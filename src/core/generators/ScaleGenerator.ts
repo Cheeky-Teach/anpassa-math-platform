@@ -1,93 +1,159 @@
-export interface QuestionRenderData {
-  type: 'text' | 'image' | 'scale_draw';
-  content: string;
-  params?: any;
-}
+import { GeneratedQuestion, Clue, AnswerType } from "../types/generator";
+import { Random } from "../utils/random";
+import { TERMS, t, Language } from "../utils/i18n";
 
-export interface GeneratedQuestion {
-  id: string;
-  renderData: QuestionRenderData;
-  clue: string;
-  answer: string | number;
-}
-
-/**
- * Generates Scale problems (Skala).
- * Logic: Relies on Relation: Real Length = Drawing Length * Scale Factor
- */
 export class ScaleGenerator {
-  
-  // Helper to get random int between min and max
-  private getRandomInt(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
+    private static readonly SHAPES = [
+        'square', 'rectangle', 'rhombus', 'parallelogram', 'right_triangle', 
+        'isosceles_triangle', 'equilateral_triangle', 
+        'arrow', 'star', 'circle', 'hexagon', 'octagon', 'pentagon', 
+        'trapezoid', 'kite', 'ellipse', 'heart', 'cross', 'lightning', 
+        'cylinder', 'cube', 'rectangular_prism', 'triangular_prism', 'pyramid', 'cone'
+    ];
 
-  public generate(level: number, lang: 'sv' | 'en' = 'sv'): GeneratedQuestion {
-    const isSwedish = lang === 'sv';
-    
-    // Level 1: Calculate Real Length (1:X)
-    // Level 2: Calculate Drawing Length (1:X)
-    // Level 3: Calculate Scale (Drawing vs Real)
-    
-    // Simplified logic for this example focusing on Level 1 & 2
-    const mode = Math.random() > 0.5 ? 'find_real' : 'find_drawing';
-    const scaleFactor = [10, 20, 50, 100, 200, 500][this.getRandomInt(0, 5)];
-    
-    // We stick to Right-Angled or Isosceles triangles or Rectangles (No Scalene)
-    // For text problems, we use "lines" or "walls" to be clear.
-    
-    // Setup units
-    const drawingUnit = 'cm';
-    const realUnit = scaleFactor >= 100 ? 'm' : 'cm';
-    
-    let drawingVal = this.getRandomInt(2, 9); // e.g., 5 cm
-    let realValRaw = drawingVal * scaleFactor; // e.g., 500 cm
-    
-    // Convert to meters if needed
-    let realValDisplay = realUnit === 'm' ? realValRaw / 100 : realValRaw;
-
-    let questionText = "";
-    let answer: number = 0;
-    let clue = "";
-
-    if (mode === 'find_real') {
-      // Q: Drawing is X, Scale is 1:Y. Find Reality.
-      questionText = isSwedish
-        ? `På en ritning i skala 1:${scaleFactor} är en vägg ${drawingVal} ${drawingUnit} lång. Hur lång är väggen i verkligheten? (Svara i ${realUnit})`
-        : `On a drawing with scale 1:${scaleFactor}, a wall is ${drawingVal} ${drawingUnit} long. How long is the wall in reality? (Answer in ${realUnit})`;
-      
-      answer = realValDisplay;
-      clue = isSwedish 
-        ? `Multiplicera måttet på ritningen med skalan (${scaleFactor}).`
-        : `Multiply the drawing length by the scale factor (${scaleFactor}).`;
-    
-    } else {
-      // Q: Reality is Y, Scale is 1:X. Find Drawing.
-      // We must ensure the answer is clean (integer or simple .5)
-      // Reverse engineer:
-      const targetDrawing = this.getRandomInt(2, 10);
-      drawingVal = targetDrawing;
-      realValRaw = drawingVal * scaleFactor;
-      realValDisplay = realUnit === 'm' ? realValRaw / 100 : realValRaw;
-
-      questionText = isSwedish
-        ? `I verkligheten är en bil ${realValDisplay} ${realUnit} lång. Hur lång blir den på en ritning i skala 1:${scaleFactor}? (Svara i ${drawingUnit})`
-        : `In reality, a car is ${realValDisplay} ${realUnit} long. How long will it be on a drawing with scale 1:${scaleFactor}? (Answer in ${drawingUnit})`;
-
-      answer = drawingVal;
-      clue = isSwedish
-        ? `Dividera verklighetens mått (omvandlat till cm) med ${scaleFactor}.`
-        : `Convert reality to cm, then divide by ${scaleFactor}.`;
-    }
-
-    return {
-      id: `scale-${Date.now()}`,
-      renderData: {
-        type: 'text', // In full app, this would be 'scale_draw' for visual components
-        content: questionText
-      },
-      clue: clue,
-      answer: answer
+    private static readonly LABELS = {
+        drawing: { sv: "Avbildning", en: "Drawing" },
+        reality: { sv: "Verklighet", en: "Reality" }
     };
-  }
+
+    public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
+        const rng = new Random(seed);
+        const color = "\\mathbf{\\color{#D35400}";
+        
+        // Mode Mapping:
+        // Level 1: Find Reality (Visual)
+        // Level 2: Find Drawing (Visual)
+        // Level 3: Find Scale (Visual - Side by Side)
+        // Level 4: Word Problems (Mixed, No Images)
+        // Level 5+: Mixed Complex
+        
+        let mode = level;
+        let hideImage = false;
+
+        if (level === 4) {
+            hideImage = true;
+            mode = rng.intBetween(1, 3); // Random type, text only
+        } else if (level >= 5) {
+            mode = rng.intBetween(1, 3);
+            hideImage = rng.intBetween(0, 1) === 1;
+        }
+
+        const shape = rng.pick(this.SHAPES);
+        const scaleFactor = rng.pick([10, 20, 50, 100, 200, 500, 1000]);
+        
+        let steps: Clue[] = [];
+        let renderData: any = {};
+        let answer: any = 0;
+        let qText = "";
+
+        // --- MODE 1: FIND REALITY ---
+        if (mode === 1) {
+            const drawingVal = rng.intBetween(2, 9);
+            const realValCm = drawingVal * scaleFactor;
+            const realUnit = scaleFactor >= 100 ? 'm' : 'cm';
+            const realValDisplay = realUnit === 'm' ? realValCm / 100 : realValCm;
+            
+            answer = realValDisplay;
+
+            qText = lang === 'sv' 
+                ? `En ${t(lang, TERMS.shapes[shape] || shape)} är ${drawingVal} cm på ritningen. Skalan är 1:${scaleFactor}. Hur lång är den i verkligheten? (Svara i ${realUnit})`
+                : `A ${t(lang, TERMS.shapes[shape] || shape)} is ${drawingVal} cm on the drawing. Scale is 1:${scaleFactor}. How long is it in reality? (Answer in ${realUnit})`;
+
+            steps = [
+                { text: t(lang, TERMS.common.calculate), latex: `${drawingVal} \\cdot ${scaleFactor} = ${realValCm} \\text{ cm}` },
+                realUnit === 'm' ? { text: "Convert units", latex: `${realValCm} / 100 = ${color}{${realValDisplay}} \\text{ m}` } : { text: "Done", latex: "" }
+            ];
+
+            renderData = {
+                text_key: "find_real",
+                description: qText,
+                latex: `1:${scaleFactor}`,
+                answerType: 'numeric',
+                geometry: hideImage ? undefined : { type: 'scale_single', shape, label: `${drawingVal} cm` }
+            };
+        }
+
+        // --- MODE 2: FIND DRAWING ---
+        else if (mode === 2) {
+            const targetDrawing = rng.intBetween(2, 10);
+            const realValCm = targetDrawing * scaleFactor;
+            const realUnit = scaleFactor >= 100 ? 'm' : 'cm';
+            const realValDisplay = realUnit === 'm' ? realValCm / 100 : realValCm;
+            
+            answer = targetDrawing;
+
+            qText = lang === 'sv'
+                ? `I verkligheten är en ${t(lang, TERMS.shapes[shape] || shape)} ${realValDisplay} ${realUnit} lång. Hur lång blir den på en ritning i skala 1:${scaleFactor}? (Svara i cm)`
+                : `In reality, a ${t(lang, TERMS.shapes[shape] || shape)} is ${realValDisplay} ${realUnit} long. How long will it be on a drawing with scale 1:${scaleFactor}? (Answer in cm)`;
+
+            steps = [
+                { text: "Convert to cm", latex: `${realValDisplay} ${realUnit} = ${realValCm} \\text{ cm}` },
+                { text: "Divide by scale", latex: `\\frac{${realValCm}}{${scaleFactor}} = ${color}{${targetDrawing}}` }
+            ];
+
+            renderData = {
+                text_key: "find_drawing",
+                description: qText,
+                latex: `1:${scaleFactor}`,
+                answerType: 'numeric',
+                geometry: hideImage ? undefined : { type: 'scale_single', shape, label: `${realValDisplay} ${realUnit}` }
+            };
+        }
+
+        // --- MODE 3: FIND SCALE (Side by Side) ---
+        else {
+            // We need a Drawing Value and a Real Value that simplify nicely
+            const base = rng.intBetween(2, 5);
+            const factor = rng.pick([10, 20, 50, 100]);
+            
+            const drawVal = base; 
+            const realVal = base * factor; // e.g. 5 * 50 = 250 cm
+            
+            const realUnit = factor >= 100 ? 'm' : 'cm';
+            const realDisplay = realUnit === 'm' ? realVal / 100 : realVal;
+
+            const ansLeft = 1;
+            const ansRight = factor;
+            
+            qText = lang === 'sv'
+                ? `Bestäm skalan.`
+                : `Determine the scale.`;
+
+            // Randomize which is on left/right for the visual
+            const leftIsDrawing = true; // Convention for now
+            
+            steps = [
+                { text: "Convert to same unit (cm)", latex: `${realDisplay} ${realUnit} = ${realVal} \\text{ cm}` },
+                { text: t(lang, TERMS.scale.step_plug_in), latex: `${drawVal} : ${realVal}` },
+                { text: t(lang, TERMS.scale.step_simplify), latex: `1 : ${realVal/drawVal} \\implies ${color}{1:${factor}}` }
+            ];
+
+            renderData = {
+                text_key: "find_scale",
+                description: qText,
+                latex: "",
+                answerType: 'scale',
+                geometry: hideImage ? undefined : { 
+                    type: 'scale_compare', 
+                    shape: shape, 
+                    leftLabel: t(lang, this.LABELS.drawing),
+                    leftValue: `${drawVal} cm`,
+                    rightLabel: t(lang, this.LABELS.reality),
+                    rightValue: `${realDisplay} ${realUnit}`
+                }
+            };
+
+            // Answer is object { left: 1, right: 50 }
+            answer = { left: ansLeft, right: ansRight };
+        }
+
+        return {
+            questionId: `scale-l${level}-${seed}`,
+            renderData: renderData,
+            serverData: {
+                answer: answer,
+                solutionSteps: steps.filter(s => s.latex !== "")
+            }
+        };
+    }
 }
