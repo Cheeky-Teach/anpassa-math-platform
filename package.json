@@ -1,0 +1,21 @@
+{
+  "name": "anpassa-math-platform",
+  "version": "2.0.0",
+  "description": "Adaptive Math Learning Platform",
+  "main": "api/index.ts",
+  "scripts": {
+    "start": "echo 'Please use: vercel dev' && exit 1",
+    "build": "echo 'No build step required for serverless functions' && exit 0"
+  },
+  "dependencies": {
+    "katex": "^0.16.9"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@vercel/node": "^3.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anpassa | Math Platform</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- KaTeX for Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .katex-display { margin: 1em 0; overflow-x: auto; overflow-y: hidden; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [loading, setLoading] = useState(true);
+            const [question, setQuestion] = useState(null);
+            const [input, setInput] = useState('');
+            const [feedback, setFeedback] = useState(null); // null, 'correct', 'incorrect'
+            const [streak, setStreak] = useState(0);
+            const [clueVisible, setClueVisible] = useState(false);
+
+            // Fetch a new question
+            const fetchQuestion = async () => {
+                setLoading(true);
+                setFeedback(null);
+                setInput('');
+                setClueVisible(false);
+                
+                try {
+                    const res = await fetch('/api/question?topic=scale&level=1');
+                    const data = await res.json();
+                    setQuestion(data);
+                } catch (err) {
+                    console.error("Failed to fetch", err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchQuestion();
+            }, []);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!input || !question) return;
+
+                try {
+                    const res = await fetch('/api/answer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            answer: input,
+                            token: question.token // Send the token back for verification
+                        })
+                    });
+                    
+                    const result = await res.json();
+                    
+                    if (result.correct) {
+                        setFeedback('correct');
+                        setStreak(s => s + 1);
+                        // Optional: Auto-fetch next after delay
+                        setTimeout(fetchQuestion, 1500);
+                    } else {
+                        setFeedback('incorrect');
+                        setStreak(0);
+                    }
+                } catch (err) {
+                    console.error("Error submitting", err);
+                }
+            };
+
+            // LaTeX Renderer Component
+            const MathRenderer = ({ content }) => {
+                const containerRef = useRef(null);
+                useEffect(() => {
+                    if (containerRef.current) {
+                        // Very basic render, in production usage you'd parse $...$ delimiters
+                        // For now we assume the text is mostly plain with some numbers
+                        containerRef.current.innerHTML = content; 
+                    }
+                }, [content]);
+                return <div className="text-xl font-medium text-gray-800" ref={containerRef} />;
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center p-4">
+                    <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
+                        
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-6 border-b pb-4">
+                            <h1 className="text-2xl font-bold text-indigo-600">Anpassa</h1>
+                            <div className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                Streak: {streak} 🔥
+                            </div>
+                        </div>
+
+                        {loading ? (
+                            <div className="text-center py-10 text-gray-500">Genererar problem...</div>
+                        ) : question ? (
+                            <div>
+                                {/* Question Area */}
+                                <div className="mb-6">
+                                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                        <MathRenderer content={question.renderData.content} />
+                                    </div>
+                                </div>
+
+                                {/* Answer Area */}
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <input 
+                                        type="text" 
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        placeholder="Skriv ditt svar..."
+                                        className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none text-lg text-center"
+                                        disabled={feedback === 'correct'}
+                                    />
+                                    
+                                    <button 
+                                        type="submit"
+                                        className={`w-full py-3 rounded-lg font-bold text-white transition-colors ${
+                                            feedback === 'correct' ? 'bg-green-500 hover:bg-green-600' :
+                                            feedback === 'incorrect' ? 'bg-red-500 hover:bg-red-600' :
+                                            'bg-indigo-600 hover:bg-indigo-700'
+                                        }`}
+                                    >
+                                        {feedback === 'correct' ? 'Rätt! Nästa...' : 
+                                         feedback === 'incorrect' ? 'Fel, försök igen' : 'Svara'}
+                                    </button>
+                                </form>
+
+                                {/* Utilities */}
+                                <div className="mt-4 flex justify-between items-center">
+                                    <button 
+                                        onClick={() => setClueVisible(!clueVisible)}
+                                        className="text-sm text-gray-500 hover:text-indigo-600 underline"
+                                    >
+                                        {clueVisible ? 'Dölj ledtråd' : 'Behöver du hjälp?'}
+                                    </button>
+                                    <button onClick={fetchQuestion} className="text-sm text-gray-400 hover:text-gray-600">
+                                        Hoppa över
+                                    </button>
+                                </div>
+
+                                {clueVisible && (
+                                    <div className="mt-3 p-3 bg-yellow-50 text-yellow-800 text-sm rounded border border-yellow-200 animate-fade-in">
+                                        💡 <strong>Ledtråd:</strong> {question.clue}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="text-red-500">Ett fel uppstod vid laddning av frågan.</div>
+                        )}
+                    </div>
+                    
+                    <footer className="mt-8 text-gray-400 text-xs text-center">
+                        Anpassa Math Engine v2.0 • Powered by Vercel
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
