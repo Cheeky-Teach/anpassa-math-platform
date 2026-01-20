@@ -157,7 +157,7 @@ export class GeometryGenerator {
             latex: qData.latex,
             answerType: 'numeric',
             geometry: geometry,
-            variables: {} // FIX: Added missing property
+            variables: {} // Added required property
         },
         serverData: {
             answer: qData.answer,

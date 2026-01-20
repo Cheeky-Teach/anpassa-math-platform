@@ -24,7 +24,6 @@ export class ExpressionSimplificationGen {
         ansK = a + c;
         ansM = b;
         steps = [
-            // FIX: Added extra closing brace
             { text: t(lang, TERMS.simplification.group_terms), latex: `(${a}x + ${c}x) + ${b} = ${color}{${ansK}x} + ${b}}` },
             { text: "Result", latex: `${ansK}x + ${b}` }
         ];
@@ -39,7 +38,6 @@ export class ExpressionSimplificationGen {
         ansM = a * b;
         steps = [
             { text: t(lang, TERMS.algebra.distribute(a)), latex: `${a} \\cdot x + ${a} \\cdot ${b}` },
-            // FIX: Added extra closing brace
             { text: "Simplify", latex: `${color}{${ansK}x + ${ansM}}}` }
         ];
     }
@@ -56,7 +54,6 @@ export class ExpressionSimplificationGen {
         steps = [
             { text: t(lang, TERMS.algebra.distribute(a)), latex: `${a}x + ${a*b} + ${c}x` },
             { text: t(lang, TERMS.simplification.group_terms), latex: `(${a}x + ${c}x) + ${ansM}` },
-            // FIX: Added extra closing brace
             { text: "Result", latex: `${color}{${ansK}x + ${ansM}}}` }
         ];
     }
@@ -81,22 +78,17 @@ export class ExpressionSimplificationGen {
             { text: t(lang, TERMS.simplification.intro(expr)), latex: expr },
             { text: "Distribute (careful with negatives)", latex: `${a}x + ${a*b} - ${c}x + ${c*d}` },
             { text: t(lang, TERMS.simplification.group_terms), latex: `(${a}x - ${c}x) + (${a*b} + ${c*d})` },
-            // FIX: Added extra closing brace
             { text: "Result", latex: `${color}{${ansK}x ${mSign} ${mVal}}}` }
         ];
     }
     
-    // Formatting the answer string for standard display
-    const mSign = ansM >= 0 ? '+' : '-';
-    const answerStr = `${ansK}x ${mSign} ${Math.abs(ansM)}`;
-
     return {
         questionId: `simp-l${level}-${seed}`,
         renderData: {
             text_key: "simplify",
             description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.",
             latex: expr,
-            variables: {},
+            variables: {}, // FIX: Added missing property
             answerType: 'function_model' 
         },
         serverData: {

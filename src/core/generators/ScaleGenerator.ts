@@ -59,7 +59,7 @@ export class ScaleGenerator {
                     latex: scaleStr, 
                     answerType: 'multiple_choice', 
                     choices: choices,
-                    variables: {} // FIX: Added missing property
+                    variables: {} 
                 },
                 serverData: { answer: correct, solutionSteps: [{ text: expl, latex: scaleStr }] }
             };
@@ -87,7 +87,7 @@ export class ScaleGenerator {
                      latex: `1:${scaleFactor}`, 
                      answerType: 'numeric', 
                      geometry: { type: 'scale_single', shape, label: subType===0?`${drawingVal} cm`:`${realVal} cm` },
-                     variables: {} // FIX: Added missing property
+                     variables: {} 
                  },
                  serverData: { answer: target, solutionSteps: [{ text: t(lang, TERMS.common.calculate), latex: subType===0 ? `${drawingVal} \\cdot ${scaleFactor} = ${color}{${realVal}}}` : `\\frac{${realVal}}{${scaleFactor}} = ${color}{${target}}}` }] }
              };
@@ -109,7 +109,7 @@ export class ScaleGenerator {
                      latex: `1:${scaleFactor}`, 
                      answerType: 'numeric', 
                      geometry: { type: 'scale_single', shape, label: subType===0?`${drawingVal} cm`:`${realValM} m` },
-                     variables: {} // FIX: Added missing property
+                     variables: {} 
                  },
                  serverData: { answer: subType===0?realValM:drawingVal, solutionSteps: [{text: "Convert/Calc", latex: subType===0?`${drawingVal} \\cdot ${scaleFactor} = ${realValCm} \\to ${color}{${realValM}}}` : `${realValM}m = ${realValCm}cm \\to \\frac{${realValCm}}{${scaleFactor}} = ${color}{${drawingVal}}}`}] }
              };
@@ -131,7 +131,7 @@ export class ScaleGenerator {
                      latex: "", 
                      answerType: 'scale', 
                      geometry: { type: 'scale_compare', shape, leftLabel: lLab, rightLabel: rLab, leftValue: lVal, rightValue: rVal },
-                     variables: {} // FIX: Added missing property
+                     variables: {} 
                  },
                  serverData: { answer: {left:1, right:factor}, solutionSteps: [{text: t(lang, TERMS.scale.step_simplify), latex: `1:${factor}`}] }
              };
@@ -148,7 +148,7 @@ export class ScaleGenerator {
                      description: desc, 
                      latex: "", 
                      answerType: 'scale',
-                     variables: {} // FIX: Added missing property
+                     variables: {} 
                  },
                  serverData: { answer: {left:1, right:factor}, solutionSteps: [{text: t(lang, TERMS.scale.step_simplify), latex: `1:${factor}`}] }
              };
@@ -167,9 +167,9 @@ export class ScaleGenerator {
             let answer: any = 0;
             let answerType: any = 'numeric';
 
-            // Get correct plural forms for the description
-            const shapePluralSv = TERMS.shapes_plural?.[areaShape]?.sv || `${areaShape}er`;
-            const shapePluralEn = TERMS.shapes_plural?.[areaShape]?.en || `${areaShape}s`;
+            // Use the plural forms from TERMS.shapes_plural
+            const shapePluralSv = TERMS.shapes_plural[areaShape]?.sv || `${areaShape}er`;
+            const shapePluralEn = TERMS.shapes_plural[areaShape]?.en || `${areaShape}s`;
 
             if (subType === 1) { // Find Scale
                 const w = rng.intBetween(2, 6);
@@ -240,7 +240,7 @@ export class ScaleGenerator {
                     latex: "",
                     answerType: answerType,
                     geometry: geomData,
-                    variables: {} // FIX: Added missing property
+                    variables: {} 
                 },
                 serverData: { answer: answer, solutionSteps: steps }
             };
