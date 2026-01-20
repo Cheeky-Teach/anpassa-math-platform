@@ -16,6 +16,7 @@ export class LinearGraphGenerator {
         let steps: Clue[] = [];
         let answer: any = 0;
         let answerType: any = 'numeric';
+        let description = "";
 
         // --- LEVEL 1: Find Intercept (m) ---
         if (mode === 1) {
@@ -23,7 +24,8 @@ export class LinearGraphGenerator {
             m = rng.intBetween(-3, 3);
             answer = m;
             questionKey = "q_intercept";
-            latexInstruction = t(lang, TERMS.graph.q_intercept);
+            description = t(lang, TERMS.graph.q_intercept); // Set full question string
+            latexInstruction = ""; // LaTeX is redundant if description is clear
             answerType = 'numeric';
             steps = [
                 { text: "Look at x = 0", latex: "(0, y)" },
@@ -37,7 +39,8 @@ export class LinearGraphGenerator {
             m = rng.intBetween(-3, 1);
             answer = k;
             questionKey = "q_slope";
-            latexInstruction = t(lang, TERMS.graph.q_slope);
+            description = t(lang, TERMS.graph.q_slope);
+            latexInstruction = "";
             answerType = 'numeric';
             steps = [
                 { text: "Slope Formula", latex: "k = \\frac{\\Delta y}{\\Delta x}" },
@@ -52,7 +55,8 @@ export class LinearGraphGenerator {
             m = rng.intBetween(-2, 4);
             answer = k;
             questionKey = "q_slope";
-            latexInstruction = t(lang, TERMS.graph.q_slope);
+            description = t(lang, TERMS.graph.q_slope);
+            latexInstruction = "";
             answerType = 'numeric';
             steps = [
                 { text: "Slope Formula", latex: "k = \\frac{\\Delta y}{\\Delta x}" },
@@ -65,9 +69,10 @@ export class LinearGraphGenerator {
         else {
             k = rng.pick([1, 2, -1, -2]);
             m = rng.intBetween(-2, 2);
-            answer = { k, m }; // Object for validation
+            answer = { k, m }; 
             questionKey = "q_func";
-            latexInstruction = t(lang, TERMS.graph.q_func);
+            description = t(lang, TERMS.graph.q_func);
+            latexInstruction = "";
             answerType = 'function_model';
             steps = [
                 { text: "Find m", latex: `m = ${m}` },
@@ -80,6 +85,7 @@ export class LinearGraphGenerator {
             questionId: `graph-l${level}-${seed}`,
             renderData: {
                 text_key: questionKey,
+                description: description, // Ensuring description is set
                 latex: latexInstruction,
                 answerType: answerType,
                 graph: { 
