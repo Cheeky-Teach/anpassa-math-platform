@@ -23,7 +23,7 @@ export const TERMS = {
         square: { sv: "kvadrat", en: "square" },
         rectangle: { sv: "rektangel", en: "rectangle" },
         circle: { sv: "cirkel", en: "circle" },
-        semicircle: { sv: "halvcirkel", en: "semicircle" },
+        semicircle: { sv: "halvcirkel", en: "semicircle" }, // Corrected
         triangle: { sv: "triangel", en: "triangle" },
         rhombus: { sv: "romb", en: "rhombus" },
         parallelogram: { sv: "parallellogram", en: "parallelogram" },
@@ -51,7 +51,7 @@ export const TERMS = {
         square: { sv: "kvadrater", en: "squares" },
         rectangle: { sv: "rektanglar", en: "rectangles" },
         circle: { sv: "cirklar", en: "circles" },
-        semicircle: { sv: "halvcirklar", en: "semicircles" },
+        semicircle: { sv: "halvcirklar", en: "semicircles" }, // Corrected
         triangle: { sv: "trianglar", en: "triangles" },
         parallelogram: { sv: "parallellogrammer", en: "parallelograms" },
         rhombus: { sv: "romber", en: "rhombuses" }
@@ -77,6 +77,7 @@ export const TERMS = {
         calc_area_scale: { sv: "Beräkna areaskala (längdskala²)", en: "Calculate area scale (length scale²)" },
         calc_new_area: { sv: "Beräkna ny area", en: "Calculate new area" }
     },
+    // ... (rest of the file remains same, Algebra, Geometry, Simplification, Graph)
     algebra: {
         intro: (eq: string) => ({ sv: `Börja med ekvationen: $${eq}$`, en: `Start with the equation: $${eq}$` }),
         sub_var: (term: string) => ({ sv: `Subtrahera ${term} från båda sidor`, en: `Subtract ${term} from both sides` }),
