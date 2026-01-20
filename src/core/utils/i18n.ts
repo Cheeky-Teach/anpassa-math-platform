@@ -11,39 +11,36 @@ export const TERMS = {
         solve: { sv: "Lös ut", en: "Solve for" },
         calculate: { sv: "Beräkna", en: "Calculate" },
         find: { sv: "Hitta", en: "Find" },
-        line: { sv: "Linje", en: "Line" },
-        simplify: { sv: "Förenkla", en: "Simplify" },
         result: { sv: "Svar:", en: "Answer:" },
         drawing: { sv: "Avbildning", en: "Drawing" },
         reality: { sv: "Verklighet", en: "Reality" }
     },
     shapes: {
+        // 2D Shapes
         square: { sv: "kvadrat", en: "square" },
         rectangle: { sv: "rektangel", en: "rectangle" },
-        rhombus: { sv: "romb", en: "rhombus" },
-        parallelogram: { sv: "parallellogram", en: "parallelogram" },
-        right_triangle: { sv: "rätvinklig triangel", en: "right triangle" },
-        isosceles_triangle: { sv: "likbent triangel", en: "isosceles triangle" },
-        equilateral_triangle: { sv: "liksidig triangel", en: "equilateral triangle" },
         circle: { sv: "cirkel", en: "circle" },
         triangle: { sv: "triangel", en: "triangle" },
-        star: { sv: "stjärna", en: "star" },
-        arrow: { sv: "pil", en: "arrow" },
+        rhombus: { sv: "romb", en: "rhombus" },
+        parallelogram: { sv: "parallellogram", en: "parallelogram" },
+        pentagon: { sv: "femhörning", en: "pentagon" },
         hexagon: { sv: "sexhörning", en: "hexagon" },
         octagon: { sv: "åttahörning", en: "octagon" },
-        pentagon: { sv: "femhörning", en: "pentagon" },
-        trapezoid: { sv: "trapets", en: "trapezoid" },
         kite: { sv: "drake", en: "kite" },
-        ellipse: { sv: "ellips", en: "ellipse" },
+        
+        // Symbols
+        star: { sv: "stjärna", en: "star" },
+        arrow: { sv: "pil", en: "arrow" },
         heart: { sv: "hjärta", en: "heart" },
         cross: { sv: "kors", en: "cross" },
         lightning: { sv: "blixt", en: "lightning" },
+        
+        // 3D Shapes
         cube: { sv: "kub", en: "cube" },
         cylinder: { sv: "cylinder", en: "cylinder" },
-        rectangular_prism: { sv: "rätblock", en: "rectangular prism" },
-        triangular_prism: { sv: "triangulärt prisma", en: "triangular prism" },
         pyramid: { sv: "pyramid", en: "pyramid" },
-        cone: { sv: "kon", en: "cone" }
+        cone: { sv: "kon", en: "cone" },
+        sphere: { sv: "sfär", en: "sphere" }
     } as Record<string, {sv:string, en:string}>,
     scale: {
         step_plug_in: { sv: "Ställ upp förhållandet:", en: "Set up the ratio:" },

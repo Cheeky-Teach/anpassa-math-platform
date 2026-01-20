@@ -3,12 +3,12 @@ import { Random } from "../utils/random";
 import { TERMS, t, Language } from "../utils/i18n";
 
 export class ScaleGenerator {
+    // Extensive list of shapes supported by the frontend visualizer
     private static readonly SHAPES = [
-        'square', 'rectangle', 'rhombus', 'parallelogram', 'right_triangle', 
-        'isosceles_triangle', 'equilateral_triangle', 
-        'arrow', 'star', 'circle', 'hexagon', 'octagon', 'pentagon', 
-        'trapezoid', 'kite', 'ellipse', 'heart', 'cross', 'lightning', 
-        'cylinder', 'cube', 'rectangular_prism', 'triangular_prism', 'pyramid', 'cone'
+        'square', 'rectangle', 'circle', 'triangle', 
+        'rhombus', 'parallelogram', 'pentagon', 'hexagon', 'octagon',
+        'star', 'arrow', 'heart', 'cross', 'lightning', 'kite',
+        'cube', 'cylinder', 'pyramid', 'cone', 'sphere'
     ];
 
     private static readonly LABELS = {
@@ -31,13 +31,19 @@ export class ScaleGenerator {
             hideImage = rng.intBetween(0, 1) === 1;
         }
 
+        // 1. Pick a Shape
         const shape = rng.pick(this.SHAPES);
+        
+        // 2. Pick Scale Factor
         const scaleFactor = rng.pick([10, 20, 50, 100, 200, 500, 1000]);
         
         let steps: Clue[] = [];
         let renderData: any = {};
         let answer: any = 0;
         let qText = "";
+
+        // Helper for localized shape name
+        const shapeName = t(lang, TERMS.shapes[shape] || shape);
 
         // --- MODE 1: FIND REALITY ---
         if (mode === 1) {
@@ -49,12 +55,11 @@ export class ScaleGenerator {
             answer = realValDisplay;
 
             qText = lang === 'sv' 
-                ? `En ${t(lang, TERMS.shapes[shape] || shape)} är ${drawingVal} cm på ritningen. Skalan är 1:${scaleFactor}. Hur lång är den i verkligheten? (Svara i ${realUnit})`
-                : `A ${t(lang, TERMS.shapes[shape] || shape)} is ${drawingVal} cm on the drawing. Scale is 1:${scaleFactor}. How long is it in reality? (Answer in ${realUnit})`;
+                ? `En ${shapeName} är ${drawingVal} cm på ritningen. Skalan är 1:${scaleFactor}. Hur lång är den i verkligheten? (Svara i ${realUnit})`
+                : `A ${shapeName} is ${drawingVal} cm on the drawing. Scale is 1:${scaleFactor}. How long is it in reality? (Answer in ${realUnit})`;
 
             steps = [
                 { text: t(lang, TERMS.common.calculate), latex: `${drawingVal} \\cdot ${scaleFactor} = ${realValCm} \\text{ cm}` },
-                // FIX: Added extra closing brace
                 realUnit === 'm' ? { text: "Convert units", latex: `${realValCm} / 100 = ${color}{${realValDisplay}}} \\text{ m}` } : { text: "Done", latex: "" }
             ];
 
@@ -63,7 +68,8 @@ export class ScaleGenerator {
                 description: qText,
                 latex: `1:${scaleFactor}`,
                 answerType: 'numeric',
-                geometry: hideImage ? undefined : { type: 'scale_single', shape, label: `${drawingVal} cm` }
+                // Pass the specific shape type to the frontend
+                geometry: hideImage ? undefined : { type: 'scale_single', shape: shape, label: `${drawingVal} cm` }
             };
         }
 
@@ -77,12 +83,11 @@ export class ScaleGenerator {
             answer = targetDrawing;
 
             qText = lang === 'sv'
-                ? `I verkligheten är en ${t(lang, TERMS.shapes[shape] || shape)} ${realValDisplay} ${realUnit} lång. Hur lång blir den på en ritning i skala 1:${scaleFactor}? (Svara i cm)`
-                : `In reality, a ${t(lang, TERMS.shapes[shape] || shape)} is ${realValDisplay} ${realUnit} long. How long will it be on a drawing with scale 1:${scaleFactor}? (Answer in cm)`;
+                ? `I verkligheten är en ${shapeName} ${realValDisplay} ${realUnit} lång. Hur lång blir den på en ritning i skala 1:${scaleFactor}? (Svara i cm)`
+                : `In reality, a ${shapeName} is ${realValDisplay} ${realUnit} long. How long will it be on a drawing with scale 1:${scaleFactor}? (Answer in cm)`;
 
             steps = [
                 { text: "Convert to cm", latex: `${realValDisplay} ${realUnit} = ${realValCm} \\text{ cm}` },
-                // FIX: Added extra closing brace
                 { text: "Divide by scale", latex: `\\frac{${realValCm}}{${scaleFactor}} = ${color}{${targetDrawing}}}` }
             ];
 
@@ -91,7 +96,7 @@ export class ScaleGenerator {
                 description: qText,
                 latex: `1:${scaleFactor}`,
                 answerType: 'numeric',
-                geometry: hideImage ? undefined : { type: 'scale_single', shape, label: `${realValDisplay} ${realUnit}` }
+                geometry: hideImage ? undefined : { type: 'scale_single', shape: shape, label: `${realValDisplay} ${realUnit}` }
             };
         }
 
@@ -110,12 +115,10 @@ export class ScaleGenerator {
             const ansRight = factor;
             
             qText = lang === 'sv' ? `Bestäm skalan.` : `Determine the scale.`;
-            const leftIsDrawing = true; 
             
             steps = [
                 { text: "Convert to same unit (cm)", latex: `${realDisplay} ${realUnit} = ${realVal} \\text{ cm}` },
                 { text: t(lang, TERMS.scale.step_plug_in), latex: `${drawVal} : ${realVal}` },
-                // FIX: Added extra closing brace
                 { text: t(lang, TERMS.scale.step_simplify), latex: `1 : ${realVal/drawVal} \\implies ${color}{1:${factor}}}` }
             ];
 
