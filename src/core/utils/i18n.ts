@@ -23,6 +23,7 @@ export const TERMS = {
         square: { sv: "kvadrat", en: "square" },
         rectangle: { sv: "rektangel", en: "rectangle" },
         circle: { sv: "cirkel", en: "circle" },
+        semicircle: { sv: "halvcirkel", en: "semicircle" },
         triangle: { sv: "triangel", en: "triangle" },
         rhombus: { sv: "romb", en: "rhombus" },
         parallelogram: { sv: "parallellogram", en: "parallelogram" },
@@ -30,15 +31,11 @@ export const TERMS = {
         hexagon: { sv: "sexhörning", en: "hexagon" },
         octagon: { sv: "åttahörning", en: "octagon" },
         kite: { sv: "drake", en: "kite" },
-        
-        // Symbols
         star: { sv: "stjärna", en: "star" },
         arrow: { sv: "pil", en: "arrow" },
         heart: { sv: "hjärta", en: "heart" },
         cross: { sv: "kors", en: "cross" },
         lightning: { sv: "blixt", en: "lightning" },
-        
-        // 3D Shapes
         cube: { sv: "kub", en: "cube" },
         cylinder: { sv: "cylinder", en: "cylinder" },
         pyramid: { sv: "pyramid", en: "pyramid" },
@@ -53,13 +50,18 @@ export const TERMS = {
         rule_reduction: { sv: "Eftersom det första talet är 1, är det en förminskning.", en: "Since the first number is 1, it is a reduction." },
         rule_enlargement: { sv: "Eftersom det första talet är större än 1, är det en förstoring.", en: "Since the first number is greater than 1, it is an enlargement." },
         
-        // Hint Translations
         calc_cm: { sv: "Beräkna cm", en: "Calculate cm" },
         conv_m: { sv: "Omvandla till meter", en: "Convert to m" },
         conv_units: { sv: "Omvandla enheter", en: "Convert units" },
         div_scale: { sv: "Dividera med skalan", en: "Divide by scale" },
         conv_same: { sv: "Omvandla till samma enhet (cm)", en: "Convert to same unit (cm)" },
-        setup_ratio: { sv: "Ställ upp förhållandet", en: "Set up ratio" }
+        setup_ratio: { sv: "Ställ upp förhållandet", en: "Set up ratio" },
+        
+        // Area Scale Specific
+        calc_area_img: { sv: "Beräkna bildens area", en: "Calculate image area" },
+        calc_area_real: { sv: "Beräkna verklighetens area", en: "Calculate reality area" },
+        calc_area_scale: { sv: "Beräkna areaskala (längdskala²)", en: "Calculate area scale (length scale²)" },
+        calc_new_area: { sv: "Beräkna ny area", en: "Calculate new area" }
     },
     algebra: {
         intro: (eq: string) => ({ sv: `Börja med ekvationen: $${eq}$`, en: `Start with the equation: $${eq}$` }),
