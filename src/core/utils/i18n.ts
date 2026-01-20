@@ -19,11 +19,10 @@ export const TERMS = {
         reality: { sv: "Verklighet", en: "Reality" }
     },
     shapes: {
-        // 2D Shapes
         square: { sv: "kvadrat", en: "square" },
         rectangle: { sv: "rektangel", en: "rectangle" },
         circle: { sv: "cirkel", en: "circle" },
-        semicircle: { sv: "halvcirkel", en: "semicircle" }, // Added
+        semicircle: { sv: "halvcirkel", en: "semicircle" },
         triangle: { sv: "triangel", en: "triangle" },
         rhombus: { sv: "romb", en: "rhombus" },
         parallelogram: { sv: "parallellogram", en: "parallelogram" },
@@ -42,6 +41,16 @@ export const TERMS = {
         cone: { sv: "kon", en: "cone" },
         sphere: { sv: "sfär", en: "sphere" }
     } as Record<string, {sv:string, en:string}>,
+    // NEW: Plural forms for correct grammar
+    shapes_plural: {
+        square: { sv: "kvadrater", en: "squares" },
+        rectangle: { sv: "rektanglar", en: "rectangles" },
+        circle: { sv: "cirklar", en: "circles" },
+        semicircle: { sv: "halvcirklar", en: "semicircles" },
+        triangle: { sv: "trianglar", en: "triangles" },
+        parallelogram: { sv: "parallellogrammer", en: "parallelograms" },
+        rhombus: { sv: "romber", en: "rhombuses" }
+    } as Record<string, {sv:string, en:string}>,
     scale: {
         step_plug_in: { sv: "Ställ upp förhållandet:", en: "Set up the ratio:" },
         step_simplify: { sv: "Förenkla:", en: "Simplify:" },
@@ -49,15 +58,12 @@ export const TERMS = {
         reduction: { sv: "Förminskning", en: "Reduction" },
         rule_reduction: { sv: "Eftersom det första talet är 1, är det en förminskning.", en: "Since the first number is 1, it is a reduction." },
         rule_enlargement: { sv: "Eftersom det första talet är större än 1, är det en förstoring.", en: "Since the first number is greater than 1, it is an enlargement." },
-        
         calc_cm: { sv: "Beräkna cm", en: "Calculate cm" },
         conv_m: { sv: "Omvandla till meter", en: "Convert to m" },
         conv_units: { sv: "Omvandla enheter", en: "Convert units" },
         div_scale: { sv: "Dividera med skalan", en: "Divide by scale" },
         conv_same: { sv: "Omvandla till samma enhet (cm)", en: "Convert to same unit (cm)" },
         setup_ratio: { sv: "Ställ upp förhållandet", en: "Set up ratio" },
-        
-        // Area Scale Specific
         calc_area_img: { sv: "Beräkna bildens area", en: "Calculate image area" },
         calc_area_real: { sv: "Beräkna verklighetens area", en: "Calculate reality area" },
         calc_area_scale: { sv: "Beräkna areaskala (längdskala²)", en: "Calculate area scale (length scale²)" },

@@ -1,4 +1,4 @@
-import { GeneratedQuestion, Clue } from "../types/generator";
+import { GeneratedQuestion, Clue, AnswerType } from "../types/generator";
 import { Random } from "../utils/random";
 import { TERMS, t, Language } from "../utils/i18n";
 
@@ -133,6 +133,10 @@ export class ScaleGenerator {
             let answer: any = 0;
             let answerType: any = 'numeric';
 
+            // Get correct plural forms for the description
+            const shapePluralSv = TERMS.shapes_plural[areaShape]?.sv || `${areaShape}er`;
+            const shapePluralEn = TERMS.shapes_plural[areaShape]?.en || `${areaShape}s`;
+
             if (subType === 1) { // Find Scale
                 const w = rng.intBetween(2, 6);
                 const h = (areaShape === 'rectangle' || areaShape === 'parallelogram' || areaShape === 'triangle') ? rng.intBetween(2, 6) : 0;
@@ -155,8 +159,8 @@ export class ScaleGenerator {
                 const dispAreaReal = Math.round(areaReal * 10) / 10;
 
                 qDesc = {
-                    sv: `Här är två ${t(lang, TERMS.shapes[areaShape])}r. Den första är en avbildning och den andra är verkligheten. Vad är areaskalan?`,
-                    en: `Here are two ${t(lang, TERMS.shapes[areaShape])}s. The first is a drawing, the second is reality. What is the area scale?`
+                    sv: `Här är två ${shapePluralSv}. Den första är en avbildning och den andra är verkligheten. Vad är areaskalan?`,
+                    en: `Here are two ${shapePluralEn}. The first is a drawing, the second is reality. What is the area scale?`
                 };
 
                 steps = [
