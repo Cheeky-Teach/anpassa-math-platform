@@ -48,7 +48,15 @@ export const TERMS = {
         enlargement: { sv: "Förstoring", en: "Enlargement" },
         reduction: { sv: "Förminskning", en: "Reduction" },
         rule_reduction: { sv: "Eftersom det första talet är 1, är det en förminskning.", en: "Since the first number is 1, it is a reduction." },
-        rule_enlargement: { sv: "Eftersom det första talet är större än 1, är det en förstoring.", en: "Since the first number is greater than 1, it is an enlargement." }
+        rule_enlargement: { sv: "Eftersom det första talet är större än 1, är det en förstoring.", en: "Since the first number is greater than 1, it is an enlargement." },
+        
+        // New Hint Translations
+        calc_cm: { sv: "Beräkna cm", en: "Calculate cm" },
+        conv_m: { sv: "Omvandla till meter", en: "Convert to m" },
+        conv_units: { sv: "Omvandla enheter", en: "Convert units" },
+        div_scale: { sv: "Dividera med skalan", en: "Divide by scale" },
+        conv_same: { sv: "Omvandla till samma enhet (cm)", en: "Convert to same unit (cm)" },
+        setup_ratio: { sv: "Ställ upp förhållandet", en: "Set up ratio" }
     },
     algebra: {
         intro: (eq: string) => ({ sv: `Börja med ekvationen: $${eq}$`, en: `Start with the equation: $${eq}$` }),

@@ -88,11 +88,12 @@
                 5: { sv: "Sammansatta figurer", en: "Composite shapes" }
             },
             scale: {
-                1: { sv: "Förstoring eller förminskning", en: "Enlargement or Reduction" }, // Updated Level 1
-                2: { sv: "Hitta längd (Enkel)", en: "Find length (Simple)" }, // Merged
-                3: { sv: "Hitta skala", en: "Calculate the scale" },
-                4: { sv: "Textproblem", en: "Word problems" },
-                5: { sv: "Blandat", en: "Mixed problems" }
+                1: { sv: "Begreppsförståelse", en: "Concepts" }, 
+                2: { sv: "Beräkna längd (Enkel)", en: "Calc Length (Simple)" }, 
+                3: { sv: "Beräkna längd (Svår)", en: "Calc Length (Hard)" },
+                4: { sv: "Ange skala", en: "Determine Scale" },
+                5: { sv: "Utan bilder", en: "No Pictures" },
+                6: { sv: "Längdskala Blandat", en: "Mixed Length Scale" }
             },
             graph: {
                 1: { sv: "Hitta m (skärning)", en: "Find y-intercept (m)" },
@@ -171,7 +172,6 @@
                 const canvas = canvasRef.current;
                 if (!canvas || !data) return;
                 const ctx = canvas.getContext('2d');
-                // Reduced size by 10% (300 -> 270)
                 const width = canvas.width; const height = canvas.height;
                 const range = data.range || 10;
                 
@@ -224,14 +224,12 @@
                     ctx.moveTo(toX(x1), toY(y1)); ctx.lineTo(toX(x2), toY(y2)); ctx.stroke();
                 });
             }, [data]);
-            // Reduced canvas size 270x270
             return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={270} height={270} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
         };
 
         const GeometryVisual = ({ data }) => {
             if (!data) return null;
             if (data.type === 'scale_single' || data.type === 'scale_compare') {
-                // EMOJI MAPPING FOR SHAPES
                 const shapeEmojis = {
                     square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺',
                     rhombus: '🔶', parallelogram: '▰', pentagon: '⬟', hexagon: '🛑',
@@ -239,26 +237,36 @@
                     cross: '➕', lightning: '⚡', kite: '🪁',
                     cube: '🧊', cylinder: '🛢️', pyramid: '⛰️', cone: '🍦', sphere: '🔮'
                 };
-                
-                const emoji = shapeEmojis[data.shape] || '📦'; // Default box if unknown
+                const emoji = shapeEmojis[data.shape] || '📦'; 
 
+                // Increased sizes as requested (80px -> 120px, 50px -> 80px)
                 const ShapeIcon = ({ size }) => (
-                    <div className="flex items-center justify-center text-4xl" style={{width:size, height:size}}>
+                    <div className="flex items-center justify-center text-6xl" style={{width:size, height:size}}>
                         {emoji}
                     </div>
                 );
 
-                if (data.type === 'scale_single') return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="72px" /><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>;
-                return <div className="flex items-end justify-center gap-4 sm:gap-8 my-6"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="45px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div><div className="pb-8 text-gray-300 text-2xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="90px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div></div>;
+                if (data.type === 'scale_single') return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="120px" /><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>;
+                
+                return (
+                    <div className="flex items-end justify-center gap-6 sm:gap-12 my-6">
+                        <div className="flex flex-col items-center gap-2">
+                            <span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span>
+                            <ShapeIcon size="80px" />
+                            <span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span>
+                        </div>
+                        <div className="pb-8 text-gray-300 text-3xl">→</div>
+                        <div className="flex flex-col items-center gap-2">
+                            <span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span>
+                            <ShapeIcon size="120px" />
+                            <span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span>
+                        </div>
+                    </div>
+                );
             }
             
-            // Reduced SVG size to 180x180 via viewBox scaling (0 0 200 200 -> 180x180 physical pixels)
-            const SvgContainer = ({ children }) => (
-                <svg width="180" height="180" viewBox="0 0 200 200" className="my-4">
-                    {children}
-                </svg>
-            );
-
+            // Other shapes code remains same...
+            const SvgContainer = ({ children }) => <svg width="180" height="180" viewBox="0 0 200 200" className="my-4">{children}</svg>;
             if (data.type === 'rectangle') return <SvgContainer><rect x={(200-(data.width*140/Math.max(data.width,data.height)))/2} y={(200-(data.height*140/Math.max(data.width,data.height)))/2} width={data.width*140/Math.max(data.width,data.height)} height={data.height*140/Math.max(data.width,data.height)} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" /><text x="100" y={(200-(data.height*140/Math.max(data.width,data.height)))/2 + data.height*140/Math.max(data.width,data.height) + 20} textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.bottom}</text><text x={(200-(data.width*140/Math.max(data.width,data.height)))/2 + data.width*140/Math.max(data.width,data.height) + 10} y="100" textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.right}</text></SvgContainer>;
             if (data.type === 'triangle') { const sc = 140/Math.max(data.width,data.height); const b = data.width*sc, h = data.height*sc, x = (200-b)/2, by = 170, ty = 170-h; return <SvgContainer><polygon points={`${x},${by} ${x+b},${by} 100,${ty}`} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" /><line x1="100" y1={ty} x2="100" y2={by} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /><text x="100" y={by+20} textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.bottom}</text><text x="105" y={by-h/2} textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.height}</text></SvgContainer>; }
             if (data.type === 'circle') return <SvgContainer><circle cx="100" cy="100" r="70" fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" /><line x1="100" y1="100" x2="170" y2="100" stroke="#374151" strokeWidth="2" /><text x="135" y="90" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">r = {data.labels.radius}</text></SvgContainer>;
@@ -269,7 +277,6 @@
         const StaticGeometryVisual = ({ description }) => {
             if (!description) return null;
             const d = description.toLowerCase();
-            // Reduced sizes
             if (d.includes("rect") || d.includes("rektangel")) return <div className="flex justify-center my-4 opacity-80"><div className="w-28 h-16 border-2 border-indigo-500 bg-indigo-50 rounded-sm"></div></div>;
             if (d.includes("trian")) return <div className="flex justify-center my-4 opacity-80"><div className="w-0 h-0 border-l-[36px] border-r-[36px] border-b-[63px] border-l-transparent border-r-transparent border-b-indigo-500/20 border-b-solid relative"><div className="absolute -left-[36px] top-[63px] w-full h-[2px] bg-indigo-500"></div></div></div>;
             if (d.includes("circ") || d.includes("cirkel")) return <div className="flex justify-center my-4 opacity-80"><div className="w-20 h-20 rounded-full border-2 border-indigo-500 bg-indigo-50"></div></div>;
@@ -311,11 +318,15 @@
                                                     }`}
                                                 >
                                                     <option value={0} disabled>{ui.selectLevel}</option>
-                                                    {[1, 2, 3, 4, 5].map(lvl => (
-                                                        <option key={lvl} value={lvl}>
-                                                            {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
-                                                        </option>
-                                                    ))}
+                                                    {[1, 2, 3, 4, 5, 6].map(lvl => {
+                                                        // Only render levels that exist in descriptions
+                                                        if (!LEVEL_DESCRIPTIONS[topic.id]?.[lvl]) return null;
+                                                        return (
+                                                            <option key={lvl} value={lvl}>
+                                                                {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
+                                                            </option>
+                                                        );
+                                                    })}
                                                 </select>
                                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
                                                     <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
