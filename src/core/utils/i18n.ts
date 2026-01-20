@@ -23,7 +23,7 @@ export const TERMS = {
         square: { sv: "kvadrat", en: "square" },
         rectangle: { sv: "rektangel", en: "rectangle" },
         circle: { sv: "cirkel", en: "circle" },
-        semicircle: { sv: "halvcirkel", en: "semicircle" },
+        semicircle: { sv: "halvcirkel", en: "semicircle" }, // Added
         triangle: { sv: "triangel", en: "triangle" },
         rhombus: { sv: "romb", en: "rhombus" },
         parallelogram: { sv: "parallellogram", en: "parallelogram" },

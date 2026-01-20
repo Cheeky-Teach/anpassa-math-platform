@@ -29,79 +29,25 @@
         const GeometryVisual = ({ data }) => {
             if (!data) return null;
 
-            // HELPER: Single Shape SVG Renderer
             const RenderShape = ({ type, dims, labels, areaText }) => {
-                const w = dims.width || 0;
-                const h = dims.height || 0;
-                const r = dims.radius || 0;
-                
-                // Generic scaling logic to fit in 140x140 box
+                const w = dims.width || 0, h = dims.height || 0, r = dims.radius || 0;
                 const size = Math.max(w, h, r*2);
-                const scale = 120 / (size || 1); // fallback to 1 to avoid infinity
-                
-                let sw = w * scale;
-                let sh = h * scale;
-                let sr = r * scale;
-                
-                // Centering offsets
-                const cx = 90; 
-                const cy = 90;
+                const scale = 120 / (size || 1); 
+                let sw = w * scale, sh = h * scale, sr = r * scale;
+                const cx = 90, cy = 90;
 
                 const content = () => {
                     if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
-                        // For parallelogram, we just skew or visually represent as rect for simplicity 
-                        // unless strict geometry needed. Let's use rect for clear dimensions.
-                        return (
-                            <>
-                                <rect x={cx - sw/2} y={cy - sh/2} width={sw} height={sh} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />
-                                {labels && (
-                                    <>
-                                        <text x={cx} y={cy + sh/2 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text>
-                                        <text x={cx + sw/2 + 10} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text>
-                                    </>
-                                )}
-                            </>
-                        );
+                        return (<><rect x={cx-sw/2} y={cy-sh/2} width={sw} height={sh} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />{labels && (<><text x={cx} y={cy+sh/2+20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text><text x={cx+sw/2+10} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text></>)}</>);
                     }
                     if (type === 'triangle') {
-                        return (
-                            <>
-                                <polygon points={`${cx - sw/2},${cy + sh/2} ${cx + sw/2},${cy + sh/2} ${cx},${cy - sh/2}`} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />
-                                {labels && (
-                                    <>
-                                        <text x={cx} y={cy + sh/2 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text>
-                                        <line x1={cx} y1={cy - sh/2} x2={cx} y2={cy + sh/2} stroke="#6b7280" strokeDasharray="4" />
-                                        <text x={cx + 5} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text>
-                                    </>
-                                )}
-                            </>
-                        );
+                        return (<><polygon points={`${cx-sw/2},${cy+sh/2} ${cx+sw/2},${cy+sh/2} ${cx},${cy-sh/2}`} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />{labels && (<><text x={cx} y={cy+sh/2+20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text><line x1={cx} y1={cy-sh/2} x2={cx} y2={cy+sh/2} stroke="#6b7280" strokeDasharray="4" /><text x={cx+5} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text></>)}</>);
                     }
                     if (type === 'circle') {
-                        return (
-                            <>
-                                <circle cx={cx} cy={cy} r={sr} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />
-                                {labels && (
-                                    <>
-                                        <line x1={cx} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" />
-                                        <text x={cx + sr/2} y={cy - 5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text>
-                                    </>
-                                )}
-                            </>
-                        );
+                        return (<><circle cx={cx} cy={cy} r={sr} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx+sr/2} y={cy-5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text></>)}</>);
                     }
                     if (type === 'semicircle') {
-                        return (
-                            <>
-                                <path d={`M ${cx - sr} ${cy} A ${sr} ${sr} 0 0 1 ${cx + sr} ${cy} Z`} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />
-                                {labels && (
-                                    <>
-                                        <line x1={cx} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" />
-                                        <text x={cx + sr/2} y={cy - 5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text>
-                                    </>
-                                )}
-                            </>
-                        );
+                        return (<><path d={`M ${cx-sr} ${cy} A ${sr} ${sr} 0 0 1 ${cx+sr} ${cy} Z`} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx+sr/2} y={cy-5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text></>)}</>);
                     }
                     return null;
                 };
@@ -109,16 +55,12 @@
                 return (
                     <svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm">
                         {content()}
-                        {areaText && (
-                            <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="bold" fill="#1e3a8a">
-                                {areaText} cm²
-                            </text>
-                        )}
+                        {areaText && <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="bold" fill="#1e3a8a">{areaText} cm²</text>}
                     </svg>
                 );
             };
 
-            // CASE 1: Scale Icons (Levels 1-4)
+            // CASE 1: Scale Icons
             if (data.type === 'scale_single' || data.type === 'scale_compare') {
                 const shapeEmojis = { square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', rhombus: '🔶', parallelogram: '▰', pentagon: '⬟', hexagon: '🛑', octagon: '🛑', star: '⭐', arrow: '➡', heart: '❤️', cross: '➕', lightning: '⚡', kite: '🪁', cube: '🧊', cylinder: '🛢️', pyramid: '⛰️', cone: '🍦', sphere: '🔮' };
                 const emoji = shapeEmojis[data.shape] || '📦'; 
@@ -127,48 +69,21 @@
                 return <div className="flex items-end justify-center gap-6 sm:gap-12 my-6"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="80px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div><div className="pb-8 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="120px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div></div>;
             }
 
-            // CASE 2: Area Scale Comparison (Level 6)
+            // CASE 2: Area Scale Comparison
             if (data.type === 'compare_shapes' || data.type === 'compare_shapes_area') {
                 const showLabels = data.type === 'compare_shapes';
                 const showArea = data.type === 'compare_shapes_area';
-                
                 return (
                     <div className="flex flex-wrap justify-center gap-8 items-end my-4">
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs font-bold uppercase text-gray-400">{data.left.label}</span>
-                            <RenderShape 
-                                type={data.shapeType} 
-                                dims={data.left} 
-                                labels={showLabels} 
-                                areaText={showArea ? data.left.area : null} 
-                            />
-                        </div>
+                        <div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.left.label}</span><RenderShape type={data.shapeType} dims={data.left} labels={showLabels} areaText={showArea ? data.left.area : null} /></div>
                         <div className="pb-20 text-gray-300 text-3xl">→</div>
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs font-bold uppercase text-gray-400">{data.right.label}</span>
-                            {/* Make the 'Reality' shape visually larger by passing scaled dims? 
-                                Actually RenderShape auto-scales to fit box. 
-                                To show size diff, we might want to scale the SVG container? 
-                                For now, let's keep boxes same size for clarity of reading numbers. 
-                            */}
-                            <RenderShape 
-                                type={data.shapeType} 
-                                dims={data.right} 
-                                labels={showLabels} 
-                                areaText={showArea ? data.right.area : null} 
-                            />
-                        </div>
+                        <div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.right.label}</span><RenderShape type={data.shapeType} dims={data.right} labels={showLabels} areaText={showArea ? data.right.area : null} /></div>
                     </div>
                 );
             }
 
-            // CASE 3: Standard Geometry (Single Shape)
-            // Reusing RenderShape logic simplified
-            return (
-                <div className="flex justify-center my-4">
-                    <RenderShape type={data.type} dims={data} labels={true} />
-                </div>
-            );
+            // CASE 3: Standard Geometry
+            return <div className="flex justify-center my-4"><RenderShape type={data.type} dims={data} labels={true} /></div>;
         };
 
         const StaticGeometryVisual = ({ description }) => {

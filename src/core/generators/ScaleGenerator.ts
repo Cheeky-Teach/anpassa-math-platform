@@ -25,15 +25,12 @@ export class ScaleGenerator {
         
         let mode = level;
         
-        // --- LEVEL 7: MIXED (Formerly Level 6) ---
+        // --- LEVEL 7: MIXED ---
         if (level === 7) {
             mode = rng.intBetween(1, 6); 
         }
 
-        // --- LEVEL 1-5 (Keeping previous logic for brevity, assuming standard blocks exist here) ---
-        // I will re-include Level 6 logic explicitly and paste Level 1-5 briefly to ensure file integrity
-        
-        // LEVEL 1: Conceptual
+        // --- LEVEL 1: CONCEPTUAL ---
         if (mode === 1) {
             const isReduction = rng.intBetween(0, 1) === 1; 
             const ratio = rng.pick([2, 5, 10, 20, 50, 100]);
@@ -67,8 +64,7 @@ export class ScaleGenerator {
         const enShape = TERMS.shapes[shape]?.en || shape;
         const scaleFactor = rng.pick([10, 20, 50, 100, 200, 500]);
 
-        if (mode === 2) { /* Level 2 Logic (Easy Length) */ 
-             // ... (Reusing logic from previous turn)
+        if (mode === 2) { /* Level 2 Logic */ 
              const subType = rng.intBetween(0, 1);
              const drawingVal = subType === 0 ? rng.intBetween(2, 15) : 0;
              const realVal = subType === 0 ? drawingVal * scaleFactor : rng.intBetween(2, 15) * scaleFactor;
@@ -83,7 +79,7 @@ export class ScaleGenerator {
              };
         }
 
-        if (mode === 3) { /* Level 3 Logic (Hard Length) */ 
+        if (mode === 3) { /* Level 3 Logic */ 
              const subType = rng.intBetween(0, 1);
              const drawingVal = rng.intBetween(2, 9);
              const realValCm = drawingVal * scaleFactor;
@@ -98,7 +94,7 @@ export class ScaleGenerator {
              };
         }
 
-        if (mode === 4) { /* Level 4 Logic (Find Scale) */ 
+        if (mode === 4) { /* Level 4 Logic */ 
              const base = rng.intBetween(2, 5); const factor = rng.pick([10, 20, 50, 100]);
              const leftIsDrawing = rng.intBetween(0,1)===1;
              const lLab = leftIsDrawing ? t(lang, this.LABELS.drawing) : t(lang, this.LABELS.reality);
@@ -113,7 +109,7 @@ export class ScaleGenerator {
              };
         }
 
-        if (mode === 5) { /* Level 5 Logic (Text Only) */ 
+        if (mode === 5) { /* Level 5 Logic */ 
              const base = rng.intBetween(3, 8); const factor = rng.pick([50, 100, 200, 500]);
              const realM = (base * factor) / 100;
              const desc = { sv: `På en ritning är en ${svShape} ${base} cm lång. I verkligheten är den ${realM} m. Vad är skalan (i cm)?`, en: `Drawing: ${base} cm. Reality: ${realM} m. What is the scale (in cm)?` };
@@ -124,10 +120,10 @@ export class ScaleGenerator {
              };
         }
 
-        // --- LEVEL 6: AREA SCALE (AREASKALA) ---
+        // --- LEVEL 6: AREA SCALE ---
         if (mode === 6) {
             const areaShape = rng.pick(this.AREA_SHAPES);
-            const subType = rng.intBetween(1, 2); // 1 = Find Scale from Dims, 2 = Find Area from Scale
+            const subType = rng.intBetween(1, 2);
             const lengthScale = rng.pick([2, 3, 4, 5, 10]); 
             const areaScale = lengthScale * lengthScale;
 
@@ -137,33 +133,24 @@ export class ScaleGenerator {
             let answer: any = 0;
             let answerType: any = 'numeric';
 
-            // --- TYPE 1: Find Area Scale from Dimensions ---
-            if (subType === 1) {
-                // Generate base dimensions for drawing
+            if (subType === 1) { // Find Scale
                 const w = rng.intBetween(2, 6);
                 const h = (areaShape === 'rectangle' || areaShape === 'parallelogram' || areaShape === 'triangle') ? rng.intBetween(2, 6) : 0;
                 
-                // Calculate Real dimensions
                 const wReal = w * lengthScale;
                 const hReal = h * lengthScale;
 
-                // Calculate Areas
                 let areaDraw = 0, areaReal = 0;
                 if (areaShape === 'rectangle' || areaShape === 'parallelogram') {
-                    areaDraw = w * h;
-                    areaReal = wReal * hReal;
+                    areaDraw = w * h; areaReal = wReal * hReal;
                 } else if (areaShape === 'triangle') {
-                    areaDraw = (w * h) / 2;
-                    areaReal = (wReal * hReal) / 2;
+                    areaDraw = (w * h) / 2; areaReal = (wReal * hReal) / 2;
                 } else if (areaShape === 'circle') {
-                    areaDraw = Math.PI * w * w; // w is radius
-                    areaReal = Math.PI * wReal * wReal;
+                    areaDraw = Math.PI * w * w; areaReal = Math.PI * wReal * wReal;
                 } else if (areaShape === 'semicircle') {
-                    areaDraw = (Math.PI * w * w) / 2; // w is radius
-                    areaReal = (Math.PI * wReal * wReal) / 2;
+                    areaDraw = (Math.PI * w * w) / 2; areaReal = (Math.PI * wReal * wReal) / 2;
                 }
 
-                // Round for display if circle
                 const dispAreaDraw = Math.round(areaDraw * 10) / 10;
                 const dispAreaReal = Math.round(areaReal * 10) / 10;
 
@@ -180,41 +167,27 @@ export class ScaleGenerator {
 
                 answer = { left: 1, right: areaScale };
                 answerType = 'scale';
-
-                // Geometry Data for Comparison Render
                 geomData = {
                     type: 'compare_shapes',
                     shapeType: areaShape,
                     left: { width: w, height: h, radius: w, label: t(lang, this.LABELS.drawing) },
                     right: { width: wReal, height: hReal, radius: wReal, label: t(lang, this.LABELS.reality) }
                 };
-            } 
-            
-            // --- TYPE 2: Find Area from Length Scale ---
-            else {
-                // Given Area 1 and Length Scale -> Find Area 2
-                // Or Given Area 2 and Length Scale -> Find Area 1 (Reduction)
-                // Let's stick to "Find Real Area" given Drawing Area + Scale for simplicity/consistency
-                
+            } else { // Find Area
                 const baseArea = rng.pick([2, 3, 4, 5, 10]);
                 const realArea = baseArea * areaScale;
-                
                 qDesc = {
                     sv: `Den lilla figuren har arean ${baseArea} cm$^2$. Hur stor är arean i den stora figuren om längdskalan är 1:${lengthScale}?`,
                     en: `The small shape has an area of ${baseArea} cm$^2$. How big is the area of the large shape if the length scale is 1:${lengthScale}?`
                 };
-
                 steps = [
                     { text: t(lang, TERMS.scale.calc_area_scale), latex: `\\text{Areaskala} = (1:${lengthScale})^2 = 1:${areaScale}` },
                     { text: t(lang, TERMS.scale.calc_new_area), latex: `${baseArea} \\cdot ${areaScale} = ${color}{${realArea}}}` }
                 ];
-
                 answer = realArea;
-                answerType = 'numeric'; // Result is area value
-
-                // Visual: Show shape with Area Text inside
+                answerType = 'numeric';
                 geomData = {
-                    type: 'compare_shapes_area', // Special type for Area Text visuals
+                    type: 'compare_shapes_area',
                     shapeType: areaShape,
                     left: { area: baseArea, label: t(lang, this.LABELS.drawing) },
                     right: { area: "?", label: t(lang, this.LABELS.reality) }
