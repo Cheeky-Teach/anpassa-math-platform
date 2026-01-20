@@ -11,6 +11,8 @@ export const TERMS = {
         solve: { sv: "Lös ut", en: "Solve for" },
         calculate: { sv: "Beräkna", en: "Calculate" },
         find: { sv: "Hitta", en: "Find" },
+        line: { sv: "Linje", en: "Line" },
+        simplify: { sv: "Förenkla", en: "Simplify" },
         result: { sv: "Svar:", en: "Answer:" },
         drawing: { sv: "Avbildning", en: "Drawing" },
         reality: { sv: "Verklighet", en: "Reality" }
@@ -18,20 +20,37 @@ export const TERMS = {
     shapes: {
         square: { sv: "kvadrat", en: "square" },
         rectangle: { sv: "rektangel", en: "rectangle" },
+        rhombus: { sv: "romb", en: "rhombus" },
+        parallelogram: { sv: "parallellogram", en: "parallelogram" },
+        right_triangle: { sv: "rätvinklig triangel", en: "right triangle" },
+        isosceles_triangle: { sv: "likbent triangel", en: "isosceles triangle" },
+        equilateral_triangle: { sv: "liksidig triangel", en: "equilateral triangle" },
         circle: { sv: "cirkel", en: "circle" },
         triangle: { sv: "triangel", en: "triangle" },
         star: { sv: "stjärna", en: "star" },
         arrow: { sv: "pil", en: "arrow" },
+        hexagon: { sv: "sexhörning", en: "hexagon" },
+        octagon: { sv: "åttahörning", en: "octagon" },
+        pentagon: { sv: "femhörning", en: "pentagon" },
+        trapezoid: { sv: "trapets", en: "trapezoid" },
+        kite: { sv: "drake", en: "kite" },
+        ellipse: { sv: "ellips", en: "ellipse" },
+        heart: { sv: "hjärta", en: "heart" },
+        cross: { sv: "kors", en: "cross" },
+        lightning: { sv: "blixt", en: "lightning" },
         cube: { sv: "kub", en: "cube" },
-        cylinder: { sv: "cylinder", en: "cylinder" }
-    },
+        cylinder: { sv: "cylinder", en: "cylinder" },
+        rectangular_prism: { sv: "rätblock", en: "rectangular prism" },
+        triangular_prism: { sv: "triangulärt prisma", en: "triangular prism" },
+        pyramid: { sv: "pyramid", en: "pyramid" },
+        cone: { sv: "kon", en: "cone" }
+    } as Record<string, {sv:string, en:string}>,
     scale: {
         step_plug_in: { sv: "Ställ upp förhållandet:", en: "Set up the ratio:" },
         step_simplify: { sv: "Förenkla:", en: "Simplify:" }
     },
     algebra: {
         intro: (eq: string) => ({ sv: `Börja med ekvationen: $${eq}$`, en: `Start with the equation: $${eq}$` }),
-        // Added sub_var which was missing
         sub_var: (term: string) => ({ sv: `Subtrahera ${term} från båda sidor`, en: `Subtract ${term} from both sides` }),
         subtract: (n: number) => ({ sv: `Subtrahera ${n} från båda sidor`, en: `Subtract ${n} from both sides` }),
         add: (n: number) => ({ sv: `Addera ${n} till båda sidor`, en: `Add ${n} to both sides` }),
