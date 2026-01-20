@@ -88,8 +88,8 @@
                 5: { sv: "Sammansatta figurer", en: "Composite shapes" }
             },
             scale: {
-                1: { sv: "Hitta verklig längd", en: "Find real length" },
-                2: { sv: "Hitta avbildning", en: "Find drawing length" },
+                1: { sv: "Förstoring eller förminskning", en: "Enlargement or Reduction" }, // Updated Level 1
+                2: { sv: "Hitta längd (Enkel)", en: "Find length (Simple)" }, // Merged
                 3: { sv: "Hitta skala", en: "Calculate the scale" },
                 4: { sv: "Textproblem", en: "Word problems" },
                 5: { sv: "Blandat", en: "Mixed problems" }
@@ -350,6 +350,19 @@
             const [historyOpen, setHistoryOpen] = useState(false);
             const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
+            // Handle multiple choice clicks
+            const handleChoiceClick = (choice) => {
+                if (feedback === 'correct') return;
+                setInput(choice);
+                // We need to pass the choice directly since setInput is async
+                handleSubmit({ preventDefault: () => {} }, choice);
+            };
+
+            // Wrapped submit for form
+            const handleFormSubmit = (e) => {
+                handleSubmit(e, input);
+            };
+
             // History Drawer Components
             const HistoryList = ({ history }) => (
                 <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -420,12 +433,35 @@
                                           </div>)}
                                     </div>
                                     <div className="mb-10 text-center"><h2 className="text-xl font-medium text-gray-700 leading-relaxed"><MathText text={question.renderData.description} /></h2></div>
-                                    <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4">
-                                        <div className="relative">
-                                            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder={question.renderData.answerType === 'scale' ? "1:X" : ui.placeholder} autoFocus disabled={feedback === 'correct'} />
+                                    
+                                    {/* Answer Area: Text Input OR Multiple Choice */}
+                                    {question.renderData.answerType === 'multiple_choice' ? (
+                                        <div className="max-w-md mx-auto grid grid-cols-2 gap-4">
+                                            {question.renderData.choices.map((choice, idx) => (
+                                                <button 
+                                                    key={idx} 
+                                                    onClick={() => handleChoiceClick(choice)}
+                                                    className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 
+                                                        ${feedback === 'correct' && choice === input 
+                                                            ? 'bg-green-500 border-green-500 text-white' 
+                                                            : feedback === 'incorrect' && choice === input
+                                                                ? 'bg-red-500 border-red-500 text-white'
+                                                                : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-500 hover:text-indigo-600'
+                                                        }`}
+                                                    disabled={feedback === 'correct'}
+                                                >
+                                                    {choice}
+                                                </button>
+                                            ))}
                                         </div>
-                                        <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-green-500 shadow-green-200 cursor-default' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 hover:shadow-lg'}`}>{feedback === 'correct' ? ui.correct : feedback === 'incorrect' ? ui.incorrect : ui.submit}</button>
-                                    </form>
+                                    ) : (
+                                        <form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
+                                            <div className="relative">
+                                                <input type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder={question.renderData.answerType === 'scale' ? "1:X" : ui.placeholder} autoFocus disabled={feedback === 'correct'} />
+                                            </div>
+                                            <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-green-500 shadow-green-200 cursor-default' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 hover:shadow-lg'}`}>{feedback === 'correct' ? ui.correct : feedback === 'incorrect' ? ui.incorrect : ui.submit}</button>
+                                        </form>
+                                    )}
                                     
                                     <div className="mt-8 flex gap-3 justify-center">
                                         <button type="button" onClick={handleHint} disabled={!question.clues || revealedClues >= question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button>
@@ -495,18 +531,29 @@
             const handleHint = () => { if (question?.clues) setRevealedClues(p => Math.min(p + 1, question.clues.length)); };
             const handleSolution = () => { if (question?.clues) setRevealedClues(question.clues.length); };
 
-            const handleSubmit = async (e) => {
+            const handleSubmit = async (e, directInput) => {
                 e.preventDefault();
-                if (!question || !input) return;
+                const answerToSubmit = directInput !== undefined ? directInput : input;
+                
+                if (!question || !answerToSubmit) return;
+                
                 const res = await fetch('/api/answer', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ answer: input, token: question.token })
+                    body: JSON.stringify({ answer: answerToSubmit, token: question.token })
                 });
                 const result = await res.json();
+                
                 setHistory(prev => [{ topic, level, correct: result.correct, text: question.renderData.description || question.renderData.latex, clueUsed: revealedClues > 0, time: Date.now() }, ...prev]);
-                if (result.correct) { setFeedback('correct'); setStreak(s => s + 1); setTimeout(() => fetchQuestion(topic, level, lang), 1500); } 
-                else { setFeedback('incorrect'); setStreak(0); }
+                
+                if (result.correct) { 
+                    setFeedback('correct'); 
+                    setStreak(s => s + 1); 
+                    setTimeout(() => fetchQuestion(topic, level, lang), 1500); 
+                } else { 
+                    setFeedback('incorrect'); 
+                    setStreak(0); 
+                }
             };
 
             return (

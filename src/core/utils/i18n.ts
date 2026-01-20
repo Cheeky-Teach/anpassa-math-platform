@@ -44,7 +44,11 @@ export const TERMS = {
     } as Record<string, {sv:string, en:string}>,
     scale: {
         step_plug_in: { sv: "Ställ upp förhållandet:", en: "Set up the ratio:" },
-        step_simplify: { sv: "Förenkla:", en: "Simplify:" }
+        step_simplify: { sv: "Förenkla:", en: "Simplify:" },
+        enlargement: { sv: "Förstoring", en: "Enlargement" },
+        reduction: { sv: "Förminskning", en: "Reduction" },
+        rule_reduction: { sv: "Eftersom det första talet är 1, är det en förminskning.", en: "Since the first number is 1, it is a reduction." },
+        rule_enlargement: { sv: "Eftersom det första talet är större än 1, är det en förstoring.", en: "Since the first number is greater than 1, it is an enlargement." }
     },
     algebra: {
         intro: (eq: string) => ({ sv: `Börja med ekvationen: $${eq}$`, en: `Start with the equation: $${eq}$` }),
