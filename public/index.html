@@ -216,31 +216,27 @@
                                     {category.topics.map(topic => (
                                         <div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
                                             <div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div>
-                                            <div className="flex flex-wrap gap-2">
-                                                {[1, 2, 3, 4, 5].map(lvl => {
-                                                    const isSelected = selectedTopic === topic.id && selectedLevel === lvl;
-                                                    return (
-                                                        <button 
-                                                            key={lvl}
-                                                            onClick={() => onSelect(topic.id, lvl)}
-                                                            className={`w-10 h-10 rounded-lg text-sm font-bold transition-all border-2 flex flex-col items-center justify-center relative
-                                                                ${isSelected 
-                                                                    ? `bg-${category.color}-600 text-white border-${category.color}-600 shadow-md scale-110 z-10` 
-                                                                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                                                                }`}
-                                                            title={LEVEL_DESCRIPTIONS[topic.id]?.[lvl]}
-                                                        >
-                                                            {lvl}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            {/* Preview Text for selected level in this topic */}
-                                            {selectedTopic === topic.id && (
-                                                <div className="mt-3 text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded font-medium animate-fade-in">
-                                                    {LEVEL_DESCRIPTIONS[topic.id]?.[selectedLevel] || "Level"}
+                                            
+                                            {/* Dropdown Selector for Level */}
+                                            <div className="relative">
+                                                <select
+                                                    value={selectedTopic === topic.id ? selectedLevel : 0}
+                                                    onChange={(e) => onSelect(topic.id, Number(e.target.value))}
+                                                    className={`w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-${category.color}-500 appearance-none cursor-pointer ${
+                                                        selectedTopic === topic.id ? `ring-2 ring-${category.color}-500 border-${category.color}-500` : ''
+                                                    }`}
+                                                >
+                                                    <option value={0} disabled>{ui.selectLevel}</option>
+                                                    {[1, 2, 3, 4, 5].map(lvl => (
+                                                        <option key={lvl} value={lvl}>
+                                                            {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl] || ""}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                                    <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
