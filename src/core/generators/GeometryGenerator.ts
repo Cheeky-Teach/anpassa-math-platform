@@ -31,7 +31,6 @@ export class GeometryGenerator {
         steps = [
             { text: t(lang, TERMS.geometry.formula_rect_perim), latex: TERMS.geometry.formula_rect_perim_latex },
             { text: t(lang, TERMS.geometry.step_sub), latex: `2(${w} + ${h})` },
-            // FIX: Added extra closing brace for color/mathbf
             { text: t(lang, TERMS.geometry.step_calc), latex: `${color}{${qData.answer}}}` }
         ];
 
@@ -58,7 +57,6 @@ export class GeometryGenerator {
         
         steps = [
             { text: "Area formula", latex: "A = b \\cdot h" },
-            // FIX: Added extra closing brace
             { text: t(lang, TERMS.geometry.step_calc), latex: `${w} \\cdot ${h} = ${color}{${qData.answer}}}` }
         ];
 
@@ -85,7 +83,6 @@ export class GeometryGenerator {
         
         steps = [
             { text: "Area formula", latex: "A = \\frac{b \\cdot h}{2}" },
-            // FIX: Added extra closing brace
             { text: t(lang, TERMS.geometry.step_calc), latex: `\\frac{${b} \\cdot ${h}}{2} = ${color}{${qData.answer}}}` }
         ];
 
@@ -113,7 +110,6 @@ export class GeometryGenerator {
         
         steps = [
             { text: "Circumference formula", latex: "O = 2 \\cdot \\pi \\cdot r" },
-            // FIX: Added extra closing brace
             { text: t(lang, TERMS.geometry.step_calc), latex: `2 \\cdot 3.14 \\cdot ${r} = ${color}{${qData.answer}}}` }
         ];
 
@@ -142,7 +138,6 @@ export class GeometryGenerator {
         steps = [
             { text: t(lang, TERMS.geometry.step_comp_tri_sides), latex: `${side} + ${side} = ${2*side}` },
             { text: t(lang, TERMS.geometry.step_comp_arc_verbose), latex: `\\frac{3.14 \\cdot ${diameter}}{2} = ${arc}` },
-            // FIX: Added extra closing brace
             { text: t(lang, TERMS.geometry.step_comp_total_perim), latex: `${2*side} + ${arc} = ${color}{${qData.answer}}}` }
         ];
 
@@ -161,7 +156,8 @@ export class GeometryGenerator {
             description: qData.description,
             latex: qData.latex,
             answerType: 'numeric',
-            geometry: geometry
+            geometry: geometry,
+            variables: {} // FIX: Added missing property
         },
         serverData: {
             answer: qData.answer,

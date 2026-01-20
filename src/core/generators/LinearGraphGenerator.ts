@@ -27,7 +27,6 @@ export class LinearGraphGenerator {
             answerType = 'numeric';
             steps = [
                 { text: "Look at x = 0", latex: "(0, y)" },
-                // FIX: Added extra closing brace
                 { text: t(lang, TERMS.graph.step_intercept(m)), latex: `m = ${color}{${m}}}` }
             ];
         }
@@ -58,7 +57,6 @@ export class LinearGraphGenerator {
             steps = [
                 { text: "Slope Formula", latex: "k = \\frac{\\Delta y}{\\Delta x}" },
                 { text: "Identify direction", latex: k < 0 ? "\\text{Downwards (Negative)}" : "\\text{Upwards (Positive)}" },
-                // FIX: Added extra closing brace
                 { text: "Result", latex: `k = ${color}{${k}}}` }
             ];
         }
@@ -74,7 +72,6 @@ export class LinearGraphGenerator {
             steps = [
                 { text: "Find m", latex: `m = ${m}` },
                 { text: "Find k", latex: `k = ${k}` },
-                // FIX: Added extra closing brace twice (for k and m)
                 { text: t(lang, TERMS.graph.step_func(k, m)), latex: `y = ${color}{${k}}}x ${m >= 0 ? '+' : ''}${color}{${m}}}` }
             ];
         }
@@ -92,7 +89,8 @@ export class LinearGraphGenerator {
                     gridStep: 1, 
                     labelStep: 2, 
                     lines: [{ slope: k, intercept: m, color: '#dc2626' }] 
-                }
+                },
+                variables: {} // FIX: Added missing property
             },
             serverData: { answer: answer, solutionSteps: steps }
         };

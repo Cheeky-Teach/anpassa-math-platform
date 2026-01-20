@@ -53,7 +53,14 @@ export class ScaleGenerator {
             }
             return {
                 questionId: `scale-l1-${seed}`,
-                renderData: { text_key: "concept", description: descObj, latex: scaleStr, answerType: 'multiple_choice', choices },
+                renderData: { 
+                    text_key: "concept", 
+                    description: descObj, 
+                    latex: scaleStr, 
+                    answerType: 'multiple_choice', 
+                    choices: choices,
+                    variables: {} // FIX: Added missing property
+                },
                 serverData: { answer: correct, solutionSteps: [{ text: expl, latex: scaleStr }] }
             };
         }
@@ -74,7 +81,14 @@ export class ScaleGenerator {
                 : { sv: `I verkligheten är en ${svShape} ${realVal} cm. Skalan är 1:${scaleFactor}. Hur lång på ritningen? (Svara i cm)`, en: `In reality, a ${enShape} is ${realVal} cm. Scale 1:${scaleFactor}. Find drawing length (cm).` };
              return {
                  questionId: `scale-l2-${seed}`,
-                 renderData: { text_key: "calc_len_easy", description: desc, latex: `1:${scaleFactor}`, answerType: 'numeric', geometry: { type: 'scale_single', shape, label: subType===0?`${drawingVal} cm`:`${realVal} cm` } },
+                 renderData: { 
+                     text_key: "calc_len_easy", 
+                     description: desc, 
+                     latex: `1:${scaleFactor}`, 
+                     answerType: 'numeric', 
+                     geometry: { type: 'scale_single', shape, label: subType===0?`${drawingVal} cm`:`${realVal} cm` },
+                     variables: {} // FIX: Added missing property
+                 },
                  serverData: { answer: target, solutionSteps: [{ text: t(lang, TERMS.common.calculate), latex: subType===0 ? `${drawingVal} \\cdot ${scaleFactor} = ${color}{${realVal}}}` : `\\frac{${realVal}}{${scaleFactor}} = ${color}{${target}}}` }] }
              };
         }
@@ -89,7 +103,14 @@ export class ScaleGenerator {
                 : { sv: `I verkligheten är en ${svShape} ${realValM} m. Skalan är 1:${scaleFactor}. Hur lång på ritningen? (Svara i cm)`, en: `In reality a ${enShape} is ${realValM} m. Scale 1:${scaleFactor}. Find drawing (cm).` };
              return {
                  questionId: `scale-l3-${seed}`,
-                 renderData: { text_key: "calc_len_hard", description: desc, latex: `1:${scaleFactor}`, answerType: 'numeric', geometry: { type: 'scale_single', shape, label: subType===0?`${drawingVal} cm`:`${realValM} m` } },
+                 renderData: { 
+                     text_key: "calc_len_hard", 
+                     description: desc, 
+                     latex: `1:${scaleFactor}`, 
+                     answerType: 'numeric', 
+                     geometry: { type: 'scale_single', shape, label: subType===0?`${drawingVal} cm`:`${realValM} m` },
+                     variables: {} // FIX: Added missing property
+                 },
                  serverData: { answer: subType===0?realValM:drawingVal, solutionSteps: [{text: "Convert/Calc", latex: subType===0?`${drawingVal} \\cdot ${scaleFactor} = ${realValCm} \\to ${color}{${realValM}}}` : `${realValM}m = ${realValCm}cm \\to \\frac{${realValCm}}{${scaleFactor}} = ${color}{${drawingVal}}}`}] }
              };
         }
@@ -104,7 +125,14 @@ export class ScaleGenerator {
              const desc = { sv: `Bestäm skalan (Svara som X:X). Svara i cm.`, en: `Determine the scale (Answer as X:X). Use cm.` };
              return {
                  questionId: `scale-l4-${seed}`,
-                 renderData: { text_key: "find_scale", description: desc, latex: "", answerType: 'scale', geometry: { type: 'scale_compare', shape, leftLabel: lLab, rightLabel: rLab, leftValue: lVal, rightValue: rVal } },
+                 renderData: { 
+                     text_key: "find_scale", 
+                     description: desc, 
+                     latex: "", 
+                     answerType: 'scale', 
+                     geometry: { type: 'scale_compare', shape, leftLabel: lLab, rightLabel: rLab, leftValue: lVal, rightValue: rVal },
+                     variables: {} // FIX: Added missing property
+                 },
                  serverData: { answer: {left:1, right:factor}, solutionSteps: [{text: t(lang, TERMS.scale.step_simplify), latex: `1:${factor}`}] }
              };
         }
@@ -115,7 +143,13 @@ export class ScaleGenerator {
              const desc = { sv: `På en ritning är en ${svShape} ${base} cm lång. I verkligheten är den ${realM} m. Vad är skalan (i cm)?`, en: `Drawing: ${base} cm. Reality: ${realM} m. What is the scale (in cm)?` };
              return {
                  questionId: `scale-l5-${seed}`,
-                 renderData: { text_key: "find_scale_text", description: desc, latex: "", answerType: 'scale' },
+                 renderData: { 
+                     text_key: "find_scale_text", 
+                     description: desc, 
+                     latex: "", 
+                     answerType: 'scale',
+                     variables: {} // FIX: Added missing property
+                 },
                  serverData: { answer: {left:1, right:factor}, solutionSteps: [{text: t(lang, TERMS.scale.step_simplify), latex: `1:${factor}`}] }
              };
         }
@@ -134,8 +168,8 @@ export class ScaleGenerator {
             let answerType: any = 'numeric';
 
             // Get correct plural forms for the description
-            const shapePluralSv = TERMS.shapes_plural[areaShape]?.sv || `${areaShape}er`;
-            const shapePluralEn = TERMS.shapes_plural[areaShape]?.en || `${areaShape}s`;
+            const shapePluralSv = TERMS.shapes_plural?.[areaShape]?.sv || `${areaShape}er`;
+            const shapePluralEn = TERMS.shapes_plural?.[areaShape]?.en || `${areaShape}s`;
 
             if (subType === 1) { // Find Scale
                 const w = rng.intBetween(2, 6);
@@ -205,7 +239,8 @@ export class ScaleGenerator {
                     description: qDesc,
                     latex: "",
                     answerType: answerType,
-                    geometry: geomData
+                    geometry: geomData,
+                    variables: {} // FIX: Added missing property
                 },
                 serverData: { answer: answer, solutionSteps: steps }
             };
