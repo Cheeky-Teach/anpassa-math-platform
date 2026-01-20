@@ -18,7 +18,8 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .katex-display { margin: 0.5em 0; }
+        /* Fix KaTeX font sizing issues */
+        .katex { font-size: 1.1em; } 
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -113,6 +114,38 @@
                 placeholder: "Enter your answer...",
                 level: "Level"
             }
+        };
+
+        // --- UTILITY COMPONENT: LATEX RENDERER ---
+        
+        const MathText = ({ text, className = "", large = false }) => {
+            if (!text) return null;
+
+            // Split string by $ delimiters to find math segments
+            // Example: "Solve $x+2=5$ now" -> ["Solve ", "$x+2=5$", " now"]
+            const parts = text.split(/(\$[^\$]+\$)/g);
+
+            return (
+                <span className={className}>
+                    {parts.map((part, index) => {
+                        if (part.startsWith('$') && part.endsWith('$')) {
+                            // It's math!
+                            const tex = part.slice(1, -1); // Remove $
+                            try {
+                                const html = katex.renderToString(tex, {
+                                    throwOnError: false,
+                                    displayMode: large // Use display mode if large flag is set
+                                });
+                                return <span key={index} dangerouslySetInnerHTML={{ __html: html }} />;
+                            } catch (e) {
+                                return <span key={index} className="text-red-500">{part}</span>;
+                            }
+                        }
+                        // It's text
+                        return <span key={index}>{part}</span>;
+                    })}
+                </span>
+            );
         };
 
         // --- VISUAL COMPONENTS ---
@@ -261,7 +294,7 @@
             return (
                 <div className="min-h-screen flex flex-col items-center p-4 sm:p-6 bg-gray-50">
                     
-                    {/* Header: Title, Streak, Lang Toggle */}
+                    {/* Header */}
                     <header className="w-full max-w-2xl flex justify-between items-center mb-6">
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold text-indigo-700 tracking-tight">Anpassa</h1>
@@ -277,7 +310,7 @@
                         </button>
                     </header>
 
-                    {/* Navigation: Categories & Topics */}
+                    {/* Navigation */}
                     <nav className="w-full max-w-2xl bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                             {Object.entries(CATEGORIES).map(([catKey, category]) => (
@@ -305,7 +338,7 @@
                         </div>
                     </nav>
 
-                    {/* Level Selector Dropdown */}
+                    {/* Level Selector */}
                     <div className="w-full max-w-2xl mb-6">
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col items-start">
                             <label className="text-xs font-bold text-gray-400 uppercase mb-2 ml-1">
@@ -326,7 +359,6 @@
                                         );
                                     })}
                                 </select>
-                                {/* Dropdown Arrow Icon */}
                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
                                     <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                                         <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
@@ -350,10 +382,10 @@
                                     {question.renderData.graph && <GraphCanvas data={question.renderData.graph} />}
                                     {question.renderData.geometry && <ScaleVisual data={question.renderData.geometry} />}
                                     
-                                    {!question.renderData.graph && !question.renderData.geometry && (
+                                    {!question.renderData.graph && !question.renderData.geometry && question.renderData.latex && (
                                         <div className="text-3xl font-mono text-gray-700">
-                                            {/* Render simple LaTeX if no complex visual */}
-                                            {question.renderData.latex && `$${question.renderData.latex}$`}
+                                            {/* WRAPPED IN DELIMITERS FOR KATE X */}
+                                            <MathText text={`$${question.renderData.latex}$`} large={true} />
                                         </div>
                                     )}
                                 </div>
@@ -361,7 +393,7 @@
                                 {/* Text Question */}
                                 <div className="mb-8 text-center space-y-2">
                                     <h2 className="text-xl sm:text-2xl font-bold text-gray-800 leading-tight">
-                                        {question.renderData.description || (question.renderData.latex ? "Solve the problem" : "")}
+                                        <MathText text={question.renderData.description} />
                                     </h2>
                                 </div>
 
@@ -408,8 +440,14 @@
                                         <div className="mt-4 space-y-3 bg-yellow-50 p-5 rounded-xl border border-yellow-100 text-sm text-yellow-900 animate-slide-down">
                                             {question.clues && question.clues.map((clue, i) => (
                                                 <div key={i} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-yellow-200/50 last:border-0 pb-2 last:pb-0">
-                                                    <span className="font-medium">{clue.text}</span>
-                                                    {clue.latex && <span className="font-mono bg-white px-2 py-0.5 rounded text-xs border border-yellow-100">{clue.latex}</span>}
+                                                    {/* Clue Text Parsed */}
+                                                    <span className="font-medium"><MathText text={clue.text} /></span>
+                                                    {/* Clue Math Parsed */}
+                                                    {clue.latex && (
+                                                        <span className="font-mono bg-white px-2 py-0.5 rounded text-xs border border-yellow-100">
+                                                            <MathText text={`$${clue.latex}$`} />
+                                                        </span>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -426,7 +464,7 @@
                     </main>
                     
                     <footer className="mt-8 text-gray-400 text-xs text-center">
-                        Anpassa Math Platform • v2.1
+                        Anpassa Math Platform • v2.2
                     </footer>
                 </div>
             );
