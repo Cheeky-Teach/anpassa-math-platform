@@ -4,28 +4,121 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anpassa | Math Platform</title>
+    
+    <!-- React & Core Dependencies -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Styling & Math -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        .katex-display { margin: 0.5em 0; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-50 text-gray-800">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // --- CONSTANTS & CONFIGURATION ---
+
+        const CATEGORIES = {
+            algebra: {
+                label: { sv: "Algebra", en: "Algebra" },
+                topics: [
+                    { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
+                    { id: 'simplify', label: { sv: "Förenkling", en: "Simplification" } }
+                ]
+            },
+            geometry: {
+                label: { sv: "Geometri", en: "Geometry" },
+                topics: [
+                    { id: 'geometry', label: { sv: "Area & Omkrets", en: "Area & Perimeter" } },
+                    { id: 'scale', label: { sv: "Skala", en: "Scale" } }
+                ]
+            },
+            functions: {
+                label: { sv: "Samband", en: "Functions" },
+                topics: [
+                    { id: 'graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
+                ]
+            }
+        };
+
+        const LEVEL_DESCRIPTIONS = {
+            equation: {
+                1: { sv: "Enstegsekvationer (ax = b)", en: "One-step equations (ax = b)" },
+                2: { sv: "Tvåstegsekvationer (ax + b = c)", en: "Two-step equations (ax + b = c)" },
+                3: { sv: "Variabel på båda sidor", en: "Variables on both sides" },
+                4: { sv: "Parenteser och distribution", en: "Parentheses and distribution" },
+                5: { sv: "Blandade svårare problem", en: "Mixed complex problems" }
+            },
+            simplify: {
+                1: { sv: "Förenkla termer (ax + b + cx)", en: "Combine like terms" },
+                2: { sv: "Multiplicera in i parentes", en: "Distribute into parentheses" },
+                3: { sv: "Distribuera och förenkla", en: "Distribute and combine" },
+                4: { sv: "Subtraktion av parenteser", en: "Subtracting parentheses" },
+                5: { sv: "Blandade uttryck", en: "Mixed expressions" }
+            },
+            geometry: {
+                1: { sv: "Omkrets (Rektangel)", en: "Perimeter (Rectangle)" },
+                2: { sv: "Area (Rektangel)", en: "Area (Rectangle)" },
+                3: { sv: "Area (Triangel)", en: "Area (Triangle)" },
+                4: { sv: "Omkrets (Cirkel)", en: "Circumference (Circle)" },
+                5: { sv: "Sammansatta figurer", en: "Composite shapes" }
+            },
+            scale: {
+                1: { sv: "Hitta verklig längd (Visuellt)", en: "Find real length (Visual)" },
+                2: { sv: "Hitta bildens längd (Visuellt)", en: "Find drawing length (Visual)" },
+                3: { sv: "Beräkna skalan", en: "Calculate the scale" },
+                4: { sv: "Textuppgifter (Utan bild)", en: "Word problems (No image)" },
+                5: { sv: "Blandade problem", en: "Mixed problems" }
+            },
+            graph: {
+                1: { sv: "Hitta m-värdet (Intercept)", en: "Find y-intercept (m)" },
+                2: { sv: "Hitta k-värdet (Positivt)", en: "Find slope (Positive)" },
+                3: { sv: "Hitta k-värdet (Negativt)", en: "Find slope (Negative)" },
+                4: { sv: "Bestäm funktionen (y=kx+m)", en: "Find equation (y=kx+m)" },
+                5: { sv: "Blandade grafer", en: "Mixed graphs" }
+            }
+        };
+
+        const UI_TEXT = {
+            sv: {
+                streak: "Streak",
+                loading: "Laddar fråga...",
+                error: "Kunde inte ladda frågan.",
+                help: "Behöver du hjälp?",
+                submit: "Svara",
+                correct: "Rätt! Nästa...",
+                incorrect: "Inte riktigt, försök igen",
+                placeholder: "Skriv ditt svar...",
+                level: "Nivå"
+            },
+            en: {
+                streak: "Streak",
+                loading: "Loading question...",
+                error: "Could not load question.",
+                help: "Need a hint?",
+                submit: "Submit",
+                correct: "Correct! Next...",
+                incorrect: "Not quite, try again",
+                placeholder: "Enter your answer...",
+                level: "Level"
+            }
+        };
+
         // --- VISUAL COMPONENTS ---
-        
+
         const GraphCanvas = ({ data }) => {
             const canvasRef = useRef(null);
-
             useEffect(() => {
                 const canvas = canvasRef.current;
                 if (!canvas || !data) return;
@@ -35,35 +128,28 @@
                 const range = data.range || 10;
                 
                 ctx.clearRect(0, 0, width, height);
-                
                 const toX = (val) => (val + range) * (width / (range * 2));
                 const toY = (val) => height - (val + range) * (height / (range * 2));
 
                 // Grid
-                ctx.strokeStyle = '#e5e7eb';
-                ctx.lineWidth = 1;
+                ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
                 for (let i = -range; i <= range; i += data.gridStep || 1) {
                     ctx.beginPath(); ctx.moveTo(toX(i), 0); ctx.lineTo(toX(i), height); ctx.stroke();
                     ctx.beginPath(); ctx.moveTo(0, toY(i)); ctx.lineTo(width, toY(i)); ctx.stroke();
                 }
-
                 // Axes
-                ctx.strokeStyle = '#374151';
-                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#374151'; ctx.lineWidth = 2;
                 ctx.beginPath(); ctx.moveTo(toX(0), 0); ctx.lineTo(toX(0), height); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(0, toY(0)); ctx.lineTo(width, toY(0)); ctx.stroke();
-
                 // Lines
                 data.lines.forEach(line => {
-                    ctx.strokeStyle = line.color || '#dc2626';
-                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = line.color || '#dc2626'; ctx.lineWidth = 3;
                     ctx.beginPath();
                     const x1 = -range; const y1 = line.slope * x1 + line.intercept;
                     const x2 = range; const y2 = line.slope * x2 + line.intercept;
                     ctx.moveTo(toX(x1), toY(y1)); ctx.lineTo(toX(x2), toY(y2)); ctx.stroke();
                 });
             }, [data]);
-
             return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={300} height={300} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
         };
 
@@ -74,8 +160,6 @@
                     {data.shape || 'Box'}
                 </div>
             );
-
-            // Level 1-2: Single Shape
             if (data.type === 'scale_single') {
                 return (
                     <div className="flex flex-col items-center gap-2 my-4">
@@ -84,11 +168,9 @@
                     </div>
                 );
             }
-
-            // Level 3: Comparison
             if (data.type === 'scale_compare') {
                 return (
-                    <div className="flex items-end justify-center gap-8 my-6">
+                    <div className="flex items-end justify-center gap-4 sm:gap-8 my-6">
                         <div className="flex flex-col items-center gap-2">
                             <span className="text-xs font-bold uppercase text-gray-400">{data.leftLabel}</span>
                             <ShapeIcon size="50px" />
@@ -106,29 +188,54 @@
             return null;
         };
 
-        // --- MAIN APP ---
+        // --- MAIN APP COMPONENT ---
+
         function App() {
-            const [topic, setTopic] = useState('scale');
+            const [lang, setLang] = useState('sv'); // 'sv' or 'en'
+            const [topic, setTopic] = useState('equation');
             const [level, setLevel] = useState(1);
             const [question, setQuestion] = useState(null);
             const [input, setInput] = useState('');
             const [feedback, setFeedback] = useState(null);
             const [loading, setLoading] = useState(false);
+            const [streak, setStreak] = useState(0);
 
-            const fetchQuestion = async (t = topic, l = level) => {
+            const ui = UI_TEXT[lang];
+
+            const fetchQuestion = async (t = topic, l = level, lg = lang) => {
                 setLoading(true); setFeedback(null); setInput('');
                 try {
-                    const res = await fetch(`/api/question?topic=${t}&level=${l}`);
+                    const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}`);
                     const data = await res.json();
+                    if(data.error) throw new Error(data.error);
                     setQuestion(data);
-                } catch(e) { console.error(e); }
-                finally { setLoading(false); }
+                } catch(e) { 
+                    console.error(e);
+                    setQuestion(null); 
+                } finally { 
+                    setLoading(false); 
+                }
             };
 
-            const changeTopic = (t) => { setTopic(t); fetchQuestion(t, level); };
-            const changeLevel = (l) => { setLevel(l); fetchQuestion(topic, l); };
-
+            // Initial Load
             useEffect(() => { fetchQuestion(); }, []);
+
+            // Handlers
+            const handleLangToggle = () => {
+                const newLang = lang === 'sv' ? 'en' : 'sv';
+                setLang(newLang);
+                fetchQuestion(topic, level, newLang);
+            };
+
+            const changeTopic = (newTopic) => {
+                setTopic(newTopic);
+                fetchQuestion(newTopic, level, lang);
+            };
+
+            const changeLevel = (newLevel) => {
+                setLevel(newLevel);
+                fetchQuestion(topic, newLevel, lang);
+            };
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
@@ -140,83 +247,191 @@
                     body: JSON.stringify({ answer: input, token: question.token })
                 });
                 const result = await res.json();
-                setFeedback(result.correct ? 'correct' : 'incorrect');
-                if (result.correct) setTimeout(() => fetchQuestion(), 1500);
+                
+                if (result.correct) {
+                    setFeedback('correct');
+                    setStreak(s => s + 1);
+                    setTimeout(() => fetchQuestion(topic, level, lang), 1500);
+                } else {
+                    setFeedback('incorrect');
+                    setStreak(0);
+                }
             };
 
             return (
-                <div className="min-h-screen flex flex-col items-center p-4">
-                    {/* Controls */}
-                    <div className="flex flex-col items-center gap-4 mb-8 w-full max-w-lg">
-                        <nav className="flex flex-wrap gap-2 justify-center">
-                            {['scale', 'geometry', 'equation', 'graph', 'simplify'].map(t => (
-                                <button key={t} onClick={() => changeTopic(t)} 
-                                    className={`px-4 py-2 rounded-full text-sm font-bold capitalize transition-all ${
-                                        topic === t ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-gray-500 hover:bg-gray-200'
-                                    }`}>{t}</button>
+                <div className="min-h-screen flex flex-col items-center p-4 sm:p-6 bg-gray-50">
+                    
+                    {/* Header: Title, Streak, Lang Toggle */}
+                    <header className="w-full max-w-2xl flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold text-indigo-700 tracking-tight">Anpassa</h1>
+                            <div className="hidden sm:block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold">
+                                {ui.streak}: {streak} 🔥
+                            </div>
+                        </div>
+                        <button 
+                            onClick={handleLangToggle}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-white border rounded-lg shadow-sm hover:bg-gray-50 text-sm font-semibold text-gray-700 transition-colors"
+                        >
+                            <span>{lang === 'sv' ? '🇸🇪 Svenska' : '🇬🇧 English'}</span>
+                        </button>
+                    </header>
+
+                    {/* Navigation: Categories & Topics */}
+                    <nav className="w-full max-w-2xl bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                            {Object.entries(CATEGORIES).map(([catKey, category]) => (
+                                <div key={catKey} className="flex flex-col gap-2">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 pl-1">
+                                        {category.label[lang]}
+                                    </h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {category.topics.map(t => (
+                                            <button 
+                                                key={t.id}
+                                                onClick={() => changeTopic(t.id)}
+                                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all w-full text-left ${
+                                                    topic === t.id 
+                                                        ? 'bg-indigo-600 text-white shadow-md' 
+                                                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-indigo-600'
+                                                }`}
+                                            >
+                                                {t.label[lang]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
-                        </nav>
-                        <div className="flex items-center gap-2 bg-white p-2 rounded-full shadow-sm">
-                            <span className="text-xs font-bold text-gray-400 uppercase ml-2 mr-1">Level</span>
-                            {[1, 2, 3, 4, 5].map(l => (
-                                <button key={l} onClick={() => changeLevel(l)}
-                                    className={`w-8 h-8 rounded-full text-sm font-bold transition-all ${
-                                        level === l ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-500' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                                    }`}>{l}</button>
-                            ))}
+                        </div>
+                    </nav>
+
+                    {/* Level Selector Dropdown */}
+                    <div className="w-full max-w-2xl mb-6">
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col items-start">
+                            <label className="text-xs font-bold text-gray-400 uppercase mb-2 ml-1">
+                                {ui.level}
+                            </label>
+                            <div className="relative w-full">
+                                <select 
+                                    value={level}
+                                    onChange={(e) => changeLevel(Number(e.target.value))}
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent appearance-none transition-shadow cursor-pointer"
+                                >
+                                    {[1, 2, 3, 4, 5].map(l => {
+                                        const desc = LEVEL_DESCRIPTIONS[topic]?.[l]?.[lang] || "";
+                                        return (
+                                            <option key={l} value={l}>
+                                                {lang === 'sv' ? `Nivå ${l}` : `Level ${l}`} - {desc}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                {/* Dropdown Arrow Icon */}
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden">
-                        {loading ? <div className="p-12 text-center text-gray-400">Laddar...</div> : question ? (
-                            <div className="p-6">
-                                {/* Visuals */}
-                                {question.renderData.graph && <GraphCanvas data={question.renderData.graph} />}
-                                {question.renderData.geometry && <ScaleVisual data={question.renderData.geometry} />}
+                    {/* Question Card */}
+                    <main className="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+                        {loading ? (
+                            <div className="p-16 text-center text-gray-400 flex flex-col items-center gap-4">
+                                <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                                <p>{ui.loading}</p>
+                            </div>
+                        ) : question ? (
+                            <div className="p-6 sm:p-8">
+                                {/* Visuals Area */}
+                                <div className="mb-8 flex justify-center bg-gray-50 rounded-xl p-4 min-h-[160px] items-center border border-gray-100">
+                                    {question.renderData.graph && <GraphCanvas data={question.renderData.graph} />}
+                                    {question.renderData.geometry && <ScaleVisual data={question.renderData.geometry} />}
+                                    
+                                    {!question.renderData.graph && !question.renderData.geometry && (
+                                        <div className="text-3xl font-mono text-gray-700">
+                                            {/* Render simple LaTeX if no complex visual */}
+                                            {question.renderData.latex && `$${question.renderData.latex}$`}
+                                        </div>
+                                    )}
+                                </div>
                                 
-                                <div className="mb-6 text-center space-y-2">
-                                    <div className="text-gray-500 text-sm uppercase tracking-wide font-bold">Level {level} • {topic}</div>
-                                    <h2 className="text-2xl font-bold text-gray-800">{question.renderData.latex || question.renderData.description}</h2>
-                                    {question.renderData.description && !question.renderData.geometry && <p className="text-gray-600">{question.renderData.description}</p>}
+                                {/* Text Question */}
+                                <div className="mb-8 text-center space-y-2">
+                                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 leading-tight">
+                                        {question.renderData.description || (question.renderData.latex ? "Solve the problem" : "")}
+                                    </h2>
                                 </div>
 
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    <input 
-                                        type="text" 
-                                        value={input}
-                                        onChange={(e) => setInput(e.target.value)}
-                                        className={`w-full p-4 text-center text-xl border-2 rounded-xl outline-none transition-colors ${
-                                            feedback === 'correct' ? 'border-green-500 bg-green-50' : 
-                                            feedback === 'incorrect' ? 'border-red-500 bg-red-50' : 'border-gray-200 focus:border-indigo-500'
+                                {/* Answer Form */}
+                                <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+                                    <div className="relative">
+                                        <input 
+                                            type="text" 
+                                            value={input}
+                                            onChange={(e) => setInput(e.target.value)}
+                                            className={`w-full p-4 text-center text-xl border-2 rounded-xl outline-none transition-colors shadow-sm ${
+                                                feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : 
+                                                feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 
+                                                'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'
+                                            }`}
+                                            placeholder={question.renderData.answerType === 'scale' ? "1:X" : ui.placeholder}
+                                            autoFocus
+                                            disabled={feedback === 'correct'}
+                                        />
+                                        {feedback === 'correct' && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500 text-2xl">✓</div>
+                                        )}
+                                    </div>
+                                    
+                                    <button 
+                                        type="submit" 
+                                        className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg transition-transform active:scale-95 ${
+                                            feedback === 'correct' 
+                                                ? 'bg-green-500 shadow-green-200 cursor-default' 
+                                                : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
                                         }`}
-                                        placeholder={question.renderData.answerType === 'scale' ? "t.ex. 1:50" : "Skriv ditt svar..."}
-                                        autoFocus
-                                    />
-                                    <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white transition-transform active:scale-95 ${
-                                        feedback === 'correct' ? 'bg-green-500' : 'bg-indigo-600 hover:bg-indigo-700'
-                                    }`}>{feedback === 'correct' ? 'Rätt! Nästa...' : 'Svara'}</button>
+                                    >
+                                        {feedback === 'correct' ? ui.correct : 
+                                         feedback === 'incorrect' ? ui.incorrect : ui.submit}
+                                    </button>
                                 </form>
 
-                                {/* Clues */}
-                                <div className="mt-6 border-t pt-4">
+                                {/* Clues / Help */}
+                                <div className="mt-8 pt-6 border-t border-gray-100">
                                     <details className="group">
-                                        <summary className="cursor-pointer text-gray-400 text-sm font-medium hover:text-indigo-600 list-none text-center">Behöver du hjälp?</summary>
-                                        <div className="mt-4 space-y-2 bg-yellow-50 p-4 rounded-lg text-sm text-yellow-800">
+                                        <summary className="cursor-pointer text-gray-400 text-sm font-medium hover:text-indigo-600 list-none text-center transition-colors">
+                                            {ui.help}
+                                        </summary>
+                                        <div className="mt-4 space-y-3 bg-yellow-50 p-5 rounded-xl border border-yellow-100 text-sm text-yellow-900 animate-slide-down">
                                             {question.clues && question.clues.map((clue, i) => (
-                                                <div key={i} className="flex justify-between border-b border-yellow-200 last:border-0 pb-2 last:pb-0">
-                                                    <span>{clue.text}</span>
-                                                    <span className="font-mono bg-white px-1 rounded">{clue.latex}</span>
+                                                <div key={i} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-yellow-200/50 last:border-0 pb-2 last:pb-0">
+                                                    <span className="font-medium">{clue.text}</span>
+                                                    {clue.latex && <span className="font-mono bg-white px-2 py-0.5 rounded text-xs border border-yellow-100">{clue.latex}</span>}
                                                 </div>
                                             ))}
                                         </div>
                                     </details>
                                 </div>
                             </div>
-                        ) : <div className="p-12 text-center text-red-400">Kunde inte ladda frågan.</div>}
-                    </div>
+                        ) : (
+                            <div className="p-12 text-center text-red-400 flex flex-col gap-2">
+                                <span className="text-2xl">⚠️</span>
+                                <p>{ui.error}</p>
+                                <button onClick={() => fetchQuestion()} className="text-indigo-600 underline text-sm mt-2">Try again</button>
+                            </div>
+                        )}
+                    </main>
+                    
+                    <footer className="mt-8 text-gray-400 text-xs text-center">
+                        Anpassa Math Platform • v2.1
+                    </footer>
                 </div>
             );
         }
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
