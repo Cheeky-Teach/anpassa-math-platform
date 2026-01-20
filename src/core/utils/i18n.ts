@@ -24,14 +24,14 @@ export const TERMS = {
         arrow: { sv: "pil", en: "arrow" },
         cube: { sv: "kub", en: "cube" },
         cylinder: { sv: "cylinder", en: "cylinder" }
-        // Fallback for others handled by returning key if missing
-    } as Record<string, {sv:string, en:string}>,
+    },
     scale: {
         step_plug_in: { sv: "Ställ upp förhållandet:", en: "Set up the ratio:" },
         step_simplify: { sv: "Förenkla:", en: "Simplify:" }
     },
     algebra: {
         intro: (eq: string) => ({ sv: `Börja med ekvationen: $${eq}$`, en: `Start with the equation: $${eq}$` }),
+        // Added sub_var which was missing
         sub_var: (term: string) => ({ sv: `Subtrahera ${term} från båda sidor`, en: `Subtract ${term} from both sides` }),
         subtract: (n: number) => ({ sv: `Subtrahera ${n} från båda sidor`, en: `Subtract ${n} from both sides` }),
         add: (n: number) => ({ sv: `Addera ${n} till båda sidor`, en: `Add ${n} to both sides` }),

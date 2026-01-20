@@ -24,8 +24,9 @@ export class ExpressionSimplificationGen {
         ansK = a + c;
         ansM = b;
         steps = [
-            { text: t(lang, TERMS.simplification.group_terms), latex: `(${a}x + ${c}x) + ${b}` },
-            { text: "Add coefficients", latex: `${ansK}x + ${b}` }
+            // FIX: Added extra closing brace
+            { text: t(lang, TERMS.simplification.group_terms), latex: `(${a}x + ${c}x) + ${b} = ${color}{${ansK}x} + ${b}}` },
+            { text: "Result", latex: `${ansK}x + ${b}` }
         ];
     }
 
@@ -38,7 +39,8 @@ export class ExpressionSimplificationGen {
         ansM = a * b;
         steps = [
             { text: t(lang, TERMS.algebra.distribute(a)), latex: `${a} \\cdot x + ${a} \\cdot ${b}` },
-            { text: "Simplify", latex: `${ansK}x + ${ansM}` }
+            // FIX: Added extra closing brace
+            { text: "Simplify", latex: `${color}{${ansK}x + ${ansM}}}` }
         ];
     }
 
@@ -54,7 +56,8 @@ export class ExpressionSimplificationGen {
         steps = [
             { text: t(lang, TERMS.algebra.distribute(a)), latex: `${a}x + ${a*b} + ${c}x` },
             { text: t(lang, TERMS.simplification.group_terms), latex: `(${a}x + ${c}x) + ${ansM}` },
-            { text: "Result", latex: `${ansK}x + ${ansM}` }
+            // FIX: Added extra closing brace
+            { text: "Result", latex: `${color}{${ansK}x + ${ansM}}}` }
         ];
     }
 
@@ -67,16 +70,19 @@ export class ExpressionSimplificationGen {
         
         expr = `${a}(x + ${b}) - ${c}(x - ${d})`;
         
-        // a*x + a*b - c*x - c*(-d)
-        // a*x + ab - cx + cd
+        // a*x + a*b - c*x - c*(-d) -> a*x + ab - cx + cd
         ansK = a - c;
         ansM = (a * b) + (c * d); // minus times minus is plus
+        
+        const mSign = ansM >= 0 ? '+' : '-';
+        const mVal = Math.abs(ansM);
         
         steps = [
             { text: t(lang, TERMS.simplification.intro(expr)), latex: expr },
             { text: "Distribute (careful with negatives)", latex: `${a}x + ${a*b} - ${c}x + ${c*d}` },
             { text: t(lang, TERMS.simplification.group_terms), latex: `(${a}x - ${c}x) + (${a*b} + ${c*d})` },
-            { text: "Result", latex: `${ansK}x + ${ansM}` }
+            // FIX: Added extra closing brace
+            { text: "Result", latex: `${color}{${ansK}x ${mSign} ${mVal}}}` }
         ];
     }
     
@@ -88,6 +94,7 @@ export class ExpressionSimplificationGen {
         questionId: `simp-l${level}-${seed}`,
         renderData: {
             text_key: "simplify",
+            description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.",
             latex: expr,
             variables: {},
             answerType: 'function_model' 

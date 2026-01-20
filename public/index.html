@@ -20,10 +20,14 @@
         body { font-family: 'Inter', sans-serif; }
         .katex { font-size: 1.1em; } 
         
+        /* Drawer & Fade Transitions */
         .drawer-enter { transform: translateX(-100%); }
         .drawer-enter-active { transform: translateX(0); transition: transform 300ms; }
         .drawer-exit { transform: translateX(0); }
         .drawer-exit-active { transform: translateX(-100%); transition: transform 300ms; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden">
@@ -32,9 +36,12 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // --- CONFIGURATION ---
+
         const CATEGORIES = {
             algebra: {
                 label: { sv: "Algebra", en: "Algebra" },
+                color: "indigo",
                 topics: [
                     { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
                     { id: 'simplify', label: { sv: "Förenkling", en: "Simplification" } }
@@ -42,6 +49,7 @@
             },
             geometry: {
                 label: { sv: "Geometri", en: "Geometry" },
+                color: "emerald",
                 topics: [
                     { id: 'geometry', label: { sv: "Area & Omkrets", en: "Area & Perimeter" } },
                     { id: 'scale', label: { sv: "Skala", en: "Scale" } }
@@ -49,48 +57,20 @@
             },
             functions: {
                 label: { sv: "Samband", en: "Functions" },
+                color: "purple",
                 topics: [
                     { id: 'graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
                 ]
             }
         };
 
+        // Level Descriptors used in Dashboard
         const LEVEL_DESCRIPTIONS = {
-            equation: {
-                1: { sv: "Enstegsekvationer (ax = b)", en: "One-step equations (ax = b)" },
-                2: { sv: "Tvåstegsekvationer (ax + b = c)", en: "Two-step equations (ax + b = c)" },
-                3: { sv: "Variabel på båda sidor", en: "Variables on both sides" },
-                4: { sv: "Parenteser och distribution", en: "Parentheses and distribution" },
-                5: { sv: "Blandade svårare problem", en: "Mixed complex problems" }
-            },
-            simplify: {
-                1: { sv: "Förenkla termer (ax + b + cx)", en: "Combine like terms" },
-                2: { sv: "Multiplicera in i parentes", en: "Distribute into parentheses" },
-                3: { sv: "Distribuera och förenkla", en: "Distribute and combine" },
-                4: { sv: "Subtraktion av parenteser", en: "Subtracting parentheses" },
-                5: { sv: "Blandade uttryck", en: "Mixed expressions" }
-            },
-            geometry: {
-                1: { sv: "Omkrets (Rektangel)", en: "Perimeter (Rectangle)" },
-                2: { sv: "Area (Rektangel)", en: "Area (Rectangle)" },
-                3: { sv: "Area (Triangel)", en: "Area (Triangle)" },
-                4: { sv: "Omkrets (Cirkel)", en: "Circumference (Circle)" },
-                5: { sv: "Sammansatta figurer", en: "Composite shapes" }
-            },
-            scale: {
-                1: { sv: "Hitta verklig längd (Visuellt)", en: "Find real length (Visual)" },
-                2: { sv: "Hitta bildens längd (Visuellt)", en: "Find drawing length (Visual)" },
-                3: { sv: "Beräkna skalan", en: "Calculate the scale" },
-                4: { sv: "Textuppgifter (Utan bild)", en: "Word problems (No image)" },
-                5: { sv: "Blandade problem", en: "Mixed problems" }
-            },
-            graph: {
-                1: { sv: "Hitta m-värdet (Intercept)", en: "Find y-intercept (m)" },
-                2: { sv: "Hitta k-värdet (Positivt)", en: "Find slope (Positive)" },
-                3: { sv: "Hitta k-värdet (Negativt)", en: "Find slope (Negative)" },
-                4: { sv: "Bestäm funktionen (y=kx+m)", en: "Find equation (y=kx+m)" },
-                5: { sv: "Blandade grafer", en: "Mixed graphs" }
-            }
+            equation: { 1: "ax = b", 2: "ax + b = c", 3: "ax + b = cx + d", 4: "a(x + b) = c", 5: "Mixed" },
+            simplify: { 1: "ax + b + cx", 2: "a(x + b)", 3: "a(x + b) + cx", 4: "a(x+b) - c(x-d)", 5: "Mixed" },
+            geometry: { 1: "Perimeter (Rect)", 2: "Area (Rect)", 3: "Area (Tri)", 4: "Circumference", 5: "Composite" },
+            scale: { 1: "Find Real", 2: "Find Drawing", 3: "Find Scale", 4: "Word Problems", 5: "Mixed" },
+            graph: { 1: "Find m", 2: "Find k (+)", 3: "Find k (-)", 4: "y = kx + m", 5: "Mixed" }
         };
 
         const UI_TEXT = {
@@ -98,8 +78,8 @@
                 streak: "Streak",
                 loading: "Laddar fråga...",
                 error: "Kunde inte ladda frågan.",
-                help: "Visa ledtrådar",
-                hideHelp: "Dölj ledtrådar",
+                btnHint: "Ledtråd",
+                btnSolution: "Visa lösning",
                 submit: "Svara",
                 correct: "Rätt! Nästa...",
                 incorrect: "Inte riktigt, försök igen",
@@ -107,14 +87,18 @@
                 level: "Nivå",
                 history: "Historik",
                 noHistory: "Inga svar än.",
-                clueUsed: "Hjälp använd"
+                clueUsed: "Hjälp",
+                dashboardTitle: "Välj område att öva på",
+                startBtn: "Börja öva",
+                backBtn: "Avsluta övning",
+                selectLevel: "Välj nivå:"
             },
             en: {
                 streak: "Streak",
                 loading: "Loading question...",
                 error: "Could not load question.",
-                help: "Show Clues",
-                hideHelp: "Hide Clues",
+                btnHint: "Hint",
+                btnSolution: "Show Solution",
                 submit: "Submit",
                 correct: "Correct! Next...",
                 incorrect: "Not quite, try again",
@@ -122,10 +106,15 @@
                 level: "Level",
                 history: "History",
                 noHistory: "No answers yet.",
-                clueUsed: "Clue used"
+                clueUsed: "Clue",
+                dashboardTitle: "Choose a topic to practice",
+                startBtn: "Start Practice",
+                backBtn: "Quit Practice",
+                selectLevel: "Select Level:"
             }
         };
 
+        // --- UTILS ---
         const MathText = ({ text, className = "", large = false }) => {
             if (!text) return null;
             const parts = text.split(/(\$[^\$]+\$)/g);
@@ -145,6 +134,7 @@
             );
         };
 
+        // --- VISUALS ---
         const GraphCanvas = ({ data }) => {
             const canvasRef = useRef(null);
             useEffect(() => {
@@ -156,16 +146,18 @@
                 ctx.clearRect(0, 0, width, height);
                 const toX = (val) => (val + range) * (width / (range * 2));
                 const toY = (val) => height - (val + range) * (height / (range * 2));
-
+                
+                // Grid
                 ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
                 for (let i = -range; i <= range; i += data.gridStep || 1) {
                     ctx.beginPath(); ctx.moveTo(toX(i), 0); ctx.lineTo(toX(i), height); ctx.stroke();
                     ctx.beginPath(); ctx.moveTo(0, toY(i)); ctx.lineTo(width, toY(i)); ctx.stroke();
                 }
+                // Axes
                 ctx.strokeStyle = '#374151'; ctx.lineWidth = 2;
                 ctx.beginPath(); ctx.moveTo(toX(0), 0); ctx.lineTo(toX(0), height); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(0, toY(0)); ctx.lineTo(width, toY(0)); ctx.stroke();
-                
+                // Lines
                 data.lines.forEach(line => {
                     ctx.strokeStyle = line.color || '#dc2626'; ctx.lineWidth = 3;
                     ctx.beginPath();
@@ -177,173 +169,224 @@
             return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={300} height={300} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
         };
 
-        // NEW: Robust Geometry Visualizer with Labels
         const GeometryVisual = ({ data }) => {
             if (!data) return null;
-
-            // Handle Scale Generator Types (Legacy/Specific logic)
             if (data.type === 'scale_single' || data.type === 'scale_compare') {
-                const ShapeIcon = ({ size }) => (
-                     <div className={`border-2 border-indigo-500 bg-indigo-50 flex items-center justify-center text-xs text-indigo-700 font-bold shadow-sm rounded`} 
-                        style={{ width: size, height: size }}>{data.shape || 'Box'}</div>
-                );
-                if (data.type === 'scale_single') {
-                    return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="80px" /><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>;
-                }
-                if (data.type === 'scale_compare') {
-                    return (
-                        <div className="flex items-end justify-center gap-4 sm:gap-8 my-6">
-                            <div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="50px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div>
-                            <div className="pb-8 text-gray-300 text-2xl">→</div>
-                            <div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="100px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div>
-                        </div>
-                    );
-                }
+                const ShapeIcon = ({ size }) => <div className="border-2 border-indigo-500 bg-indigo-50 flex items-center justify-center text-xs text-indigo-700 font-bold shadow-sm rounded" style={{width:size, height:size}}>{data.shape || 'Box'}</div>;
+                if (data.type === 'scale_single') return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="80px" /><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>;
+                return <div className="flex items-end justify-center gap-4 sm:gap-8 my-6"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="50px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div><div className="pb-8 text-gray-300 text-2xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="100px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div></div>;
             }
-
-            // --- SVG RENDERER FOR GEOMETRY ---
-            // Viewport 200x200
-            
-            if (data.type === 'rectangle') {
-                // Normalize sizes to fit in 160x160 box with padding
-                const maxDim = Math.max(data.width, data.height);
-                const scale = 140 / maxDim;
-                const w = data.width * scale;
-                const h = data.height * scale;
-                const x = (200 - w) / 2;
-                const y = (200 - h) / 2;
-
-                return (
-                    <svg width="200" height="200" className="my-4">
-                        <rect x={x} y={y} width={w} height={h} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />
-                        {/* Bottom Label */}
-                        <text x={100} y={y + h + 20} textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.bottom}</text>
-                        {/* Right Label */}
-                        <text x={x + w + 10} y={100} textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.right}</text>
-                    </svg>
-                );
-            }
-
-            if (data.type === 'triangle') {
-                // Isosceles representation for generic area problems
-                const maxDim = Math.max(data.width, data.height); // width is base
-                const scale = 140 / maxDim;
-                const b = data.width * scale;
-                const h = data.height * scale;
-                const x = (200 - b) / 2;
-                const baseY = 170;
-                const topY = baseY - h;
-
-                return (
-                    <svg width="200" height="200" className="my-4">
-                        <polygon points={`${x},${baseY} ${x + b},${baseY} ${100},${topY}`} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />
-                        {/* Height Line (Dotted) */}
-                        <line x1="100" y1={topY} x2="100" y2={baseY} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
-                        {/* Base Label */}
-                        <text x={100} y={baseY + 20} textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.bottom}</text>
-                        {/* Height Label */}
-                        <text x={105} y={baseY - h/2} textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.height}</text>
-                    </svg>
-                );
-            }
-
-            if (data.type === 'circle') {
-                return (
-                    <svg width="200" height="200" className="my-4">
-                        <circle cx="100" cy="100" r="70" fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />
-                        {/* Radius Line */}
-                        <line x1="100" y1="100" x2="170" y2="100" stroke="#374151" strokeWidth="2" />
-                        {/* Radius Label */}
-                        <text x={135} y={90} textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">r = {data.labels.radius}</text>
-                    </svg>
-                );
-            }
-
-            if (data.type === 'composite') {
-                // Ice Cream Cone
-                // Top semi circle, bottom triangle
-                // Simplified drawing logic
-                return (
-                    <svg width="200" height="200" className="my-4">
-                        {/* Triangle Bottom */}
-                        <polygon points="50,70 150,70 100,190" fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />
-                        {/* Semi Circle Top */}
-                        <path d="M 50 70 A 50 50 0 0 1 150 70" fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" />
-                        {/* Dotted Line for Diameter */}
-                        <line x1="50" y1="70" x2="150" y2="70" stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
-                        
-                        {/* Labels */}
-                        <text x={100} y={60} textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.top}</text>
-                        <text x={140} y={130} textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.side}</text>
-                    </svg>
-                );
-            }
-
+            if (data.type === 'rectangle') return <svg width="200" height="200" className="my-4"><rect x={(200-(data.width*140/Math.max(data.width,data.height)))/2} y={(200-(data.height*140/Math.max(data.width,data.height)))/2} width={data.width*140/Math.max(data.width,data.height)} height={data.height*140/Math.max(data.width,data.height)} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" /><text x="100" y={(200-(data.height*140/Math.max(data.width,data.height)))/2 + data.height*140/Math.max(data.width,data.height) + 20} textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.bottom}</text><text x={(200-(data.width*140/Math.max(data.width,data.height)))/2 + data.width*140/Math.max(data.width,data.height) + 10} y="100" textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.right}</text></svg>;
+            if (data.type === 'triangle') { const sc = 140/Math.max(data.width,data.height); const b = data.width*sc, h = data.height*sc, x = (200-b)/2, by = 170, ty = 170-h; return <svg width="200" height="200" className="my-4"><polygon points={`${x},${by} ${x+b},${by} 100,${ty}`} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" /><line x1="100" y1={ty} x2="100" y2={by} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /><text x="100" y={by+20} textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.bottom}</text><text x="105" y={by-h/2} textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.height}</text></svg>; }
+            if (data.type === 'circle') return <svg width="200" height="200" className="my-4"><circle cx="100" cy="100" r="70" fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" /><line x1="100" y1="100" x2="170" y2="100" stroke="#374151" strokeWidth="2" /><text x="135" y="90" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">r = {data.labels.radius}</text></svg>;
+            if (data.type === 'composite') return <svg width="200" height="200" className="my-4"><polygon points="50,70 150,70 100,190" fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" /><path d="M 50 70 A 50 50 0 0 1 150 70" fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" /><line x1="50" y1="70" x2="150" y2="70" stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /><text x="100" y="60" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.top}</text><text x="140" y={130} textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.side}</text></svg>;
             return null;
         };
 
-        const HistoryDrawer = ({ history, isOpen, onClose, ui }) => {
-            return (
-                <>
-                    {isOpen && <div className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm lg:hidden" onClick={onClose}></div>}
-                    <div className={`fixed inset-y-0 left-0 w-80 bg-white shadow-2xl transform transition-transform duration-300 z-50 flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                        <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-                            <h2 className="font-bold text-gray-700">{ui.history}</h2>
-                            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                            {history.length === 0 ? <p className="text-gray-400 text-center text-sm py-4">{ui.noHistory}</p> : history.map((entry, i) => (
-                                <div key={i} className={`p-3 rounded-lg border-l-4 text-sm ${entry.correct ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
-                                    <div className="flex justify-between items-start mb-1">
-                                        <span className="font-semibold capitalize text-gray-700">{entry.topic} <span className="text-xs font-normal text-gray-500">(Lvl {entry.level})</span></span>
-                                        <span className="text-xs text-gray-400">{new Date(entry.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                    </div>
-                                    <div className="text-gray-600 mb-1 line-clamp-2"><MathText text={entry.text} /></div>
-                                    {entry.clueUsed && <span className="inline-block px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] rounded uppercase font-bold tracking-wider">{ui.clueUsed}</span>}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </>
-            );
+        const StaticGeometryVisual = ({ description }) => {
+            if (!description) return null;
+            const d = description.toLowerCase();
+            if (d.includes("rect") || d.includes("rektangel")) return <div className="flex justify-center my-4 opacity-80"><div className="w-32 h-20 border-2 border-indigo-500 bg-indigo-50 rounded-sm"></div></div>;
+            if (d.includes("trian")) return <div className="flex justify-center my-4 opacity-80"><div className="w-0 h-0 border-l-[40px] border-r-[40px] border-b-[70px] border-l-transparent border-r-transparent border-b-indigo-500/20 border-b-solid relative"><div className="absolute -left-[40px] top-[70px] w-full h-[2px] bg-indigo-500"></div></div></div>;
+            if (d.includes("circ") || d.includes("cirkel")) return <div className="flex justify-center my-4 opacity-80"><div className="w-24 h-24 rounded-full border-2 border-indigo-500 bg-indigo-50"></div></div>;
+            return null;
         };
 
-        const CluePanel = ({ clues, isVisible, ui }) => {
-            if (!isVisible) return null;
+        // --- DASHBOARD COMPONENT ---
+        const Dashboard = ({ lang, onStart, selectedTopic, selectedLevel, onSelect }) => {
+            const ui = UI_TEXT[lang];
+            
             return (
-                <div className="lg:w-80 w-full shrink-0 animate-fade-in">
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 shadow-sm sticky top-6">
-                        <div className="flex items-center gap-2 mb-4 text-yellow-800 font-bold border-b border-yellow-200 pb-2"><span>💡 Hints</span></div>
-                        <div className="space-y-6">
-                            {clues.map((clue, i) => (
-                                <div key={i} className="group">
-                                    <div className="text-sm text-yellow-900 mb-2 font-medium leading-relaxed"><MathText text={clue.text} /></div>
-                                    {clue.latex && <div className="bg-white p-3 rounded-lg border border-yellow-200 text-center shadow-sm overflow-x-auto"><MathText text={`$${clue.latex}$`} large={true} /></div>}
+                <div className="max-w-6xl mx-auto w-full p-4 fade-in">
+                    <div className="text-center mb-10">
+                        <h2 className="text-3xl font-bold text-gray-800 mb-2">{ui.dashboardTitle}</h2>
+                        <div className="h-1 w-20 bg-indigo-500 mx-auto rounded-full"></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">
+                        {Object.entries(CATEGORIES).map(([catKey, category]) => (
+                            <div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}>
+                                <div className={`bg-${category.color}-50 p-4 border-b border-${category.color}-100`}>
+                                    <h3 className={`text-lg font-bold text-${category.color}-700 uppercase tracking-wide flex items-center gap-2`}>
+                                        <span className={`w-3 h-3 rounded-full bg-${category.color}-500`}></span>
+                                        {category.label[lang]}
+                                    </h3>
                                 </div>
-                            ))}
-                        </div>
+                                <div className="p-4 space-y-4 flex-1">
+                                    {category.topics.map(topic => (
+                                        <div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                            <div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {[1, 2, 3, 4, 5].map(lvl => {
+                                                    const isSelected = selectedTopic === topic.id && selectedLevel === lvl;
+                                                    return (
+                                                        <button 
+                                                            key={lvl}
+                                                            onClick={() => onSelect(topic.id, lvl)}
+                                                            className={`w-10 h-10 rounded-lg text-sm font-bold transition-all border-2 flex flex-col items-center justify-center relative
+                                                                ${isSelected 
+                                                                    ? `bg-${category.color}-600 text-white border-${category.color}-600 shadow-md scale-110 z-10` 
+                                                                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                                                }`}
+                                                            title={LEVEL_DESCRIPTIONS[topic.id]?.[lvl]}
+                                                        >
+                                                            {lvl}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            {/* Preview Text for selected level in this topic */}
+                                            {selectedTopic === topic.id && (
+                                                <div className="mt-3 text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded font-medium animate-fade-in">
+                                                    {LEVEL_DESCRIPTIONS[topic.id]?.[selectedLevel] || "Level"}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Floating Action Button */}
+                    <div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20">
+                        <button 
+                            onClick={onStart}
+                            className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3
+                                ${selectedTopic 
+                                    ? 'bg-indigo-600 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-indigo-700' 
+                                    : 'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'
+                                }`}
+                        >
+                            {ui.startBtn} <span>🚀</span>
+                        </button>
                     </div>
                 </div>
             );
         };
 
+        // --- PRACTICE VIEW COMPONENT (Legacy Main View) ---
+        const PracticeView = ({ lang, ui, question, loading, feedback, streak, input, setInput, handleSubmit, handleHint, handleSolution, revealedClues, uiState, actions }) => {
+            const [historyOpen, setHistoryOpen] = useState(false);
+            const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
+
+            // History Drawer Components
+            const HistoryList = ({ history }) => (
+                <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-4 border-b bg-gray-50 flex justify-between items-center"><h2 className="font-bold text-gray-700">{ui.history}</h2><span className="text-xs text-gray-400">{history.length}</span></div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[500px]">
+                        {history.length === 0 ? <p className="text-gray-400 text-center text-sm py-4">{ui.noHistory}</p> : history.map((entry, i) => (
+                            <div key={i} className={`p-3 rounded-lg border-l-4 text-sm ${entry.correct ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
+                                <div className="flex justify-between items-start mb-1"><span className="font-semibold capitalize text-gray-700">{entry.topic} <span className="text-xs font-normal text-gray-500">(Lvl {entry.level})</span></span><span className="text-xs text-gray-400">{new Date(entry.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span></div>
+                                <div className="text-gray-600 mb-1 line-clamp-2"><MathText text={entry.text} /></div>
+                                {entry.clueUsed && <span className="inline-block px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] rounded uppercase font-bold tracking-wider">{ui.clueUsed}</span>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            const MobileDrawer = () => (
+                <>
+                    {mobileHistoryOpen && <div className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm lg:hidden" onClick={() => setMobileHistoryOpen(false)}></div>}
+                    <div className={`fixed inset-y-0 left-0 w-80 bg-white shadow-2xl transform transition-transform duration-300 z-50 flex flex-col lg:hidden ${mobileHistoryOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                        <div className="p-4 border-b flex justify-between items-center bg-gray-50"><h2 className="font-bold text-gray-700">{ui.history}</h2><button onClick={() => setMobileHistoryOpen(false)} className="text-gray-400">✕</button></div>
+                        <div className="flex-1 overflow-y-auto p-4"><HistoryList history={uiState.history} /></div> {/* Reusing simplified logic inside for mobile */}
+                    </div>
+                </>
+            );
+
+            // Clue Panel
+            const CluePanel = () => {
+                if (revealedClues === 0) return null;
+                const visibleClues = question.clues.slice(0, revealedClues);
+                return (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 shadow-sm mb-4 animate-fade-in">
+                        <div className="flex items-center gap-2 mb-4 text-yellow-800 font-bold border-b border-yellow-200 pb-2"><span>💡 Hints ({revealedClues}/{question.clues.length})</span></div>
+                        <div className="space-y-6">{visibleClues.map((clue, i) => (<div key={i} className="group animate-slide-down"><div className="text-sm text-yellow-900 mb-2 font-medium leading-relaxed"><MathText text={clue.text} /></div>{clue.latex && <div className="bg-white p-3 rounded-lg border border-yellow-200 text-center shadow-sm overflow-x-auto"><MathText text={`$${clue.latex}$`} large={true} /></div>}</div>))}</div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
+                    <MobileDrawer />
+                    
+                    {/* Left Column: Question */}
+                    <div className="flex-1 w-full min-w-0">
+                        {/* Header with Back Button */}
+                        <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                            <button onClick={actions.goBack} className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 font-semibold text-sm px-2 py-1 rounded transition-colors">
+                                <span>←</span> {ui.backBtn}
+                            </button>
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">{uiState.topic} • Lvl {uiState.level}</span>
+                                <button onClick={() => setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>
+                            </div>
+                        </div>
+
+                        <main className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
+                            {loading ? (
+                                <div className="p-20 text-center flex flex-col items-center gap-4"><div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div></div>
+                            ) : question ? (
+                                <div className="p-6 sm:p-8">
+                                    <div className="mb-8 flex justify-center bg-gray-50 rounded-xl p-6 min-h-[200px] items-center border border-gray-100 relative">
+                                        {question.renderData.graph ? (<GraphCanvas data={question.renderData.graph} />) : 
+                                         question.renderData.geometry ? (<GeometryVisual data={question.renderData.geometry} />) : 
+                                         (<div className="flex flex-col items-center justify-center w-full">
+                                            {/* Static fallback based on description text for Geometry */}
+                                            {uiState.topic === 'geometry' && <StaticGeometryVisual description={question.renderData.description} />}
+                                            {question.renderData.latex && <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true} /></div>}
+                                          </div>)}
+                                    </div>
+                                    <div className="mb-10 text-center"><h2 className="text-xl font-medium text-gray-700 leading-relaxed"><MathText text={question.renderData.description} /></h2></div>
+                                    <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4">
+                                        <div className="relative">
+                                            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder={question.renderData.answerType === 'scale' ? "1:X" : ui.placeholder} autoFocus disabled={feedback === 'correct'} />
+                                        </div>
+                                        <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-green-500 shadow-green-200 cursor-default' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 hover:shadow-lg'}`}>{feedback === 'correct' ? ui.correct : feedback === 'incorrect' ? ui.incorrect : ui.submit}</button>
+                                    </form>
+                                    
+                                    <div className="mt-8 flex gap-3 justify-center">
+                                        <button type="button" onClick={handleHint} disabled={!question.clues || revealedClues >= question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button>
+                                        <button type="button" onClick={handleSolution} disabled={!question.clues || revealedClues >= question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={actions.retry} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>
+                            )}
+                        </main>
+                    </div>
+
+                    {/* Right Column: Clues + History */}
+                    <div className="lg:w-80 w-full shrink-0 flex flex-col gap-4">
+                        <CluePanel />
+                        <div className="hidden lg:block flex-1 min-h-0"><HistoryList history={uiState.history} /></div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- ROOT APP ---
         function App() {
+            const [view, setView] = useState('dashboard'); // 'dashboard' | 'practice'
             const [lang, setLang] = useState('sv'); 
-            const [topic, setTopic] = useState('equation');
-            const [level, setLevel] = useState(1);
+            const [topic, setTopic] = useState('');
+            const [level, setLevel] = useState(0);
+            
             const [question, setQuestion] = useState(null);
             const [input, setInput] = useState('');
             const [feedback, setFeedback] = useState(null);
             const [loading, setLoading] = useState(false);
             const [streak, setStreak] = useState(0);
             const [history, setHistory] = useState([]);
-            const [historyOpen, setHistoryOpen] = useState(false);
-            const [cluesVisible, setCluesVisible] = useState(false);
+            const [revealedClues, setRevealedClues] = useState(0);
 
             const ui = UI_TEXT[lang];
 
             const fetchQuestion = async (t = topic, l = level, lg = lang) => {
-                setLoading(true); setFeedback(null); setInput(''); setCluesVisible(false);
+                if(!t || !l) return;
+                setLoading(true); setFeedback(null); setInput(''); setRevealedClues(0);
                 try {
                     const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}`);
                     const data = await res.json();
@@ -352,11 +395,25 @@
                 } catch(e) { console.error(e); setQuestion(null); } finally { setLoading(false); }
             };
 
-            useEffect(() => { fetchQuestion(); }, []);
+            const startPractice = () => {
+                if(topic && level) {
+                    setView('practice');
+                    fetchQuestion(topic, level, lang);
+                }
+            };
 
-            const handleLangToggle = () => { const newLang = lang === 'sv' ? 'en' : 'sv'; setLang(newLang); fetchQuestion(topic, level, newLang); };
-            const changeTopic = (newTopic) => { setTopic(newTopic); fetchQuestion(newTopic, level, lang); };
-            const changeLevel = (newLevel) => { setLevel(newLevel); fetchQuestion(topic, newLevel, lang); };
+            const quitPractice = () => {
+                setView('dashboard');
+                setQuestion(null);
+            };
+
+            const handleSelection = (t, l) => {
+                setTopic(t);
+                setLevel(l);
+            };
+
+            const handleHint = () => { if (question?.clues) setRevealedClues(p => Math.min(p + 1, question.clues.length)); };
+            const handleSolution = () => { if (question?.clues) setRevealedClues(question.clues.length); };
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
@@ -367,85 +424,52 @@
                     body: JSON.stringify({ answer: input, token: question.token })
                 });
                 const result = await res.json();
-                setHistory(prev => [{ topic, level, correct: result.correct, text: question.renderData.description || question.renderData.latex, clueUsed: cluesVisible, time: Date.now() }, ...prev]);
-                if (result.correct) {
-                    setFeedback('correct'); setStreak(s => s + 1); setTimeout(() => fetchQuestion(topic, level, lang), 1500);
-                } else {
-                    setFeedback('incorrect'); setStreak(0);
-                }
+                setHistory(prev => [{ topic, level, correct: result.correct, text: question.renderData.description || question.renderData.latex, clueUsed: revealedClues > 0, time: Date.now() }, ...prev]);
+                if (result.correct) { setFeedback('correct'); setStreak(s => s + 1); setTimeout(() => fetchQuestion(topic, level, lang), 1500); } 
+                else { setFeedback('incorrect'); setStreak(0); }
             };
 
             return (
                 <div className="min-h-screen flex flex-col bg-gray-50">
-                    <HistoryDrawer history={history} isOpen={historyOpen} onClose={() => setHistoryOpen(false)} ui={ui} />
+                    {/* Persistent Header */}
                     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm">
-                        <div className="max-w-6xl mx-auto flex justify-between items-center">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
                             <div className="flex items-center gap-4">
-                                <button onClick={() => setHistoryOpen(true)} className="p-2 -ml-2 rounded-lg hover:bg-gray-100 text-gray-500">
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
-                                </button>
-                                <h1 className="text-xl font-bold text-indigo-700 tracking-tight hidden sm:block">Anpassa</h1>
+                                <h1 className="text-xl font-bold text-indigo-700 tracking-tight cursor-pointer" onClick={() => setView('dashboard')}>Anpassa</h1>
                                 <div className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"><span>🔥</span> {streak}</div>
                             </div>
-                            <button onClick={handleLangToggle} className="text-sm font-semibold text-gray-600 hover:text-indigo-600 transition-colors">{lang === 'sv' ? '🇸🇪 Svenska' : '🇬🇧 English'}</button>
+                            <button onClick={() => setLang(l => l === 'sv' ? 'en' : 'sv')} className="text-sm font-semibold text-gray-600 hover:text-indigo-600 transition-colors">{lang === 'sv' ? '🇸🇪 Svenska' : '🇬🇧 English'}</button>
                         </div>
                     </header>
-                    <div className="flex-1 max-w-6xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start">
-                        <div className="flex-1 w-full min-w-0">
-                            <nav className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-                                <div className="flex flex-col gap-4">
-                                    {Object.entries(CATEGORIES).map(([catKey, category]) => (
-                                        <div key={catKey}>
-                                            <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">{category.label[lang]}</h3>
-                                            <div className="flex flex-wrap gap-2">
-                                                {category.topics.map(t => (
-                                                    <button key={t.id} onClick={() => changeTopic(t.id)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${topic === t.id ? 'bg-indigo-600 text-white shadow-md ring-2 ring-indigo-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-indigo-600'}`}>{t.label[lang]}</button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </nav>
-                            <div className="mb-6">
-                                <div className="relative">
-                                    <select value={level} onChange={(e) => changeLevel(Number(e.target.value))} className="w-full p-4 pl-12 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none shadow-sm cursor-pointer">
-                                        {[1, 2, 3, 4, 5].map(l => { const desc = LEVEL_DESCRIPTIONS[topic]?.[l]?.[lang] || ""; return <option key={l} value={l}>{lang === 'sv' ? `Nivå ${l}` : `Level ${l}`} — {desc}</option>; })}
-                                    </select>
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500 font-bold text-xs uppercase tracking-wide">{ui.level}</div>
-                                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"><svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
-                                </div>
-                            </div>
-                            <main className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
-                                {loading ? (
-                                    <div className="p-20 text-center flex flex-col items-center gap-4"><div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div></div>
-                                ) : question ? (
-                                    <div className="p-6 sm:p-8">
-                                        <div className="mb-8 flex justify-center bg-gray-50 rounded-xl p-6 min-h-[200px] items-center border border-gray-100 relative">
-                                            {question.renderData.graph ? (<GraphCanvas data={question.renderData.graph} />) : 
-                                             question.renderData.geometry ? (<GeometryVisual data={question.renderData.geometry} />) : 
-                                             (<div className="flex flex-col items-center justify-center w-full">
-                                                {question.renderData.latex && <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true} /></div>}
-                                              </div>)}
-                                        </div>
-                                        <div className="mb-10 text-center"><h2 className="text-xl font-medium text-gray-700 leading-relaxed"><MathText text={question.renderData.description} /></h2></div>
-                                        <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4">
-                                            <div className="relative">
-                                                <input type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder={question.renderData.answerType === 'scale' ? "1:X" : ui.placeholder} autoFocus disabled={feedback === 'correct'} />
-                                            </div>
-                                            <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-green-500 shadow-green-200 cursor-default' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 hover:shadow-lg'}`}>{feedback === 'correct' ? ui.correct : feedback === 'incorrect' ? ui.incorrect : ui.submit}</button>
-                                        </form>
-                                        <div className="mt-8 text-center">
-                                            <button type="button" onClick={() => setCluesVisible(!cluesVisible)} className="text-sm font-semibold text-gray-400 hover:text-indigo-600 transition-colors flex items-center justify-center gap-2 mx-auto"><span>{cluesVisible ? '🚫' : '💡'}</span>{cluesVisible ? ui.hideHelp : ui.help}</button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={() => fetchQuestion()} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>
-                                )}
-                            </main>
-                        </div>
-                        {question && question.clues && <CluePanel clues={question.clues} isVisible={cluesVisible} ui={ui} />}
-                    </div>
-                    <footer className="mt-auto py-8 text-gray-400 text-xs text-center border-t border-gray-200">Anpassa Math Platform • v2.3</footer>
+
+                    {view === 'dashboard' ? (
+                        <Dashboard 
+                            lang={lang} 
+                            selectedTopic={topic} 
+                            selectedLevel={level} 
+                            onSelect={handleSelection} 
+                            onStart={startPractice} 
+                        />
+                    ) : (
+                        <PracticeView 
+                            lang={lang}
+                            ui={ui}
+                            question={question}
+                            loading={loading}
+                            feedback={feedback}
+                            streak={streak}
+                            input={input}
+                            setInput={setInput}
+                            handleSubmit={handleSubmit}
+                            handleHint={handleHint}
+                            handleSolution={handleSolution}
+                            revealedClues={revealedClues}
+                            uiState={{ history, topic, level }}
+                            actions={{ goBack: quitPractice, retry: () => fetchQuestion(topic, level, lang) }}
+                        />
+                    )}
+                    
+                    {view === 'dashboard' && <footer className="mt-auto py-8 text-gray-400 text-xs text-center border-t border-gray-200">Anpassa Math Platform • v2.5</footer>}
                 </div>
             );
         }

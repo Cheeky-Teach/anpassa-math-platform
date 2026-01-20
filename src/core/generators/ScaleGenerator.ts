@@ -20,19 +20,12 @@ export class ScaleGenerator {
         const rng = new Random(seed);
         const color = "\\mathbf{\\color{#D35400}";
         
-        // Mode Mapping:
-        // Level 1: Find Reality (Visual)
-        // Level 2: Find Drawing (Visual)
-        // Level 3: Find Scale (Visual - Side by Side)
-        // Level 4: Word Problems (Mixed, No Images)
-        // Level 5+: Mixed Complex
-        
         let mode = level;
         let hideImage = false;
 
         if (level === 4) {
             hideImage = true;
-            mode = rng.intBetween(1, 3); // Random type, text only
+            mode = rng.intBetween(1, 3);
         } else if (level >= 5) {
             mode = rng.intBetween(1, 3);
             hideImage = rng.intBetween(0, 1) === 1;
@@ -61,7 +54,8 @@ export class ScaleGenerator {
 
             steps = [
                 { text: t(lang, TERMS.common.calculate), latex: `${drawingVal} \\cdot ${scaleFactor} = ${realValCm} \\text{ cm}` },
-                realUnit === 'm' ? { text: "Convert units", latex: `${realValCm} / 100 = ${color}{${realValDisplay}} \\text{ m}` } : { text: "Done", latex: "" }
+                // FIX: Added extra closing brace
+                realUnit === 'm' ? { text: "Convert units", latex: `${realValCm} / 100 = ${color}{${realValDisplay}}} \\text{ m}` } : { text: "Done", latex: "" }
             ];
 
             renderData = {
@@ -88,7 +82,8 @@ export class ScaleGenerator {
 
             steps = [
                 { text: "Convert to cm", latex: `${realValDisplay} ${realUnit} = ${realValCm} \\text{ cm}` },
-                { text: "Divide by scale", latex: `\\frac{${realValCm}}{${scaleFactor}} = ${color}{${targetDrawing}}` }
+                // FIX: Added extra closing brace
+                { text: "Divide by scale", latex: `\\frac{${realValCm}}{${scaleFactor}} = ${color}{${targetDrawing}}}` }
             ];
 
             renderData = {
@@ -100,14 +95,13 @@ export class ScaleGenerator {
             };
         }
 
-        // --- MODE 3: FIND SCALE (Side by Side) ---
+        // --- MODE 3: FIND SCALE ---
         else {
-            // We need a Drawing Value and a Real Value that simplify nicely
             const base = rng.intBetween(2, 5);
             const factor = rng.pick([10, 20, 50, 100]);
             
             const drawVal = base; 
-            const realVal = base * factor; // e.g. 5 * 50 = 250 cm
+            const realVal = base * factor; 
             
             const realUnit = factor >= 100 ? 'm' : 'cm';
             const realDisplay = realUnit === 'm' ? realVal / 100 : realVal;
@@ -115,17 +109,14 @@ export class ScaleGenerator {
             const ansLeft = 1;
             const ansRight = factor;
             
-            qText = lang === 'sv'
-                ? `Bestäm skalan.`
-                : `Determine the scale.`;
-
-            // Randomize which is on left/right for the visual
-            const leftIsDrawing = true; // Convention for now
+            qText = lang === 'sv' ? `Bestäm skalan.` : `Determine the scale.`;
+            const leftIsDrawing = true; 
             
             steps = [
                 { text: "Convert to same unit (cm)", latex: `${realDisplay} ${realUnit} = ${realVal} \\text{ cm}` },
                 { text: t(lang, TERMS.scale.step_plug_in), latex: `${drawVal} : ${realVal}` },
-                { text: t(lang, TERMS.scale.step_simplify), latex: `1 : ${realVal/drawVal} \\implies ${color}{1:${factor}}` }
+                // FIX: Added extra closing brace
+                { text: t(lang, TERMS.scale.step_simplify), latex: `1 : ${realVal/drawVal} \\implies ${color}{1:${factor}}}` }
             ];
 
             renderData = {
@@ -143,7 +134,6 @@ export class ScaleGenerator {
                 }
             };
 
-            // Answer is object { left: 1, right: 50 }
             answer = { left: ansLeft, right: ansRight };
         }
 

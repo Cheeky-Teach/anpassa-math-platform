@@ -12,7 +12,6 @@ export class LinearGraphGenerator {
 
         let k = 1, m = 0;
         let questionKey = "";
-        let latexInstruction = "";
         let steps: Clue[] = [];
         let answer: any = 0;
         let answerType: any = 'numeric';
@@ -24,12 +23,12 @@ export class LinearGraphGenerator {
             m = rng.intBetween(-3, 3);
             answer = m;
             questionKey = "q_intercept";
-            description = t(lang, TERMS.graph.q_intercept); // Set full question string
-            latexInstruction = ""; // LaTeX is redundant if description is clear
+            description = t(lang, TERMS.graph.q_intercept);
             answerType = 'numeric';
             steps = [
                 { text: "Look at x = 0", latex: "(0, y)" },
-                { text: t(lang, TERMS.graph.step_intercept(m)), latex: `m = ${color}{${m}}` }
+                // FIX: Added extra closing brace
+                { text: t(lang, TERMS.graph.step_intercept(m)), latex: `m = ${color}{${m}}}` }
             ];
         }
 
@@ -40,7 +39,6 @@ export class LinearGraphGenerator {
             answer = k;
             questionKey = "q_slope";
             description = t(lang, TERMS.graph.q_slope);
-            latexInstruction = "";
             answerType = 'numeric';
             steps = [
                 { text: "Slope Formula", latex: "k = \\frac{\\Delta y}{\\Delta x}" },
@@ -56,12 +54,12 @@ export class LinearGraphGenerator {
             answer = k;
             questionKey = "q_slope";
             description = t(lang, TERMS.graph.q_slope);
-            latexInstruction = "";
             answerType = 'numeric';
             steps = [
                 { text: "Slope Formula", latex: "k = \\frac{\\Delta y}{\\Delta x}" },
                 { text: "Identify direction", latex: k < 0 ? "\\text{Downwards (Negative)}" : "\\text{Upwards (Positive)}" },
-                { text: "Result", latex: `k = ${color}{${k}}` }
+                // FIX: Added extra closing brace
+                { text: "Result", latex: `k = ${color}{${k}}}` }
             ];
         }
 
@@ -72,12 +70,12 @@ export class LinearGraphGenerator {
             answer = { k, m }; 
             questionKey = "q_func";
             description = t(lang, TERMS.graph.q_func);
-            latexInstruction = "";
             answerType = 'function_model';
             steps = [
                 { text: "Find m", latex: `m = ${m}` },
                 { text: "Find k", latex: `k = ${k}` },
-                { text: t(lang, TERMS.graph.step_func(k, m)), latex: `y = ${color}{${k}}x ${m >= 0 ? '+' : ''}${color}{${m}}` }
+                // FIX: Added extra closing brace twice (for k and m)
+                { text: t(lang, TERMS.graph.step_func(k, m)), latex: `y = ${color}{${k}}}x ${m >= 0 ? '+' : ''}${color}{${m}}}` }
             ];
         }
 
@@ -85,8 +83,8 @@ export class LinearGraphGenerator {
             questionId: `graph-l${level}-${seed}`,
             renderData: {
                 text_key: questionKey,
-                description: description, // Ensuring description is set
-                latex: latexInstruction,
+                description: description,
+                latex: "",
                 answerType: answerType,
                 graph: { 
                     type: 'linear', 
