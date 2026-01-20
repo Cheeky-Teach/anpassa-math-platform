@@ -18,9 +18,10 @@ export interface GeneratedQuestion {
   questionId: string;
   renderData: {
     text_key: string;
-    variables?: Record<string, string | number>;
-    latex?: string;
-    description?: string; 
+    variables: Record<string, string | number>;
+    latex: string;
+    // Updated to allow bilingual support
+    description?: string | { sv: string, en: string }; 
     answerType?: AnswerType; 
     choices?: string[];      
     graph?: {

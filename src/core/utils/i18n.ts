@@ -7,6 +7,9 @@ export function t(lang: Language, keyOrObj: string | { sv: string, en: string } 
 }
 
 export const TERMS = {
+    ui: {
+        hints: { sv: "Ledtrådar", en: "Hints" }
+    },
     common: {
         solve: { sv: "Lös ut", en: "Solve for" },
         calculate: { sv: "Beräkna", en: "Calculate" },
@@ -50,7 +53,7 @@ export const TERMS = {
         rule_reduction: { sv: "Eftersom det första talet är 1, är det en förminskning.", en: "Since the first number is 1, it is a reduction." },
         rule_enlargement: { sv: "Eftersom det första talet är större än 1, är det en förstoring.", en: "Since the first number is greater than 1, it is an enlargement." },
         
-        // New Hint Translations
+        // Hint Translations
         calc_cm: { sv: "Beräkna cm", en: "Calculate cm" },
         conv_m: { sv: "Omvandla till meter", en: "Convert to m" },
         conv_units: { sv: "Omvandla enheter", en: "Convert units" },

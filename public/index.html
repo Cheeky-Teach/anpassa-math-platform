@@ -20,7 +20,6 @@
         body { font-family: 'Inter', sans-serif; }
         .katex { font-size: 1.1em; } 
         
-        /* Drawer & Fade Transitions */
         .drawer-enter { transform: translateX(-100%); }
         .drawer-enter-active { transform: translateX(0); transition: transform 300ms; }
         .drawer-exit { transform: translateX(0); }
@@ -35,8 +34,6 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
-
-        // --- CONFIGURATION ---
 
         const CATEGORIES = {
             algebra: {
@@ -64,44 +61,12 @@
             }
         };
 
-        // Localized Level Descriptors
         const LEVEL_DESCRIPTIONS = {
-            equation: {
-                1: { sv: "Enstegsekvationer", en: "One-step equations" },
-                2: { sv: "Tvåstegsekvationer", en: "Two-step equations" },
-                3: { sv: "X på båda sidor", en: "X on both sides" },
-                4: { sv: "Multiplikation med parentes", en: "Multiplication with parentheses" },
-                5: { sv: "Blandat", en: "Mixed" }
-            },
-            simplify: {
-                1: { sv: "Förenkla uttryck", en: "Combine like terms" },
-                2: { sv: "Parenteser", en: "Distribute into parentheses" },
-                3: { sv: "Distribuera & förenkla", en: "Distribute and combine" },
-                4: { sv: "Subtrahera parenteser", en: "Subtracting parentheses" },
-                5: { sv: "Blandat", en: "Mixed expressions" }
-            },
-            geometry: {
-                1: { sv: "Omkrets (Rektangel)", en: "Perimeter (Rectangle)" },
-                2: { sv: "Area (Rektangel)", en: "Area (Rectangle)" },
-                3: { sv: "Area (Triangel)", en: "Area (Triangle)" },
-                4: { sv: "Omkrets (Cirkel)", en: "Circumference (Circle)" },
-                5: { sv: "Sammansatta figurer", en: "Composite shapes" }
-            },
-            scale: {
-                1: { sv: "Begreppsförståelse", en: "Concepts" }, 
-                2: { sv: "Beräkna längd (Enkel)", en: "Calc Length (Simple)" }, 
-                3: { sv: "Beräkna längd (Svår)", en: "Calc Length (Hard)" },
-                4: { sv: "Ange skala", en: "Determine Scale" },
-                5: { sv: "Utan bilder", en: "No Pictures" },
-                6: { sv: "Längdskala Blandat", en: "Mixed Length Scale" }
-            },
-            graph: {
-                1: { sv: "Hitta m (skärning)", en: "Find y-intercept (m)" },
-                2: { sv: "Hitta k (positiv)", en: "Find slope (Positive)" },
-                3: { sv: "Hitta k (negativ)", en: "Find slope (Negative)" },
-                4: { sv: "Hitta funktion (y=kx+m)", en: "Find equation (y=kx+m)" },
-                5: { sv: "Blandat", en: "Mixed graphs" }
-            }
+            equation: { 1: { sv: "Enstegsekvationer", en: "One-step equations" }, 2: { sv: "Tvåstegsekvationer", en: "Two-step equations" }, 3: { sv: "X på båda sidor", en: "X on both sides" }, 4: { sv: "Multiplikation med parentes", en: "Multiplication with parentheses" }, 5: { sv: "Blandat", en: "Mixed" } },
+            simplify: { 1: { sv: "Förenkla uttryck", en: "Combine like terms" }, 2: { sv: "Parenteser", en: "Distribute into parentheses" }, 3: { sv: "Distribuera & förenkla", en: "Distribute and combine" }, 4: { sv: "Subtrahera parenteser", en: "Subtracting parentheses" }, 5: { sv: "Blandat", en: "Mixed expressions" } },
+            geometry: { 1: { sv: "Omkrets (Rektangel)", en: "Perimeter (Rectangle)" }, 2: { sv: "Area (Rektangel)", en: "Area (Rectangle)" }, 3: { sv: "Area (Triangel)", en: "Area (Triangle)" }, 4: { sv: "Omkrets (Cirkel)", en: "Circumference (Circle)" }, 5: { sv: "Sammansatta figurer", en: "Composite shapes" } },
+            scale: { 1: { sv: "Begreppsförståelse", en: "Concepts" }, 2: { sv: "Beräkna längd (Enkel)", en: "Calc Length (Simple)" }, 3: { sv: "Beräkna längd (Svår)", en: "Calc Length (Hard)" }, 4: { sv: "Ange skala", en: "Determine Scale" }, 5: { sv: "Utan bilder", en: "No Pictures" }, 6: { sv: "Längdskala Blandat", en: "Mixed Length Scale" } },
+            graph: { 1: { sv: "Hitta m (skärning)", en: "Find y-intercept (m)" }, 2: { sv: "Hitta k (positiv)", en: "Find slope (Positive)" }, 3: { sv: "Hitta k (negativ)", en: "Find slope (Negative)" }, 4: { sv: "Hitta funktion (y=kx+m)", en: "Find equation (y=kx+m)" }, 5: { sv: "Blandat", en: "Mixed graphs" } }
         };
 
         const UI_TEXT = {
@@ -122,7 +87,8 @@
                 dashboardTitle: "Välj område att öva på",
                 startBtn: "Börja öva",
                 backBtn: "Avsluta övning",
-                selectLevel: "Välj nivå:"
+                selectLevel: "Välj nivå:",
+                hintsTitle: "Ledtrådar"
             },
             en: {
                 streak: "Streak",
@@ -141,11 +107,11 @@
                 dashboardTitle: "Choose a topic to practice",
                 startBtn: "Start Practice",
                 backBtn: "Quit Practice",
-                selectLevel: "Select Level:"
+                selectLevel: "Select Level:",
+                hintsTitle: "Hints"
             }
         };
 
-        // --- UTILS ---
         const MathText = ({ text, className = "", large = false }) => {
             if (!text) return null;
             const parts = text.split(/(\$[^\$]+\$)/g);
@@ -165,7 +131,6 @@
             );
         };
 
-        // --- VISUALS ---
         const GraphCanvas = ({ data }) => {
             const canvasRef = useRef(null);
             useEffect(() => {
@@ -174,53 +139,27 @@
                 const ctx = canvas.getContext('2d');
                 const width = canvas.width; const height = canvas.height;
                 const range = data.range || 10;
-                
-                // Clear and Setup
                 ctx.clearRect(0, 0, width, height);
-                ctx.font = '10px Inter, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
+                ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 const toX = (val) => (val + range) * (width / (range * 2));
                 const toY = (val) => height - (val + range) * (height / (range * 2));
-                
-                // Grid
                 ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
                 for (let i = -range; i <= range; i += data.gridStep || 1) {
                     ctx.beginPath(); ctx.moveTo(toX(i), 0); ctx.lineTo(toX(i), height); ctx.stroke();
                     ctx.beginPath(); ctx.moveTo(0, toY(i)); ctx.lineTo(width, toY(i)); ctx.stroke();
                 }
-
-                // Axes
                 ctx.strokeStyle = '#374151'; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(toX(0), 0); ctx.lineTo(toX(0), height); ctx.stroke(); // Y-Axis
-                ctx.beginPath(); ctx.moveTo(0, toY(0)); ctx.lineTo(width, toY(0)); ctx.stroke(); // X-Axis
-
-                // Ticks & Numbers
-                ctx.fillStyle = '#6b7280';
-                const tickSize = 3;
-                const step = data.labelStep || 2; 
-
+                ctx.beginPath(); ctx.moveTo(toX(0), 0); ctx.lineTo(toX(0), height); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, toY(0)); ctx.lineTo(width, toY(0)); ctx.stroke();
+                ctx.fillStyle = '#6b7280'; const tickSize = 3; const step = data.labelStep || 2; 
                 for (let i = -range; i <= range; i += step) {
                     if (i === 0) continue; 
-
-                    const xPos = toX(i);
-                    const yOrigin = toY(0);
-                    ctx.beginPath(); ctx.moveTo(xPos, yOrigin - tickSize); ctx.lineTo(xPos, yOrigin + tickSize); ctx.stroke();
-                    ctx.fillText(i.toString(), xPos, yOrigin + 12);
-
-                    const yPos = toY(i);
-                    const xOrigin = toX(0);
-                    ctx.beginPath(); ctx.moveTo(xOrigin - tickSize, yPos); ctx.lineTo(xOrigin + tickSize, yPos); ctx.stroke();
-                    ctx.fillText(i.toString(), xOrigin - 12, yPos);
+                    const xPos = toX(i); const yOrigin = toY(0); ctx.beginPath(); ctx.moveTo(xPos, yOrigin - tickSize); ctx.lineTo(xPos, yOrigin + tickSize); ctx.stroke(); ctx.fillText(i.toString(), xPos, yOrigin + 12);
+                    const yPos = toY(i); const xOrigin = toX(0); ctx.beginPath(); ctx.moveTo(xOrigin - tickSize, yPos); ctx.lineTo(xOrigin + tickSize, yPos); ctx.stroke(); ctx.fillText(i.toString(), xOrigin - 12, yPos);
                 }
-
-                // Lines
                 data.lines.forEach(line => {
-                    ctx.strokeStyle = line.color || '#dc2626'; ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    const x1 = -range; const y1 = line.slope * x1 + line.intercept;
-                    const x2 = range; const y2 = line.slope * x2 + line.intercept;
+                    ctx.strokeStyle = line.color || '#dc2626'; ctx.lineWidth = 3; ctx.beginPath();
+                    const x1 = -range; const y1 = line.slope * x1 + line.intercept; const x2 = range; const y2 = line.slope * x2 + line.intercept;
                     ctx.moveTo(toX(x1), toY(y1)); ctx.lineTo(toX(x2), toY(y2)); ctx.stroke();
                 });
             }, [data]);
@@ -230,42 +169,12 @@
         const GeometryVisual = ({ data }) => {
             if (!data) return null;
             if (data.type === 'scale_single' || data.type === 'scale_compare') {
-                const shapeEmojis = {
-                    square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺',
-                    rhombus: '🔶', parallelogram: '▰', pentagon: '⬟', hexagon: '🛑',
-                    octagon: '🛑', star: '⭐', arrow: '➡', heart: '❤️', 
-                    cross: '➕', lightning: '⚡', kite: '🪁',
-                    cube: '🧊', cylinder: '🛢️', pyramid: '⛰️', cone: '🍦', sphere: '🔮'
-                };
+                const shapeEmojis = { square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', rhombus: '🔶', parallelogram: '▰', pentagon: '⬟', hexagon: '🛑', octagon: '🛑', star: '⭐', arrow: '➡', heart: '❤️', cross: '➕', lightning: '⚡', kite: '🪁', cube: '🧊', cylinder: '🛢️', pyramid: '⛰️', cone: '🍦', sphere: '🔮' };
                 const emoji = shapeEmojis[data.shape] || '📦'; 
-
-                // Increased sizes as requested (80px -> 120px, 50px -> 80px)
-                const ShapeIcon = ({ size }) => (
-                    <div className="flex items-center justify-center text-6xl" style={{width:size, height:size}}>
-                        {emoji}
-                    </div>
-                );
-
+                const ShapeIcon = ({ size }) => <div className="flex items-center justify-center text-6xl" style={{width:size, height:size}}>{emoji}</div>;
                 if (data.type === 'scale_single') return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="120px" /><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>;
-                
-                return (
-                    <div className="flex items-end justify-center gap-6 sm:gap-12 my-6">
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span>
-                            <ShapeIcon size="80px" />
-                            <span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span>
-                        </div>
-                        <div className="pb-8 text-gray-300 text-3xl">→</div>
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span>
-                            <ShapeIcon size="120px" />
-                            <span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span>
-                        </div>
-                    </div>
-                );
+                return <div className="flex items-end justify-center gap-6 sm:gap-12 my-6"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="80px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div><div className="pb-8 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="120px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div></div>;
             }
-            
-            // Other shapes code remains same...
             const SvgContainer = ({ children }) => <svg width="180" height="180" viewBox="0 0 200 200" className="my-4">{children}</svg>;
             if (data.type === 'rectangle') return <SvgContainer><rect x={(200-(data.width*140/Math.max(data.width,data.height)))/2} y={(200-(data.height*140/Math.max(data.width,data.height)))/2} width={data.width*140/Math.max(data.width,data.height)} height={data.height*140/Math.max(data.width,data.height)} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" /><text x="100" y={(200-(data.height*140/Math.max(data.width,data.height)))/2 + data.height*140/Math.max(data.width,data.height) + 20} textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.bottom}</text><text x={(200-(data.width*140/Math.max(data.width,data.height)))/2 + data.width*140/Math.max(data.width,data.height) + 10} y="100" textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.right}</text></SvgContainer>;
             if (data.type === 'triangle') { const sc = 140/Math.max(data.width,data.height); const b = data.width*sc, h = data.height*sc, x = (200-b)/2, by = 170, ty = 170-h; return <SvgContainer><polygon points={`${x},${by} ${x+b},${by} 100,${ty}`} fill="#e0e7ff" stroke="#4f46e5" strokeWidth="3" /><line x1="100" y1={ty} x2="100" y2={by} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /><text x="100" y={by+20} textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.bottom}</text><text x="105" y={by-h/2} textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.height}</text></SvgContainer>; }
@@ -283,54 +192,26 @@
             return null;
         };
 
-        // --- DASHBOARD COMPONENT ---
+        // --- DASHBOARD ---
         const Dashboard = ({ lang, onStart, selectedTopic, selectedLevel, onSelect }) => {
             const ui = UI_TEXT[lang];
-            
             return (
                 <div className="max-w-6xl mx-auto w-full p-4 fade-in">
-                    <div className="text-center mb-10">
-                        <h2 className="text-3xl font-bold text-gray-800 mb-2">{ui.dashboardTitle}</h2>
-                        <div className="h-1 w-20 bg-indigo-500 mx-auto rounded-full"></div>
-                    </div>
-
+                    <div className="text-center mb-10"><h2 className="text-3xl font-bold text-gray-800 mb-2">{ui.dashboardTitle}</h2><div className="h-1 w-20 bg-indigo-500 mx-auto rounded-full"></div></div>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">
                         {Object.entries(CATEGORIES).map(([catKey, category]) => (
                             <div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}>
-                                <div className={`bg-${category.color}-50 p-4 border-b border-${category.color}-100`}>
-                                    <h3 className={`text-lg font-bold text-${category.color}-700 uppercase tracking-wide flex items-center gap-2`}>
-                                        <span className={`w-3 h-3 rounded-full bg-${category.color}-500`}></span>
-                                        {category.label[lang]}
-                                    </h3>
-                                </div>
+                                <div className={`bg-${category.color}-50 p-4 border-b border-${category.color}-100`}><h3 className={`text-lg font-bold text-${category.color}-700 uppercase tracking-wide flex items-center gap-2`}><span className={`w-3 h-3 rounded-full bg-${category.color}-500`}></span>{category.label[lang]}</h3></div>
                                 <div className="p-4 space-y-4 flex-1">
                                     {category.topics.map(topic => (
                                         <div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
                                             <div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div>
-                                            
-                                            {/* Dropdown Selector for Level */}
                                             <div className="relative">
-                                                <select
-                                                    value={selectedTopic === topic.id ? selectedLevel : 0}
-                                                    onChange={(e) => onSelect(topic.id, Number(e.target.value))}
-                                                    className={`w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-${category.color}-500 appearance-none cursor-pointer ${
-                                                        selectedTopic === topic.id ? `ring-2 ring-${category.color}-500 border-${category.color}-500` : ''
-                                                    }`}
-                                                >
+                                                <select value={selectedTopic === topic.id ? selectedLevel : 0} onChange={(e) => onSelect(topic.id, Number(e.target.value))} className={`w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-${category.color}-500 appearance-none cursor-pointer ${selectedTopic === topic.id ? `ring-2 ring-${category.color}-500 border-${category.color}-500` : ''}`}>
                                                     <option value={0} disabled>{ui.selectLevel}</option>
-                                                    {[1, 2, 3, 4, 5, 6].map(lvl => {
-                                                        // Only render levels that exist in descriptions
-                                                        if (!LEVEL_DESCRIPTIONS[topic.id]?.[lvl]) return null;
-                                                        return (
-                                                            <option key={lvl} value={lvl}>
-                                                                {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
-                                                            </option>
-                                                        );
-                                                    })}
+                                                    {[1, 2, 3, 4, 5, 6].map(lvl => { if (!LEVEL_DESCRIPTIONS[topic.id]?.[lvl]) return null; return <option key={lvl} value={lvl}>{lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}</option>; })}
                                                 </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                                    <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                                                </div>
+                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div>
                                             </div>
                                         </div>
                                     ))}
@@ -338,43 +219,23 @@
                             </div>
                         ))}
                     </div>
-
-                    {/* Floating Action Button */}
-                    <div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20">
-                        <button 
-                            onClick={onStart}
-                            className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3
-                                ${selectedTopic 
-                                    ? 'bg-indigo-600 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-indigo-700' 
-                                    : 'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'
-                                }`}
-                        >
-                            {ui.startBtn} <span>🚀</span>
-                        </button>
-                    </div>
+                    <div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20"><button onClick={onStart} className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 ${selectedTopic ? 'bg-indigo-600 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-indigo-700' : 'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}`}>{ui.startBtn} <span>🚀</span></button></div>
                 </div>
             );
         };
 
-        // --- PRACTICE VIEW COMPONENT (Legacy Main View) ---
+        // --- PRACTICE VIEW ---
         const PracticeView = ({ lang, ui, question, loading, feedback, streak, input, setInput, handleSubmit, handleHint, handleSolution, revealedClues, uiState, actions }) => {
-            const [historyOpen, setHistoryOpen] = useState(false);
             const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
-            // Handle multiple choice clicks
-            const handleChoiceClick = (choice) => {
-                if (feedback === 'correct') return;
-                setInput(choice);
-                // We need to pass the choice directly since setInput is async
-                handleSubmit({ preventDefault: () => {} }, choice);
-            };
+            // RESOLVE DESCRIPTION LANGUAGE HERE
+            const descriptionText = typeof question?.renderData?.description === 'object' 
+                ? question.renderData.description[lang] 
+                : question?.renderData?.description;
 
-            // Wrapped submit for form
-            const handleFormSubmit = (e) => {
-                handleSubmit(e, input);
-            };
+            const handleChoiceClick = (choice) => { if (feedback === 'correct') return; setInput(choice); handleSubmit({ preventDefault: () => {} }, choice); };
+            const handleFormSubmit = (e) => { handleSubmit(e, input); };
 
-            // History Drawer Components
             const HistoryList = ({ history }) => (
                 <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="p-4 border-b bg-gray-50 flex justify-between items-center"><h2 className="font-bold text-gray-700">{ui.history}</h2><span className="text-xs text-gray-400">{history.length}</span></div>
@@ -395,18 +256,17 @@
                     {mobileHistoryOpen && <div className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm lg:hidden" onClick={() => setMobileHistoryOpen(false)}></div>}
                     <div className={`fixed inset-y-0 left-0 w-80 bg-white shadow-2xl transform transition-transform duration-300 z-50 flex flex-col lg:hidden ${mobileHistoryOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                         <div className="p-4 border-b flex justify-between items-center bg-gray-50"><h2 className="font-bold text-gray-700">{ui.history}</h2><button onClick={() => setMobileHistoryOpen(false)} className="text-gray-400">✕</button></div>
-                        <div className="flex-1 overflow-y-auto p-4"><HistoryList history={uiState.history} /></div> {/* Reusing simplified logic inside for mobile */}
+                        <div className="flex-1 overflow-y-auto p-4"><HistoryList history={uiState.history} /></div>
                     </div>
                 </>
             );
 
-            // Clue Panel
             const CluePanel = () => {
                 if (revealedClues === 0) return null;
                 const visibleClues = question.clues.slice(0, revealedClues);
                 return (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 shadow-sm mb-4 animate-fade-in">
-                        <div className="flex items-center gap-2 mb-4 text-yellow-800 font-bold border-b border-yellow-200 pb-2"><span>💡 Hints ({revealedClues}/{question.clues.length})</span></div>
+                        <div className="flex items-center gap-2 mb-4 text-yellow-800 font-bold border-b border-yellow-200 pb-2"><span>💡 {ui.hintsTitle} ({revealedClues}/{question.clues.length})</span></div>
                         <div className="space-y-6">{visibleClues.map((clue, i) => (<div key={i} className="group animate-slide-down"><div className="text-sm text-yellow-900 mb-2 font-medium leading-relaxed"><MathText text={clue.text} /></div>{clue.latex && <div className="bg-white p-3 rounded-lg border border-yellow-200 text-center shadow-sm overflow-x-auto"><MathText text={`$${clue.latex}$`} large={true} /></div>}</div>))}</div>
                     </div>
                 );
@@ -415,20 +275,11 @@
             return (
                 <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
                     <MobileDrawer />
-                    
-                    {/* Left Column: Question */}
                     <div className="flex-1 w-full min-w-0">
-                        {/* Header with Back Button */}
                         <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
-                            <button onClick={actions.goBack} className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 font-semibold text-sm px-2 py-1 rounded transition-colors">
-                                <span>←</span> {ui.backBtn}
-                            </button>
-                            <div className="flex items-center gap-3">
-                                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">{uiState.topic} • Lvl {uiState.level}</span>
-                                <button onClick={() => setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>
-                            </div>
+                            <button onClick={actions.goBack} className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 font-semibold text-sm px-2 py-1 rounded transition-colors"><span>←</span> {ui.backBtn}</button>
+                            <div className="flex items-center gap-3"><span className="text-xs font-bold uppercase tracking-wider text-gray-400">{uiState.topic} • Lvl {uiState.level}</span><button onClick={() => setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button></div>
                         </div>
-
                         <main className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
                             {loading ? (
                                 <div className="p-20 text-center flex flex-col items-center gap-4"><div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div></div>
@@ -438,31 +289,15 @@
                                         {question.renderData.graph ? (<GraphCanvas data={question.renderData.graph} />) : 
                                          question.renderData.geometry ? (<GeometryVisual data={question.renderData.geometry} />) : 
                                          (<div className="flex flex-col items-center justify-center w-full">
-                                            {/* Static fallback based on description text for Geometry */}
-                                            {uiState.topic === 'geometry' && <StaticGeometryVisual description={question.renderData.description} />}
+                                            {uiState.topic === 'geometry' && <StaticGeometryVisual description={descriptionText} />}
                                             {question.renderData.latex && <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true} /></div>}
                                           </div>)}
                                     </div>
-                                    <div className="mb-10 text-center"><h2 className="text-xl font-medium text-gray-700 leading-relaxed"><MathText text={question.renderData.description} /></h2></div>
-                                    
-                                    {/* Answer Area: Text Input OR Multiple Choice */}
+                                    <div className="mb-10 text-center"><h2 className="text-xl font-medium text-gray-700 leading-relaxed"><MathText text={descriptionText} /></h2></div>
                                     {question.renderData.answerType === 'multiple_choice' ? (
                                         <div className="max-w-md mx-auto grid grid-cols-2 gap-4">
                                             {question.renderData.choices.map((choice, idx) => (
-                                                <button 
-                                                    key={idx} 
-                                                    onClick={() => handleChoiceClick(choice)}
-                                                    className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 
-                                                        ${feedback === 'correct' && choice === input 
-                                                            ? 'bg-green-500 border-green-500 text-white' 
-                                                            : feedback === 'incorrect' && choice === input
-                                                                ? 'bg-red-500 border-red-500 text-white'
-                                                                : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-500 hover:text-indigo-600'
-                                                        }`}
-                                                    disabled={feedback === 'correct'}
-                                                >
-                                                    {choice}
-                                                </button>
+                                                <button key={idx} onClick={() => handleChoiceClick(choice)} className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback === 'correct' && choice === input ? 'bg-green-500 border-green-500 text-white' : feedback === 'incorrect' && choice === input ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-500 hover:text-indigo-600'}`} disabled={feedback === 'correct'}>{choice}</button>
                                             ))}
                                         </div>
                                     ) : (
@@ -473,7 +308,6 @@
                                             <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-green-500 shadow-green-200 cursor-default' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 hover:shadow-lg'}`}>{feedback === 'correct' ? ui.correct : feedback === 'incorrect' ? ui.incorrect : ui.submit}</button>
                                         </form>
                                     )}
-                                    
                                     <div className="mt-8 flex gap-3 justify-center">
                                         <button type="button" onClick={handleHint} disabled={!question.clues || revealedClues >= question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button>
                                         <button type="button" onClick={handleSolution} disabled={!question.clues || revealedClues >= question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button>
@@ -484,8 +318,6 @@
                             )}
                         </main>
                     </div>
-
-                    {/* Right Column: Clues + History */}
                     <div className="lg:w-80 w-full shrink-0 flex flex-col gap-4">
                         <CluePanel />
                         <div className="hidden lg:block flex-1 min-h-0"><HistoryList history={uiState.history} /></div>
@@ -494,9 +326,8 @@
             );
         };
 
-        // --- ROOT APP ---
         function App() {
-            const [view, setView] = useState('dashboard'); // 'dashboard' | 'practice'
+            const [view, setView] = useState('dashboard'); 
             const [lang, setLang] = useState('sv'); 
             const [topic, setTopic] = useState('');
             const [level, setLevel] = useState(0);
@@ -522,54 +353,29 @@
                 } catch(e) { console.error(e); setQuestion(null); } finally { setLoading(false); }
             };
 
-            const startPractice = () => {
-                if(topic && level) {
-                    setView('practice');
-                    fetchQuestion(topic, level, lang);
-                }
-            };
-
-            const quitPractice = () => {
-                setView('dashboard');
-                setQuestion(null);
-            };
-
-            const handleSelection = (t, l) => {
-                setTopic(t);
-                setLevel(l);
-            };
-
+            const startPractice = () => { if(topic && level) { setView('practice'); fetchQuestion(topic, level, lang); } };
+            const quitPractice = () => { setView('dashboard'); setQuestion(null); };
+            const handleSelection = (t, l) => { setTopic(t); setLevel(l); };
             const handleHint = () => { if (question?.clues) setRevealedClues(p => Math.min(p + 1, question.clues.length)); };
             const handleSolution = () => { if (question?.clues) setRevealedClues(question.clues.length); };
 
             const handleSubmit = async (e, directInput) => {
                 e.preventDefault();
                 const answerToSubmit = directInput !== undefined ? directInput : input;
-                
                 if (!question || !answerToSubmit) return;
-                
-                const res = await fetch('/api/answer', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ answer: answerToSubmit, token: question.token })
-                });
+                const res = await fetch('/api/answer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answer: answerToSubmit, token: question.token }) });
                 const result = await res.json();
                 
-                setHistory(prev => [{ topic, level, correct: result.correct, text: question.renderData.description || question.renderData.latex, clueUsed: revealedClues > 0, time: Date.now() }, ...prev]);
+                // For history, resolve description text
+                const descText = typeof question.renderData.description === 'object' ? question.renderData.description[lang] : question.renderData.description;
                 
-                if (result.correct) { 
-                    setFeedback('correct'); 
-                    setStreak(s => s + 1); 
-                    setTimeout(() => fetchQuestion(topic, level, lang), 1500); 
-                } else { 
-                    setFeedback('incorrect'); 
-                    setStreak(0); 
-                }
+                setHistory(prev => [{ topic, level, correct: result.correct, text: descText || question.renderData.latex, clueUsed: revealedClues > 0, time: Date.now() }, ...prev]);
+                if (result.correct) { setFeedback('correct'); setStreak(s => s + 1); setTimeout(() => fetchQuestion(topic, level, lang), 1500); } 
+                else { setFeedback('incorrect'); setStreak(0); }
             };
 
             return (
                 <div className="min-h-screen flex flex-col bg-gray-50">
-                    {/* Persistent Header */}
                     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm">
                         <div className="max-w-7xl mx-auto flex justify-between items-center">
                             <div className="flex items-center gap-4">
@@ -579,34 +385,7 @@
                             <button onClick={() => setLang(l => l === 'sv' ? 'en' : 'sv')} className="text-sm font-semibold text-gray-600 hover:text-indigo-600 transition-colors">{lang === 'sv' ? '🇸🇪 Svenska' : '🇬🇧 English'}</button>
                         </div>
                     </header>
-
-                    {view === 'dashboard' ? (
-                        <Dashboard 
-                            lang={lang} 
-                            selectedTopic={topic} 
-                            selectedLevel={level} 
-                            onSelect={handleSelection} 
-                            onStart={startPractice} 
-                        />
-                    ) : (
-                        <PracticeView 
-                            lang={lang}
-                            ui={ui}
-                            question={question}
-                            loading={loading}
-                            feedback={feedback}
-                            streak={streak}
-                            input={input}
-                            setInput={setInput}
-                            handleSubmit={handleSubmit}
-                            handleHint={handleHint}
-                            handleSolution={handleSolution}
-                            revealedClues={revealedClues}
-                            uiState={{ history, topic, level }}
-                            actions={{ goBack: quitPractice, retry: () => fetchQuestion(topic, level, lang) }}
-                        />
-                    )}
-                    
+                    {view === 'dashboard' ? (<Dashboard lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice} />) : (<PracticeView lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} revealedClues={revealedClues} uiState={{ history, topic, level }} actions={{ goBack: quitPractice, retry: () => fetchQuestion(topic, level, lang) }} />)}
                     {view === 'dashboard' && <footer className="mt-auto py-8 text-gray-400 text-xs text-center border-t border-gray-200">Anpassa Math Platform • v2.5</footer>}
                 </div>
             );
