@@ -1,34 +1,35 @@
-import { DifficultyConfig } from "../types/generator";
-
 export class ProgressionRules {
-    // The Magic Number
+    // The streak required to trigger a level-up suggestion
     private static readonly STREAK_THRESHOLD = 8;
+
+    // Define the specific max level for each generator
+    // This ensures the system knows when to stop offering upgrades
+    private static readonly MAX_LEVELS: Record<string, number> = {
+        scale: 7,      // 6 Levels + Mixed
+        equation: 5,   // 4 Levels + Mixed
+        simplify: 5,   // 4 Levels + Mixed
+        geometry: 5,   // 4 Levels + Mixed
+        graph: 5       // 4 Levels + Mixed
+    };
 
     /**
      * Checks if the user qualifies for a difficulty increase.
-     * Returns a message object if they do, or null if they don't.
+     * @param newStreak The streak count AFTER the current correct answer.
+     * @param currentLevel The user's current level.
+     * @param topic The current topic (e.g., 'scale', 'geometry').
      */
-    public static checkLevelUp(streak: number, currentLevel: number): { shouldPromote: boolean, message?: string } {
-        if (streak >= this.STREAK_THRESHOLD && currentLevel < 5) {
-            return { 
-                shouldPromote: true, 
-                message: `🔥 You are on fire! You've answered ${this.STREAK_THRESHOLD} in a row. Do you want to try Level ${currentLevel + 1}?` 
-            };
+    public static checkLevelUp(newStreak: number, currentLevel: number, topic: string): boolean {
+        // Default to 5 if topic not found, but we should have all defined
+        const maxLevel = this.MAX_LEVELS[topic] || 5;
+        
+        // Trigger if:
+        // 1. Streak > 0
+        // 2. Streak is a multiple of 8 (8, 16, 24...)
+        // 3. User is not yet at the max level for this topic
+        if (newStreak > 0 && newStreak % this.STREAK_THRESHOLD === 0 && currentLevel < maxLevel) {
+            return true;
         }
-        return { shouldPromote: false };
-    }
-
-    /**
-     * Returns the difficulty config for a specific level.
-     * This ensures all generators use the exact same difficulty scale.
-     */
-    public static getConfig(level: number): DifficultyConfig {
-        return {
-            level: level,
-            allowNegatives: level > 1, 
-            allowFractions: level > 3,
-            variableSymbol: 'x',
-            complexity: level > 2 ? 'two-step' : 'one-step'
-        };
+        
+        return false;
     }
 }
