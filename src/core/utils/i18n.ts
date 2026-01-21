@@ -23,7 +23,7 @@ export const TERMS = {
         square: { sv: "kvadrat", en: "square" },
         rectangle: { sv: "rektangel", en: "rectangle" },
         circle: { sv: "cirkel", en: "circle" },
-        semicircle: { sv: "halvcirkel", en: "semicircle" }, // Corrected
+        semicircle: { sv: "halvcirkel", en: "semicircle" },
         triangle: { sv: "triangel", en: "triangle" },
         rhombus: { sv: "romb", en: "rhombus" },
         parallelogram: { sv: "parallellogram", en: "parallelogram" },
@@ -46,12 +46,11 @@ export const TERMS = {
         cone: { sv: "kon", en: "cone" },
         sphere: { sv: "sfär", en: "sphere" }
     } as Record<string, {sv:string, en:string}>,
-    // Plural forms for correct grammar
     shapes_plural: {
         square: { sv: "kvadrater", en: "squares" },
         rectangle: { sv: "rektanglar", en: "rectangles" },
         circle: { sv: "cirklar", en: "circles" },
-        semicircle: { sv: "halvcirklar", en: "semicircles" }, // Corrected
+        semicircle: { sv: "halvcirklar", en: "semicircles" },
         triangle: { sv: "trianglar", en: "triangles" },
         parallelogram: { sv: "parallellogrammer", en: "parallelograms" },
         rhombus: { sv: "romber", en: "rhombuses" }
@@ -71,13 +70,11 @@ export const TERMS = {
         conv_same: { sv: "Omvandla till samma enhet (cm)", en: "Convert to same unit (cm)" },
         setup_ratio: { sv: "Ställ upp förhållandet", en: "Set up ratio" },
         
-        // Area Scale Specific
         calc_area_img: { sv: "Beräkna bildens area", en: "Calculate image area" },
         calc_area_real: { sv: "Beräkna verklighetens area", en: "Calculate reality area" },
         calc_area_scale: { sv: "Beräkna areaskala (längdskala²)", en: "Calculate area scale (length scale²)" },
         calc_new_area: { sv: "Beräkna ny area", en: "Calculate new area" }
     },
-    // ... (rest of the file remains same, Algebra, Geometry, Simplification, Graph)
     algebra: {
         intro: (eq: string) => ({ sv: `Börja med ekvationen: $${eq}$`, en: `Start with the equation: $${eq}$` }),
         sub_var: (term: string) => ({ sv: `Subtrahera ${term} från båda sidor`, en: `Subtract ${term} from both sides` }),
@@ -85,7 +82,16 @@ export const TERMS = {
         add: (n: number) => ({ sv: `Addera ${n} till båda sidor`, en: `Add ${n} to both sides` }),
         divide: (n: number) => ({ sv: `Dela båda sidor med ${n}`, en: `Divide both sides by ${n}` }),
         multiply: (n: number) => ({ sv: `Multiplicera båda sidor med ${n}`, en: `Multiply both sides by ${n}` }),
-        distribute: (n: number) => ({ sv: `Multiplicera in ${n} i parentesen`, en: `Distribute ${n} into the parentheses` })
+        distribute: (n: number) => ({ sv: `Multiplicera in ${n} i parentesen`, en: `Distribute ${n} into the parentheses` }),
+        
+        // NEW PROBLEM SOLVING TERMS
+        number: { sv: "talet", en: "the number" },
+        half: { sv: "hälften", en: "half" },
+        third: { sv: "en tredjedel", en: "a third" },
+        quarter: { sv: "en fjärdedel", en: "a quarter" },
+        fifth: { sv: "en femtedel", en: "a fifth" },
+        discount: { sv: "rabatt", en: "discount" },
+        removed: { sv: "tog bort", en: "removed" }
     },
     geometry: {
         desc_rect: { sv: "En rektangel", en: "A rectangle" },
