@@ -8,7 +8,8 @@ export class LinearEquationGenerator {
     const color = "\\mathbf{\\color{#D35400}"; 
 
     let mode = level;
-    if (level >= 6) mode = rng.intBetween(2, 5); 
+    // For Mixed levels, pick a random mode
+    if (level === 5) mode = rng.intBetween(1, 4); 
 
     const s = (val: number) => Math.round(val * multiplier);
 
@@ -18,6 +19,7 @@ export class LinearEquationGenerator {
 
     // --- LEVEL 1: One-Step Equations (All 4 Operations) ---
     if (mode === 1) {
+        // 1: Mul, 2: Div, 3: Add, 4: Sub
         const type = rng.intBetween(1, 4); 
         
         // Type 1: Multiplication (ax = b)
@@ -160,7 +162,7 @@ export class LinearEquationGenerator {
         ];
     }
 
-    // --- LEVEL 4/5: Parentheses & Complexity (a(x + b) = c) ---
+    // --- LEVEL 4: Parentheses & Complexity (a(x + b) = c) ---
     else {
         const x = rng.intBetween(s(2), s(10));
         const a = rng.intBetween(s(2), s(5));

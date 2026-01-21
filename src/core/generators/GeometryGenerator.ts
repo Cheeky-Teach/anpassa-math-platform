@@ -34,7 +34,12 @@ export class GeometryGenerator {
             { text: t(lang, TERMS.geometry.step_calc), latex: `${color}{${qData.answer}}}` }
         ];
 
-        geometry = { type: 'rectangle', width: w, height: h, labels: { bottom: w, right: h } };
+        geometry = { 
+            type: 'rectangle', 
+            width: w, 
+            height: h, 
+            labels: { bottom: w, right: h } 
+        };
     }
     
     // --- LEVEL 2: Area (Rectangles) ---
@@ -55,10 +60,15 @@ export class GeometryGenerator {
             { text: t(lang, TERMS.geometry.step_calc), latex: `${w} \\cdot ${h} = ${color}{${qData.answer}}}` }
         ];
 
-        geometry = { type: 'rectangle', width: w, height: h, labels: { bottom: w, right: h } };
+        geometry = { 
+            type: 'rectangle', 
+            width: w, 
+            height: h, 
+            labels: { bottom: w, right: h } 
+        };
     }
 
-    // --- LEVEL 3: Triangles (Area) - With Rotation & Right Angles ---
+    // --- LEVEL 3: Triangles (Area) ---
     else if (mode === 3) {
         const b = rng.intBetween(s(4), s(14));
         const h = rng.intBetween(s(2), s(10)) * 2; 
@@ -138,7 +148,7 @@ export class GeometryGenerator {
             type: 'circle',
             show: giveDiameter ? 'diameter' : 'radius',
             value: val,
-            labels: { main: val }
+            labels: { radius: r }
         };
     }
 
@@ -258,7 +268,7 @@ export class GeometryGenerator {
             latex: qData.latex,
             answerType: 'numeric',
             geometry: geometry,
-            variables: {}
+            variables: {} // Added required property
         },
         serverData: {
             answer: qData.answer,

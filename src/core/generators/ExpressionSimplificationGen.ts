@@ -88,7 +88,7 @@ export class ExpressionSimplificationGen {
             text_key: "simplify",
             description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.",
             latex: expr,
-            variables: {}, // FIX: Added missing property
+            variables: {}, 
             answerType: 'function_model' 
         },
         serverData: {

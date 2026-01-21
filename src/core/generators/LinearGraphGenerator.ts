@@ -42,7 +42,7 @@ export class LinearGraphGenerator {
             steps = [
                 { text: "Slope Formula", latex: "k = \\frac{\\Delta y}{\\Delta x}" },
                 { text: "Step 1 Right", latex: `(0, ${m}) \\to (1, ${m+k})` },
-                { text: "Change in height", latex: `\\Delta y = ${k}` }
+                { text: "Change in height", latex: `\\Delta y = ${k} \\\\ \\\\ k = ${color}{${k}}}` }
             ];
         }
 
@@ -90,7 +90,7 @@ export class LinearGraphGenerator {
                     labelStep: 2, 
                     lines: [{ slope: k, intercept: m, color: '#dc2626' }] 
                 },
-                variables: {} // FIX: Added missing property
+                variables: {} // Added required property
             },
             serverData: { answer: answer, solutionSteps: steps }
         };
