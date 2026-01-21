@@ -6,7 +6,6 @@ import { TextEngine, ContextKey } from "../utils/textEngine";
 interface Scenario {
     id: string;
     context: ContextKey;
-    // Returns variables for the text, the answer, and the steps
     generateMath: (rng: Random, lang: Language) => { 
         variables: Record<string, string | number>; 
         answer: number; 
@@ -39,7 +38,17 @@ export class LinearEquationProblemGen {
 
                 const steps: Clue[] = [
                     { 
-                        text: t(lang, {sv: "Ställ upp en ekvation. Låt talet vara x.", en: "Set up an equation. Let the number be x."}), 
+                        text: t(lang, {
+                            sv: `Frågan handlar om ett "hemligt tal". Vi vet inte vilket tal det är, så vi kallar det för $x$.`,
+                            en: `The question is about a "secret number". We don't know what it is, so we call it $x$.`
+                        }), 
+                        latex: `\\text{Talet} = x` 
+                    },
+                    { 
+                        text: t(lang, {
+                            sv: `Vi multiplicerar talet med ${mul} och lägger till ${add}. Resultatet ska bli ${res}.`,
+                            en: `We multiply the number by ${mul} and add ${add}. The result should be ${res}.`
+                        }), 
                         latex: `${mul}x + ${add} = ${res}` 
                     },
                     { 
@@ -83,7 +92,17 @@ export class LinearEquationProblemGen {
 
                 const steps: Clue[] = [
                     {
-                        text: t(lang, {sv: `Låt $x$ vara antal ${item}.`, en: `Let $x$ be the number of ${item}.`}),
+                        text: t(lang, {
+                            sv: `Vi vill ta reda på hur många ${item} du köpte. Eftersom antalet är okänt kallar vi det för $x$.`,
+                            en: `We want to find out how many ${item} you bought. Since the quantity is unknown, we call it $x$.`
+                        }),
+                        latex: `\\text{Antal ${item}} = x`
+                    },
+                    {
+                        text: t(lang, {
+                            sv: `Varje sak kostar ${price} kr. Priset för $x$ stycken blir då ${price} gånger $x$. Sedan lägger vi till den fasta kostnaden på ${fixed} kr.`,
+                            en: `Each item costs ${price} kr. The price for $x$ items is ${price} times $x$. Then we add the fixed cost of ${fixed} kr.`
+                        }),
                         latex: `${price}x + ${fixed} = ${total}`
                     },
                     {
@@ -132,7 +151,17 @@ export class LinearEquationProblemGen {
 
                 const steps: Clue[] = [
                     {
-                        text: t(lang, {sv: `Kalla ${name2}s antal för $x$. Då har ${name1} $x + ${diff}$.`, en: `Let ${name2}'s amount be $x$. Then ${name1} has $x + ${diff}$.`}),
+                        text: t(lang, {
+                            sv: `Vi vet inte hur många ${item} ${name2} har. Därför kallar vi ${name2}s antal för $x$.`,
+                            en: `We don't know how many ${item} ${name2} has. So we call ${name2}'s amount $x$.`
+                        }),
+                        latex: `\\text{${name2}} = x`
+                    },
+                    {
+                        text: t(lang, {
+                            sv: `${name1} har ${diff} fler än ${name2}. Det betyder att ${name1} har $x + ${diff}$. Tillsammans har de ${total}.`,
+                            en: `${name1} has ${diff} more than ${name2}. This means ${name1} has $x + ${diff}$. Together they have ${total}.`
+                        }),
                         latex: `x + (x + ${diff}) = ${total}`
                     },
                     {
@@ -164,11 +193,10 @@ export class LinearEquationProblemGen {
             id: 'savings_goal',
             context: 'shopping', 
             generateMath: (rng, lang) => {
-                // Goal = starting + (weekly * weeks)
-                const weeks = rng.intBetween(3, 12); // Answer (x)
-                const weekly = rng.intBetween(20, 100); // Coefficient
-                const start = rng.intBetween(50, 500); // Constant
-                const goal = start + (weekly * weeks); // Total
+                const weeks = rng.intBetween(3, 12); 
+                const weekly = rng.intBetween(20, 100); 
+                const start = rng.intBetween(50, 500); 
+                const goal = start + (weekly * weeks); 
 
                 const vars = {
                     weekly: `$${weekly}$`,
@@ -178,7 +206,17 @@ export class LinearEquationProblemGen {
 
                 const steps: Clue[] = [
                     {
-                        text: t(lang, {sv: "Låt $x$ vara antal veckor.", en: "Let $x$ be the number of weeks."}),
+                        text: t(lang, {
+                            sv: `Frågan är "hur många veckor". Vi vet inte antalet veckor, så vi kallar det för $x$.`,
+                            en: `The question is "how many weeks". We don't know the number of weeks, so we call it $x$.`
+                        }),
+                        latex: `\\text{Veckor} = x`
+                    },
+                    {
+                        text: t(lang, {
+                            sv: `Du sparar ${weekly} kr varje vecka. På $x$ veckor blir det ${weekly} gånger $x$. Du har redan ${start} kr.`,
+                            en: `You save ${weekly} kr each week. In $x$ weeks that becomes ${weekly} times $x$. You already have ${start} kr.`
+                        }),
                         latex: `${weekly}x + ${start} = ${goal}`
                     },
                     {
@@ -206,16 +244,9 @@ export class LinearEquationProblemGen {
             id: 'age_future',
             context: 'age',
             generateMath: (rng, lang) => {
-                // Person A is 'diff' years older than B.
-                // In 'years' time, their sum will be 'total'.
-                // Current ages: B = x, A = x + diff.
-                // Future ages: B = x + years, A = x + diff + years.
-                // Sum: (x + years) + (x + diff + years) = total
-                // 2x + diff + 2*years = total
-                
-                const bAge = rng.intBetween(5, 15); // Answer (x)
-                const diff = rng.intBetween(2, 5); // Age difference
-                const years = rng.intBetween(3, 10); // Years into future
+                const bAge = rng.intBetween(5, 15); 
+                const diff = rng.intBetween(2, 5); 
+                const years = rng.intBetween(3, 10); 
                 const totalFutureSum = (bAge + years) + (bAge + diff + years);
 
                 const name1 = TextEngine.getRandomName(rng, 'age');
@@ -231,7 +262,17 @@ export class LinearEquationProblemGen {
 
                 const steps: Clue[] = [
                     {
-                        text: t(lang, {sv: `Låt ${name2}s nuvarande ålder vara $x$.`, en: `Let ${name2}'s current age be $x$.`}),
+                        text: t(lang, {
+                            sv: `Vi söker ${name2}s nuvarande ålder. Låt den åldern vara $x$.`,
+                            en: `We are looking for ${name2}'s current age. Let that age be $x$.`
+                        }),
+                        latex: `\\text{${name2}} = x`
+                    },
+                    {
+                        text: t(lang, {
+                            sv: `${name1} är ${diff} år äldre, alltså $x + ${diff}$. Om ${years} år har båda blivit ${years} år äldre.`,
+                            en: `${name1} is ${diff} years older, so $x + ${diff}$. In ${years} years, both will be ${years} years older.`
+                        }),
                         latex: `(x + ${years}) + ((x + ${diff}) + ${years}) = ${totalFutureSum}`
                     },
                     {
@@ -263,9 +304,7 @@ export class LinearEquationProblemGen {
             id: 'perimeter_find_side',
             context: 'school', // General context
             generateMath: (rng, lang) => {
-                // P = 2(l + w). Find l given w and P.
-                // 2(x + w) = P -> 2x + 2w = P
-                const length = rng.intBetween(5, 20); // Answer (x)
+                const length = rng.intBetween(5, 20); 
                 const width = rng.intBetween(3, 15);
                 const perimeter = 2 * (length + width);
 
@@ -276,7 +315,17 @@ export class LinearEquationProblemGen {
 
                 const steps: Clue[] = [
                     {
-                        text: t(lang, {sv: "Använd formeln för omkrets. Låt längden vara $x$.", en: "Use the perimeter formula. Let length be $x$."}),
+                        text: t(lang, {
+                            sv: `Vi söker rektangelns längd. Vi kallar längden för $x$.`,
+                            en: `We are looking for the length of the rectangle. We call the length $x$.`
+                        }),
+                        latex: `\\text{Längd} = x`
+                    },
+                    {
+                        text: t(lang, {
+                            sv: `Formeln för omkrets är $2 \\cdot (\\text{längd} + \\text{bredd})$. Vi vet att bredden är ${width} och totalen är ${perimeter}.`,
+                            en: `The formula for perimeter is $2 \\cdot (\\text{length} + \\text{width})$. We know width is ${width} and total is ${perimeter}.`
+                        }),
                         latex: `2(x + ${width}) = ${perimeter}`
                     },
                     {
@@ -308,9 +357,7 @@ export class LinearEquationProblemGen {
             id: 'consecutive_sum',
             context: 'school',
             generateMath: (rng, lang) => {
-                // Sum of 3 consecutive numbers: x + (x+1) + (x+2) = Total
-                // 3x + 3 = Total
-                const startNum = rng.intBetween(5, 30); // Answer (x)
+                const startNum = rng.intBetween(5, 30); 
                 const total = startNum + (startNum + 1) + (startNum + 2);
 
                 const vars = {
@@ -319,7 +366,17 @@ export class LinearEquationProblemGen {
 
                 const steps: Clue[] = [
                     {
-                        text: t(lang, {sv: "Låt det minsta talet vara $x$. De andra är $x+1$ och $x+2$.", en: "Let the smallest number be $x$. The others are $x+1$ and $x+2$."}),
+                        text: t(lang, {
+                            sv: `Vi söker det minsta talet. Låt det vara $x$.`,
+                            en: `We are looking for the smallest number. Let it be $x$.`
+                        }),
+                        latex: `\\text{Minsta talet} = x`
+                    },
+                    {
+                        text: t(lang, {
+                            sv: `Eftersom talen följer på varandra är nästa tal $x+1$ och talet efter det $x+2$. Summan ska bli ${total}.`,
+                            en: `Since the numbers are consecutive, the next is $x+1$ and the one after is $x+2$. The sum should be ${total}.`
+                        }),
                         latex: `x + (x+1) + (x+2) = ${total}`
                     },
                     {
@@ -351,9 +408,7 @@ export class LinearEquationProblemGen {
             id: 'taxi_fare',
             context: 'shopping',
             generateMath: (rng, lang) => {
-                // Cost = Start + (PricePerKm * km)
-                // Total = S + Px
-                const km = rng.intBetween(5, 25); // Answer (x)
+                const km = rng.intBetween(5, 25); 
                 const perKm = rng.intBetween(10, 30);
                 const startFee = rng.intBetween(40, 75);
                 const total = startFee + (perKm * km);
@@ -366,7 +421,17 @@ export class LinearEquationProblemGen {
 
                 const steps: Clue[] = [
                     {
-                        text: t(lang, {sv: "Låt $x$ vara antal kilometer.", en: "Let $x$ be the number of km."}),
+                        text: t(lang, {
+                            sv: `Vi vill veta hur lång resan var. Låt $x$ vara antalet kilometer.`,
+                            en: `We want to know how long the trip was. Let $x$ be the number of kilometers.`
+                        }),
+                        latex: `\\text{Kilometer} = x`
+                    },
+                    {
+                        text: t(lang, {
+                            sv: `Det kostar ${perKm} kr per kilometer, alltså ${perKm} gånger $x$. Plus startavgiften på ${startFee} kr.`,
+                            en: `It costs ${perKm} kr per kilometer, so ${perKm} times $x$. Plus the start fee of ${startFee} kr.`
+                        }),
                         latex: `${perKm}x + ${startFee} = ${total}`
                     },
                     {

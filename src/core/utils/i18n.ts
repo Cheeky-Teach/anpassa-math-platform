@@ -19,7 +19,6 @@ export const TERMS = {
         reality: { sv: "Verklighet", en: "Reality" }
     },
     shapes: {
-        // 2D Shapes
         square: { sv: "kvadrat", en: "square" },
         rectangle: { sv: "rektangel", en: "rectangle" },
         circle: { sv: "cirkel", en: "circle" },
@@ -31,15 +30,11 @@ export const TERMS = {
         hexagon: { sv: "sexhörning", en: "hexagon" },
         octagon: { sv: "åttahörning", en: "octagon" },
         kite: { sv: "drake", en: "kite" },
-        
-        // Symbols
         star: { sv: "stjärna", en: "star" },
         arrow: { sv: "pil", en: "arrow" },
         heart: { sv: "hjärta", en: "heart" },
         cross: { sv: "kors", en: "cross" },
         lightning: { sv: "blixt", en: "lightning" },
-        
-        // 3D Shapes
         cube: { sv: "kub", en: "cube" },
         cylinder: { sv: "cylinder", en: "cylinder" },
         pyramid: { sv: "pyramid", en: "pyramid" },
@@ -62,14 +57,12 @@ export const TERMS = {
         reduction: { sv: "Förminskning", en: "Reduction" },
         rule_reduction: { sv: "Eftersom det första talet är 1, är det en förminskning.", en: "Since the first number is 1, it is a reduction." },
         rule_enlargement: { sv: "Eftersom det första talet är större än 1, är det en förstoring.", en: "Since the first number is greater than 1, it is an enlargement." },
-        
         calc_cm: { sv: "Beräkna cm", en: "Calculate cm" },
         conv_m: { sv: "Omvandla till meter", en: "Convert to m" },
         conv_units: { sv: "Omvandla enheter", en: "Convert units" },
         div_scale: { sv: "Dividera med skalan", en: "Divide by scale" },
         conv_same: { sv: "Omvandla till samma enhet (cm)", en: "Convert to same unit (cm)" },
         setup_ratio: { sv: "Ställ upp förhållandet", en: "Set up ratio" },
-        
         calc_area_img: { sv: "Beräkna bildens area", en: "Calculate image area" },
         calc_area_real: { sv: "Beräkna verklighetens area", en: "Calculate reality area" },
         calc_area_scale: { sv: "Beräkna areaskala (längdskala²)", en: "Calculate area scale (length scale²)" },
@@ -83,8 +76,6 @@ export const TERMS = {
         divide: (n: number) => ({ sv: `Dela båda sidor med ${n}`, en: `Divide both sides by ${n}` }),
         multiply: (n: number) => ({ sv: `Multiplicera båda sidor med ${n}`, en: `Multiply both sides by ${n}` }),
         distribute: (n: number) => ({ sv: `Multiplicera in ${n} i parentesen`, en: `Distribute ${n} into the parentheses` }),
-        
-        // NEW PROBLEM SOLVING TERMS
         number: { sv: "talet", en: "the number" },
         half: { sv: "hälften", en: "half" },
         third: { sv: "en tredjedel", en: "a third" },
@@ -99,17 +90,14 @@ export const TERMS = {
         desc_tri: { sv: "En triangel", en: "A triangle" },
         desc_circle: { sv: "En cirkel", en: "A circle" },
         desc_composite: { sv: "En sammansatt figur", en: "A composite shape" },
-        
         formula_rect_perim: { sv: "Omkrets = 2 · (bredd + höjd)", en: "Perimeter = 2 · (width + height)" },
         formula_para_perim: { sv: "Omkrets = 2 · (sida A + sida B)", en: "Perimeter = 2 · (side A + side B)" },
         formula_rect_perim_latex: "O = 2(b + h)",
         formula_para_perim_latex: "O = 2(a + b)",
-        
         step_sub: { sv: "Sätt in värdena i formeln:", en: "Substitute values into the formula:" },
         step_calc: { sv: "Beräkna resultatet:", en: "Calculate the result:" },
         calc_perim: { sv: "Beräkna omkretsen", en: "Calculate perimeter" },
         calc_area: { sv: "Beräkna arean", en: "Calculate area" },
-        
         step_comp_tri_sides: { sv: "Addera sidorna:", en: "Add the sides:" },
         step_comp_arc_verbose: { sv: "Beräkna bågen:", en: "Calculate the arc:" },
         step_comp_total_perim: { sv: "Total omkrets:", en: "Total perimeter:" },
@@ -119,7 +107,13 @@ export const TERMS = {
     simplification: {
         intro: (expr: string) => ({ sv: `Förenkla uttrycket: $${expr}$`, en: `Simplify the expression: $${expr}$` }),
         group_terms: { sv: "Gruppera termer (x med x, tal med tal)", en: "Group like terms" },
-        calc_result: (ans: string) => ({ sv: `Resultat: $${ans}$`, en: `Result: $${ans}$` })
+        calc_result: (ans: string) => ({ sv: `Resultat: $${ans}$`, en: `Result: $${ans}$` }),
+        // New terms for word problems
+        start_unknown: { sv: "Vi börjar med talet $x$.", en: "We start with the number $x$." },
+        translate_math: { sv: "Översätt texten till matematik:", en: "Translate text to math:" },
+        cost_unknown: (item: string) => ({ sv: `Priset per ${item} är okänt, så $x$.`, en: `Price per ${item} is unknown, so $x$.` }),
+        final_expr: { sv: "Slutgiltigt uttryck:", en: "Final expression:" },
+        simplify_const: { sv: "Förenkla konstanterna:", en: "Simplify constants:" }
     },
     graph: {
         q_intercept: { sv: "Hitta m-värdet (skärning med y-axeln):", en: "Find the Y-Intercept (m):" },
