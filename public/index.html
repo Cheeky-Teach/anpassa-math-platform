@@ -37,6 +37,7 @@
         .drawer-enter-active { transform: translateX(0); transition: transform 300ms; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Modal Animation */
         .modal-enter { opacity: 0; transform: scale(0.95); }
         .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
     </style>
@@ -145,12 +146,11 @@
         const MathText=({text,className="",large=false})=>{if(!text)return null;const parts=text.split(/(\$[^\$]+\$)/g);return(<span className={className}>{parts.map((part,index)=>{if(part.startsWith('$')&&part.endsWith('$')){const tex=part.slice(1,-1);try{const html=katex.renderToString(tex,{throwOnError:false,displayMode:large});return<span key={index} dangerouslySetInnerHTML={{__html:html}}/>;}catch(e){return<span key={index} className="text-red-500">{part}</span>;}}return<span key={index}>{part}</span>;})}</span>);};
         const GraphCanvas=({data})=>{const canvasRef=useRef(null);useEffect(()=>{const canvas=canvasRef.current;if(!canvas||!data)return;const ctx=canvas.getContext('2d');const width=canvas.width;const height=canvas.height;const range=data.range||10;ctx.clearRect(0,0,width,height);ctx.font='10px Inter, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const toX=(val)=>(val+range)*(width/(range*2));const toY=(val)=>height-(val+range)*(height/(range*2));ctx.strokeStyle='#e5e7eb';ctx.lineWidth=1;for(let i=-range;i<=range;i+=data.gridStep||1){ctx.beginPath();ctx.moveTo(toX(i),0);ctx.lineTo(toX(i),height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,toY(i));ctx.lineTo(width,toY(i));ctx.stroke();}ctx.strokeStyle='#374151';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(toX(0),0);ctx.lineTo(toX(0),height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,toY(0));ctx.lineTo(width,toY(0));ctx.stroke();ctx.fillStyle='#6b7280';const tickSize=3;const step=data.labelStep||2;for(let i=-range;i<=range;i+=step){if(i===0)continue;const xPos=toX(i);const yOrigin=toY(0);ctx.beginPath();ctx.moveTo(xPos,yOrigin-tickSize);ctx.lineTo(xPos,yOrigin+tickSize);ctx.stroke();ctx.fillText(i.toString(),xPos,yOrigin+12);const yPos=toY(i);const xOrigin=toX(0);ctx.beginPath();ctx.moveTo(xOrigin-tickSize,yPos);ctx.lineTo(xOrigin+tickSize,yPos);ctx.stroke();ctx.fillText(i.toString(),xOrigin-12,yPos);}data.lines.forEach(line=>{ctx.strokeStyle=line.color||'#dc2626';ctx.lineWidth=3;ctx.beginPath();const x1=-range;const y1=line.slope*x1+line.intercept;const x2=range;const y2=line.slope*x2+line.intercept;ctx.moveTo(toX(x1),toY(y1));ctx.lineTo(toX(x2),toY(y2));ctx.stroke();});},[data]);return<div className="flex justify-center my-4"><canvas ref={canvasRef} width={270} height={270} className="bg-white rounded border border-gray-300 shadow-sm"/></div>;};
         
-        // --- GEOMETRY VISUAL ---
+        // --- UPDATED GEOMETRY VISUAL ---
         const GeometryVisual = ({ data }) => {
             if (!data) return null;
             const SvgContainer = ({ children }) => <svg width="300" height="300" viewBox="0 0 200 200" className="my-4 w-full max-w-[300px]">{children}</svg>;
 
-            // SHAPE RENDERER
             const RenderShape = ({ type, dims, labels, areaText }) => {
                 const w = dims.width || 0, h = dims.height || 0, r = dims.radius || 0;
                 const size = Math.max(w, h, r*2);
@@ -167,7 +167,6 @@
                 return (<svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm w-full max-w-[200px]">{content()}{areaText && <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
             };
 
-            // TRIANGLE LOGIC (Rotated)
             if (data.type === 'triangle') {
                 const w = data.width || 0, h = data.height || 0;
                 const maxDim = Math.max(w, h);
@@ -182,7 +181,7 @@
                 if (orient === 'up') {
                     const x1 = cx - bVal/2, y1 = cy + hVal/2; const x2 = cx + bVal/2, y2 = cy + hVal/2; const x3 = isRight ? x1 : cx, y3 = cy - hVal/2;
                     points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`;
-                    hLine = !isRight ? <line x1={x3} y1={y3} x2={x3} y2={y1} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x1} y1={y1} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />;
+                    hLine = !isRight ? <line x1={x3} y1={y3} x2={x3} y2={y1} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x1} y1={y1} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; 
                     bLabel = <text x={cx} y={y1 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>;
                     hLabel = <text x={isRight ? x1 - 15 : cx + 5} y={cy} textAnchor={isRight ? "end" : "start"} fontWeight="bold" fill="#374151">{data.labels.height}</text>;
                 } else if (orient === 'down') {
@@ -290,7 +289,12 @@
             return(
                 <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
                     <MobileDrawer/>
-                    <LevelUpModal visible={levelUpAvailable} ui={ui} onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }} onStay={() => setLevelUpAvailable(false)}/>
+                    <LevelUpModal 
+                        visible={levelUpAvailable} 
+                        ui={ui} 
+                        onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }}
+                        onStay={() => setLevelUpAvailable(false)}
+                    />
                     <div className="flex-1 w-full min-w-0">
                         <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
                             <button onClick={actions.goBack} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm px-4 py-2 rounded-lg shadow-sm border border-gray-300 transition-all active:scale-95"><span>←</span> {ui.backBtn}</button>
