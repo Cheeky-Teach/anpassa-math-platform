@@ -4,17 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anpassa | Math Platform</title>
-    
-    <!-- React & Core Dependencies -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Styling & Math -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script>
         tailwind.config = {
             theme: {
@@ -28,262 +23,20 @@
             }
         }
     </script>
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .katex { font-size: 1.1em; } 
-        .drawer-enter { transform: translateX(-100%); }
-        .drawer-enter-active { transform: translateX(0); transition: transform 300ms; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Modal Animation */
-        .modal-enter { opacity: 0; transform: scale(0.95); }
-        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
-    </style>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');body{font-family:'Inter',sans-serif}.katex{font-size:1.1em}.drawer-enter{transform:translateX(-100%)}.drawer-enter-active{transform:translateX(0);transition:transform 300ms}.fade-in{animation:fadeIn 0.3s ease-in-out}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.modal-enter{opacity:0;transform:scale(0.95)}.modal-enter-active{opacity:1;transform:scale(1);transition:opacity 300ms,transform 300ms}</style>
 </head>
-<body class="bg-gray-50 text-gray-800 overflow-x-hidden">
-    <div id="root"></div>
-
+<body class="bg-gray-50 text-gray-800 overflow-x-hidden flex flex-col min-h-screen">
+    <div id="root" class="flex-grow flex flex-col"></div>
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const CATEGORIES={algebra:{label:{sv:"Algebra",en:"Algebra"},color:"indigo",topics:[{id:'equation',label:{sv:"Ekvationer",en:"Equations"}},{id:'simplify',label:{sv:"Uttryck",en:"Simplify expression"}}]},geometry:{label:{sv:"Geometri",en:"Geometry"},color:"emerald",topics:[{id:'geometry',label:{sv:"Area & Omkrets",en:"Area & Perimeter"}},{id:'scale',label:{sv:"Skala",en:"Scale"}}]},functions:{label:{sv:"Samband",en:"Functions"},color:"purple",topics:[{id:'graph',label:{sv:"Räta Linjen",en:"Linear Graphs"}}]}};
-        
-        // VERIFIED: All level descriptions are localized
-        const LEVEL_DESCRIPTIONS={
-            equation:{1:{sv:"Enstegsekvationer",en:"One-step equations"},2:{sv:"Tvåstegsekvationer",en:"Two-step equations"},3:{sv:"X på båda sidor",en:"X on both sides"},4:{sv:"Multiplikation med parentes",en:"Multiplication with parentheses"},5:{sv:"Problemlösning",en:"Problem Solving"},6:{sv:"Blandat",en:"Mixed"}},
-            simplify:{1:{sv:"Förenkla uttryck",en:"Combine like terms"},2:{sv:"Parenteser",en:"Distribute into parentheses"},3:{sv:"Distribuera & förenkla",en:"Distribute and combine"},4:{sv:"Subtrahera parenteser",en:"Subtracting parentheses"},5:{sv:"Textuppgifter",en:"Word Problems"},6:{sv:"Blandat",en:"Mixed"}},
-            geometry:{1:{sv:"Omkrets (Rektangel)",en:"Perimeter (Rectangle)"},2:{sv:"Area (Rektangel)",en:"Area (Rectangle)"},3:{sv:"Area (Triangel)",en:"Area (Triangle)"},4:{sv:"Cirklar (Omkrets & Area)",en:"Circles (Perimeter & Area)"},5:{sv:"Sammansatta figurer",en:"Composite shapes"}},
-            scale:{
-                1:{sv:"Begreppsförståelse",en:"Concepts"},
-                2:{sv:"Beräkna längd (Enkel)",en:"Calc Length (Simple)"},
-                3:{sv:"Beräkna längd (Svår)",en:"Calc Length (Hard)"},
-                4:{sv:"Ange skala",en:"Determine Scale"},
-                5:{sv:"Utan bilder",en:"No Pictures"},
-                6:{sv:"Areaskala",en:"Area Scale"},
-                7:{sv:"Blandat",en:"Mixed"}
-            },
-            graph:{1:{sv:"Hitta m (skärning)",en:"Find y-intercept (m)"},2:{sv:"Hitta k (positiv)",en:"Find slope (Positive)"},3:{sv:"Hitta k (negativ)",en:"Find slope (Negative)"},4:{sv:"Hitta funktion (y=kx+m)",en:"Find equation (y=kx+m)"},5:{sv:"Blandat",en:"Mixed graphs"}}
-        };
-
-        // VERIFIED: All UI text strings have sv/en pairs
-        const UI_TEXT={
-            sv:{
-                streak:"Streak",loading:"Laddar fråga...",error:"Kunde inte ladda frågan.",
-                btnHint:"Ledtråd",btnSolution:"Visa lösning",btnSkip:"Hoppa över",
-                submit:"Svara",correct:"Rätt! Nästa...",incorrect:"Inte riktigt, försök igen",placeholder:"Skriv ditt svar...",
-                level:"Nivå",history:"Historik",noHistory:"Inga svar än.",clueUsed:"Hjälp",
-                dashboardTitle:"Välj område att öva på",
-                progressionInfo:"Systemet anpassar sig efter dig. Klarar du 8 frågor i rad på en nivå föreslår vi att du går vidare till nästa.",
-                startBtn:"Börja öva",backBtn:"Tillbaka till menyn",selectLevel:"Välj nivå:",
-                hintsTitle:"Ledtrådar",prevLevel:"Föregående",nextLevel:"Nästa",
-                levelUpTitle:"Bra jobbat! 🔥",levelUpDesc:"Du har klarat 8 frågor i rad! Vill du gå vidare till nästa nivå?",levelUpYes:"Nästa nivå",levelUpNo:"Stanna på samma nivå",levelUpHint:"Kom ihåg att du alltid kan byta nivå manuellt högst upp på sidan."
-            },
-            en:{
-                streak:"Streak",loading:"Loading question...",error:"Could not load question.",
-                btnHint:"Hint",btnSolution:"Show Solution",btnSkip:"Skip",
-                submit:"Submit",correct:"Correct! Next...",incorrect:"Not quite, try again",placeholder:"Enter your answer...",
-                level:"Level",history:"History",noHistory:"No answers yet.",clueUsed:"Clue",
-                dashboardTitle:"Choose a topic to practice",
-                progressionInfo:"The system adapts to you. Answer 8 questions correctly in a row to unlock the next level.",
-                startBtn:"Start Practice",backBtn:"Back to Menu",selectLevel:"Select Level:",
-                hintsTitle:"Hints",prevLevel:"Previous",nextLevel:"Next",
-                levelUpTitle:"Great Job! 🔥",levelUpDesc:"You've answered 8 in a row! Do you want to try the next level?",levelUpYes:"Next Level",levelUpNo:"Stay Here",levelUpHint:"Remember, you can always change difficulty manually at the top."
-            }
-        };
+        const CATEGORIES={algebra:{label:{sv:"Algebra",en:"Algebra"},color:"indigo",topics:[{id:'equation',label:{sv:"Ekvationer",en:"Equations"}},{id:'simplify',label:{sv:"Förenkling",en:"Simplification"}}]},geometry:{label:{sv:"Geometri",en:"Geometry"},color:"emerald",topics:[{id:'geometry',label:{sv:"Area & Omkrets",en:"Area & Perimeter"}},{id:'scale',label:{sv:"Skala",en:"Scale"}}]},functions:{label:{sv:"Samband",en:"Functions"},color:"purple",topics:[{id:'graph',label:{sv:"Räta Linjen",en:"Linear Graphs"}}]}};
+        const LEVEL_DESCRIPTIONS={equation:{1:{sv:"Enstegsekvationer",en:"One-step equations"},2:{sv:"Tvåstegsekvationer",en:"Two-step equations"},3:{sv:"X på båda sidor",en:"X on both sides"},4:{sv:"Multiplikation med parentes",en:"Multiplication with parentheses"},5:{sv:"Blandat",en:"Mixed"}},simplify:{1:{sv:"Förenkla uttryck",en:"Combine like terms"},2:{sv:"Parenteser",en:"Distribute into parentheses"},3:{sv:"Distribuera & förenkla",en:"Distribute and combine"},4:{sv:"Subtrahera parenteser",en:"Subtracting parentheses"},5:{sv:"Blandat",en:"Mixed expressions"}},geometry:{1:{sv:"Omkrets (Rektangel)",en:"Perimeter (Rectangle)"},2:{sv:"Area (Rektangel)",en:"Area (Rectangle)"},3:{sv:"Area (Triangel)",en:"Area (Triangle)"},4:{sv:"Omkrets (Cirkel)",en:"Circumference (Circle)"},5:{sv:"Sammansatta figurer",en:"Composite shapes"}},scale:{1:{sv:"Begreppsförståelse",en:"Concepts"},2:{sv:"Beräkna längd (Enkel)",en:"Calc Length (Simple)"},3:{sv:"Beräkna längd (Svår)",en:"Calc Length (Hard)"},4:{sv:"Ange skala",en:"Determine Scale"},5:{sv:"Utan bilder",en:"No Pictures"},6:{sv:"Areaskala",en:"Area Scale"},7:{sv:"Blandat",en:"Mixed"}},graph:{1:{sv:"Hitta m (skärning)",en:"Find y-intercept (m)"},2:{sv:"Hitta k (positiv)",en:"Find slope (Positive)"},3:{sv:"Hitta k (negativ)",en:"Find slope (Negative)"},4:{sv:"Hitta funktion (y=kx+m)",en:"Find equation (y=kx+m)"},5:{sv:"Blandat",en:"Mixed graphs"}}};
+        const UI_TEXT={sv:{streak:"Streak",loading:"Laddar fråga...",error:"Kunde inte ladda frågan.",btnHint:"Ledtråd",btnSolution:"Visa lösning",btnSkip:"Hoppa över",submit:"Svara",correct:"Rätt! Nästa...",incorrect:"Inte riktigt, försök igen",placeholder:"Skriv ditt svar...",level:"Nivå",history:"Historik",noHistory:"Inga svar än.",clueUsed:"Hjälp",dashboardTitle:"Välj område att öva på",progressionInfo:"Systemet anpassar sig efter dig. Klarar du 8 frågor i rad på en nivå föreslår vi att du går vidare till nästa.",startBtn:"Börja öva",backBtn:"Tillbaka till menyn",selectLevel:"Välj nivå:",hintsTitle:"Ledtrådar",prevLevel:"Föregående",nextLevel:"Nästa",levelUpTitle:"Bra jobbat! 🔥",levelUpDesc:"Du har klarat 8 frågor i rad! Vill du gå vidare till nästa nivå?",levelUpYes:"Nästa nivå",levelUpNo:"Stanna på samma nivå",levelUpHint:"Kom ihåg att du alltid kan byta nivå manuellt högst upp på sidan.",aboutBtn:"Om skaparen",aboutTitle:"Om skaparen",aboutText:"Charles är en speciallärare som arbetar i Sverige och brinner för att upptäcka nya sätt att undervisa i klassrummet."},en:{streak:"Streak",loading:"Loading question...",error:"Could not load question.",btnHint:"Hint",btnSolution:"Show Solution",btnSkip:"Skip",submit:"Submit",correct:"Correct! Next...",incorrect:"Not quite, try again",placeholder:"Enter your answer...",level:"Level",history:"History",noHistory:"No answers yet.",clueUsed:"Clue",dashboardTitle:"Choose a topic to practice",progressionInfo:"The system adapts to you. Answer 8 questions correctly in a row to unlock the next level.",startBtn:"Start Practice",backBtn:"Back to Menu",selectLevel:"Select Level:",hintsTitle:"Hints",prevLevel:"Previous",nextLevel:"Next",levelUpTitle:"Great Job! 🔥",levelUpDesc:"You've answered 8 in a row! Do you want to try the next level?",levelUpYes:"Next Level",levelUpNo:"Stay Here",levelUpHint:"Remember, you can always change difficulty manually at the top.",aboutBtn:"About the creator",aboutTitle:"About the creator",aboutText:"Charles is a special education teacher currently working in Sweden and is passionate about discovering new ways to teach in the classroom."}};
 
         const MathText=({text,className="",large=false})=>{if(!text)return null;const parts=text.split(/(\$[^\$]+\$)/g);return(<span className={className}>{parts.map((part,index)=>{if(part.startsWith('$')&&part.endsWith('$')){const tex=part.slice(1,-1);try{const html=katex.renderToString(tex,{throwOnError:false,displayMode:large});return<span key={index} dangerouslySetInnerHTML={{__html:html}}/>;}catch(e){return<span key={index} className="text-red-500">{part}</span>;}}return<span key={index}>{part}</span>;})}</span>);};
-
-        // --- VISUALS ---
         const GraphCanvas=({data})=>{const canvasRef=useRef(null);useEffect(()=>{const canvas=canvasRef.current;if(!canvas||!data)return;const ctx=canvas.getContext('2d');const width=canvas.width;const height=canvas.height;const range=data.range||10;ctx.clearRect(0,0,width,height);ctx.font='10px Inter, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const toX=(val)=>(val+range)*(width/(range*2));const toY=(val)=>height-(val+range)*(height/(range*2));ctx.strokeStyle='#e5e7eb';ctx.lineWidth=1;for(let i=-range;i<=range;i+=data.gridStep||1){ctx.beginPath();ctx.moveTo(toX(i),0);ctx.lineTo(toX(i),height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,toY(i));ctx.lineTo(width,toY(i));ctx.stroke();}ctx.strokeStyle='#374151';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(toX(0),0);ctx.lineTo(toX(0),height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,toY(0));ctx.lineTo(width,toY(0));ctx.stroke();ctx.fillStyle='#6b7280';const tickSize=3;const step=data.labelStep||2;for(let i=-range;i<=range;i+=step){if(i===0)continue;const xPos=toX(i);const yOrigin=toY(0);ctx.beginPath();ctx.moveTo(xPos,yOrigin-tickSize);ctx.lineTo(xPos,yOrigin+tickSize);ctx.stroke();ctx.fillText(i.toString(),xPos,yOrigin+12);const yPos=toY(i);const xOrigin=toX(0);ctx.beginPath();ctx.moveTo(xOrigin-tickSize,yPos);ctx.lineTo(xOrigin+tickSize,yPos);ctx.stroke();ctx.fillText(i.toString(),xOrigin-12,yPos);}data.lines.forEach(line=>{ctx.strokeStyle=line.color||'#dc2626';ctx.lineWidth=3;ctx.beginPath();const x1=-range;const y1=line.slope*x1+line.intercept;const x2=range;const y2=line.slope*x2+line.intercept;ctx.moveTo(toX(x1),toY(y1));ctx.lineTo(toX(x2),toY(y2));ctx.stroke();});},[data]);return<div className="flex justify-center my-4"><canvas ref={canvasRef} width={270} height={270} className="bg-white rounded border border-gray-300 shadow-sm"/></div>;};
-        
-        // --- UPDATED GEOMETRY VISUAL ---
-        const GeometryVisual = ({ data }) => {
-            if (!data) return null;
-
-            const SvgContainer = ({ children }) => <svg width="200" height="200" viewBox="0 0 200 200" className="my-4">{children}</svg>;
-
-            // --- TRIANGLE RENDERER (FIXED) ---
-            if (data.type === 'triangle') {
-                const w = data.width || 0, h = data.height || 0;
-                // Scale to fit nicely in 200x200
-                const maxDim = Math.max(w, h);
-                const scale = 140 / (maxDim || 1);
-                const bVal = w * scale;
-                const hVal = h * scale;
-
-                const cx = 100, cy = 100;
-                let points = "", hLine = null, bLabel = null, hLabel = null;
-                const orient = data.orientation || 'up';
-                const isRight = data.subtype === 'right';
-
-                // We define points relative to center (cx, cy)
-                if (orient === 'up') {
-                    // Base at bottom
-                    const x1 = cx - bVal/2, y1 = cy + hVal/2;
-                    const x2 = cx + bVal/2, y2 = cy + hVal/2;
-                    const x3 = isRight ? x1 : cx, y3 = cy - hVal/2; // Apex
-                    points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`;
-                    
-                    // Height Line
-                    if (!isRight) {
-                        hLine = <line x1={x3} y1={y3} x2={x3} y2={y1} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
-                    } else {
-                        // Right angle symbol could go here, but side is height
-                        hLine = <line x1={x1} y1={y1} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; // Overwrite side
-                    }
-
-                    bLabel = <text x={cx} y={y1 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>;
-                    hLabel = <text x={isRight ? x1 - 15 : cx + 5} y={cy} textAnchor={isRight ? "end" : "start"} fontWeight="bold" fill="#374151">{data.labels.height}</text>;
-
-                } else if (orient === 'down') {
-                    // Base at top
-                    const x1 = cx - bVal/2, y1 = cy - hVal/2;
-                    const x2 = cx + bVal/2, y2 = cy - hVal/2;
-                    const x3 = isRight ? x1 : cx, y3 = cy + hVal/2; // Apex
-                    points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`;
-
-                    if (!isRight) hLine = <line x1={x3} y1={y3} x2={x3} y2={y1} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
-                    else hLine = <line x1={x1} y1={y1} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />;
-
-                    bLabel = <text x={cx} y={y1 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>;
-                    hLabel = <text x={isRight ? x1 - 15 : cx + 5} y={cy} textAnchor={isRight ? "end" : "start"} fontWeight="bold" fill="#374151">{data.labels.height}</text>;
-
-                } else if (orient === 'left') {
-                    // Base on right side vertical
-                    const x1 = cx + hVal/2, y1 = cy - bVal/2; // Top Right
-                    const x2 = cx + hVal/2, y2 = cy + bVal/2; // Bottom Right
-                    const x3 = cx - hVal/2, y3 = isRight ? y2 : cy; // Apex Left
-                    points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`;
-
-                    if (!isRight) hLine = <line x1={x3} y1={y3} x2={x1} y2={y3} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
-                    else hLine = <line x1={x2} y1={y2} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />;
-
-                    bLabel = <text x={x1 + 15} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{data.labels.base}</text>;
-                    hLabel = <text x={cx} y={isRight ? y2 + 20 : y3 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.height}</text>;
-
-                } else { // right
-                    // Base on left side vertical
-                    const x1 = cx - hVal/2, y1 = cy - bVal/2; // Top Left
-                    const x2 = cx - hVal/2, y2 = cy + bVal/2; // Bottom Left
-                    const x3 = cx + hVal/2, y3 = isRight ? y2 : cy; // Apex Right
-                    points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`;
-
-                    if (!isRight) hLine = <line x1={x3} y1={y3} x2={x1} y2={y3} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
-                    else hLine = <line x1={x2} y1={y2} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />;
-
-                    bLabel = <text x={x1 - 15} y={cy} textAnchor="end" fontWeight="bold" fill="#374151">{data.labels.base}</text>;
-                    hLabel = <text x={cx} y={isRight ? y2 + 20 : y3 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.height}</text>;
-                }
-
-                return (
-                    <SvgContainer>
-                        <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                        {hLine}
-                        {bLabel}
-                        {hLabel}
-                    </SvgContainer>
-                );
-            }
-
-            // --- CIRCLE RENDERER ---
-            if (data.type === 'circle') {
-                const cx=100, cy=100, r=70;
-                return (
-                    <SvgContainer>
-                        <circle cx={cx} cy={cy} r={r} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                        {data.show === 'diameter' ? (
-                            <>
-                                <line x1={cx-r} y1={cy} x2={cx+r} y2={cy} stroke="#374151" strokeWidth="2" />
-                                <text x={cx} y={cy-10} textAnchor="middle" fontWeight="bold" fill="#374151">d = {data.value}</text>
-                            </>
-                        ) : (
-                            <>
-                                <line x1={cx} y1={cy} x2={cx+r} y2={cy} stroke="#374151" strokeWidth="2" />
-                                <text x={cx+r/2} y={cy-10} textAnchor="middle" fontWeight="bold" fill="#374151">r = {data.value}</text>
-                            </>
-                        )}
-                    </SvgContainer>
-                );
-            }
-
-            // --- COMPOSITE RENDERER ---
-            if (data.type === 'composite') {
-                const subtype = data.subtype;
-                
-                // --- HOUSE (Rect + Triangle) ---
-                if (subtype === 'house') {
-                    // Shifted UP by 20px compared to previous
-                    return (
-                        <SvgContainer>
-                            <rect x="50" y="80" width="100" height="80" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            <polygon points="50,80 150,80 100,20" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            <text x="160" y="120" fontWeight="bold" fill="#374151">{data.labels.h}</text>
-                            <text x="100" y="180" textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.w}</text>
-                            <text x="130" y="50" fontWeight="bold" fill="#374151">{data.labels.h_roof}</text>
-                        </SvgContainer>
-                    );
-                }
-
-                // --- PORTAL (Square + Semicircle) ---
-                if (subtype === 'portal') {
-                    // Shifted UP by 30px compared to previous to avoid clipping
-                    return (
-                        <SvgContainer>
-                            <rect x="50" y="70" width="100" height="100" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            <path d="M 50 70 A 50 50 0 0 1 150 70" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            <text x="100" y="190" textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.w}</text>
-                        </SvgContainer>
-                    );
-                }
-
-                // Ice Cream (default)
-                return (
-                    <SvgContainer>
-                        <polygon points="50,70 150,70 100,190" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                        <path d="M 50 70 A 50 50 0 0 1 150 70" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                        <line x1="50" y1="70" x2="150" y2="70" stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
-                        <text x="100" y="60" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.top}</text>
-                        <text x="140" y={130} textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.side}</text>
-                    </SvgContainer>
-                );
-            }
-
-            // Fallback Re-use existing render logic for basic rect/scale (minified for brevity)
-            const RenderShape = ({ type, dims, labels, areaText }) => {
-                const w = dims.width || 0, h = dims.height || 0, r = dims.radius || 0;
-                const size = Math.max(w, h, r*2);
-                const scale = 120 / (size || 1); 
-                let sw = w * scale, sh = h * scale, sr = r * scale;
-                const cx = 90, cy = 90;
-                const content = () => {
-                    if (type === 'rectangle' || type === 'square' || type === 'parallelogram') return (<><rect x={cx-sw/2} y={cy-sh/2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><text x={cx} y={cy+sh/2+20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text><text x={cx+sw/2+10} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text></>)}</>);
-                    if (type === 'triangle') return (<><polygon points={`${cx-sw/2},${cy+sh/2} ${cx+sw/2},${cy+sh/2} ${cx},${cy-sh/2}`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><text x={cx} y={cy+sh/2+20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text><line x1={cx} y1={cy-sh/2} x2={cx} y2={cy+sh/2} stroke="#6b7280" strokeDasharray="4" /><text x={cx+5} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text></>)}</>);
-                    if (type === 'circle') return (<><circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx+sr/2} y={cy-5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text></>)}</>);
-                    if (type === 'semicircle') return (<><path d={`M ${cx-sr} ${cy} A ${sr} ${sr} 0 0 1 ${cx+sr} ${cy} Z`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx+sr/2} y={cy-5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text></>)}</>);
-                    return null;
-                };
-                return (<svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm">{content()}{areaText && <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
-            };
-
-            if (data.type === 'scale_single' || data.type === 'scale_compare') {
-                const shapeEmojis = { square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', rhombus: '🔶', parallelogram: '▰', pentagon: '⬟', hexagon: '🛑', octagon: '🛑', star: '⭐', arrow: '➡', heart: '❤️', cross: '➕', lightning: '⚡', kite: '🪁', cube: '🧊', cylinder: '🛢️', pyramid: '⛰️', cone: '🍦', sphere: '🔮' };
-                const emoji = shapeEmojis[data.shape] || '📦'; 
-                const ShapeIcon = ({ size }) => <div className="flex items-center justify-center text-6xl" style={{width:size,height:size}}>{emoji}</div>;
-                if (data.type === 'scale_single') return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="120px" /><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>;
-                return <div className="flex items-end justify-center gap-6 sm:gap-12 my-6"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="80px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div><div className="pb-8 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="120px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div></div>;
-            }
-
-            if (data.type === 'compare_shapes' || data.type === 'compare_shapes_area') {
-                const showLabels = data.type === 'compare_shapes';
-                const showArea = data.type === 'compare_shapes_area';
-                return (<div className="flex flex-wrap justify-center gap-8 items-end my-4"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.left.label}</span><RenderShape type={data.shapeType} dims={data.left} labels={showLabels} areaText={showArea ? data.left.area : null} /></div><div className="pb-20 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.right.label}</span><RenderShape type={data.shapeType} dims={data.right} labels={showLabels} areaText={showArea ? data.right.area : null} /></div></div>);
-            }
-            
-            return <div className="flex justify-center my-4"><RenderShape type={data.type} dims={data} labels={true} /></div>;
-        };
-
+        const GeometryVisual=({data})=>{if(!data)return null;const RenderShape=({type,dims,labels,areaText})=>{const w=dims.width||0,h=dims.height||0,r=dims.radius||0;const size=Math.max(w,h,r*2);const scale=120/(size||1);let sw=w*scale,sh=h*scale,sr=r*scale;const cx=90,cy=90;const content=()=>{if(type==='rectangle'||type==='square'||type==='parallelogram')return(<><rect x={cx-sw/2} y={cy-sh/2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3"/>{labels&&(<><text x={cx} y={cy+sh/2+20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text><text x={cx+sw/2+10} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text></>)}</>);if(type==='triangle')return(<><polygon points={`${cx-sw/2},${cy+sh/2} ${cx+sw/2},${cy+sh/2} ${cx},${cy-sh/2}`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3"/>{labels&&(<><text x={cx} y={cy+sh/2+20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text><line x1={cx} y1={cy-sh/2} x2={cx} y2={cy+sh/2} stroke="#6b7280" strokeDasharray="4"/><text x={cx+5} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text></>)}</>);if(type==='circle')return(<><circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3"/>{labels&&(<><line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#374151" strokeWidth="2"/><text x={cx+sr/2} y={cy-5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text></>)}</>);if(type==='semicircle')return(<><path d={`M ${cx-sr} ${cy} A ${sr} ${sr} 0 0 1 ${cx+sr} ${cy} Z`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3"/>{labels&&(<><line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#374151" strokeWidth="2"/><text x={cx+sr/2} y={cy-5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text></>)}</>);return null;};return(<svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm">{content()}{areaText&&<text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);};if(data.type==='scale_single'||data.type==='scale_compare'){const shapeEmojis={square:'⬛',rectangle:'▭',circle:'⚫',triangle:'🔺',rhombus:'🔶',parallelogram:'▰',pentagon:'⬟',hexagon:'🛑',octagon:'🛑',star:'⭐',arrow:'➡',heart:'❤️',cross:'➕',lightning:'⚡',kite:'🪁',cube:'🧊',cylinder:'🛢️',pyramid:'⛰️',cone:'🍦',sphere:'🔮'};const emoji=shapeEmojis[data.shape]||'📦';const ShapeIcon=({size})=><div className="flex items-center justify-center text-6xl" style={{width:size,height:size}}>{emoji}</div>;if(data.type==='scale_single')return<div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="120px"/><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>;return<div className="flex items-end justify-center gap-6 sm:gap-12 my-6"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="80px"/><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div><div className="pb-8 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="120px"/><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div></div>;}if(data.type==='compare_shapes'||data.type==='compare_shapes_area'){const showLabels=data.type==='compare_shapes';const showArea=data.type==='compare_shapes_area';return(<div className="flex flex-wrap justify-center gap-8 items-end my-4"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.left.label}</span><RenderShape type={data.shapeType} dims={data.left} labels={showLabels} areaText={showArea?data.left.area:null}/></div><div className="pb-20 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.right.label}</span><RenderShape type={data.shapeType} dims={data.right} labels={showLabels} areaText={showArea?data.right.area:null}/></div></div>); }return<div className="flex justify-center my-4"><RenderShape type={data.type} dims={data} labels={true}/></div>;};
         const StaticGeometryVisual=({description})=>{if(!description)return null;const d=description.toLowerCase();if(d.includes("rect")||d.includes("rektangel"))return<div className="flex justify-center my-4 opacity-80"><div className="w-28 h-16 border-2 border-primary-500 bg-primary-50 rounded-sm"></div></div>;if(d.includes("trian"))return<div className="flex justify-center my-4 opacity-80"><div className="w-0 h-0 border-l-[36px] border-r-[36px] border-b-[63px] border-l-transparent border-r-transparent border-b-primary-500/20 border-b-solid relative"><div className="absolute -left-[36px] top-[63px] w-full h-[2px] bg-primary-500"></div></div></div>;if(d.includes("circ")||d.includes("cirkel"))return<div className="flex justify-center my-4 opacity-80"><div className="w-20 h-20 rounded-full border-2 border-primary-500 bg-primary-50"></div></div>;return null;};
 
         // --- DASHBOARD COMPONENT ---
@@ -309,6 +62,26 @@
                             </button>
                         </div>
                         <p className="text-xs text-gray-400 text-center mt-6 italic">{ui.levelUpHint}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- ABOUT MODAL ---
+        const AboutModal = ({ visible, onClose, ui }) => {
+            if (!visible) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-bounce-in border border-gray-100">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">✕</button>
+                        <div className="text-center mb-6">
+                            {/* Placeholder for Image */}
+                            <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Charles" alt="Charles" className="w-full h-full object-cover" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-2">{ui.aboutTitle}</h3>
+                            <p className="text-gray-600 text-sm leading-relaxed">{ui.aboutText}</p>
+                        </div>
                     </div>
                 </div>
             );
@@ -394,7 +167,7 @@
                                 )}
                                 <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback==='correct'?'bg-primary-500 shadow-green-200 cursor-default':'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}>{feedback==='correct'?ui.correct:feedback==='incorrect'?ui.incorrect:ui.submit}</button></form>)}<div className="mt-8 flex gap-3 justify-center flex-wrap"><button type="button" onClick={handleHint} disabled={!question.clues||revealedClues>=question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-accent-50 text-accent-700 border border-accent-200 hover:bg-accent-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button><button type="button" onClick={handleSolution} disabled={!question.clues||revealedClues>=question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button><button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"><span>⏭️</span> {ui.btnSkip}</button></div></div>):(<div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={actions.retry} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>)}</main></div><div className="lg:w-80 w-full shrink-0 flex flex-col gap-4"><CluePanel/><div className="hidden lg:block flex-1 min-h-0"><HistoryList history={uiState.history}/></div></div></div>);};
 
-        function App(){const[view,setView]=useState('dashboard');const[lang,setLang]=useState('sv');const[topic,setTopic]=useState('');const[level,setLevel]=useState(0);const[question,setQuestion]=useState(null);const[input,setInput]=useState('');const[feedback,setFeedback]=useState(null);const[loading,setLoading]=useState(false);const[streak,setStreak]=useState(0);const[history,setHistory]=useState([]);const[revealedClues,setRevealedClues]=useState(0);const[levelUpAvailable,setLevelUpAvailable]=useState(false);const ui=UI_TEXT[lang];const fetchQuestion=async(t=topic,l=level,lg=lang)=>{if(!t||!l)return;setLoading(true);setFeedback(null);setInput('');setRevealedClues(0);setLevelUpAvailable(false);try{const res=await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}`);const data=await res.json();if(data.error)throw new Error(data.error);setQuestion(data);}catch(e){console.error(e);setQuestion(null);}finally{setLoading(false);}};const startPractice=()=>{if(topic&&level){setStreak(0);setView('practice');fetchQuestion(topic,level,lang);}};const quitPractice=()=>{setStreak(0);setView('dashboard');setQuestion(null);};const handleSelection=(t,l)=>{setTopic(t);setLevel(l);};const handleHint=()=>{if(question?.clues)setRevealedClues(p=>Math.min(p+1,question.clues.length));};const handleSolution=()=>{if(question?.clues)setRevealedClues(question.clues.length);};const handleSkip=()=>{fetchQuestion(topic,level,lang);};const handleChangeLevel=(delta)=>{const newLevel=level+delta;const max=Object.keys(LEVEL_DESCRIPTIONS[topic]||{}).length;if(newLevel>=1&&newLevel<=max){setStreak(0);setLevel(newLevel);fetchQuestion(topic,newLevel,lang);}};const handleSubmit=async(e,directInput)=>{e.preventDefault();const answerToSubmit=directInput!==undefined?directInput:input;if(!question||!answerToSubmit)return;const res=await fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:answerToSubmit,token:question.token,streak:streak,level:level,topic:topic})});const result=await res.json();console.log("Server response:",result);const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;setHistory(prev=>[{topic,level,correct:result.correct,text:descText||question.renderData.latex,clueUsed:revealedClues>0,time:Date.now()},...prev]);if(result.correct){setFeedback('correct');setStreak(s=>s+1);if(result.levelUp)setLevelUpAvailable(true);setTimeout(()=>{if(!result.levelUp)fetchQuestion(topic,level,lang);},1500);}else{setFeedback('incorrect');setStreak(0);}};return(<div className="min-h-screen flex flex-col bg-gray-50"><div className="flex flex-col flex-1"><header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm"><div className="max-w-7xl mx-auto flex justify-between items-center"><div className="flex items-center gap-4"><h1 className="text-xl font-bold text-primary-700 tracking-tight cursor-pointer" onClick={()=>setView('dashboard')}>Anpassa</h1><div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">{ui.streak}: {streak} 🔥</div></div><button onClick={()=>setLang(l=>l==='sv'?'en':'sv')} className="text-sm font-semibold text-gray-600 hover:text-primary-600 transition-colors">{lang==='sv'?'🇸🇪 Svenska':'🇬🇧 English'}</button></div></header>{view==='dashboard'?(<Dashboard lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice}/>):(<PracticeView lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip} handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{history,topic,level}} actions={{goBack:quitPractice,retry:()=>fetchQuestion(topic,level,lang)}} levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable}/>)}</div><footer className="w-full py-6 text-gray-400 text-xs text-center border-t border-gray-200 font-medium">Created by: Charles Mejilla, 2026</footer></div>);}
+        function App(){const[view,setView]=useState('dashboard');const[lang,setLang]=useState('sv');const[topic,setTopic]=useState('');const[level,setLevel]=useState(0);const[question,setQuestion]=useState(null);const[input,setInput]=useState('');const[feedback,setFeedback]=useState(null);const[loading,setLoading]=useState(false);const[streak,setStreak]=useState(0);const[history,setHistory]=useState([]);const[revealedClues,setRevealedClues]=useState(0);const[levelUpAvailable,setLevelUpAvailable]=useState(false);const[aboutOpen,setAboutOpen]=useState(false);const ui=UI_TEXT[lang];const fetchQuestion=async(t=topic,l=level,lg=lang)=>{if(!t||!l)return;setLoading(true);setFeedback(null);setInput('');setRevealedClues(0);setLevelUpAvailable(false);try{const res=await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}`);const data=await res.json();if(data.error)throw new Error(data.error);setQuestion(data);}catch(e){console.error(e);setQuestion(null);}finally{setLoading(false);}};const startPractice=()=>{if(topic&&level){setStreak(0);setView('practice');fetchQuestion(topic,level,lang);}};const quitPractice=()=>{setStreak(0);setView('dashboard');setQuestion(null);};const handleSelection=(t,l)=>{setTopic(t);setLevel(l);};const handleHint=()=>{if(question?.clues)setRevealedClues(p=>Math.min(p+1,question.clues.length));};const handleSolution=()=>{if(question?.clues)setRevealedClues(question.clues.length);};const handleSkip=()=>{fetchQuestion(topic,level,lang);};const handleChangeLevel=(delta)=>{const newLevel=level+delta;const max=Object.keys(LEVEL_DESCRIPTIONS[topic]||{}).length;if(newLevel>=1&&newLevel<=max){setStreak(0);setLevel(newLevel);fetchQuestion(topic,newLevel,lang);}};const handleSubmit=async(e,directInput)=>{e.preventDefault();const answerToSubmit=directInput!==undefined?directInput:input;if(!question||!answerToSubmit)return;const res=await fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:answerToSubmit,token:question.token,streak:streak,level:level,topic:topic})});const result=await res.json();console.log("Server response:",result);const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;setHistory(prev=>[{topic,level,correct:result.correct,text:descText||question.renderData.latex,clueUsed:revealedClues>0,time:Date.now()},...prev]);if(result.correct){setFeedback('correct');setStreak(s=>s+1);if(result.levelUp)setLevelUpAvailable(true);setTimeout(()=>{if(!result.levelUp)fetchQuestion(topic,level,lang);},1500);}else{setFeedback('incorrect');setStreak(0);}};return(<div className="min-h-screen flex flex-col bg-gray-50"><AboutModal visible={aboutOpen} onClose={()=>setAboutOpen(false)} ui={ui}/><header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm"><div className="max-w-7xl mx-auto flex justify-between items-center"><h1 className="text-xl font-bold text-primary-700 tracking-tight cursor-pointer" onClick={()=>setView('dashboard')}>Anpassa</h1><div className="flex items-center gap-4"><div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">{ui.streak}: {streak} 🔥</div><button onClick={()=>setLang(l=>l==='sv'?'en':'sv')} className="text-sm font-semibold text-gray-600 hover:text-primary-600 transition-colors">{lang==='sv'?'🇸🇪 Svenska':'🇬🇧 English'}</button></div></div></header><div className="flex-1 flex flex-col">{view==='dashboard'?(<Dashboard lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice}/>):(<PracticeView lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip} handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{history,topic,level}} actions={{goBack:quitPractice,retry:()=>fetchQuestion(topic,level,lang)}} levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable}/>)}</div><footer className="w-full py-6 text-gray-400 text-xs text-center border-t border-gray-200 font-medium flex justify-center items-center gap-4"><span>Created by: Charles Mejilla, 2026</span><button onClick={()=>setAboutOpen(true)} className="text-primary-600 hover:text-primary-800 underline">{ui.aboutBtn}</button></footer></div>);}
         const root=ReactDOM.createRoot(document.getElementById('root'));root.render(<App/>);
     </script>
 </body>
