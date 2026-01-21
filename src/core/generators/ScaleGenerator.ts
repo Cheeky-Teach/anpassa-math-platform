@@ -71,87 +71,207 @@ export class ScaleGenerator {
         const enShape = TERMS.shapes[shape]?.en || shape;
         const scaleFactor = rng.pick([10, 20, 50, 100, 200, 500]);
 
-        if (mode === 2) { /* Level 2 Logic */ 
-             const subType = rng.intBetween(0, 1);
-             const drawingVal = subType === 0 ? rng.intBetween(2, 15) : 0;
-             const realVal = subType === 0 ? drawingVal * scaleFactor : rng.intBetween(2, 15) * scaleFactor;
-             const target = subType === 0 ? realVal : rng.intBetween(2, 15);
-             const desc = subType === 0 
-                ? { sv: `En ${svShape} är ${drawingVal} cm på ritningen. Skalan är 1:${scaleFactor}. Hur lång är den i verkligheten? (Svara i cm)`, en: `A ${enShape} is ${drawingVal} cm on the drawing. Scale is 1:${scaleFactor}. Find reality (cm).` }
-                : { sv: `I verkligheten är en ${svShape} ${realVal} cm. Skalan är 1:${scaleFactor}. Hur lång på ritningen? (Svara i cm)`, en: `In reality, a ${enShape} is ${realVal} cm. Scale 1:${scaleFactor}. Find drawing length (cm).` };
-             return {
-                 questionId: `scale-l2-${seed}`,
-                 renderData: { 
-                     text_key: "calc_len_easy", 
-                     description: desc, 
-                     latex: `1:${scaleFactor}`, 
-                     answerType: 'numeric', 
-                     geometry: { type: 'scale_single', shape, label: subType===0?`${drawingVal} cm`:`${realVal} cm` },
-                     variables: {} 
-                 },
-                 serverData: { answer: target, solutionSteps: [{ text: t(lang, TERMS.common.calculate), latex: subType===0 ? `${drawingVal} \\cdot ${scaleFactor} = ${color}{${realVal}}}` : `\\frac{${realVal}}{${scaleFactor}} = ${color}{${target}}}` }] }
-             };
+        // --- LEVEL 2: FIND LENGTH (EASY - SAME UNITS) ---
+        if (mode === 2) {
+            const subType = rng.intBetween(0, 1);
+            let drawingVal = 0; 
+            let realVal = 0;
+            let answer = 0;
+            let steps: Clue[] = [];
+            let geomLabel = "";
+            let descriptionObj = { sv: "", en: "" };
+
+            // We generate the BASE drawing integer first to ensure clean math
+            const baseInt = rng.intBetween(2, 15);
+
+            if (subType === 0) { // Find Real
+                drawingVal = baseInt;
+                realVal = drawingVal * scaleFactor;
+                answer = realVal;
+                
+                descriptionObj = {
+                    sv: `En ${svShape} är ${drawingVal} cm på ritningen. Skalan är 1:${scaleFactor}. Hur lång är den i verkligheten? (Svara i cm)`,
+                    en: `A ${enShape} is ${drawingVal} cm on the drawing. Scale is 1:${scaleFactor}. How long is it in reality? (Answer in cm)`
+                };
+                
+                geomLabel = `${drawingVal} cm`;
+                steps = [{ text: t(lang, TERMS.common.calculate), latex: `${drawingVal} \\cdot ${scaleFactor} = ${color}{${realVal}}}` }];
+            } else { // Find Drawing
+                // We set the reality based on the base integer so division is clean
+                answer = baseInt; // The drawing length IS the answer
+                realVal = answer * scaleFactor; 
+
+                descriptionObj = {
+                    sv: `I verkligheten är en ${svShape} ${realVal} cm lång. Hur lång blir den på en ritning i skala 1:${scaleFactor}? (Svara i cm)`,
+                    en: `In reality, a ${enShape} is ${realVal} cm long. How long will it be on a drawing with scale 1:${scaleFactor}? (Answer in cm)`
+                };
+                
+                geomLabel = `${realVal} cm`;
+                steps = [{ text: t(lang, TERMS.scale.div_scale), latex: `\\frac{${realVal}}{${scaleFactor}} = ${color}{${answer}}}` }];
+            }
+
+            return {
+                questionId: `scale-l2-${seed}`,
+                renderData: {
+                    text_key: "calc_len_easy",
+                    description: descriptionObj,
+                    latex: `1:${scaleFactor}`,
+                    answerType: 'numeric',
+                    geometry: { type: 'scale_single', shape: shape, label: geomLabel },
+                    variables: {} 
+                },
+                serverData: { answer, solutionSteps: steps }
+            };
         }
 
-        if (mode === 3) { /* Level 3 Logic */ 
-             const subType = rng.intBetween(0, 1);
-             const drawingVal = rng.intBetween(2, 9);
-             const realValCm = drawingVal * scaleFactor;
-             const realValM = realValCm / 100;
-             const desc = subType === 0
-                ? { sv: `En ${svShape} är ${drawingVal} cm på ritningen. Skalan är 1:${scaleFactor}. Hur lång är den i verkligheten? (Svara i m)`, en: `A ${enShape} is ${drawingVal} cm on drawing. Scale 1:${scaleFactor}. Find reality (m).` }
-                : { sv: `I verkligheten är en ${svShape} ${realValM} m. Skalan är 1:${scaleFactor}. Hur lång på ritningen? (Svara i cm)`, en: `In reality a ${enShape} is ${realValM} m. Scale 1:${scaleFactor}. Find drawing (cm).` };
-             return {
-                 questionId: `scale-l3-${seed}`,
-                 renderData: { 
-                     text_key: "calc_len_hard", 
-                     description: desc, 
-                     latex: `1:${scaleFactor}`, 
-                     answerType: 'numeric', 
-                     geometry: { type: 'scale_single', shape, label: subType===0?`${drawingVal} cm`:`${realValM} m` },
-                     variables: {} 
-                 },
-                 serverData: { answer: subType===0?realValM:drawingVal, solutionSteps: [{text: "Convert/Calc", latex: subType===0?`${drawingVal} \\cdot ${scaleFactor} = ${realValCm} \\to ${color}{${realValM}}}` : `${realValM}m = ${realValCm}cm \\to \\frac{${realValCm}}{${scaleFactor}} = ${color}{${drawingVal}}}`}] }
-             };
+        // --- LEVEL 3: FIND LENGTH (HARD - MIXED UNITS) ---
+        if (mode === 3) {
+            const subType = rng.intBetween(0, 1);
+            let answer = 0;
+            let steps: Clue[] = [];
+            let geomLabel = "";
+            let descriptionObj = { sv: "", en: "" };
+
+            // Generate base integer for drawing length (cm)
+            const baseInt = rng.intBetween(2, 9);
+
+            if (subType === 0) { // Find Real (Answer in m)
+                const drawingVal = baseInt; 
+                const realValCm = drawingVal * scaleFactor;
+                const realValM = realValCm / 100; // Convert to meters
+                answer = realValM;
+
+                descriptionObj = {
+                    sv: `En ${svShape} är ${drawingVal} cm på ritningen. Skalan är 1:${scaleFactor}. Hur lång är den i verkligheten? (Svara i m)`,
+                    en: `A ${enShape} is ${drawingVal} cm on the drawing. Scale is 1:${scaleFactor}. How long is it in reality? (Answer in m)`
+                };
+                
+                geomLabel = `${drawingVal} cm`;
+                steps = [
+                    { text: t(lang, TERMS.scale.calc_cm), latex: `${drawingVal} \\cdot ${scaleFactor} = ${realValCm} \\text{ cm}` },
+                    { text: t(lang, TERMS.scale.conv_m), latex: `\\frac{${realValCm}}{100} = ${color}{${realValM}}}` }
+                ];
+            } else { // Find Drawing (Answer in cm, Reality given in m)
+                const drawingVal = baseInt; // Answer
+                const realValCm = drawingVal * scaleFactor;
+                const realValM = realValCm / 100; // Input given to user
+
+                answer = drawingVal;
+
+                descriptionObj = {
+                    sv: `I verkligheten är en ${svShape} ${realValM} m lång. Hur lång blir den på en ritning i skala 1:${scaleFactor}? (Svara i cm)`,
+                    en: `In reality, a ${enShape} is ${realValM} m long. How long will it be on a drawing with scale 1:${scaleFactor}? (Answer in cm)`
+                };
+                
+                geomLabel = `${realValM} m`;
+                steps = [
+                    { text: t(lang, TERMS.scale.conv_same), latex: `${realValM} \\text{ m} = ${realValCm} \\text{ cm}` },
+                    { text: t(lang, TERMS.scale.div_scale), latex: `\\frac{${realValCm}}{${scaleFactor}} = ${color}{${answer}}}` }
+                ];
+            }
+
+            return {
+                questionId: `scale-l3-${seed}`,
+                renderData: {
+                    text_key: "calc_len_hard",
+                    description: descriptionObj,
+                    latex: `1:${scaleFactor}`,
+                    answerType: 'numeric',
+                    geometry: { type: 'scale_single', shape: shape, label: geomLabel },
+                    variables: {} 
+                },
+                serverData: { answer, solutionSteps: steps }
+            };
         }
 
-        if (mode === 4) { /* Level 4 Logic */ 
-             const base = rng.intBetween(2, 5); const factor = rng.pick([10, 20, 50, 100]);
-             const leftIsDrawing = rng.intBetween(0,1)===1;
-             const lLab = leftIsDrawing ? t(lang, this.LABELS.drawing) : t(lang, this.LABELS.reality);
-             const rLab = leftIsDrawing ? t(lang, this.LABELS.reality) : t(lang, this.LABELS.drawing);
-             const lVal = leftIsDrawing ? `${base} cm` : `${(base*factor)/100} m`;
-             const rVal = leftIsDrawing ? `${(base*factor)/100} m` : `${base} cm`;
-             const desc = { sv: `Bestäm skalan (Svara som X:X). Svara i cm.`, en: `Determine the scale (Answer as X:X). Use cm.` };
-             return {
-                 questionId: `scale-l4-${seed}`,
-                 renderData: { 
-                     text_key: "find_scale", 
-                     description: desc, 
-                     latex: "", 
-                     answerType: 'scale', 
-                     geometry: { type: 'scale_compare', shape, leftLabel: lLab, rightLabel: rLab, leftValue: lVal, rightValue: rVal },
-                     variables: {} 
-                 },
-                 serverData: { answer: {left:1, right:factor}, solutionSteps: [{text: t(lang, TERMS.scale.step_simplify), latex: `1:${factor}`}] }
-             };
+        // --- LEVEL 4: FIND SCALE (RANDOM POSITIONING) ---
+        if (mode === 4) {
+            const base = rng.intBetween(2, 5);
+            const factor = rng.pick([10, 20, 50, 100]);
+            
+            const drawVal = base; 
+            const realVal = base * factor; 
+            
+            const realUnit = factor >= 100 ? 'm' : 'cm';
+            const realDisplay = realUnit === 'm' ? realVal / 100 : realVal;
+
+            const descriptionObj = {
+                sv: `Bestäm skalan (Svara som X:X).`,
+                en: `Determine the scale (Answer as X:X).`
+            };
+            
+            const leftIsDrawing = rng.intBetween(0, 1) === 1;
+
+            const leftLabel = leftIsDrawing ? t(lang, this.LABELS.drawing) : t(lang, this.LABELS.reality);
+            const rightLabel = leftIsDrawing ? t(lang, this.LABELS.reality) : t(lang, this.LABELS.drawing);
+            
+            const leftValue = leftIsDrawing ? `${drawVal} cm` : `${realDisplay} ${realUnit}`;
+            const rightValue = leftIsDrawing ? `${realDisplay} ${realUnit}` : `${drawVal} cm`;
+
+            const steps: Clue[] = [
+                { text: t(lang, TERMS.scale.conv_same), latex: `${realDisplay} ${realUnit} = ${realVal} \\text{ cm}` },
+                { text: t(lang, TERMS.scale.step_plug_in), latex: `\\text{Bild} : \\text{Verklighet} = ${drawVal} : ${realVal}` },
+                { text: t(lang, TERMS.scale.step_simplify), latex: `1 : \\frac{${realVal}}{${drawVal}} \\implies ${color}{1:${factor}}}` }
+            ];
+
+            return {
+                questionId: `scale-l4-${seed}`,
+                renderData: {
+                    text_key: "find_scale",
+                    description: descriptionObj,
+                    latex: "",
+                    answerType: 'scale',
+                    geometry: { 
+                        type: 'scale_compare', 
+                        shape: shape, 
+                        leftLabel, 
+                        rightLabel,
+                        leftValue,
+                        rightValue
+                    },
+                    variables: {} 
+                },
+                serverData: {
+                    answer: { left: 1, right: factor },
+                    solutionSteps: steps
+                }
+            };
         }
 
-        if (mode === 5) { /* Level 5 Logic */ 
-             const base = rng.intBetween(3, 8); const factor = rng.pick([50, 100, 200, 500]);
-             const realM = (base * factor) / 100;
-             const desc = { sv: `På en ritning är en ${svShape} ${base} cm lång. I verkligheten är den ${realM} m. Vad är skalan (i cm)?`, en: `Drawing: ${base} cm. Reality: ${realM} m. What is the scale (in cm)?` };
-             return {
-                 questionId: `scale-l5-${seed}`,
-                 renderData: { 
-                     text_key: "find_scale_text", 
-                     description: desc, 
-                     latex: "", 
-                     answerType: 'scale',
-                     variables: {} 
-                 },
-                 serverData: { answer: {left:1, right:factor}, solutionSteps: [{text: t(lang, TERMS.scale.step_simplify), latex: `1:${factor}`}] }
-             };
+        // --- LEVEL 5: TEXT ONLY (FIND SCALE) ---
+        if (mode === 5) {
+            const base = rng.intBetween(3, 8);
+            const factor = rng.pick([50, 100, 200, 500]);
+            const drawVal = base;
+            const realValCm = base * factor;
+            const realValM = realValCm / 100;
+            const shapeName = t(lang, TERMS.shapes[shape] || shape);
+
+            const descriptionObj = {
+                sv: `På en ritning är en ${shapeName} ${drawVal} cm lång. I verkligheten är den ${realValM} m. Vad är skalan (i cm)?`,
+                en: `On a drawing, a ${shapeName} is ${drawVal} cm long. In reality it is ${realValM} m. What is the scale (in cm)?`
+            };
+
+            const steps: Clue[] = [
+                { text: t(lang, TERMS.scale.conv_same), latex: `${realValM} \\text{ m} = ${realValCm} \\text{ cm}` },
+                { text: t(lang, TERMS.scale.setup_ratio), latex: `${drawVal} : ${realValCm}` },
+                { text: t(lang, TERMS.scale.step_simplify), latex: `1 : \\frac{${realValCm}}{${drawVal}} \\implies ${color}{1:${factor}}}` }
+            ];
+
+            return {
+                questionId: `scale-l5-${seed}`,
+                renderData: {
+                    text_key: "find_scale_text",
+                    description: descriptionObj,
+                    latex: "",
+                    answerType: 'scale',
+                    variables: {} 
+                },
+                serverData: {
+                    answer: { left: 1, right: factor },
+                    solutionSteps: steps
+                }
+            };
         }
 
         // --- LEVEL 6: AREA SCALE ---
@@ -167,9 +287,8 @@ export class ScaleGenerator {
             let answer: any = 0;
             let answerType: any = 'numeric';
 
-            // Use the plural forms from TERMS.shapes_plural
-            const shapePluralSv = TERMS.shapes_plural[areaShape]?.sv || `${areaShape}er`;
-            const shapePluralEn = TERMS.shapes_plural[areaShape]?.en || `${areaShape}s`;
+            const shapePluralSv = TERMS.shapes_plural?.[areaShape]?.sv || `${areaShape}er`;
+            const shapePluralEn = TERMS.shapes_plural?.[areaShape]?.en || `${areaShape}s`;
 
             if (subType === 1) { // Find Scale
                 const w = rng.intBetween(2, 6);
