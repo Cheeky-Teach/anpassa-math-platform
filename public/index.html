@@ -37,6 +37,7 @@
         .drawer-enter-active { transform: translateX(0); transition: transform 300ms; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Modal Animation */
         .modal-enter { opacity: 0; transform: scale(0.95); }
         .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
     </style>
@@ -122,12 +123,13 @@
                 submit:"Svara",correct:"Rätt! Nästa...",incorrect:"Inte riktigt, försök igen",placeholder:"Skriv ditt svar...",
                 level:"Nivå",history:"Historik",noHistory:"Inga svar än.",clueUsed:"Hjälp",
                 dashboardTitle:"Välj område att öva på",
-                progressionInfo:"Systemet anpassar sig efter dig. Klarar du 8 frågor i rad på en nivå föreslår vi att du går vidare till nästa.",
+                progressionInfo:"Välj ett område. Systemet anpassar sig efter dig. Klarar du 8 frågor i rad på en nivå föreslår vi att du går vidare till nästa.",
                 startBtn:"Börja öva",backBtn:"Tillbaka till menyn",selectLevel:"Välj nivå:",
                 hintsTitle:"Ledtrådar",prevLevel:"Föregående",nextLevel:"Nästa",
                 levelUpTitle:"Bra jobbat! 🔥",levelUpDesc:"Du har klarat 8 frågor i rad! Vill du gå vidare till nästa nivå?",levelUpYes:"Nästa nivå",levelUpNo:"Stanna på samma nivå",levelUpHint:"Kom ihåg att du alltid kan byta nivå manuellt högst upp på sidan.",
                 aboutBtn:"Om skaparen",aboutTitle:"Om skaparen",aboutText:"Charles är en speciallärare som arbetar i Sverige och brinner för att upptäcka nya sätt att undervisa i klassrummet.",
-                contactLink:"Följ mig på LinkedIn"
+                contactLink:"Följ mig på LinkedIn",
+                tagline:"Rätt stöd. Direkt."
             },
             en:{
                 streak:"Streak",loading:"Loading question...",error:"Could not load question.",
@@ -135,12 +137,13 @@
                 submit:"Submit",correct:"Correct! Next...",incorrect:"Not quite, try again",placeholder:"Enter your answer...",
                 level:"Level",history:"History",noHistory:"No answers yet.",clueUsed:"Clue",
                 dashboardTitle:"Choose a topic to practice",
-                progressionInfo:"The system adapts to you. Answer 8 questions correctly in a row to unlock the next level.",
+                progressionInfo:"Choose a topic. The system adapts to you. Answer 8 questions correctly in a row to unlock the next level.",
                 startBtn:"Start Practice",backBtn:"Back to Menu",selectLevel:"Select Level:",
                 hintsTitle:"Hints",prevLevel:"Previous",nextLevel:"Next",
                 levelUpTitle:"Great Job! 🔥",levelUpDesc:"You've answered 8 in a row! Do you want to try the next level?",levelUpYes:"Next Level",levelUpNo:"Stay Here",levelUpHint:"Remember, you can always change difficulty manually at the top.",
                 aboutBtn:"About the creator",aboutTitle:"About the creator",aboutText:"Charles is a special education teacher currently working in Sweden and is passionate about discovering new ways to teach in the classroom.",
-                contactLink:"Follow me on LinkedIn"
+                contactLink:"Follow me on LinkedIn",
+                tagline:"Right support. Instantly."
             }
         };
 
@@ -223,18 +226,22 @@
                 if (data.type === 'scale_single') return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="120px" /><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>;
                 return <div className="flex items-end justify-center gap-6 sm:gap-12 my-6"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="80px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div><div className="pb-8 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="120px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div></div>;
             }
+
             if (data.type === 'compare_shapes' || data.type === 'compare_shapes_area') {
                 const showLabels = data.type === 'compare_shapes';
                 const showArea = data.type === 'compare_shapes_area';
                 return (<div className="flex flex-wrap justify-center gap-8 items-end my-4"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.left.label}</span><RenderShape type={data.shapeType} dims={data.left} labels={showLabels} areaText={showArea ? data.left.area : null} /></div><div className="pb-20 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.right.label}</span><RenderShape type={data.shapeType} dims={data.right} labels={showLabels} areaText={showArea ? data.right.area : null} /></div></div>);
             }
+            
             return <div className="flex justify-center my-4"><RenderShape type={data.type} dims={data} labels={true} /></div>;
         };
 
         const StaticGeometryVisual=({description})=>{if(!description)return null;const d=description.toLowerCase();if(d.includes("rect")||d.includes("rektangel"))return<div className="flex justify-center my-4 opacity-80"><div className="w-28 h-16 border-2 border-primary-500 bg-primary-50 rounded-sm"></div></div>;if(d.includes("trian"))return<div className="flex justify-center my-4 opacity-80"><div className="w-0 h-0 border-l-[36px] border-r-[36px] border-b-[63px] border-l-transparent border-r-transparent border-b-primary-500/20 border-b-solid relative"><div className="absolute -left-[36px] top-[63px] w-full h-[2px] bg-primary-500"></div></div></div>;if(d.includes("circ")||d.includes("cirkel"))return<div className="flex justify-center my-4 opacity-80"><div className="w-20 h-20 rounded-full border-2 border-primary-500 bg-primary-50"></div></div>;return null;};
 
         // --- DASHBOARD COMPONENT ---
-        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect})=>{const ui=UI_TEXT[lang];const getCategoryColorClass=(category,type)=>{const colorMap={indigo:'indigo',emerald:'emerald',purple:'purple'};const color=colorMap[category.color]||'primary';if(type==='bg-light')return `bg-${color}-50`;if(type==='bg-dark')return `bg-${color}-500`;if(type==='border')return `border-${color}-100`;if(type==='text')return `text-${color}-700`;if(type==='ring')return `ring-${color}-500`;if(type==='border-solid')return `border-${color}-500`;return '';};return(<div className="max-w-6xl mx-auto w-full p-4 fade-in"><div className="text-center mb-10"><h2 className="text-2xl font-bold text-gray-800 mb-2">{ui.dashboardTitle}</h2><div className="h-1 w-20 bg-primary-500 mx-auto rounded-full mb-4"></div><p className="text-gray-500 text-sm italic">{ui.progressionInfo}</p></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">{Object.entries(CATEGORIES).map(([catKey,category])=>{const bgLight=getCategoryColorClass(category,'bg-light');const border=getCategoryColorClass(category,'border');const text=getCategoryColorClass(category,'text');const bgDark=getCategoryColorClass(category,'bg-dark');return(<div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}><div className={`${bgLight} p-4 border-b ${border}`}><h3 className={`text-lg font-bold ${text} uppercase tracking-wide flex items-center gap-2`}><span className={`w-3 h-3 rounded-full ${bgDark}`}></span>{category.label[lang]}</h3></div><div className="p-4 space-y-4 flex-1">{category.topics.map(topic=>{const ring=getCategoryColorClass(category,'ring');const borderSolid=getCategoryColorClass(category,'border-solid');return(<div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100"><div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div><div className="relative"><select value={selectedTopic===topic.id?selectedLevel:0} onChange={(e)=>onSelect(topic.id,Number(e.target.value))} className={`w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 appearance-none cursor-pointer ${selectedTopic===topic.id?`ring-2 ${ring} ${borderSolid}`:`focus:${ring}`}`}><option value={0} disabled>{ui.selectLevel}</option>{[1,2,3,4,5,6,7].map(lvl=>{if(!LEVEL_DESCRIPTIONS[topic.id]?.[lvl])return null;return<option key={lvl} value={lvl}>{lang==='sv'?`Nivå ${lvl}`:`Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang]||""}</option>;})}</select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div></div></div>);})}</div></div>);})}</div><div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20"><button onClick={onStart} className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 ${selectedTopic?'bg-accent-500 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-accent-600 shadow-accent-200':'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}`}>{ui.startBtn} <span>🚀</span></button></div></div>);};
+        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect})=>{const ui=UI_TEXT[lang];const getCategoryColorClass=(category,type)=>{const colorMap={indigo:'indigo',emerald:'emerald',purple:'purple'};const color=colorMap[category.color]||'primary';if(type==='bg-light')return `bg-${color}-50`;if(type==='bg-dark')return `bg-${color}-500`;if(type==='border')return `border-${color}-100`;if(type==='text')return `text-${color}-700`;if(type==='ring')return `ring-${color}-500`;if(type==='border-solid')return `border-${color}-500`;return '';};return(<div className="max-w-6xl mx-auto w-full p-4 fade-in">
+        <div className="text-center py-10 md:py-16 border-b border-gray-200 mb-12 bg-primary-50 rounded-3xl mx-4"><h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-4 tracking-tight">Anpassa</h1><p className="text-xl md:text-2xl text-gray-500 font-medium tracking-wide">{ui.tagline}</p></div>
+        <div className="text-center mb-10"><p className="text-gray-500 text-lg leading-relaxed max-w-2xl mx-auto">{ui.progressionInfo}</p></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">{Object.entries(CATEGORIES).map(([catKey,category])=>{const bgLight=getCategoryColorClass(category,'bg-light');const border=getCategoryColorClass(category,'border');const text=getCategoryColorClass(category,'text');const bgDark=getCategoryColorClass(category,'bg-dark');return(<div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}><div className={`${bgLight} p-4 border-b ${border}`}><h3 className={`text-lg font-bold ${text} uppercase tracking-wide flex items-center gap-2`}><span className={`w-3 h-3 rounded-full ${bgDark}`}></span>{category.label[lang]}</h3></div><div className="p-4 space-y-4 flex-1">{category.topics.map(topic=>{const ring=getCategoryColorClass(category,'ring');const borderSolid=getCategoryColorClass(category,'border-solid');return(<div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100"><div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div><div className="relative"><select value={selectedTopic===topic.id?selectedLevel:0} onChange={(e)=>onSelect(topic.id,Number(e.target.value))} className={`w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 appearance-none cursor-pointer ${selectedTopic===topic.id?`ring-2 ${ring} ${borderSolid}`:`focus:${ring}`}`}><option value={0} disabled>{ui.selectLevel}</option>{[1,2,3,4,5,6,7].map(lvl=>{if(!LEVEL_DESCRIPTIONS[topic.id]?.[lvl])return null;return<option key={lvl} value={lvl}>{lang==='sv'?`Nivå ${lvl}`:`Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang]||""}</option>;})}</select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div></div></div>);})}</div></div>);})}</div><div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20"><button onClick={onStart} className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 ${selectedTopic?'bg-accent-500 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-accent-600 shadow-accent-200':'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}`}>{ui.startBtn} <span>🚀</span></button></div></div>);};
 
         // --- PRACTICE VIEW ---
         const LevelUpModal = ({ visible, ui, onNext, onStay }) => {
@@ -252,6 +259,7 @@
 
         const AboutModal = ({ visible, onClose, ui }) => {
             if (!visible) return null;
+            
             return (
                 <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-bounce-in border border-gray-100">
@@ -260,6 +268,9 @@
                             <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 overflow-hidden"><img src="https://lh3.googleusercontent.com/pw/AP1GczOwrnjPbUDbsavQ6HYoAA7krSlDYM17qihgBcUa2ZjjVu_cyP4qO7jaX7wF7ll3u7Z9AGMHFjzeL71qZGLsUF5_TWtbEfQ05I3eoSu3tigPClQLzKAF=w2400" alt="Charles" className="w-full h-full object-cover" /></div>
                             <h3 className="text-2xl font-bold text-gray-800 mb-2">{ui.aboutTitle}</h3>
                             <p className="text-gray-600 text-sm leading-relaxed mb-6">{ui.aboutText}</p>
+                            
+                            <hr className="my-4 border-gray-200" />
+                            
                             <a href="https://www.linkedin.com/in/charles-mejilla-4a2ba22b" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-bold transition-colors">
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
                                 {ui.contactLink}
