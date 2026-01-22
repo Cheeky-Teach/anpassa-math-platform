@@ -7,6 +7,7 @@ export class LinearEquationGenerator {
     const rng = new Random(seed);
     
     // FIX: Using function to generate valid LaTeX color
+    // Structure: \textcolor{color}{ \mathbf{text} }
     const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
 
     let mode = level;
@@ -24,6 +25,7 @@ export class LinearEquationGenerator {
             const res = rng.intBetween(s(2), s(10)); 
             answer = res * k;
             eq = `\\frac{x}{${k}} = ${res}`;
+            
             steps = [
                 { text: t(lang, TERMS.algebra.intro(eq)), latex: eq },
                 { text: t(lang, TERMS.algebra.multiply(k)), latex: `x = ${res} \\cdot ${k} = ${formatColor(answer)}` }
@@ -69,7 +71,7 @@ export class LinearEquationGenerator {
         const x = rng.intBetween(s(2), s(10));
         const a = rng.intBetween(s(2), s(9));
         const b = rng.intBetween(s(1), s(20));
-        const type = rng.bool(); 
+        const type = rng.bool(); // Plus or Minus
         
         if (type) { // ax + b = c
             const c = (a * x) + b;
@@ -91,7 +93,7 @@ export class LinearEquationGenerator {
         answer = x;
     }
 
-    // --- LEVEL 3: Variables on Both Sides ---
+    // --- LEVEL 3: Variables on Both Sides (ax + b = cx + d) ---
     else if (mode === 3) {
         answer = rng.intBetween(s(2), s(10));
         const c = rng.intBetween(s(2), s(5));
@@ -109,7 +111,7 @@ export class LinearEquationGenerator {
         ];
     }
 
-    // --- LEVEL 4: Parentheses ---
+    // --- LEVEL 4: Parentheses a(x + b) = c ---
     else {
         const x = rng.intBetween(s(2), s(10));
         const a = rng.intBetween(s(2), s(5));

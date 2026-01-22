@@ -3,7 +3,7 @@ import { Random } from "../utils/random";
 import { TERMS, t, Language } from "../utils/i18n";
 
 export class ScaleGenerator {
-    // Moved to static method to ensure availability
+    // Safer static method access or internal definition to prevent load issues
     private static getShape(rng: Random) {
         const SHAPES = [
             'square', 'rectangle', 'circle', 'triangle', 
