@@ -8,7 +8,7 @@ import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerato
 import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
 import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
-import { VolumeGenerator } from '../src/core/generators/VolumeGenerator'; // Added
+import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
 
 function formatAnswerForToken(answer: any): string | number {
     if (typeof answer === 'object' && answer !== null) {
@@ -28,25 +28,35 @@ function formatAnswerForToken(answer: any): string | number {
 export default function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
   
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
-    const { topic = 'scale', level = '1', lang = 'sv' } = req.query;
-    const seed = Math.random().toString(36).substring(7);
-    const lvl = Number(level) || 1;
-    const lg = (lang === 'en' ? 'en' : 'sv');
-    const multiplier = 1;
+    const { topic, level, lang = 'sv' } = req.query;
+
+    if (!topic || !level) {
+      return res.status(400).json({ error: 'Missing topic or level' });
+    }
+
+    const seed = `${topic}-${level}-${Date.now()}`;
+    const lvl = Number(level);
+    const lg = lang as 'sv' | 'en';
+    const multiplier = 1; // Can be dynamic later
 
     let qData;
+    let tolerance = 0; // Default: Exact match required
 
-    switch(topic) {
+    switch (topic) {
       case 'equation':
-        if (lvl === 5) {
-            qData = LinearEquationProblemGen.generate(lvl, seed, lg);
+      case 'problem':
+        if (lvl === 5 && topic === 'equation') {
+             qData = LinearEquationProblemGen.generate(5, seed, lg);
         } else if (lvl === 6) {
              qData = LinearEquationGenerator.generate(6, seed, lg, multiplier);
         } else {
@@ -57,9 +67,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       case 'geometry':
         qData = GeometryGenerator.generate(lvl, seed, lg, multiplier);
         break;
-      case 'volume': // Added
+      
+      case 'volume':
         qData = VolumeGenerator.generate(lvl, seed, lg, multiplier);
+        tolerance = 1; // +/- 1.0 forgiveness for PI rounding differences
         break;
+
       case 'graph':
         qData = LinearGraphGenerator.generate(lvl, seed, lg);
         break;
@@ -77,7 +90,9 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const tokenAnswer = formatAnswerForToken(qData.serverData.answer);
-    const token = generateToken(qData.questionId, tokenAnswer);
+    
+    // Pass tolerance to the token generator
+    const token = generateToken(qData.questionId, tokenAnswer, tolerance);
     
     return res.status(200).json({
       questionId: qData.questionId,
@@ -86,11 +101,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       token: token
     });
 
-  } catch (error: any) {
-    console.error("API Error in /api/question:", error);
-    return res.status(500).json({ 
-        error: 'Failed to generate question', 
-        details: error.message 
-    });
+  } catch (error) {
+    console.error("API Error:", error);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
