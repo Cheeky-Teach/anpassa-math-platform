@@ -26,8 +26,15 @@ export const TERMS = {
         step_simplify: { sv: "Förenkla:", en: "Simplify:" },
         enlargement: { sv: "Förstoring", en: "Enlargement" },
         reduction: { sv: "Förminskning", en: "Reduction" },
+        rule_reduction: { sv: "Eftersom det första talet är 1, är det en förminskning.", en: "Since the first number is 1, it is a reduction." },
+        rule_enlargement: { sv: "Eftersom det första talet är större än 1, är det en förstoring.", en: "Since the first number is greater than 1, it is an enlargement." },
+        
         calc_cm: { sv: "Beräkna cm", en: "Calculate cm" },
         conv_m: { sv: "Omvandla till meter", en: "Convert to m" },
+        conv_units: { sv: "Omvandla enheter", en: "Convert units" },
+        div_scale: { sv: "Dividera med skalan", en: "Divide by scale" },
+        conv_same: { sv: "Omvandla till samma enhet (cm)", en: "Convert to same unit (cm)" },
+        setup_ratio: { sv: "Ställ upp förhållandet", en: "Set up ratio" },
         
         // Area Scale Specific
         calc_area_img: { sv: "Beräkna bildens area", en: "Calculate image area" },
@@ -46,6 +53,7 @@ export const TERMS = {
         step_calc_base: { sv: "Beräkna basytan (B)", en: "Calculate Base Area (B)" }
     },
     shapes: {
+        // 2D Shapes
         square: { sv: "kvadrat", en: "square" },
         rectangle: { sv: "rektangel", en: "rectangle" },
         circle: { sv: "cirkel", en: "circle" },
@@ -57,26 +65,60 @@ export const TERMS = {
         hexagon: { sv: "sexhörning", en: "hexagon" },
         octagon: { sv: "åttahörning", en: "octagon" },
         kite: { sv: "drake", en: "kite" },
+        
+        // Symbols
         star: { sv: "stjärna", en: "star" },
         arrow: { sv: "pil", en: "arrow" },
         heart: { sv: "hjärta", en: "heart" },
         cross: { sv: "kors", en: "cross" },
         lightning: { sv: "blixt", en: "lightning" },
+        
+        // 3D Shapes
         cube: { sv: "kub", en: "cube" },
         rect_prism: { sv: "rätblock", en: "rectangular prism" }, 
-        tri_prism: { sv: "triangulärt prisma", en: "triangular prism" },
+        tri_prism: { sv: "triangulärt prisma", en: "triangular prism" }, // Kept for compatibility with VolumeGen
         triangular_prism: { sv: "triangulärt prisma", en: "triangular prism" },
         cylinder: { sv: "cylinder", en: "cylinder" },
         pyramid: { sv: "pyramid", en: "pyramid" },
         cone: { sv: "kon", en: "cone" },
         sphere: { sv: "klot", en: "sphere" } 
-    },
+    } as Record<string, {sv:string, en:string}>,
+    shapes_plural: {
+        square: { sv: "kvadrater", en: "squares" },
+        rectangle: { sv: "rektanglar", en: "rectangles" },
+        circle: { sv: "cirklar", en: "circles" },
+        semicircle: { sv: "halvcirklar", en: "semicircles" },
+        triangle: { sv: "trianglar", en: "triangles" },
+        parallelogram: { sv: "parallellogrammer", en: "parallelograms" },
+        rhombus: { sv: "romber", en: "rhombuses" }
+    } as Record<string, {sv:string, en:string}>,
     geometry: {
+        // Descriptions
+        desc_rect: { sv: "En rektangel", en: "A rectangle" },
+        desc_para: { sv: "En parallellogram", en: "A parallelogram" },
+        desc_tri: { sv: "En triangel", en: "A triangle" },
+        desc_circle: { sv: "En cirkel", en: "A circle" },
+        desc_composite: { sv: "En sammansatt figur", en: "A composite shape" },
+        
+        // Formulas & Calcs (Merged)
         calc_area_tri: { sv: "Area = (basen · höjden) / 2", en: "Area = (base · height) / 2" },
         formula_rect_perim: { sv: "Omkrets = 2 · (bredd + höjd)", en: "Perimeter = 2 · (width + height)" },
         formula_para_perim: { sv: "Omkrets = 2 · (sida A + sida B)", en: "Perimeter = 2 · (side A + side B)" },
+        formula_rect_perim_latex: "O = 2(b + h)",
+        formula_para_perim_latex: "O = 2(a + b)",
+        
+        step_sub: { sv: "Sätt in värdena i formeln:", en: "Substitute values into the formula:" },
+        step_calc: { sv: "Beräkna resultatet:", en: "Calculate the result:" },
         calc_perim: { sv: "Beräkna omkretsen", en: "Calculate perimeter" },
         calc_area: { sv: "Beräkna arean", en: "Calculate area" },
+        
+        step_comp_tri_sides: { sv: "Addera sidorna:", en: "Add the sides:" },
+        step_comp_arc_verbose: { sv: "Beräkna bågen:", en: "Calculate the arc:" },
+        step_comp_total_perim: { sv: "Total omkrets:", en: "Total perimeter:" },
+        step_comp_semi_area: { sv: "Halvcirkelns area:", en: "Semicircle area:" },
+        step_comp_total_area: { sv: "Total area:", en: "Total area:" },
+        
+        // Compatibility keys
         comp_rect_area: { sv: "Rektangelns area:", en: "Rectangle area:" },
         comp_tri_area: { sv: "Triangelns area:", en: "Triangle area:" },
         comp_total_area: { sv: "Total area:", en: "Total area:" }
@@ -85,6 +127,9 @@ export const TERMS = {
         intro: (expr: string) => ({ sv: `Förenkla uttrycket: $${expr}$`, en: `Simplify the expression: $${expr}$` }),
         group_terms: { sv: "Gruppera termer (x med x, tal med tal)", en: "Group like terms" },
         calc_result: (ans: string) => ({ sv: `Resultat: $${ans}$`, en: `Result: $${ans}$` }),
+        start_unknown: { sv: "Vi börjar med talet $x$.", en: "We start with the number $x$." },
+        translate_math: { sv: "Översätt texten till matematik:", en: "Translate text to math:" },
+        cost_unknown: (item: string) => ({ sv: `Priset per ${item} är okänt, så $x$.`, en: `Price per ${item} is unknown, so $x$.` }),
         final_expr: { sv: "Slutgiltigt uttryck:", en: "Final expression:" },
         simplify_const: { sv: "Förenkla konstanterna:", en: "Simplify constants:" }
     },
@@ -103,5 +148,5 @@ export const TERMS = {
         q_func: { sv: "Skriv funktionen på formen y = kx + m", en: "Write the function as y = kx + m" },
         step_intercept: (m: number) => ({ sv: `Avläs m-värdet där linjen skär y-axeln. m = ${m}`, en: `Read the y-intercept (m) where line crosses y-axis. m = ${m}` }),
         step_func: (k: number, m: number) => ({ sv: `Sätt in k och m i formeln: y = ${k}x + ${m}`, en: `Insert k and m into formula: y = ${k}x + ${m}` })
-    }
+    },
 };
