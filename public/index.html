@@ -114,7 +114,8 @@
                 3: { sv: "Cylinder", en: "Cylinder" },
                 4: { sv: "Pyramid & Kon", en: "Pyramid & Cone" },
                 5: { sv: "Klot", en: "Sphere" },
-                6: { sv: "Blandat", en: "Mixed" }
+                6: { sv: "Blandat", en: "Mixed" },
+                7: { sv: "Blandat med olika enheter", en: "Mixed with units" }
             },
             graph:{
                 1:{sv:"Hitta m (skärning)",en:"Find y-intercept (m)"},
@@ -321,9 +322,56 @@
                     drawLabel(data.labels.s, cBaseX + dx/2, cBaseY + dy/2 + 20); 
                     drawLabel(data.labels.h, cBaseX + 15, cBaseY - h/2); 
                 }
-                else if (data.type === 'sphere' || data.type === 'hemisphere' || data.type === 'ice_cream') {
+                else if (data.type === 'sphere' || data.type === 'hemisphere' || data.type === 'ice_cream' || data.type === 'silo') {
                     const r = 70;
-                    if (data.type === 'ice_cream') {
+                    
+                    if (data.type === 'silo') {
+                        // Cylinder + Hemisphere on top
+                        const cylH = 100;
+                        const topY = cy - cylH/2 + 20; 
+                        const bottomY = cy + cylH/2 + 20;
+
+                        // Cylinder Sides
+                        ctx.beginPath();
+                        ctx.moveTo(cx - r, topY);
+                        ctx.lineTo(cx - r, bottomY);
+                        ctx.moveTo(cx + r, topY);
+                        ctx.lineTo(cx + r, bottomY);
+                        ctx.stroke();
+
+                        // Bottom Ellipse (Front solid, Back dashed)
+                        ctx.beginPath();
+                        ctx.ellipse(cx, bottomY, r, r/3, 0, 0, Math.PI);
+                        ctx.stroke();
+                        ctx.save();
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.ellipse(cx, bottomY, r, r/3, 0, Math.PI, 2 * Math.PI);
+                        ctx.stroke();
+                        ctx.restore();
+
+                        // Top Intersection Ellipse
+                        ctx.beginPath();
+                        ctx.ellipse(cx, topY, r, r/3, 0, 0, 2 * Math.PI);
+                        ctx.stroke();
+
+                        // Hemisphere on top
+                        ctx.beginPath();
+                        ctx.arc(cx, topY, r, Math.PI, 0); 
+                        ctx.stroke();
+
+                        // Labels
+                        drawLabel(data.labels.h, cx + r + 20, cy + 20); // Height
+                        
+                        if (data.show === 'd') {
+                            drawDashedLine(cx - r, topY, cx + r, topY);
+                            drawLabel(data.labels.val, cx, topY - 10);
+                        } else {
+                            drawDashedLine(cx, topY, cx + r, topY);
+                            drawLabel(data.labels.val, cx + r/2, topY - 10);
+                        }
+                    }
+                    else if (data.type === 'ice_cream') {
                         const coneH = 120;
                         const tipY = cy + coneH/2;
                         const baseY = tipY - coneH;
@@ -632,7 +680,7 @@
                                         <GraphCanvas data={question.renderData.graph}/>
                                     ) : question.renderData.geometry ? (
                                         // Use sophisticated Volume Engine for 3D shapes, standard SVG for 2D
-                                        ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder'].includes(question.renderData.geometry.type) 
+                                        ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(question.renderData.geometry.type) 
                                         ? <VolumeVisualization data={question.renderData.geometry}/> 
                                         : <GeometryVisual data={question.renderData.geometry}/>
                                     ) : (

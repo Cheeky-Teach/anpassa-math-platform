@@ -6,7 +6,7 @@ export class ProgressionRules {
         equation: 6,
         simplify: 6,
         geometry: 5,
-        volume: 6, // Added
+        volume: 7, // Updated to 7
         graph: 5
     };
 

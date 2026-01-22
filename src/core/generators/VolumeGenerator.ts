@@ -6,11 +6,55 @@ export class VolumeGenerator {
     public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
         const rng = new Random(seed);
         const color = "\\mathbf{\\textcolor{#D35400}}";
-        const s = (val: number) => Math.round(val * multiplier);
         const piApprox = 3.14;
 
+        // --- UTILS ---
+        
+        // Helper: Generate numbers up to 30, ensuring they are within 9 of each other
+        const getConstrainedValues = (count: number): number[] => {
+            // Pick a "floor" for the range such that floor + 9 <= 30
+            // Range [2, 30]
+            const minAllowed = 2;
+            const maxAllowed = 30;
+            const span = 9;
+            
+            // Pick a start point for the window [start, start + 9]
+            const windowStart = rng.intBetween(minAllowed, maxAllowed - span);
+            const windowEnd = windowStart + span;
+
+            const vals: number[] = [];
+            for(let i = 0; i < count; i++) {
+                vals.push(rng.intBetween(windowStart, windowEnd));
+            }
+            return vals;
+        };
+
+        // --- LEVEL LOGIC ---
+
         let mode = level;
-        if (level === 6) mode = rng.intBetween(1, 5); 
+        const isUnitConversion = level === 7;
+        
+        // Level 6 (Mixed) or Level 7 (Units) -> Pick random shape mode
+        if (level >= 6) mode = rng.intBetween(1, 5); 
+
+        // Unit Handling
+        const UNITS = [
+            { id: 'mm', factor: 0.001 },
+            { id: 'cm', factor: 0.01 },
+            { id: 'dm', factor: 0.1 },
+            { id: 'm', factor: 1.0 }
+        ];
+        
+        let unitIn = UNITS[1]; // Default cm
+        let unitOut = UNITS[1]; // Default cm
+
+        if (isUnitConversion) {
+            unitIn = rng.pick(UNITS);
+            // Ensure unitOut is different
+            do {
+                unitOut = rng.pick(UNITS);
+            } while (unitOut.id === unitIn.id);
+        }
 
         let steps: Clue[] = [];
         let qData = { 
@@ -21,194 +65,237 @@ export class VolumeGenerator {
         };
         let geometry: any = undefined;
 
+        // Helper to get unit suffix text
+        const uText = (u: string) => u;
+        const uVol = (u: string) => `${u}^3`;
+
         // --- LEVEL 1: Rätblock (Rectangular Prism) & Kub (Cube) ---
         if (mode === 1) {
             const isCube = rng.intBetween(0, 1) === 1;
-            const w = rng.intBetween(s(2), s(10));
-            const d = isCube ? w : rng.intBetween(s(2), s(10)); // Depth (Width in user terms)
-            const h = isCube ? w : rng.intBetween(s(2), s(10)); // Height
+            const vals = getConstrainedValues(3);
+            const w = vals[0];
+            const d = isCube ? w : vals[1]; 
+            const h = isCube ? w : vals[2]; 
 
-            qData.answer = w * d * h;
-            qData.text_key = "calc_vol_prism";
+            const volRaw = w * d * h;
+            qData.answer = volRaw; // Base answer
+            
             const shapeNameSv = isCube ? "kuben" : "rätblocket";
             const shapeNameEn = isCube ? "the cube" : "the rectangular prism";
 
             qData.description = {
-                sv: `Beräkna volymen av ${shapeNameSv}.`,
-                en: `Calculate the volume of ${shapeNameEn}.`
+                sv: `Beräkna volymen av ${shapeNameSv}.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ''}`,
+                en: `Calculate the volume of ${shapeNameEn}.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ''}`
             };
 
             steps = [
-                { text: t(lang, TERMS.volume.formula_prism), latex: "V = B \\cdot h = l \\cdot b \\cdot h" },
-                { text: "Calc", latex: `${w} \\cdot ${d} \\cdot ${h} = ${color}{${qData.answer}}` }
+                { text: t(lang, TERMS.volume.formula_prism), latex: "V = l \\cdot b \\cdot h" },
+                { text: "Calc", latex: `${w} \\cdot ${d} \\cdot ${h} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
             ];
 
-            // w = Length (bottom), d = Depth (diagonal/width), h = Height (vertical)
-            geometry = { type: 'cuboid', w, h, d, labels: { w, h, d } };
+            geometry = { type: 'cuboid', w, h, d, labels: { w: `${w}${unitIn.id}`, h: `${h}${unitIn.id}`, d: `${d}${unitIn.id}` } };
         }
 
         // --- LEVEL 2: Prismor (Triangular Prism) ---
         else if (mode === 2) {
-            // Base is a triangle. Volume = Area_base * Length
-            const bBase = rng.intBetween(s(3), s(10)); // Base of the triangle
-            const hTri = rng.intBetween(s(3), s(8));   // Height of the triangle
-            const len = rng.intBetween(s(5), s(15));   // Length of the prism
+            const vals = getConstrainedValues(3);
+            const bBase = vals[0];
+            const hTri = vals[1];
+            const len = vals[2];
             
             const areaBase = (bBase * hTri) / 2;
-            qData.answer = areaBase * len;
+            const volRaw = areaBase * len;
+            qData.answer = volRaw;
             
-            qData.text_key = "calc_vol_tri_prism";
             qData.description = {
-                sv: "Beräkna volymen av prismat.",
-                en: "Calculate the volume of the prism."
+                sv: `Beräkna volymen av prismat.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ''}`,
+                en: `Calculate the volume of the prism.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ''}`
             };
 
             steps = [
-                { text: "Base Area (Triangle)", latex: `B = \\frac{b \\cdot h}{2} = \\frac{${bBase} \\cdot ${hTri}}{2} = ${areaBase}` },
-                { text: "Volume", latex: `V = B \\cdot l = ${areaBase} \\cdot ${len} = ${color}{${qData.answer}}` }
+                { text: "Base Area", latex: `B = \\frac{b \\cdot h}{2} = \\frac{${bBase} \\cdot ${hTri}}{2} = ${areaBase}` },
+                { text: "Volume", latex: `V = B \\cdot l = ${areaBase} \\cdot ${len} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
             ];
 
             geometry = { 
-                type: 'triangular_prism', 
-                b: bBase, 
-                h_tri: hTri, 
-                len: len, 
-                labels: { b: bBase, h: hTri, l: len } 
+                type: 'triangular_prism', b: bBase, h_tri: hTri, len: len, 
+                labels: { b: `${bBase}${unitIn.id}`, h: `${hTri}${unitIn.id}`, l: `${len}${unitIn.id}` } 
             };
         }
 
         // --- LEVEL 3: Pyramid & Kon (Cone) ---
         else if (mode === 3) {
             const isCone = rng.intBetween(0, 1) === 1;
+            const vals = getConstrainedValues(2);
 
             if (isCone) {
-                const r = rng.intBetween(s(2), s(6));
-                const h = rng.intBetween(s(5), s(15));
+                const r = Math.min(vals[0], 10); // Keep radius sane visually
+                const h = vals[1];
                 const baseArea = piApprox * r * r;
-                qData.answer = Math.round((baseArea * h / 3) * 10) / 10;
+                const volRaw = Math.round((baseArea * h / 3) * 10) / 10;
+                qData.answer = volRaw;
                 
                 qData.description = {
-                    sv: `En kon har radien ${r} cm och höjden ${h} cm. Beräkna volymen.`,
-                    en: `A cone has radius ${r} cm and height ${h} cm. Calculate the volume.`
+                    sv: `En kon har radien ${r} ${unitIn.id} och höjden ${h} ${unitIn.id}.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ' Beräkna volymen.'}`,
+                    en: `A cone has radius ${r} ${unitIn.id} and height ${h} ${unitIn.id}.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ' Calculate the volume.'}`
                 };
                 
                 steps = [
                     { text: "Base Area", latex: `B = \\pi r^2 \\approx ${piApprox} \\cdot ${r}^2 = ${Math.round(baseArea*100)/100}` },
-                    { text: "Volume", latex: `V = \\frac{B \\cdot h}{3} \\approx ${color}{${qData.answer}}` }
+                    { text: "Volume", latex: `V = \\frac{B \\cdot h}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
-                geometry = { type: 'cone', r, h, labels: { r, h } };
+                geometry = { type: 'cone', r, h, labels: { r: `${r}${unitIn.id}`, h: `${h}${unitIn.id}` } };
             } else {
-                // Square-based Pyramid
-                const side = rng.intBetween(s(3), s(10));
-                const h = rng.intBetween(s(5), s(15));
+                const side = vals[0];
+                const h = vals[1];
                 const baseArea = side * side;
-                qData.answer = Math.round((baseArea * h / 3) * 10) / 10;
+                const volRaw = Math.round((baseArea * h / 3) * 10) / 10;
+                qData.answer = volRaw;
 
                 qData.description = {
-                    sv: "Beräkna volymen av pyramiden med kvadratisk bas.",
-                    en: "Calculate the volume of the square-based pyramid."
+                    sv: `Beräkna volymen av pyramiden.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ''}`,
+                    en: `Calculate the volume of the pyramid.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ''}`
                 };
 
                 steps = [
-                    { text: "Base Area", latex: `B = s \\cdot s = ${side} \\cdot ${side} = ${baseArea}` },
-                    { text: "Volume", latex: `V = \\frac{B \\cdot h}{3} = \\frac{${baseArea} \\cdot ${h}}{3} \\approx ${color}{${qData.answer}}` }
+                    { text: "Base Area", latex: `B = s^2 = ${side} \\cdot ${side} = ${baseArea}` },
+                    { text: "Volume", latex: `V = \\frac{B \\cdot h}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
-                geometry = { type: 'pyramid', s: side, h, labels: { s: side, h } };
+                geometry = { type: 'pyramid', s: side, h, labels: { s: `${side}${unitIn.id}`, h: `${h}${unitIn.id}` } };
             }
         }
 
         // --- LEVEL 4: Cylinder ---
         else if (mode === 4) {
-             const r = rng.intBetween(s(2), s(6));
-             const h = rng.intBetween(s(5), s(15));
+             const vals = getConstrainedValues(2);
+             const r = Math.min(vals[0], 12);
+             const h = vals[1];
              const baseArea = piApprox * r * r;
-             qData.answer = Math.round(baseArea * h * 10) / 10;
+             const volRaw = Math.round(baseArea * h * 10) / 10;
+             qData.answer = volRaw;
 
              qData.description = {
-                 sv: `En cylinder har radien ${r} cm och höjden ${h} cm.`,
-                 en: `A cylinder has radius ${r} cm and height ${h} cm.`
+                 sv: `En cylinder har radien ${r} ${unitIn.id} och höjden ${h} ${unitIn.id}.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ''}`,
+                 en: `A cylinder has radius ${r} ${unitIn.id} and height ${h} ${unitIn.id}.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ''}`
              };
              
              steps = [
                  { text: "Base Area", latex: `B = \\pi r^2 \\approx ${piApprox} \\cdot ${r}^2 = ${Math.round(baseArea*100)/100}` },
-                 { text: "Volume", latex: `V = B \\cdot h = ${Math.round(baseArea*100)/100} \\cdot ${h} = ${color}{${qData.answer}}` }
+                 { text: "Volume", latex: `V = B \\cdot h \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
              ];
-             geometry = { type: 'cylinder', r, h, labels: { r, h } };
+             geometry = { type: 'cylinder', r, h, labels: { r: `${r}${unitIn.id}`, h: `${h}${unitIn.id}` } };
         }
 
-        // --- LEVEL 5: Sphere (Klot), Hemisphere, Ice Cream ---
+        // --- LEVEL 5: Sphere, Hemisphere, Ice Cream, Silo ---
         else {
-            const subType = rng.pick(['sphere', 'hemisphere', 'ice_cream']);
-            // const subType = 'ice_cream'; // Debug force
+            const subType = rng.pick(['sphere', 'hemisphere', 'ice_cream', 'silo']);
+            const vals = getConstrainedValues(2);
             
-            // Common radius logic
-            const r = rng.intBetween(s(2), s(8));
+            const r = Math.min(vals[0], 12);
+            const hOther = vals[1]; // Used for cone height or cylinder height
             const d = r * 2;
-            const giveDiameter = rng.intBetween(0, 1) === 1; // Variation: Give Diameter?
+            const giveDiameter = rng.intBetween(0, 1) === 1; 
             
-            // Sphere
+            // Shared geometry label
+            const labelVal = giveDiameter ? d : r;
+            const labelKeySv = giveDiameter ? 'diametern' : 'radien';
+            const labelKeyEn = giveDiameter ? 'diameter' : 'radius';
+            const unitSuffix = unitIn.id;
+
             if (subType === 'sphere') {
-                qData.answer = Math.round((4 * piApprox * Math.pow(r, 3) / 3) * 100) / 100;
-                const label = giveDiameter ? { sv: 'diametern', en: 'diameter', val: d } : { sv: 'radien', en: 'radius', val: r };
+                const volRaw = Math.round((4 * piApprox * Math.pow(r, 3) / 3) * 100) / 100;
+                qData.answer = volRaw;
                 
                 qData.description = {
-                    sv: `Ett klot har ${label.sv} ${label.val} cm. Beräkna volymen.`,
-                    en: `A sphere has ${label.en} ${label.val} cm. Calculate the volume.`
+                    sv: `Ett klot har ${labelKeySv} ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ' Beräkna volymen.'}`,
+                    en: `A sphere has ${labelKeyEn} ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ' Calculate the volume.'}`
                 };
                 
                 steps = [
                     ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
-                    { text: "Volume", latex: `V = \\frac{4 \\cdot \\pi \\cdot r^3}{3} \\approx ${color}{${qData.answer}}` }
+                    { text: "Volume", latex: `V = \\frac{4 \\cdot \\pi \\cdot r^3}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
-                geometry = { type: 'sphere', r, show: giveDiameter ? 'd' : 'r', labels: { val: giveDiameter ? d : r } };
+                geometry = { type: 'sphere', r, show: giveDiameter ? 'd' : 'r', labels: { val: `${labelVal}${unitSuffix}` } };
             } 
-            // Hemisphere (Halvklot)
             else if (subType === 'hemisphere') {
                 const volSphere = (4 * piApprox * Math.pow(r, 3)) / 3;
-                qData.answer = Math.round((volSphere / 2) * 100) / 100;
-                const label = giveDiameter ? { sv: 'diametern', en: 'diameter', val: d } : { sv: 'radien', en: 'radius', val: r };
+                const volRaw = Math.round((volSphere / 2) * 100) / 100;
+                qData.answer = volRaw;
 
                 qData.description = {
-                    sv: `Ett halvklot har ${label.sv} ${label.val} cm. Beräkna volymen.`,
-                    en: `A hemisphere has ${label.en} ${label.val} cm. Calculate the volume.`
+                    sv: `Ett halvklot har ${labelKeySv} ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ' Beräkna volymen.'}`,
+                    en: `A hemisphere has ${labelKeyEn} ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ' Calculate the volume.'}`
                 };
 
                 steps = [
                      ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
                      { text: "Sphere Vol", latex: `V_{sphere} = \\frac{4\\pi r^3}{3} \\approx ${Math.round(volSphere*10)/10}` },
-                     { text: "Half", latex: `V = \\frac{V_{sphere}}{2} \\approx ${color}{${qData.answer}}` }
+                     { text: "Half", latex: `V = \\frac{V_{sphere}}{2} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
-                geometry = { type: 'hemisphere', r, show: giveDiameter ? 'd' : 'r', labels: { val: giveDiameter ? d : r } };
+                geometry = { type: 'hemisphere', r, show: giveDiameter ? 'd' : 'r', labels: { val: `${labelVal}${unitSuffix}` } };
             }
-            // Ice Cream (Cone + Hemisphere)
-            else {
-                const hCone = rng.intBetween(s(5), s(12));
-                
-                const volCone = (piApprox * r * r * hCone) / 3;
+            else if (subType === 'ice_cream') {
+                const volCone = (piApprox * r * r * hOther) / 3;
                 const volHemi = (2 * piApprox * Math.pow(r, 3)) / 3;
-                
-                qData.answer = Math.round((volCone + volHemi) * 100) / 100;
+                const volRaw = Math.round((volCone + volHemi) * 100) / 100;
+                qData.answer = volRaw;
 
+                // REMOVED SHAPE NAMES
                 qData.description = {
-                    sv: `Beräkna glassens volym (kon + halvklot). Konens höjd är ${hCone} cm och ${giveDiameter ? 'diametern' : 'radien'} är ${giveDiameter ? d : r} cm.`,
-                    en: `Calculate the ice cream volume (cone + hemisphere). The cone height is ${hCone} cm and the ${giveDiameter ? 'diameter' : 'radius'} is ${giveDiameter ? d : r} cm.`
+                    sv: `Beräkna volymen. $h = ${hOther}$ ${unitSuffix} och ${labelKeySv} är ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ''}`,
+                    en: `Calculate the volume. $h = ${hOther}$ ${unitSuffix} and the ${labelKeyEn} is ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ''}`
                 };
 
                 steps = [
                      ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
                      { text: "Cone Vol", latex: `V_{cone} = \\frac{\\pi r^2 h}{3} \\approx ${Math.round(volCone*10)/10}` },
                      { text: "Hemi Vol", latex: `V_{hemi} = \\frac{2\\pi r^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
-                     { text: "Total", latex: `V_{total} = ${Math.round(volCone*10)/10} + ${Math.round(volHemi*10)/10} = ${color}{${qData.answer}}` }
+                     { text: "Total", latex: `V_{total} = ${Math.round(volCone*10)/10} + ${Math.round(volHemi*10)/10} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
-                
                 geometry = { 
-                    type: 'ice_cream', 
-                    r, 
-                    h: hCone, 
-                    show: giveDiameter ? 'd' : 'r', 
-                    labels: { val: giveDiameter ? d : r, h: hCone } 
+                    type: 'ice_cream', r, h: hOther, show: giveDiameter ? 'd' : 'r', 
+                    labels: { val: `${labelVal}${unitSuffix}`, h: `${hOther}${unitSuffix}` } 
                 };
             }
+            else { // Silo
+                const volCyl = piApprox * r * r * hOther;
+                const volHemi = (2 * piApprox * Math.pow(r, 3)) / 3;
+                const volRaw = Math.round((volCyl + volHemi) * 100) / 100;
+                qData.answer = volRaw;
+
+                // REMOVED SHAPE NAMES
+                qData.description = {
+                    sv: `Beräkna volymen. $h = ${hOther}$ ${unitSuffix} och ${labelKeySv} är ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ''}`,
+                    en: `Calculate the volume. $h = ${hOther}$ ${unitSuffix} and the ${labelKeyEn} is ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ''}`
+                };
+
+                steps = [
+                     ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
+                     { text: "Cylinder Vol", latex: `V_{cyl} = \\pi r^2 h \\approx ${Math.round(volCyl*10)/10}` },
+                     { text: "Hemi Vol", latex: `V_{hemi} = \\frac{2\\pi r^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
+                     { text: "Total", latex: `V_{total} = ${Math.round(volCyl*10)/10} + ${Math.round(volHemi*10)/10} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                ];
+                geometry = { 
+                    type: 'silo', r, h: hOther, show: giveDiameter ? 'd' : 'r', 
+                    labels: { val: `${labelVal}${unitSuffix}`, h: `${hOther}${unitSuffix}` } 
+                };
+            }
+        }
+
+        // --- CONVERT IF LEVEL 7 ---
+        if (isUnitConversion) {
+            const ratio = unitIn.factor / unitOut.factor;
+            const volRatio = Math.pow(ratio, 3);
+            
+            const originalAns = qData.answer;
+            const convertedAns = Math.round(originalAns * volRatio * 1000) / 1000;
+            
+            qData.answer = convertedAns;
+            
+            steps.push({
+                text: t(lang, {sv: "Omvandla enhet", en: "Convert Unit"}),
+                latex: `${originalAns} \\text{ ${uVol(unitIn.id)}} \\cdot ${Math.round(volRatio*1000000)/1000000} = ${color}{${convertedAns}} \\text{ ${uVol(unitOut.id)}}`
+            });
         }
 
         return {
