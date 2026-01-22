@@ -5,46 +5,95 @@ import { t, Language, TERMS } from "../utils/i18n";
 export class LinearGraphGenerator {
     public static generate(level: number, seed: string, lang: Language = 'sv'): GeneratedQuestion {
         const rng = new Random(seed);
-        const color = "\\mathbf{\\textcolor{#D35400}}";
+        
+        // FIX: Standardize LaTeX color formatting function
+        const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
         
         let mode = level;
-        if (level >= 5) mode = rng.intBetween(3, 4);
+        // Level 5 is mixed practice of previous modes
+        if (level >= 5) mode = rng.intBetween(1, 4);
 
         let k = 1, m = 0, steps: Clue[] = [];
-        let answer: string | number = 0; // Standardized
+        let answer: string | number = 0; 
         let answerType: any = 'numeric';
         let description = { sv: "", en: "" };
 
+        // Helper to get slope including 0
+        const getSlope = (min: number, max: number) => {
+            return rng.intBetween(min, max);
+        };
+
+        // --- LEVEL 1: Find m (intercept) ---
         if (mode === 1) {
-            // Find m
-            k = rng.pick([1, 2, -1, -2]); m = rng.intBetween(-3, 3); 
+            // Slope: -3 to 3 (including 0), Intercept: -5 to 5
+            k = getSlope(-3, 3); 
+            m = rng.intBetween(-5, 5); 
+            
             answer = m;
-            description = { sv: "Hitta m-värdet (skärning med y-axeln):", en: "Find the Y-Intercept (m):" };
-            steps = [{ text: "Look at x = 0", latex: "(0, y)" }, { text: t(lang, TERMS.graph.step_intercept(m)), latex: `m = ${color}{${m}}}` }];
-        } else if (mode === 2 || mode === 3) {
-            // Find k
-            k = mode === 2 ? rng.intBetween(1, 4) : rng.pick([-1, -2, -3]);
-            m = rng.intBetween(-2, 4); 
+            description = TERMS.graph.q_intercept;
+            
+            steps = [
+                { text: "Look at x = 0", latex: "(0, y)" }, 
+                { text: t(lang, TERMS.graph.step_intercept(m)), latex: `m = ${formatColor(m)}` }
+            ];
+        } 
+        
+        // --- LEVEL 2: Find k (positive slope) ---
+        else if (mode === 2) {
+            k = rng.intBetween(0, 3); // 0, 1, 2, or 3
+            m = rng.intBetween(-5, 5); 
+            
             answer = k;
-            description = { sv: "Beräkna lutningen (k):", en: "Calculate the slope (k):" };
-            steps = [{ text: "Slope Formula", latex: "k = \\frac{\\Delta y}{\\Delta x}" }, { text: "Result", latex: `k = ${color}{${k}}}` }];
-        } else {
-            // Find Equation y = kx + m
-            k = rng.pick([1, 2, -1, -2]); 
-            m = rng.intBetween(-2, 2); 
+            description = TERMS.graph.q_slope;
+            
+            steps = [
+                { text: t(lang, TERMS.graph.step_delta), latex: "k = \\frac{\\Delta y}{\\Delta x}" },
+                { text: t(lang, TERMS.graph.step_slope_calc), latex: `k = ${formatColor(k)}` }
+            ];
+        }
+
+        // --- LEVEL 3: Find k (negative slope) ---
+        else if (mode === 3) {
+            k = rng.intBetween(-3, 0); // -3, -2, -1, or 0
+            m = rng.intBetween(-5, 5); 
+            
+            answer = k;
+            description = TERMS.graph.q_slope;
+            
+            steps = [
+                { text: t(lang, TERMS.graph.step_delta), latex: "k = \\frac{\\Delta y}{\\Delta x}" },
+                { text: t(lang, TERMS.graph.step_slope_calc), latex: `k = ${formatColor(k)}` }
+            ];
+        }
+
+        // --- LEVEL 4: Find Equation (y = kx + m) ---
+        else {
+            k = getSlope(-3, 3); 
+            m = rng.intBetween(-5, 5); 
             
             // Construct the standardized string answer: "y=kx+m" or "y=kx-m"
-            const mPart = m >= 0 ? `+${m}` : `${m}`; // e.g. "+2" or "-2"
-            const eqStr = `y=${k}x${mPart}`; // e.g. "y=2x+2" or "y=-1x-2"
+            // Special handling for k=0 -> "y=m"
+            let eqStr = "";
+            if (k === 0) {
+                eqStr = `y=${m}`;
+            } else {
+                const mPart = m >= 0 ? `+${m}` : `${m}`; // e.g. "+2" or "-2"
+                eqStr = `y=${k}x${mPart}`; // e.g. "y=2x+2" or "y=-1x-2"
+            }
             
             answer = eqStr;
             answerType = 'function_model'; 
 
-            description = { sv: "Skriv funktionen på formen y = kx + m", en: "Write the function as y = kx + m" };
+            description = TERMS.graph.q_func;
+            
+            const eqDisplay = k === 0 
+                ? `y = ${formatColor(m)}` 
+                : `y = ${formatColor(k)}x ${m >= 0 ? '+' : ''}${formatColor(m)}`;
+
             steps = [
                 { text: "Find m", latex: `m = ${m}` }, 
                 { text: "Find k", latex: `k = ${k}` }, 
-                { text: "Equation", latex: `y = ${color}{${k}}}x ${m >= 0 ? '+' : ''}${color}{${m}}}` }
+                { text: "Equation", latex: eqDisplay }
             ];
         }
 
@@ -54,15 +103,18 @@ export class LinearGraphGenerator {
         return {
             questionId: `graph-l${level}-${seed}`,
             renderData: {
-                text_key: "graph",
+                text_key: "graph_gen",
                 description: description,
                 latex: "",
                 answerType: answerType,
-                graph: { lines, range: 10, gridStep: 1, labelStep: 2 },
-                variables: {}
+                graph: {
+                    lines: lines,
+                    range: 10, // Visual range (-10 to 10) fits the new m/k values well
+                    gridStep: 1
+                }
             },
             serverData: {
-                answer: answer, // Now a string for level 4
+                answer: answer,
                 solutionSteps: steps
             }
         };

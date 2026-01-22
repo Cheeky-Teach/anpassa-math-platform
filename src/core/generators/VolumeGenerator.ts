@@ -129,7 +129,7 @@ export class VolumeGenerator {
             const vals = getConstrainedValues(2);
 
             if (isCone) {
-                const r = Math.min(vals[0], 10); // Keep radius sane visually
+                const r = vals[0];
                 const h = vals[1];
                 const baseArea = piApprox * r * r;
                 const volRaw = Math.round((baseArea * h / 3) * 10) / 10;
@@ -168,7 +168,7 @@ export class VolumeGenerator {
         // --- LEVEL 4: Cylinder ---
         else if (mode === 4) {
              const vals = getConstrainedValues(2);
-             const r = Math.min(vals[0], 12);
+             const r = vals[0];
              const h = vals[1];
              const baseArea = piApprox * r * r;
              const volRaw = Math.round(baseArea * h * 10) / 10;
@@ -191,7 +191,7 @@ export class VolumeGenerator {
             const subType = rng.pick(['sphere', 'hemisphere', 'ice_cream', 'silo']);
             const vals = getConstrainedValues(2);
             
-            const r = Math.min(vals[0], 12);
+            const r = vals[0];
             const hOther = vals[1]; // Used for cone height or cylinder height
             const d = r * 2;
             const giveDiameter = rng.intBetween(0, 1) === 1; 
