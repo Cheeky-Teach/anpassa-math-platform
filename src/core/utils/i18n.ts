@@ -20,7 +20,6 @@ export const TERMS = {
         distribute: { sv: "Distribuera", en: "Distribute" },
         equation: { sv: "Ekvation", en: "Equation" },
         simplify: { sv: "Förenkla", en: "Simplify" },
-        // Added standard explanations
         identify_var: { sv: "Identifiera variabeln", en: "Identify the variable" },
         identify_const: { sv: "Identifiera konstanterna", en: "Identify constants" },
         combine_like: { sv: "Kombinera termer", en: "Combine like terms" }
@@ -57,8 +56,6 @@ export const TERMS = {
         formula_pyramid: { sv: "Volym = (Basytan · h) / 3", en: "Volume = (Base Area · h) / 3" },
         formula_sphere: { sv: "Volym = (4 · π · r³) / 3", en: "Volume = (4 · π · r³) / 3" },
         step_calc_base: { sv: "Beräkna basytan (B)", en: "Calculate Base Area (B)" },
-        
-        // Explanations
         expl_prism_base: { sv: "Basytan är en triangel (b*h)/2.", en: "The base is a triangle (b*h)/2." },
         expl_cylinder_base: { sv: "Basytan är en cirkel (pi*r^2).", en: "The base is a circle (pi*r^2)." },
         expl_cone_vol: { sv: "Konen är 1/3 av en cylinder.", en: "The cone is 1/3 of a cylinder." },
@@ -150,7 +147,6 @@ export const TERMS = {
         final_expr: { sv: "Slutgiltigt uttryck:", en: "Final expression:" },
         simplify_const: { sv: "Förenkla konstanterna:", en: "Simplify constants:" },
         
-        // Explanations for word problems
         expl_var_basic: { sv: "Variabeln representerar det okända antalet.", en: "The variable represents the unknown number." },
         expl_fixed_cost: { sv: "Detta är den fasta kostnaden.", en: "This is the fixed cost." },
         expl_variable_cost: { sv: "Detta är kostnaden som beror på x.", en: "This is the cost dependent on x." },
@@ -184,26 +180,17 @@ export const TERMS = {
         task_write: { sv: "Teckna en ekvation för att beräkna x.", en: "Write an equation to calculate x." },
         task_write_expr: { sv: "Teckna ett förenklat uttryck.", en: "Write a simplified expression." },
 
-        // Scenario A (ax + b = c)
         a_buy: { sv: "Du köper $x$ st {item} för $a$ kr styck och en kasse för $b$ kr. Totalt betalar du $c$ kr.", en: "You buy $x$ {item} for $a$ kr each and a bag for $b$ kr. In total, you pay $c$ kr." },
         a_taxi: { sv: "En taxi kostar $b$ kr i startavgift och sedan $a$ kr per km. Du åker $x$ km och betalar totalt $c$ kr.", en: "A taxi charges a start fee of $b$ kr and then $a$ kr per km. You travel $x$ km and pay a total of $c$ kr." },
-        
-        // Scenario B (ax - b = c)
         b_discount: { sv: "Du köper $x$ st {item} som kostar $a$ kr styck. Du får $b$ kr i rabatt på totalen. Du betalar $c$ kr.", en: "You buy $x$ {item} costing $a$ kr each. You get a discount of $b$ kr on the total. You pay $c$ kr." },
         b_points: { sv: "Du samlar $a$ poäng per nivå i ett spel. Du klarar $x$ nivåer men förlorar $b$ poäng i straff. Du har totalt $c$ poäng.", en: "You earn $a$ points per level in a game. You clear $x$ levels but lose $b$ points as a penalty. You have $c$ points in total." },
-        
-        // Scenario C (x + (x + a) = c)
         c_compare: { sv: "{name1} har $x$ st {item}. {name2} har $a$ fler {item} än {name1}. Tillsammans har de $c$ st.", en: "{name1} has $x$ {item}. {name2} has $a$ more {item} than {name1}. Together they have $c$." },
-        
-        // Scenario D (x + (x - b) = c)
         d_compare: { sv: "{name1} har $x$ st {item}. {name2} har $b$ färre {item} än {name1}. Tillsammans har de $c$ st.", en: "{name1} has $x$ {item}. {name2} has $b$ fewer {item} than {name1}. Together they have $c$." },
 
-        // Clues
         clue_var: { sv: "Låt x vara antalet.", en: "Let x be the number." },
         clue_setup: { sv: "Ställ upp ekvationen.", en: "Set up the equation." },
         clue_total: { sv: "Totalt är det", en: "The total is" },
         
-        // Explanations for specific parts
         expl_fixed_val: { sv: "Detta är det fasta värdet.", en: "This is the fixed value." },
         expl_rate_val: { sv: "Detta värde multipliceras med x.", en: "This value is multiplied by x." },
         expl_person1: { sv: "Den första personen har x.", en: "The first person has x." },

@@ -9,8 +9,8 @@ import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGe
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
 import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
+import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen'; // Added
 
-// Helper to handle object answers (like coordinates or ratios)
 function formatAnswerForToken(answer: any): string | number {
     if (typeof answer === 'object' && answer !== null) {
         if ('k' in answer && 'm' in answer) {
@@ -27,7 +27,6 @@ function formatAnswerForToken(answer: any): string | number {
 }
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
@@ -44,18 +43,21 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const lvl = Number(level);
     const seed = Math.random().toString(36).substring(7);
     const lg = lang as 'sv' | 'en';
-    const multiplier = 1; // Future difficulty scaling
+    const multiplier = 1; 
 
     let qData: any;
-    // Set tolerance for float comparisons (geometry/volume)
     let tolerance = 0;
 
     switch (topic) {
+      case 'arithmetic': // Added
+        qData = BasicArithmeticGen.generate(lvl, seed, lg, multiplier);
+        break;
+
       case 'equation':
-        if (lvl >= 5 && topic === 'equation') {
-             qData = LinearEquationProblemGen.generate(5, seed, lg);
-        } else if (lvl === 6) {
-             qData = LinearEquationGenerator.generate(6, seed, lg, multiplier);
+        if (lvl === 5 || lvl === 6) {
+             qData = LinearEquationProblemGen.generate(lvl, seed, lg);
+        } else if (lvl === 7) {
+             qData = LinearEquationGenerator.generate(7, seed, lg, multiplier);
         } else {
              qData = LinearEquationGenerator.generate(lvl, seed, lg, multiplier);
         }
@@ -63,7 +65,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         
       case 'geometry':
         qData = GeometryGenerator.generate(lvl, seed, lg, multiplier);
-        tolerance = 0.5; // Allow 0.5 error margin
+        tolerance = 0.5; 
         break;
         
       case 'graph':
@@ -89,11 +91,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error(`Generator for topic '${topic}' failed to return data.`);
     }
 
-    // Prepare answer for token generation (stringify complex objects)
     const tokenAnswer = formatAnswerForToken(qData.serverData.answer);
-    
-    // Token Generation (Encryption)
-    // Now robust against non-string inputs due to fixes in security.ts and above helper
     const token = generateToken(qData.questionId, tokenAnswer, tolerance);
     
     return res.status(200).json({
