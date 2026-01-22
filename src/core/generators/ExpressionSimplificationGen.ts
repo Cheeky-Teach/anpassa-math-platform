@@ -6,7 +6,7 @@ export class ExpressionSimplificationGen {
   public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
     const rng = new Random(seed);
     
-    // FIX: Use robust LaTeX coloring
+    // FIX: Valid LaTeX color formatting: \textcolor{color}{\mathbf{text}}
     const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
 
     let mode = level;

@@ -6,9 +6,8 @@ export class LinearEquationGenerator {
   public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
     const rng = new Random(seed);
     
-    // FIX: Function to generate strictly valid LaTeX for colored bold text
-    // Old broken way: \mathbf{\textcolor{...}}{...}
-    // New working way: \textcolor{...}{\mathbf{...}}
+    // FIX: Using function to generate valid LaTeX color
+    // Structure: \textcolor{color}{ \mathbf{text} }
     const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
 
     let mode = level;

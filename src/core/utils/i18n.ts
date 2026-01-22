@@ -76,7 +76,7 @@ export const TERMS = {
         // 3D Shapes
         cube: { sv: "kub", en: "cube" },
         rect_prism: { sv: "rätblock", en: "rectangular prism" }, 
-        tri_prism: { sv: "triangulärt prisma", en: "triangular prism" }, // Kept for compatibility
+        tri_prism: { sv: "triangulärt prisma", en: "triangular prism" }, // Kept for compatibility with VolumeGen
         triangular_prism: { sv: "triangulärt prisma", en: "triangular prism" },
         cylinder: { sv: "cylinder", en: "cylinder" },
         pyramid: { sv: "pyramid", en: "pyramid" },
@@ -118,7 +118,7 @@ export const TERMS = {
         step_comp_semi_area: { sv: "Halvcirkelns area:", en: "Semicircle area:" },
         step_comp_total_area: { sv: "Total area:", en: "Total area:" },
         
-        // Compatibility keys for existing generators
+        // Compatibility keys
         comp_rect_area: { sv: "Rektangelns area:", en: "Rectangle area:" },
         comp_tri_area: { sv: "Triangelns area:", en: "Triangle area:" },
         comp_total_area: { sv: "Total area:", en: "Total area:" }
@@ -136,9 +136,9 @@ export const TERMS = {
     algebra: {
         intro: (eq: string) => ({ sv: `Ekvation: $${eq}$`, en: `Equation: $${eq}$` }),
         subtract: (val: number) => ({ sv: `Subtrahera ${val} från båda sidor`, en: `Subtract ${val} from both sides` }),
-        add: (val: number) => ({ sv: `Addera ${val} på båda sidor`, en: `Add ${val} to both sides` }),
-        divide: (val: number) => ({ sv: `Dela med ${val}`, en: `Divide by ${val}` }),
-        multiply: (val: number) => ({ sv: `Multiplicera med ${val}`, en: `Multiply by ${val}` }),
+        add: (val: number) => ({ sv: `Addera ${val} till båda sidor`, en: `Add ${val} to both sides` }),
+        divide: (val: number) => ({ sv: `Dela båda sidor med ${val}`, en: `Divide both sides by ${val}` }),
+        multiply: (val: number) => ({ sv: `Multiplicera båda sidor med ${val}`, en: `Multiply both sides by ${val}` }),
         distribute: (val: number) => ({ sv: `Multiplicera in ${val} i parentesen`, en: `Distribute ${val} into the parentheses` }),
         sub_var: (term: string) => ({ sv: `Subtrahera ${term} från båda sidor`, en: `Subtract ${term} from both sides` })
     },
