@@ -5,7 +5,7 @@ const SECRET_KEY = process.env.HMAC_SECRET || 'dev-secret-key-change-me-in-prod'
 
 // Derive a consistent 32-byte key from the secret
 const KEY = crypto.scryptSync(SECRET_KEY, 'salt', 32);
-const ALGORITHM = 'aes-256-cbc';
+const IV_LENGTH = 16; 
 
 export interface TokenPayload {
   qId: string;      // Question ID
@@ -33,8 +33,11 @@ export function normalizeAnswer(input: string | number): string {
  * Encrypts a string.
  */
 function encrypt(text: string): string {
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv);
+  if (typeof text !== 'string') {
+      text = String(text);
+  }
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv('aes-256-cbc', KEY, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return iv.toString('hex') + ':' + encrypted;
@@ -44,31 +47,32 @@ function encrypt(text: string): string {
  * Decrypts a string.
  */
 function decrypt(text: string): string {
-  try {
-    const parts = text.split(':');
-    if (parts.length !== 2) return "";
-    const iv = Buffer.from(parts.shift()!, 'hex');
-    const encryptedText = parts.join(':');
-    const decipher = crypto.createDecipheriv(ALGORITHM, KEY, iv);
-    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
-  } catch (e) {
-    return "";
-  }
+  const textParts = text.split(':');
+  const iv = Buffer.from(textParts.shift()!, 'hex');
+  const encryptedText = textParts.join(':');
+  const decipher = crypto.createDecipheriv('aes-256-cbc', KEY, iv);
+  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
 }
 
 /**
- * Generates a signed token with the encrypted answer.
+ * Generates a signed JWT-like token containing the encrypted answer.
+ * Handles Numbers, Strings, and Objects safely.
  */
-export function generateToken(questionId: string, correctAnswer: string | number, tolerance: number = 0): string {
-  const normAnswer = normalizeAnswer(correctAnswer);
-  const encrypted = encrypt(normAnswer);
+export function generateToken(qId: string, answer: string | number | object, tol: number = 0): string {
+  // CRITICAL FIX: Ensure answer is a string before encrypting to prevent AES crash
+  let encVal = "";
+  if (typeof answer === 'object') {
+      encVal = JSON.stringify(answer);
+  } else {
+      encVal = String(answer);
+  }
 
   const payload: TokenPayload = {
-    qId: questionId,
-    enc: encrypted,
-    tol: tolerance,
+    qId,
+    enc: encrypt(encVal),
+    tol,
     ts: Date.now()
   };
 
@@ -104,20 +108,27 @@ export function verifyAnswer(userAnswer: string | number, token: string): boolea
     const correctVal = decrypt(payload.enc);
     const userVal = normalizeAnswer(userAnswer);
 
-    // 3. Numeric Tolerance Check
+    // 3. Check for Numeric Tolerance
     if (payload.tol && payload.tol > 0) {
         const cNum = parseFloat(correctVal);
         const uNum = parseFloat(userVal);
+        
         if (!isNaN(cNum) && !isNaN(uNum)) {
             return Math.abs(cNum - uNum) <= payload.tol;
         }
     }
 
-    // 4. Standard Exact Match
-    return correctVal === userVal;
+    // 4. Standard String Comparison
+    // Special handling for coordinate strings or objects if they were stringified
+    if (correctVal.startsWith('{') || correctVal.startsWith('[')) {
+        // If the answer is complex (like json), verification might need specific logic
+        // For now, we normalize the decrypted string and compare
+        return normalizeAnswer(correctVal) === userVal;
+    }
 
-  } catch (error) {
-    console.error("Verification Error:", error);
+    return normalizeAnswer(correctVal) === userVal;
+  } catch (err) {
+    console.error("Token verification failed:", err);
     return false;
   }
 }

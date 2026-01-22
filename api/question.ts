@@ -10,6 +10,22 @@ import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSi
 import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
 
+// Helper to handle object answers (like coordinates or ratios)
+function formatAnswerForToken(answer: any): string | number {
+    if (typeof answer === 'object' && answer !== null) {
+        if ('k' in answer && 'm' in answer) {
+            const { k, m } = answer;
+            const mStr = m >= 0 ? `+ ${m}` : `- ${Math.abs(m)}`;
+            return `${k}x ${mStr}`; 
+        }
+        if ('left' in answer && 'right' in answer) {
+            return `${answer.left}:${answer.right}`; 
+        }
+        return JSON.stringify(answer);
+    }
+    return answer;
+}
+
 export default function handler(req: VercelRequest, res: VercelResponse) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -25,29 +41,18 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { topic, level, lang = 'sv' } = req.query;
-
-    if (!topic || !level) {
-      return res.status(400).json({ error: 'Missing topic or level' });
-    }
-
-    const seed = `${topic}-${level}-${Date.now()}`;
     const lvl = Number(level);
+    const seed = Math.random().toString(36).substring(7);
     const lg = lang as 'sv' | 'en';
-    const multiplier = 1;
+    const multiplier = 1; // Future difficulty scaling
 
-    let qData;
-    let tolerance = 0; // Default: Exact match required
+    let qData: any;
+    // Set tolerance for float comparisons (geometry/volume)
+    let tolerance = 0;
 
-    // Select Generator
     switch (topic) {
-      case 'volume':
-        qData = VolumeGenerator.generate(lvl, seed, lg, multiplier);
-        tolerance = 1.0; // Allow +/- 1.0 for rounding differences in PI
-        break;
-        
       case 'equation':
-      case 'problem':
-        if (lvl === 5 && topic === 'equation') {
+        if (lvl >= 5 && topic === 'equation') {
              qData = LinearEquationProblemGen.generate(5, seed, lg);
         } else if (lvl === 6) {
              qData = LinearEquationGenerator.generate(6, seed, lg, multiplier);
@@ -58,6 +63,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         
       case 'geometry':
         qData = GeometryGenerator.generate(lvl, seed, lg, multiplier);
+        tolerance = 0.5; // Allow 0.5 error margin
         break;
         
       case 'graph':
@@ -68,6 +74,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         qData = ExpressionSimplificationGen.generate(lvl, seed, lg, multiplier);
         break;
         
+      case 'volume':
+        qData = VolumeGenerator.generate(lvl, seed, lg, multiplier);
+        tolerance = 0.5;
+        break;
+
       case 'scale':
       default:
         qData = ScaleGenerator.generate(lvl, seed, lg, multiplier);
@@ -78,9 +89,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error(`Generator for topic '${topic}' failed to return data.`);
     }
 
+    // Prepare answer for token generation (stringify complex objects)
+    const tokenAnswer = formatAnswerForToken(qData.serverData.answer);
+    
     // Token Generation (Encryption)
-    // pass the raw answer (string or number) and the tolerance
-    const token = generateToken(qData.questionId, qData.serverData.answer, tolerance);
+    // Now robust against non-string inputs due to fixes in security.ts and above helper
+    const token = generateToken(qData.questionId, tokenAnswer, tolerance);
     
     return res.status(200).json({
       questionId: qData.questionId,
@@ -88,9 +102,9 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       clues: qData.serverData.solutionSteps,
       token: token
     });
-
-  } catch (error) {
-    console.error("API Error:", error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    
+  } catch (error: any) {
+    console.error('API Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 }
