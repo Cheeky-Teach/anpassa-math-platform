@@ -8,7 +8,13 @@ export function t(lang: Language, keyOrObj: string | { sv: string, en: string } 
 
 export const TERMS = {
     ui: {
-        hints: { sv: "Ledtrådar", en: "Hints" }
+        hints: { sv: "Ledtrådar", en: "Hints" },
+        streak_modal_title: { sv: "Fantastiskt! 🔥", en: "Awesome! 🔥" },
+        streak_modal_msg: { sv: "Du har nått en streak på {streak}!", en: "You hit a streak of {streak}!" },
+        total_modal_title: { sv: "Snyggt jobbat! ✅", en: "Great work! ✅" },
+        total_modal_msg: { sv: "Du svarade rätt på {total} frågor! Bra jobbat!", en: "You answered {total} questions correctly! Great job!" },
+        btn_close_streak: { sv: "Bra jobbat!", en: "Great job!" },
+        btn_close_total: { sv: "Fortsätt", en: "Continue" }
     },
     common: {
         solve: { sv: "Lös ut", en: "Solve for" },
@@ -66,7 +72,6 @@ export const TERMS = {
         formula_sphere: { sv: "Volym = (4 · π · r³) / 3", en: "Volume = (4 · π · r³) / 3" },
         step_calc_base: { sv: "Beräkna basytan (B)", en: "Calculate Base Area (B)" },
         
-        // Simplified Explanations
         expl_prism_vol: { sv: "Multiplicera basytan med höjden.", en: "Multiply the base area by the height." },
         expl_cone_fraction: { sv: "En kon är en tredjedel av en cylinder.", en: "A cone is one third of a cylinder." },
         expl_sphere_formula: { sv: "Använd formeln för klot.", en: "Use the formula for a sphere." },
@@ -163,7 +168,6 @@ export const TERMS = {
         final_expr: { sv: "Slutgiltigt uttryck:", en: "Final expression:" },
         simplify_const: { sv: "Förenkla konstanterna:", en: "Simplify constants:" },
         
-        // Explanations for word problems
         expl_var_basic: { sv: "Variabeln (x) representerar det okända antalet.", en: "The variable (x) represents the unknown number." },
         expl_fixed_cost: { sv: "Detta är den fasta avgiften/kostnaden.", en: "This is the fixed fee/cost." },
         expl_rate_val: { sv: "Detta är priset per styck (multipliceras med x).", en: "This is the price per item (multiplied by x)." },
@@ -171,7 +175,6 @@ export const TERMS = {
         expl_discount: { sv: "Rabatten dras bort från totalen.", en: "The discount is subtracted from the total." },
         expl_compare: { sv: "Vi jämför två mängder.", en: "We are comparing two quantities." },
         
-        // Basic Explanations
         expl_distribute: (val: number) => ({ sv: `Multiplicera in ${val} i parentesen.`, en: `Multiply ${val} into the parentheses.` }),
         expl_group: { sv: "Samla alla x-termer och alla vanliga tal.", en: "Collect all x-terms and all number terms." }
     },
