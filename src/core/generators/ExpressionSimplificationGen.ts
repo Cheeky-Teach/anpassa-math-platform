@@ -5,8 +5,6 @@ import { TERMS, t, Language } from "../utils/i18n";
 export class ExpressionSimplificationGen {
   public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
     const rng = new Random(seed);
-    
-    // FIX: Valid LaTeX color formatting: \textcolor{color}{\mathbf{text}}
     const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
 
     let mode = level;
@@ -25,40 +23,43 @@ export class ExpressionSimplificationGen {
         ansM = b;
         
         steps = [
+            { text: t(lang, TERMS.simplification.intro(expr)), latex: expr }, 
             { text: t(lang, TERMS.simplification.group_terms), latex: `(${a}x + ${c}x) + ${b}` },
-            { text: "Result", latex: formatColor(`${ansK}x + ${ansM}`) }
+            { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
         ];
     } 
     
-    // --- MODE 2: Distributing a(x + b) ---
+    // --- MODE 2: Parentheses k(x + a) ---
     else if (mode === 2) {
-        const a = rng.intBetween(2, 6);
-        const b = rng.intBetween(1, 8);
-        expr = `${a}(x + ${b})`; 
-        ansK = a; 
-        ansM = a * b;
+        const k = rng.intBetween(2, 9);
+        const a = rng.intBetween(1, 9);
+        expr = `${k}(x + ${a})`; 
+        ansK = k; 
+        ansM = k * a;
         
         steps = [
-            { text: "Distribute", latex: `${a} \\cdot x + ${a} \\cdot ${b}` },
-            { text: "Result", latex: formatColor(`${ansK}x + ${ansM}`) }
+            { text: t(lang, TERMS.simplification.intro(expr)), latex: expr }, 
+            { text: t(lang, TERMS.algebra.distribute(k)), latex: `${k} \\cdot x + ${k} \\cdot ${a}` },
+            { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
         ];
     }
-    
-    // --- MODE 3: Distribute & Group a(x + b) + cx ---
+
+    // --- MODE 3: Distribute & Simplify a(x + b) + cx ---
     else if (mode === 3) {
         const a = rng.intBetween(2, 5);
         const b = rng.intBetween(1, 5);
-        const c = rng.intBetween(2, 8);
-        expr = `${a}(x + ${b}) + ${c}x`; 
+        const c = rng.intBetween(2, 9);
         
-        const distM = a * b;
+        expr = `${a}(x + ${b}) + ${c}x`;
+        const distM = a * b; 
         ansK = a + c; 
         ansM = distM;
         
         steps = [
+            { text: t(lang, TERMS.simplification.intro(expr)), latex: expr }, 
             { text: t(lang, TERMS.algebra.distribute(a)), latex: `${a}x + ${distM} + ${c}x` }, 
             { text: t(lang, TERMS.simplification.group_terms), latex: `(${a}x + ${c}x) + ${distM}` }, 
-            { text: "Result", latex: formatColor(`${ansK}x + ${ansM}`) }
+            { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
         ];
     }
     
@@ -78,24 +79,22 @@ export class ExpressionSimplificationGen {
         
         steps = [
             { text: t(lang, TERMS.simplification.intro(expr)), latex: expr }, 
-            { text: "Distribute", latex: `${a}x + ${distM1} - ${c}x + ${distM2}` }, 
+            { text: t(lang, TERMS.algebra.distribute(a)), latex: `${a}x + ${distM1} - ${c}x + ${distM2}` }, 
             { text: t(lang, TERMS.simplification.group_terms), latex: `(${a}x - ${c}x) + (${distM1} + ${distM2})` }, 
-            { text: "Result", latex: formatColor(`${ansK}x + ${ansM}`) }
+            { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
         ];
     }
 
-    const mSign = ansM >= 0 ? '+' : '-';
-    const mVal = Math.abs(ansM);
-    const answerStr = ansM === 0 ? `${ansK}x` : `${ansK}x${mSign}${mVal}`;
+    const mPart = ansM >= 0 ? `+ ${ansM}` : `- ${Math.abs(ansM)}`;
+    const answerStr = `${ansK}x ${mPart}`;
 
     return {
-        questionId: `simp-l${level}-${seed}`,
+        questionId: `sim-l${level}-${seed}`,
         renderData: {
             text_key: "simplify",
             description: descObj,
             latex: expr,
-            answerType: 'algebraic',
-            variables: {}
+            answerType: 'text'
         },
         serverData: {
             answer: answerStr,

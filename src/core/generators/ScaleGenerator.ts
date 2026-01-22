@@ -15,49 +15,6 @@ export class ScaleGenerator {
 
     private static readonly AREA_SHAPES = ['rectangle', 'triangle', 'circle', 'semicircle', 'parallelogram'];
 
-    // Internal dictionary to ensure we have all needed terms without modifying i18n.ts
-    private static readonly TEXTS = {
-        drawing: { sv: "Avbildning", en: "Drawing" },
-        reality: { sv: "Verklighet", en: "Reality" },
-        image_larger: { sv: "Bilden är störst", en: "The image is larger" },
-        reality_larger: { sv: "Verkligheten är störst", en: "Reality is larger" },
-        reduction: { sv: "Förminskning", en: "Reduction" },
-        enlargement: { sv: "Förstoring", en: "Enlargement" },
-        rule_red: { sv: "1:X = Förminskning -> Verklighet störst", en: "1:X = Reduction -> Reality larger" },
-        rule_enl: { sv: "X:1 = Förstoring -> Bild störst", en: "X:1 = Enlargement -> Image larger" },
-        calc_cm: { sv: "Beräkna cm", en: "Calc cm" },
-        conv_m: { sv: "Omvandla till meter", en: "Convert to meters" },
-        conv_same: { sv: "Omvandla till samma enhet", en: "Convert to same unit" },
-        setup: { sv: "Ställ upp förhållandet", en: "Set up ratio" },
-        area_img: { sv: "Area (Bild)", en: "Area (Image)" },
-        area_real: { sv: "Area (Verklighet)", en: "Area (Reality)" },
-        area_scale: { sv: "Areaskala", en: "Area Scale" }
-    };
-
-    private static readonly SHAPE_NAMES: Record<string, {sv: string, en: string}> = {
-        square: { sv: "kvadrat", en: "square" },
-        rectangle: { sv: "rektangel", en: "rectangle" },
-        circle: { sv: "cirkel", en: "circle" },
-        triangle: { sv: "triangel", en: "triangle" },
-        rhombus: { sv: "romb", en: "rhombus" },
-        parallelogram: { sv: "parallellogram", en: "parallelogram" },
-        pentagon: { sv: "femhörning", en: "pentagon" },
-        hexagon: { sv: "sexhörning", en: "hexagon" },
-        octagon: { sv: "åttahörning", en: "octagon" },
-        star: { sv: "stjärna", en: "star" },
-        arrow: { sv: "pil", en: "arrow" },
-        heart: { sv: "hjärta", en: "heart" },
-        cross: { sv: "kors", en: "cross" },
-        lightning: { sv: "blixt", en: "lightning" },
-        kite: { sv: "drake", en: "kite" },
-        cube: { sv: "kub", en: "cube" },
-        cylinder: { sv: "cylinder", en: "cylinder" },
-        pyramid: { sv: "pyramid", en: "pyramid" },
-        cone: { sv: "kon", en: "cone" },
-        sphere: { sv: "klot", en: "sphere" },
-        semicircle: { sv: "halvcirkel", en: "semicircle" }
-    };
-
     /**
      * Generate diverse scale factors:
      * - Small integers (2-25)
@@ -84,9 +41,6 @@ export class ScaleGenerator {
             mode = rng.intBetween(1, 6); 
         }
 
-        // Helper for translation
-        const T = (key: keyof typeof ScaleGenerator.TEXTS) => t(lang, ScaleGenerator.TEXTS[key]);
-
         // --- LEVEL 1: CONCEPTUAL (Multiple Choice) ---
         if (mode === 1) {
             const isReduction = rng.intBetween(0, 1) === 1; 
@@ -97,16 +51,16 @@ export class ScaleGenerator {
 
             if (qType === 1) {
                 descObj = { sv: `Visar skalan ${scaleStr} en förstoring eller en förminskning?`, en: `Does the scale ${scaleStr} show an enlargement or a reduction?` };
-                correct = isReduction ? T('reduction') : T('enlargement');
-                const wrong = isReduction ? T('enlargement') : T('reduction');
+                correct = isReduction ? t(lang, TERMS.scale.reduction) : t(lang, TERMS.scale.enlargement);
+                const wrong = isReduction ? t(lang, TERMS.scale.enlargement) : t(lang, TERMS.scale.reduction);
                 choices = rng.intBetween(0,1) ? [wrong, correct] : [correct, wrong];
-                expl = isReduction ? T('rule_red') : T('rule_enl');
+                expl = isReduction ? t(lang, TERMS.scale.rule_reduction) : t(lang, TERMS.scale.rule_enlargement);
             } else {
                 descObj = { sv: `Skalan är ${scaleStr}. Vad är störst: bilden eller verkligheten?`, en: `The scale is ${scaleStr}. Which is larger: the image or reality?` };
-                correct = isReduction ? T('reality_larger') : T('image_larger');
-                const wrong = isReduction ? T('image_larger') : T('reality_larger');
+                correct = isReduction ? t(lang, TERMS.scale.reality) : t(lang, TERMS.scale.drawing);
+                const wrong = isReduction ? t(lang, TERMS.scale.drawing) : t(lang, TERMS.scale.reality);
                 choices = rng.intBetween(0,1) ? [wrong, correct] : [correct, wrong];
-                expl = isReduction ? T('rule_red') : T('rule_enl');
+                expl = isReduction ? t(lang, TERMS.scale.rule_reduction) : t(lang, TERMS.scale.rule_enlargement);
             }
             return {
                 questionId: `scale-l1-${seed}`,
@@ -124,8 +78,8 @@ export class ScaleGenerator {
 
         // Shared Setup for L2-6
         const shape = rng.pick(this.SHAPES);
-        const svShape = this.SHAPE_NAMES[shape]?.sv || shape;
-        const enShape = this.SHAPE_NAMES[shape]?.en || shape;
+        const svShape = t('sv', TERMS.shapes[shape]) || shape;
+        const enShape = t('en', TERMS.shapes[shape]) || shape;
         
         const scaleFactor = ScaleGenerator.getScaleFactor(rng);
 
@@ -166,13 +120,13 @@ export class ScaleGenerator {
                     realVal = baseInt; 
                     drawingVal = realVal * scaleFactor; 
                     answer = drawingVal;
-                    descriptionObj = { sv: `I verkligheten är en ${svShape} ${realVal} cm lång. Skalan är ${scaleStr} (förstoring). Hur lång blir den på en ritning? (Svara i cm)`, en: `In reality, a ${enShape} is ${realVal} cm long. Scale is ${scaleStr} (enlargement). How long on the drawing? (Answer in cm)` };
+                    descriptionObj = { sv: `I verkligheten är en ${svShape} ${realVal} cm lång. Skalan är ${scaleStr}. Hur lång blir den på en ritning? (Svara i cm)`, en: `In reality, a ${enShape} is ${realVal} cm long. Scale is ${scaleStr}. How long on the drawing? (Answer in cm)` };
                     geomLabel = `${realVal} cm`;
                     steps = [{ text: t(lang, TERMS.common.calculate), latex: `${realVal} \\cdot ${scaleFactor} = ${formatColor(drawingVal)}` }];
                 } else { // Find Reality
                     answer = baseInt;
                     drawingVal = answer * scaleFactor; 
-                    descriptionObj = { sv: `En ${svShape} är ${drawingVal} cm på ritningen. Skalan är ${scaleStr} (förstoring). Hur lång är den i verkligheten? (Svara i cm)`, en: `A ${enShape} is ${drawingVal} cm on the drawing. Scale is ${scaleStr} (enlargement). Find reality (cm).` };
+                    descriptionObj = { sv: `En ${svShape} är ${drawingVal} cm på ritningen. Skalan är ${scaleStr}. Hur lång är den i verkligheten? (Svara i cm)`, en: `A ${enShape} is ${drawingVal} cm on the drawing. Scale is ${scaleStr}. Find reality (cm).` };
                     geomLabel = `${drawingVal} cm`;
                     steps = [{ text: t(lang, TERMS.scale.step_plug_in), latex: `\\frac{${drawingVal}}{${scaleFactor}} = ${formatColor(answer)}` }];
                 }
@@ -210,8 +164,8 @@ export class ScaleGenerator {
                 descriptionObj = { sv: `En ${svShape} är ${drawingVal} cm på ritningen. Skalan är 1:${scaleFactor}. Hur lång är den i verkligheten? (Svara i m)`, en: `A ${enShape} is ${drawingVal} cm on the drawing. Scale is 1:${scaleFactor}. How long is it in reality? (Answer in m)` };
                 geomLabel = `${drawingVal} cm`;
                 steps = [
-                    { text: T('calc_cm'), latex: `${drawingVal} \\cdot ${scaleFactor} = ${realValCm} \\text{ cm}` },
-                    { text: T('conv_m'), latex: `\\frac{${realValCm}}{100} = ${formatColor(realValM)}` }
+                    { text: t(lang, TERMS.scale.calc_cm), latex: `${drawingVal} \\cdot ${scaleFactor} = ${realValCm} \\text{ cm}` },
+                    { text: t(lang, TERMS.scale.conv_m), latex: `\\frac{${realValCm}}{100} = ${formatColor(realValM)}` }
                 ];
             } else { // Find Drawing
                 const drawingVal = baseInt; 
@@ -222,7 +176,7 @@ export class ScaleGenerator {
                 descriptionObj = { sv: `I verkligheten är en ${svShape} ${realValM} m lång. Skalan är 1:${scaleFactor}. Hur lång på ritningen? (Svara i cm)`, en: `In reality a ${enShape} is ${realValM} m long. Scale 1:${scaleFactor}. Find drawing (cm).` };
                 geomLabel = `${realValM} m`;
                 steps = [
-                    { text: T('conv_same'), latex: `${realValM} \\text{ m} = ${realValCm} \\text{ cm}` },
+                    { text: t(lang, TERMS.scale.conv_same), latex: `${realValM} \\text{ m} = ${realValCm} \\text{ cm}` },
                     { text: t(lang, TERMS.scale.step_plug_in), latex: `\\frac{${realValCm}}{${scaleFactor}} = ${formatColor(answer)}` }
                 ];
             }
@@ -262,8 +216,8 @@ export class ScaleGenerator {
                 const realDisplay = realUnit === 'm' ? realVal / 100 : realVal;
 
                 steps = [
-                    { text: T('conv_same'), latex: `${realDisplay} ${realUnit} = ${realVal} \\text{ cm}` },
-                    { text: T('setup'), latex: `\\text{Bild} : \\text{Verklighet} = ${drawVal} : ${realVal}` },
+                    { text: t(lang, TERMS.scale.conv_same), latex: `${realDisplay} ${realUnit} = ${realVal} \\text{ cm}` },
+                    { text: t(lang, TERMS.scale.setup_ratio), latex: `\\text{Bild} : \\text{Verklighet} = ${drawVal} : ${realVal}` },
                     { text: t(lang, TERMS.scale.step_simplify), latex: `1 : \\frac{${realVal}}{${drawVal}} \\implies ${formatColor('1:' + factor)}` }
                 ];
             } else {
@@ -274,7 +228,7 @@ export class ScaleGenerator {
                 ansRight = 1;
 
                 steps = [
-                    { text: T('setup'), latex: `\\text{Bild} : \\text{Verklighet} = ${drawVal} : ${realVal}` },
+                    { text: t(lang, TERMS.scale.setup_ratio), latex: `\\text{Bild} : \\text{Verklighet} = ${drawVal} : ${realVal}` },
                     { text: t(lang, TERMS.scale.step_simplify), latex: `\\frac{${drawVal}}{${realVal}} : 1 \\implies ${formatColor(factor + ':1')}` }
                 ];
             }
@@ -283,8 +237,8 @@ export class ScaleGenerator {
             
             // Visual Randomization
             const leftIsDrawing = rng.intBetween(0, 1) === 1;
-            const leftLabel = leftIsDrawing ? T('drawing') : T('reality');
-            const rightLabel = leftIsDrawing ? T('reality') : T('drawing');
+            const leftLabel = leftIsDrawing ? t(lang, TERMS.scale.drawing) : t(lang, TERMS.scale.reality);
+            const rightLabel = leftIsDrawing ? t(lang, TERMS.scale.reality) : t(lang, TERMS.scale.drawing);
             
             // Value Formatting
             const realUnit = (!isReduction && factor < 100) ? 'cm' : (factor >= 100 ? 'm' : 'cm');
@@ -331,9 +285,9 @@ export class ScaleGenerator {
                 };
                 
                 if (showM) {
-                    steps.push({ text: T('conv_same'), latex: `${realM} \\text{ m} = ${realVal} \\text{ cm}` });
+                    steps.push({ text: t(lang, TERMS.scale.conv_same), latex: `${realM} \\text{ m} = ${realVal} \\text{ cm}` });
                 }
-                steps.push({ text: T('setup'), latex: `${drawVal} : ${realVal}` });
+                steps.push({ text: t(lang, TERMS.scale.setup_ratio), latex: `${drawVal} : ${realVal}` });
                 steps.push({ text: t(lang, TERMS.scale.step_simplify), latex: `1 : \\frac{${realVal}}{${drawVal}} \\implies ${formatColor('1:' + factor)}` });
 
             } else {
@@ -348,7 +302,7 @@ export class ScaleGenerator {
                 };
 
                 steps = [
-                    { text: T('setup'), latex: `${drawVal} : ${realVal}` },
+                    { text: t(lang, TERMS.scale.setup_ratio), latex: `${drawVal} : ${realVal}` },
                     { text: t(lang, TERMS.scale.step_simplify), latex: `\\frac{${drawVal}}{${realVal}} : 1 \\implies ${formatColor(factor + ':1')}` }
                 ];
             }
@@ -375,8 +329,8 @@ export class ScaleGenerator {
             let answer: any = 0;
             let answerType: any = 'numeric';
 
-            const shapePluralSv = (ScaleGenerator.SHAPE_NAMES[areaShape]?.sv || areaShape) + "er";
-            const shapePluralEn = (ScaleGenerator.SHAPE_NAMES[areaShape]?.en || areaShape) + "s";
+            const shapePluralSv = (t('sv', TERMS.shapes_plural[areaShape]) || areaShape);
+            const shapePluralEn = (t('en', TERMS.shapes_plural[areaShape]) || areaShape);
 
             if (subType === 1) { // Find Scale (Visual)
                 const w = rng.intBetween(2, 6);
@@ -398,13 +352,13 @@ export class ScaleGenerator {
                 };
 
                 steps = [
-                    { text: T('area_img'), latex: `A_{bild} = ${dispAreaDraw} \\text{ cm}^2` },
-                    { text: T('area_real'), latex: `A_{verklighet} = ${dispAreaReal} \\text{ cm}^2` },
+                    { text: t(lang, TERMS.scale.calc_area_img), latex: `A_{bild} = ${dispAreaDraw} \\text{ cm}^2` },
+                    { text: t(lang, TERMS.scale.calc_area_real), latex: `A_{verklighet} = ${dispAreaReal} \\text{ cm}^2` },
                     { text: t(lang, TERMS.scale.step_simplify), latex: `${dispAreaDraw} : ${dispAreaReal} \\implies ${formatColor('1:' + areaScale)}` }
                 ];
                 answer = { left: 1, right: areaScale };
                 answerType = 'scale';
-                geomData = { type: 'compare_shapes', shapeType: areaShape, left: { width: w, height: h, radius: w, label: T('drawing') }, right: { width: wReal, height: hReal, radius: wReal, label: T('reality') } };
+                geomData = { type: 'compare_shapes', shapeType: areaShape, left: { width: w, height: h, radius: w, label: t(lang, TERMS.scale.drawing) }, right: { width: wReal, height: hReal, radius: wReal, label: t(lang, TERMS.scale.reality) } };
             } 
             else if (subType === 2) { // Find Real Area
                 const baseArea = rng.pick([2, 3, 4, 5, 10]);
@@ -414,12 +368,12 @@ export class ScaleGenerator {
                     en: `The small shape has an area of ${baseArea} cm$^2$. How big is the area of the large shape if the length scale is 1:${lengthScale}?`
                 };
                 steps = [
-                    { text: T('area_scale'), latex: `(1:${lengthScale})^2 = 1:${areaScale}` },
+                    { text: t(lang, TERMS.scale.calc_area_scale), latex: `(1:${lengthScale})^2 = 1:${areaScale}` },
                     { text: t(lang, TERMS.common.calculate), latex: `${baseArea} \\cdot ${areaScale} = ${formatColor(realArea)}` }
                 ];
                 answer = realArea;
                 answerType = 'numeric';
-                geomData = { type: 'compare_shapes_area', shapeType: areaShape, left: { area: baseArea, label: T('drawing') }, right: { area: "?", label: T('reality') } };
+                geomData = { type: 'compare_shapes_area', shapeType: areaShape, left: { area: baseArea, label: t(lang, TERMS.scale.drawing) }, right: { area: "?", label: t(lang, TERMS.scale.reality) } };
             }
             else if (subType === 3) { // Length -> Area Scale
                 const lScaleStr = isReduction ? `1:${lengthScale}` : `${lengthScale}:1`;

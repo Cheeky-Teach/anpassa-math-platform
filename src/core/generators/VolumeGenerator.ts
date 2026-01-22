@@ -9,19 +9,12 @@ export class VolumeGenerator {
         const piApprox = 3.14;
 
         // --- UTILS ---
-        
-        // Helper: Generate numbers up to 30, ensuring they are within 9 of each other
         const getConstrainedValues = (count: number): number[] => {
-            // Pick a "floor" for the range such that floor + 9 <= 30
-            // Range [2, 30]
             const minAllowed = 2;
             const maxAllowed = 30;
             const span = 9;
-            
-            // Pick a start point for the window [start, start + 9]
             const windowStart = rng.intBetween(minAllowed, maxAllowed - span);
             const windowEnd = windowStart + span;
-
             const vals: number[] = [];
             for(let i = 0; i < count; i++) {
                 vals.push(rng.intBetween(windowStart, windowEnd));
@@ -30,11 +23,8 @@ export class VolumeGenerator {
         };
 
         // --- LEVEL LOGIC ---
-
         let mode = level;
         const isUnitConversion = level === 7;
-        
-        // Level 6 (Mixed) or Level 7 (Units) -> Pick random shape mode
         if (level >= 6) mode = rng.intBetween(1, 5); 
 
         // Unit Handling
@@ -50,7 +40,6 @@ export class VolumeGenerator {
 
         if (isUnitConversion) {
             unitIn = rng.pick(UNITS);
-            // Ensure unitOut is different
             do {
                 unitOut = rng.pick(UNITS);
             } while (unitOut.id === unitIn.id);
@@ -65,8 +54,6 @@ export class VolumeGenerator {
         };
         let geometry: any = undefined;
 
-        // Helper to get unit suffix text
-        const uText = (u: string) => u;
         const uVol = (u: string) => `${u}^3`;
 
         // --- LEVEL 1: Rätblock (Rectangular Prism) & Kub (Cube) ---
@@ -78,7 +65,7 @@ export class VolumeGenerator {
             const h = isCube ? w : vals[2]; 
 
             const volRaw = w * d * h;
-            qData.answer = volRaw; // Base answer
+            qData.answer = volRaw; 
             
             const shapeNameSv = isCube ? "kuben" : "rätblocket";
             const shapeNameEn = isCube ? "the cube" : "the rectangular prism";
@@ -90,7 +77,7 @@ export class VolumeGenerator {
 
             steps = [
                 { text: t(lang, TERMS.volume.formula_prism), latex: "V = l \\cdot b \\cdot h" },
-                { text: "Calc", latex: `${w} \\cdot ${d} \\cdot ${h} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                { text: t(lang, TERMS.common.calculate), latex: `${w} \\cdot ${d} \\cdot ${h} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
             ];
 
             geometry = { type: 'cuboid', w, h, d, labels: { w: `${w}${unitIn.id}`, h: `${h}${unitIn.id}`, d: `${d}${unitIn.id}` } };
@@ -113,8 +100,8 @@ export class VolumeGenerator {
             };
 
             steps = [
-                { text: "Base Area", latex: `B = \\frac{b \\cdot h}{2} = \\frac{${bBase} \\cdot ${hTri}}{2} = ${areaBase}` },
-                { text: "Volume", latex: `V = B \\cdot l = ${areaBase} \\cdot ${len} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                { text: t(lang, TERMS.volume.formula_prism_base), latex: `B = \\frac{b \\cdot h}{2} = \\frac{${bBase} \\cdot ${hTri}}{2} = ${areaBase}` },
+                { text: t(lang, TERMS.volume.volume), latex: `V = B \\cdot l = ${areaBase} \\cdot ${len} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
             ];
 
             geometry = { 
@@ -141,8 +128,8 @@ export class VolumeGenerator {
                 };
                 
                 steps = [
-                    { text: "Base Area", latex: `B = \\pi r^2 \\approx ${piApprox} \\cdot ${r}^2 = ${Math.round(baseArea*100)/100}` },
-                    { text: "Volume", latex: `V = \\frac{B \\cdot h}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                    { text: t(lang, TERMS.volume.step_calc_base), latex: `B = \\pi r^2 \\approx ${piApprox} \\cdot ${r}^2 = ${Math.round(baseArea*100)/100}` },
+                    { text: t(lang, TERMS.volume.formula_cone), latex: `V = \\frac{B \\cdot h}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { type: 'cone', r, h, labels: { r: `${r}${unitIn.id}`, h: `${h}${unitIn.id}` } };
             } else {
@@ -158,8 +145,8 @@ export class VolumeGenerator {
                 };
 
                 steps = [
-                    { text: "Base Area", latex: `B = s^2 = ${side} \\cdot ${side} = ${baseArea}` },
-                    { text: "Volume", latex: `V = \\frac{B \\cdot h}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                    { text: t(lang, TERMS.volume.step_calc_base), latex: `B = s^2 = ${side} \\cdot ${side} = ${baseArea}` },
+                    { text: t(lang, TERMS.volume.formula_pyramid), latex: `V = \\frac{B \\cdot h}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { type: 'pyramid', s: side, h, labels: { s: `${side}${unitIn.id}`, h: `${h}${unitIn.id}` } };
             }
@@ -180,8 +167,8 @@ export class VolumeGenerator {
              };
              
              steps = [
-                 { text: "Base Area", latex: `B = \\pi r^2 \\approx ${piApprox} \\cdot ${r}^2 = ${Math.round(baseArea*100)/100}` },
-                 { text: "Volume", latex: `V = B \\cdot h \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                 { text: t(lang, TERMS.volume.step_calc_base), latex: `B = \\pi r^2 \\approx ${piApprox} \\cdot ${r}^2 = ${Math.round(baseArea*100)/100}` },
+                 { text: t(lang, TERMS.volume.formula_cylinder), latex: `V = B \\cdot h \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
              ];
              geometry = { type: 'cylinder', r, h, labels: { r: `${r}${unitIn.id}`, h: `${h}${unitIn.id}` } };
         }
@@ -192,11 +179,10 @@ export class VolumeGenerator {
             const vals = getConstrainedValues(2);
             
             const r = vals[0];
-            const hOther = vals[1]; // Used for cone height or cylinder height
+            const hOther = vals[1]; 
             const d = r * 2;
             const giveDiameter = rng.intBetween(0, 1) === 1; 
             
-            // Shared geometry label
             const labelVal = giveDiameter ? d : r;
             const labelKeySv = giveDiameter ? 'diametern' : 'radien';
             const labelKeyEn = giveDiameter ? 'diameter' : 'radius';
@@ -212,8 +198,8 @@ export class VolumeGenerator {
                 };
                 
                 steps = [
-                    ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
-                    { text: "Volume", latex: `V = \\frac{4 \\cdot \\pi \\cdot r^3}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                    ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = \\frac{d}{2} = ${r}` }] : []),
+                    { text: t(lang, TERMS.volume.formula_sphere), latex: `V = \\frac{4 \\cdot \\pi \\cdot r^3}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { type: 'sphere', r, show: giveDiameter ? 'd' : 'r', labels: { val: `${labelVal}${unitSuffix}` } };
             } 
@@ -228,9 +214,9 @@ export class VolumeGenerator {
                 };
 
                 steps = [
-                     ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
-                     { text: "Sphere Vol", latex: `V_{sphere} = \\frac{4\\pi r^3}{3} \\approx ${Math.round(volSphere*10)/10}` },
-                     { text: "Half", latex: `V = \\frac{V_{sphere}}{2} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                     ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = \\frac{d}{2} = ${r}` }] : []),
+                     { text: t(lang, TERMS.volume.sphere_vol), latex: `V_{sphere} = \\frac{4\\pi r^3}{3} \\approx ${Math.round(volSphere*10)/10}` },
+                     { text: t(lang, TERMS.volume.half), latex: `V = \\frac{V_{sphere}}{2} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { type: 'hemisphere', r, show: giveDiameter ? 'd' : 'r', labels: { val: `${labelVal}${unitSuffix}` } };
             }
@@ -240,17 +226,16 @@ export class VolumeGenerator {
                 const volRaw = Math.round((volCone + volHemi) * 100) / 100;
                 qData.answer = volRaw;
 
-                // REMOVED SHAPE NAMES
                 qData.description = {
                     sv: `Beräkna volymen. $h = ${hOther}$ ${unitSuffix} och ${labelKeySv} är ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ''}`,
                     en: `Calculate the volume. $h = ${hOther}$ ${unitSuffix} and the ${labelKeyEn} is ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ''}`
                 };
 
                 steps = [
-                     ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
-                     { text: "Cone Vol", latex: `V_{cone} = \\frac{\\pi r^2 h}{3} \\approx ${Math.round(volCone*10)/10}` },
-                     { text: "Hemi Vol", latex: `V_{hemi} = \\frac{2\\pi r^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
-                     { text: "Total", latex: `V_{total} = ${Math.round(volCone*10)/10} + ${Math.round(volHemi*10)/10} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                     ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = \\frac{d}{2} = ${r}` }] : []),
+                     { text: t(lang, TERMS.volume.cone_vol), latex: `V_{cone} = \\frac{\\pi r^2 h}{3} \\approx ${Math.round(volCone*10)/10}` },
+                     { text: t(lang, TERMS.volume.hemi_vol), latex: `V_{hemi} = \\frac{2\\pi r^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
+                     { text: t(lang, TERMS.volume.total), latex: `V_{total} = ${Math.round(volCone*10)/10} + ${Math.round(volHemi*10)/10} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { 
                     type: 'ice_cream', r, h: hOther, show: giveDiameter ? 'd' : 'r', 
@@ -263,17 +248,16 @@ export class VolumeGenerator {
                 const volRaw = Math.round((volCyl + volHemi) * 100) / 100;
                 qData.answer = volRaw;
 
-                // REMOVED SHAPE NAMES
                 qData.description = {
                     sv: `Beräkna volymen. $h = ${hOther}$ ${unitSuffix} och ${labelKeySv} är ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Svara i ${uVol(unitOut.id)}.` : ''}`,
                     en: `Calculate the volume. $h = ${hOther}$ ${unitSuffix} and the ${labelKeyEn} is ${labelVal} ${unitSuffix}.${isUnitConversion ? ` Answer in ${uVol(unitOut.id)}.` : ''}`
                 };
 
                 steps = [
-                     ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
-                     { text: "Cylinder Vol", latex: `V_{cyl} = \\pi r^2 h \\approx ${Math.round(volCyl*10)/10}` },
-                     { text: "Hemi Vol", latex: `V_{hemi} = \\frac{2\\pi r^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
-                     { text: "Total", latex: `V_{total} = ${Math.round(volCyl*10)/10} + ${Math.round(volHemi*10)/10} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                     ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = \\frac{d}{2} = ${r}` }] : []),
+                     { text: t(lang, TERMS.volume.cyl_vol), latex: `V_{cyl} = \\pi r^2 h \\approx ${Math.round(volCyl*10)/10}` },
+                     { text: t(lang, TERMS.volume.hemi_vol), latex: `V_{hemi} = \\frac{2\\pi r^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
+                     { text: t(lang, TERMS.volume.total), latex: `V_{total} = ${Math.round(volCyl*10)/10} + ${Math.round(volHemi*10)/10} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { 
                     type: 'silo', r, h: hOther, show: giveDiameter ? 'd' : 'r', 
@@ -293,7 +277,7 @@ export class VolumeGenerator {
             qData.answer = convertedAns;
             
             steps.push({
-                text: t(lang, {sv: "Omvandla enhet", en: "Convert Unit"}),
+                text: t(lang, TERMS.scale.conv_units), 
                 latex: `${originalAns} \\text{ ${uVol(unitIn.id)}} \\cdot ${Math.round(volRatio*1000000)/1000000} = ${color}{${convertedAns}} \\text{ ${uVol(unitOut.id)}}`
             });
         }

@@ -16,7 +16,9 @@ export const TERMS = {
         find: { sv: "Hitta", en: "Find" },
         result: { sv: "Svar:", en: "Answer:" },
         drawing: { sv: "Avbildning", en: "Drawing" },
-        reality: { sv: "Verklighet", en: "Reality" }
+        reality: { sv: "Verklighet", en: "Reality" },
+        // Added for compatibility
+        distribute: { sv: "Distribuera", en: "Distribute" } 
     },
     scale: {
         scale: { sv: "Skala", en: "Scale" },
@@ -50,7 +52,18 @@ export const TERMS = {
         formula_cone: { sv: "Volym = (π · r² · h) / 3", en: "Volume = (π · r² · h) / 3" },
         formula_pyramid: { sv: "Volym = (Basytan · h) / 3", en: "Volume = (Base Area · h) / 3" },
         formula_sphere: { sv: "Volym = (4 · π · r³) / 3", en: "Volume = (4 · π · r³) / 3" },
-        step_calc_base: { sv: "Beräkna basytan (B)", en: "Calculate Base Area (B)" }
+        step_calc_base: { sv: "Beräkna basytan (B)", en: "Calculate Base Area (B)" },
+        
+        // Added for Level 5 (Composite/Sphere)
+        radius: { sv: "Radie", en: "Radius" },
+        find_radius: { sv: "Hitta radien", en: "Find radius" },
+        volume: { sv: "Volym", en: "Volume" },
+        sphere_vol: { sv: "Klotets volym", en: "Sphere Vol" },
+        hemi_vol: { sv: "Halvklotets volym", en: "Hemisphere Vol" },
+        cone_vol: { sv: "Konens volym", en: "Cone Vol" },
+        cyl_vol: { sv: "Cylinderns volym", en: "Cylinder Vol" },
+        total: { sv: "Totalt", en: "Total" },
+        half: { sv: "Hälften", en: "Half" }
     },
     shapes: {
         // 2D Shapes
@@ -76,7 +89,7 @@ export const TERMS = {
         // 3D Shapes
         cube: { sv: "kub", en: "cube" },
         rect_prism: { sv: "rätblock", en: "rectangular prism" }, 
-        tri_prism: { sv: "triangulärt prisma", en: "triangular prism" }, // Kept for compatibility with VolumeGen
+        tri_prism: { sv: "triangulärt prisma", en: "triangular prism" },
         triangular_prism: { sv: "triangulärt prisma", en: "triangular prism" },
         cylinder: { sv: "cylinder", en: "cylinder" },
         pyramid: { sv: "pyramid", en: "pyramid" },
@@ -100,7 +113,7 @@ export const TERMS = {
         desc_circle: { sv: "En cirkel", en: "A circle" },
         desc_composite: { sv: "En sammansatt figur", en: "A composite shape" },
         
-        // Formulas & Calcs (Merged)
+        // Formulas & Calcs
         calc_area_tri: { sv: "Area = (basen · höjden) / 2", en: "Area = (base · height) / 2" },
         formula_rect_perim: { sv: "Omkrets = 2 · (bredd + höjd)", en: "Perimeter = 2 · (width + height)" },
         formula_para_perim: { sv: "Omkrets = 2 · (sida A + sida B)", en: "Perimeter = 2 · (side A + side B)" },
@@ -118,10 +131,13 @@ export const TERMS = {
         step_comp_semi_area: { sv: "Halvcirkelns area:", en: "Semicircle area:" },
         step_comp_total_area: { sv: "Total area:", en: "Total area:" },
         
-        // Compatibility keys
         comp_rect_area: { sv: "Rektangelns area:", en: "Rectangle area:" },
         comp_tri_area: { sv: "Triangelns area:", en: "Triangle area:" },
-        comp_total_area: { sv: "Total area:", en: "Total area:" }
+        comp_total_area: { sv: "Total area:", en: "Total area:" },
+
+        // Added for Generators
+        sides_3: { sv: "3 Sidor", en: "3 Sides" },
+        arc: { sv: "Båge", en: "Arc" }
     },
     simplification: {
         intro: (expr: string) => ({ sv: `Förenkla uttrycket: $${expr}$`, en: `Simplify the expression: $${expr}$` }),
@@ -147,6 +163,12 @@ export const TERMS = {
         q_slope: { sv: "Beräkna lutningen (k):", en: "Calculate the slope (k):" },
         q_func: { sv: "Skriv funktionen på formen y = kx + m", en: "Write the function as y = kx + m" },
         step_intercept: (m: number) => ({ sv: `Avläs m-värdet där linjen skär y-axeln. m = ${m}`, en: `Read the y-intercept (m) where line crosses y-axis. m = ${m}` }),
-        step_func: (k: number, m: number) => ({ sv: `Sätt in k och m i formeln: y = ${k}x + ${m}`, en: `Insert k and m into formula: y = ${k}x + ${m}` })
+        step_func: (k: number, m: number) => ({ sv: `Sätt in k och m i formeln: y = ${k}x + ${m}`, en: `Insert k and m into formula: y = ${k}x + ${m}` }),
+        // Added for LinearGraphGenerator
+        step_delta: { sv: "Skillnad i y / Skillnad i x", en: "Change in y / Change in x" },
+        step_slope_calc: { sv: "Beräkna k", en: "Calculate k" },
+        look_x0: { sv: "Titta på x = 0", en: "Look at x = 0" },
+        find_m: { sv: "Hitta m", en: "Find m" },
+        find_k: { sv: "Hitta k", en: "Find k" }
     },
 };
