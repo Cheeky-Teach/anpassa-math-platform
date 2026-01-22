@@ -18,7 +18,31 @@ export const TERMS = {
         drawing: { sv: "Avbildning", en: "Drawing" },
         reality: { sv: "Verklighet", en: "Reality" }
     },
-    volume: { // New Section
+    scale: {
+        scale: { sv: "Skala", en: "Scale" },
+        drawing: { sv: "Bild", en: "Image" },
+        reality: { sv: "Verklighet", en: "Reality" },
+        step_plug_in: { sv: "Ställ upp förhållandet:", en: "Set up the ratio:" },
+        step_simplify: { sv: "Förenkla:", en: "Simplify:" },
+        enlargement: { sv: "Förstoring", en: "Enlargement" },
+        reduction: { sv: "Förminskning", en: "Reduction" },
+        rule_reduction: { sv: "Eftersom det första talet är 1, är det en förminskning.", en: "Since the first number is 1, it is a reduction." },
+        rule_enlargement: { sv: "Eftersom det första talet är större än 1, är det en förstoring.", en: "Since the first number is greater than 1, it is an enlargement." },
+        
+        calc_cm: { sv: "Beräkna cm", en: "Calculate cm" },
+        conv_m: { sv: "Omvandla till meter", en: "Convert to m" },
+        conv_units: { sv: "Omvandla enheter", en: "Convert units" },
+        div_scale: { sv: "Dividera med skalan", en: "Divide by scale" },
+        conv_same: { sv: "Omvandla till samma enhet (cm)", en: "Convert to same unit (cm)" },
+        setup_ratio: { sv: "Ställ upp förhållandet", en: "Set up ratio" },
+        
+        // Area Scale Specific
+        calc_area_img: { sv: "Beräkna bildens area", en: "Calculate image area" },
+        calc_area_real: { sv: "Beräkna verklighetens area", en: "Calculate reality area" },
+        calc_area_scale: { sv: "Beräkna areaskala (längdskala²)", en: "Calculate area scale (length scale²)" },
+        calc_new_area: { sv: "Beräkna ny area", en: "Calculate new area" }
+    },
+    volume: {
         formula_cube: { sv: "Volym = sida³", en: "Volume = side³" },
         formula_rect_prism: { sv: "Volym = längd · bredd · höjd", en: "Volume = length · width · height" },
         formula_prism_base: { sv: "Volym = Basytan · höjden", en: "Volume = Base Area · height" },
@@ -49,9 +73,10 @@ export const TERMS = {
         cross: { sv: "kors", en: "cross" },
         lightning: { sv: "blixt", en: "lightning" },
         
-        // 3D Shapes (Expanded)
+        // 3D Shapes
         cube: { sv: "kub", en: "cube" },
-        rectangular_prism: { sv: "rätblock", en: "rectangular prism" }, 
+        rect_prism: { sv: "rätblock", en: "rectangular prism" }, 
+        tri_prism: { sv: "triangulärt prisma", en: "triangular prism" }, // Kept for compatibility
         triangular_prism: { sv: "triangulärt prisma", en: "triangular prism" },
         cylinder: { sv: "cylinder", en: "cylinder" },
         pyramid: { sv: "pyramid", en: "pyramid" },
@@ -67,43 +92,16 @@ export const TERMS = {
         parallelogram: { sv: "parallellogrammer", en: "parallelograms" },
         rhombus: { sv: "romber", en: "rhombuses" }
     } as Record<string, {sv:string, en:string}>,
-    scale: {
-        step_plug_in: { sv: "Ställ upp förhållandet:", en: "Set up the ratio:" },
-        step_simplify: { sv: "Förenkla:", en: "Simplify:" },
-        enlargement: { sv: "Förstoring", en: "Enlargement" },
-        reduction: { sv: "Förminskning", en: "Reduction" },
-        rule_reduction: { sv: "Eftersom det första talet är 1, är det en förminskning.", en: "Since the first number is 1, it is a reduction." },
-        rule_enlargement: { sv: "Eftersom det första talet är större än 1, är det en förstoring.", en: "Since the first number is greater than 1, it is an enlargement." },
-        
-        calc_cm: { sv: "Beräkna cm", en: "Calculate cm" },
-        conv_m: { sv: "Omvandla till meter", en: "Convert to m" },
-        conv_units: { sv: "Omvandla enheter", en: "Convert units" },
-        div_scale: { sv: "Dividera med skalan", en: "Divide by scale" },
-        conv_same: { sv: "Omvandla till samma enhet (cm)", en: "Convert to same unit (cm)" },
-        setup_ratio: { sv: "Ställ upp förhållandet", en: "Set up ratio" },
-        
-        // Area Scale Specific
-        calc_area_img: { sv: "Beräkna bildens area", en: "Calculate image area" },
-        calc_area_real: { sv: "Beräkna verklighetens area", en: "Calculate reality area" },
-        calc_area_scale: { sv: "Beräkna areaskala (längdskala²)", en: "Calculate area scale (length scale²)" },
-        calc_new_area: { sv: "Beräkna ny area", en: "Calculate new area" }
-    },
-    algebra: {
-        intro: (eq: string) => ({ sv: `Börja med ekvationen: $${eq}$`, en: `Start with the equation: $${eq}$` }),
-        sub_var: (term: string) => ({ sv: `Subtrahera ${term} från båda sidor`, en: `Subtract ${term} from both sides` }),
-        subtract: (n: number) => ({ sv: `Subtrahera ${n} från båda sidor`, en: `Subtract ${n} from both sides` }),
-        add: (n: number) => ({ sv: `Addera ${n} till båda sidor`, en: `Add ${n} to both sides` }),
-        divide: (n: number) => ({ sv: `Dela båda sidor med ${n}`, en: `Divide both sides by ${n}` }),
-        multiply: (n: number) => ({ sv: `Multiplicera båda sidor med ${n}`, en: `Multiply both sides by ${n}` }),
-        distribute: (n: number) => ({ sv: `Multiplicera in ${n} i parentesen`, en: `Distribute ${n} into the parentheses` })
-    },
     geometry: {
+        // Descriptions
         desc_rect: { sv: "En rektangel", en: "A rectangle" },
         desc_para: { sv: "En parallellogram", en: "A parallelogram" },
         desc_tri: { sv: "En triangel", en: "A triangle" },
         desc_circle: { sv: "En cirkel", en: "A circle" },
         desc_composite: { sv: "En sammansatt figur", en: "A composite shape" },
         
+        // Formulas & Calcs (Merged)
+        calc_area_tri: { sv: "Area = (basen · höjden) / 2", en: "Area = (base · height) / 2" },
         formula_rect_perim: { sv: "Omkrets = 2 · (bredd + höjd)", en: "Perimeter = 2 · (width + height)" },
         formula_para_perim: { sv: "Omkrets = 2 · (sida A + sida B)", en: "Perimeter = 2 · (side A + side B)" },
         formula_rect_perim_latex: "O = 2(b + h)",
@@ -118,7 +116,12 @@ export const TERMS = {
         step_comp_arc_verbose: { sv: "Beräkna bågen:", en: "Calculate the arc:" },
         step_comp_total_perim: { sv: "Total omkrets:", en: "Total perimeter:" },
         step_comp_semi_area: { sv: "Halvcirkelns area:", en: "Semicircle area:" },
-        step_comp_total_area: { sv: "Total area:", en: "Total area:" }
+        step_comp_total_area: { sv: "Total area:", en: "Total area:" },
+        
+        // Compatibility keys for existing generators
+        comp_rect_area: { sv: "Rektangelns area:", en: "Rectangle area:" },
+        comp_tri_area: { sv: "Triangelns area:", en: "Triangle area:" },
+        comp_total_area: { sv: "Total area:", en: "Total area:" }
     },
     simplification: {
         intro: (expr: string) => ({ sv: `Förenkla uttrycket: $${expr}$`, en: `Simplify the expression: $${expr}$` }),
@@ -130,11 +133,20 @@ export const TERMS = {
         final_expr: { sv: "Slutgiltigt uttryck:", en: "Final expression:" },
         simplify_const: { sv: "Förenkla konstanterna:", en: "Simplify constants:" }
     },
+    algebra: {
+        intro: (eq: string) => ({ sv: `Ekvation: $${eq}$`, en: `Equation: $${eq}$` }),
+        subtract: (val: number) => ({ sv: `Subtrahera ${val} från båda sidor`, en: `Subtract ${val} from both sides` }),
+        add: (val: number) => ({ sv: `Addera ${val} på båda sidor`, en: `Add ${val} to both sides` }),
+        divide: (val: number) => ({ sv: `Dela med ${val}`, en: `Divide by ${val}` }),
+        multiply: (val: number) => ({ sv: `Multiplicera med ${val}`, en: `Multiply by ${val}` }),
+        distribute: (val: number) => ({ sv: `Multiplicera in ${val} i parentesen`, en: `Distribute ${val} into the parentheses` }),
+        sub_var: (term: string) => ({ sv: `Subtrahera ${term} från båda sidor`, en: `Subtract ${term} from both sides` })
+    },
     graph: {
         q_intercept: { sv: "Hitta m-värdet (skärning med y-axeln):", en: "Find the Y-Intercept (m):" },
         q_slope: { sv: "Beräkna lutningen (k):", en: "Calculate the slope (k):" },
         q_func: { sv: "Skriv funktionen på formen y = kx + m", en: "Write the function as y = kx + m" },
-        step_intercept: (m: number) => ({ sv: `Linjen skär y-axeln vid ${m}.`, en: `The line intersects the y-axis at ${m}.` }),
-        step_func: (k: number, m: number) => ({ sv: `Sätt in k=${k} och m=${m} i formeln.`, en: `Substitute k=${k} and m=${m} into the formula.` })
-    }
+        step_intercept: (m: number) => ({ sv: `Avläs m-värdet där linjen skär y-axeln. m = ${m}`, en: `Read the y-intercept (m) where line crosses y-axis. m = ${m}` }),
+        step_func: (k: number, m: number) => ({ sv: `Sätt in k och m i formeln: y = ${k}x + ${m}`, en: `Insert k and m into formula: y = ${k}x + ${m}` })
+    },
 };
