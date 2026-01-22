@@ -158,8 +158,9 @@
 
         const MathText=({text,className="",large=false})=>{
             if(!text)return null;
-            // Patch for malformed LaTeX from some generators: \mathbf{textcolor...} -> \mathbf{\textcolor...}
-            const patchedText = text.replace(/\\mathbf\{textcolor/g, '\\mathbf{\\textcolor');
+            // Robust patch for \mathbf{\textcolor{...}{...}} pattern which might be malformed or hard for KaTeX to parse inside mathbf
+            // Replaces \mathbf{\textcolor{color}{text}} (with or without backslash on textcolor) -> {\color{color}\mathbf{text}}
+            const patchedText = text.replace(/\\mathbf\{\\?textcolor\{([^}]+)\}\{([^}]+)\}\}/g, '{\\color{$1}\\mathbf{$2}}');
             const parts=patchedText.split(/(\$[^\$]+\$)/g);
             return(<span className={className}>{parts.map((part,index)=>{if(part.startsWith('$')&&part.endsWith('$')){const tex=part.slice(1,-1);try{const html=katex.renderToString(tex,{throwOnError:false,displayMode:large});return<span key={index} dangerouslySetInnerHTML={{__html:html}}/>;}catch(e){return<span key={index} className="text-red-500">{part}</span>;}}return<span key={index}>{part}</span>;})}</span>);
         };
