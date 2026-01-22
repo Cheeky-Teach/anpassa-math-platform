@@ -16,7 +16,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { answer, token, streak, level, topic } = req.body;
+    // Added solutionUsed to the destructured body
+    const { answer, token, streak, level, topic, usedHelp, solutionUsed } = req.body;
 
     if (answer === undefined || !token) {
       return res.status(400).json({ error: 'Missing answer or token' });
@@ -29,23 +30,30 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     let newStreak = Number(streak || 0);
 
     if (isCorrect) {
-        newStreak += 1;
-        // Check for level up if valid data is present
-        if (level && topic) {
-            levelUpAvailable = ProgressionRules.checkLevelUp(newStreak, Number(level), String(topic));
+        if (solutionUsed) {
+            // STRICT RESET: If solution was viewed, streak resets to 0 even if answer is correct
+            newStreak = 0;
+        } else if (!usedHelp) {
+            // Standard Increment: No hints, no solution -> Streak +1
+            newStreak += 1;
+            if (level && topic) {
+                levelUpAvailable = ProgressionRules.checkLevelUp(newStreak, Number(level), String(topic));
+            }
         }
+        // If usedHelp is true but solutionUsed is false (hints only), streak remains the same.
     } else {
+        // Incorrect answer always resets streak
         newStreak = 0;
     }
 
     return res.status(200).json({
       correct: isCorrect,
-      levelUp: levelUpAvailable,
-      streak: newStreak
+      newStreak: newStreak,
+      levelUp: levelUpAvailable
     });
-
-  } catch (error) {
-    console.error("Answer Handler Error:", error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    
+  } catch (error: any) {
+    console.error('API Error:', error);
+    return res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 }

@@ -100,8 +100,8 @@ export class VolumeGenerator {
             };
 
             steps = [
-                { text: t(lang, TERMS.volume.formula_prism_base), latex: `B = \\frac{b \\cdot h}{2} = \\frac{${bBase} \\cdot ${hTri}}{2} = ${areaBase}` },
-                { text: t(lang, TERMS.volume.volume), latex: `V = B \\cdot l = ${areaBase} \\cdot ${len} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                { text: t(lang, TERMS.volume.expl_prism_base), latex: `B = \\frac{${bBase} \\cdot ${hTri}}{2} = ${areaBase}` },
+                { text: t(lang, TERMS.volume.formula_prism_base), latex: `V = B \\cdot h = ${areaBase} \\cdot ${len} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
             ];
 
             geometry = { 
@@ -128,8 +128,8 @@ export class VolumeGenerator {
                 };
                 
                 steps = [
-                    { text: t(lang, TERMS.volume.step_calc_base), latex: `B = \\pi r^2 \\approx ${piApprox} \\cdot ${r}^2 = ${Math.round(baseArea*100)/100}` },
-                    { text: t(lang, TERMS.volume.formula_cone), latex: `V = \\frac{B \\cdot h}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                    { text: t(lang, TERMS.volume.expl_cylinder_base), latex: `B = \\pi \\cdot ${r}^2 \\approx ${Math.round(baseArea*100)/100}` },
+                    { text: t(lang, TERMS.volume.expl_cone_vol), latex: `V = \\frac{${Math.round(baseArea*100)/100} \\cdot ${h}}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { type: 'cone', r, h, labels: { r: `${r}${unitIn.id}`, h: `${h}${unitIn.id}` } };
             } else {
@@ -145,8 +145,8 @@ export class VolumeGenerator {
                 };
 
                 steps = [
-                    { text: t(lang, TERMS.volume.step_calc_base), latex: `B = s^2 = ${side} \\cdot ${side} = ${baseArea}` },
-                    { text: t(lang, TERMS.volume.formula_pyramid), latex: `V = \\frac{B \\cdot h}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                    { text: t(lang, TERMS.volume.step_calc_base), latex: `B = ${side} \\cdot ${side} = ${baseArea}` },
+                    { text: t(lang, TERMS.volume.formula_pyramid), latex: `V = \\frac{${baseArea} \\cdot ${h}}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { type: 'pyramid', s: side, h, labels: { s: `${side}${unitIn.id}`, h: `${h}${unitIn.id}` } };
             }
@@ -167,8 +167,8 @@ export class VolumeGenerator {
              };
              
              steps = [
-                 { text: t(lang, TERMS.volume.step_calc_base), latex: `B = \\pi r^2 \\approx ${piApprox} \\cdot ${r}^2 = ${Math.round(baseArea*100)/100}` },
-                 { text: t(lang, TERMS.volume.formula_cylinder), latex: `V = B \\cdot h \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                 { text: t(lang, TERMS.volume.expl_cylinder_base), latex: `B = \\pi \\cdot ${r}^2 \\approx ${Math.round(baseArea*100)/100}` },
+                 { text: t(lang, TERMS.volume.formula_cylinder), latex: `V = ${Math.round(baseArea*100)/100} \\cdot ${h} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
              ];
              geometry = { type: 'cylinder', r, h, labels: { r: `${r}${unitIn.id}`, h: `${h}${unitIn.id}` } };
         }
@@ -198,8 +198,8 @@ export class VolumeGenerator {
                 };
                 
                 steps = [
-                    ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = \\frac{d}{2} = ${r}` }] : []),
-                    { text: t(lang, TERMS.volume.formula_sphere), latex: `V = \\frac{4 \\cdot \\pi \\cdot r^3}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                    ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = ${d}/2 = ${r}` }] : []),
+                    { text: t(lang, TERMS.volume.expl_sphere_formula), latex: `V = \\frac{4 \\cdot \\pi \\cdot ${r}^3}{3} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { type: 'sphere', r, show: giveDiameter ? 'd' : 'r', labels: { val: `${labelVal}${unitSuffix}` } };
             } 
@@ -214,9 +214,9 @@ export class VolumeGenerator {
                 };
 
                 steps = [
-                     ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = \\frac{d}{2} = ${r}` }] : []),
-                     { text: t(lang, TERMS.volume.sphere_vol), latex: `V_{sphere} = \\frac{4\\pi r^3}{3} \\approx ${Math.round(volSphere*10)/10}` },
-                     { text: t(lang, TERMS.volume.half), latex: `V = \\frac{V_{sphere}}{2} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                     ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = ${d}/2 = ${r}` }] : []),
+                     { text: t(lang, TERMS.volume.sphere_vol), latex: `V_{sphere} = \\frac{4\\pi \\cdot ${r}^3}{3} \\approx ${Math.round(volSphere*10)/10}` },
+                     { text: t(lang, TERMS.volume.half), latex: `V = \\frac{${Math.round(volSphere*10)/10}}{2} \\approx ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { type: 'hemisphere', r, show: giveDiameter ? 'd' : 'r', labels: { val: `${labelVal}${unitSuffix}` } };
             }
@@ -232,10 +232,10 @@ export class VolumeGenerator {
                 };
 
                 steps = [
-                     ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = \\frac{d}{2} = ${r}` }] : []),
-                     { text: t(lang, TERMS.volume.cone_vol), latex: `V_{cone} = \\frac{\\pi r^2 h}{3} \\approx ${Math.round(volCone*10)/10}` },
-                     { text: t(lang, TERMS.volume.hemi_vol), latex: `V_{hemi} = \\frac{2\\pi r^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
-                     { text: t(lang, TERMS.volume.total), latex: `V_{total} = ${Math.round(volCone*10)/10} + ${Math.round(volHemi*10)/10} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                     ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = ${d}/2 = ${r}` }] : []),
+                     { text: t(lang, TERMS.volume.cone_vol), latex: `V_{cone} = \\frac{\\pi \\cdot ${r}^2 \\cdot ${hOther}}{3} \\approx ${Math.round(volCone*10)/10}` },
+                     { text: t(lang, TERMS.volume.hemi_vol), latex: `V_{hemi} = \\frac{2\\pi \\cdot ${r}^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
+                     { text: t(lang, TERMS.volume.total), latex: `${Math.round(volCone*10)/10} + ${Math.round(volHemi*10)/10} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { 
                     type: 'ice_cream', r, h: hOther, show: giveDiameter ? 'd' : 'r', 
@@ -254,10 +254,10 @@ export class VolumeGenerator {
                 };
 
                 steps = [
-                     ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = \\frac{d}{2} = ${r}` }] : []),
-                     { text: t(lang, TERMS.volume.cyl_vol), latex: `V_{cyl} = \\pi r^2 h \\approx ${Math.round(volCyl*10)/10}` },
-                     { text: t(lang, TERMS.volume.hemi_vol), latex: `V_{hemi} = \\frac{2\\pi r^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
-                     { text: t(lang, TERMS.volume.total), latex: `V_{total} = ${Math.round(volCyl*10)/10} + ${Math.round(volHemi*10)/10} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
+                     ...(giveDiameter ? [{ text: t(lang, TERMS.volume.find_radius), latex: `r = ${d}/2 = ${r}` }] : []),
+                     { text: t(lang, TERMS.volume.cyl_vol), latex: `V_{cyl} = \\pi \\cdot ${r}^2 \\cdot ${hOther} \\approx ${Math.round(volCyl*10)/10}` },
+                     { text: t(lang, TERMS.volume.hemi_vol), latex: `V_{hemi} = \\frac{2\\pi \\cdot ${r}^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
+                     { text: t(lang, TERMS.volume.total), latex: `${Math.round(volCyl*10)/10} + ${Math.round(volHemi*10)/10} = ${volRaw} \\text{ ${uVol(unitIn.id)}}` }
                 ];
                 geometry = { 
                     type: 'silo', r, h: hOther, show: giveDiameter ? 'd' : 'r', 

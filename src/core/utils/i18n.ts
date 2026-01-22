@@ -19,7 +19,11 @@ export const TERMS = {
         reality: { sv: "Verklighet", en: "Reality" },
         distribute: { sv: "Distribuera", en: "Distribute" },
         equation: { sv: "Ekvation", en: "Equation" },
-        simplify: { sv: "Förenkla", en: "Simplify" }
+        simplify: { sv: "Förenkla", en: "Simplify" },
+        // Added standard explanations
+        identify_var: { sv: "Identifiera variabeln", en: "Identify the variable" },
+        identify_const: { sv: "Identifiera konstanterna", en: "Identify constants" },
+        combine_like: { sv: "Kombinera termer", en: "Combine like terms" }
     },
     scale: {
         scale: { sv: "Skala", en: "Scale" },
@@ -54,8 +58,14 @@ export const TERMS = {
         formula_sphere: { sv: "Volym = (4 · π · r³) / 3", en: "Volume = (4 · π · r³) / 3" },
         step_calc_base: { sv: "Beräkna basytan (B)", en: "Calculate Base Area (B)" },
         
+        // Explanations
+        expl_prism_base: { sv: "Basytan är en triangel (b*h)/2.", en: "The base is a triangle (b*h)/2." },
+        expl_cylinder_base: { sv: "Basytan är en cirkel (pi*r^2).", en: "The base is a circle (pi*r^2)." },
+        expl_cone_vol: { sv: "Konen är 1/3 av en cylinder.", en: "The cone is 1/3 of a cylinder." },
+        expl_sphere_formula: { sv: "Använd formeln för klot.", en: "Use the sphere formula." },
+        
         radius: { sv: "Radie", en: "Radius" },
-        find_radius: { sv: "Hitta radien", en: "Find radius" },
+        find_radius: { sv: "Hitta radien (r = d/2)", en: "Find radius (r = d/2)" },
         volume: { sv: "Volym", en: "Volume" },
         sphere_vol: { sv: "Klotets volym", en: "Sphere Vol" },
         hemi_vol: { sv: "Halvklotets volym", en: "Hemisphere Vol" },
@@ -138,7 +148,15 @@ export const TERMS = {
         translate_math: { sv: "Översätt texten till matematik:", en: "Translate text to math:" },
         cost_unknown: (item: string) => ({ sv: `Priset per ${item} är okänt, så $x$.`, en: `Price per ${item} is unknown, so $x$.` }),
         final_expr: { sv: "Slutgiltigt uttryck:", en: "Final expression:" },
-        simplify_const: { sv: "Förenkla konstanterna:", en: "Simplify constants:" }
+        simplify_const: { sv: "Förenkla konstanterna:", en: "Simplify constants:" },
+        
+        // Explanations for word problems
+        expl_var_basic: { sv: "Variabeln representerar det okända antalet.", en: "The variable represents the unknown number." },
+        expl_fixed_cost: { sv: "Detta är den fasta kostnaden.", en: "This is the fixed cost." },
+        expl_variable_cost: { sv: "Detta är kostnaden som beror på x.", en: "This is the cost dependent on x." },
+        expl_total: { sv: "Detta är summan av alla delar.", en: "This is the sum of all parts." },
+        expl_discount: { sv: "Rabatten dras bort från totalen.", en: "The discount is subtracted from the total." },
+        expl_compare: { sv: "Vi jämför två mängder.", en: "We are comparing two quantities." }
     },
     algebra: {
         intro: (eq: string) => ({ sv: `Ekvation: $${eq}$`, en: `Equation: $${eq}$` }),
@@ -164,8 +182,6 @@ export const TERMS = {
     problem_solving: {
         task_solve: { sv: "Vad är x?", en: "What is x?" },
         task_write: { sv: "Teckna en ekvation för att beräkna x.", en: "Write an equation to calculate x." },
-        
-        // Added for SimplificationGen Level 5
         task_write_expr: { sv: "Teckna ett förenklat uttryck.", en: "Write a simplified expression." },
 
         // Scenario A (ax + b = c)
@@ -185,6 +201,13 @@ export const TERMS = {
         // Clues
         clue_var: { sv: "Låt x vara antalet.", en: "Let x be the number." },
         clue_setup: { sv: "Ställ upp ekvationen.", en: "Set up the equation." },
-        clue_total: { sv: "Totalt är det", en: "The total is" }
+        clue_total: { sv: "Totalt är det", en: "The total is" },
+        
+        // Explanations for specific parts
+        expl_fixed_val: { sv: "Detta är det fasta värdet.", en: "This is the fixed value." },
+        expl_rate_val: { sv: "Detta värde multipliceras med x.", en: "This value is multiplied by x." },
+        expl_person1: { sv: "Den första personen har x.", en: "The first person has x." },
+        expl_person2_more: { sv: "Den andra personen har mer.", en: "The second person has more." },
+        expl_person2_less: { sv: "Den andra personen har mindre.", en: "The second person has less." }
     }
 };
