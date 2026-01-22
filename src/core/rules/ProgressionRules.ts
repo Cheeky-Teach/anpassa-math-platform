@@ -3,10 +3,10 @@ export class ProgressionRules {
 
     private static readonly MAX_LEVELS: Record<string, number> = {
         scale: 7,
-        equation: 6,
+        equation: 7, // Updated to 7
         simplify: 6,
         geometry: 5,
-        volume: 7, // Updated to 7
+        volume: 7,
         graph: 5
     };
 

@@ -17,8 +17,9 @@ export const TERMS = {
         result: { sv: "Svar:", en: "Answer:" },
         drawing: { sv: "Avbildning", en: "Drawing" },
         reality: { sv: "Verklighet", en: "Reality" },
-        // Added for compatibility
-        distribute: { sv: "Distribuera", en: "Distribute" } 
+        distribute: { sv: "Distribuera", en: "Distribute" },
+        equation: { sv: "Ekvation", en: "Equation" },
+        simplify: { sv: "Förenkla", en: "Simplify" }
     },
     scale: {
         scale: { sv: "Skala", en: "Scale" },
@@ -38,7 +39,6 @@ export const TERMS = {
         conv_same: { sv: "Omvandla till samma enhet (cm)", en: "Convert to same unit (cm)" },
         setup_ratio: { sv: "Ställ upp förhållandet", en: "Set up ratio" },
         
-        // Area Scale Specific
         calc_area_img: { sv: "Beräkna bildens area", en: "Calculate image area" },
         calc_area_real: { sv: "Beräkna verklighetens area", en: "Calculate reality area" },
         calc_area_scale: { sv: "Beräkna areaskala (längdskala²)", en: "Calculate area scale (length scale²)" },
@@ -54,7 +54,6 @@ export const TERMS = {
         formula_sphere: { sv: "Volym = (4 · π · r³) / 3", en: "Volume = (4 · π · r³) / 3" },
         step_calc_base: { sv: "Beräkna basytan (B)", en: "Calculate Base Area (B)" },
         
-        // Added for Level 5 (Composite/Sphere)
         radius: { sv: "Radie", en: "Radius" },
         find_radius: { sv: "Hitta radien", en: "Find radius" },
         volume: { sv: "Volym", en: "Volume" },
@@ -66,7 +65,6 @@ export const TERMS = {
         half: { sv: "Hälften", en: "Half" }
     },
     shapes: {
-        // 2D Shapes
         square: { sv: "kvadrat", en: "square" },
         rectangle: { sv: "rektangel", en: "rectangle" },
         circle: { sv: "cirkel", en: "circle" },
@@ -78,15 +76,11 @@ export const TERMS = {
         hexagon: { sv: "sexhörning", en: "hexagon" },
         octagon: { sv: "åttahörning", en: "octagon" },
         kite: { sv: "drake", en: "kite" },
-        
-        // Symbols
         star: { sv: "stjärna", en: "star" },
         arrow: { sv: "pil", en: "arrow" },
         heart: { sv: "hjärta", en: "heart" },
         cross: { sv: "kors", en: "cross" },
         lightning: { sv: "blixt", en: "lightning" },
-        
-        // 3D Shapes
         cube: { sv: "kub", en: "cube" },
         rect_prism: { sv: "rätblock", en: "rectangular prism" }, 
         tri_prism: { sv: "triangulärt prisma", en: "triangular prism" },
@@ -106,14 +100,12 @@ export const TERMS = {
         rhombus: { sv: "romber", en: "rhombuses" }
     } as Record<string, {sv:string, en:string}>,
     geometry: {
-        // Descriptions
         desc_rect: { sv: "En rektangel", en: "A rectangle" },
         desc_para: { sv: "En parallellogram", en: "A parallelogram" },
         desc_tri: { sv: "En triangel", en: "A triangle" },
         desc_circle: { sv: "En cirkel", en: "A circle" },
         desc_composite: { sv: "En sammansatt figur", en: "A composite shape" },
         
-        // Formulas & Calcs
         calc_area_tri: { sv: "Area = (basen · höjden) / 2", en: "Area = (base · height) / 2" },
         formula_rect_perim: { sv: "Omkrets = 2 · (bredd + höjd)", en: "Perimeter = 2 · (width + height)" },
         formula_para_perim: { sv: "Omkrets = 2 · (sida A + sida B)", en: "Perimeter = 2 · (side A + side B)" },
@@ -135,7 +127,6 @@ export const TERMS = {
         comp_tri_area: { sv: "Triangelns area:", en: "Triangle area:" },
         comp_total_area: { sv: "Total area:", en: "Total area:" },
 
-        // Added for Generators
         sides_3: { sv: "3 Sidor", en: "3 Sides" },
         arc: { sv: "Båge", en: "Arc" }
     },
@@ -164,11 +155,36 @@ export const TERMS = {
         q_func: { sv: "Skriv funktionen på formen y = kx + m", en: "Write the function as y = kx + m" },
         step_intercept: (m: number) => ({ sv: `Avläs m-värdet där linjen skär y-axeln. m = ${m}`, en: `Read the y-intercept (m) where line crosses y-axis. m = ${m}` }),
         step_func: (k: number, m: number) => ({ sv: `Sätt in k och m i formeln: y = ${k}x + ${m}`, en: `Insert k and m into formula: y = ${k}x + ${m}` }),
-        // Added for LinearGraphGenerator
         step_delta: { sv: "Skillnad i y / Skillnad i x", en: "Change in y / Change in x" },
         step_slope_calc: { sv: "Beräkna k", en: "Calculate k" },
         look_x0: { sv: "Titta på x = 0", en: "Look at x = 0" },
         find_m: { sv: "Hitta m", en: "Find m" },
         find_k: { sv: "Hitta k", en: "Find k" }
     },
+    problem_solving: {
+        task_solve: { sv: "Vad är x?", en: "What is x?" },
+        task_write: { sv: "Teckna en ekvation för att beräkna x.", en: "Write an equation to calculate x." },
+        
+        // Added for SimplificationGen Level 5
+        task_write_expr: { sv: "Teckna ett förenklat uttryck.", en: "Write a simplified expression." },
+
+        // Scenario A (ax + b = c)
+        a_buy: { sv: "Du köper $x$ st {item} för $a$ kr styck och en kasse för $b$ kr. Totalt betalar du $c$ kr.", en: "You buy $x$ {item} for $a$ kr each and a bag for $b$ kr. In total, you pay $c$ kr." },
+        a_taxi: { sv: "En taxi kostar $b$ kr i startavgift och sedan $a$ kr per km. Du åker $x$ km och betalar totalt $c$ kr.", en: "A taxi charges a start fee of $b$ kr and then $a$ kr per km. You travel $x$ km and pay a total of $c$ kr." },
+        
+        // Scenario B (ax - b = c)
+        b_discount: { sv: "Du köper $x$ st {item} som kostar $a$ kr styck. Du får $b$ kr i rabatt på totalen. Du betalar $c$ kr.", en: "You buy $x$ {item} costing $a$ kr each. You get a discount of $b$ kr on the total. You pay $c$ kr." },
+        b_points: { sv: "Du samlar $a$ poäng per nivå i ett spel. Du klarar $x$ nivåer men förlorar $b$ poäng i straff. Du har totalt $c$ poäng.", en: "You earn $a$ points per level in a game. You clear $x$ levels but lose $b$ points as a penalty. You have $c$ points in total." },
+        
+        // Scenario C (x + (x + a) = c)
+        c_compare: { sv: "{name1} har $x$ st {item}. {name2} har $a$ fler {item} än {name1}. Tillsammans har de $c$ st.", en: "{name1} has $x$ {item}. {name2} has $a$ more {item} than {name1}. Together they have $c$." },
+        
+        // Scenario D (x + (x - b) = c)
+        d_compare: { sv: "{name1} har $x$ st {item}. {name2} har $b$ färre {item} än {name1}. Tillsammans har de $c$ st.", en: "{name1} has $x$ {item}. {name2} has $b$ fewer {item} than {name1}. Together they have $c$." },
+
+        // Clues
+        clue_var: { sv: "Låt x vara antalet.", en: "Let x be the number." },
+        clue_setup: { sv: "Ställ upp ekvationen.", en: "Set up the equation." },
+        clue_total: { sv: "Totalt är det", en: "The total is" }
+    }
 };

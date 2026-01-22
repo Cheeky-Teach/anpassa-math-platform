@@ -5,13 +5,11 @@ import { TERMS, t, Language } from "../utils/i18n";
 export class LinearEquationGenerator {
   public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
     const rng = new Random(seed);
-    
-    // FIX: Using function to generate valid LaTeX color
-    // Structure: \textcolor{color}{ \mathbf{text} }
     const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
 
     let mode = level;
-    if (level >= 6) mode = rng.intBetween(1, 4); 
+    // Level 7 is now the Mixed Level for drills
+    if (level >= 7) mode = rng.intBetween(1, 4); 
 
     const s = (val: number) => Math.round(val * multiplier);
     let eq = "", answer = 0, steps: Clue[] = [];
@@ -66,7 +64,6 @@ export class LinearEquationGenerator {
     }
 
     // --- LEVEL 2: Two-Step Equations (ax + b = c) ---
-    // FIXED: This block was missing in previous versions
     else if (mode === 2) {
         const x = rng.intBetween(s(2), s(10));
         const a = rng.intBetween(s(2), s(9));
@@ -84,16 +81,11 @@ export class LinearEquationGenerator {
 
     // --- LEVEL 3: Variables on Both Sides (ax + b = cx + d) ---
     else if (mode === 3) {
-        // Solution
         answer = rng.intBetween(s(2), s(10));
-        
-        // Ensure ax > cx to keep x positive for simplicity
         const c = rng.intBetween(s(2), s(5));
         const diff = rng.intBetween(s(1), s(4));
         const a = c + diff; 
-        
         const b = rng.intBetween(s(1), s(10));
-        // Calculate d to satisfy eq: ax + b = cx + d
         const leftSide = a * answer + b;
         const d = leftSide - (c * answer);
         
@@ -119,7 +111,7 @@ export class LinearEquationGenerator {
         steps = [
             { text: t(lang, TERMS.algebra.intro(eq)), latex: eq },
             { text: t(lang, TERMS.algebra.distribute(a)), latex: `\\textcolor{#3498DB}{${a} \\cdot x} + \\textcolor{#3498DB}{${a} \\cdot ${b}} = ${res}` },
-            { text: "Simplify", latex: `${a}x + ${a*b} = ${res}` },
+            { text: t(lang, TERMS.common.simplify), latex: `${a}x + ${a*b} = ${res}` },
             { text: t(lang, TERMS.algebra.subtract(a*b)), latex: `${a}x = ${res} - ${a*b} = ${res - (a*b)}` },
             { text: t(lang, TERMS.algebra.divide(a)), latex: `x = ${formatColor(answer)}` }
         ];
