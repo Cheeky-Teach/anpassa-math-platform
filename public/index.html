@@ -62,7 +62,8 @@
                 color:"emerald",
                 topics:[
                     {id:'geometry',label:{sv:"Area & Omkrets",en:"Area & Perimeter"}},
-                    {id:'scale',label:{sv:"Skala",en:"Scale"}}
+                    {id:'scale',label:{sv:"Skala",en:"Scale"}},
+                    {id:'volume',label:{sv:"Volym",en:"Volume"}}
                 ]
             },
             functions:{
@@ -106,6 +107,14 @@
                 5:{sv:"Utan bilder",en:"No Pictures"},
                 6:{sv:"Areaskala",en:"Area Scale"},
                 7:{sv:"Blandat",en:"Mixed"}
+            },
+            volume: {
+                1: { sv: "Rätblock & Kub", en: "Prisms & Cubes" },
+                2: { sv: "Triangulärt Prisma", en: "Triangular Prism" },
+                3: { sv: "Cylinder", en: "Cylinder" },
+                4: { sv: "Pyramid & Kon", en: "Pyramid & Cone" },
+                5: { sv: "Klot", en: "Sphere" },
+                6: { sv: "Blandat", en: "Mixed" }
             },
             graph:{
                 1:{sv:"Hitta m (skärning)",en:"Find y-intercept (m)"},
@@ -153,7 +162,108 @@
         // --- GEOMETRY VISUAL ---
         const GeometryVisual = ({ data }) => {
             if (!data) return null;
-            const SvgContainer = ({ children }) => <svg width="300" height="300" viewBox="0 0 200 200" className="my-4 w-full max-w-[300px]">{children}</svg>;
+            const SvgContainer = ({ children, w=300, h=300, viewBox="0 0 200 200" }) => <svg width={w} height={h} viewBox={viewBox} className="my-4 w-full max-w-[300px] mx-auto">{children}</svg>;
+
+            const Label = ({ x, y, text, align="middle" }) => (
+                <text x={x} y={y} textAnchor={align} className="fill-gray-700 text-sm font-bold" style={{fontSize: '14px'}}>
+                    {text}
+                </text>
+            );
+
+            // ------------------ 3D SHAPES (VOLUME) ------------------
+            
+            // CUBE / RECT PRISM
+            if (data.type === 'cube' || data.type === 'rectangular_prism') {
+                const dx = 40, dy = 30; // depth offset
+                const W = 100, H = data.type==='cube' ? 100 : 70;
+                const ox = 30, oy = 50; // origin
+                const labels = data.labels || {};
+                
+                return (
+                    <SvgContainer w={250} h={220} viewBox="0 0 220 200">
+                         {/* Back Face (Hidden lines dashed) */}
+                         <path d={`M${ox+dx},${oy+dy} L${ox+W+dx},${oy+dy} L${ox+W+dx},${oy+H+dy} L${ox+dx},${oy+H+dy} Z`} className="stroke-gray-300 fill-none stroke-1" strokeDasharray="4" />
+                        <line x1={ox} y1={oy+H} x2={ox+dx} y2={oy+H+dy} className="stroke-gray-300 stroke-1" strokeDasharray="4" />
+                        <line x1={ox+dx} y1={oy+dy} x2={ox+dx} y2={oy+H+dy} className="stroke-gray-300 stroke-1" strokeDasharray="4" />
+
+                        {/* Front Face */}
+                        <rect x={ox} y={oy} width={W} height={H} className="stroke-primary-600 stroke-2 fill-primary-50 opacity-90" />
+                        
+                        {/* Top Face */}
+                        <path d={`M${ox},${oy} L${ox+dx},${oy-dy} L${ox+W+dx},${oy-dy} L${ox+W},${oy} Z`} className="stroke-primary-600 stroke-2 fill-primary-100" />
+                        
+                        {/* Side Face */}
+                        <path d={`M${ox+W},${oy} L${ox+W+dx},${oy-dy} L${ox+W+dx},${oy+H-dy} L${ox+W},${oy+H} Z`} className="stroke-primary-600 stroke-2 fill-primary-200" />
+
+                        {/* Labels */}
+                        {labels.s && <Label x={ox+W/2} y={oy+H+20} text={labels.s} />} {/* Cube side */}
+                        {labels.l && <Label x={ox+W/2} y={oy+H+20} text={labels.l} />}
+                        {labels.h && <Label x={ox-15} y={oy+H/2} text={labels.h} />}
+                        {labels.w && <Label x={ox+W+dx+10} y={oy+H/2-10} text={labels.w} />}
+                    </SvgContainer>
+                );
+            }
+
+            // CYLINDER
+            if (data.type === 'cylinder') {
+                const labels = data.labels || {};
+                return (
+                    <SvgContainer w={200} h={220} viewBox="0 0 200 220">
+                        <ellipse cx="100" cy="170" rx="60" ry="20" className="stroke-primary-600 stroke-2 fill-primary-50" />
+                        <path d="M40,50 L40,170 M160,50 L160,170" className="stroke-primary-600 stroke-2" />
+                        <ellipse cx="100" cy="50" rx="60" ry="20" className="stroke-primary-600 stroke-2 fill-primary-100" />
+                        
+                        {/* Radius/Diameter */}
+                        {labels.r && <line x1="100" y1="50" x2="160" y2="50" className="stroke-black stroke-1" />}
+                        {labels.r && <Label x="130" y="45" text={labels.r} />}
+                        
+                        {/* Height */}
+                        <line x1="180" y1="50" x2="180" y2="170" className="stroke-gray-400 stroke-1" strokeDasharray="4" />
+                        <Label x="190" y="110" text={labels.h} />
+                    </SvgContainer>
+                );
+            }
+
+            // SPHERE
+            if (data.type === 'sphere') {
+                const labels = data.labels || {};
+                return (
+                    <SvgContainer w={200} h={200} viewBox="0 0 200 200">
+                        <circle cx="100" cy="100" r="80" className="stroke-primary-600 stroke-2 fill-primary-50" />
+                        {/* Equator arc to look 3D */}
+                        <path d="M20,100 Q100,160 180,100" className="stroke-primary-600 stroke-1 fill-none" strokeDasharray="4" />
+                        <path d="M20,100 Q100,40 180,100" className="stroke-primary-600 stroke-1 fill-none" />
+                        
+                        <circle cx="100" cy="100" r="2" className="fill-black" />
+                        {labels.r && <line x1="100" y1="100" x2="180" y2="100" className="stroke-black stroke-1" />}
+                        {labels.r && <Label x="140" y="90" text={labels.r} />}
+                        {labels.d && <line x1="20" y1="100" x2="180" y2="100" className="stroke-black stroke-1" />}
+                        {labels.d && <Label x="50" y="90" text={labels.d} />}
+                    </SvgContainer>
+                );
+            }
+
+            // CONE
+            if (data.type === 'cone') {
+                const labels = data.labels || {};
+                return (
+                    <SvgContainer w={200} h={220} viewBox="0 0 200 220">
+                        <path d="M100,20 L20,180 L180,180 Z" className="fill-primary-50" />
+                        <ellipse cx="100" cy="180" rx="80" ry="20" className="stroke-primary-600 stroke-2 fill-primary-100" />
+                        <line x1="100" y1="20" x2="20" y2="180" className="stroke-primary-600 stroke-2" />
+                        <line x1="100" y1="20" x2="180" y2="180" className="stroke-primary-600 stroke-2" />
+
+                        {labels.r && <line x1="100" y1="180" x2="180" y2="180" className="stroke-black stroke-1" />}
+                        {labels.r && <Label x="140" y="170" text={labels.r} />}
+                        
+                        {labels.h && <line x1="100" y1="20" x2="100" y2="180" className="stroke-gray-500 stroke-1" strokeDasharray="4" />}
+                        {labels.h && <Label x="110" y="100" text={labels.h} align="start" />}
+                    </SvgContainer>
+                );
+            }
+
+
+            // ------------------ 2D / EXISTING SHAPES ------------------
 
             const RenderShape = ({ type, dims, labels, areaText }) => {
                 const w = dims.width || 0, h = dims.height || 0, r = dims.radius || 0;

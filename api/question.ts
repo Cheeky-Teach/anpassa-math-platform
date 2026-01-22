@@ -8,8 +8,8 @@ import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerato
 import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
 import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
+import { VolumeGenerator } from '../src/core/generators/VolumeGenerator'; // Added
 
-// Helper to normalize complex answers for the token
 function formatAnswerForToken(answer: any): string | number {
     if (typeof answer === 'object' && answer !== null) {
         if ('k' in answer && 'm' in answer) {
@@ -45,25 +45,20 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     switch(topic) {
       case 'equation':
-        // Level 5 is now specifically Problem Solving
         if (lvl === 5) {
             qData = LinearEquationProblemGen.generate(lvl, seed, lg);
-        } 
-        // Level 6 is the new "Mixed" (formerly Level 5 logic)
-        else if (lvl === 6) {
-             // We pass '5' to the generator because internally it treats 5 as Mixed
-             // Alternatively, we update the generator to handle 6, but passing 5 works 
-             // if the generator expects 5 for mixed. Let's check LinearEquationGen...
-             // It checks: if (level >= 6) mode = rng... so actually passing 6 works perfectly!
+        } else if (lvl === 6) {
              qData = LinearEquationGenerator.generate(6, seed, lg, multiplier);
-        }
-        else {
+        } else {
             qData = LinearEquationGenerator.generate(lvl, seed, lg, multiplier);
         }
         break;
         
       case 'geometry':
         qData = GeometryGenerator.generate(lvl, seed, lg, multiplier);
+        break;
+      case 'volume': // Added
+        qData = VolumeGenerator.generate(lvl, seed, lg, multiplier);
         break;
       case 'graph':
         qData = LinearGraphGenerator.generate(lvl, seed, lg);
