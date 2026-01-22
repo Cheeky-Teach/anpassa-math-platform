@@ -10,22 +10,8 @@ import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSi
 import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
 
-function formatAnswerForToken(answer: any): string | number {
-    if (typeof answer === 'object' && answer !== null) {
-        if ('k' in answer && 'm' in answer) {
-            const { k, m } = answer;
-            const mStr = m >= 0 ? `+ ${m}` : `- ${Math.abs(m)}`;
-            return `${k}x ${mStr}`; 
-        }
-        if ('left' in answer && 'right' in answer) {
-            return `${answer.left}:${answer.right}`; 
-        }
-        return JSON.stringify(answer);
-    }
-    return answer;
-}
-
 export default function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
@@ -47,12 +33,18 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const seed = `${topic}-${level}-${Date.now()}`;
     const lvl = Number(level);
     const lg = lang as 'sv' | 'en';
-    const multiplier = 1; // Can be dynamic later
+    const multiplier = 1;
 
     let qData;
     let tolerance = 0; // Default: Exact match required
 
+    // Select Generator
     switch (topic) {
+      case 'volume':
+        qData = VolumeGenerator.generate(lvl, seed, lg, multiplier);
+        tolerance = 1.0; // Allow +/- 1.0 for rounding differences in PI
+        break;
+        
       case 'equation':
       case 'problem':
         if (lvl === 5 && topic === 'equation') {
@@ -60,25 +52,22 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         } else if (lvl === 6) {
              qData = LinearEquationGenerator.generate(6, seed, lg, multiplier);
         } else {
-            qData = LinearEquationGenerator.generate(lvl, seed, lg, multiplier);
+             qData = LinearEquationGenerator.generate(lvl, seed, lg, multiplier);
         }
         break;
         
       case 'geometry':
         qData = GeometryGenerator.generate(lvl, seed, lg, multiplier);
         break;
-      
-      case 'volume':
-        qData = VolumeGenerator.generate(lvl, seed, lg, multiplier);
-        tolerance = 1; // +/- 1.0 forgiveness for PI rounding differences
-        break;
-
+        
       case 'graph':
         qData = LinearGraphGenerator.generate(lvl, seed, lg);
         break;
+        
       case 'simplify':
         qData = ExpressionSimplificationGen.generate(lvl, seed, lg, multiplier);
         break;
+        
       case 'scale':
       default:
         qData = ScaleGenerator.generate(lvl, seed, lg, multiplier);
@@ -89,10 +78,9 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       throw new Error(`Generator for topic '${topic}' failed to return data.`);
     }
 
-    const tokenAnswer = formatAnswerForToken(qData.serverData.answer);
-    
-    // Pass tolerance to the token generator
-    const token = generateToken(qData.questionId, tokenAnswer, tolerance);
+    // Token Generation (Encryption)
+    // pass the raw answer (string or number) and the tolerance
+    const token = generateToken(qData.questionId, qData.serverData.answer, tolerance);
     
     return res.status(200).json({
       questionId: qData.questionId,
