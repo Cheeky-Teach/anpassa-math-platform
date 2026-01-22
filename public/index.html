@@ -188,10 +188,19 @@
                 const cy = h / 2;
 
                 const drawLabel = (text, x, y, color='#ef4444') => {
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; // Strong white outline
+                    ctx.lineWidth = 4;
+                    ctx.lineJoin = 'round';
+                    ctx.miterLimit = 2;
+                    ctx.strokeText(text, x, y);
+                    ctx.restore();
+
                     ctx.fillStyle = color;
                     ctx.fillText(text, x, y);
                     ctx.fillStyle = '#e5e7eb';
                 };
+
                 const drawDashedLine = (x1, y1, x2, y2) => {
                     ctx.save();
                     ctx.setLineDash([5, 5]);
@@ -234,8 +243,10 @@
                     // Labels
                     drawLabel(data.labels.w, x0 + hw/2, y0 + 20); // Length (bottom)
                     drawLabel(data.labels.h, x0 - 20, y0 - hh/2); // Height (left)
-                    // Depth (on slanted line)
-                    drawLabel(data.labels.d, x0 + hw + depthX/2 + 10, y0 - hh + depthY/2 - 5);
+                    
+                    // Depth - moved to bottom diagonal perspective line
+                    // Line goes from (x0+hw, y0) to (x0+hw+depthX, y0+depthY)
+                    drawLabel(data.labels.d, x0 + hw + depthX/2 + 5, y0 + depthY/2 + 15);
                 }
                 else if (data.type === 'triangular_prism') {
                     const scale = 14;
@@ -376,16 +387,25 @@
                 else if (data.type === 'cylinder' || data.type === 'cone') {
                     const w = 100; const hShape = 120;
                     const isCone = data.type === 'cone';
+                    
                     ctx.beginPath();
                     ctx.ellipse(cx, cy + hShape/2, w/2, 15, 0, 0, 2 * Math.PI);
                     ctx.stroke();
+                    
                     if (isCone) {
                         ctx.beginPath();
                         ctx.moveTo(cx - w/2, cy + hShape/2);
-                        ctx.lineTo(cx, cy - hShape/2);
+                        ctx.lineTo(cx, cy - hShape/2); // Apex
                         ctx.lineTo(cx + w/2, cy + hShape/2);
                         ctx.stroke();
+                        
+                        // Internal Dotted Height Line
+                        drawDashedLine(cx, cy - hShape/2, cx, cy + hShape/2);
+                        drawLabel(data.labels.h, cx + 15, cy); // Label next to internal line
+                        
+                        drawLabel(data.labels.r, cx + 10, cy + hShape/2 + 25);
                     } else {
+                        // Cylinder
                         ctx.beginPath();
                         ctx.ellipse(cx, cy - hShape/2, w/2, 15, 0, 0, 2 * Math.PI);
                         ctx.stroke();
@@ -395,9 +415,10 @@
                         ctx.moveTo(cx + w/2, cy - hShape/2);
                         ctx.lineTo(cx + w/2, cy + hShape/2);
                         ctx.stroke();
+                        
+                        drawLabel(data.labels.h, cx + w/2 + 20, cy);
+                        drawLabel(data.labels.r, cx + 10, cy + hShape/2 + 25);
                     }
-                    drawLabel(data.labels.h, cx + w/2 + 20, cy);
-                    drawLabel(data.labels.r, cx + 10, cy + hShape/2 + 25);
                 }
             }, [data]);
 
