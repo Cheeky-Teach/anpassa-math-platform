@@ -39,7 +39,7 @@ export class LinearEquationProblemGen {
                         solution: x,
                         equation: `${a}x + ${b} = ${c}`,
                         stepsWrite: (lang, fc) => [
-                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a} \\cdot x` },
+                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `\\text{Pris} \\cdot \\text{Antal} = ${a} \\cdot x` },
                             { text: t(lang, TERMS.problem_solving.expl_fixed_val), latex: `+ ${b}` },
                             { text: t(lang, TERMS.problem_solving.clue_total), latex: `${a}x + ${b} = ${c}` }
                         ],
@@ -66,7 +66,7 @@ export class LinearEquationProblemGen {
                         solution: x,
                         equation: `${a}x + ${b} = ${c}`,
                         stepsWrite: (lang, fc) => [
-                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a}x` },
+                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a} \\cdot x` },
                             { text: t(lang, TERMS.problem_solving.expl_fixed_val), latex: `+ ${b}` },
                             { text: t(lang, TERMS.problem_solving.clue_total), latex: `${a}x + ${b} = ${c}` }
                         ],
@@ -78,7 +78,6 @@ export class LinearEquationProblemGen {
                     };
                 }
             },
-
             // --- TYPE B: ax - b = c ---
             {
                 id: 'shopping_discount',
@@ -95,7 +94,7 @@ export class LinearEquationProblemGen {
                         solution: x,
                         equation: `${a}x - ${b} = ${c}`,
                         stepsWrite: (lang, fc) => [
-                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a}x` },
+                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a} \\cdot x` },
                             { text: t(lang, TERMS.simplification.expl_discount), latex: `-${b}` },
                             { text: t(lang, TERMS.problem_solving.clue_total), latex: `${a}x - ${b} = ${c}` }
                         ],
@@ -107,8 +106,7 @@ export class LinearEquationProblemGen {
                     };
                 }
             },
-
-            // --- TYPE C: x + (x + a) = c ---
+             // --- TYPE C: x + (x + a) = c ---
             {
                 id: 'compare_sum',
                 type: 'C',
@@ -125,7 +123,7 @@ export class LinearEquationProblemGen {
                         stepsWrite: (lang, fc) => [
                             { text: t(lang, TERMS.problem_solving.expl_person1), latex: "x" },
                             { text: t(lang, TERMS.problem_solving.expl_person2_more), latex: `x + ${a}` },
-                            { text: t(lang, TERMS.simplification.group_terms), latex: `2x + ${a} = ${total}` }
+                            { text: t(lang, TERMS.simplification.group_terms), latex: `x + (x + ${a}) = 2x + ${a}` }
                         ],
                         stepsSolve: (lang, fc) => [
                             { text: t(lang, TERMS.common.equation), latex: `2x + ${a} = ${total}` },
@@ -135,7 +133,6 @@ export class LinearEquationProblemGen {
                     };
                 }
             },
-
             // --- TYPE D: x + (x - b) = c ---
             {
                 id: 'compare_diff',
@@ -153,7 +150,7 @@ export class LinearEquationProblemGen {
                         stepsWrite: (lang, fc) => [
                             { text: t(lang, TERMS.problem_solving.expl_person1), latex: "x" },
                             { text: t(lang, TERMS.problem_solving.expl_person2_less), latex: `x - ${b}` },
-                            { text: t(lang, TERMS.simplification.group_terms), latex: `2x - ${b} = ${total}` }
+                            { text: t(lang, TERMS.simplification.group_terms), latex: `x + (x - ${b}) = 2x - ${b}` }
                         ],
                         stepsSolve: (lang, fc) => [
                             { text: t(lang, TERMS.common.equation), latex: `2x - ${b} = ${total}` },
@@ -165,16 +162,16 @@ export class LinearEquationProblemGen {
             }
         ];
     }
-
+    // ... (rest of class remains standard static generate method calling these scenarios)
     public static generate(level: number, seed: string, lang: Language = 'sv'): GeneratedQuestion {
         const rng = new Random(seed);
         const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
-
+        
         const scenarios = this.getScenarios();
         const scenario = rng.pick(scenarios);
         const math = scenario.logic(rng);
-        const rawTemplateObj = rng.pick(scenario.templates);
-        let text = t(lang, rawTemplateObj);
+        const templateObj = rng.pick(scenario.templates);
+        let text = t(lang, templateObj);
 
         Object.entries(math.vars).forEach(([key, val]) => {
             text = text.replace(new RegExp(`\\$${key}\\$`, 'g'), `$${val}$`);
@@ -197,21 +194,18 @@ export class LinearEquationProblemGen {
         const isWriteMode = level === 5;
         const taskText = isWriteMode ? t(lang, TERMS.problem_solving.task_write) : t(lang, TERMS.problem_solving.task_solve);
         
-        const fullDescription = `${text} ${taskText}`;
-        const steps = isWriteMode ? math.stepsWrite(lang, formatColor) : math.stepsSolve(lang, formatColor);
-        
         return {
             questionId: `prob-l${level}-${seed}`,
             renderData: {
                 text_key: "problem_solving",
-                description: fullDescription,
+                description: `${text} ${taskText}`,
                 latex: "",
                 answerType: isWriteMode ? 'text' : 'numeric', 
                 variables: {}
             },
             serverData: {
                 answer: isWriteMode ? math.equation : math.solution,
-                solutionSteps: steps
+                solutionSteps: isWriteMode ? math.stepsWrite(lang, formatColor) : math.stepsSolve(lang, formatColor)
             }
         };
     }

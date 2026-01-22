@@ -2,7 +2,8 @@ export class ProgressionRules {
     private static readonly STREAK_THRESHOLD = 8;
 
     private static readonly MAX_LEVELS: Record<string, number> = {
-        arithmetic: 9, // Updated to 9
+        arithmetic: 9,
+        negative: 5, // Added new topic max level
         scale: 7,
         equation: 7,
         simplify: 6,

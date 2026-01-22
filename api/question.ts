@@ -9,7 +9,8 @@ import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGe
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
 import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
-import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen'; // Added
+import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
+import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen'; // Added
 
 function formatAnswerForToken(answer: any): string | number {
     if (typeof answer === 'object' && answer !== null) {
@@ -27,6 +28,7 @@ function formatAnswerForToken(answer: any): string | number {
 }
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
@@ -49,8 +51,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     let tolerance = 0;
 
     switch (topic) {
-      case 'arithmetic': // Added
+      case 'arithmetic': 
         qData = BasicArithmeticGen.generate(lvl, seed, lg, multiplier);
+        break;
+
+      case 'negative': // Added routing for Negative Numbers
+        qData = NegativeNumbersGen.generate(lvl, seed, lg, multiplier);
         break;
 
       case 'equation':

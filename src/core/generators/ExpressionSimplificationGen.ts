@@ -19,10 +19,8 @@ interface MathData {
 
 export class ExpressionSimplificationGen {
   
-  // --- SCENARIO DEFINITIONS FOR WORD PROBLEMS (LEVEL 5) ---
   private static getScenarios(): ExprScenario[] {
       return [
-          // --- TYPE A: ax + b (Shopping/Taxi) ---
           {
               id: 'shopping_bag',
               type: 'A',
@@ -61,8 +59,6 @@ export class ExpressionSimplificationGen {
                   };
               }
           },
-
-          // --- TYPE B: ax - b (Discount) ---
           {
               id: 'shopping_discount',
               type: 'B',
@@ -82,8 +78,6 @@ export class ExpressionSimplificationGen {
                   };
               }
           },
-
-          // --- TYPE C: Comparative Sum (x + (x + a)) ---
           {
               id: 'compare_sum',
               type: 'C',
@@ -102,8 +96,6 @@ export class ExpressionSimplificationGen {
                   };
               }
           },
-
-          // --- TYPE D: Comparative Diff (x + (x - b)) ---
           {
               id: 'compare_diff',
               type: 'D',
@@ -144,7 +136,7 @@ export class ExpressionSimplificationGen {
             text = text.replace(new RegExp(`\\$${key}`, 'g'), `$${val}`);
         });
 
-        text = text.replace(/[^.!?]*\$c\$[^.!?]*[.!?]?\s*$/, ""); // Strip total part
+        text = text.replace(/[^.!?]*\$c\$[^.!?]*[.!?]?\s*$/, ""); 
 
         const ctxData = CONTEXTS[scenario.context];
         if (ctxData) {
@@ -192,8 +184,8 @@ export class ExpressionSimplificationGen {
         ansM = b;
         
         steps = [
-            { text: t(lang, TERMS.simplification.identify_var), latex: `${a}x + ${c}x` }, 
-            { text: t(lang, TERMS.simplification.group_terms), latex: `(${a} + ${c})x = ${a+c}x` },
+            { text: t(lang, TERMS.simplification.expl_var_basic), latex: `${a}x + ${c}x` }, 
+            { text: t(lang, TERMS.simplification.expl_group), latex: `(${a} + ${c})x = ${a+c}x` },
             { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
         ];
     } 
@@ -205,8 +197,7 @@ export class ExpressionSimplificationGen {
         ansM = k * a;
         
         steps = [
-            { text: t(lang, TERMS.algebra.distribute), latex: `${k} \\cdot x = ${k}x` }, 
-            { text: t(lang, TERMS.algebra.distribute), latex: `${k} \\cdot ${a} = ${ansM}` },
+            { text: t(lang, TERMS.simplification.expl_distribute(k)), latex: `${k} \\cdot x + ${k} \\cdot ${a}` }, 
             { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
         ];
     }
@@ -220,8 +211,8 @@ export class ExpressionSimplificationGen {
         ansM = distM;
         
         steps = [
-            { text: t(lang, TERMS.algebra.distribute), latex: `${a}x + ${distM} + ${c}x` }, 
-            { text: t(lang, TERMS.simplification.group_terms), latex: `${a}x + ${c}x = ${a+c}x` }, 
+            { text: t(lang, TERMS.simplification.expl_distribute(a)), latex: `${a}x + ${distM} + ${c}x` }, 
+            { text: t(lang, TERMS.simplification.expl_group), latex: `(${a} + ${c})x + ${distM}` }, 
             { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
         ];
     }
@@ -237,8 +228,8 @@ export class ExpressionSimplificationGen {
         ansM = distM1 + distM2; 
         
         steps = [
-            { text: t(lang, TERMS.algebra.distribute), latex: `${a}x + ${distM1} - ${c}x + ${distM2}` }, 
-            { text: t(lang, TERMS.simplification.group_terms), latex: `${a}x - ${c}x = ${a-c}x` }, 
+            { text: t(lang, TERMS.simplification.expl_distribute(a)), latex: `${a}x + ${distM1} - ${c}x + ${distM2}` }, 
+            { text: t(lang, TERMS.simplification.expl_group), latex: `(${a} - ${c})x + (${distM1} + ${distM2})` }, 
             { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
         ];
     }

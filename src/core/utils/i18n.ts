@@ -24,6 +24,15 @@ export const TERMS = {
         identify_const: { sv: "Identifiera konstanterna", en: "Identify constants" },
         combine_like: { sv: "Kombinera termer", en: "Combine like terms" }
     },
+    neg_signs: {
+        sub_neg: { sv: "Att subtrahera ett negativt tal är samma som att addera.", en: "Subtracting a negative number is the same as adding." },
+        add_neg: { sv: "Att addera ett negativt tal är samma som att subtrahera.", en: "Adding a negative number is the same as subtracting." },
+        mul_pos_neg: { sv: "Positivt gånger negativt blir negativt.", en: "Positive times negative becomes negative." },
+        mul_neg_neg: { sv: "Negativt gånger negativt blir positivt.", en: "Negative times negative becomes positive." },
+        div_sign_same: { sv: "Lika tecken ger positivt svar.", en: "Same signs give a positive answer." },
+        div_sign_diff: { sv: "Olika tecken ger negativt svar.", en: "Different signs give a negative answer." },
+        step_calc: { sv: "Beräkna nu värdet.", en: "Now calculate the value." }
+    },
     scale: {
         scale: { sv: "Skala", en: "Scale" },
         drawing: { sv: "Bild", en: "Image" },
@@ -56,10 +65,17 @@ export const TERMS = {
         formula_pyramid: { sv: "Volym = (Basytan · h) / 3", en: "Volume = (Base Area · h) / 3" },
         formula_sphere: { sv: "Volym = (4 · π · r³) / 3", en: "Volume = (4 · π · r³) / 3" },
         step_calc_base: { sv: "Beräkna basytan (B)", en: "Calculate Base Area (B)" },
+        
+        // Simplified Explanations
+        expl_prism_vol: { sv: "Multiplicera basytan med höjden.", en: "Multiply the base area by the height." },
+        expl_cone_fraction: { sv: "En kon är en tredjedel av en cylinder.", en: "A cone is one third of a cylinder." },
+        expl_sphere_formula: { sv: "Använd formeln för klot.", en: "Use the formula for a sphere." },
+        expl_hemi_split: { sv: "Dela klotets volym med två.", en: "Divide the sphere's volume by two." },
+        expl_total_add: { sv: "Addera delarna för att få totalen.", en: "Add the parts to get the total." },
+        
         expl_prism_base: { sv: "Basytan är en triangel (b*h)/2.", en: "The base is a triangle (b*h)/2." },
         expl_cylinder_base: { sv: "Basytan är en cirkel (pi*r^2).", en: "The base is a circle (pi*r^2)." },
-        expl_cone_vol: { sv: "Konen är 1/3 av en cylinder.", en: "The cone is 1/3 of a cylinder." },
-        expl_sphere_formula: { sv: "Använd formeln för klot.", en: "Use the sphere formula." },
+        expl_cone_vol: { sv: "Konens volym", en: "Cone Vol" },
         
         radius: { sv: "Radie", en: "Radius" },
         find_radius: { sv: "Hitta radien (r = d/2)", en: "Find radius (r = d/2)" },
@@ -147,12 +163,17 @@ export const TERMS = {
         final_expr: { sv: "Slutgiltigt uttryck:", en: "Final expression:" },
         simplify_const: { sv: "Förenkla konstanterna:", en: "Simplify constants:" },
         
-        expl_var_basic: { sv: "Variabeln representerar det okända antalet.", en: "The variable represents the unknown number." },
-        expl_fixed_cost: { sv: "Detta är den fasta kostnaden.", en: "This is the fixed cost." },
-        expl_variable_cost: { sv: "Detta är kostnaden som beror på x.", en: "This is the cost dependent on x." },
+        // Explanations for word problems
+        expl_var_basic: { sv: "Variabeln (x) representerar det okända antalet.", en: "The variable (x) represents the unknown number." },
+        expl_fixed_cost: { sv: "Detta är den fasta avgiften/kostnaden.", en: "This is the fixed fee/cost." },
+        expl_rate_val: { sv: "Detta är priset per styck (multipliceras med x).", en: "This is the price per item (multiplied by x)." },
         expl_total: { sv: "Detta är summan av alla delar.", en: "This is the sum of all parts." },
         expl_discount: { sv: "Rabatten dras bort från totalen.", en: "The discount is subtracted from the total." },
-        expl_compare: { sv: "Vi jämför två mängder.", en: "We are comparing two quantities." }
+        expl_compare: { sv: "Vi jämför två mängder.", en: "We are comparing two quantities." },
+        
+        // Basic Explanations
+        expl_distribute: (val: number) => ({ sv: `Multiplicera in ${val} i parentesen.`, en: `Multiply ${val} into the parentheses.` }),
+        expl_group: { sv: "Samla alla x-termer och alla vanliga tal.", en: "Collect all x-terms and all number terms." }
     },
     algebra: {
         intro: (eq: string) => ({ sv: `Ekvation: $${eq}$`, en: `Equation: $${eq}$` }),
@@ -191,10 +212,10 @@ export const TERMS = {
         clue_setup: { sv: "Ställ upp ekvationen.", en: "Set up the equation." },
         clue_total: { sv: "Totalt är det", en: "The total is" },
         
-        expl_fixed_val: { sv: "Detta är det fasta värdet.", en: "This is the fixed value." },
-        expl_rate_val: { sv: "Detta värde multipliceras med x.", en: "This value is multiplied by x." },
+        expl_fixed_val: { sv: "Detta är det fasta värdet (t.ex. startavgift/påse).", en: "This is the fixed value (e.g. start fee/bag)." },
+        expl_rate_val: { sv: "Detta är det rörliga värdet (pris/st * antal).", en: "This is the variable value (price/item * quantity)." },
         expl_person1: { sv: "Den första personen har x.", en: "The first person has x." },
-        expl_person2_more: { sv: "Den andra personen har mer.", en: "The second person has more." },
-        expl_person2_less: { sv: "Den andra personen har mindre.", en: "The second person has less." }
+        expl_person2_more: { sv: "Den andra personen har mer än den första.", en: "The second person has more than the first." },
+        expl_person2_less: { sv: "Den andra personen har mindre än den första.", en: "The second person has less than the first." }
     }
 };
