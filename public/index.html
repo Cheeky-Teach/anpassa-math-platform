@@ -158,15 +158,253 @@
 
         const MathText=({text,className="",large=false})=>{
             if(!text)return null;
-            // Robust patch for \mathbf{\textcolor{...}{...}} pattern which might be malformed or hard for KaTeX to parse inside mathbf
-            // Replaces \mathbf{\textcolor{color}{text}} (with or without backslash on textcolor) -> {\color{color}\mathbf{text}}
             const patchedText = text.replace(/\\mathbf\{\\?textcolor\{([^}]+)\}\{([^}]+)\}\}/g, '{\\color{$1}\\mathbf{$2}}');
             const parts=patchedText.split(/(\$[^\$]+\$)/g);
             return(<span className={className}>{parts.map((part,index)=>{if(part.startsWith('$')&&part.endsWith('$')){const tex=part.slice(1,-1);try{const html=katex.renderToString(tex,{throwOnError:false,displayMode:large});return<span key={index} dangerouslySetInnerHTML={{__html:html}}/>;}catch(e){return<span key={index} className="text-red-500">{part}</span>;}}return<span key={index}>{part}</span>;})}</span>);
         };
         const GraphCanvas=({data})=>{const canvasRef=useRef(null);useEffect(()=>{const canvas=canvasRef.current;if(!canvas||!data)return;const ctx=canvas.getContext('2d');const width=canvas.width;const height=canvas.height;const range=data.range||10;ctx.clearRect(0,0,width,height);ctx.font='10px Inter, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const toX=(val)=>(val+range)*(width/(range*2));const toY=(val)=>height-(val+range)*(height/(range*2));ctx.strokeStyle='#e5e7eb';ctx.lineWidth=1;for(let i=-range;i<=range;i+=data.gridStep||1){ctx.beginPath();ctx.moveTo(toX(i),0);ctx.lineTo(toX(i),height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,toY(i));ctx.lineTo(width,toY(i));ctx.stroke();}ctx.strokeStyle='#374151';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(toX(0),0);ctx.lineTo(toX(0),height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,toY(0));ctx.lineTo(width,toY(0));ctx.stroke();ctx.fillStyle='#6b7280';const tickSize=3;const step=data.labelStep||2;for(let i=-range;i<=range;i+=step){if(i===0)continue;const xPos=toX(i);const yOrigin=toY(0);ctx.beginPath();ctx.moveTo(xPos,yOrigin-tickSize);ctx.lineTo(xPos,yOrigin+tickSize);ctx.stroke();ctx.fillText(i.toString(),xPos,yOrigin+12);const yPos=toY(i);const xOrigin=toX(0);ctx.beginPath();ctx.moveTo(xOrigin-tickSize,yPos);ctx.lineTo(xOrigin+tickSize,yPos);ctx.stroke();ctx.fillText(i.toString(),xOrigin-12,yPos);}data.lines.forEach(line=>{ctx.strokeStyle=line.color||'#dc2626';ctx.lineWidth=3;ctx.beginPath();const x1=-range;const y1=line.slope*x1+line.intercept;const x2=range;const y2=line.slope*x2+line.intercept;ctx.moveTo(toX(x1),toY(y1));ctx.lineTo(toX(x2),toY(y2));ctx.stroke();});},[data]);return<div className="flex justify-center my-4"><canvas ref={canvasRef} width={270} height={270} className="bg-white rounded border border-gray-300 shadow-sm"/></div>;};
         
-        // --- GEOMETRY VISUAL ---
+        // --- VOLUME VISUALIZATION ENGINE (3D/Isometric) ---
+        const VolumeVisualization = ({ data }) => {
+            const canvasRef = useRef(null);
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas || !data) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width;
+                const h = canvas.height;
+                
+                // Clear & Setup
+                ctx.clearRect(0, 0, w, h);
+                ctx.strokeStyle = '#374151'; // Gray-700
+                ctx.fillStyle = '#e5e7eb';   // Gray-200
+                ctx.lineWidth = 2;
+                ctx.lineJoin = 'round';
+                ctx.font = "bold 16px Inter";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+
+                const cx = w / 2;
+                const cy = h / 2;
+
+                const drawLabel = (text, x, y, color='#ef4444') => {
+                    ctx.fillStyle = color;
+                    ctx.fillText(text, x, y);
+                    ctx.fillStyle = '#e5e7eb';
+                };
+                const drawDashedLine = (x1, y1, x2, y2) => {
+                    ctx.save();
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                    ctx.restore();
+                };
+
+                // --- 3D RENDERING LOGIC ---
+                if (data.type === 'cuboid') {
+                    // Isometric View
+                    const s = 120; 
+                    const hw = s * 0.6; // Width
+                    const hh = s * 0.5; // Height
+                    const depthX = 40;  // Isometric X offset
+                    const depthY = -30; // Isometric Y offset
+
+                    const x0 = cx - hw/2 - depthX/2;
+                    const y0 = cy + hh/2 + depthY/2;
+
+                    // Front Face
+                    ctx.strokeRect(x0, y0 - hh, hw, hh);
+                    
+                    // Depth Lines
+                    ctx.beginPath();
+                    ctx.moveTo(x0, y0 - hh);
+                    ctx.lineTo(x0 + depthX, y0 - hh + depthY); // Top-Left back
+                    ctx.lineTo(x0 + hw + depthX, y0 - hh + depthY); // Top-Right back
+                    ctx.lineTo(x0 + hw, y0 - hh); // Top-Right front
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(x0 + hw + depthX, y0 - hh + depthY);
+                    ctx.lineTo(x0 + hw + depthX, y0 + depthY); // Bottom-Right back
+                    ctx.lineTo(x0 + hw, y0); // Bottom-Right front
+                    ctx.stroke();
+
+                    // Labels
+                    drawLabel(data.labels.w, x0 + hw/2, y0 + 20); // Length (bottom)
+                    drawLabel(data.labels.h, x0 - 20, y0 - hh/2); // Height (left)
+                    // Depth (on slanted line)
+                    drawLabel(data.labels.d, x0 + hw + depthX/2 + 10, y0 - hh + depthY/2 - 5);
+                }
+                else if (data.type === 'triangular_prism') {
+                    const scale = 14;
+                    const baseW = data.b * scale;
+                    const triH = data.h_tri * scale;
+                    const len = data.len * scale * 0.8; 
+                    const startX = cx - baseW/2 - len/4;
+                    const startY = cy + triH/2;
+
+                    // Front Triangle
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(startX + baseW, startY);
+                    ctx.lineTo(startX + baseW/2, startY - triH);
+                    ctx.closePath();
+                    ctx.stroke();
+
+                    // Back Triangle Offset
+                    const offX = len * 0.8; 
+                    const offY = -len * 0.5; 
+                    
+                    // Connecting Edges
+                    ctx.beginPath();
+                    ctx.moveTo(startX + baseW/2, startY - triH);
+                    ctx.lineTo(startX + baseW/2 + offX, startY - triH + offY);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(startX + baseW, startY);
+                    ctx.lineTo(startX + baseW + offX, startY + offY);
+                    ctx.lineTo(startX + baseW/2 + offX, startY - triH + offY);
+                    ctx.stroke();
+
+                    drawDashedLine(startX + baseW/2, startY, startX + baseW/2, startY - triH); // Height
+                    
+                    drawLabel(data.labels.b, startX + baseW/2, startY + 20); 
+                    drawLabel(data.labels.h, startX + baseW/2 + 15, startY - triH/2); 
+                    drawLabel(data.labels.l, startX + baseW + offX/2 + 10, startY + offY/2); 
+                }
+                else if (data.type === 'pyramid') {
+                    // Isometric Square Pyramid (Rhombus Base)
+                    const h = 130;   
+                    const cBaseX = cx;
+                    const cBaseY = cy + 50;
+                    const dx = 80; const dy = 30; // Rhombus radii
+                    
+                    const vFront = { x: cBaseX, y: cBaseY + dy };
+                    const vBack  = { x: cBaseX, y: cBaseY - dy };
+                    const vLeft  = { x: cBaseX - dx, y: cBaseY };
+                    const vRight = { x: cBaseX + dx, y: cBaseY };
+                    const vApex  = { x: cBaseX, y: cBaseY - h };
+
+                    // Base Edges
+                    ctx.beginPath();
+                    ctx.moveTo(vLeft.x, vLeft.y);
+                    ctx.lineTo(vFront.x, vFront.y);
+                    ctx.lineTo(vRight.x, vRight.y);
+                    ctx.lineTo(vBack.x, vBack.y);
+                    ctx.closePath();
+                    ctx.stroke();
+
+                    // Edges to Apex
+                    ctx.beginPath();
+                    ctx.moveTo(vLeft.x, vLeft.y); ctx.lineTo(vApex.x, vApex.y);
+                    ctx.moveTo(vRight.x, vRight.y); ctx.lineTo(vApex.x, vApex.y);
+                    ctx.moveTo(vFront.x, vFront.y); ctx.lineTo(vApex.x, vApex.y);
+                    ctx.stroke();
+                    
+                    drawDashedLine(vBack.x, vBack.y, vApex.x, vApex.y); // Back edge
+                    drawDashedLine(cBaseX, cBaseY, vApex.x, vApex.y);   // Height
+
+                    drawLabel(data.labels.s, cBaseX + dx/2, cBaseY + dy/2 + 20); 
+                    drawLabel(data.labels.h, cBaseX + 15, cBaseY - h/2); 
+                }
+                else if (data.type === 'sphere' || data.type === 'hemisphere' || data.type === 'ice_cream') {
+                    const r = 70;
+                    if (data.type === 'ice_cream') {
+                        const coneH = 120;
+                        const tipY = cy + coneH/2;
+                        const baseY = tipY - coneH;
+
+                        // Cone
+                        ctx.beginPath();
+                        ctx.moveTo(cx - r, baseY);
+                        ctx.lineTo(cx, tipY);
+                        ctx.lineTo(cx + r, baseY);
+                        ctx.stroke();
+                        // Ellipse Top
+                        ctx.beginPath();
+                        ctx.ellipse(cx, baseY, r, r/3, 0, 0, 2 * Math.PI);
+                        ctx.stroke();
+                        // Hemisphere
+                        ctx.beginPath();
+                        ctx.arc(cx, baseY, r, Math.PI, 0); 
+                        ctx.stroke();
+
+                        drawLabel(data.labels.h, cx + 20, tipY - coneH/2);
+                        if (data.show === 'd') {
+                            drawDashedLine(cx - r, baseY, cx + r, baseY);
+                            drawLabel(data.labels.val, cx, baseY - 20);
+                        } else {
+                            drawDashedLine(cx, baseY, cx + r, baseY);
+                            drawLabel(data.labels.val, cx + r/2, baseY - 15);
+                        }
+                    } 
+                    else if (data.type === 'hemisphere') {
+                         const baseY = cy + 20;
+                         ctx.beginPath();
+                         ctx.ellipse(cx, baseY, r, r/3, 0, 0, 2 * Math.PI);
+                         ctx.stroke();
+                         ctx.beginPath();
+                         ctx.arc(cx, baseY, r, Math.PI, 0);
+                         ctx.stroke();
+                         if (data.show === 'd') {
+                            drawDashedLine(cx - r, baseY, cx + r, baseY);
+                            drawLabel(data.labels.val, cx, baseY + 40);
+                         } else {
+                            drawDashedLine(cx, baseY, cx + r, baseY);
+                            drawLabel(data.labels.val, cx + r/2, baseY + 10);
+                         }
+                    }
+                    else { // Sphere
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.ellipse(cx, cy, r, r/3, 0, 0, 2 * Math.PI);
+                        ctx.stroke();
+                        if (data.show === 'd') {
+                            drawDashedLine(cx - r, cy, cx + r, cy);
+                            drawLabel(data.labels.val, cx, cy - 15);
+                        } else {
+                            drawDashedLine(cx, cy, cx + r, cy);
+                            drawLabel(data.labels.val, cx + r/2, cy - 15);
+                        }
+                    }
+                }
+                else if (data.type === 'cylinder' || data.type === 'cone') {
+                    const w = 100; const hShape = 120;
+                    const isCone = data.type === 'cone';
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy + hShape/2, w/2, 15, 0, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    if (isCone) {
+                        ctx.beginPath();
+                        ctx.moveTo(cx - w/2, cy + hShape/2);
+                        ctx.lineTo(cx, cy - hShape/2);
+                        ctx.lineTo(cx + w/2, cy + hShape/2);
+                        ctx.stroke();
+                    } else {
+                        ctx.beginPath();
+                        ctx.ellipse(cx, cy - hShape/2, w/2, 15, 0, 0, 2 * Math.PI);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(cx - w/2, cy - hShape/2);
+                        ctx.lineTo(cx - w/2, cy + hShape/2);
+                        ctx.moveTo(cx + w/2, cy - hShape/2);
+                        ctx.lineTo(cx + w/2, cy + hShape/2);
+                        ctx.stroke();
+                    }
+                    drawLabel(data.labels.h, cx + w/2 + 20, cy);
+                    drawLabel(data.labels.r, cx + 10, cy + hShape/2 + 25);
+                }
+            }, [data]);
+
+            return <div className="flex justify-center my-4 w-full"><canvas ref={canvasRef} width={400} height={300} className="w-full max-w-[400px] h-auto bg-white rounded-lg" /></div>;
+        };
+
+        // --- GEOMETRY VISUAL (2D - Preserved SVG Logic) ---
         const GeometryVisual = ({ data }) => {
             if (!data) return null;
             const SvgContainer = ({ children, w=300, h=300, viewBox="0 0 200 200" }) => <svg width={w} height={h} viewBox={viewBox} className="my-4 w-full max-w-[300px] mx-auto">{children}</svg>;
@@ -176,94 +414,6 @@
                     {text}
                 </text>
             );
-
-            // ------------------ 3D SHAPES (VOLUME) ------------------
-            
-            // CUBE / RECT PRISM
-            if (data.type === 'cube' || data.type === 'rectangular_prism') {
-                const dx = 40, dy = 30; // depth offset
-                const W = 100, H = data.type==='cube' ? 100 : 70;
-                const ox = 30, oy = 50; // origin
-                const labels = data.labels || {};
-                
-                const hx = ox + dx;
-                const hy = oy + H - dy;
-
-                return (
-                    <SvgContainer w={250} h={220} viewBox="0 0 220 200">
-                        {/* Hidden Lines (Dashed) */}
-                        <line x1={hx} y1={oy-dy} x2={hx} y2={hy} className="stroke-gray-400 stroke-1" strokeDasharray="4" />
-                        <line x1={hx} y1={hy} x2={ox+W+dx} y2={hy} className="stroke-gray-400 stroke-1" strokeDasharray="4" />
-                        <line x1={ox} y1={oy+H} x2={hx} y2={hy} className="stroke-gray-400 stroke-1" strokeDasharray="4" />
-
-                        {/* Front Face */}
-                        <rect x={ox} y={oy} width={W} height={H} className="stroke-primary-600 stroke-2 fill-primary-50 opacity-90" />
-                        
-                        {/* Top Face */}
-                        <path d={`M${ox},${oy} L${ox+dx},${oy-dy} L${ox+W+dx},${oy-dy} L${ox+W},${oy} Z`} className="stroke-primary-600 stroke-2 fill-primary-100" />
-                        
-                        {/* Side Face */}
-                        <path d={`M${ox+W},${oy} L${ox+W+dx},${oy-dy} L${ox+W+dx},${oy+H-dy} L${ox+W},${oy+H} Z`} className="stroke-primary-600 stroke-2 fill-primary-200" />
-
-                        {/* Labels */}
-                        {labels.s && <Label x={ox+W/2} y={oy+H+20} text={labels.s} />} {/* Cube side */}
-                        {labels.l && <Label x={ox+W/2} y={oy+H+20} text={labels.l} />}
-                        {labels.h && <Label x={ox-15} y={oy+H/2} text={labels.h} />}
-                        {labels.w && <Label x={ox+W+dx+10} y={oy+H/2-10} text={labels.w} />}
-                    </SvgContainer>
-                );
-            }
-
-            // CYLINDER
-            if (data.type === 'cylinder') {
-                const labels = data.labels || {};
-                return (
-                    <SvgContainer w={200} h={220} viewBox="0 0 200 220">
-                        <ellipse cx="100" cy="170" rx="60" ry="20" className="stroke-primary-600 stroke-2 fill-primary-50" strokeDasharray="4" />
-                        <path d="M40,170 A60,20 0 0,0 160,170" className="stroke-primary-600 stroke-2 fill-none" />
-                        <path d="M40,50 L40,170 M160,50 L160,170" className="stroke-primary-600 stroke-2" />
-                        <ellipse cx="100" cy="50" rx="60" ry="20" className="stroke-primary-600 stroke-2 fill-primary-100" />
-                        {labels.r && <line x1="100" y1="50" x2="160" y2="50" className="stroke-black stroke-1" />}
-                        {labels.r && <Label x="130" y="45" text={labels.r} />}
-                        <line x1="180" y1="50" x2="180" y2="170" className="stroke-gray-400 stroke-1" strokeDasharray="4" />
-                        <Label x="190" y="110" text={labels.h} />
-                    </SvgContainer>
-                );
-            }
-
-            // SPHERE
-            if (data.type === 'sphere') {
-                const labels = data.labels || {};
-                return (
-                    <SvgContainer w={200} h={200} viewBox="0 0 200 200">
-                        <circle cx="100" cy="100" r="80" className="stroke-primary-600 stroke-2 fill-primary-50" />
-                        <path d="M20,100 Q100,160 180,100" className="stroke-primary-600 stroke-1 fill-none" strokeDasharray="4" />
-                        <path d="M20,100 Q100,40 180,100" className="stroke-primary-600 stroke-1 fill-none" />
-                        <circle cx="100" cy="100" r="2" className="fill-black" />
-                        {labels.r && <line x1="100" y1="100" x2="180" y2="100" className="stroke-black stroke-1" />}
-                        {labels.r && <Label x="140" y="90" text={labels.r} />}
-                        {labels.d && <line x1="20" y1="100" x2="180" y2="100" className="stroke-black stroke-1" />}
-                        {labels.d && <Label x="50" y="90" text={labels.d} />}
-                    </SvgContainer>
-                );
-            }
-
-            // CONE
-            if (data.type === 'cone') {
-                const labels = data.labels || {};
-                return (
-                    <SvgContainer w={200} h={220} viewBox="0 0 200 220">
-                        <path d="M100,20 L20,180 L180,180 Z" className="fill-primary-50" />
-                        <ellipse cx="100" cy="180" rx="80" ry="20" className="stroke-primary-600 stroke-2 fill-primary-100" />
-                        <line x1="100" y1="20" x2="20" y2="180" className="stroke-primary-600 stroke-2" />
-                        <line x1="100" y1="20" x2="180" y2="180" className="stroke-primary-600 stroke-2" />
-                        {labels.r && <line x1="100" y1="180" x2="180" y2="180" className="stroke-black stroke-1" />}
-                        {labels.r && <Label x="140" y="170" text={labels.r} />}
-                        {labels.h && <line x1="100" y1="20" x2="100" y2="180" className="stroke-gray-500 stroke-1" strokeDasharray="4" />}
-                        {labels.h && <Label x="110" y="100" text={labels.h} align="start" />}
-                    </SvgContainer>
-                );
-            }
 
             // ------------------ 2D SHAPES ------------------
             const RenderShape = ({ type, dims, labels, areaText }) => {
@@ -337,7 +487,6 @@
                 if (data.type === 'scale_single') return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="120px" /><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>;
                 return <div className="flex items-end justify-center gap-6 sm:gap-12 my-6"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="80px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div><div className="pb-8 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="120px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div></div>;
             }
-
             if (data.type === 'compare_shapes' || data.type === 'compare_shapes_area') {
                 const showLabels = data.type === 'compare_shapes';
                 const showArea = data.type === 'compare_shapes_area';
@@ -422,9 +571,7 @@
                         <div className="space-y-6">
                             {visibleClues.map((clue,i)=>{
                                 const isLast = i === question.clues.length - 1;
-                                // If it is the last step AND solution not fully revealed, hide the math/latex part
                                 const showLatex = !isLast || isSolutionRevealed;
-                                
                                 return (
                                     <div key={i} className="group animate-slide-down">
                                         <div className="text-sm text-accent-900 mb-2 font-medium leading-relaxed">
@@ -458,7 +605,24 @@
                             <div className="flex items-center gap-3"><div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200"><button onClick={()=>handleChangeLevel(-1)} disabled={uiState.level<=1} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.prevLevel}>&lt;</button><span className="text-xs font-bold uppercase tracking-wider text-gray-500 min-w-[80px] text-center">{uiState.topic} • Lvl {uiState.level}</span><button onClick={()=>handleChangeLevel(1)} disabled={uiState.level>=maxLevels} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.nextLevel}>&gt;</button></div><button onClick={()=>setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button></div>
                         </div>
                         <main className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
-                            {loading?(<div className="p-20 text-center flex flex-col items-center gap-4"><div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div></div>):question?(<div className="p-6 sm:p-8"><div className="mb-8 flex justify-center bg-gray-50 rounded-xl p-6 min-h-[180px] items-center border border-gray-100 relative">{question.renderData.graph?(<GraphCanvas data={question.renderData.graph}/>):question.renderData.geometry?(<GeometryVisual data={question.renderData.geometry}/>):(<div className="flex flex-col items-center justify-center w-full">{uiState.topic==='geometry'&&<StaticGeometryVisual description={descriptionText}/>}{question.renderData.latex&&<div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true}/></div>}</div>)}</div><div className="mb-10 text-center"><h2 className="text-xl font-medium text-gray-700 leading-relaxed"><MathText text={descriptionText}/></h2></div>{question.renderData.answerType==='multiple_choice'?(<div className="max-w-md mx-auto grid grid-cols-2 gap-4">{question.renderData.choices.map((choice,idx)=>(<button key={idx} onClick={()=>handleChoiceClick(choice)} className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback==='correct'&&choice===input?'bg-green-500 border-green-500 text-white':feedback==='incorrect'&&choice===input?'bg-red-500 border-red-500 text-white':'bg-white border-gray-200 text-gray-700 hover:border-accent-500 hover:text-accent-600'}`} disabled={feedback==='correct'}>{choice}</button>))}</div>):(<form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
+                            {loading?(<div className="p-20 text-center flex flex-col items-center gap-4"><div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div></div>):question?(<div className="p-6 sm:p-8">
+                                <div className="mb-8 flex justify-center bg-gray-50 rounded-xl p-6 min-h-[180px] items-center border border-gray-100 relative">
+                                    {question.renderData.graph ? (
+                                        <GraphCanvas data={question.renderData.graph}/>
+                                    ) : question.renderData.geometry ? (
+                                        // Use sophisticated Volume Engine for 3D shapes, standard SVG for 2D
+                                        ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder'].includes(question.renderData.geometry.type) 
+                                        ? <VolumeVisualization data={question.renderData.geometry}/> 
+                                        : <GeometryVisual data={question.renderData.geometry}/>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center w-full">
+                                            {uiState.topic==='geometry' && <StaticGeometryVisual description={descriptionText}/>}
+                                            {question.renderData.latex && <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true}/></div>}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mb-10 text-center"><h2 className="text-xl font-medium text-gray-700 leading-relaxed"><MathText text={descriptionText}/></h2></div>
+                                {question.renderData.answerType==='multiple_choice'?(<div className="max-w-md mx-auto grid grid-cols-2 gap-4">{question.renderData.choices.map((choice,idx)=>(<button key={idx} onClick={()=>handleChoiceClick(choice)} className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback==='correct'&&choice===input?'bg-green-500 border-green-500 text-white':feedback==='incorrect'&&choice===input?'bg-red-500 border-red-500 text-white':'bg-white border-gray-200 text-gray-700 hover:border-accent-500 hover:text-accent-600'}`} disabled={feedback==='correct'}>{choice}</button>))}</div>):(<form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
                                 {question.renderData.answerType === 'scale' ? (
                                     <div className="flex items-center justify-center gap-2"><input type="text" value={scaleInputLeft} onChange={(e) => setScaleInputLeft(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder="X" autoFocus disabled={feedback === 'correct'} /><span className="text-2xl font-bold text-gray-400">:</span><input type="text" value={scaleInputRight} onChange={(e) => setScaleInputRight(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder="X" disabled={feedback === 'correct'} /></div>
                                 ) : (

@@ -5,207 +5,220 @@ import { TERMS, t, Language } from "../utils/i18n";
 export class VolumeGenerator {
     public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
         const rng = new Random(seed);
-        
-        // FIX: Use textcolor which takes 2 arguments: {color}{text}. 
-        // This variable provides the command and the first argument (color).
-        // Usage: `${color}{text}` -> \mathbf{\textcolor{#D35400}{text}}
         const color = "\\mathbf{\\textcolor{#D35400}}";
-        
         const s = (val: number) => Math.round(val * multiplier);
         const piApprox = 3.14;
 
         let mode = level;
-        if (level === 6) mode = rng.intBetween(1, 5); // Mixed Level
+        if (level === 6) mode = rng.intBetween(1, 5); 
 
         let steps: Clue[] = [];
-        let qData = { text_key: "", description: "" as string | {sv:string, en:string}, latex: "", answer: 0 };
+        let qData = { 
+            text_key: "", 
+            description: "" as string | {sv:string, en:string}, 
+            latex: "", 
+            answer: 0 
+        };
         let geometry: any = undefined;
-        let shapeName = "";
 
         // --- LEVEL 1: Rätblock (Rectangular Prism) & Kub (Cube) ---
         if (mode === 1) {
             const isCube = rng.intBetween(0, 1) === 1;
-            const useBaseArea = rng.intBetween(0, 1) === 1 && !isCube;
+            const w = rng.intBetween(s(2), s(10));
+            const d = isCube ? w : rng.intBetween(s(2), s(10)); // Depth (Width in user terms)
+            const h = isCube ? w : rng.intBetween(s(2), s(10)); // Height
 
-            if (isCube) {
-                const side = rng.intBetween(s(2), s(10));
-                qData.answer = Math.pow(side, 3);
-                shapeName = t(lang, TERMS.shapes.cube);
-                qData.description = {
-                    sv: `Beräkna volymen av en ${shapeName} med sidan ${side} cm.`,
-                    en: `Calculate the volume of a ${shapeName} with side ${side} cm.`
-                };
-                qData.latex = `V = s^3`;
-                steps = [
-                    { text: t(lang, TERMS.volume.formula_cube), latex: "V = s^3" },
-                    { text: "Substitution", latex: `V = ${side}^3` },
-                    { text: t(lang, TERMS.common.result), latex: `V = ${color}{${qData.answer}}` }
-                ];
-                geometry = { type: 'cube', labels: { s: side } };
-            } else {
-                const w = rng.intBetween(s(2), s(8));
-                const h = rng.intBetween(s(2), s(8));
-                const l = rng.intBetween(s(2), s(10));
-                qData.answer = w * h * l;
-                shapeName = t(lang, TERMS.shapes.rect_prism);
+            qData.answer = w * d * h;
+            qData.text_key = "calc_vol_prism";
+            const shapeNameSv = isCube ? "kuben" : "rätblocket";
+            const shapeNameEn = isCube ? "the cube" : "the rectangular prism";
 
-                if (useBaseArea) {
-                    const baseArea = w * l;
-                    qData.description = {
-                        sv: `Ett rätblock har basarean ${baseArea} cm² och höjden ${h} cm.`,
-                        en: `A rectangular prism has a base area of ${baseArea} cm² and height ${h} cm.`
-                    };
-                    steps = [
-                        { text: t(lang, TERMS.volume.formula_prism_base), latex: "V = B \\cdot h" },
-                        { text: "Substitution", latex: `V = ${baseArea} \\cdot ${h}` },
-                        { text: t(lang, TERMS.common.result), latex: `V = ${color}{${qData.answer}}` }
-                    ];
-                    geometry = { type: 'rectangular_prism', labels: { h: h, s: `B=${baseArea}` } }; // Special label for Base
-                } else {
-                    qData.description = {
-                        sv: `Beräkna volymen (l=${l}, b=${w}, h=${h}).`,
-                        en: `Calculate volume (l=${l}, w=${w}, h=${h}).`
-                    };
-                    steps = [
-                        { text: t(lang, TERMS.volume.formula_rect_prism), latex: "V = l \\cdot b \\cdot h" },
-                        { text: "Substitution", latex: `V = ${l} \\cdot ${w} \\cdot ${h}` },
-                        { text: t(lang, TERMS.common.result), latex: `V = ${color}{${qData.answer}}` }
-                    ];
-                    geometry = { type: 'rectangular_prism', labels: { w: w, h: h, l: l } };
-                }
-            }
+            qData.description = {
+                sv: `Beräkna volymen av ${shapeNameSv}.`,
+                en: `Calculate the volume of ${shapeNameEn}.`
+            };
+
+            steps = [
+                { text: t(lang, TERMS.volume.formula_prism), latex: "V = B \\cdot h = l \\cdot b \\cdot h" },
+                { text: "Calc", latex: `${w} \\cdot ${d} \\cdot ${h} = ${color}{${qData.answer}}` }
+            ];
+
+            // w = Length (bottom), d = Depth (diagonal/width), h = Height (vertical)
+            geometry = { type: 'cuboid', w, h, d, labels: { w, h, d } };
         }
 
-        // --- LEVEL 2: Triangular Prism ---
+        // --- LEVEL 2: Prismor (Triangular Prism) ---
         else if (mode === 2) {
-            const b = rng.intBetween(s(3), s(8));
-            const h_tri = rng.intBetween(s(2), s(6));
-            const len = rng.intBetween(s(5), s(12));
-            const baseArea = (b * h_tri) / 2;
+            // Base is a triangle. Volume = Area_base * Length
+            const bBase = rng.intBetween(s(3), s(10)); // Base of the triangle
+            const hTri = rng.intBetween(s(3), s(8));   // Height of the triangle
+            const len = rng.intBetween(s(5), s(15));   // Length of the prism
             
-            // Tolerance fix: Round intermediate step to avoid compounding float errors? 
-            // Better to keep precision but display rounded.
-            qData.answer = baseArea * len;
+            const areaBase = (bBase * hTri) / 2;
+            qData.answer = areaBase * len;
             
-            shapeName = t(lang, TERMS.shapes.tri_prism);
+            qData.text_key = "calc_vol_tri_prism";
             qData.description = {
-                sv: `Ett triangulärt prisma har en bas med b=${b} cm, h=${h_tri} cm och längden ${len} cm.`,
-                en: `A triangular prism has a base with b=${b} cm, h=${h_tri} cm and length ${len} cm.`
+                sv: "Beräkna volymen av prismat.",
+                en: "Calculate the volume of the prism."
             };
 
             steps = [
-                { text: t(lang, TERMS.geometry.calc_area_tri), latex: `B = \\frac{${b} \\cdot ${h_tri}}{2} = ${baseArea}` },
-                { text: t(lang, TERMS.volume.formula_prism_base), latex: "V = B \\cdot l" },
-                { text: "Substitution", latex: `V = ${baseArea} \\cdot ${len}` },
-                { text: t(lang, TERMS.common.result), latex: `V = ${color}{${qData.answer}}` }
+                { text: "Base Area (Triangle)", latex: `B = \\frac{b \\cdot h}{2} = \\frac{${bBase} \\cdot ${hTri}}{2} = ${areaBase}` },
+                { text: "Volume", latex: `V = B \\cdot l = ${areaBase} \\cdot ${len} = ${color}{${qData.answer}}` }
             ];
 
-            // Reuse 'triangle' visual but maybe we need a prism visual later. 
-            // For now, showing the Base Triangle is often enough with text context.
-            // Or use the 'rectangular_prism' generic shape with special labels?
-            // Let's use the new 3D logic if we had a tri-prism renderer, but index.html only has cube/cyl/sphere.
-            // Fallback: Show the Triangle Base and ask for Prism volume.
-            geometry = { type: 'triangle', width: b, height: h_tri, labels: { base: b, height: h_tri }, note: `Length = ${len}` }; 
+            geometry = { 
+                type: 'triangular_prism', 
+                b: bBase, 
+                h_tri: hTri, 
+                len: len, 
+                labels: { b: bBase, h: hTri, l: len } 
+            };
         }
 
-        // --- LEVEL 3: Cylinder ---
+        // --- LEVEL 3: Pyramid & Kon (Cone) ---
         else if (mode === 3) {
-            const r = rng.intBetween(s(2), s(6));
-            const h = rng.intBetween(s(5), s(15));
-            const baseArea = Math.round(piApprox * r * r * 10) / 10;
-            
-            qData.answer = Math.round(baseArea * h * 10) / 10; // Round to 1 decimal
-            shapeName = t(lang, TERMS.shapes.cylinder);
-
-            qData.description = {
-                sv: `En cylinder har radien ${r} cm och höjden ${h} cm. Beräkna volymen.`,
-                en: `A cylinder has radius ${r} cm and height ${h} cm. Calculate the volume.`
-            };
-
-            steps = [
-                { text: t(lang, TERMS.volume.formula_cylinder), latex: "V = \\pi \\cdot r^2 \\cdot h" },
-                { text: "Base Area", latex: `B \\approx ${piApprox} \\cdot ${r}^2 \\approx ${baseArea}` },
-                { text: "Calc", latex: `V = ${baseArea} \\cdot ${h}` },
-                { text: t(lang, TERMS.common.result), latex: `V \\approx ${color}{${qData.answer}}` }
-            ];
-            
-            geometry = { type: 'cylinder', labels: { r: r, h: h } };
-        }
-
-        // --- LEVEL 4: Pyramid & Cone ---
-        else if (mode === 4) {
             const isCone = rng.intBetween(0, 1) === 1;
-            const h = rng.intBetween(s(6), s(12));
 
             if (isCone) {
-                const r = rng.intBetween(s(2), s(5));
+                const r = rng.intBetween(s(2), s(6));
+                const h = rng.intBetween(s(5), s(15));
                 const baseArea = piApprox * r * r;
                 qData.answer = Math.round((baseArea * h / 3) * 10) / 10;
-                shapeName = t(lang, TERMS.shapes.cone);
-
+                
                 qData.description = {
-                    sv: `En kon har radien ${r} cm och höjden ${h} cm.`,
-                    en: `A cone has radius ${r} cm and height ${h} cm.`
-                };
-
-                steps = [
-                    { text: t(lang, TERMS.volume.formula_cone), latex: "V = \\frac{\\pi \\cdot r^2 \\cdot h}{3}" },
-                    { text: "Substitution", latex: `V \\approx \\frac{${piApprox} \\cdot ${r}^2 \\cdot ${h}}{3}` },
-                    { text: t(lang, TERMS.common.result), latex: `V \\approx ${color}{${qData.answer}}` }
-                ];
-                geometry = { type: 'cone', labels: { r: r, h: h } };
-            } else {
-                // Square Pyramid
-                const side = rng.intBetween(s(4), s(8));
-                const baseArea = side * side;
-                qData.answer = Math.round((baseArea * h / 3) * 10) / 10;
-                shapeName = t(lang, TERMS.shapes.pyramid);
-
-                qData.description = {
-                    sv: `En pyramid har en kvadratisk bas med sidan ${side} cm och höjden ${h} cm.`,
-                    en: `A pyramid has a square base with side ${side} cm and height ${h} cm.`
+                    sv: `En kon har radien ${r} cm och höjden ${h} cm. Beräkna volymen.`,
+                    en: `A cone has radius ${r} cm and height ${h} cm. Calculate the volume.`
                 };
                 
                 steps = [
-                    { text: t(lang, TERMS.volume.formula_pyramid), latex: "V = \\frac{B \\cdot h}{3}" },
-                    { text: "Base Area", latex: `B = ${side} \\cdot ${side} = ${baseArea}` },
-                    { text: t(lang, TERMS.common.result), latex: `V = \\frac{${baseArea} \\cdot ${h}}{3} = ${color}{${qData.answer}}` }
+                    { text: "Base Area", latex: `B = \\pi r^2 \\approx ${piApprox} \\cdot ${r}^2 = ${Math.round(baseArea*100)/100}` },
+                    { text: "Volume", latex: `V = \\frac{B \\cdot h}{3} \\approx ${color}{${qData.answer}}` }
                 ];
-                // Use pyramid visual if available, otherwise fallback or generic 3d
-                geometry = { type: 'rectangular_prism', labels: { s: side, h: h }, subtype: 'pyramid' }; // Note: Renderer needs to handle subtype or we add pyramid renderer
+                geometry = { type: 'cone', r, h, labels: { r, h } };
+            } else {
+                // Square-based Pyramid
+                const side = rng.intBetween(s(3), s(10));
+                const h = rng.intBetween(s(5), s(15));
+                const baseArea = side * side;
+                qData.answer = Math.round((baseArea * h / 3) * 10) / 10;
+
+                qData.description = {
+                    sv: "Beräkna volymen av pyramiden med kvadratisk bas.",
+                    en: "Calculate the volume of the square-based pyramid."
+                };
+
+                steps = [
+                    { text: "Base Area", latex: `B = s \\cdot s = ${side} \\cdot ${side} = ${baseArea}` },
+                    { text: "Volume", latex: `V = \\frac{B \\cdot h}{3} = \\frac{${baseArea} \\cdot ${h}}{3} \\approx ${color}{${qData.answer}}` }
+                ];
+                geometry = { type: 'pyramid', s: side, h, labels: { s: side, h } };
             }
         }
 
-        // --- LEVEL 5: Sphere (Klot) ---
-        else if (mode === 5) {
-            const giveDiameter = rng.intBetween(0, 1) === 1;
-            const r = rng.intBetween(2, 9); 
+        // --- LEVEL 4: Cylinder ---
+        else if (mode === 4) {
+             const r = rng.intBetween(s(2), s(6));
+             const h = rng.intBetween(s(5), s(15));
+             const baseArea = piApprox * r * r;
+             qData.answer = Math.round(baseArea * h * 10) / 10;
+
+             qData.description = {
+                 sv: `En cylinder har radien ${r} cm och höjden ${h} cm.`,
+                 en: `A cylinder has radius ${r} cm and height ${h} cm.`
+             };
+             
+             steps = [
+                 { text: "Base Area", latex: `B = \\pi r^2 \\approx ${piApprox} \\cdot ${r}^2 = ${Math.round(baseArea*100)/100}` },
+                 { text: "Volume", latex: `V = B \\cdot h = ${Math.round(baseArea*100)/100} \\cdot ${h} = ${color}{${qData.answer}}` }
+             ];
+             geometry = { type: 'cylinder', r, h, labels: { r, h } };
+        }
+
+        // --- LEVEL 5: Sphere (Klot), Hemisphere, Ice Cream ---
+        else {
+            const subType = rng.pick(['sphere', 'hemisphere', 'ice_cream']);
+            // const subType = 'ice_cream'; // Debug force
+            
+            // Common radius logic
+            const r = rng.intBetween(s(2), s(8));
             const d = r * 2;
-            qData.answer = Math.round((4 * piApprox * Math.pow(r, 3) / 3) * 100) / 100;
-            shapeName = t(lang, TERMS.shapes.sphere);
+            const giveDiameter = rng.intBetween(0, 1) === 1; // Variation: Give Diameter?
+            
+            // Sphere
+            if (subType === 'sphere') {
+                qData.answer = Math.round((4 * piApprox * Math.pow(r, 3) / 3) * 100) / 100;
+                const label = giveDiameter ? { sv: 'diametern', en: 'diameter', val: d } : { sv: 'radien', en: 'radius', val: r };
+                
+                qData.description = {
+                    sv: `Ett klot har ${label.sv} ${label.val} cm. Beräkna volymen.`,
+                    en: `A sphere has ${label.en} ${label.val} cm. Calculate the volume.`
+                };
+                
+                steps = [
+                    ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
+                    { text: "Volume", latex: `V = \\frac{4 \\cdot \\pi \\cdot r^3}{3} \\approx ${color}{${qData.answer}}` }
+                ];
+                geometry = { type: 'sphere', r, show: giveDiameter ? 'd' : 'r', labels: { val: giveDiameter ? d : r } };
+            } 
+            // Hemisphere (Halvklot)
+            else if (subType === 'hemisphere') {
+                const volSphere = (4 * piApprox * Math.pow(r, 3)) / 3;
+                qData.answer = Math.round((volSphere / 2) * 100) / 100;
+                const label = giveDiameter ? { sv: 'diametern', en: 'diameter', val: d } : { sv: 'radien', en: 'radius', val: r };
 
-            qData.description = lang === 'sv'
-                ? `Ett ${shapeName} har ${giveDiameter ? 'diametern' : 'radien'} ${giveDiameter ? d : r} cm. Beräkna volymen.`
-                : `A ${shapeName} has ${giveDiameter ? 'diameter' : 'radius'} ${giveDiameter ? d : r} cm. Calculate the volume.`;
+                qData.description = {
+                    sv: `Ett halvklot har ${label.sv} ${label.val} cm. Beräkna volymen.`,
+                    en: `A hemisphere has ${label.en} ${label.val} cm. Calculate the volume.`
+                };
 
-            steps = [
-                giveDiameter ? { text: "Find radius", latex: `r = \\frac{d}{2} = ${r}` } : { text: "Radius", latex: `r = ${r}` },
-                { text: t(lang, TERMS.volume.formula_sphere), latex: "V = \\frac{4 \\cdot \\pi \\cdot r^3}{3}" },
-                { text: "Calc", latex: `\\frac{4 \\cdot ${piApprox} \\cdot ${r}^3}{3} = ${color}{${qData.answer}}` }
-            ];
+                steps = [
+                     ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
+                     { text: "Sphere Vol", latex: `V_{sphere} = \\frac{4\\pi r^3}{3} \\approx ${Math.round(volSphere*10)/10}` },
+                     { text: "Half", latex: `V = \\frac{V_{sphere}}{2} \\approx ${color}{${qData.answer}}` }
+                ];
+                geometry = { type: 'hemisphere', r, show: giveDiameter ? 'd' : 'r', labels: { val: giveDiameter ? d : r } };
+            }
+            // Ice Cream (Cone + Hemisphere)
+            else {
+                const hCone = rng.intBetween(s(5), s(12));
+                
+                const volCone = (piApprox * r * r * hCone) / 3;
+                const volHemi = (2 * piApprox * Math.pow(r, 3)) / 3;
+                
+                qData.answer = Math.round((volCone + volHemi) * 100) / 100;
 
-            geometry = { type: 'sphere', r, show: giveDiameter ? 'd' : 'r', labels: { r: giveDiameter ? d : r } };
+                qData.description = {
+                    sv: `Beräkna glassens volym (kon + halvklot). Konens höjd är ${hCone} cm och ${giveDiameter ? 'diametern' : 'radien'} är ${giveDiameter ? d : r} cm.`,
+                    en: `Calculate the ice cream volume (cone + hemisphere). The cone height is ${hCone} cm and the ${giveDiameter ? 'diameter' : 'radius'} is ${giveDiameter ? d : r} cm.`
+                };
+
+                steps = [
+                     ...(giveDiameter ? [{ text: "Find Radius", latex: `r = \\frac{d}{2} = ${r}` }] : []),
+                     { text: "Cone Vol", latex: `V_{cone} = \\frac{\\pi r^2 h}{3} \\approx ${Math.round(volCone*10)/10}` },
+                     { text: "Hemi Vol", latex: `V_{hemi} = \\frac{2\\pi r^3}{3} \\approx ${Math.round(volHemi*10)/10}` },
+                     { text: "Total", latex: `V_{total} = ${Math.round(volCone*10)/10} + ${Math.round(volHemi*10)/10} = ${color}{${qData.answer}}` }
+                ];
+                
+                geometry = { 
+                    type: 'ice_cream', 
+                    r, 
+                    h: hCone, 
+                    show: giveDiameter ? 'd' : 'r', 
+                    labels: { val: giveDiameter ? d : r, h: hCone } 
+                };
+            }
         }
 
         return {
             questionId: `vol-l${level}-${seed}`,
             renderData: {
-                text_key: "calc_volume",
+                text_key: qData.text_key || "vol_gen",
                 description: qData.description,
                 latex: qData.latex,
-                answerType: 'numeric',
-                geometry: geometry,
-                variables: {}
+                answerType: "numeric",
+                geometry: geometry
             },
             serverData: {
                 answer: qData.answer,
