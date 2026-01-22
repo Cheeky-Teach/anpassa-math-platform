@@ -3,16 +3,17 @@ import { Random } from "../utils/random";
 import { TERMS, t, Language } from "../utils/i18n";
 
 export class ScaleGenerator {
-    private static readonly SHAPES = [
-        'square', 'rectangle', 'circle', 'triangle', 
-        'rhombus', 'parallelogram', 'pentagon', 'hexagon', 'octagon',
-        'star', 'arrow', 'heart', 'cross', 'lightning', 'kite',
-        'cube', 'cylinder', 'pyramid', 'cone', 'sphere'
-    ];
+    // Moved to static method to ensure availability
+    private static getShape(rng: Random) {
+        const SHAPES = [
+            'square', 'rectangle', 'circle', 'triangle', 
+            'rhombus', 'parallelogram', 'pentagon', 'hexagon', 'octagon',
+            'star', 'arrow', 'heart', 'cross', 'lightning', 'kite',
+            'cube', 'cylinder', 'pyramid', 'cone', 'sphere'
+        ];
+        return rng.pick(SHAPES);
+    }
 
-    /**
-     * Helper to get appropriate scale factors based on difficulty
-     */
     private static getScaleFactor(rng: Random, difficult: boolean = false): number {
         if (!difficult) return rng.pick([2, 3, 4, 5, 10]);
         return rng.pick([20, 25, 50, 100, 200, 500, 1000]);
@@ -20,24 +21,25 @@ export class ScaleGenerator {
 
     public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
         const rng = new Random(seed);
-        const color = "\\mathbf{\\textcolor{#D35400}}";
+        // FIX: Use formatColor for valid LaTeX
+        const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
         
         let mode = level;
         if (level === 7) mode = rng.intBetween(1, 6);
 
         let qDesc = { sv: "", en: "" };
         let answerStr = ""; 
-        let answerType: any = 'numeric'; // Default to numeric, switch to 'scale' for L4/L6
+        let answerType: any = 'numeric';
         let steps: Clue[] = [];
         let renderData: any = {};
-        const shape = rng.pick(ScaleGenerator.SHAPES);
+        const shape = ScaleGenerator.getShape(rng);
 
-        // --- LEVEL 1: Concepts (Simple 1:X Calculation) ---
+        // --- LEVEL 1: Concepts ---
         if (mode === 1) {
             const scale = rng.pick([2, 5, 10]);
             const drawing = rng.intBetween(1, 5);
             const reality = drawing * scale;
-            const findReality = rng.bool(); // True = Find Reality, False = Find Drawing
+            const findReality = rng.bool(); 
 
             if (findReality) {
                 answerStr = reality.toString();
@@ -47,7 +49,7 @@ export class ScaleGenerator {
                 };
                 steps = [
                     { text: t(lang, {sv: "Verklighet = Bild · Skala", en: "Reality = Image · Scale"}), latex: `V = ${drawing} \\cdot ${scale}` },
-                    { text: t(lang, TERMS.common.result), latex: `V = ${color}{${answerStr}}` }
+                    { text: t(lang, TERMS.common.result), latex: `V = ${formatColor(answerStr)}` }
                 ];
             } else {
                 answerStr = drawing.toString();
@@ -57,54 +59,41 @@ export class ScaleGenerator {
                 };
                 steps = [
                     { text: t(lang, {sv: "Bild = Verklighet / Skala", en: "Image = Reality / Scale"}), latex: `B = \\frac{${reality}}{${scale}}` },
-                    { text: t(lang, TERMS.common.result), latex: `B = ${color}{${answerStr}}` }
+                    { text: t(lang, TERMS.common.result), latex: `B = ${formatColor(answerStr)}` }
                 ];
             }
 
-            renderData = { 
-                type: 'scale_single', 
-                label: `1:${scale}`, 
-                shape: shape 
-            };
+            renderData = { type: 'scale_single', label: `1:${scale}`, shape: shape };
         }
 
-        // --- LEVEL 2 (Simple) & 3 (Hard): Calculate Length ---
+        // --- LEVEL 2 & 3: Calculate Length ---
         else if (mode === 2 || mode === 3) {
             const isHard = mode === 3;
-            const isReduction = rng.bool(); // 1:X (Reduction) vs X:1 (Enlargement)
+            const isReduction = rng.bool(); 
             const scale = ScaleGenerator.getScaleFactor(rng, isHard);
-            
-            // Generate nice numbers
             const base = rng.intBetween(2, 9);
             const large = base * scale;
-            
-            const findLarge = rng.bool(); // Find the larger value (Reality in reduction, Image in enlargement)
-            
-            // Set values based on Reduction vs Enlargement
-            // Reduction 1:S -> Image is small, Reality is large
-            // Enlargement S:1 -> Image is large, Reality is small
+            const findLarge = rng.bool(); 
             
             let scaleLabel = isReduction ? `1:${scale}` : `${scale}:1`;
             let knownVal = 0;
-            let knownType = ""; // 'drawing' or 'reality'
+            let knownType = "";
             
-            if (isReduction) {
-                // 1:S
+            if (isReduction) { // 1:S
                 if (findLarge) { // Find Reality
                     knownVal = base; knownType = 'drawing'; answerStr = large.toString();
-                    steps = [{ text: "Calc", latex: `${base} \\cdot ${scale} = ${color}{${answerStr}}` }];
+                    steps = [{ text: t(lang, TERMS.common.calculate), latex: `${base} \\cdot ${scale} = ${formatColor(answerStr)}` }];
                 } else { // Find Drawing
                     knownVal = large; knownType = 'reality'; answerStr = base.toString();
-                    steps = [{ text: "Calc", latex: `\\frac{${large}}{${scale}} = ${color}{${answerStr}}` }];
+                    steps = [{ text: t(lang, TERMS.common.calculate), latex: `\\frac{${large}}{${scale}} = ${formatColor(answerStr)}` }];
                 }
-            } else {
-                // S:1
+            } else { // S:1
                 if (findLarge) { // Find Image
                     knownVal = base; knownType = 'reality'; answerStr = large.toString();
-                    steps = [{ text: "Calc", latex: `${base} \\cdot ${scale} = ${color}{${answerStr}}` }];
+                    steps = [{ text: t(lang, TERMS.common.calculate), latex: `${base} \\cdot ${scale} = ${formatColor(answerStr)}` }];
                 } else { // Find Reality
                     knownVal = large; knownType = 'drawing'; answerStr = base.toString();
-                    steps = [{ text: "Calc", latex: `\\frac{${large}}{${scale}} = ${color}{${answerStr}}` }];
+                    steps = [{ text: t(lang, TERMS.common.calculate), latex: `\\frac{${large}}{${scale}} = ${formatColor(answerStr)}` }];
                 }
             }
 
@@ -116,7 +105,6 @@ export class ScaleGenerator {
                 en: `Scale ${scaleLabel}. ${kLabel.en} is ${knownVal} cm. What is ${uLabel.en.toLowerCase()}?`
             };
 
-            // Visualize comparison
             renderData = {
                 type: 'scale_compare',
                 leftLabel: kLabel.sv, leftValue: `${knownVal} cm`,
@@ -125,7 +113,7 @@ export class ScaleGenerator {
             };
         }
 
-        // --- LEVEL 4: Find the Scale (X:Y) ---
+        // --- LEVEL 4: Find Scale ---
         else if (mode === 4) {
             const isReduction = rng.bool();
             const scale = ScaleGenerator.getScaleFactor(rng, false);
@@ -133,13 +121,8 @@ export class ScaleGenerator {
             const large = base * scale;
 
             let drawing = 0, reality = 0;
-            if (isReduction) { // 1:S
-                drawing = base; reality = large;
-                answerStr = `1:${scale}`;
-            } else { // S:1
-                drawing = large; reality = base;
-                answerStr = `${scale}:1`;
-            }
+            if (isReduction) { drawing = base; reality = large; answerStr = `1:${scale}`; }
+            else { drawing = large; reality = base; answerStr = `${scale}:1`; }
 
             qDesc = {
                 sv: `Bilden är ${drawing} cm och verkligheten är ${reality} cm. Vad är skalan?`,
@@ -147,8 +130,8 @@ export class ScaleGenerator {
             };
 
             steps = [
-                { text: t(lang, {sv: "Skala = Bild : Verklighet", en: "Scale = Image : Reality"}), latex: `${drawing} : ${reality}` },
-                { text: t(lang, {sv: "Förenkla", en: "Simplify"}), latex: `${color}{${answerStr}}` }
+                { text: t(lang, TERMS.scale.step_plug_in), latex: `${drawing} : ${reality}` },
+                { text: t(lang, TERMS.scale.step_simplify), latex: formatColor(answerStr) }
             ];
 
             renderData = {
@@ -160,14 +143,12 @@ export class ScaleGenerator {
             answerType = 'scale';
         }
 
-        // --- LEVEL 5: Word Problems (No Pictures) ---
+        // --- LEVEL 5: Map Problems ---
         else if (mode === 5) {
             const scale = rng.pick([50, 100, 500, 1000, 10000]);
             const drawingCm = rng.intBetween(2, 9);
             const realityCm = drawingCm * scale;
             const realityM = realityCm / 100;
-            
-            // Always "Find Reality in Meters" for variety
             answerStr = realityM.toString(); 
 
             qDesc = {
@@ -176,29 +157,27 @@ export class ScaleGenerator {
             };
 
             steps = [
-                { text: "Cm", latex: `${drawingCm} \\cdot ${scale} = ${realityCm} \\text{ cm}` },
-                { text: "To Meters", latex: `\\frac{${realityCm}}{100} = ${color}{${answerStr}} \\text{ m}` }
+                { text: t(lang, TERMS.scale.calc_cm), latex: `${drawingCm} \\cdot ${scale} = ${realityCm} \\text{ cm}` },
+                { text: t(lang, TERMS.scale.conv_m), latex: `\\frac{${realityCm}}{100} = ${formatColor(answerStr)} \\text{ m}` }
             ];
 
-            renderData = { type: 'scale_single', label: `1:${scale}`, shape: 'map_icon' }; // map_icon not implemented, will fallback
+            renderData = { type: 'scale_single', label: `1:${scale}`, shape: 'square' }; 
         }
 
-        // --- LEVEL 6: Area Scale (Already implemented correctly) ---
+        // --- LEVEL 6: Area Scale ---
         else if (mode === 6) {
              const isReduction = rng.intBetween(0, 1) === 1;
              const factor = rng.pick([2, 3, 4, 5, 10]); 
              const aFactor = factor * factor; 
              const aScaleStr = isReduction ? `1:${aFactor}` : `${aFactor}:1`;
-             
              const lScaleLeft = isReduction ? 1 : factor;
              const lScaleRight = isReduction ? factor : 1;
-             
              answerStr = `${lScaleLeft}:${lScaleRight}`;
 
              qDesc = { sv: `Areaskalan är ${aScaleStr}. Vad är längdskalan?`, en: `The area scale is ${aScaleStr}. What is the length scale?` };
              const clueLatex = isReduction ? `(\\sqrt{1} : \\sqrt{${aFactor}})` : `(\\sqrt{${aFactor}} : \\sqrt{1})`;
              
-             steps = [{ text: t(lang, {sv: "Längdskala = √Areaskala", en: "Length Scale = √Area Scale"}), latex: `${clueLatex} \\\\implies ${color}{${answerStr}}}` }];
+             steps = [{ text: t(lang, {sv: "Längdskala = √Areaskala", en: "Length Scale = √Area Scale"}), latex: `${clueLatex} \\\\implies ${formatColor(answerStr)}` }];
              
              renderData = { type: 'scale_single', label: aScaleStr, shape: 'square' };
              answerType = 'scale';

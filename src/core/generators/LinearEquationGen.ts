@@ -7,7 +7,6 @@ export class LinearEquationGenerator {
     const rng = new Random(seed);
     
     // FIX: Using function to generate valid LaTeX color
-    // Structure: \textcolor{color}{ \mathbf{text} }
     const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
 
     let mode = level;
@@ -20,20 +19,17 @@ export class LinearEquationGenerator {
     if (mode === 1) {
         const type = rng.intBetween(1, 4); 
         
-        if (type === 1) { 
-            // x / k = res
+        if (type === 1) { // x / k = res
             const k = rng.intBetween(s(2), s(9));
             const res = rng.intBetween(s(2), s(10)); 
             answer = res * k;
             eq = `\\frac{x}{${k}} = ${res}`;
-            
             steps = [
                 { text: t(lang, TERMS.algebra.intro(eq)), latex: eq },
                 { text: t(lang, TERMS.algebra.multiply(k)), latex: `x = ${res} \\cdot ${k} = ${formatColor(answer)}` }
             ];
         }
-        else if (type === 2) { 
-            // k * x = res
+        else if (type === 2) { // k * x = res
             const x = rng.intBetween(s(2), s(12));
             const k = rng.intBetween(s(2), s(9));
             const res = x * k;
@@ -44,8 +40,7 @@ export class LinearEquationGenerator {
                 { text: t(lang, TERMS.algebra.divide(k)), latex: `x = \\frac{${res}}{${k}} = ${formatColor(answer)}` }
             ]; 
         }
-        else if (type === 3) { 
-            // x + a = b
+        else if (type === 3) { // x + a = b
             const x = rng.intBetween(s(1), s(20));
             const a = rng.intBetween(s(1), s(20));
             const b = x + a;
@@ -56,8 +51,7 @@ export class LinearEquationGenerator {
                 { text: t(lang, TERMS.algebra.subtract(a)), latex: `x = ${b} - ${a} = ${formatColor(answer)}` }
             ];
         }
-        else {
-            // x - a = b
+        else { // x - a = b
             const x = rng.intBetween(s(2), s(20));
             const a = rng.intBetween(s(1), s(20));
             const b = x - a;
@@ -75,7 +69,7 @@ export class LinearEquationGenerator {
         const x = rng.intBetween(s(2), s(10));
         const a = rng.intBetween(s(2), s(9));
         const b = rng.intBetween(s(1), s(20));
-        const type = rng.bool(); // Plus or Minus
+        const type = rng.bool(); 
         
         if (type) { // ax + b = c
             const c = (a * x) + b;
@@ -97,7 +91,7 @@ export class LinearEquationGenerator {
         answer = x;
     }
 
-    // --- LEVEL 3: Variables on Both Sides (ax + b = cx + d) ---
+    // --- LEVEL 3: Variables on Both Sides ---
     else if (mode === 3) {
         answer = rng.intBetween(s(2), s(10));
         const c = rng.intBetween(s(2), s(5));
@@ -115,7 +109,7 @@ export class LinearEquationGenerator {
         ];
     }
 
-    // --- LEVEL 4: Parentheses a(x + b) = c ---
+    // --- LEVEL 4: Parentheses ---
     else {
         const x = rng.intBetween(s(2), s(10));
         const a = rng.intBetween(s(2), s(5));
