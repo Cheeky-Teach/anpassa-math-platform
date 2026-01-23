@@ -30,14 +30,19 @@ export const TERMS = {
         identify_const: { sv: "Identifiera konstanterna", en: "Identify constants" },
         combine_like: { sv: "Kombinera termer", en: "Combine like terms" }
     },
+    // NEW: Detailed explanations for negative number logic
     neg_signs: {
-        sub_neg: { sv: "Att subtrahera ett negativt tal är samma som att addera.", en: "Subtracting a negative number is the same as adding." },
-        add_neg: { sv: "Att addera ett negativt tal är samma som att subtrahera.", en: "Adding a negative number is the same as subtracting." },
-        mul_pos_neg: { sv: "Positivt gånger negativt blir negativt.", en: "Positive times negative becomes negative." },
-        mul_neg_neg: { sv: "Negativt gånger negativt blir positivt.", en: "Negative times negative becomes positive." },
-        div_sign_same: { sv: "Lika tecken ger positivt svar.", en: "Same signs give a positive answer." },
-        div_sign_diff: { sv: "Olika tecken ger negativt svar.", en: "Different signs give a negative answer." },
-        step_calc: { sv: "Beräkna nu värdet.", en: "Now calculate the value." }
+        sub_neg: { sv: "Minus ett negativt tal blir plus. Vi adderar istället.", en: "Minus a negative number becomes plus. We add instead." },
+        add_neg: { sv: "Plus ett negativt tal blir minus. Vi subtraherar istället.", en: "Plus a negative number becomes minus. We subtract instead." },
+        simple_calc: { sv: "Beräkna.", en: "Calculate." },
+        
+        mul_pos_neg: { sv: "Olika tecken ger ett negativt svar.", en: "Different signs give a negative answer." },
+        mul_neg_neg: { sv: "Lika tecken (två minus) ger ett positivt svar.", en: "Same signs (two minuses) give a positive answer." },
+        
+        div_sign_same: { sv: "Lika tecken ger alltid ett positivt svar.", en: "Same signs always give a positive answer." },
+        div_sign_diff: { sv: "Olika tecken ger alltid ett negativt svar.", en: "Different signs always give a negative answer." },
+        
+        step_calc: { sv: "Beräkna nästa steg.", en: "Calculate the next step." }
     },
     scale: {
         scale: { sv: "Skala", en: "Scale" },
@@ -170,7 +175,7 @@ export const TERMS = {
         
         expl_var_basic: { sv: "Variabeln (x) representerar det okända antalet.", en: "The variable (x) represents the unknown number." },
         expl_fixed_cost: { sv: "Detta är den fasta avgiften/kostnaden.", en: "This is the fixed fee/cost." },
-        expl_variable_cost: { sv: "Detta är kostnaden som beror på x.", en: "This is the cost dependent on x." },
+        expl_rate_val: { sv: "Detta är priset per styck (multipliceras med x).", en: "This is the price per item (multiplied by x)." },
         expl_total: { sv: "Detta är summan av alla delar.", en: "This is the sum of all parts." },
         expl_discount: { sv: "Rabatten dras bort från totalen.", en: "The discount is subtracted from the total." },
         expl_compare: { sv: "Vi jämför två mängder.", en: "We are comparing two quantities." },
@@ -215,7 +220,6 @@ export const TERMS = {
         clue_setup: { sv: "Ställ upp ekvationen.", en: "Set up the equation." },
         clue_total: { sv: "Totalt är det", en: "The total is" },
         
-        // NEW EXPLANATIONS for Clues
         expl_fixed_val: { sv: "Detta är det fasta värdet (t.ex. startavgift eller påse).", en: "This is the fixed value (e.g. start fee or bag)." },
         expl_rate_val: { sv: "Detta är det rörliga värdet (pris per styck · antal).", en: "This is the variable value (price per item · quantity)." },
         expl_person1: { sv: "Den första personen har x.", en: "The first person has x." },
