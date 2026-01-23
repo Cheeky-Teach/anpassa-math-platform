@@ -42,7 +42,7 @@
         .modal-enter { opacity: 0; transform: scale(0.95); }
         .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
         
-        /* Custom Scrollbar */
+        /* Custom Scrollbar for inner elements */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -211,7 +211,8 @@
                 stat_wrong: "Fel",
                 stat_help: "Hjälp",
                 stat_correct: "Rätt",
-                stat_total: "Totalt"
+                stat_total: "Totalt",
+                lgr_btn: "LGR22"
             },
             en:{
                 streak:"",
@@ -256,7 +257,8 @@
                 stat_wrong: "Wrong",
                 stat_help: "Help",
                 stat_correct: "Correct",
-                stat_total: "Total"
+                stat_total: "Total",
+                lgr_btn: "LGR22"
             }
         };
 
@@ -341,6 +343,72 @@
          * 3. UI COMPONENTS (Modals, Panels)
          * DEFINED BEFORE USE to avoid Hoisting Errors
          *******************************************************/
+
+        // NEW: LGR22 Modal
+        const LgrModal = ({ visible, onClose, ui }) => {
+            const [data, setData] = useState(null);
+            const [loading, setLoading] = useState(false);
+
+            useEffect(() => {
+                if (visible && !data) {
+                    setLoading(true);
+                    fetch('/api/curriculum')
+                        .then(res => res.json())
+                        .then(d => { setData(d); setLoading(false); })
+                        .catch(err => { console.error(err); setLoading(false); });
+                }
+            }, [visible, data]);
+
+            if (!visible) return null;
+
+            return (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm fade-in">
+                    <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-2xl shadow-2xl p-6 relative flex flex-col border-t-8 border-sky-200 overflow-hidden">
+                        <div className="flex justify-between items-start mb-6 shrink-0">
+                            <h3 className="text-2xl font-bold text-slate-800">{data ? data.title : "Lgr22"}</h3>
+                            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600">✕</button>
+                        </div>
+                        
+                        <div className="overflow-y-auto custom-scrollbar flex-1 pr-2">
+                            {loading ? (
+                                <div className="py-10 text-center text-slate-400">Laddar läroplan...</div>
+                            ) : data ? (
+                                <div className="space-y-8">
+                                    <p className="text-slate-600 italic">{data.description}</p>
+                                    
+                                    <div>
+                                        <h4 className="font-bold text-sky-800 border-b border-sky-100 pb-2 mb-3">Syfte</h4>
+                                        <ul className="list-disc pl-5 space-y-2 text-sm text-slate-700">
+                                            {data.syfte.map((s, i) => <li key={i}>{s}</li>)}
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-sky-800 border-b border-sky-100 pb-2 mb-3">Centralt Innehåll (åk 7-9)</h4>
+                                        <div className="grid gap-6">
+                                            {Object.entries(data.mapping).map(([key, section]) => (
+                                                <div key={key} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                                    <h5 className="font-bold text-slate-900 mb-2 text-sm">{section.category}</h5>
+                                                    <ul className="list-disc pl-5 space-y-1 text-xs text-slate-600">
+                                                        {section.content.map((c, i) => <li key={i}>{c}</li>)}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center text-red-400">Kunde inte ladda informationen.</div>
+                            )}
+                        </div>
+                        
+                        <div className="mt-6 pt-4 border-t border-slate-100 text-center">
+                            <a href="https://www.skolverket.se" target="_blank" className="text-xs text-sky-600 hover:underline">Källa: Skolverket (Lgr22)</a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
         const LevelUpModal = ({ visible, ui, onNext, onStay }) => {
             if(!visible) return null;
@@ -516,7 +584,18 @@
             return (
                 <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-bounce-in border border-gray-100">
-                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">✕</button>
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10 bg-white/80 rounded-full p-1">✕</button>
+                        
+                        <div className="mb-4 flex justify-center">
+                            <div className="w-24 h-24 rounded-full overflow-hidden shadow-lg border-4 border-white ring-1 ring-gray-100">
+                                <img 
+                                    src="https://lh3.googleusercontent.com/pw/AP1GczNVvq27uV0cE5nPctXb-5OET-vV57DYHQdI9CX4ODcthn4Dw-fxwULnK5G4u2Yy_7zzmo-SPNbsYglcKsiw_Omz7Q_rWwaiVCnL3e3tgge8hpoVypu8=w2400" 
+                                    alt="Creator" 
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        </div>
+
                         <div className="text-center mb-6">
                             <h3 className="text-2xl font-bold text-gray-800 mb-2">{ui.aboutTitle}</h3>
                             <p className="text-gray-600 text-sm leading-relaxed mb-6">{ui.aboutText}</p>
@@ -568,10 +647,10 @@
          * 4. MAIN VIEWS (Dashboard, PracticeView)
          *******************************************************/
 
-        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect, timerSettings, toggleTimer, resetTimer, ui})=>{
+        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect, timerSettings, toggleTimer, resetTimer, ui, onLgrOpen})=>{
             const getCategoryColorClass=(category,type)=>{const colorMap={pink:'pink',indigo:'indigo',emerald:'emerald',purple:'purple'};const color=colorMap[category.color]||'primary';if(type==='bg-light')return `bg-${color}-50`;if(type==='bg-dark')return `bg-${color}-500`;if(type==='border')return `border-${color}-100`;if(type==='text')return `text-${color}-700`;if(type==='ring')return `ring-${color}-500`;if(type==='border-solid')return `border-${color}-500`;return '';};
             return(
-                <div className="max-w-6xl mx-auto w-full p-4 fade-in">
+                <div className="max-w-6xl mx-auto w-full p-4 fade-in flex flex-col min-h-screen">
                     <div className="text-center py-10 md:py-16 border-b border-gray-200 mb-12 bg-primary-50 rounded-3xl mx-4 relative overflow-hidden">
                         <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-4 tracking-tight relative z-10">Anpassa</h1>
                         <p className="text-xl md:text-2xl text-gray-500 font-medium tracking-wide relative z-10">{ui.tagline}</p>
@@ -640,11 +719,18 @@
                             );
                         })}
                     </div>
+                    
                     <div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20">
                         <button onClick={onStart} className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 ${selectedTopic?'bg-accent-500 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-accent-600 shadow-accent-200':'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}`}>
                             {ui.startBtn} <span>🚀</span>
                         </button>
                     </div>
+
+                    <footer className="mt-auto py-6 border-t border-gray-200 flex justify-center">
+                        <button onClick={onLgrOpen} className="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-sky-200 shadow-sm">
+                            {ui.lgr_btn}
+                        </button>
+                    </footer>
                 </div>
             );
         };
@@ -789,6 +875,7 @@
             const[aboutOpen,setAboutOpen]=useState(false);
             const[statsOpen, setStatsOpen] = useState(false);
             const[timeUpOpen, setTimeUpOpen] = useState(false);
+            const[lgrOpen, setLgrOpen] = useState(false);
 
             // Modals State
             const[showStreakModal, setShowStreakModal] = useState(false);
@@ -1056,6 +1143,7 @@
             return(
                 <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
                     <AboutModal visible={aboutOpen} onClose={()=>setAboutOpen(false)} ui={ui}/>
+                    <LgrModal visible={lgrOpen} onClose={()=>setLgrOpen(false)} ui={ui}/>
                     <MobileDrawer open={mobileHistoryOpen} onClose={()=>setMobileHistoryOpen(false)} history={history} ui={ui}/>
                     <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={()=>setStatsOpen(false)} title={ui.stats_title} />
                     <StatsModal visible={timeUpOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={closeTimeUp} title={ui.stats_times_up} />
@@ -1075,7 +1163,7 @@
                                 {totalCorrect > 0 && <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-primary-200">✅ {totalCorrect}</div>}
                                 {streak > 0 && <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-yellow-200">🔥 {streak}</div>}
                                 <button onClick={()=>setStatsOpen(true)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title={ui.stats_title}>
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                                 </button>
                                 <button onClick={()=>setAboutOpen(true)} className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-1 px-4 text-xs rounded-full shadow-sm transition-transform transform active:scale-95">{ui.aboutBtn}</button>
                             </div>
@@ -1094,6 +1182,7 @@
                                 toggleTimer={toggleTimer}
                                 resetTimer={resetTimer}
                                 ui={ui}
+                                onLgrOpen={()=>setLgrOpen(true)}
                             />
                         ):(
                             <PracticeView 
