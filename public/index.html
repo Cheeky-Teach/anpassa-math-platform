@@ -40,10 +40,6 @@
         /* Modal Animation */
         .modal-enter { opacity: 0; transform: scale(0.95); }
         .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
-        
-        /* Scrollbar hiding for timer selector */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden flex flex-col min-h-screen">
@@ -160,14 +156,13 @@
 
         const UI_TEXT={
             sv:{
-                streak:"", // Removed text
-                loading:"Laddar fråga...",error:"Kunde inte ladda frågan.",
+                streak:"Streak",loading:"Laddar fråga...",error:"Kunde inte ladda frågan.",
                 btnHint:"Ledtråd",btnSolution:"Visa lösning",btnSkip:"Hoppa över",
                 submit:"Svara",correct:"Rätt! Nästa...",incorrect:"Inte riktigt, försök igen",placeholder:"Skriv ditt svar...",
                 level:"Nivå",history:"Historik",noHistory:"Inga svar än.",clueUsed:"Hjälp",
                 dashboardTitle:"Välj område att öva på",
                 progressionInfo:"Välj ett område. Systemet anpassar sig efter dig. Klarar du 8 frågor i rad på en nivå föreslår vi att du går vidare till nästa.",
-                startBtn:"Börja öva",backBtn:"Meny",selectLevel:"Välj nivå:",
+                startBtn:"Börja öva",backBtn:"Tillbaka till menyn",selectLevel:"Välj nivå:",
                 hintsTitle:"Ledtrådar",prevLevel:"Föregående",nextLevel:"Nästa",
                 levelUpTitle:"Bra jobbat! 🔥",levelUpDesc:"Du har klarat 8 frågor i rad! Vill du gå vidare till nästa nivå?",levelUpYes:"Nästa nivå",levelUpNo:"Stanna på samma nivå",levelUpHint:"Kom ihåg att du alltid kan byta nivå manuellt högst upp på sidan.",
                 aboutBtn:"Om skaparen",aboutTitle:"Om skaparen",aboutText:"Charles är en speciallärare som arbetar i Sverige och brinner för att upptäcka nya sätt att undervisa i klassrummet.",
@@ -181,33 +176,16 @@
                 total_modal_title: "Snyggt jobbat! ✅",
                 total_modal_msg: "Du svarade rätt på {total} frågor! Bra jobbat!",
                 btn_close_streak: "Bra jobbat!",
-                btn_close_total: "Fortsätt",
-                
-                timer_title: "Övningstimer",
-                timer_off: "Av",
-                timer_min: "min",
-                timer_reset: "Återställ",
-                timer_paused: "Pausad",
-                
-                stats_title: "Statistik",
-                stats_times_up: "Tiden är ute!",
-                stats_longest_streak: "Längsta streak",
-                stats_attempted: "Försökta frågor",
-                stats_correct_no_help: "Rätt (utan hjälp)",
-                stats_correct_help: "Rätt (med hjälp)",
-                stats_incorrect: "Fel",
-                stats_skipped: "Hoppade över",
-                stats_close: "Stäng"
+                btn_close_total: "Fortsätt"
             },
             en:{
-                streak:"", // Removed text
-                loading:"Loading question...",error:"Could not load question.",
+                streak:"Streak",loading:"Loading question...",error:"Could not load question.",
                 btnHint:"Hint",btnSolution:"Show Solution",btnSkip:"Skip",
                 submit:"Submit",correct:"Correct! Next...",incorrect:"Not quite, try again",placeholder:"Enter your answer...",
                 level:"Level",history:"History",noHistory:"No answers yet.",clueUsed:"Clue",
                 dashboardTitle:"Choose a topic to practice",
                 progressionInfo:"Choose a topic. The system adapts to you. Answer 8 questions correctly in a row to unlock the next level.",
-                startBtn:"Start Practice",backBtn:"Menu",selectLevel:"Select Level:",
+                startBtn:"Start Practice",backBtn:"Back to Menu",selectLevel:"Select Level:",
                 hintsTitle:"Hints",prevLevel:"Previous",nextLevel:"Next",
                 levelUpTitle:"Great Job! 🔥",levelUpDesc:"You've answered 8 in a row! Do you want to try the next level?",levelUpYes:"Next Level",levelUpNo:"Stay Here",levelUpHint:"Remember, you can always change difficulty manually at the top.",
                 aboutBtn:"About the creator",aboutTitle:"About the creator",aboutText:"Charles is a special education teacher currently working in Sweden and is passionate about discovering new ways to teach in the classroom.",
@@ -221,29 +199,21 @@
                 total_modal_title: "Great work! ✅",
                 total_modal_msg: "You answered {total} questions correctly! Great job!",
                 btn_close_streak: "Great job!",
-                btn_close_total: "Continue",
-                
-                timer_title: "Practice Timer",
-                timer_off: "Off",
-                timer_min: "min",
-                timer_reset: "Reset",
-                timer_paused: "Paused",
-                
-                stats_title: "Statistics",
-                stats_times_up: "Time's up!",
-                stats_longest_streak: "Longest streak",
-                stats_attempted: "Problems attempted",
-                stats_correct_no_help: "Correct (no help)",
-                stats_correct_help: "Correct (with help)",
-                stats_incorrect: "Incorrect",
-                stats_skipped: "Skipped",
-                stats_close: "Close"
+                btn_close_total: "Continue"
             }
         };
 
         const MathText=({text,className="",large=false})=>{
             if(!text)return null;
-            const patchedText = text.replace(/\\mathbf\{\\?textcolor\{([^}]+)\}\{([^}]+)\}\}/g, '{\\color{$1}\\mathbf{$2}}');
+            // Clean up potentially already escaped backslashes for textcolor
+            const cleanText = text.replace(/\\\\/g, '\\');
+            const patchedText = cleanText.replace(/\\mathbf\{\\?textcolor\{([^}]+)\}\{([^}]+)\}\}/g, '{\\color{$1}\\mathbf{$2}}');
+            
+            // Format fractions cleanly in history or descriptions if they appear raw like \frac{x}{6}
+            // We wrap them in $...$ if they aren't already, but carefully
+            // This regex finds latex commands not inside $...$ and wraps them (simplified)
+            // Ideally generators send $...$, but for history we wrap the whole text if it looks like math
+            
             const parts=patchedText.split(/(\$[^\$]+\$)/g);
             return(<span className={className}>{parts.map((part,index)=>{
                 if(part.startsWith('$')&&part.endsWith('$')){
@@ -253,10 +223,13 @@
                         return<span key={index} dangerouslySetInnerHTML={{__html:html}}/>;
                     }catch(e){return<span key={index} className="text-red-500">{part}</span>;}
                 } else if (part.includes('\\')) { 
+                    // Fallback for un-dollar-sign-wrapped latex in history
                     try {
                         const html=katex.renderToString(part,{throwOnError:false,displayMode:false});
                         return<span key={index} dangerouslySetInnerHTML={{__html:html}}/>;
-                    } catch(e) { return<span key={index}>{part}</span>; }
+                    } catch(e) {
+                         return<span key={index}>{part}</span>;
+                    }
                 }
                 return<span key={index}>{part}</span>;
             })}</span>);
@@ -310,17 +283,7 @@
             return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>; 
         };
 
-        const StaticGeometryVisual=({description})=>{if(!description)return null;const d=description.toLowerCase();if(d.includes("rect")||d.includes("rektangel"))return<div className="flex justify-center my-4 opacity-80"><div className="w-28 h-16 border-2 border-primary-500 bg-primary-50 rounded-sm"></div></div>;return null;};
-
-        // --- COMPONENTS ---
-        // ADDED: Dashboard component defined BEFORE App
-        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect})=>{const ui=UI_TEXT[lang];const getCategoryColorClass=(category,type)=>{const colorMap={pink:'pink',indigo:'indigo',emerald:'emerald',purple:'purple'};const color=colorMap[category.color]||'primary';if(type==='bg-light')return `bg-${color}-50`;if(type==='bg-dark')return `bg-${color}-500`;if(type==='border')return `border-${color}-100`;if(type==='text')return `text-${color}-700`;if(type==='ring')return `ring-${color}-500`;if(type==='border-solid')return `border-${color}-500`;return '';};return(<div className="max-w-6xl mx-auto w-full p-4 fade-in">
-        <div className="text-center py-10 md:py-16 border-b border-gray-200 mb-12 bg-primary-50 rounded-3xl mx-4"><h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-4 tracking-tight">Anpassa</h1><p className="text-xl md:text-2xl text-gray-500 font-medium tracking-wide">{ui.tagline}</p></div>
-        <div className="text-center mb-10"><p className="text-gray-500 text-lg leading-relaxed max-w-2xl mx-auto">{ui.progressionInfo}</p></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">{Object.entries(CATEGORIES).map(([catKey,category])=>{const bgLight=getCategoryColorClass(category,'bg-light');const border=getCategoryColorClass(category,'border');const text=getCategoryColorClass(category,'text');const bgDark=getCategoryColorClass(category,'bg-dark');return(<div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}><div className={`${bgLight} p-4 border-b ${border}`}><h3 className={`text-lg font-bold ${text} uppercase tracking-wide flex items-center gap-2`}><span className={`w-3 h-3 rounded-full ${bgDark}`}></span>{category.label[lang]}</h3></div><div className="p-4 space-y-4 flex-1">{category.topics.map(topic=>{const ring=getCategoryColorClass(category,'ring');const borderSolid=getCategoryColorClass(category,'border-solid');return(<div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100"><div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div><div className="relative"><select value={selectedTopic===topic.id?selectedLevel:0} onChange={(e)=>onSelect(topic.id,Number(e.target.value))} className={`w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 appearance-none cursor-pointer ${selectedTopic===topic.id?`ring-2 ${ring} ${borderSolid}`:`focus:${ring}`}`}><option value={0} disabled>{ui.selectLevel}</option>{[1,2,3,4,5,6,7,8,9].map(lvl=>{if(!LEVEL_DESCRIPTIONS[topic.id]?.[lvl])return null;return<option key={lvl} value={lvl}>{lang==='sv'?`Nivå ${lvl}`:`Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang]||""}</option>;})}</select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div></div></div>);})}</div></div>);})}</div><div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20"><button onClick={onStart} className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 ${selectedTopic?'bg-accent-500 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-accent-600 shadow-accent-200':'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}`}>{ui.startBtn} <span>🚀</span></button></div></div>);};
-
-        // --- SUB-COMPONENTS (LIFTED OUT) ---
-        // Pass ui as prop to all of them
-        
+        // --- DEFINED BEFORE USAGE ---
         const LevelUpModal = ({ visible, ui, onNext, onStay }) => {
             if(!visible) return null;
             return (
@@ -367,36 +330,6 @@
                 </div>
             );
         };
-        
-        // NEW STATS MODAL 
-        const StatsModal = ({ visible, stats, ui, onClose, title }) => {
-            if (!visible) return null;
-            const attemptCount = stats.attempted || 0;
-            const getPct = (val) => attemptCount > 0 ? Math.round((val / attemptCount) * 100) : 0;
-            
-            return (
-                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-bounce-in border-4 border-blue-500 text-center">
-                        <h3 className="text-2xl font-bold text-gray-900 mb-4">{title || ui.stats_title}</h3>
-                        <div className="grid grid-cols-2 gap-4 text-left text-sm mb-6">
-                            <div className="text-gray-500">{ui.stats_longest_streak}</div>
-                            <div className="font-bold text-right">{stats.maxStreak} 🔥</div>
-                            <div className="text-gray-500">{ui.stats_attempted}</div>
-                            <div className="font-bold text-right">{stats.attempted}</div>
-                            <div className="text-gray-500">{ui.stats_correct_no_help}</div>
-                            <div className="font-bold text-right text-green-600">{stats.correctNoHelp} ({getPct(stats.correctNoHelp)}%)</div>
-                            <div className="text-gray-500">{ui.stats_correct_help}</div>
-                            <div className="font-bold text-right text-yellow-600">{stats.correctHelp} ({getPct(stats.correctHelp)}%)</div>
-                            <div className="text-gray-500">{ui.stats_incorrect}</div>
-                            <div className="font-bold text-right text-red-600">{stats.incorrect} ({getPct(stats.incorrect)}%)</div>
-                            <div className="text-gray-500">{ui.stats_skipped}</div>
-                            <div className="font-bold text-right text-gray-400">{stats.skipped}</div>
-                        </div>
-                        <button onClick={onClose} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 text-lg">{ui.stats_close}</button>
-                    </div>
-                </div>
-            );
-        };
 
         const AboutModal = ({ visible, onClose, ui }) => {
             if (!visible) return null;
@@ -418,40 +351,12 @@
             );
         };
 
-        const HistoryList=({history, ui})=>(<div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><div className="p-4 border-b bg-gray-50 flex justify-between items-center"><h2 className="font-bold text-gray-700">{ui.history}</h2><span className="text-xs text-gray-400">{history.length}</span></div><div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[500px]">{history.length===0?<p className="text-gray-400 text-center text-sm py-4">{ui.noHistory}</p>:history.map((entry,i)=>(<div key={i} className={`p-3 rounded-lg border-l-4 text-sm ${entry.correct?'border-primary-500 bg-primary-50': (entry.skipped ? 'border-gray-400 bg-gray-50' : 'border-red-500 bg-red-50')}`}><div className="flex justify-between items-start mb-1"><span className="font-semibold capitalize text-gray-700">{entry.topic} <span className="text-xs font-normal text-gray-500">(Lvl {entry.level})</span></span><span className="text-xs text-gray-400">{new Date(entry.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><div className="text-gray-600 mb-1 line-clamp-2"><MathText text={entry.text}/></div>{!entry.correct && !entry.skipped && entry.correctAnswer && <div className="text-xs text-red-600 mt-1 font-medium"><MathText text={`Correct: ${entry.correctAnswer}`}/></div>}<div>{entry.clueUsed&&<span className="inline-block px-1.5 py-0.5 bg-accent-100 text-accent-700 text-[10px] rounded uppercase font-bold tracking-wider mr-1">{ui.clueUsed}</span>} <span className={`inline-block px-1.5 py-0.5 rounded uppercase font-bold tracking-wider text-[10px] ${entry.correct ? 'bg-green-100 text-green-700' : (entry.skipped ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-700')}`}>{entry.correct ? ui.tagCorrect : (entry.skipped ? ui.tagSkipped : ui.tagWrong)}</span></div></div>))}</div></div>);
+        // --- DASHBOARD COMPONENT ---
+        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect})=>{const ui=UI_TEXT[lang];const getCategoryColorClass=(category,type)=>{const colorMap={pink:'pink',indigo:'indigo',emerald:'emerald',purple:'purple'};const color=colorMap[category.color]||'primary';if(type==='bg-light')return `bg-${color}-50`;if(type==='bg-dark')return `bg-${color}-500`;if(type==='border')return `border-${color}-100`;if(type==='text')return `text-${color}-700`;if(type==='ring')return `ring-${color}-500`;if(type==='border-solid')return `border-${color}-500`;return '';};return(<div className="max-w-6xl mx-auto w-full p-4 fade-in">
+        <div className="text-center py-10 md:py-16 border-b border-gray-200 mb-12 bg-primary-50 rounded-3xl mx-4"><h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-4 tracking-tight">Anpassa</h1><p className="text-xl md:text-2xl text-gray-500 font-medium tracking-wide">{ui.tagline}</p></div>
+        <div className="text-center mb-10"><p className="text-gray-500 text-lg leading-relaxed max-w-2xl mx-auto">{ui.progressionInfo}</p></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">{Object.entries(CATEGORIES).map(([catKey,category])=>{const bgLight=getCategoryColorClass(category,'bg-light');const border=getCategoryColorClass(category,'border');const text=getCategoryColorClass(category,'text');const bgDark=getCategoryColorClass(category,'bg-dark');return(<div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}><div className={`${bgLight} p-4 border-b ${border}`}><h3 className={`text-lg font-bold ${text} uppercase tracking-wide flex items-center gap-2`}><span className={`w-3 h-3 rounded-full ${bgDark}`}></span>{category.label[lang]}</h3></div><div className="p-4 space-y-4 flex-1">{category.topics.map(topic=>{const ring=getCategoryColorClass(category,'ring');const borderSolid=getCategoryColorClass(category,'border-solid');return(<div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100"><div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div><div className="relative"><select value={selectedTopic===topic.id?selectedLevel:0} onChange={(e)=>onSelect(topic.id,Number(e.target.value))} className={`w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 appearance-none cursor-pointer ${selectedTopic===topic.id?`ring-2 ${ring} ${borderSolid}`:`focus:${ring}`}`}><option value={0} disabled>{ui.selectLevel}</option>{[1,2,3,4,5,6,7,8,9].map(lvl=>{if(!LEVEL_DESCRIPTIONS[topic.id]?.[lvl])return null;return<option key={lvl} value={lvl}>{lang==='sv'?`Nivå ${lvl}`:`Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang]||""}</option>;})}</select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div></div></div>);})}</div></div>);})}</div><div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20"><button onClick={onStart} className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 ${selectedTopic?'bg-accent-500 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-accent-600 shadow-accent-200':'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}`}>{ui.startBtn} <span>🚀</span></button></div></div>);};
 
-        const MobileDrawer=({open, onClose, history, ui})=>(<>{open&&<div className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm lg:hidden" onClick={onClose}></div>}<div className={`fixed inset-y-0 left-0 w-80 bg-white shadow-2xl transform transition-transform duration-300 z-50 flex flex-col lg:hidden ${open?'translate-x-0':'-translate-x-full'}`}><div className="p-4 border-b flex justify-between items-center bg-gray-50"><h2 className="font-bold text-gray-700">{ui.history}</h2><button onClick={onClose} className="text-gray-400">✕</button></div><div className="flex-1 overflow-y-auto p-4"><HistoryList history={history} ui={ui}/></div></div></>);
-
-        const CluePanel=({revealedClues, question, ui, isSolutionRevealed})=>{
-            if(!revealedClues || revealedClues.length===0) return null;
-            return(
-                <div className="bg-accent-50 border border-accent-200 rounded-xl p-5 shadow-sm mb-4 animate-fade-in">
-                    <div className="flex items-center gap-2 mb-4 text-accent-800 font-bold border-b border-accent-200 pb-2">
-                        <span>💡 {ui.hintsTitle} ({revealedClues.length}/{question.clues.length})</span>
-                    </div>
-                    <div className="space-y-6">
-                        {revealedClues.map((clue,i)=>{
-                            const isLast = i === question.clues.length - 1;
-                            const showLatex = !isLast || isSolutionRevealed;
-                            return (
-                                <div key={i} className="group animate-slide-down">
-                                    <div className="text-sm text-accent-900 mb-2 font-medium leading-relaxed">
-                                        <MathText text={clue.text}/>
-                                    </div>
-                                    {clue.latex && showLatex && (
-                                        <div className="bg-white p-3 rounded-lg border border-accent-200 text-center shadow-sm overflow-x-auto">
-                                            <MathText text={`$${clue.latex}$`} large={true}/>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            );
-        };
-
-        // --- PRACTICE VIEW (MOVED OUTSIDE APP) ---
+        // --- PRACTICE VIEW ---
         const PracticeView=({lang,ui,question,loading,feedback,streak,input,setInput,handleSubmit,handleHint,handleSolution,handleSkip,handleChangeLevel,revealedClues,uiState,actions,levelUpAvailable,setLevelUpAvailable,isSolutionRevealed, showStreakModal, setShowStreakModal, showTotalModal, setShowTotalModal, totalCorrect})=>{
             const [mobileHistoryOpen,setMobileHistoryOpen]=useState(false);
             const [scaleInputLeft, setScaleInputLeft] = useState('');
@@ -463,17 +368,14 @@
             const handleFormSubmit=(e)=>{
                 if(question.renderData.answerType === 'scale') {
                     const combined = `${scaleInputLeft}:${scaleInputRight}`;
-                    // Important: Don't setInput(combined) here because 'input' is controlled by App. 
-                    // Instead just pass it. But we need to update the UI too? 
-                    // Actually, 'input' prop is for the single text box.
-                    // For scale, we use local state scaleInputLeft/Right which is fine.
-                    // We just pass combined to handleSubmit.
+                    setInput(combined);
                     handleSubmit(e, combined);
                 } else {
                     handleSubmit(e, input);
                 }
             };
             
+            // Reset attempts when question changes
             useEffect(() => { 
                 setScaleInputLeft(''); 
                 setScaleInputRight(''); 
@@ -482,12 +384,44 @@
 
             const maxLevels=Object.keys(LEVEL_DESCRIPTIONS[uiState.topic]||{}).length;
             
-            // Re-defined HistoryList here to ensure scope access or pass as prop? 
-            // Better to use the one defined above.
+            // Enhanced History with Tags (Right/Wrong/Skipped)
+            // Added correct answer display for failed questions
+            const HistoryList=({history})=>(<div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><div className="p-4 border-b bg-gray-50 flex justify-between items-center"><h2 className="font-bold text-gray-700">{ui.history}</h2><span className="text-xs text-gray-400">{history.length}</span></div><div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[500px]">{history.length===0?<p className="text-gray-400 text-center text-sm py-4">{ui.noHistory}</p>:history.map((entry,i)=>(<div key={i} className={`p-3 rounded-lg border-l-4 text-sm ${entry.correct?'border-primary-500 bg-primary-50': (entry.skipped ? 'border-gray-400 bg-gray-50' : 'border-red-500 bg-red-50')}`}><div className="flex justify-between items-start mb-1"><span className="font-semibold capitalize text-gray-700">{entry.topic} <span className="text-xs font-normal text-gray-500">(Lvl {entry.level})</span></span><span className="text-xs text-gray-400">{new Date(entry.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><div className="text-gray-600 mb-1 line-clamp-2"><MathText text={entry.text}/></div>{!entry.correct && !entry.skipped && entry.correctAnswer && <div className="text-xs text-red-600 mt-1 font-medium"><MathText text={`Correct: ${entry.correctAnswer}`}/></div>}<div>{entry.clueUsed&&<span className="inline-block px-1.5 py-0.5 bg-accent-100 text-accent-700 text-[10px] rounded uppercase font-bold tracking-wider mr-1">{ui.clueUsed}</span>} <span className={`inline-block px-1.5 py-0.5 rounded uppercase font-bold tracking-wider text-[10px] ${entry.correct ? 'bg-green-100 text-green-700' : (entry.skipped ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-700')}`}>{entry.correct ? ui.tagCorrect : (entry.skipped ? ui.tagSkipped : ui.tagWrong)}</span></div></div>))}</div></div>);
             
+            const MobileDrawer=()=>(<>{mobileHistoryOpen&&<div className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm lg:hidden" onClick={()=>setMobileHistoryOpen(false)}></div>}<div className={`fixed inset-y-0 left-0 w-80 bg-white shadow-2xl transform transition-transform duration-300 z-50 flex flex-col lg:hidden ${mobileHistoryOpen?'translate-x-0':'-translate-x-full'}`}><div className="p-4 border-b flex justify-between items-center bg-gray-50"><h2 className="font-bold text-gray-700">{ui.history}</h2><button onClick={()=>setMobileHistoryOpen(false)} className="text-gray-400">✕</button></div><div className="flex-1 overflow-y-auto p-4"><HistoryList history={uiState.history}/></div></div></>);
+            const CluePanel=()=>{
+                if(revealedClues===0)return null;
+                const visibleClues=question.clues.slice(0,revealedClues);
+                return(
+                    <div className="bg-accent-50 border border-accent-200 rounded-xl p-5 shadow-sm mb-4 animate-fade-in">
+                        <div className="flex items-center gap-2 mb-4 text-accent-800 font-bold border-b border-accent-200 pb-2">
+                            <span>💡 {ui.hintsTitle} ({revealedClues}/{question.clues.length})</span>
+                        </div>
+                        <div className="space-y-6">
+                            {visibleClues.map((clue,i)=>{
+                                const isLast = i === question.clues.length - 1;
+                                const showLatex = !isLast || isSolutionRevealed;
+                                return (
+                                    <div key={i} className="group animate-slide-down">
+                                        <div className="text-sm text-accent-900 mb-2 font-medium leading-relaxed">
+                                            <MathText text={clue.text}/>
+                                        </div>
+                                        {clue.latex && showLatex && (
+                                            <div className="bg-white p-3 rounded-lg border border-accent-200 text-center shadow-sm overflow-x-auto">
+                                                <MathText text={`$${clue.latex}$`} large={true}/>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            };
+
             return(
                 <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
-                    <MobileDrawer open={mobileHistoryOpen} onClose={()=>setMobileHistoryOpen(false)} history={uiState.history} ui={ui}/>
+                    <MobileDrawer/>
                     <LevelUpModal 
                         visible={levelUpAvailable} 
                         ui={ui} 
@@ -498,7 +432,7 @@
                         visible={showStreakModal}
                         streak={streak}
                         ui={ui}
-                        onClose={() => { setShowStreakModal(false); actions.retry(); }} 
+                        onClose={() => { setShowStreakModal(false); actions.retry(); }} // Generate next question on close
                     />
                     <TotalCorrectModal
                         visible={showTotalModal}
@@ -512,6 +446,7 @@
                             <div className="flex items-center gap-3"><div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200"><button onClick={()=>handleChangeLevel(-1)} disabled={uiState.level<=1} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.prevLevel}>&lt;</button><span className="text-xs font-bold uppercase tracking-wider text-gray-500 min-w-[80px] text-center">{uiState.topic} • Lvl {uiState.level}</span><button onClick={()=>handleChangeLevel(1)} disabled={uiState.level>=maxLevels} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.nextLevel}>&gt;</button></div><button onClick={()=>setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button></div>
                         </div>
                         <main className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
+                            {/* REDUCED PADDING & SPACING IN MAIN CONTENT */}
                             {loading?(<div className="p-20 text-center flex flex-col items-center gap-4"><div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div></div>):question?(<div className="p-4 sm:p-6">
                                 <div className="mb-4 flex justify-center bg-gray-50 rounded-xl p-4 min-h-[160px] items-center border border-gray-100 relative">
                                     {question.renderData.graph ? (
@@ -534,376 +469,30 @@
                                 ) : (
                                     <div className="relative"><input type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder={ui.placeholder} autoFocus disabled={feedback === 'correct'}/></div>
                                 )}
-                                <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback==='correct'?'bg-primary-500 shadow-green-200 cursor-default':'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}>{feedback==='correct'?ui.correct:feedback==='incorrect'?ui.incorrect:ui.submit}</button></form>)}<div className="mt-6 flex gap-3 justify-center flex-wrap"><button type="button" onClick={handleHint} disabled={!question.clues||revealedClues.length>=question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-accent-50 text-accent-700 border border-accent-200 hover:bg-accent-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button><button type="button" onClick={handleSolution} disabled={!question.clues||isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button><button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"><span>⏭️</span> {ui.btnSkip}</button></div></div>):(<div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={actions.retry} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>)}</main>
-                    </div>
-                    <div className="lg:w-80 w-full shrink-0 flex flex-col gap-4 hidden lg:flex">
-                        <CluePanel revealedClues={revealedClues} question={question} ui={ui} isSolutionRevealed={isSolutionRevealed}/>
-                        <div className="flex-1 min-h-0"><HistoryList history={uiState.history} ui={ui}/></div>
-                    </div>
-                </div>
-            );
-        };
+                                <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback==='correct'?'bg-primary-500 shadow-green-200 cursor-default':'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}>{feedback==='correct'?ui.correct:feedback==='incorrect'?ui.incorrect:ui.submit}</button></form>)}<div className="mt-6 flex gap-3 justify-center flex-wrap"><button type="button" onClick={handleHint} disabled={!question.clues||revealedClues>=question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-accent-50 text-accent-700 border border-accent-200 hover:bg-accent-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button><button type="button" onClick={handleSolution} disabled={!question.clues||isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button><button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"><span>⏭️</span> {ui.btnSkip}</button></div></div>):(<div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={actions.retry} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>)}</main></div><div className="lg:w-80 w-full shrink-0 flex flex-col gap-4"><CluePanel/><div className="hidden lg:block flex-1 min-h-0"><HistoryList history={uiState.history}/></div></div></div>);};
 
-        // --- APP CONTROLLER ---
-        function App(){
-            const[view,setView]=useState('dashboard');
-            const[lang,setLang]=useState('sv');
-            const[topic,setTopic]=useState('');
-            const[level,setLevel]=useState(0);
-            
-            const[question,setQuestion]=useState(null);
-            const[input,setInput]=useState('');
-            const[feedback,setFeedback]=useState(null);
-            const[loading,setLoading]=useState(false);
-            
-            // Session Stats
-            const[streak,setStreak]=useState(0);
-            const[totalCorrect, setTotalCorrect] = useState(0); 
-            const[sessionStats, setSessionStats] = useState({
-                attempted: 0,
-                correctNoHelp: 0,
-                correctHelp: 0,
-                incorrect: 0,
-                skipped: 0,
-                maxStreak: 0
-            });
+        function App(){const[view,setView]=useState('dashboard');const[lang,setLang]=useState('sv');const[topic,setTopic]=useState('');const[level,setLevel]=useState(0);const[question,setQuestion]=useState(null);const[input,setInput]=useState('');const[feedback,setFeedback]=useState(null);const[loading,setLoading]=useState(false);const[streak,setStreak]=useState(0);const[totalCorrect, setTotalCorrect] = useState(0); // Total correct answers
+        const[history,setHistory]=useState([]);const[revealedClues,setRevealedClues]=useState(0);const[levelUpAvailable,setLevelUpAvailable]=useState(false);const[aboutOpen,setAboutOpen]=useState(false);const[usedHelp, setUsedHelp] = useState(false);const[isSolutionRevealed, setIsSolutionRevealed] = useState(false);const[showStreakModal, setShowStreakModal] = useState(false);const[showTotalModal, setShowTotalModal] = useState(false);const ui=UI_TEXT[lang];const fetchQuestion=async(t=topic,l=level,lg=lang)=>{if(!t||!l)return;setLoading(true);setFeedback(null);setInput('');setRevealedClues(0);setUsedHelp(false);setIsSolutionRevealed(false);setLevelUpAvailable(false);try{const res=await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}`);const data=await res.json();if(data.error)throw new Error(data.error);setQuestion(data);}catch(e){console.error(e);setQuestion(null);}finally{setLoading(false);}};const startPractice=()=>{if(topic&&level){setStreak(0);setView('practice');fetchQuestion(topic,level,lang);}};const quitPractice=()=>{setStreak(0);setView('dashboard');setQuestion(null);};const handleSelection=(t,l)=>{setTopic(t);setLevel(l);};const handleHint=()=>{if(question?.clues){setUsedHelp(true);setRevealedClues(p=>Math.min(p+1,question.clues.length));}};const handleSolution=()=>{if(question?.clues){setUsedHelp(true);setRevealedClues(question.clues.length);setIsSolutionRevealed(true);setStreak(0);}};const handleSkip=()=>{const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;setHistory(prev=>[{topic,level,correct:false,skipped:true,text:descText||question.renderData.latex,clueUsed:revealedClues>0||isSolutionRevealed,time:Date.now()},...prev]);setStreak(0);fetchQuestion(topic,level,lang);};const handleChangeLevel=(delta)=>{const newLevel=level+delta;const max=Object.keys(LEVEL_DESCRIPTIONS[topic]||{}).length;if(newLevel>=1&&newLevel<=max){setStreak(0);setLevel(newLevel);fetchQuestion(topic,newLevel,lang);}};const handleSubmit=async(e,directInput)=>{e.preventDefault();const answerToSubmit=directInput!==undefined?directInput:input;if(!question||!answerToSubmit)return;const helpUsed=revealedClues>0||isSolutionRevealed;try{const res=await fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:answerToSubmit,token:question.token,streak:streak,level:level,topic:topic,usedHelp:helpUsed,solutionUsed:isSolutionRevealed,attempts:question.attempts})});const result=await res.json();const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;if(result.correct){setHistory(prev=>[{topic,level,correct:true,text:descText||question.renderData.latex,clueUsed:helpUsed,time:Date.now()},...prev]);setFeedback('correct');setStreak(result.newStreak);
+        
+        // Handle Total Correct (Independent of streak, but not if solution used)
+        if (!isSolutionRevealed) {
+            const newTotal = totalCorrect + 1;
+            setTotalCorrect(newTotal);
+            if ([10, 20, 30, 40, 50].includes(newTotal)) {
+                setShowTotalModal(true);
+            }
+        }
 
-            const[history,setHistory]=useState([]);
-            const[revealedClues,setRevealedClues]=useState([]); // Fixed type to array
-            const[levelUpAvailable,setLevelUpAvailable]=useState(false);
-            const[aboutOpen,setAboutOpen]=useState(false);
-            const[statsOpen, setStatsOpen] = useState(false);
-            const[timeUpOpen, setTimeUpOpen] = useState(false);
-
-            // Modals State
-            const[showStreakModal, setShowStreakModal] = useState(false);
-            const[showTotalModal, setShowTotalModal] = useState(false);
-            
-            const[usedHelp, setUsedHelp] = useState(false);
-            const[isSolutionRevealed, setIsSolutionRevealed] = useState(false);
-            const[mobileHistoryOpen,setMobileHistoryOpen]=useState(false);
-            
-            // Timer State
-            const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
-
-            const ui=UI_TEXT[lang];
-
-            // Timer Logic
-            useEffect(() => {
-                let interval = null;
-                if (timerSettings.isActive && timerSettings.remaining > 0 && view === 'practice') {
-                    interval = setInterval(() => {
-                        setTimerSettings(prev => {
-                            if (prev.remaining <= 1) {
-                                clearInterval(interval);
-                                setTimeUpOpen(true);
-                                return { ...prev, remaining: 0, isActive: false };
-                            }
-                            return { ...prev, remaining: prev.remaining - 1 };
-                        });
-                    }, 1000);
-                }
-                return () => clearInterval(interval);
-            }, [timerSettings.isActive, view, timerSettings.remaining]);
-
-            const toggleTimer = (minutes) => {
-                const seconds = minutes * 60;
-                setTimerSettings({ duration: seconds, remaining: seconds, isActive: minutes > 0 });
-            };
-            
-            const resetTimer = () => {
-                setTimerSettings({ duration: 0, remaining: 0, isActive: false });
-            };
-
-            const formatTime = (seconds) => {
-                const m = Math.floor(seconds / 60);
-                const s = seconds % 60;
-                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            };
-
-            useEffect(() => {
-                if (streak > sessionStats.maxStreak) {
-                    setSessionStats(prev => ({...prev, maxStreak: streak}));
-                }
-            }, [streak]);
-
-            const fetchQuestion=async(t=topic,l=level,lg=lang)=>{
-                if (showStreakModal || showTotalModal || levelUpAvailable || timeUpOpen) return;
-                if(!t||!l)return;
-                setLoading(true);
-                setFeedback(null);
-                setInput('');
-                setRevealedClues([]); // Fixed reset
-                setUsedHelp(false);
-                setIsSolutionRevealed(false);
-                setLevelUpAvailable(false);
-                try{
-                    const res=await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}`);
-                    const data=await res.json();
-                    if(data.error)throw new Error(data.error);
-                    setQuestion(data);
-                }catch(e){
-                    console.error(e);
-                    setQuestion(null);
-                }finally{
-                    setLoading(false);
-                }
-            };
-
-            const startPractice=()=>{
-                if(topic&&level){
-                    setStreak(0);
-                    setView('practice');
-                    if (timerSettings.duration > 0) {
-                        setTimerSettings(prev => ({ ...prev, isActive: true }));
-                    }
-                    fetchQuestion(topic,level,lang);
-                }
-            };
-
-            const quitPractice=()=>{
-                setStreak(0);
-                setView('dashboard');
-                setQuestion(null);
-            };
-
-            const handleSelection=(t,l)=>{setTopic(t);setLevel(l);};
-            const handleHint=()=>{
-                if(question?.clues){
-                    setUsedHelp(true);
-                    // Add next clue to revealed list
-                    const currentLen = revealedClues.length;
-                    if(currentLen < question.clues.length) {
-                         setRevealedClues([...revealedClues, question.clues[currentLen]]);
-                    }
-                }
-            };
-            const handleSolution=()=>{
-                if(question?.clues){
-                    setUsedHelp(true);
-                    setRevealedClues(question.clues); // Reveal all
-                    setIsSolutionRevealed(true);
-                    setStreak(0);
-                }
-            };
-            
-            const updateStats = (type) => { 
-                setSessionStats(prev => ({
-                    ...prev,
-                    attempted: prev.attempted + 1,
-                    [type]: prev[type] + 1
-                }));
-            };
-
-            const handleSkip=()=>{
-                const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;
-                setHistory(prev=>[{topic,level,correct:false,skipped:true,text:descText||question.renderData.latex,clueUsed:revealedClues.length>0||isSolutionRevealed,time:Date.now()},...prev]);
-                setStreak(0);
-                updateStats('skipped');
-                fetchQuestion(topic,level,lang);
-            };
-
-            const handleChangeLevel=(delta)=>{const newLevel=level+delta;const max=Object.keys(LEVEL_DESCRIPTIONS[topic]||{}).length;if(newLevel>=1&&newLevel<=max){setStreak(0);setLevel(newLevel);fetchQuestion(topic,newLevel,lang);}};
-
-            const handleSubmit=async(e,directInput)=>{
-                e.preventDefault();
-                if (showStreakModal || showTotalModal || timeUpOpen) return;
-
-                // Handle composite scale input if needed
-                let finalInput = directInput !== undefined ? directInput : input;
-                // NOTE: Scale input logic handled in PracticeView, it calls this with combined string
-
-                if(!question||!finalInput)return;
-                
-                const helpUsed=revealedClues.length>0||isSolutionRevealed;
-                
-                try{
-                    const res=await fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:finalInput,token:question.token,streak:streak,level:level,topic:topic,usedHelp:helpUsed,solutionUsed:isSolutionRevealed,attempts:question.attempts})});
-                    const result=await res.json();
-                    const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;
-                    
-                    if(result.correct){
-                        setHistory(prev=>[{topic,level,correct:true,text:descText||question.renderData.latex,clueUsed:helpUsed,time:Date.now()},...prev]);
-                        setFeedback('correct');
-                        setStreak(result.newStreak);
-                        
-                        if (!helpUsed) updateStats('correctNoHelp');
-                        else updateStats('correctHelp');
-                        
-                        if (!isSolutionRevealed) {
-                            const newTotal = totalCorrect + 1;
-                            setTotalCorrect(newTotal);
-                            if ([10, 20, 30, 40, 50].includes(newTotal)) {
-                                setShowTotalModal(true);
-                            }
-                        }
-
-                        if ([15, 20, 30, 40, 50].includes(result.newStreak)) {
-                            setShowStreakModal(true);
-                        } else {
-                             if(result.levelUp) setLevelUpAvailable(true);
-                             setTimeout(()=>{
-                                 if (!showTotalModal && !showStreakModal) {
-                                    if(!result.levelUp) fetchQuestion(topic,level,lang);
-                                 }
-                             },1500);
-                        }
-                    
-                    } else {
-                        // Incorrect
-                        question.attempts=(question.attempts||0)+1; // Local mutation for immediate feedback loop
-                        if(result.action==='next_clue'){
-                            handleHint();
-                        } else if(result.action==='show_solution'){
-                            handleSolution();
-                            updateStats('incorrect');
-                            setHistory(prev=>[{topic,level,correct:false,text:descText||question.renderData.latex,clueUsed:true,correctAnswer:result.correctAnswer,time:Date.now()},...prev]);
-                        }
-                        setFeedback('incorrect');
-                        setStreak(0);
-                    }
-                } catch(e){console.error(e);}
-            };
-
-            const closeStreakModal = () => {
-                setShowStreakModal(false);
-                if (!showTotalModal && !timeUpOpen && !levelUpAvailable) {
-                    fetchQuestion(topic, level, lang);
-                }
-            };
-
-            const closeTotalModal = () => {
-                setShowTotalModal(false);
-                if (!showStreakModal && !timeUpOpen && !levelUpAvailable && feedback === 'correct') {
-                     fetchQuestion(topic, level, lang);
-                }
-            };
-            
-            const closeTimeUp = () => {
-                setTimeUpOpen(false);
-            };
-
-            return(
-                <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
-                    <AboutModal visible={aboutOpen} onClose={()=>setAboutOpen(false)} ui={ui}/>
-                    <StatsModal visible={statsOpen} stats={sessionStats} ui={ui} onClose={()=>setStatsOpen(false)} title={ui.stats_title} />
-                    <StatsModal visible={timeUpOpen} stats={sessionStats} ui={ui} onClose={closeTimeUp} title={ui.stats_times_up} />
-                    
-                    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                <h1 className="text-xl font-bold text-primary-700 tracking-tight cursor-pointer" onClick={quitPractice}>Anpassa</h1>
-                                {view === 'dashboard' && timerSettings.remaining > 0 && (
-                                    <div className="hidden sm:flex bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold items-center gap-2 border border-orange-200">
-                                        <span>⏸ {ui.timer_paused}</span>
-                                        <span className="font-mono text-sm">{formatTime(timerSettings.remaining)}</span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-3">
-                                {totalCorrect > 0 && <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-primary-200">✅ {totalCorrect}</div>}
-                                {streak > 0 && <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-yellow-200">🔥 {streak}</div>}
-                                <button onClick={()=>setStatsOpen(true)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title={ui.stats_title}>
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                                </button>
-                                <button onClick={()=>setAboutOpen(true)} className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-1 px-4 text-xs rounded-full shadow-sm transition-transform transform active:scale-95">{ui.aboutBtn}</button>
-                            </div>
-                        </div>
-                    </header>
-                    
-                    <div className="flex-1 flex flex-col">
-                        {view==='dashboard'?(
-                            <div className="w-full">
-                                <Dashboard lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice}/>
-                                <div className="max-w-md mx-auto px-4 mb-8">
-                                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
-                                        <span className="font-bold text-gray-700 text-sm">{ui.timer_title}</span>
-                                        <div className="flex items-center gap-3">
-                                            <div className="relative group">
-                                                <select 
-                                                    value={timerSettings.duration / 60} 
-                                                    onChange={(e) => toggleTimer(Number(e.target.value))}
-                                                    className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-1 pl-3 pr-8 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
-                                                >
-                                                    <option value="0">{ui.timer_off}</option>
-                                                    {[5, 10, 15, 20, 30, 45, 60].map(m => <option key={m} value={m}>{m} {ui.timer_min}</option>)}
-                                                </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                                                </div>
-                                            </div>
-                                            {timerSettings.duration > 0 && (
-                                                <button onClick={resetTimer} className="text-xs text-red-500 hover:text-red-700 font-medium underline">{ui.timer_reset}</button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ):(
-                            <>
-                                <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4 flex justify-between items-center">
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={quitPractice} className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm px-4 py-2 rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-2">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                                            {ui.menu_btn}
-                                        </button>
-                                        
-                                        {timerSettings.duration > 0 && (
-                                            <div className={`font-mono text-lg font-bold px-3 py-1 rounded-lg border ${timerSettings.remaining < 60 ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-white text-gray-700 border-gray-200'}`}>
-                                                {formatTime(timerSettings.remaining)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <button onClick={()=>setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>
-                                </div>
-                                <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
-                                     <MobileDrawer open={mobileHistoryOpen} onClose={()=>setMobileHistoryOpen(false)} history={history} ui={ui}/>
-                                     
-                                     <div className="flex-1 w-full min-w-0">
-                                         <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
-                                             <button onClick={actions.goBack} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm px-4 py-2 rounded-lg shadow-sm border border-gray-300 transition-all active:scale-95"><span>←</span> {ui.backBtn}</button>
-                                             <div className="flex items-center gap-3"><div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200"><button onClick={()=>handleChangeLevel(-1)} disabled={uiState.level<=1} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.prevLevel}>&lt;</button><span className="text-xs font-bold uppercase tracking-wider text-gray-500 min-w-[80px] text-center">{uiState.topic} • Lvl {uiState.level}</span><button onClick={()=>handleChangeLevel(1)} disabled={uiState.level>=maxLevels} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.nextLevel}>&gt;</button></div></div>
-                                         </div>
-                                         <main className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
-                                            {loading?(<div className="p-20 text-center flex flex-col items-center gap-4"><div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div></div>):question?(<div className="p-4 sm:p-6">
-                                                <div className="mb-4 flex justify-center bg-gray-50 rounded-xl p-4 min-h-[160px] items-center border border-gray-100 relative">
-                                                    {question.renderData.graph ? (
-                                                        <GraphCanvas data={question.renderData.graph}/>
-                                                    ) : question.renderData.geometry ? (
-                                                        ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(question.renderData.geometry.type) 
-                                                        ? <VolumeVisualization data={question.renderData.geometry}/> 
-                                                        : <GeometryVisual data={question.renderData.geometry}/>
-                                                    ) : (
-                                                        <div className="flex flex-col items-center justify-center w-full">
-                                                            {uiState.topic==='geometry' && <StaticGeometryVisual description={descriptionText}/>}
-                                                            {question.renderData.latex && <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true}/></div>}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="mb-4 text-center"><h2 className="text-lg sm:text-xl font-medium text-gray-700 leading-relaxed"><MathText text={descriptionText}/></h2></div>
-                                                {question.renderData.answerType==='multiple_choice'?(<div className="max-w-md mx-auto grid grid-cols-2 gap-4">{question.renderData.choices.map((choice,idx)=>(<button key={idx} onClick={()=>handleChoiceClick(choice)} className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback==='correct'&&choice===input?'bg-green-500 border-green-500 text-white':feedback==='incorrect'&&choice===input?'bg-red-500 border-red-500 text-white':'bg-white border-gray-200 text-gray-700 hover:border-accent-500 hover:text-accent-600'}`} disabled={feedback==='correct'}>{choice}</button>))}</div>):(<form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
-                                                {question.renderData.answerType === 'scale' ? (
-                                                    <div className="flex items-center justify-center gap-2"><input type="text" value={scaleInputLeft} onChange={(e) => setScaleInputLeft(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder="X" autoFocus disabled={feedback === 'correct'} /><span className="text-2xl font-bold text-gray-400">:</span><input type="text" value={scaleInputRight} onChange={(e) => setScaleInputRight(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder="X" disabled={feedback === 'correct'} /></div>
-                                                ) : (
-                                                    <div className="relative"><input type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder={ui.placeholder} autoFocus disabled={feedback === 'correct'}/></div>
-                                                )}
-                                                <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback==='correct'?'bg-primary-500 shadow-green-200 cursor-default':'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}>{feedback==='correct'?ui.correct:feedback==='incorrect'?ui.incorrect:ui.submit}</button></form>)}<div className="mt-6 flex gap-3 justify-center flex-wrap"><button type="button" onClick={handleHint} disabled={!question.clues||revealedClues.length>=question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-accent-50 text-accent-700 border border-accent-200 hover:bg-accent-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button><button type="button" onClick={handleSolution} disabled={!question.clues||isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button><button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"><span>⏭️</span> {ui.btnSkip}</button></div></div>):(<div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={actions.retry} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>)}</main>
-                                     </div>
-                                     <div className="lg:w-80 w-full shrink-0 flex flex-col gap-4 hidden lg:flex">
-                                         <CluePanel revealedClues={revealedClues} question={question} ui={ui} isSolutionRevealed={isSolutionRevealed}/>
-                                         <div className="flex-1 min-h-0"><HistoryList history={history} ui={ui}/></div>
-                                     </div>
-                                </div>
-                                <LevelUpModal visible={levelUpAvailable} ui={ui} onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }} onStay={() => setLevelUpAvailable(false)} />
-                                <StreakModal visible={showStreakModal} streak={streak} ui={ui} onClose={closeStreakModal} />
-                                <TotalCorrectModal visible={showTotalModal} total={totalCorrect} ui={ui} onClose={closeTotalModal} />
-                            </>
-                        )}
-                    </div>
-                </div>
-            );
+        // Handle Streak Milestones
+        if ([15, 20, 30, 40, 50].includes(result.newStreak)) {
+            setShowStreakModal(true);
+            // Don't auto-fetch question if showing modal
+        } else {
+             if(result.levelUp)setLevelUpAvailable(true);
+             setTimeout(()=>{if(!result.levelUp)fetchQuestion(topic,level,lang);},1500);
         }
         
+        }else{question.attempts=(question.attempts||0)+1;if(result.action==='next_clue'){handleHint();}else if(result.action==='show_solution'){handleSolution();setHistory(prev=>[{topic,level,correct:false,text:descText||question.renderData.latex,clueUsed:true,correctAnswer:result.correctAnswer,time:Date.now()},...prev]);}setFeedback('incorrect');setStreak(0);}}catch(e){console.error(e);}};return(<div className="min-h-screen flex flex-col bg-gray-50"><AboutModal visible={aboutOpen} onClose={()=>setAboutOpen(false)} ui={ui}/><header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm"><div className="max-w-7xl mx-auto flex justify-between items-center"><div className="flex items-center gap-4"><h1 className="text-xl font-bold text-primary-700 tracking-tight cursor-pointer" onClick={()=>setView('dashboard')}>Anpassa</h1></div><div className="flex items-center gap-4"><div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">✅ {totalCorrect}</div><div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">{ui.streak}: {streak} 🔥</div><button onClick={()=>setAboutOpen(true)} className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-1 px-4 text-xs rounded-full shadow-sm transition-transform transform active:scale-95">{ui.aboutBtn}</button></div></div></header><div className="flex-1 flex flex-col">{view==='dashboard'?(<Dashboard lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice}/>):(<PracticeView lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip} handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{history,topic,level}} actions={{goBack:quitPractice,retry:()=>fetchQuestion(topic,level,lang)}} levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable} isSolutionRevealed={isSolutionRevealed} showStreakModal={showStreakModal} setShowStreakModal={setShowStreakModal} showTotalModal={showTotalModal} setShowTotalModal={setShowTotalModal} totalCorrect={totalCorrect}/>)}</div><footer className="w-full py-6 text-gray-400 text-xs text-center border-t border-gray-200 font-medium flex justify-center items-center gap-4"><span>Created by: Charles Mejilla, 2026</span><button onClick={()=>setLang(l=>l==='sv'?'en':'sv')} className="text-sm font-semibold text-gray-600 hover:text-primary-600 transition-colors">{lang==='sv'?'🇸🇪 Svenska':'🇬🇧 English'}</button></footer></div>);}
         const root=ReactDOM.createRoot(document.getElementById('root'));root.render(<App/>);
     </script>
 </body>
