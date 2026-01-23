@@ -379,17 +379,17 @@
             );
         };
         
-        // NEW: Granular Breakdown Component
+        // NEW: Granular Breakdown Component (Updated Layout)
         const LevelBreakdown = ({ granularStats, ui, lang }) => {
             const topics = Object.keys(granularStats);
             if (topics.length === 0) return null;
 
             return (
-                <div className="mt-6 border-t border-gray-100 pt-4 flex-1 overflow-hidden flex flex-col min-h-0">
-                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 shrink-0">
+                <div className="mt-6 border-t border-gray-100 pt-4 w-full">
+                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">
                         {ui.level_breakdown}
                     </h4>
-                    <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                    <div className="space-y-4">
                         {topics.map(topicKey => {
                             const topicLevels = granularStats[topicKey];
                             const levels = Object.keys(topicLevels).sort((a,b) => Number(a)-Number(b));
@@ -445,7 +445,7 @@
             );
         };
         
-        // UPDATED: Stats Modal with Responsive Layout
+        // UPDATED: Stats Modal with Vertical Stack Scroll
         const StatsModal = ({ visible, stats, granularStats, ui, onClose, title, lang }) => {
             if (!visible) return null;
             const attemptCount = stats.attempted || 0;
@@ -453,12 +453,15 @@
             
             return (
                 <div className="fixed inset-0 z-[100] flex sm:items-center justify-center sm:p-4 bg-white sm:bg-black/50 sm:backdrop-blur-sm fade-in">
-                    <div className="bg-white w-full h-full sm:h-auto sm:max-h-[85vh] sm:rounded-2xl sm:shadow-2xl sm:max-w-md p-6 relative flex flex-col sm:border-4 sm:border-blue-500 overflow-hidden">
+                    {/* Modal Container: Scrollable as one unit */}
+                    <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl sm:shadow-2xl sm:max-w-md p-6 relative flex flex-col sm:border-4 sm:border-blue-500 overflow-y-auto custom-scrollbar">
+                        
                         <div className="flex justify-between items-center mb-6 shrink-0">
                             <h3 className="text-2xl font-bold text-gray-900">{title || ui.stats_title}</h3>
                             <button onClick={onClose} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 sm:hidden">✕</button>
                         </div>
                         
+                        {/* Global Stats Grid */}
                         <div className="shrink-0 grid grid-cols-2 gap-4 text-left text-sm mb-6">
                             <div className="text-gray-500">{ui.stats_longest_streak}</div>
                             <div className="font-bold text-right">{stats.maxStreak} 🔥</div>
@@ -474,9 +477,10 @@
                             <div className="font-bold text-right text-gray-400">{stats.skipped}</div>
                         </div>
 
+                        {/* Level Breakdown - Stacked underneath */}
                         <LevelBreakdown granularStats={granularStats} ui={ui} lang={lang} />
                         
-                        <button onClick={onClose} className="mt-6 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 text-lg shrink-0 hidden sm:block">
+                        <button onClick={onClose} className="mt-8 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 text-lg shrink-0 hidden sm:block">
                             {ui.stats_close}
                         </button>
                     </div>
