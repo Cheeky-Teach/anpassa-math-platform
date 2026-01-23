@@ -170,7 +170,7 @@ export const TERMS = {
         
         expl_var_basic: { sv: "Variabeln (x) representerar det okända antalet.", en: "The variable (x) represents the unknown number." },
         expl_fixed_cost: { sv: "Detta är den fasta avgiften/kostnaden.", en: "This is the fixed fee/cost." },
-        expl_rate_val: { sv: "Detta är priset per styck (multipliceras med x).", en: "This is the price per item (multiplied by x)." },
+        expl_variable_cost: { sv: "Detta är kostnaden som beror på x.", en: "This is the cost dependent on x." },
         expl_total: { sv: "Detta är summan av alla delar.", en: "This is the sum of all parts." },
         expl_discount: { sv: "Rabatten dras bort från totalen.", en: "The discount is subtracted from the total." },
         expl_compare: { sv: "Vi jämför två mängder.", en: "We are comparing two quantities." },
@@ -215,10 +215,15 @@ export const TERMS = {
         clue_setup: { sv: "Ställ upp ekvationen.", en: "Set up the equation." },
         clue_total: { sv: "Totalt är det", en: "The total is" },
         
-        expl_fixed_val: { sv: "Detta är det fasta värdet (t.ex. startavgift/påse).", en: "This is the fixed value (e.g. start fee/bag)." },
-        expl_rate_val: { sv: "Detta är det rörliga värdet (pris/st * antal).", en: "This is the variable value (price/item * quantity)." },
+        // NEW EXPLANATIONS for Clues
+        expl_fixed_val: { sv: "Detta är det fasta värdet (t.ex. startavgift eller påse).", en: "This is the fixed value (e.g. start fee or bag)." },
+        expl_rate_val: { sv: "Detta är det rörliga värdet (pris per styck · antal).", en: "This is the variable value (price per item · quantity)." },
         expl_person1: { sv: "Den första personen har x.", en: "The first person has x." },
         expl_person2_more: { sv: "Den andra personen har mer än den första.", en: "The second person has more than the first." },
-        expl_person2_less: { sv: "Den andra personen har mindre än den första.", en: "The second person has less than the first." }
+        expl_person2_less: { sv: "Den andra personen har mindre än den första.", en: "The second person has less than the first." },
+        expl_item_cost: { sv: "Priset för varorna är:", en: "The price for the items is:" },
+        expl_discount_sub: { sv: "Rabatten dras bort:", en: "The discount is subtracted:" },
+        expl_compare_sum: { sv: "Vi adderar båda personernas antal:", en: "We add both amounts:" },
+        expl_compare_diff: { sv: "Summan av båda personerna är:", en: "The sum of both people is:" }
     }
 };

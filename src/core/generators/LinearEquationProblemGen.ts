@@ -12,8 +12,8 @@ interface ProblemScenario {
 }
 
 interface MathData {
-    vars: Record<string, number>;
-    solution: number;
+    vars: Record<string, number>; // Constants a, b, c
+    solution: number; // x
     equation: string;
     stepsSolve: (lang: Language, formatColor: (v:any)=>string) => Clue[];
     stepsWrite: (lang: Language, formatColor: (v:any)=>string) => Clue[];
@@ -23,7 +23,7 @@ export class LinearEquationProblemGen {
     
     private static getScenarios(): ProblemScenario[] {
         return [
-            // --- TYPE A: ax + b = c ---
+            // --- TYPE A: ax + b = c (Shopping/Taxi) ---
             {
                 id: 'shopping_bag',
                 type: 'A',
@@ -34,19 +34,22 @@ export class LinearEquationProblemGen {
                     const a = rng.intBetween(5, 25); 
                     const b = rng.pick([2, 5, 10]); 
                     const c = a * x + b;
+                    
+                    // x IS NOT PASSED in vars to prevent auto-replacement in text
                     return {
-                        vars: { x, a, b, c },
+                        vars: { a, b, c }, 
                         solution: x,
                         equation: `${a}x + ${b} = ${c}`,
                         stepsWrite: (lang, fc) => [
-                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `\\text{Pris} \\cdot \\text{Antal} = ${a} \\cdot x` },
+                            { text: t(lang, TERMS.problem_solving.clue_var), latex: "x" },
+                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `\\text{Pris} \\cdot \\text{Antal} = ${a} \\cdot x = ${a}x` },
                             { text: t(lang, TERMS.problem_solving.expl_fixed_val), latex: `+ ${b}` },
                             { text: t(lang, TERMS.problem_solving.clue_total), latex: `${a}x + ${b} = ${c}` }
                         ],
                         stepsSolve: (lang, fc) => [
                             { text: t(lang, TERMS.common.equation), latex: `${a}x + ${b} = ${c}` },
-                            { text: t(lang, TERMS.algebra.subtract(b)), latex: `${a}x = ${c - b}` },
-                            { text: t(lang, TERMS.algebra.divide(a)), latex: `x = ${fc(x)}` }
+                            { text: t(lang, TERMS.algebra.subtract(b)), latex: `${a}x = ${c - b} = ${c - b}` },
+                            { text: t(lang, TERMS.algebra.divide(a)), latex: `x = \\frac{${c - b}}{${a}} = ${fc(x)}` }
                         ]
                     };
                 }
@@ -62,13 +65,14 @@ export class LinearEquationProblemGen {
                     const b = rng.pick([45, 50, 75, 100]); 
                     const c = a * x + b;
                     return {
-                        vars: { x, a, b, c },
+                        vars: { a, b, c },
                         solution: x,
                         equation: `${a}x + ${b} = ${c}`,
                         stepsWrite: (lang, fc) => [
-                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a} \\cdot x` },
-                            { text: t(lang, TERMS.problem_solving.expl_fixed_val), latex: `+ ${b}` },
-                            { text: t(lang, TERMS.problem_solving.clue_total), latex: `${a}x + ${b} = ${c}` }
+                             { text: t(lang, TERMS.problem_solving.clue_var), latex: "x" },
+                             { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a} \\cdot x` },
+                             { text: t(lang, TERMS.problem_solving.expl_fixed_val), latex: `+ ${b}` },
+                             { text: t(lang, TERMS.problem_solving.clue_total), latex: `${a}x + ${b} = ${c}` }
                         ],
                         stepsSolve: (lang, fc) => [
                             { text: t(lang, TERMS.common.equation), latex: `${a}x + ${b} = ${c}` },
@@ -78,7 +82,8 @@ export class LinearEquationProblemGen {
                     };
                 }
             },
-            // --- TYPE B: ax - b = c ---
+
+            // --- TYPE B: ax - b = c (Discount) ---
             {
                 id: 'shopping_discount',
                 type: 'B',
@@ -90,12 +95,13 @@ export class LinearEquationProblemGen {
                     const b = rng.pick([20, 50, 100]); 
                     const c = a * x - b;
                     return {
-                        vars: { x, a, b, c },
+                        vars: { a, b, c }, // x excluded
                         solution: x,
                         equation: `${a}x - ${b} = ${c}`,
                         stepsWrite: (lang, fc) => [
-                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a} \\cdot x` },
-                            { text: t(lang, TERMS.simplification.expl_discount), latex: `-${b}` },
+                            { text: t(lang, TERMS.problem_solving.clue_var), latex: "x" },
+                            { text: t(lang, TERMS.problem_solving.expl_item_cost), latex: `${a}x` },
+                            { text: t(lang, TERMS.problem_solving.expl_discount_sub), latex: `-${b}` },
                             { text: t(lang, TERMS.problem_solving.clue_total), latex: `${a}x - ${b} = ${c}` }
                         ],
                         stepsSolve: (lang, fc) => [
@@ -106,7 +112,8 @@ export class LinearEquationProblemGen {
                     };
                 }
             },
-             // --- TYPE C: x + (x + a) = c ---
+
+            // --- TYPE C: x + (x + a) = c (Comparison Sum) ---
             {
                 id: 'compare_sum',
                 type: 'C',
@@ -117,13 +124,14 @@ export class LinearEquationProblemGen {
                     const a = rng.intBetween(2, 10); 
                     const total = x + (x + a);
                     return {
-                        vars: { x, a, c: total },
+                        vars: { a, c: total }, // x excluded
                         solution: x,
                         equation: `2x + ${a} = ${total}`,
                         stepsWrite: (lang, fc) => [
                             { text: t(lang, TERMS.problem_solving.expl_person1), latex: "x" },
                             { text: t(lang, TERMS.problem_solving.expl_person2_more), latex: `x + ${a}` },
-                            { text: t(lang, TERMS.simplification.group_terms), latex: `x + (x + ${a}) = 2x + ${a}` }
+                            { text: t(lang, TERMS.problem_solving.expl_compare_sum), latex: `x + (x + ${a}) = ${total}` },
+                            { text: t(lang, TERMS.common.simplify), latex: `2x + ${a} = ${total}` }
                         ],
                         stepsSolve: (lang, fc) => [
                             { text: t(lang, TERMS.common.equation), latex: `2x + ${a} = ${total}` },
@@ -133,7 +141,8 @@ export class LinearEquationProblemGen {
                     };
                 }
             },
-            // --- TYPE D: x + (x - b) = c ---
+
+            // --- TYPE D: x + (x - b) = c (Comparison Diff) ---
             {
                 id: 'compare_diff',
                 type: 'D',
@@ -144,13 +153,14 @@ export class LinearEquationProblemGen {
                     const b = rng.intBetween(2, 8);   
                     const total = x + (x - b);
                     return {
-                        vars: { x, b, c: total },
+                        vars: { b, c: total }, // x excluded
                         solution: x,
                         equation: `2x - ${b} = ${total}`,
                         stepsWrite: (lang, fc) => [
                             { text: t(lang, TERMS.problem_solving.expl_person1), latex: "x" },
                             { text: t(lang, TERMS.problem_solving.expl_person2_less), latex: `x - ${b}` },
-                            { text: t(lang, TERMS.simplification.group_terms), latex: `x + (x - ${b}) = 2x - ${b}` }
+                            { text: t(lang, TERMS.problem_solving.expl_compare_sum), latex: `x + (x - ${b}) = ${total}` },
+                            { text: t(lang, TERMS.common.simplify), latex: `2x - ${b} = ${total}` }
                         ],
                         stepsSolve: (lang, fc) => [
                             { text: t(lang, TERMS.common.equation), latex: `2x - ${b} = ${total}` },
@@ -162,22 +172,27 @@ export class LinearEquationProblemGen {
             }
         ];
     }
-    // ... (rest of class remains standard static generate method calling these scenarios)
+
     public static generate(level: number, seed: string, lang: Language = 'sv'): GeneratedQuestion {
         const rng = new Random(seed);
         const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
-        
+
         const scenarios = this.getScenarios();
         const scenario = rng.pick(scenarios);
+        
+        // Generate math - x is NOT in math.vars
         const math = scenario.logic(rng);
-        const templateObj = rng.pick(scenario.templates);
-        let text = t(lang, templateObj);
+        
+        const rawTemplateObj = rng.pick(scenario.templates);
+        let text = t(lang, rawTemplateObj);
 
+        // Replace math variables ($a$, $b$, $c$)
         Object.entries(math.vars).forEach(([key, val]) => {
             text = text.replace(new RegExp(`\\$${key}\\$`, 'g'), `$${val}$`);
             text = text.replace(new RegExp(`\\$${key}`, 'g'), `$${val}`);
         });
 
+        // Replace Context
         const ctxData = CONTEXTS[scenario.context];
         if (ctxData) {
             const itemObj = rng.pick(ctxData.items);
