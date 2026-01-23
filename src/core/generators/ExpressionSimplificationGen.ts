@@ -1,254 +1,242 @@
 import { GeneratedQuestion, Clue } from "../types/generator";
 import { Random } from "../utils/random";
-import { TERMS, t, Language } from "../utils/i18n";
-import { CONTEXTS, ContextKey } from "../utils/textEngine";
-
-interface ExprScenario {
-    id: string;
-    type: 'A' | 'B' | 'C' | 'D';
-    logic: (rng: Random) => MathData;
-    templates: { sv: string, en: string }[];
-    context: ContextKey;
-}
-
-interface MathData {
-    vars: Record<string, number>;
-    expression: string; 
-    stepsWrite: (lang: Language, formatColor: (v:any)=>string) => Clue[];
-}
+import { t, Language } from "../utils/i18n";
 
 export class ExpressionSimplificationGen {
-  
-  private static getScenarios(): ExprScenario[] {
-      return [
-          {
-              id: 'shopping_bag',
-              type: 'A',
-              context: 'shopping',
-              templates: [ TERMS.problem_solving.a_buy ],
-              logic: (rng) => {
-                  const a = rng.intBetween(5, 25); 
-                  const b = rng.pick([2, 5, 10]); 
-                  return {
-                      vars: { a, b },
-                      expression: `${a}x + ${b}`,
-                      stepsWrite: (lang, fc) => [
-                          { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a} \\cdot x` },
-                          { text: t(lang, TERMS.problem_solving.expl_fixed_val), latex: `+ ${b}` },
-                          { text: t(lang, TERMS.common.result), latex: fc(`${a}x + ${b}`) }
-                      ]
-                  };
-              }
-          },
-          {
-              id: 'taxi',
-              type: 'A',
-              context: 'shopping', 
-              templates: [ TERMS.problem_solving.a_taxi ],
-              logic: (rng) => {
-                  const a = rng.intBetween(10, 50); 
-                  const b = rng.pick([45, 50, 75, 100]); 
-                  return {
-                      vars: { a, b },
-                      expression: `${a}x + ${b}`,
-                      stepsWrite: (lang, fc) => [
-                          { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a}x` },
-                          { text: t(lang, TERMS.problem_solving.expl_fixed_val), latex: `+ ${b}` },
-                          { text: t(lang, TERMS.common.result), latex: fc(`${a}x + ${b}`) }
-                      ]
-                  };
-              }
-          },
-          {
-              id: 'shopping_discount',
-              type: 'B',
-              context: 'shopping',
-              templates: [ TERMS.problem_solving.b_discount ],
-              logic: (rng) => {
-                  const a = rng.intBetween(50, 200); 
-                  const b = rng.pick([20, 50, 100]); 
-                  return {
-                      vars: { a, b },
-                      expression: `${a}x - ${b}`,
-                      stepsWrite: (lang, fc) => [
-                          { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a}x` },
-                          { text: t(lang, TERMS.simplification.expl_discount), latex: `-${b}` },
-                          { text: t(lang, TERMS.common.result), latex: fc(`${a}x - ${b}`) }
-                      ]
-                  };
-              }
-          },
-          {
-              id: 'compare_sum',
-              type: 'C',
-              context: 'hobbies',
-              templates: [ TERMS.problem_solving.c_compare ],
-              logic: (rng) => {
-                  const a = rng.intBetween(2, 10); 
-                  return {
-                      vars: { a },
-                      expression: `2x + ${a}`,
-                      stepsWrite: (lang, fc) => [
-                          { text: t(lang, TERMS.problem_solving.expl_person1), latex: "x" },
-                          { text: t(lang, TERMS.problem_solving.expl_person2_more), latex: `x + ${a}` },
-                          { text: t(lang, TERMS.simplification.group_terms), latex: `x + (x + ${a}) = ${fc('2x + ' + a)}` }
-                      ]
-                  };
-              }
-          },
-          {
-              id: 'compare_diff',
-              type: 'D',
-              context: 'hobbies',
-              templates: [ TERMS.problem_solving.d_compare ],
-              logic: (rng) => {
-                  const b = rng.intBetween(2, 8); 
-                  return {
-                      vars: { b },
-                      expression: `2x - ${b}`,
-                      stepsWrite: (lang, fc) => [
-                          { text: t(lang, TERMS.problem_solving.expl_person1), latex: "x" },
-                          { text: t(lang, TERMS.problem_solving.expl_person2_less), latex: `x - ${b}` },
-                          { text: t(lang, TERMS.simplification.group_terms), latex: `x + (x - ${b}) = ${fc('2x - ' + b)}` }
-                      ]
-                  };
-              }
-          }
-      ];
-  }
+    public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
+        const rng = new Random(seed);
+        const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
 
-  public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
-    const rng = new Random(seed);
-    const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
+        let mode = level;
+        if (level === 6) mode = rng.intBetween(1, 5); // Mixed level
 
-    let mode = level;
-    
-    // --- LEVEL 5: WORD PROBLEMS (EXPRESSIONS) ---
-    if (mode === 5) {
-        const scenarios = this.getScenarios();
-        const scenario = rng.pick(scenarios);
-        const math = scenario.logic(rng);
-        const templateObj = rng.pick(scenario.templates);
-        let text = t(lang, templateObj);
+        let expr = "";
+        let steps: Clue[] = [];
+        let answer = "";
+        let description = { sv: "Förenkla uttrycket så långt som möjligt.", en: "Simplify the expression as much as possible." };
 
-        Object.entries(math.vars).forEach(([key, val]) => {
-            text = text.replace(new RegExp(`\\$${key}\\$`, 'g'), `$${val}$`);
-            text = text.replace(new RegExp(`\\$${key}`, 'g'), `$${val}`);
-        });
+        // Helper to format terms with signs correctly
+        // e.g., (3, 'x') -> "+ 3x", (-3, 'x') -> "- 3x"
+        const termStr = (val: number, variable: string = '', isFirst: boolean = false): string => {
+            if (val === 0) return "";
+            const abs = Math.abs(val);
+            const sign = val < 0 ? "-" : (isFirst ? "" : "+");
+            const valStr = (abs === 1 && variable) ? "" : abs.toString(); // Don't show '1' in '1x'
+            return `${sign} ${valStr}${variable}`.trim();
+        };
 
-        text = text.replace(/[^.!?]*\$c\$[^.!?]*[.!?]?\s*$/, ""); 
+        // --- LEVEL 1: Combine Like Terms (ax + b + cx + d) ---
+        if (mode === 1) {
+            const a = rng.intBetween(2, 9);
+            const b = rng.intBetween(1, 9);
+            const c = rng.intBetween(-8, 8); // Can be negative
+            const d = rng.intBetween(-8, 8);
 
-        const ctxData = CONTEXTS[scenario.context];
-        if (ctxData) {
-            const itemObj = rng.pick(ctxData.items);
-            const itemStr = t(lang, itemObj);
-            const name1 = rng.pick(ctxData.people);
-            let name2 = rng.pick(ctxData.people);
-            while (name1 === name2) name2 = rng.pick(ctxData.people);
+            if (c === 0) return ExpressionSimplificationGen.generate(level, seed + "r", lang, multiplier);
+            
+            // Raw: 3x + 5 - 2x + 4
+            expr = `${termStr(a, 'x', true)} ${termStr(b)} ${termStr(c, 'x')} ${termStr(d)}`;
+            
+            // Logic
+            const finalX = a + c;
+            const finalNum = b + d;
+            answer = `${termStr(finalX, 'x', true)} ${termStr(finalNum)}`;
 
-            text = text.replace(/{item}/g, itemStr);
-            text = text.replace(/{name1}/g, name1);
-            text = text.replace(/{name2}/g, name2);
+            // Step 1: Group visually (The fix requested)
+            // Instead of (3-2)x, we show 3x - 2x + 5 + 4
+            const groupLatex = `${termStr(a, 'x', true)} ${termStr(c, 'x')} ${termStr(b)} ${termStr(d)}`;
+            
+            steps = [
+                { 
+                    text: { 
+                        sv: "Samla alla x-termer för sig och alla vanliga tal för sig. Kom ihåg att tecknet framför talet (plus eller minus) alltid följer med!", 
+                        en: "Collect all x-terms together and all numbers together. Remember that the sign in front of the number (plus or minus) always moves with it!" 
+                    }, 
+                    latex: groupLatex 
+                },
+                { 
+                    text: { 
+                        sv: `Räkna ut delarna: $${a}x ${c < 0 ? '-' : '+'} ${Math.abs(c)}x$ blir $${finalX}x$, och $${b} ${d < 0 ? '-' : '+'} ${Math.abs(d)}$ blir $${finalNum}$.`, 
+                        en: `Calculate the parts: $${a}x ${c < 0 ? '-' : '+'} ${Math.abs(c)}x$ becomes $${finalX}x$, and $${b} ${d < 0 ? '-' : '+'} ${Math.abs(d)}$ becomes $${finalNum}$.` 
+                    }, 
+                    latex: formatColor(answer) 
+                }
+            ];
         }
 
-        const taskText = t(lang, TERMS.problem_solving.task_write_expr);
-        const fullDesc = `${text.trim()} ${taskText}`;
+        // --- LEVEL 2: Parentheses a(x + b) ---
+        else if (mode === 2) {
+            const a = rng.intBetween(2, 9);
+            const b = rng.intBetween(1, 9);
+            const isSub = rng.bool(); // + or - inside
+
+            expr = `${a}(x ${isSub ? '-' : '+'} ${b})`;
+            
+            const term1 = `${a}x`;
+            const val2 = isSub ? (a * -b) : (a * b);
+            answer = `${term1} ${termStr(val2)}`;
+
+            steps = [
+                { 
+                    text: { 
+                        sv: `Multiplicera in $${a}$ i parentesen. $${a} \\cdot x$ och $${a} \\cdot ${isSub ? -b : b}$.`, 
+                        en: `Multiply $${a}$ into the parentheses. $${a} \\cdot x$ and $${a} \\cdot ${isSub ? -b : b}$.` 
+                    }, 
+                    latex: `${a} \\cdot x ${val2 < 0 ? '-' : '+'} ${a} \\cdot ${Math.abs(b)}` 
+                },
+                { 
+                    text: { sv: "Förenkla multiplikationerna.", en: "Simplify the multiplications." }, 
+                    latex: formatColor(answer) 
+                }
+            ];
+        }
+
+        // --- LEVEL 3: Distribute & Simplify a(x + b) + cx ---
+        else if (mode === 3) {
+            const a = rng.intBetween(2, 5);
+            const b = rng.intBetween(1, 5);
+            const c = rng.intBetween(2, 6);
+            
+            // a(x + b) + cx
+            expr = `${a}(x + ${b}) + ${c}x`;
+            
+            const distB = a * b;
+            const finalX = a + c;
+
+            answer = `${finalX}x + ${distB}`;
+
+            steps = [
+                { 
+                    text: { sv: "Börja med att multiplicera in i parentesen.", en: "Start by multiplying into the parentheses." }, 
+                    latex: `${a}x + ${distB} + ${c}x` 
+                },
+                { 
+                    text: { sv: "Samla x-termerna. Talen står kvar.", en: "Collect the x-terms. The numbers stay." }, 
+                    latex: `${a}x + ${c}x + ${distB}` // Visual grouping
+                },
+                { 
+                    text: { sv: "Lägg ihop x-termerna.", en: "Add the x-terms together." }, 
+                    latex: formatColor(answer) 
+                }
+            ];
+        }
+
+        // --- LEVEL 4: Subtracting Parentheses a(x+b) - c(x-d) ---
+        else if (mode === 4) {
+            // This is the specific requested change
+            const a = rng.intBetween(2, 5);
+            const b = rng.intBetween(1, 5);
+            const c = rng.intBetween(2, 4); // Keep numbers reasonable
+            const d = rng.intBetween(1, 5);
+            
+            // a(x + b) - c(x - d)
+            // Minus before second parenthesis is key concept here
+            expr = `${a}(x + ${b}) - ${c}(x - ${d})`;
+
+            // Step 1 Expansion values
+            // 1st part: ax + ab
+            const val1 = a * b;
+            // 2nd part: -cx + cd (because -c * -d is positive)
+            const val2 = -c * d; // This is the raw result of c*d, but we have -c.
+            // Wait, logic check: -c * (x - d) -> -cx + cd
+            const termX2 = -c;
+            const termNum2 = (-c) * (-d); // Positive
+
+            const finalX = a - c;
+            const finalNum = val1 + termNum2;
+
+            answer = `${termStr(finalX, 'x', true)} ${termStr(finalNum)}`;
+
+            steps = [
+                { 
+                    text: { 
+                        sv: "Multiplicera in. Var noga med minustecknet framför den andra parentesen! $-" + c + " \\cdot -" + d + "$ blir plus.", 
+                        en: "Multiply in. Be careful with the minus sign before the second parenthesis! $-" + c + " \\cdot -" + d + "$ becomes positive." 
+                    }, 
+                    // Expansion: ax + ab - cx + cd
+                    latex: `${a}x + ${val1} - ${c}x + ${termNum2}` 
+                },
+                { 
+                    text: { 
+                        sv: "Samla x-termer och vanliga tal. Flytta med tecknen framför varje term.", 
+                        en: "Collect x-terms and numbers. Move the signs in front of each term with them." 
+                    }, 
+                    // Visual Grouping: ax - cx + ab + cd
+                    latex: `${a}x - ${c}x + ${val1} + ${termNum2}` 
+                },
+                { 
+                    text: { 
+                        sv: `Räkna ut: $${a}x - ${c}x$ är $${finalX}x$. $${val1} + ${termNum2}$ är $${finalNum}$.`, 
+                        en: `Calculate: $${a}x - ${c}x$ is $${finalX}x$. $${val1} + ${termNum2}$ is $${finalNum}$.` 
+                    }, 
+                    latex: formatColor(answer) 
+                }
+            ];
+        }
+
+        // --- LEVEL 5: Word Problems ---
+        else if (mode === 5) {
+            // Simple logic: "I have 3 bags with x apples and 2 loose ones. My friend has 2 bags..."
+            const myBags = rng.intBetween(2, 5);
+            const myLoose = rng.intBetween(1, 10);
+            const friendBags = rng.intBetween(1, 3);
+            
+            description = {
+                sv: `Du har ${myBags} påsar med godis (x) och ${myLoose} lösa godisar. Din kompis har ${friendBags} påsar. Skriv ett uttryck för hur mycket ni har tillsammans och förenkla det.`,
+                en: `You have ${myBags} bags of candy (x) and ${myLoose} loose candies. Your friend has ${friendBags} bags. Write an expression for how much you have together and simplify it.`
+            };
+            
+            expr = "Textuppgift (se ovan)"; // Not used for calculation, just identifier if needed
+            
+            // (Ax + B) + Cx
+            const totalX = myBags + friendBags;
+            answer = `${totalX}x + ${myLoose}`;
+            
+            steps = [
+                { 
+                    text: { sv: "Skriv uttrycket. Påsarna är x.", en: "Write the expression. The bags are x." }, 
+                    latex: `${myBags}x + ${myLoose} + ${friendBags}x` 
+                },
+                { 
+                    text: { sv: "Lägg ihop alla x (påsar) för sig.", en: "Add all x (bags) together." }, 
+                    latex: `${myBags}x + ${friendBags}x + ${myLoose}` 
+                },
+                { 
+                    text: { sv: "Resultat", en: "Result" }, 
+                    latex: formatColor(answer) 
+                }
+            ];
+            
+            // Override renderData latex to be empty so user relies on text
+            return {
+                questionId: `simp-l${level}-${seed}`,
+                renderData: {
+                    text_key: "simplify_word",
+                    description: description,
+                    latex: "", // No latex prompt
+                    answerType: "text",
+                    variables: {}
+                },
+                serverData: {
+                    answer: answer,
+                    solutionSteps: steps
+                }
+            };
+        }
 
         return {
-            questionId: `sim-l5-${seed}`,
+            questionId: `simp-l${level}-${seed}`,
             renderData: {
-                text_key: "simplify_word",
-                description: fullDesc,
-                latex: "",
-                answerType: 'text',
+                text_key: "simplify",
+                description: description,
+                latex: expr,
+                answerType: "text",
                 variables: {}
             },
             serverData: {
-                answer: math.expression,
-                solutionSteps: math.stepsWrite(lang, formatColor)
+                answer: answer,
+                solutionSteps: steps
             }
         };
     }
-
-    if (level >= 6) mode = rng.intBetween(3, 4);
-
-    let expr = "", ansK = 0, ansM = 0, steps: Clue[] = [];
-    let descObj = { sv: "Förenkla uttrycket.", en: "Simplify the expression." };
-
-    if (mode === 1) {
-        const a = rng.intBetween(2, 9);
-        const b = rng.intBetween(1, 10);
-        const c = rng.intBetween(2, 9);
-        expr = `${a}x + ${b} + ${c}x`; 
-        ansK = a + c; 
-        ansM = b;
-        
-        steps = [
-            { text: t(lang, TERMS.simplification.expl_var_basic), latex: `${a}x + ${c}x` }, 
-            { text: t(lang, TERMS.simplification.expl_group), latex: `(${a} + ${c})x = ${a+c}x` },
-            { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
-        ];
-    } 
-    else if (mode === 2) {
-        const k = rng.intBetween(2, 9);
-        const a = rng.intBetween(1, 9);
-        expr = `${k}(x + ${a})`; 
-        ansK = k; 
-        ansM = k * a;
-        
-        steps = [
-            { text: t(lang, TERMS.simplification.expl_distribute(k)), latex: `${k} \\cdot x + ${k} \\cdot ${a}` }, 
-            { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
-        ];
-    }
-    else if (mode === 3) {
-        const a = rng.intBetween(2, 5);
-        const b = rng.intBetween(1, 5);
-        const c = rng.intBetween(2, 9);
-        expr = `${a}(x + ${b}) + ${c}x`;
-        const distM = a * b; 
-        ansK = a + c; 
-        ansM = distM;
-        
-        steps = [
-            { text: t(lang, TERMS.simplification.expl_distribute(a)), latex: `${a}x + ${distM} + ${c}x` }, 
-            { text: t(lang, TERMS.simplification.expl_group), latex: `(${a} + ${c})x + ${distM}` }, 
-            { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
-        ];
-    }
-    else {
-        const a = rng.intBetween(2, 5);
-        const b = rng.intBetween(1, 5);
-        const c = rng.intBetween(2, 4);
-        const d = rng.intBetween(1, 5);
-        expr = `${a}(x + ${b}) - ${c}(x - ${d})`;
-        const distM1 = a * b;
-        const distM2 = c * d; 
-        ansK = a - c; 
-        ansM = distM1 + distM2; 
-        
-        steps = [
-            { text: t(lang, TERMS.simplification.expl_distribute(a)), latex: `${a}x + ${distM1} - ${c}x + ${distM2}` }, 
-            { text: t(lang, TERMS.simplification.expl_group), latex: `(${a} - ${c})x + (${distM1} + ${distM2})` }, 
-            { text: t(lang, TERMS.common.result), latex: formatColor(`${ansK}x + ${ansM}`) }
-        ];
-    }
-
-    const mPart = ansM >= 0 ? `+ ${ansM}` : `- ${Math.abs(ansM)}`;
-    const answerStr = `${ansK}x ${mPart}`;
-
-    return {
-        questionId: `sim-l${level}-${seed}`,
-        renderData: {
-            text_key: "simplify",
-            description: descObj,
-            latex: expr,
-            answerType: 'text'
-        },
-        serverData: {
-            answer: answerStr,
-            solutionSteps: steps
-        }
-    };
-  }
 }
