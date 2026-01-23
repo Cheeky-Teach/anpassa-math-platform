@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anpassa | Math Platform</title>
+    
+    <!-- React & Core Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Styling & Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b' },
+                        accent: { 50: '#fff7ed', 100: '#ffedd5', 200: '#fed7aa', 300: '#fdba74', 400: '#fb923c', 500: '#f97316', 600: '#ea580c', 700: '#c2410c', 800: '#9a3412', 900: '#7c2d12' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .katex { font-size: 1.1em; } 
+        .drawer-enter { transform: translateX(-100%); }
+        .drawer-enter-active { transform: translateX(0); transition: transform 300ms; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Modal Animation */
+        .modal-enter { opacity: 0; transform: scale(0.95); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
+        
+        /* Scrollbar hiding for timer selector */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 overflow-x-hidden flex flex-col min-h-screen">
+    <div id="root" class="flex-grow flex flex-col"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- DATA & CONSTANTS ---
+        const CATEGORIES={
+            arithmetic: {
+                label: { sv: "Taluppfattning", en: "Number Theory" },
+                color: "pink", 
+                topics: [
+                    { id: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
+                    { id: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } }
+                ]
+            },
+            algebra:{
+                label:{sv:"Algebra",en:"Algebra"},
+                color:"indigo",
+                topics:[
+                    {id:'equation',label:{sv:"Ekvationer",en:"Equations"}},
+                    {id:'simplify',label:{sv:"Uttryck",en:"Expressions"}}
+                ]
+            },
+            geometry:{
+                label:{sv:"Geometri",en:"Geometry"},
+                color:"emerald",
+                topics:[
+                    {id:'geometry',label:{sv:"Area & Omkrets",en:"Area & Perimeter"}},
+                    {id:'scale',label:{sv:"Skala",en:"Scale"}},
+                    {id:'volume',label:{sv:"Volym",en:"Volume"}}
+                ]
+            },
+            functions:{
+                label:{sv:"Samband",en:"Functions"},
+                color:"purple",
+                topics:[
+                    {id:'graph',label:{sv:"Räta Linjen",en:"Linear Graphs"}}
+                ]
+            }
+        };
+
+        const LEVEL_DESCRIPTIONS={
+            arithmetic: {
+                1: { sv: "Addition (1-3 siffror)", en: "Addition (1-3 digits)" },
+                2: { sv: "Subtraktion (1-3 siffror)", en: "Subtraction (1-3 digits)" },
+                3: { sv: "Decimaltal (+/-)", en: "Decimals (+/-)" },
+                4: { sv: "Multiplikation (Lätt)", en: "Multiplication (Easy)" },
+                5: { sv: "Multiplikation (Medel)", en: "Multiplication (Medium)" },
+                6: { sv: "Multiplikation (Svår)", en: "Multiplication (Hard)" },
+                7: { sv: "Division (Lätt)", en: "Division (Easy)" },
+                8: { sv: "Alla räknesätt (heltal)", en: "Mixed Integers" },
+                9: { sv: "Alla räknesätt (med decimal)", en: "Mixed (incl. Decimals)" }
+            },
+            negative: {
+                1: { sv: "Addition & Subtraktion", en: "Addition & Subtraction" },
+                2: { sv: "Addition & Subtraktion (Svår)", en: "Addition & Subtraction (Hard)" },
+                3: { sv: "Multiplikation", en: "Multiplication" },
+                4: { sv: "Division", en: "Division" },
+                5: { sv: "Blandat", en: "Mixed" }
+            },
+            equation:{
+                1:{sv:"Enstegsekvationer",en:"One-step equations"},
+                2:{sv:"Tvåstegsekvationer",en:"Two-step equations"},
+                3:{sv:"X på båda sidor",en:"X on both sides"},
+                4:{sv:"Multiplikation med parentes",en:"Multiplication with parentheses"},
+                5:{sv:"Problemlösning (Skriv)",en:"Word Problems (Write)"},
+                6:{sv:"Problemlösning (Lös)",en:"Word Problems (Solve)"},
+                7:{sv:"Blandat",en:"Mixed"}
+            },
+            simplify:{
+                1:{sv:"Förenkla uttryck",en:"Combine like terms"},
+                2:{sv:"Parenteser",en:"Distribute into parentheses"},
+                3:{sv:"Distribuera & förenkla",en:"Distribute and combine"},
+                4:{sv:"Subtrahera parenteser",en:"Subtracting parentheses"},
+                5:{sv:"Textuppgifter",en:"Word Problems"},
+                6:{sv:"Blandat",en:"Mixed"}
+            },
+            geometry:{
+                1:{sv:"Omkrets (Rektangel)",en:"Perimeter (Rectangle)"},
+                2:{sv:"Area (Rektangel)",en:"Area (Rectangle)"},
+                3:{sv:"Area (Triangel)",en:"Area (Triangle)"},
+                4:{sv:"Cirklar (Omkrets & Area)",en:"Circles (Perimeter & Area)"},
+                5:{sv:"Sammansatta figurer",en:"Composite shapes"}
+            },
+            scale:{
+                1:{sv:"Begreppsförståelse",en:"Concepts"},
+                2:{sv:"Beräkna längd (Enkel)",en:"Calc Length (Simple)"},
+                3:{sv:"Beräkna längd (Svår)",en:"Calc Length (Hard)"},
+                4:{sv:"Ange skala",en:"Determine Scale"},
+                5:{sv:"Utan bilder",en:"No Pictures"},
+                6:{sv:"Areaskala",en:"Area Scale"},
+                7:{sv:"Blandat",en:"Mixed"}
+            },
+            volume: {
+                1: { sv: "Rätblock & Kub", en: "Prisms & Cubes" },
+                2: { sv: "Triangulärt Prisma", en: "Triangular Prism" },
+                3: { sv: "Cylinder", en: "Cylinder" },
+                4: { sv: "Pyramid & Kon", en: "Pyramid & Cone" },
+                5: { sv: "Klot", en: "Sphere" },
+                6: { sv: "Blandat", en: "Mixed" },
+                7: { sv: "Blandat med olika enheter", en: "Mixed with units" }
+            },
+            graph:{
+                1:{sv:"Hitta m (skärning)",en:"Find y-intercept (m)"},
+                2:{sv:"Hitta k (positiv)",en:"Find slope (Positive)"},
+                3:{sv:"Hitta k (negativ)",en:"Find slope (Negative)"},
+                4:{sv:"Hitta funktion (y=kx+m)",en:"Find equation (y=kx+m)"},
+                5:{sv:"Blandat",en:"Mixed graphs"}
+            }
+        };
+
+        const UI_TEXT={
+            sv:{
+                streak:"", // Removed text
+                loading:"Laddar fråga...",error:"Kunde inte ladda frågan.",
+                btnHint:"Ledtråd",btnSolution:"Visa lösning",btnSkip:"Hoppa över",
+                submit:"Svara",correct:"Rätt! Nästa...",incorrect:"Inte riktigt, försök igen",placeholder:"Skriv ditt svar...",
+                level:"Nivå",history:"Historik",noHistory:"Inga svar än.",clueUsed:"Hjälp",
+                dashboardTitle:"Välj område att öva på",
+                progressionInfo:"Välj ett område. Systemet anpassar sig efter dig. Klarar du 8 frågor i rad på en nivå föreslår vi att du går vidare till nästa.",
+                startBtn:"Börja öva",backBtn:"Meny",selectLevel:"Välj nivå:",
+                hintsTitle:"Ledtrådar",prevLevel:"Föregående",nextLevel:"Nästa",
+                levelUpTitle:"Bra jobbat! 🔥",levelUpDesc:"Du har klarat 8 frågor i rad! Vill du gå vidare till nästa nivå?",levelUpYes:"Nästa nivå",levelUpNo:"Stanna på samma nivå",levelUpHint:"Kom ihåg att du alltid kan byta nivå manuellt högst upp på sidan.",
+                aboutBtn:"Om skaparen",aboutTitle:"Om skaparen",aboutText:"Charles är en speciallärare som arbetar i Sverige och brinner för att upptäcka nya sätt att undervisa i klassrummet.",
+                contactLink:"Följ mig på LinkedIn",
+                tagline:"Rätt stöd. Direkt.",
+                tagCorrect: "Rätt",
+                tagWrong: "Fel",
+                tagSkipped: "Hoppad",
+                streak_modal_title: "Fantastiskt! 🔥",
+                streak_modal_msg: "Du har nått en streak på {streak}!",
+                total_modal_title: "Snyggt jobbat! ✅",
+                total_modal_msg: "Du svarade rätt på {total} frågor! Bra jobbat!",
+                btn_close_streak: "Bra jobbat!",
+                btn_close_total: "Fortsätt",
+                
+                timer_title: "Övningstimer",
+                timer_off: "Av",
+                timer_min: "min",
+                timer_reset: "Återställ",
+                timer_paused: "Pausad",
+                
+                stats_title: "Statistik",
+                stats_times_up: "Tiden är ute!",
+                stats_longest_streak: "Längsta streak",
+                stats_attempted: "Försökta frågor",
+                stats_correct_no_help: "Rätt (utan hjälp)",
+                stats_correct_help: "Rätt (med hjälp)",
+                stats_incorrect: "Fel",
+                stats_skipped: "Hoppade över",
+                stats_close: "Stäng"
+            },
+            en:{
+                streak:"", // Removed text
+                loading:"Loading question...",error:"Could not load question.",
+                btnHint:"Hint",btnSolution:"Show Solution",btnSkip:"Skip",
+                submit:"Submit",correct:"Correct! Next...",incorrect:"Not quite, try again",placeholder:"Enter your answer...",
+                level:"Level",history:"History",noHistory:"No answers yet.",clueUsed:"Clue",
+                dashboardTitle:"Choose a topic to practice",
+                progressionInfo:"Choose a topic. The system adapts to you. Answer 8 questions correctly in a row to unlock the next level.",
+                startBtn:"Start Practice",backBtn:"Menu",selectLevel:"Select Level:",
+                hintsTitle:"Hints",prevLevel:"Previous",nextLevel:"Next",
+                levelUpTitle:"Great Job! 🔥",levelUpDesc:"You've answered 8 in a row! Do you want to try the next level?",levelUpYes:"Next Level",levelUpNo:"Stay Here",levelUpHint:"Remember, you can always change difficulty manually at the top.",
+                aboutBtn:"About the creator",aboutTitle:"About the creator",aboutText:"Charles is a special education teacher currently working in Sweden and is passionate about discovering new ways to teach in the classroom.",
+                contactLink:"Follow me on LinkedIn",
+                tagline:"Right support. Instantly.",
+                tagCorrect: "Correct",
+                tagWrong: "Wrong",
+                tagSkipped: "Skipped",
+                streak_modal_title: "Awesome! 🔥",
+                streak_modal_msg: "You hit a streak of {streak}!",
+                total_modal_title: "Great work! ✅",
+                total_modal_msg: "You answered {total} questions correctly! Great job!",
+                btn_close_streak: "Great job!",
+                btn_close_total: "Continue",
+                
+                timer_title: "Practice Timer",
+                timer_off: "Off",
+                timer_min: "min",
+                timer_reset: "Reset",
+                timer_paused: "Paused",
+                
+                stats_title: "Statistics",
+                stats_times_up: "Time's up!",
+                stats_longest_streak: "Longest streak",
+                stats_attempted: "Problems attempted",
+                stats_correct_no_help: "Correct (no help)",
+                stats_correct_help: "Correct (with help)",
+                stats_incorrect: "Incorrect",
+                stats_skipped: "Skipped",
+                stats_close: "Close"
+            }
+        };
+
+        const MathText=({text,className="",large=false})=>{
+            if(!text)return null;
+            const patchedText = text.replace(/\\mathbf\{\\?textcolor\{([^}]+)\}\{([^}]+)\}\}/g, '{\\color{$1}\\mathbf{$2}}');
+            const parts=patchedText.split(/(\$[^\$]+\$)/g);
+            return(<span className={className}>{parts.map((part,index)=>{
+                if(part.startsWith('$')&&part.endsWith('$')){
+                    const tex=part.slice(1,-1);
+                    try{
+                        const html=katex.renderToString(tex,{throwOnError:false,displayMode:large});
+                        return<span key={index} dangerouslySetInnerHTML={{__html:html}}/>;
+                    }catch(e){return<span key={index} className="text-red-500">{part}</span>;}
+                } else if (part.includes('\\')) { 
+                    try {
+                        const html=katex.renderToString(part,{throwOnError:false,displayMode:false});
+                        return<span key={index} dangerouslySetInnerHTML={{__html:html}}/>;
+                    } catch(e) { return<span key={index}>{part}</span>; }
+                }
+                return<span key={index}>{part}</span>;
+            })}</span>);
+        };
+        
+        const GraphCanvas=({data})=>{const canvasRef=useRef(null);useEffect(()=>{const canvas=canvasRef.current;if(!canvas||!data)return;const ctx=canvas.getContext('2d');const width=canvas.width;const height=canvas.height;const range=data.range||10;ctx.clearRect(0,0,width,height);ctx.font='10px Inter, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const toX=(val)=>(val+range)*(width/(range*2));const toY=(val)=>height-(val+range)*(height/(range*2));ctx.strokeStyle='#e5e7eb';ctx.lineWidth=1;for(let i=-range;i<=range;i+=data.gridStep||1){ctx.beginPath();ctx.moveTo(toX(i),0);ctx.lineTo(toX(i),height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,toY(i));ctx.lineTo(width,toY(i));ctx.stroke();}ctx.strokeStyle='#374151';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(toX(0),0);ctx.lineTo(toX(0),height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,toY(0));ctx.lineTo(width,toY(0));ctx.stroke();ctx.fillStyle='#6b7280';const tickSize=3;const step=data.labelStep||2;for(let i=-range;i<=range;i+=step){if(i===0)continue;const xPos=toX(i);const yOrigin=toY(0);ctx.beginPath();ctx.moveTo(xPos,yOrigin-tickSize);ctx.lineTo(xPos,yOrigin+tickSize);ctx.stroke();ctx.fillText(i.toString(),xPos,yOrigin+12);const yPos=toY(i);const xOrigin=toX(0);ctx.beginPath();ctx.moveTo(xOrigin-tickSize,yPos);ctx.lineTo(xOrigin+tickSize,yPos);ctx.stroke();ctx.fillText(i.toString(),xOrigin-12,yPos);}data.lines.forEach(line=>{ctx.strokeStyle=line.color||'#dc2626';ctx.lineWidth=3;ctx.beginPath();const x1=-range;const y1=line.slope*x1+line.intercept;const x2=range;const y2=line.slope*x2+line.intercept;ctx.moveTo(toX(x1),toY(y1));ctx.lineTo(toX(x2),toY(y2));ctx.stroke();});},[data]);return<div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm"/></div>;};
+        
+        const VolumeVisualization = ({ data }) => {
+            const canvasRef = useRef(null);
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas || !data) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width;
+                const h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+                ctx.strokeStyle = '#374151'; ctx.fillStyle = '#e5e7eb'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.font = "bold 16px Inter"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                const cx = w / 2; const cy = h / 2;
+                const drawLabel = (text, x, y, color='#ef4444') => { ctx.save(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.miterLimit = 2; ctx.strokeText(text, x, y); ctx.restore(); ctx.fillStyle = color; ctx.fillText(text, x, y); ctx.fillStyle = '#e5e7eb'; };
+                const drawDashedLine = (x1, y1, x2, y2) => { ctx.save(); ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore(); };
+
+                if (data.type === 'cuboid') { const s = 120; const hw = s * 0.6; const hh = s * 0.5; const depthX = 40; const depthY = -30; const x0 = cx - hw/2 - depthX/2; const y0 = cy + hh/2 + depthY/2; ctx.strokeRect(x0, y0 - hh, hw, hh); ctx.beginPath(); ctx.moveTo(x0, y0 - hh); ctx.lineTo(x0 + depthX, y0 - hh + depthY); ctx.lineTo(x0 + hw + depthX, y0 - hh + depthY); ctx.lineTo(x0 + hw, y0 - hh); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x0 + hw + depthX, y0 - hh + depthY); ctx.lineTo(x0 + hw + depthX, y0 + depthY); ctx.lineTo(x0 + hw, y0); ctx.stroke(); drawLabel(data.labels.w, x0 + hw/2, y0 + 20); drawLabel(data.labels.h, x0 - 20, y0 - hh/2); drawLabel(data.labels.d, x0 + hw + depthX/2 + 5, y0 + depthY/2 + 15); }
+                else if (data.type === 'triangular_prism') { const scale = 14; const baseW = data.b * scale; const triH = data.h_tri * scale; const len = data.len * scale * 0.8; const startX = cx - baseW/2 - len/4; const startY = cy + triH/2; ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(startX + baseW, startY); ctx.lineTo(startX + baseW/2, startY - triH); ctx.closePath(); ctx.stroke(); const offX = len * 0.8; const offY = -len * 0.5; ctx.beginPath(); ctx.moveTo(startX + baseW/2, startY - triH); ctx.lineTo(startX + baseW/2 + offX, startY - triH + offY); ctx.stroke(); ctx.beginPath(); ctx.moveTo(startX + baseW, startY); ctx.lineTo(startX + baseW + offX, startY + offY); ctx.lineTo(startX + baseW/2 + offX, startY - triH + offY); ctx.stroke(); drawDashedLine(startX + baseW/2, startY, startX + baseW/2, startY - triH); drawLabel(data.labels.b, startX + baseW/2, startY + 20); drawLabel(data.labels.h, startX + baseW/2 + 15, startY - triH/2); drawLabel(data.labels.l, startX + baseW + offX/2 + 10, startY + offY/2); }
+                else if (data.type === 'pyramid') { const h = 130; const cBaseX = cx; const cBaseY = cy + 50; const dx = 80; const dy = 30; const vFront = { x: cBaseX, y: cBaseY + dy }; const vBack  = { x: cBaseX, y: cBaseY - dy }; const vLeft  = { x: cBaseX - dx, y: cBaseY }; const vRight = { x: cBaseX + dx, y: cBaseY }; const vApex  = { x: cBaseX, y: cBaseY - h }; ctx.beginPath(); ctx.moveTo(vLeft.x, vLeft.y); ctx.lineTo(vFront.x, vFront.y); ctx.lineTo(vRight.x, vRight.y); ctx.lineTo(vBack.x, vBack.y); ctx.closePath(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(vLeft.x, vLeft.y); ctx.lineTo(vApex.x, vApex.y); ctx.moveTo(vRight.x, vRight.y); ctx.lineTo(vApex.x, vApex.y); ctx.moveTo(vFront.x, vFront.y); ctx.lineTo(vApex.x, vApex.y); ctx.stroke(); drawDashedLine(vBack.x, vBack.y, vApex.x, vApex.y); drawDashedLine(cBaseX, cBaseY, vApex.x, vApex.y); drawLabel(data.labels.s, cBaseX + dx/2, cBaseY + dy/2 + 20); drawLabel(data.labels.h, cBaseX + 15, cBaseY - h/2); }
+                else if (data.type === 'sphere' || data.type === 'hemisphere' || data.type === 'ice_cream' || data.type === 'silo') { const r = 70; if (data.type === 'silo') { const cylH = 100; const topY = cy - cylH/2 + 20; const bottomY = cy + cylH/2 + 20; ctx.beginPath(); ctx.moveTo(cx - r, topY); ctx.lineTo(cx - r, bottomY); ctx.moveTo(cx + r, topY); ctx.lineTo(cx + r, bottomY); ctx.stroke(); ctx.beginPath(); ctx.ellipse(cx, bottomY, r, r/3, 0, 0, Math.PI); ctx.stroke(); ctx.save(); ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.ellipse(cx, bottomY, r, r/3, 0, Math.PI, 2 * Math.PI); ctx.stroke(); ctx.restore(); ctx.beginPath(); ctx.ellipse(cx, topY, r, r/3, 0, 0, 2 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, topY, r, Math.PI, 0); ctx.stroke(); drawLabel(data.labels.h, cx + r + 20, cy + 20); if (data.show === 'd') { drawDashedLine(cx - r, topY, cx + r, topY); drawLabel(data.labels.val, cx, topY - 10); } else { drawDashedLine(cx, topY, cx + r, topY); drawLabel(data.labels.val, cx + r/2, topY - 10); } } else if (data.type === 'ice_cream') { const coneH = 120; const tipY = cy + coneH/2; const baseY = tipY - coneH; ctx.beginPath(); ctx.moveTo(cx - r, baseY); ctx.lineTo(cx, tipY); ctx.lineTo(cx + r, baseY); ctx.stroke(); ctx.beginPath(); ctx.ellipse(cx, baseY, r, r/3, 0, 0, 2 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, baseY, r, Math.PI, 0); ctx.stroke(); drawLabel(data.labels.h, cx + 20, tipY - coneH/2); if (data.show === 'd') { drawDashedLine(cx - r, baseY, cx + r, baseY); drawLabel(data.labels.val, cx, baseY - 20); } else { drawDashedLine(cx, baseY, cx + r, baseY); drawLabel(data.labels.val, cx + r/2, baseY - 15); } } else if (data.type === 'hemisphere') { const baseY = cy + 20; ctx.beginPath(); ctx.ellipse(cx, baseY, r, r/3, 0, 0, 2 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, baseY, r, Math.PI, 0); ctx.stroke(); if (data.show === 'd') { drawDashedLine(cx - r, baseY, cx + r, baseY); drawLabel(data.labels.val, cx, baseY + 40); } else { drawDashedLine(cx, baseY, cx + r, baseY); drawLabel(data.labels.val, cx + r/2, baseY + 10); } } else { ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.ellipse(cx, cy, r, r/3, 0, 0, 2 * Math.PI); ctx.stroke(); if (data.show === 'd') { drawDashedLine(cx - r, cy, cx + r, cy); drawLabel(data.labels.val, cx, cy - 15); } else { drawDashedLine(cx, cy, cx + r, cy); drawLabel(data.labels.val, cx + r/2, cy - 15); } } }
+                else if (data.type === 'cylinder' || data.type === 'cone') { const w = 100; const hShape = 120; const isCone = data.type === 'cone'; ctx.beginPath(); ctx.ellipse(cx, cy + hShape/2, w/2, 15, 0, 0, 2 * Math.PI); ctx.stroke(); if (isCone) { ctx.beginPath(); ctx.moveTo(cx - w/2, cy + hShape/2); ctx.lineTo(cx, cy - hShape/2); ctx.lineTo(cx + w/2, cy + hShape/2); ctx.stroke(); drawDashedLine(cx, cy - hShape/2, cx, cy + hShape/2); drawLabel(data.labels.h, cx + 15, cy); drawLabel(data.labels.r, cx + 10, cy + hShape/2 + 25); } else { ctx.beginPath(); ctx.ellipse(cx, cy - hShape/2, w/2, 15, 0, 0, 2 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx - w/2, cy - hShape/2); ctx.lineTo(cx - w/2, cy + hShape/2); ctx.moveTo(cx + w/2, cy - hShape/2); ctx.lineTo(cx + w/2, cy + hShape/2); ctx.stroke(); drawLabel(data.labels.h, cx + w/2 + 20, cy); drawLabel(data.labels.r, cx + 10, cy + hShape/2 + 25); } }
+            }, [data]);
+            return <div className="flex justify-center my-2 w-full"><canvas ref={canvasRef} width={320} height={240} className="w-full max-w-[320px] h-auto bg-white rounded-lg" /></div>;
+        };
+
+        const GeometryVisual = ({ data }) => {
+            if (!data) return null;
+            const SvgContainer = ({ children, w=240, h=200, viewBox="0 0 200 200" }) => <svg width={w} height={h} viewBox={viewBox} className="my-2 w-full max-w-[240px] mx-auto">{children}</svg>;
+            const Label = ({ x, y, text, align="middle" }) => ( <text x={x} y={y} textAnchor={align} className="fill-gray-700 text-sm font-bold" style={{fontSize: '14px'}}> {text} </text> );
+            const RenderShape = ({ type, dims, labels, areaText }) => {
+                const w = dims.width || 0, h = dims.height || 0, r = dims.radius || 0;
+                const size = Math.max(w, h, r*2);
+                const scale = 120 / (size || 1); 
+                let sw = w * scale, sh = h * scale, sr = r * scale;
+                const cx = 90, cy = 90;
+                const content = () => {
+                    if (type === 'rectangle' || type === 'square' || type === 'parallelogram') return (<><rect x={cx-sw/2} y={cy-sh/2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><text x={cx} y={cy+sh/2+20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text><text x={cx+sw/2+10} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text></>)}</>);
+                    if (type === 'triangle') return (<><polygon points={`${cx-sw/2},${cy+sh/2} ${cx+sw/2},${cy+sh/2} ${cx},${cy-sh/2}`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><text x={cx} y={cy+sh/2+20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text><line x1={cx} y1={cy-sh/2} x2={cx} y2={cy+sh/2} stroke="#6b7280" strokeDasharray="4" /><text x={cx+5} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text></>)}</>);
+                    if (type === 'circle') return (<><circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx+sr/2} y={cy-5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text></>)}</>);
+                    if (type === 'semicircle') return (<><path d={`M ${cx-sr} ${cy} A ${sr} ${sr} 0 0 1 ${cx+sr} ${cy} Z`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx+sr/2} y={cy-5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text></>)}</>);
+                    return null;
+                };
+                return (<svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm w-full max-w-[200px]">{content()}{areaText && <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
+            };
+            if (data.type === 'triangle') { const w = data.width || 0, h = data.height || 0; const maxDim = Math.max(w, h); const scale = 140 / (maxDim || 1); const bVal = w * scale; const hVal = h * scale; const cx = 100, cy = 100; let points = "", hLine = null, bLabel = null, hLabel = null; const orient = data.orientation || 'up'; const isRight = data.subtype === 'right'; if (orient === 'up') { const x1 = cx - bVal/2, y1 = cy + hVal/2; const x2 = cx + bVal/2, y2 = cy + hVal/2; const x3 = isRight ? x1 : cx, y3 = cy - hVal/2; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x3} y2={y1} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x1} y1={y1} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={cx} y={y1 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={isRight ? x1 - 15 : cx + 5} y={cy} textAnchor={isRight ? "end" : "start"} fontWeight="bold" fill="#374151">{data.labels.height}</text>; } else if (orient === 'down') { const x1 = cx - bVal/2, y1 = cy - hVal/2; const x2 = cx + bVal/2, y2 = cy - hVal/2; const x3 = isRight ? x1 : cx, y3 = cy + hVal/2; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x3} y2={y1} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x1} y1={y1} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={cx} y={y1 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={isRight ? x1 - 15 : cx + 5} y={cy} textAnchor={isRight ? "end" : "start"} fontWeight="bold" fill="#374151">{data.labels.height}</text>; } else if (orient === 'left') { const x1 = cx + hVal/2, y1 = cy - bVal/2; const x2 = cx + hVal/2, y2 = cy + bVal/2; const x3 = cx - hVal/2, y3 = isRight ? y2 : cy; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x1} y2={y3} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x2} y1={y2} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={x1 + 15} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={cx} y={isRight ? y2 + 20 : y3 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.height}</text>; } else { const x1 = cx - hVal/2, y1 = cy - bVal/2; const x2 = cx - hVal/2, y2 = cy + bVal/2; const x3 = cx + hVal/2, y3 = isRight ? y2 : cy; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x1} y2={y3} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x2} y1={y2} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={x1 - 15} y={cy} textAnchor="end" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={cx} y={isRight ? y2 + 20 : y3 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.height}</text>; } return ( <SvgContainer><polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{hLine}{bLabel}{hLabel}</SvgContainer> ); } if (data.type === 'circle') { const cx=100, cy=100, r=70; return ( <SvgContainer><circle cx={cx} cy={cy} r={r} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{data.show === 'diameter' ? (<><line x1={cx-r} y1={cy} x2={cx+r} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx} y={cy-10} textAnchor="middle" fontWeight="bold" fill="#374151">d = {data.value}</text></>) : (<><line x1={cx} y1={cy} x2={cx+r} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx+r/2} y={cy-10} textAnchor="middle" fontWeight="bold" fill="#374151">r = {data.value}</text></>)}</SvgContainer> ); } if (data.type === 'composite') { const subtype = data.subtype; if (subtype === 'house') { return ( <SvgContainer><rect x="50" y="80" width="100" height="80" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><polygon points="50,80 150,80 100,20" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><text x="160" y="120" fontWeight="bold" fill="#374151">{data.labels.h}</text><text x="100" y="180" textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.w}</text><text x="130" y="50" fontWeight="bold" fill="#374151">{data.labels.h_roof}</text></SvgContainer> ); } if (subtype === 'portal') { return ( <SvgContainer><rect x="50" y="70" width="100" height="100" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><path d="M 50 70 A 50 50 0 0 1 150 70" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><text x="100" y="190" textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.w}</text></SvgContainer> ); } return ( <SvgContainer><polygon points="50,70 150,70 100,190" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><path d="M 50 70 A 50 50 0 0 1 150 70" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><line x1="50" y1="70" x2="150" y2="70" stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /><text x="100" y="60" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.top}</text><text x="140" y={130} textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.side}</text></SvgContainer> ); } if (data.type === 'scale_single' || data.type === 'scale_compare') { const shapeEmojis = { square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', rhombus: '🔶', parallelogram: '▰', pentagon: '⬟', hexagon: '🛑', octagon: '🛑', star: '⭐', arrow: '➡', heart: '❤️', cross: '➕', lightning: '⚡', kite: '🪁', cube: '🧊', cylinder: '🛢️', pyramid: '⛰️', cone: '🍦', sphere: '🔮' }; const emoji = shapeEmojis[data.shape] || '📦'; const ShapeIcon = ({ size }) => <div className="flex items-center justify-center text-6xl" style={{width:size,height:size}}>{emoji}</div>; if (data.type === 'scale_single') return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="120px" /><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>; return <div className="flex items-end justify-center gap-6 sm:gap-12 my-6"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="80px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div><div className="pb-8 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="120px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div></div>; } if (data.type === 'compare_shapes' || data.type === 'compare_shapes_area') { const showLabels = data.type === 'compare_shapes'; const showArea = data.type === 'compare_shapes_area'; return (<div className="flex flex-wrap justify-center gap-8 items-end my-4"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.left.label}</span><RenderShape type={data.shapeType} dims={data.left} labels={showLabels} areaText={showArea ? data.left.area : null} /></div><div className="pb-20 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.right.label}</span><RenderShape type={data.shapeType} dims={data.right} labels={showLabels} areaText={showArea ? data.right.area : null} /></div></div>); }
+            return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>; 
+        };
+
+        const StaticGeometryVisual=({description})=>{if(!description)return null;const d=description.toLowerCase();if(d.includes("rect")||d.includes("rektangel"))return<div className="flex justify-center my-4 opacity-80"><div className="w-28 h-16 border-2 border-primary-500 bg-primary-50 rounded-sm"></div></div>;return null;};
+
+        // --- COMPONENTS ---
+        // ADDED: Dashboard component defined BEFORE App
+        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect})=>{const ui=UI_TEXT[lang];const getCategoryColorClass=(category,type)=>{const colorMap={pink:'pink',indigo:'indigo',emerald:'emerald',purple:'purple'};const color=colorMap[category.color]||'primary';if(type==='bg-light')return `bg-${color}-50`;if(type==='bg-dark')return `bg-${color}-500`;if(type==='border')return `border-${color}-100`;if(type==='text')return `text-${color}-700`;if(type==='ring')return `ring-${color}-500`;if(type==='border-solid')return `border-${color}-500`;return '';};return(<div className="max-w-6xl mx-auto w-full p-4 fade-in">
+        <div className="text-center py-10 md:py-16 border-b border-gray-200 mb-12 bg-primary-50 rounded-3xl mx-4"><h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-4 tracking-tight">Anpassa</h1><p className="text-xl md:text-2xl text-gray-500 font-medium tracking-wide">{ui.tagline}</p></div>
+        <div className="text-center mb-10"><p className="text-gray-500 text-lg leading-relaxed max-w-2xl mx-auto">{ui.progressionInfo}</p></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">{Object.entries(CATEGORIES).map(([catKey,category])=>{const bgLight=getCategoryColorClass(category,'bg-light');const border=getCategoryColorClass(category,'border');const text=getCategoryColorClass(category,'text');const bgDark=getCategoryColorClass(category,'bg-dark');return(<div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}><div className={`${bgLight} p-4 border-b ${border}`}><h3 className={`text-lg font-bold ${text} uppercase tracking-wide flex items-center gap-2`}><span className={`w-3 h-3 rounded-full ${bgDark}`}></span>{category.label[lang]}</h3></div><div className="p-4 space-y-4 flex-1">{category.topics.map(topic=>{const ring=getCategoryColorClass(category,'ring');const borderSolid=getCategoryColorClass(category,'border-solid');return(<div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100"><div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div><div className="relative"><select value={selectedTopic===topic.id?selectedLevel:0} onChange={(e)=>onSelect(topic.id,Number(e.target.value))} className={`w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 appearance-none cursor-pointer ${selectedTopic===topic.id?`ring-2 ${ring} ${borderSolid}`:`focus:${ring}`}`}><option value={0} disabled>{ui.selectLevel}</option>{[1,2,3,4,5,6,7,8,9].map(lvl=>{if(!LEVEL_DESCRIPTIONS[topic.id]?.[lvl])return null;return<option key={lvl} value={lvl}>{lang==='sv'?`Nivå ${lvl}`:`Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang]||""}</option>;})}</select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div></div></div>);})}</div></div>);})}</div><div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20"><button onClick={onStart} className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 ${selectedTopic?'bg-accent-500 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-accent-600 shadow-accent-200':'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}`}>{ui.startBtn} <span>🚀</span></button></div></div>);};
+
+        // --- SUB-COMPONENTS (LIFTED OUT) ---
+        // Pass ui as prop to all of them
+        
+        const LevelUpModal = ({ visible, ui, onNext, onStay }) => {
+            if(!visible) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-bounce-in border border-gray-100">
+                        <div className="text-center mb-6"><div className="text-5xl mb-4">🔥</div><h3 className="text-2xl font-bold text-gray-800 mb-2">{ui.levelUpTitle}</h3><p className="text-gray-600">{ui.levelUpDesc}</p></div>
+                        <div className="flex flex-col gap-3"><button onClick={onNext} className="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 text-lg">{ui.levelUpYes}</button><button onClick={onStay} className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all active:scale-95">{ui.levelUpNo}</button></div>
+                        <p className="text-xs text-gray-400 text-center mt-6 italic">{ui.levelUpHint}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const StreakModal = ({ visible, streak, ui, onClose }) => {
+            if (!visible) return null;
+            let icon = "🥉";
+            if (streak >= 50) icon = "👑";
+            else if (streak >= 40) icon = "🏆";
+            else if (streak >= 30) icon = "🥇";
+            else if (streak >= 20) icon = "🥈";
+            else if (streak >= 15) icon = "🥉";
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 relative animate-bounce-in border-4 border-yellow-400 text-center">
+                        <div className="text-6xl mb-4 animate-pulse">{icon}</div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">{ui.streak_modal_title}</h3>
+                        <p className="text-lg text-gray-600 mb-6">{ui.streak_modal_msg.replace('{streak}', streak)}</p>
+                        <button onClick={onClose} className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 text-lg">{ui.btn_close_streak}</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const TotalCorrectModal = ({ visible, total, ui, onClose }) => {
+            if (!visible) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 relative animate-bounce-in border-4 border-green-500 text-center">
+                        <div className="text-6xl mb-4">✅</div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">{ui.total_modal_title}</h3>
+                        <p className="text-lg text-gray-600 mb-6">{ui.total_modal_msg.replace('{total}', total)}</p>
+                        <button onClick={onClose} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 text-lg">{ui.btn_close_total}</button>
+                    </div>
+                </div>
+            );
+        };
+        
+        // NEW STATS MODAL 
+        const StatsModal = ({ visible, stats, ui, onClose, title }) => {
+            if (!visible) return null;
+            const attemptCount = stats.attempted || 0;
+            const getPct = (val) => attemptCount > 0 ? Math.round((val / attemptCount) * 100) : 0;
+            
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-bounce-in border-4 border-blue-500 text-center">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-4">{title || ui.stats_title}</h3>
+                        <div className="grid grid-cols-2 gap-4 text-left text-sm mb-6">
+                            <div className="text-gray-500">{ui.stats_longest_streak}</div>
+                            <div className="font-bold text-right">{stats.maxStreak} 🔥</div>
+                            <div className="text-gray-500">{ui.stats_attempted}</div>
+                            <div className="font-bold text-right">{stats.attempted}</div>
+                            <div className="text-gray-500">{ui.stats_correct_no_help}</div>
+                            <div className="font-bold text-right text-green-600">{stats.correctNoHelp} ({getPct(stats.correctNoHelp)}%)</div>
+                            <div className="text-gray-500">{ui.stats_correct_help}</div>
+                            <div className="font-bold text-right text-yellow-600">{stats.correctHelp} ({getPct(stats.correctHelp)}%)</div>
+                            <div className="text-gray-500">{ui.stats_incorrect}</div>
+                            <div className="font-bold text-right text-red-600">{stats.incorrect} ({getPct(stats.incorrect)}%)</div>
+                            <div className="text-gray-500">{ui.stats_skipped}</div>
+                            <div className="font-bold text-right text-gray-400">{stats.skipped}</div>
+                        </div>
+                        <button onClick={onClose} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 text-lg">{ui.stats_close}</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const AboutModal = ({ visible, onClose, ui }) => {
+            if (!visible) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-bounce-in border border-gray-100">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">✕</button>
+                        <div className="text-center mb-6">
+                            <h3 className="text-2xl font-bold text-gray-800 mb-2">{ui.aboutTitle}</h3>
+                            <p className="text-gray-600 text-sm leading-relaxed mb-6">{ui.aboutText}</p>
+                            <hr className="my-4 border-gray-200" />
+                            <a href="https://www.linkedin.com/in/charles-mejilla-4a2ba22b" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-bold transition-colors">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                                {ui.contactLink}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const HistoryList=({history, ui})=>(<div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><div className="p-4 border-b bg-gray-50 flex justify-between items-center"><h2 className="font-bold text-gray-700">{ui.history}</h2><span className="text-xs text-gray-400">{history.length}</span></div><div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[500px]">{history.length===0?<p className="text-gray-400 text-center text-sm py-4">{ui.noHistory}</p>:history.map((entry,i)=>(<div key={i} className={`p-3 rounded-lg border-l-4 text-sm ${entry.correct?'border-primary-500 bg-primary-50': (entry.skipped ? 'border-gray-400 bg-gray-50' : 'border-red-500 bg-red-50')}`}><div className="flex justify-between items-start mb-1"><span className="font-semibold capitalize text-gray-700">{entry.topic} <span className="text-xs font-normal text-gray-500">(Lvl {entry.level})</span></span><span className="text-xs text-gray-400">{new Date(entry.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><div className="text-gray-600 mb-1 line-clamp-2"><MathText text={entry.text}/></div>{!entry.correct && !entry.skipped && entry.correctAnswer && <div className="text-xs text-red-600 mt-1 font-medium"><MathText text={`Correct: ${entry.correctAnswer}`}/></div>}<div>{entry.clueUsed&&<span className="inline-block px-1.5 py-0.5 bg-accent-100 text-accent-700 text-[10px] rounded uppercase font-bold tracking-wider mr-1">{ui.clueUsed}</span>} <span className={`inline-block px-1.5 py-0.5 rounded uppercase font-bold tracking-wider text-[10px] ${entry.correct ? 'bg-green-100 text-green-700' : (entry.skipped ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-700')}`}>{entry.correct ? ui.tagCorrect : (entry.skipped ? ui.tagSkipped : ui.tagWrong)}</span></div></div>))}</div></div>);
+
+        const MobileDrawer=({open, onClose, history, ui})=>(<>{open&&<div className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm lg:hidden" onClick={onClose}></div>}<div className={`fixed inset-y-0 left-0 w-80 bg-white shadow-2xl transform transition-transform duration-300 z-50 flex flex-col lg:hidden ${open?'translate-x-0':'-translate-x-full'}`}><div className="p-4 border-b flex justify-between items-center bg-gray-50"><h2 className="font-bold text-gray-700">{ui.history}</h2><button onClick={onClose} className="text-gray-400">✕</button></div><div className="flex-1 overflow-y-auto p-4"><HistoryList history={history} ui={ui}/></div></div></>);
+
+        const CluePanel=({revealedClues, question, ui, isSolutionRevealed})=>{
+            if(!revealedClues || revealedClues.length===0) return null;
+            return(
+                <div className="bg-accent-50 border border-accent-200 rounded-xl p-5 shadow-sm mb-4 animate-fade-in">
+                    <div className="flex items-center gap-2 mb-4 text-accent-800 font-bold border-b border-accent-200 pb-2">
+                        <span>💡 {ui.hintsTitle} ({revealedClues.length}/{question.clues.length})</span>
+                    </div>
+                    <div className="space-y-6">
+                        {revealedClues.map((clue,i)=>{
+                            const isLast = i === question.clues.length - 1;
+                            const showLatex = !isLast || isSolutionRevealed;
+                            return (
+                                <div key={i} className="group animate-slide-down">
+                                    <div className="text-sm text-accent-900 mb-2 font-medium leading-relaxed">
+                                        <MathText text={clue.text}/>
+                                    </div>
+                                    {clue.latex && showLatex && (
+                                        <div className="bg-white p-3 rounded-lg border border-accent-200 text-center shadow-sm overflow-x-auto">
+                                            <MathText text={`$${clue.latex}$`} large={true}/>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- PRACTICE VIEW (MOVED OUTSIDE APP) ---
+        const PracticeView=({lang,ui,question,loading,feedback,streak,input,setInput,handleSubmit,handleHint,handleSolution,handleSkip,handleChangeLevel,revealedClues,uiState,actions,levelUpAvailable,setLevelUpAvailable,isSolutionRevealed, showStreakModal, setShowStreakModal, showTotalModal, setShowTotalModal, totalCorrect})=>{
+            const [mobileHistoryOpen,setMobileHistoryOpen]=useState(false);
+            const [scaleInputLeft, setScaleInputLeft] = useState('');
+            const [scaleInputRight, setScaleInputRight] = useState('');
+            const [attempts, setAttempts] = useState(0);
+
+            const descriptionText=typeof question?.renderData?.description==='object'?question.renderData.description[lang]:question?.renderData?.description;
+            const handleChoiceClick=(choice)=>{if(feedback==='correct')return;setInput(choice);handleSubmit({preventDefault:()=>{}},choice);};
+            const handleFormSubmit=(e)=>{
+                if(question.renderData.answerType === 'scale') {
+                    const combined = `${scaleInputLeft}:${scaleInputRight}`;
+                    // Important: Don't setInput(combined) here because 'input' is controlled by App. 
+                    // Instead just pass it. But we need to update the UI too? 
+                    // Actually, 'input' prop is for the single text box.
+                    // For scale, we use local state scaleInputLeft/Right which is fine.
+                    // We just pass combined to handleSubmit.
+                    handleSubmit(e, combined);
+                } else {
+                    handleSubmit(e, input);
+                }
+            };
+            
+            useEffect(() => { 
+                setScaleInputLeft(''); 
+                setScaleInputRight(''); 
+                setAttempts(0);
+            }, [question]);
+
+            const maxLevels=Object.keys(LEVEL_DESCRIPTIONS[uiState.topic]||{}).length;
+            
+            // Re-defined HistoryList here to ensure scope access or pass as prop? 
+            // Better to use the one defined above.
+            
+            return(
+                <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
+                    <MobileDrawer open={mobileHistoryOpen} onClose={()=>setMobileHistoryOpen(false)} history={uiState.history} ui={ui}/>
+                    <LevelUpModal 
+                        visible={levelUpAvailable} 
+                        ui={ui} 
+                        onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }}
+                        onStay={() => setLevelUpAvailable(false)}
+                    />
+                    <StreakModal 
+                        visible={showStreakModal}
+                        streak={streak}
+                        ui={ui}
+                        onClose={() => { setShowStreakModal(false); actions.retry(); }} 
+                    />
+                    <TotalCorrectModal
+                        visible={showTotalModal}
+                        total={totalCorrect}
+                        ui={ui}
+                        onClose={() => { setShowTotalModal(false); }}
+                    />
+                    <div className="flex-1 w-full min-w-0">
+                        <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                            <button onClick={actions.goBack} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm px-4 py-2 rounded-lg shadow-sm border border-gray-300 transition-all active:scale-95"><span>←</span> {ui.backBtn}</button>
+                            <div className="flex items-center gap-3"><div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200"><button onClick={()=>handleChangeLevel(-1)} disabled={uiState.level<=1} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.prevLevel}>&lt;</button><span className="text-xs font-bold uppercase tracking-wider text-gray-500 min-w-[80px] text-center">{uiState.topic} • Lvl {uiState.level}</span><button onClick={()=>handleChangeLevel(1)} disabled={uiState.level>=maxLevels} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.nextLevel}>&gt;</button></div><button onClick={()=>setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button></div>
+                        </div>
+                        <main className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
+                            {loading?(<div className="p-20 text-center flex flex-col items-center gap-4"><div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div></div>):question?(<div className="p-4 sm:p-6">
+                                <div className="mb-4 flex justify-center bg-gray-50 rounded-xl p-4 min-h-[160px] items-center border border-gray-100 relative">
+                                    {question.renderData.graph ? (
+                                        <GraphCanvas data={question.renderData.graph}/>
+                                    ) : question.renderData.geometry ? (
+                                        ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(question.renderData.geometry.type) 
+                                        ? <VolumeVisualization data={question.renderData.geometry}/> 
+                                        : <GeometryVisual data={question.renderData.geometry}/>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center w-full">
+                                            {uiState.topic==='geometry' && <StaticGeometryVisual description={descriptionText}/>}
+                                            {question.renderData.latex && <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true}/></div>}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mb-4 text-center"><h2 className="text-lg sm:text-xl font-medium text-gray-700 leading-relaxed"><MathText text={descriptionText}/></h2></div>
+                                {question.renderData.answerType==='multiple_choice'?(<div className="max-w-md mx-auto grid grid-cols-2 gap-4">{question.renderData.choices.map((choice,idx)=>(<button key={idx} onClick={()=>handleChoiceClick(choice)} className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback==='correct'&&choice===input?'bg-green-500 border-green-500 text-white':feedback==='incorrect'&&choice===input?'bg-red-500 border-red-500 text-white':'bg-white border-gray-200 text-gray-700 hover:border-accent-500 hover:text-accent-600'}`} disabled={feedback==='correct'}>{choice}</button>))}</div>):(<form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
+                                {question.renderData.answerType === 'scale' ? (
+                                    <div className="flex items-center justify-center gap-2"><input type="text" value={scaleInputLeft} onChange={(e) => setScaleInputLeft(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder="X" autoFocus disabled={feedback === 'correct'} /><span className="text-2xl font-bold text-gray-400">:</span><input type="text" value={scaleInputRight} onChange={(e) => setScaleInputRight(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder="X" disabled={feedback === 'correct'} /></div>
+                                ) : (
+                                    <div className="relative"><input type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder={ui.placeholder} autoFocus disabled={feedback === 'correct'}/></div>
+                                )}
+                                <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback==='correct'?'bg-primary-500 shadow-green-200 cursor-default':'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}>{feedback==='correct'?ui.correct:feedback==='incorrect'?ui.incorrect:ui.submit}</button></form>)}<div className="mt-6 flex gap-3 justify-center flex-wrap"><button type="button" onClick={handleHint} disabled={!question.clues||revealedClues.length>=question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-accent-50 text-accent-700 border border-accent-200 hover:bg-accent-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button><button type="button" onClick={handleSolution} disabled={!question.clues||isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button><button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"><span>⏭️</span> {ui.btnSkip}</button></div></div>):(<div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={actions.retry} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>)}</main>
+                    </div>
+                    <div className="lg:w-80 w-full shrink-0 flex flex-col gap-4 hidden lg:flex">
+                        <CluePanel revealedClues={revealedClues} question={question} ui={ui} isSolutionRevealed={isSolutionRevealed}/>
+                        <div className="flex-1 min-h-0"><HistoryList history={uiState.history} ui={ui}/></div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- APP CONTROLLER ---
+        function App(){
+            const[view,setView]=useState('dashboard');
+            const[lang,setLang]=useState('sv');
+            const[topic,setTopic]=useState('');
+            const[level,setLevel]=useState(0);
+            
+            const[question,setQuestion]=useState(null);
+            const[input,setInput]=useState('');
+            const[feedback,setFeedback]=useState(null);
+            const[loading,setLoading]=useState(false);
+            
+            // Session Stats
+            const[streak,setStreak]=useState(0);
+            const[totalCorrect, setTotalCorrect] = useState(0); 
+            const[sessionStats, setSessionStats] = useState({
+                attempted: 0,
+                correctNoHelp: 0,
+                correctHelp: 0,
+                incorrect: 0,
+                skipped: 0,
+                maxStreak: 0
+            });
+
+            const[history,setHistory]=useState([]);
+            const[revealedClues,setRevealedClues]=useState([]); // Fixed type to array
+            const[levelUpAvailable,setLevelUpAvailable]=useState(false);
+            const[aboutOpen,setAboutOpen]=useState(false);
+            const[statsOpen, setStatsOpen] = useState(false);
+            const[timeUpOpen, setTimeUpOpen] = useState(false);
+
+            // Modals State
+            const[showStreakModal, setShowStreakModal] = useState(false);
+            const[showTotalModal, setShowTotalModal] = useState(false);
+            
+            const[usedHelp, setUsedHelp] = useState(false);
+            const[isSolutionRevealed, setIsSolutionRevealed] = useState(false);
+            const[mobileHistoryOpen,setMobileHistoryOpen]=useState(false);
+            
+            // Timer State
+            const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
+
+            const ui=UI_TEXT[lang];
+
+            // Timer Logic
+            useEffect(() => {
+                let interval = null;
+                if (timerSettings.isActive && timerSettings.remaining > 0 && view === 'practice') {
+                    interval = setInterval(() => {
+                        setTimerSettings(prev => {
+                            if (prev.remaining <= 1) {
+                                clearInterval(interval);
+                                setTimeUpOpen(true);
+                                return { ...prev, remaining: 0, isActive: false };
+                            }
+                            return { ...prev, remaining: prev.remaining - 1 };
+                        });
+                    }, 1000);
+                }
+                return () => clearInterval(interval);
+            }, [timerSettings.isActive, view, timerSettings.remaining]);
+
+            const toggleTimer = (minutes) => {
+                const seconds = minutes * 60;
+                setTimerSettings({ duration: seconds, remaining: seconds, isActive: minutes > 0 });
+            };
+            
+            const resetTimer = () => {
+                setTimerSettings({ duration: 0, remaining: 0, isActive: false });
+            };
+
+            const formatTime = (seconds) => {
+                const m = Math.floor(seconds / 60);
+                const s = seconds % 60;
+                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            };
+
+            useEffect(() => {
+                if (streak > sessionStats.maxStreak) {
+                    setSessionStats(prev => ({...prev, maxStreak: streak}));
+                }
+            }, [streak]);
+
+            const fetchQuestion=async(t=topic,l=level,lg=lang)=>{
+                if (showStreakModal || showTotalModal || levelUpAvailable || timeUpOpen) return;
+                if(!t||!l)return;
+                setLoading(true);
+                setFeedback(null);
+                setInput('');
+                setRevealedClues([]); // Fixed reset
+                setUsedHelp(false);
+                setIsSolutionRevealed(false);
+                setLevelUpAvailable(false);
+                try{
+                    const res=await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}`);
+                    const data=await res.json();
+                    if(data.error)throw new Error(data.error);
+                    setQuestion(data);
+                }catch(e){
+                    console.error(e);
+                    setQuestion(null);
+                }finally{
+                    setLoading(false);
+                }
+            };
+
+            const startPractice=()=>{
+                if(topic&&level){
+                    setStreak(0);
+                    setView('practice');
+                    if (timerSettings.duration > 0) {
+                        setTimerSettings(prev => ({ ...prev, isActive: true }));
+                    }
+                    fetchQuestion(topic,level,lang);
+                }
+            };
+
+            const quitPractice=()=>{
+                setStreak(0);
+                setView('dashboard');
+                setQuestion(null);
+            };
+
+            const handleSelection=(t,l)=>{setTopic(t);setLevel(l);};
+            const handleHint=()=>{
+                if(question?.clues){
+                    setUsedHelp(true);
+                    // Add next clue to revealed list
+                    const currentLen = revealedClues.length;
+                    if(currentLen < question.clues.length) {
+                         setRevealedClues([...revealedClues, question.clues[currentLen]]);
+                    }
+                }
+            };
+            const handleSolution=()=>{
+                if(question?.clues){
+                    setUsedHelp(true);
+                    setRevealedClues(question.clues); // Reveal all
+                    setIsSolutionRevealed(true);
+                    setStreak(0);
+                }
+            };
+            
+            const updateStats = (type) => { 
+                setSessionStats(prev => ({
+                    ...prev,
+                    attempted: prev.attempted + 1,
+                    [type]: prev[type] + 1
+                }));
+            };
+
+            const handleSkip=()=>{
+                const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;
+                setHistory(prev=>[{topic,level,correct:false,skipped:true,text:descText||question.renderData.latex,clueUsed:revealedClues.length>0||isSolutionRevealed,time:Date.now()},...prev]);
+                setStreak(0);
+                updateStats('skipped');
+                fetchQuestion(topic,level,lang);
+            };
+
+            const handleChangeLevel=(delta)=>{const newLevel=level+delta;const max=Object.keys(LEVEL_DESCRIPTIONS[topic]||{}).length;if(newLevel>=1&&newLevel<=max){setStreak(0);setLevel(newLevel);fetchQuestion(topic,newLevel,lang);}};
+
+            const handleSubmit=async(e,directInput)=>{
+                e.preventDefault();
+                if (showStreakModal || showTotalModal || timeUpOpen) return;
+
+                // Handle composite scale input if needed
+                let finalInput = directInput !== undefined ? directInput : input;
+                // NOTE: Scale input logic handled in PracticeView, it calls this with combined string
+
+                if(!question||!finalInput)return;
+                
+                const helpUsed=revealedClues.length>0||isSolutionRevealed;
+                
+                try{
+                    const res=await fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:finalInput,token:question.token,streak:streak,level:level,topic:topic,usedHelp:helpUsed,solutionUsed:isSolutionRevealed,attempts:question.attempts})});
+                    const result=await res.json();
+                    const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;
+                    
+                    if(result.correct){
+                        setHistory(prev=>[{topic,level,correct:true,text:descText||question.renderData.latex,clueUsed:helpUsed,time:Date.now()},...prev]);
+                        setFeedback('correct');
+                        setStreak(result.newStreak);
+                        
+                        if (!helpUsed) updateStats('correctNoHelp');
+                        else updateStats('correctHelp');
+                        
+                        if (!isSolutionRevealed) {
+                            const newTotal = totalCorrect + 1;
+                            setTotalCorrect(newTotal);
+                            if ([10, 20, 30, 40, 50].includes(newTotal)) {
+                                setShowTotalModal(true);
+                            }
+                        }
+
+                        if ([15, 20, 30, 40, 50].includes(result.newStreak)) {
+                            setShowStreakModal(true);
+                        } else {
+                             if(result.levelUp) setLevelUpAvailable(true);
+                             setTimeout(()=>{
+                                 if (!showTotalModal && !showStreakModal) {
+                                    if(!result.levelUp) fetchQuestion(topic,level,lang);
+                                 }
+                             },1500);
+                        }
+                    
+                    } else {
+                        // Incorrect
+                        question.attempts=(question.attempts||0)+1; // Local mutation for immediate feedback loop
+                        if(result.action==='next_clue'){
+                            handleHint();
+                        } else if(result.action==='show_solution'){
+                            handleSolution();
+                            updateStats('incorrect');
+                            setHistory(prev=>[{topic,level,correct:false,text:descText||question.renderData.latex,clueUsed:true,correctAnswer:result.correctAnswer,time:Date.now()},...prev]);
+                        }
+                        setFeedback('incorrect');
+                        setStreak(0);
+                    }
+                } catch(e){console.error(e);}
+            };
+
+            const closeStreakModal = () => {
+                setShowStreakModal(false);
+                if (!showTotalModal && !timeUpOpen && !levelUpAvailable) {
+                    fetchQuestion(topic, level, lang);
+                }
+            };
+
+            const closeTotalModal = () => {
+                setShowTotalModal(false);
+                if (!showStreakModal && !timeUpOpen && !levelUpAvailable && feedback === 'correct') {
+                     fetchQuestion(topic, level, lang);
+                }
+            };
+            
+            const closeTimeUp = () => {
+                setTimeUpOpen(false);
+            };
+
+            return(
+                <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
+                    <AboutModal visible={aboutOpen} onClose={()=>setAboutOpen(false)} ui={ui}/>
+                    <StatsModal visible={statsOpen} stats={sessionStats} ui={ui} onClose={()=>setStatsOpen(false)} title={ui.stats_title} />
+                    <StatsModal visible={timeUpOpen} stats={sessionStats} ui={ui} onClose={closeTimeUp} title={ui.stats_times_up} />
+                    
+                    <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <h1 className="text-xl font-bold text-primary-700 tracking-tight cursor-pointer" onClick={quitPractice}>Anpassa</h1>
+                                {view === 'dashboard' && timerSettings.remaining > 0 && (
+                                    <div className="hidden sm:flex bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold items-center gap-2 border border-orange-200">
+                                        <span>⏸ {ui.timer_paused}</span>
+                                        <span className="font-mono text-sm">{formatTime(timerSettings.remaining)}</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-3">
+                                {totalCorrect > 0 && <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-primary-200">✅ {totalCorrect}</div>}
+                                {streak > 0 && <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-yellow-200">🔥 {streak}</div>}
+                                <button onClick={()=>setStatsOpen(true)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title={ui.stats_title}>
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                                </button>
+                                <button onClick={()=>setAboutOpen(true)} className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-1 px-4 text-xs rounded-full shadow-sm transition-transform transform active:scale-95">{ui.aboutBtn}</button>
+                            </div>
+                        </div>
+                    </header>
+                    
+                    <div className="flex-1 flex flex-col">
+                        {view==='dashboard'?(
+                            <div className="w-full">
+                                <Dashboard lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice}/>
+                                <div className="max-w-md mx-auto px-4 mb-8">
+                                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-between">
+                                        <span className="font-bold text-gray-700 text-sm">{ui.timer_title}</span>
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative group">
+                                                <select 
+                                                    value={timerSettings.duration / 60} 
+                                                    onChange={(e) => toggleTimer(Number(e.target.value))}
+                                                    className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-1 pl-3 pr-8 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                                                >
+                                                    <option value="0">{ui.timer_off}</option>
+                                                    {[5, 10, 15, 20, 30, 45, 60].map(m => <option key={m} value={m}>{m} {ui.timer_min}</option>)}
+                                                </select>
+                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                                </div>
+                                            </div>
+                                            {timerSettings.duration > 0 && (
+                                                <button onClick={resetTimer} className="text-xs text-red-500 hover:text-red-700 font-medium underline">{ui.timer_reset}</button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ):(
+                            <>
+                                <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4 flex justify-between items-center">
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={quitPractice} className="bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm px-4 py-2 rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-2">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                                            {ui.menu_btn}
+                                        </button>
+                                        
+                                        {timerSettings.duration > 0 && (
+                                            <div className={`font-mono text-lg font-bold px-3 py-1 rounded-lg border ${timerSettings.remaining < 60 ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-white text-gray-700 border-gray-200'}`}>
+                                                {formatTime(timerSettings.remaining)}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button onClick={()=>setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>
+                                </div>
+                                <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
+                                     <MobileDrawer open={mobileHistoryOpen} onClose={()=>setMobileHistoryOpen(false)} history={history} ui={ui}/>
+                                     
+                                     <div className="flex-1 w-full min-w-0">
+                                         <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                                             <button onClick={actions.goBack} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm px-4 py-2 rounded-lg shadow-sm border border-gray-300 transition-all active:scale-95"><span>←</span> {ui.backBtn}</button>
+                                             <div className="flex items-center gap-3"><div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200"><button onClick={()=>handleChangeLevel(-1)} disabled={uiState.level<=1} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.prevLevel}>&lt;</button><span className="text-xs font-bold uppercase tracking-wider text-gray-500 min-w-[80px] text-center">{uiState.topic} • Lvl {uiState.level}</span><button onClick={()=>handleChangeLevel(1)} disabled={uiState.level>=maxLevels} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.nextLevel}>&gt;</button></div></div>
+                                         </div>
+                                         <main className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
+                                            {loading?(<div className="p-20 text-center flex flex-col items-center gap-4"><div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div></div>):question?(<div className="p-4 sm:p-6">
+                                                <div className="mb-4 flex justify-center bg-gray-50 rounded-xl p-4 min-h-[160px] items-center border border-gray-100 relative">
+                                                    {question.renderData.graph ? (
+                                                        <GraphCanvas data={question.renderData.graph}/>
+                                                    ) : question.renderData.geometry ? (
+                                                        ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(question.renderData.geometry.type) 
+                                                        ? <VolumeVisualization data={question.renderData.geometry}/> 
+                                                        : <GeometryVisual data={question.renderData.geometry}/>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center w-full">
+                                                            {uiState.topic==='geometry' && <StaticGeometryVisual description={descriptionText}/>}
+                                                            {question.renderData.latex && <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true}/></div>}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="mb-4 text-center"><h2 className="text-lg sm:text-xl font-medium text-gray-700 leading-relaxed"><MathText text={descriptionText}/></h2></div>
+                                                {question.renderData.answerType==='multiple_choice'?(<div className="max-w-md mx-auto grid grid-cols-2 gap-4">{question.renderData.choices.map((choice,idx)=>(<button key={idx} onClick={()=>handleChoiceClick(choice)} className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback==='correct'&&choice===input?'bg-green-500 border-green-500 text-white':feedback==='incorrect'&&choice===input?'bg-red-500 border-red-500 text-white':'bg-white border-gray-200 text-gray-700 hover:border-accent-500 hover:text-accent-600'}`} disabled={feedback==='correct'}>{choice}</button>))}</div>):(<form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
+                                                {question.renderData.answerType === 'scale' ? (
+                                                    <div className="flex items-center justify-center gap-2"><input type="text" value={scaleInputLeft} onChange={(e) => setScaleInputLeft(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder="X" autoFocus disabled={feedback === 'correct'} /><span className="text-2xl font-bold text-gray-400">:</span><input type="text" value={scaleInputRight} onChange={(e) => setScaleInputRight(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder="X" disabled={feedback === 'correct'} /></div>
+                                                ) : (
+                                                    <div className="relative"><input type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder={ui.placeholder} autoFocus disabled={feedback === 'correct'}/></div>
+                                                )}
+                                                <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback==='correct'?'bg-primary-500 shadow-green-200 cursor-default':'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}>{feedback==='correct'?ui.correct:feedback==='incorrect'?ui.incorrect:ui.submit}</button></form>)}<div className="mt-6 flex gap-3 justify-center flex-wrap"><button type="button" onClick={handleHint} disabled={!question.clues||revealedClues.length>=question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-accent-50 text-accent-700 border border-accent-200 hover:bg-accent-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button><button type="button" onClick={handleSolution} disabled={!question.clues||isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button><button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"><span>⏭️</span> {ui.btnSkip}</button></div></div>):(<div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={actions.retry} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>)}</main>
+                                     </div>
+                                     <div className="lg:w-80 w-full shrink-0 flex flex-col gap-4 hidden lg:flex">
+                                         <CluePanel revealedClues={revealedClues} question={question} ui={ui} isSolutionRevealed={isSolutionRevealed}/>
+                                         <div className="flex-1 min-h-0"><HistoryList history={history} ui={ui}/></div>
+                                     </div>
+                                </div>
+                                <LevelUpModal visible={levelUpAvailable} ui={ui} onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }} onStay={() => setLevelUpAvailable(false)} />
+                                <StreakModal visible={showStreakModal} streak={streak} ui={ui} onClose={closeStreakModal} />
+                                <TotalCorrectModal visible={showTotalModal} total={totalCorrect} ui={ui} onClose={closeTotalModal} />
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+        
+        const root=ReactDOM.createRoot(document.getElementById('root'));root.render(<App/>);
+    </script>
+</body>
+</html>
+
+
+
+// Back code starts here //
+
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anpassa | Math Platform</title>
+    
+    <!-- React & Core Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Styling & Math -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b' },
+                        accent: { 50: '#fff7ed', 100: '#ffedd5', 200: '#fed7aa', 300: '#fdba74', 400: '#fb923c', 500: '#f97316', 600: '#ea580c', 700: '#c2410c', 800: '#9a3412', 900: '#7c2d12' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .katex { font-size: 1.1em; } 
+        .drawer-enter { transform: translateX(-100%); }
+        .drawer-enter-active { transform: translateX(0); transition: transform 300ms; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Modal Animation */
+        .modal-enter { opacity: 0; transform: scale(0.95); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 overflow-x-hidden flex flex-col min-h-screen">
+    <div id="root" class="flex-grow flex flex-col"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- DATA & CONSTANTS ---
+        const CATEGORIES={
+            arithmetic: {
+                label: { sv: "Taluppfattning", en: "Number Theory" },
+                color: "pink", 
+                topics: [
+                    { id: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
+                    { id: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } }
+                ]
+            },
+            algebra:{
+                label:{sv:"Algebra",en:"Algebra"},
+                color:"indigo",
+                topics:[
+                    {id:'equation',label:{sv:"Ekvationer",en:"Equations"}},
+                    {id:'simplify',label:{sv:"Uttryck",en:"Expressions"}}
+                ]
+            },
+            geometry:{
+                label:{sv:"Geometri",en:"Geometry"},
+                color:"emerald",
+                topics:[
+                    {id:'geometry',label:{sv:"Area & Omkrets",en:"Area & Perimeter"}},
+                    {id:'scale',label:{sv:"Skala",en:"Scale"}},
+                    {id:'volume',label:{sv:"Volym",en:"Volume"}}
+                ]
+            },
+            functions:{
+                label:{sv:"Samband",en:"Functions"},
+                color:"purple",
+                topics:[
+                    {id:'graph',label:{sv:"Räta Linjen",en:"Linear Graphs"}}
+                ]
+            }
+        };
+
+        const LEVEL_DESCRIPTIONS={
+            arithmetic: {
+                1: { sv: "Addition (1-3 siffror)", en: "Addition (1-3 digits)" },
+                2: { sv: "Subtraktion (1-3 siffror)", en: "Subtraction (1-3 digits)" },
+                3: { sv: "Decimaltal (+/-)", en: "Decimals (+/-)" },
+                4: { sv: "Multiplikation (Lätt)", en: "Multiplication (Easy)" },
+                5: { sv: "Multiplikation (Medel)", en: "Multiplication (Medium)" },
+                6: { sv: "Multiplikation (Svår)", en: "Multiplication (Hard)" },
+                7: { sv: "Division (Lätt)", en: "Division (Easy)" },
+                8: { sv: "Alla räknesätt (heltal)", en: "Mixed Integers" },
+                9: { sv: "Alla räknesätt (med decimal)", en: "Mixed (incl. Decimals)" }
+            },
+            negative: {
+                1: { sv: "Addition & Subtraktion", en: "Addition & Subtraction" },
+                2: { sv: "Addition & Subtraktion (Svår)", en: "Addition & Subtraction (Hard)" },
+                3: { sv: "Multiplikation", en: "Multiplication" },
+                4: { sv: "Division", en: "Division" },
+                5: { sv: "Blandat", en: "Mixed" }
+            },
+            equation:{
+                1:{sv:"Enstegsekvationer",en:"One-step equations"},
+                2:{sv:"Tvåstegsekvationer",en:"Two-step equations"},
+                3:{sv:"X på båda sidor",en:"X on both sides"},
+                4:{sv:"Multiplikation med parentes",en:"Multiplication with parentheses"},
+                5:{sv:"Problemlösning (Skriv)",en:"Word Problems (Write)"},
+                6:{sv:"Problemlösning (Lös)",en:"Word Problems (Solve)"},
+                7:{sv:"Blandat",en:"Mixed"}
+            },
+            simplify:{
+                1:{sv:"Förenkla uttryck",en:"Combine like terms"},
+                2:{sv:"Parenteser",en:"Distribute into parentheses"},
+                3:{sv:"Distribuera & förenkla",en:"Distribute and combine"},
+                4:{sv:"Subtrahera parenteser",en:"Subtracting parentheses"},
+                5:{sv:"Textuppgifter",en:"Word Problems"},
+                6:{sv:"Blandat",en:"Mixed"}
+            },
+            geometry:{
+                1:{sv:"Omkrets (Rektangel)",en:"Perimeter (Rectangle)"},
+                2:{sv:"Area (Rektangel)",en:"Area (Rectangle)"},
+                3:{sv:"Area (Triangel)",en:"Area (Triangle)"},
+                4:{sv:"Cirklar (Omkrets & Area)",en:"Circles (Perimeter & Area)"},
+                5:{sv:"Sammansatta figurer",en:"Composite shapes"}
+            },
+            scale:{
+                1:{sv:"Begreppsförståelse",en:"Concepts"},
+                2:{sv:"Beräkna längd (Enkel)",en:"Calc Length (Simple)"},
+                3:{sv:"Beräkna längd (Svår)",en:"Calc Length (Hard)"},
+                4:{sv:"Ange skala",en:"Determine Scale"},
+                5:{sv:"Utan bilder",en:"No Pictures"},
+                6:{sv:"Areaskala",en:"Area Scale"},
+                7:{sv:"Blandat",en:"Mixed"}
+            },
+            volume: {
+                1: { sv: "Rätblock & Kub", en: "Prisms & Cubes" },
+                2: { sv: "Triangulärt Prisma", en: "Triangular Prism" },
+                3: { sv: "Cylinder", en: "Cylinder" },
+                4: { sv: "Pyramid & Kon", en: "Pyramid & Cone" },
+                5: { sv: "Klot", en: "Sphere" },
+                6: { sv: "Blandat", en: "Mixed" },
+                7: { sv: "Blandat med olika enheter", en: "Mixed with units" }
+            },
+            graph:{
+                1:{sv:"Hitta m (skärning)",en:"Find y-intercept (m)"},
+                2:{sv:"Hitta k (positiv)",en:"Find slope (Positive)"},
+                3:{sv:"Hitta k (negativ)",en:"Find slope (Negative)"},
+                4:{sv:"Hitta funktion (y=kx+m)",en:"Find equation (y=kx+m)"},
+                5:{sv:"Blandat",en:"Mixed graphs"}
+            }
+        };
+
+        const UI_TEXT={
+            sv:{
+                streak:"Streak",loading:"Laddar fråga...",error:"Kunde inte ladda frågan.",
+                btnHint:"Ledtråd",btnSolution:"Visa lösning",btnSkip:"Hoppa över",
+                submit:"Svara",correct:"Rätt! Nästa...",incorrect:"Inte riktigt, försök igen",placeholder:"Skriv ditt svar...",
+                level:"Nivå",history:"Historik",noHistory:"Inga svar än.",clueUsed:"Hjälp",
+                dashboardTitle:"Välj område att öva på",
+                progressionInfo:"Välj ett område. Systemet anpassar sig efter dig. Klarar du 8 frågor i rad på en nivå föreslår vi att du går vidare till nästa.",
+                startBtn:"Börja öva",backBtn:"Tillbaka till menyn",selectLevel:"Välj nivå:",
+                hintsTitle:"Ledtrådar",prevLevel:"Föregående",nextLevel:"Nästa",
+                levelUpTitle:"Bra jobbat! 🔥",levelUpDesc:"Du har klarat 8 frågor i rad! Vill du gå vidare till nästa nivå?",levelUpYes:"Nästa nivå",levelUpNo:"Stanna på samma nivå",levelUpHint:"Kom ihåg att du alltid kan byta nivå manuellt högst upp på sidan.",
+                aboutBtn:"Om skaparen",aboutTitle:"Om skaparen",aboutText:"Charles är en speciallärare som arbetar i Sverige och brinner för att upptäcka nya sätt att undervisa i klassrummet.",
+                contactLink:"Följ mig på LinkedIn",
+                tagline:"Rätt stöd. Direkt.",
+                tagCorrect: "Rätt",
+                tagWrong: "Fel",
+                tagSkipped: "Hoppad",
+                streak_modal_title: "Fantastiskt! 🔥",
+                streak_modal_msg: "Du har nått en streak på {streak}!",
+                total_modal_title: "Snyggt jobbat! ✅",
+                total_modal_msg: "Du svarade rätt på {total} frågor! Bra jobbat!",
+                btn_close_streak: "Bra jobbat!",
+                btn_close_total: "Fortsätt"
+            },
+            en:{
+                streak:"Streak",loading:"Loading question...",error:"Could not load question.",
+                btnHint:"Hint",btnSolution:"Show Solution",btnSkip:"Skip",
+                submit:"Submit",correct:"Correct! Next...",incorrect:"Not quite, try again",placeholder:"Enter your answer...",
+                level:"Level",history:"History",noHistory:"No answers yet.",clueUsed:"Clue",
+                dashboardTitle:"Choose a topic to practice",
+                progressionInfo:"Choose a topic. The system adapts to you. Answer 8 questions correctly in a row to unlock the next level.",
+                startBtn:"Start Practice",backBtn:"Back to Menu",selectLevel:"Select Level:",
+                hintsTitle:"Hints",prevLevel:"Previous",nextLevel:"Next",
+                levelUpTitle:"Great Job! 🔥",levelUpDesc:"You've answered 8 in a row! Do you want to try the next level?",levelUpYes:"Next Level",levelUpNo:"Stay Here",levelUpHint:"Remember, you can always change difficulty manually at the top.",
+                aboutBtn:"About the creator",aboutTitle:"About the creator",aboutText:"Charles is a special education teacher currently working in Sweden and is passionate about discovering new ways to teach in the classroom.",
+                contactLink:"Follow me on LinkedIn",
+                tagline:"Right support. Instantly.",
+                tagCorrect: "Correct",
+                tagWrong: "Wrong",
+                tagSkipped: "Skipped",
+                streak_modal_title: "Awesome! 🔥",
+                streak_modal_msg: "You hit a streak of {streak}!",
+                total_modal_title: "Great work! ✅",
+                total_modal_msg: "You answered {total} questions correctly! Great job!",
+                btn_close_streak: "Great job!",
+                btn_close_total: "Continue"
+            }
+        };
+
+        const MathText=({text,className="",large=false})=>{
+            if(!text)return null;
+            // Clean up potentially already escaped backslashes for textcolor
+            const cleanText = text.replace(/\\\\/g, '\\');
+            const patchedText = cleanText.replace(/\\mathbf\{\\?textcolor\{([^}]+)\}\{([^}]+)\}\}/g, '{\\color{$1}\\mathbf{$2}}');
+            
+            // Format fractions cleanly in history or descriptions if they appear raw like \frac{x}{6}
+            // We wrap them in $...$ if they aren't already, but carefully
+            // This regex finds latex commands not inside $...$ and wraps them (simplified)
+            // Ideally generators send $...$, but for history we wrap the whole text if it looks like math
+            
+            const parts=patchedText.split(/(\$[^\$]+\$)/g);
+            return(<span className={className}>{parts.map((part,index)=>{
+                if(part.startsWith('$')&&part.endsWith('$')){
+                    const tex=part.slice(1,-1);
+                    try{
+                        const html=katex.renderToString(tex,{throwOnError:false,displayMode:large});
+                        return<span key={index} dangerouslySetInnerHTML={{__html:html}}/>;
+                    }catch(e){return<span key={index} className="text-red-500">{part}</span>;}
+                } else if (part.includes('\\')) { 
+                    // Fallback for un-dollar-sign-wrapped latex in history
+                    try {
+                        const html=katex.renderToString(part,{throwOnError:false,displayMode:false});
+                        return<span key={index} dangerouslySetInnerHTML={{__html:html}}/>;
+                    } catch(e) {
+                         return<span key={index}>{part}</span>;
+                    }
+                }
+                return<span key={index}>{part}</span>;
+            })}</span>);
+        };
+        
+        const GraphCanvas=({data})=>{const canvasRef=useRef(null);useEffect(()=>{const canvas=canvasRef.current;if(!canvas||!data)return;const ctx=canvas.getContext('2d');const width=canvas.width;const height=canvas.height;const range=data.range||10;ctx.clearRect(0,0,width,height);ctx.font='10px Inter, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const toX=(val)=>(val+range)*(width/(range*2));const toY=(val)=>height-(val+range)*(height/(range*2));ctx.strokeStyle='#e5e7eb';ctx.lineWidth=1;for(let i=-range;i<=range;i+=data.gridStep||1){ctx.beginPath();ctx.moveTo(toX(i),0);ctx.lineTo(toX(i),height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,toY(i));ctx.lineTo(width,toY(i));ctx.stroke();}ctx.strokeStyle='#374151';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(toX(0),0);ctx.lineTo(toX(0),height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,toY(0));ctx.lineTo(width,toY(0));ctx.stroke();ctx.fillStyle='#6b7280';const tickSize=3;const step=data.labelStep||2;for(let i=-range;i<=range;i+=step){if(i===0)continue;const xPos=toX(i);const yOrigin=toY(0);ctx.beginPath();ctx.moveTo(xPos,yOrigin-tickSize);ctx.lineTo(xPos,yOrigin+tickSize);ctx.stroke();ctx.fillText(i.toString(),xPos,yOrigin+12);const yPos=toY(i);const xOrigin=toX(0);ctx.beginPath();ctx.moveTo(xOrigin-tickSize,yPos);ctx.lineTo(xOrigin+tickSize,yPos);ctx.stroke();ctx.fillText(i.toString(),xOrigin-12,yPos);}data.lines.forEach(line=>{ctx.strokeStyle=line.color||'#dc2626';ctx.lineWidth=3;ctx.beginPath();const x1=-range;const y1=line.slope*x1+line.intercept;const x2=range;const y2=line.slope*x2+line.intercept;ctx.moveTo(toX(x1),toY(y1));ctx.lineTo(toX(x2),toY(y2));ctx.stroke();});},[data]);return<div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm"/></div>;};
+        
+        const VolumeVisualization = ({ data }) => {
+            const canvasRef = useRef(null);
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas || !data) return;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width;
+                const h = canvas.height;
+                ctx.clearRect(0, 0, w, h);
+                ctx.strokeStyle = '#374151'; ctx.fillStyle = '#e5e7eb'; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.font = "bold 16px Inter"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                const cx = w / 2; const cy = h / 2;
+                const drawLabel = (text, x, y, color='#ef4444') => { ctx.save(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.miterLimit = 2; ctx.strokeText(text, x, y); ctx.restore(); ctx.fillStyle = color; ctx.fillText(text, x, y); ctx.fillStyle = '#e5e7eb'; };
+                const drawDashedLine = (x1, y1, x2, y2) => { ctx.save(); ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.restore(); };
+
+                if (data.type === 'cuboid') { const s = 120; const hw = s * 0.6; const hh = s * 0.5; const depthX = 40; const depthY = -30; const x0 = cx - hw/2 - depthX/2; const y0 = cy + hh/2 + depthY/2; ctx.strokeRect(x0, y0 - hh, hw, hh); ctx.beginPath(); ctx.moveTo(x0, y0 - hh); ctx.lineTo(x0 + depthX, y0 - hh + depthY); ctx.lineTo(x0 + hw + depthX, y0 - hh + depthY); ctx.lineTo(x0 + hw, y0 - hh); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x0 + hw + depthX, y0 - hh + depthY); ctx.lineTo(x0 + hw + depthX, y0 + depthY); ctx.lineTo(x0 + hw, y0); ctx.stroke(); drawLabel(data.labels.w, x0 + hw/2, y0 + 20); drawLabel(data.labels.h, x0 - 20, y0 - hh/2); drawLabel(data.labels.d, x0 + hw + depthX/2 + 5, y0 + depthY/2 + 15); }
+                else if (data.type === 'triangular_prism') { const scale = 14; const baseW = data.b * scale; const triH = data.h_tri * scale; const len = data.len * scale * 0.8; const startX = cx - baseW/2 - len/4; const startY = cy + triH/2; ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(startX + baseW, startY); ctx.lineTo(startX + baseW/2, startY - triH); ctx.closePath(); ctx.stroke(); const offX = len * 0.8; const offY = -len * 0.5; ctx.beginPath(); ctx.moveTo(startX + baseW/2, startY - triH); ctx.lineTo(startX + baseW/2 + offX, startY - triH + offY); ctx.stroke(); ctx.beginPath(); ctx.moveTo(startX + baseW, startY); ctx.lineTo(startX + baseW + offX, startY + offY); ctx.lineTo(startX + baseW/2 + offX, startY - triH + offY); ctx.stroke(); drawDashedLine(startX + baseW/2, startY, startX + baseW/2, startY - triH); drawLabel(data.labels.b, startX + baseW/2, startY + 20); drawLabel(data.labels.h, startX + baseW/2 + 15, startY - triH/2); drawLabel(data.labels.l, startX + baseW + offX/2 + 10, startY + offY/2); }
+                else if (data.type === 'pyramid') { const h = 130; const cBaseX = cx; const cBaseY = cy + 50; const dx = 80; const dy = 30; const vFront = { x: cBaseX, y: cBaseY + dy }; const vBack  = { x: cBaseX, y: cBaseY - dy }; const vLeft  = { x: cBaseX - dx, y: cBaseY }; const vRight = { x: cBaseX + dx, y: cBaseY }; const vApex  = { x: cBaseX, y: cBaseY - h }; ctx.beginPath(); ctx.moveTo(vLeft.x, vLeft.y); ctx.lineTo(vFront.x, vFront.y); ctx.lineTo(vRight.x, vRight.y); ctx.lineTo(vBack.x, vBack.y); ctx.closePath(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(vLeft.x, vLeft.y); ctx.lineTo(vApex.x, vApex.y); ctx.moveTo(vRight.x, vRight.y); ctx.lineTo(vApex.x, vApex.y); ctx.moveTo(vFront.x, vFront.y); ctx.lineTo(vApex.x, vApex.y); ctx.stroke(); drawDashedLine(vBack.x, vBack.y, vApex.x, vApex.y); drawDashedLine(cBaseX, cBaseY, vApex.x, vApex.y); drawLabel(data.labels.s, cBaseX + dx/2, cBaseY + dy/2 + 20); drawLabel(data.labels.h, cBaseX + 15, cBaseY - h/2); }
+                else if (data.type === 'sphere' || data.type === 'hemisphere' || data.type === 'ice_cream' || data.type === 'silo') { const r = 70; if (data.type === 'silo') { const cylH = 100; const topY = cy - cylH/2 + 20; const bottomY = cy + cylH/2 + 20; ctx.beginPath(); ctx.moveTo(cx - r, topY); ctx.lineTo(cx - r, bottomY); ctx.moveTo(cx + r, topY); ctx.lineTo(cx + r, bottomY); ctx.stroke(); ctx.beginPath(); ctx.ellipse(cx, bottomY, r, r/3, 0, 0, Math.PI); ctx.stroke(); ctx.save(); ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.ellipse(cx, bottomY, r, r/3, 0, Math.PI, 2 * Math.PI); ctx.stroke(); ctx.restore(); ctx.beginPath(); ctx.ellipse(cx, topY, r, r/3, 0, 0, 2 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, topY, r, Math.PI, 0); ctx.stroke(); drawLabel(data.labels.h, cx + r + 20, cy + 20); if (data.show === 'd') { drawDashedLine(cx - r, topY, cx + r, topY); drawLabel(data.labels.val, cx, topY - 10); } else { drawDashedLine(cx, topY, cx + r, topY); drawLabel(data.labels.val, cx + r/2, topY - 10); } } else if (data.type === 'ice_cream') { const coneH = 120; const tipY = cy + coneH/2; const baseY = tipY - coneH; ctx.beginPath(); ctx.moveTo(cx - r, baseY); ctx.lineTo(cx, tipY); ctx.lineTo(cx + r, baseY); ctx.stroke(); ctx.beginPath(); ctx.ellipse(cx, baseY, r, r/3, 0, 0, 2 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, baseY, r, Math.PI, 0); ctx.stroke(); drawLabel(data.labels.h, cx + 20, tipY - coneH/2); if (data.show === 'd') { drawDashedLine(cx - r, baseY, cx + r, baseY); drawLabel(data.labels.val, cx, baseY - 20); } else { drawDashedLine(cx, baseY, cx + r, baseY); drawLabel(data.labels.val, cx + r/2, baseY - 15); } } else if (data.type === 'hemisphere') { const baseY = cy + 20; ctx.beginPath(); ctx.ellipse(cx, baseY, r, r/3, 0, 0, 2 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, baseY, r, Math.PI, 0); ctx.stroke(); if (data.show === 'd') { drawDashedLine(cx - r, baseY, cx + r, baseY); drawLabel(data.labels.val, cx, baseY + 40); } else { drawDashedLine(cx, baseY, cx + r, baseY); drawLabel(data.labels.val, cx + r/2, baseY + 10); } } else { ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.ellipse(cx, cy, r, r/3, 0, 0, 2 * Math.PI); ctx.stroke(); if (data.show === 'd') { drawDashedLine(cx - r, cy, cx + r, cy); drawLabel(data.labels.val, cx, cy - 15); } else { drawDashedLine(cx, cy, cx + r, cy); drawLabel(data.labels.val, cx + r/2, cy - 15); } } }
+                else if (data.type === 'cylinder' || data.type === 'cone') { const w = 100; const hShape = 120; const isCone = data.type === 'cone'; ctx.beginPath(); ctx.ellipse(cx, cy + hShape/2, w/2, 15, 0, 0, 2 * Math.PI); ctx.stroke(); if (isCone) { ctx.beginPath(); ctx.moveTo(cx - w/2, cy + hShape/2); ctx.lineTo(cx, cy - hShape/2); ctx.lineTo(cx + w/2, cy + hShape/2); ctx.stroke(); drawDashedLine(cx, cy - hShape/2, cx, cy + hShape/2); drawLabel(data.labels.h, cx + 15, cy); drawLabel(data.labels.r, cx + 10, cy + hShape/2 + 25); } else { ctx.beginPath(); ctx.ellipse(cx, cy - hShape/2, w/2, 15, 0, 0, 2 * Math.PI); ctx.stroke(); ctx.beginPath(); ctx.moveTo(cx - w/2, cy - hShape/2); ctx.lineTo(cx - w/2, cy + hShape/2); ctx.moveTo(cx + w/2, cy - hShape/2); ctx.lineTo(cx + w/2, cy + hShape/2); ctx.stroke(); drawLabel(data.labels.h, cx + w/2 + 20, cy); drawLabel(data.labels.r, cx + 10, cy + hShape/2 + 25); } }
+            }, [data]);
+            return <div className="flex justify-center my-2 w-full"><canvas ref={canvasRef} width={320} height={240} className="w-full max-w-[320px] h-auto bg-white rounded-lg" /></div>;
+        };
+
+        const GeometryVisual = ({ data }) => {
+            if (!data) return null;
+            const SvgContainer = ({ children, w=240, h=200, viewBox="0 0 200 200" }) => <svg width={w} height={h} viewBox={viewBox} className="my-2 w-full max-w-[240px] mx-auto">{children}</svg>;
+            const Label = ({ x, y, text, align="middle" }) => ( <text x={x} y={y} textAnchor={align} className="fill-gray-700 text-sm font-bold" style={{fontSize: '14px'}}> {text} </text> );
+            const RenderShape = ({ type, dims, labels, areaText }) => {
+                const w = dims.width || 0, h = dims.height || 0, r = dims.radius || 0;
+                const size = Math.max(w, h, r*2);
+                const scale = 120 / (size || 1); 
+                let sw = w * scale, sh = h * scale, sr = r * scale;
+                const cx = 90, cy = 90;
+                const content = () => {
+                    if (type === 'rectangle' || type === 'square' || type === 'parallelogram') return (<><rect x={cx-sw/2} y={cy-sh/2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><text x={cx} y={cy+sh/2+20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text><text x={cx+sw/2+10} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text></>)}</>);
+                    if (type === 'triangle') return (<><polygon points={`${cx-sw/2},${cy+sh/2} ${cx+sw/2},${cy+sh/2} ${cx},${cy-sh/2}`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><text x={cx} y={cy+sh/2+20} textAnchor="middle" fontWeight="bold" fill="#374151">{dims.width}</text><line x1={cx} y1={cy-sh/2} x2={cx} y2={cy+sh/2} stroke="#6b7280" strokeDasharray="4" /><text x={cx+5} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{dims.height}</text></>)}</>);
+                    if (type === 'circle') return (<><circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx+sr/2} y={cy-5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text></>)}</>);
+                    if (type === 'semicircle') return (<><path d={`M ${cx-sr} ${cy} A ${sr} ${sr} 0 0 1 ${cx+sr} ${cy} Z`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx+sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx+sr/2} y={cy-5} textAnchor="middle" fontWeight="bold" fill="#374151">r={dims.radius}</text></>)}</>);
+                    return null;
+                };
+                return (<svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm w-full max-w-[200px]">{content()}{areaText && <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
+            };
+            if (data.type === 'triangle') { const w = data.width || 0, h = data.height || 0; const maxDim = Math.max(w, h); const scale = 140 / (maxDim || 1); const bVal = w * scale; const hVal = h * scale; const cx = 100, cy = 100; let points = "", hLine = null, bLabel = null, hLabel = null; const orient = data.orientation || 'up'; const isRight = data.subtype === 'right'; if (orient === 'up') { const x1 = cx - bVal/2, y1 = cy + hVal/2; const x2 = cx + bVal/2, y2 = cy + hVal/2; const x3 = isRight ? x1 : cx, y3 = cy - hVal/2; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x3} y2={y1} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x1} y1={y1} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={cx} y={y1 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={isRight ? x1 - 15 : cx + 5} y={cy} textAnchor={isRight ? "end" : "start"} fontWeight="bold" fill="#374151">{data.labels.height}</text>; } else if (orient === 'down') { const x1 = cx - bVal/2, y1 = cy - hVal/2; const x2 = cx + bVal/2, y2 = cy - hVal/2; const x3 = isRight ? x1 : cx, y3 = cy + hVal/2; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x3} y2={y1} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x1} y1={y1} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={cx} y={y1 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={isRight ? x1 - 15 : cx + 5} y={cy} textAnchor={isRight ? "end" : "start"} fontWeight="bold" fill="#374151">{data.labels.height}</text>; } else if (orient === 'left') { const x1 = cx + hVal/2, y1 = cy - bVal/2; const x2 = cx + hVal/2, y2 = cy + bVal/2; const x3 = cx - hVal/2, y3 = isRight ? y2 : cy; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x1} y2={y3} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x2} y1={y2} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={x1 + 15} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={cx} y={isRight ? y2 + 20 : y3 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.height}</text>; } else { const x1 = cx - hVal/2, y1 = cy - bVal/2; const x2 = cx - hVal/2, y2 = cy + bVal/2; const x3 = cx + hVal/2, y3 = isRight ? y2 : cy; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x1} y2={y3} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x2} y1={y2} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={x1 - 15} y={cy} textAnchor="end" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={cx} y={isRight ? y2 + 20 : y3 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.height}</text>; } return ( <SvgContainer><polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{hLine}{bLabel}{hLabel}</SvgContainer> ); } if (data.type === 'circle') { const cx=100, cy=100, r=70; return ( <SvgContainer><circle cx={cx} cy={cy} r={r} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{data.show === 'diameter' ? (<><line x1={cx-r} y1={cy} x2={cx+r} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx} y={cy-10} textAnchor="middle" fontWeight="bold" fill="#374151">d = {data.value}</text></>) : (<><line x1={cx} y1={cy} x2={cx+r} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx+r/2} y={cy-10} textAnchor="middle" fontWeight="bold" fill="#374151">r = {data.value}</text></>)}</SvgContainer> ); } if (data.type === 'composite') { const subtype = data.subtype; if (subtype === 'house') { return ( <SvgContainer><rect x="50" y="80" width="100" height="80" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><polygon points="50,80 150,80 100,20" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><text x="160" y="120" fontWeight="bold" fill="#374151">{data.labels.h}</text><text x="100" y="180" textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.w}</text><text x="130" y="50" fontWeight="bold" fill="#374151">{data.labels.h_roof}</text></SvgContainer> ); } if (subtype === 'portal') { return ( <SvgContainer><rect x="50" y="70" width="100" height="100" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><path d="M 50 70 A 50 50 0 0 1 150 70" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><text x="100" y="190" textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.w}</text></SvgContainer> ); } return ( <SvgContainer><polygon points="50,70 150,70 100,190" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><path d="M 50 70 A 50 50 0 0 1 150 70" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><line x1="50" y1="70" x2="150" y2="70" stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /><text x="100" y="60" textAnchor="middle" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.top}</text><text x="140" y={130} textAnchor="start" fill="#374151" fontSize="14" fontWeight="bold">{data.labels.side}</text></SvgContainer> ); } if (data.type === 'scale_single' || data.type === 'scale_compare') { const shapeEmojis = { square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', rhombus: '🔶', parallelogram: '▰', pentagon: '⬟', hexagon: '🛑', octagon: '🛑', star: '⭐', arrow: '➡', heart: '❤️', cross: '➕', lightning: '⚡', kite: '🪁', cube: '🧊', cylinder: '🛢️', pyramid: '⛰️', cone: '🍦', sphere: '🔮' }; const emoji = shapeEmojis[data.shape] || '📦'; const ShapeIcon = ({ size }) => <div className="flex items-center justify-center text-6xl" style={{width:size,height:size}}>{emoji}</div>; if (data.type === 'scale_single') return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="120px" /><span className="bg-white px-3 py-1 rounded shadow text-sm font-mono border border-gray-200">{data.label}</span></div>; return <div className="flex items-end justify-center gap-6 sm:gap-12 my-6"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="80px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.leftValue}</span></div><div className="pb-8 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400 mb-1">{data.rightLabel}</span><ShapeIcon size="120px" /><span className="text-sm font-mono bg-white px-2 rounded border mt-2">{data.rightValue}</span></div></div>; } if (data.type === 'compare_shapes' || data.type === 'compare_shapes_area') { const showLabels = data.type === 'compare_shapes'; const showArea = data.type === 'compare_shapes_area'; return (<div className="flex flex-wrap justify-center gap-8 items-end my-4"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.left.label}</span><RenderShape type={data.shapeType} dims={data.left} labels={showLabels} areaText={showArea ? data.left.area : null} /></div><div className="pb-20 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.right.label}</span><RenderShape type={data.shapeType} dims={data.right} labels={showLabels} areaText={showArea ? data.right.area : null} /></div></div>); }
+            return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>; 
+        };
+
+        // --- DEFINED BEFORE USAGE ---
+        const LevelUpModal = ({ visible, ui, onNext, onStay }) => {
+            if(!visible) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-bounce-in border border-gray-100">
+                        <div className="text-center mb-6"><div className="text-5xl mb-4">🔥</div><h3 className="text-2xl font-bold text-gray-800 mb-2">{ui.levelUpTitle}</h3><p className="text-gray-600">{ui.levelUpDesc}</p></div>
+                        <div className="flex flex-col gap-3"><button onClick={onNext} className="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 text-lg">{ui.levelUpYes}</button><button onClick={onStay} className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all active:scale-95">{ui.levelUpNo}</button></div>
+                        <p className="text-xs text-gray-400 text-center mt-6 italic">{ui.levelUpHint}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const StreakModal = ({ visible, streak, ui, onClose }) => {
+            if (!visible) return null;
+            let icon = "🥉";
+            if (streak >= 50) icon = "👑";
+            else if (streak >= 40) icon = "🏆";
+            else if (streak >= 30) icon = "🥇";
+            else if (streak >= 20) icon = "🥈";
+            else if (streak >= 15) icon = "🥉";
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 relative animate-bounce-in border-4 border-yellow-400 text-center">
+                        <div className="text-6xl mb-4 animate-pulse">{icon}</div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">{ui.streak_modal_title}</h3>
+                        <p className="text-lg text-gray-600 mb-6">{ui.streak_modal_msg.replace('{streak}', streak)}</p>
+                        <button onClick={onClose} className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 text-lg">{ui.btn_close_streak}</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const TotalCorrectModal = ({ visible, total, ui, onClose }) => {
+            if (!visible) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 relative animate-bounce-in border-4 border-green-500 text-center">
+                        <div className="text-6xl mb-4">✅</div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">{ui.total_modal_title}</h3>
+                        <p className="text-lg text-gray-600 mb-6">{ui.total_modal_msg.replace('{total}', total)}</p>
+                        <button onClick={onClose} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-md transition-all active:scale-95 text-lg">{ui.btn_close_total}</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const AboutModal = ({ visible, onClose, ui }) => {
+            if (!visible) return null;
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative animate-bounce-in border border-gray-100">
+                        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">✕</button>
+                        <div className="text-center mb-6">
+                            <h3 className="text-2xl font-bold text-gray-800 mb-2">{ui.aboutTitle}</h3>
+                            <p className="text-gray-600 text-sm leading-relaxed mb-6">{ui.aboutText}</p>
+                            <hr className="my-4 border-gray-200" />
+                            <a href="https://www.linkedin.com/in/charles-mejilla-4a2ba22b" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-bold transition-colors">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                                {ui.contactLink}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- DASHBOARD COMPONENT ---
+        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect})=>{const ui=UI_TEXT[lang];const getCategoryColorClass=(category,type)=>{const colorMap={pink:'pink',indigo:'indigo',emerald:'emerald',purple:'purple'};const color=colorMap[category.color]||'primary';if(type==='bg-light')return `bg-${color}-50`;if(type==='bg-dark')return `bg-${color}-500`;if(type==='border')return `border-${color}-100`;if(type==='text')return `text-${color}-700`;if(type==='ring')return `ring-${color}-500`;if(type==='border-solid')return `border-${color}-500`;return '';};return(<div className="max-w-6xl mx-auto w-full p-4 fade-in">
+        <div className="text-center py-10 md:py-16 border-b border-gray-200 mb-12 bg-primary-50 rounded-3xl mx-4"><h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-4 tracking-tight">Anpassa</h1><p className="text-xl md:text-2xl text-gray-500 font-medium tracking-wide">{ui.tagline}</p></div>
+        <div className="text-center mb-10"><p className="text-gray-500 text-lg leading-relaxed max-w-2xl mx-auto">{ui.progressionInfo}</p></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">{Object.entries(CATEGORIES).map(([catKey,category])=>{const bgLight=getCategoryColorClass(category,'bg-light');const border=getCategoryColorClass(category,'border');const text=getCategoryColorClass(category,'text');const bgDark=getCategoryColorClass(category,'bg-dark');return(<div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}><div className={`${bgLight} p-4 border-b ${border}`}><h3 className={`text-lg font-bold ${text} uppercase tracking-wide flex items-center gap-2`}><span className={`w-3 h-3 rounded-full ${bgDark}`}></span>{category.label[lang]}</h3></div><div className="p-4 space-y-4 flex-1">{category.topics.map(topic=>{const ring=getCategoryColorClass(category,'ring');const borderSolid=getCategoryColorClass(category,'border-solid');return(<div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100"><div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div><div className="relative"><select value={selectedTopic===topic.id?selectedLevel:0} onChange={(e)=>onSelect(topic.id,Number(e.target.value))} className={`w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 appearance-none cursor-pointer ${selectedTopic===topic.id?`ring-2 ${ring} ${borderSolid}`:`focus:${ring}`}`}><option value={0} disabled>{ui.selectLevel}</option>{[1,2,3,4,5,6,7,8,9].map(lvl=>{if(!LEVEL_DESCRIPTIONS[topic.id]?.[lvl])return null;return<option key={lvl} value={lvl}>{lang==='sv'?`Nivå ${lvl}`:`Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang]||""}</option>;})}</select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg></div></div></div>);})}</div></div>);})}</div><div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20"><button onClick={onStart} className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 ${selectedTopic?'bg-accent-500 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-accent-600 shadow-accent-200':'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}`}>{ui.startBtn} <span>🚀</span></button></div></div>);};
+
+        // --- PRACTICE VIEW ---
+        const PracticeView=({lang,ui,question,loading,feedback,streak,input,setInput,handleSubmit,handleHint,handleSolution,handleSkip,handleChangeLevel,revealedClues,uiState,actions,levelUpAvailable,setLevelUpAvailable,isSolutionRevealed, showStreakModal, setShowStreakModal, showTotalModal, setShowTotalModal, totalCorrect})=>{
+            const [mobileHistoryOpen,setMobileHistoryOpen]=useState(false);
+            const [scaleInputLeft, setScaleInputLeft] = useState('');
+            const [scaleInputRight, setScaleInputRight] = useState('');
+            const [attempts, setAttempts] = useState(0);
+
+            const descriptionText=typeof question?.renderData?.description==='object'?question.renderData.description[lang]:question?.renderData?.description;
+            const handleChoiceClick=(choice)=>{if(feedback==='correct')return;setInput(choice);handleSubmit({preventDefault:()=>{}},choice);};
+            const handleFormSubmit=(e)=>{
+                if(question.renderData.answerType === 'scale') {
+                    const combined = `${scaleInputLeft}:${scaleInputRight}`;
+                    setInput(combined);
+                    handleSubmit(e, combined);
+                } else {
+                    handleSubmit(e, input);
+                }
+            };
+            
+            // Reset attempts when question changes
+            useEffect(() => { 
+                setScaleInputLeft(''); 
+                setScaleInputRight(''); 
+                setAttempts(0);
+            }, [question]);
+
+            const maxLevels=Object.keys(LEVEL_DESCRIPTIONS[uiState.topic]||{}).length;
+            
+            // Enhanced History with Tags (Right/Wrong/Skipped)
+            // Added correct answer display for failed questions
+            const HistoryList=({history})=>(<div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"><div className="p-4 border-b bg-gray-50 flex justify-between items-center"><h2 className="font-bold text-gray-700">{ui.history}</h2><span className="text-xs text-gray-400">{history.length}</span></div><div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[500px]">{history.length===0?<p className="text-gray-400 text-center text-sm py-4">{ui.noHistory}</p>:history.map((entry,i)=>(<div key={i} className={`p-3 rounded-lg border-l-4 text-sm ${entry.correct?'border-primary-500 bg-primary-50': (entry.skipped ? 'border-gray-400 bg-gray-50' : 'border-red-500 bg-red-50')}`}><div className="flex justify-between items-start mb-1"><span className="font-semibold capitalize text-gray-700">{entry.topic} <span className="text-xs font-normal text-gray-500">(Lvl {entry.level})</span></span><span className="text-xs text-gray-400">{new Date(entry.time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div><div className="text-gray-600 mb-1 line-clamp-2"><MathText text={entry.text}/></div>{!entry.correct && !entry.skipped && entry.correctAnswer && <div className="text-xs text-red-600 mt-1 font-medium"><MathText text={`Correct: ${entry.correctAnswer}`}/></div>}<div>{entry.clueUsed&&<span className="inline-block px-1.5 py-0.5 bg-accent-100 text-accent-700 text-[10px] rounded uppercase font-bold tracking-wider mr-1">{ui.clueUsed}</span>} <span className={`inline-block px-1.5 py-0.5 rounded uppercase font-bold tracking-wider text-[10px] ${entry.correct ? 'bg-green-100 text-green-700' : (entry.skipped ? 'bg-gray-200 text-gray-600' : 'bg-red-100 text-red-700')}`}>{entry.correct ? ui.tagCorrect : (entry.skipped ? ui.tagSkipped : ui.tagWrong)}</span></div></div>))}</div></div>);
+            
+            const MobileDrawer=()=>(<>{mobileHistoryOpen&&<div className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm lg:hidden" onClick={()=>setMobileHistoryOpen(false)}></div>}<div className={`fixed inset-y-0 left-0 w-80 bg-white shadow-2xl transform transition-transform duration-300 z-50 flex flex-col lg:hidden ${mobileHistoryOpen?'translate-x-0':'-translate-x-full'}`}><div className="p-4 border-b flex justify-between items-center bg-gray-50"><h2 className="font-bold text-gray-700">{ui.history}</h2><button onClick={()=>setMobileHistoryOpen(false)} className="text-gray-400">✕</button></div><div className="flex-1 overflow-y-auto p-4"><HistoryList history={uiState.history}/></div></div></>);
+            const CluePanel=()=>{
+                if(revealedClues===0)return null;
+                const visibleClues=question.clues.slice(0,revealedClues);
+                return(
+                    <div className="bg-accent-50 border border-accent-200 rounded-xl p-5 shadow-sm mb-4 animate-fade-in">
+                        <div className="flex items-center gap-2 mb-4 text-accent-800 font-bold border-b border-accent-200 pb-2">
+                            <span>💡 {ui.hintsTitle} ({revealedClues}/{question.clues.length})</span>
+                        </div>
+                        <div className="space-y-6">
+                            {visibleClues.map((clue,i)=>{
+                                const isLast = i === question.clues.length - 1;
+                                const showLatex = !isLast || isSolutionRevealed;
+                                return (
+                                    <div key={i} className="group animate-slide-down">
+                                        <div className="text-sm text-accent-900 mb-2 font-medium leading-relaxed">
+                                            <MathText text={clue.text}/>
+                                        </div>
+                                        {clue.latex && showLatex && (
+                                            <div className="bg-white p-3 rounded-lg border border-accent-200 text-center shadow-sm overflow-x-auto">
+                                                <MathText text={`$${clue.latex}$`} large={true}/>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            };
+
+            return(
+                <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
+                    <MobileDrawer/>
+                    <LevelUpModal 
+                        visible={levelUpAvailable} 
+                        ui={ui} 
+                        onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }}
+                        onStay={() => setLevelUpAvailable(false)}
+                    />
+                    <StreakModal 
+                        visible={showStreakModal}
+                        streak={streak}
+                        ui={ui}
+                        onClose={() => { setShowStreakModal(false); actions.retry(); }} // Generate next question on close
+                    />
+                    <TotalCorrectModal
+                        visible={showTotalModal}
+                        total={totalCorrect}
+                        ui={ui}
+                        onClose={() => { setShowTotalModal(false); }}
+                    />
+                    <div className="flex-1 w-full min-w-0">
+                        <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                            <button onClick={actions.goBack} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm px-4 py-2 rounded-lg shadow-sm border border-gray-300 transition-all active:scale-95"><span>←</span> {ui.backBtn}</button>
+                            <div className="flex items-center gap-3"><div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200"><button onClick={()=>handleChangeLevel(-1)} disabled={uiState.level<=1} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.prevLevel}>&lt;</button><span className="text-xs font-bold uppercase tracking-wider text-gray-500 min-w-[80px] text-center">{uiState.topic} • Lvl {uiState.level}</span><button onClick={()=>handleChangeLevel(1)} disabled={uiState.level>=maxLevels} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.nextLevel}>&gt;</button></div><button onClick={()=>setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button></div>
+                        </div>
+                        <main className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
+                            {/* REDUCED PADDING & SPACING IN MAIN CONTENT */}
+                            {loading?(<div className="p-20 text-center flex flex-col items-center gap-4"><div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div></div>):question?(<div className="p-4 sm:p-6">
+                                <div className="mb-4 flex justify-center bg-gray-50 rounded-xl p-4 min-h-[160px] items-center border border-gray-100 relative">
+                                    {question.renderData.graph ? (
+                                        <GraphCanvas data={question.renderData.graph}/>
+                                    ) : question.renderData.geometry ? (
+                                        ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(question.renderData.geometry.type) 
+                                        ? <VolumeVisualization data={question.renderData.geometry}/> 
+                                        : <GeometryVisual data={question.renderData.geometry}/>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center w-full">
+                                            {uiState.topic==='geometry' && <StaticGeometryVisual description={descriptionText}/>}
+                                            {question.renderData.latex && <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true}/></div>}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mb-4 text-center"><h2 className="text-lg sm:text-xl font-medium text-gray-700 leading-relaxed"><MathText text={descriptionText}/></h2></div>
+                                {question.renderData.answerType==='multiple_choice'?(<div className="max-w-md mx-auto grid grid-cols-2 gap-4">{question.renderData.choices.map((choice,idx)=>(<button key={idx} onClick={()=>handleChoiceClick(choice)} className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback==='correct'&&choice===input?'bg-green-500 border-green-500 text-white':feedback==='incorrect'&&choice===input?'bg-red-500 border-red-500 text-white':'bg-white border-gray-200 text-gray-700 hover:border-accent-500 hover:text-accent-600'}`} disabled={feedback==='correct'}>{choice}</button>))}</div>):(<form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
+                                {question.renderData.answerType === 'scale' ? (
+                                    <div className="flex items-center justify-center gap-2"><input type="text" value={scaleInputLeft} onChange={(e) => setScaleInputLeft(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder="X" autoFocus disabled={feedback === 'correct'} /><span className="text-2xl font-bold text-gray-400">:</span><input type="text" value={scaleInputRight} onChange={(e) => setScaleInputRight(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder="X" disabled={feedback === 'correct'} /></div>
+                                ) : (
+                                    <div className="relative"><input type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback==='correct'?'border-primary-500 bg-primary-50 text-primary-700':feedback==='incorrect'?'border-red-500 bg-red-50 text-red-700':'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder={ui.placeholder} autoFocus disabled={feedback === 'correct'}/></div>
+                                )}
+                                <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback==='correct'?'bg-primary-500 shadow-green-200 cursor-default':'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}>{feedback==='correct'?ui.correct:feedback==='incorrect'?ui.incorrect:ui.submit}</button></form>)}<div className="mt-6 flex gap-3 justify-center flex-wrap"><button type="button" onClick={handleHint} disabled={!question.clues||revealedClues>=question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-accent-50 text-accent-700 border border-accent-200 hover:bg-accent-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button><button type="button" onClick={handleSolution} disabled={!question.clues||isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button><button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"><span>⏭️</span> {ui.btnSkip}</button></div></div>):(<div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={actions.retry} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>)}</main></div><div className="lg:w-80 w-full shrink-0 flex flex-col gap-4"><CluePanel/><div className="hidden lg:block flex-1 min-h-0"><HistoryList history={uiState.history}/></div></div></div>);};
+
+        function App(){const[view,setView]=useState('dashboard');const[lang,setLang]=useState('sv');const[topic,setTopic]=useState('');const[level,setLevel]=useState(0);const[question,setQuestion]=useState(null);const[input,setInput]=useState('');const[feedback,setFeedback]=useState(null);const[loading,setLoading]=useState(false);const[streak,setStreak]=useState(0);const[totalCorrect, setTotalCorrect] = useState(0); // Total correct answers
+        const[history,setHistory]=useState([]);const[revealedClues,setRevealedClues]=useState(0);const[levelUpAvailable,setLevelUpAvailable]=useState(false);const[aboutOpen,setAboutOpen]=useState(false);const[usedHelp, setUsedHelp] = useState(false);const[isSolutionRevealed, setIsSolutionRevealed] = useState(false);const[showStreakModal, setShowStreakModal] = useState(false);const[showTotalModal, setShowTotalModal] = useState(false);const ui=UI_TEXT[lang];const fetchQuestion=async(t=topic,l=level,lg=lang)=>{if(!t||!l)return;setLoading(true);setFeedback(null);setInput('');setRevealedClues(0);setUsedHelp(false);setIsSolutionRevealed(false);setLevelUpAvailable(false);try{const res=await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}`);const data=await res.json();if(data.error)throw new Error(data.error);setQuestion(data);}catch(e){console.error(e);setQuestion(null);}finally{setLoading(false);}};const startPractice=()=>{if(topic&&level){setStreak(0);setView('practice');fetchQuestion(topic,level,lang);}};const quitPractice=()=>{setStreak(0);setView('dashboard');setQuestion(null);};const handleSelection=(t,l)=>{setTopic(t);setLevel(l);};const handleHint=()=>{if(question?.clues){setUsedHelp(true);setRevealedClues(p=>Math.min(p+1,question.clues.length));}};const handleSolution=()=>{if(question?.clues){setUsedHelp(true);setRevealedClues(question.clues.length);setIsSolutionRevealed(true);setStreak(0);}};const handleSkip=()=>{const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;setHistory(prev=>[{topic,level,correct:false,skipped:true,text:descText||question.renderData.latex,clueUsed:revealedClues>0||isSolutionRevealed,time:Date.now()},...prev]);setStreak(0);fetchQuestion(topic,level,lang);};const handleChangeLevel=(delta)=>{const newLevel=level+delta;const max=Object.keys(LEVEL_DESCRIPTIONS[topic]||{}).length;if(newLevel>=1&&newLevel<=max){setStreak(0);setLevel(newLevel);fetchQuestion(topic,newLevel,lang);}};const handleSubmit=async(e,directInput)=>{e.preventDefault();const answerToSubmit=directInput!==undefined?directInput:input;if(!question||!answerToSubmit)return;const helpUsed=revealedClues>0||isSolutionRevealed;try{const res=await fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:answerToSubmit,token:question.token,streak:streak,level:level,topic:topic,usedHelp:helpUsed,solutionUsed:isSolutionRevealed,attempts:question.attempts})});const result=await res.json();const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;if(result.correct){setHistory(prev=>[{topic,level,correct:true,text:descText||question.renderData.latex,clueUsed:helpUsed,time:Date.now()},...prev]);setFeedback('correct');setStreak(result.newStreak);
+        
+        // Handle Total Correct (Independent of streak, but not if solution used)
+        if (!isSolutionRevealed) {
+            const newTotal = totalCorrect + 1;
+            setTotalCorrect(newTotal);
+            if ([10, 20, 30, 40, 50].includes(newTotal)) {
+                setShowTotalModal(true);
+            }
+        }
+
+        // Handle Streak Milestones
+        if ([15, 20, 30, 40, 50].includes(result.newStreak)) {
+            setShowStreakModal(true);
+            // Don't auto-fetch question if showing modal
+        } else {
+             if(result.levelUp)setLevelUpAvailable(true);
+             setTimeout(()=>{if(!result.levelUp)fetchQuestion(topic,level,lang);},1500);
+        }
+        
+        }else{question.attempts=(question.attempts||0)+1;if(result.action==='next_clue'){handleHint();}else if(result.action==='show_solution'){handleSolution();setHistory(prev=>[{topic,level,correct:false,text:descText||question.renderData.latex,clueUsed:true,correctAnswer:result.correctAnswer,time:Date.now()},...prev]);}setFeedback('incorrect');setStreak(0);}}catch(e){console.error(e);}};return(<div className="min-h-screen flex flex-col bg-gray-50"><AboutModal visible={aboutOpen} onClose={()=>setAboutOpen(false)} ui={ui}/><header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm"><div className="max-w-7xl mx-auto flex justify-between items-center"><div className="flex items-center gap-4"><h1 className="text-xl font-bold text-primary-700 tracking-tight cursor-pointer" onClick={()=>setView('dashboard')}>Anpassa</h1></div><div className="flex items-center gap-4"><div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">✅ {totalCorrect}</div><div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">{ui.streak}: {streak} 🔥</div><button onClick={()=>setAboutOpen(true)} className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-1 px-4 text-xs rounded-full shadow-sm transition-transform transform active:scale-95">{ui.aboutBtn}</button></div></div></header><div className="flex-1 flex flex-col">{view==='dashboard'?(<Dashboard lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice}/>):(<PracticeView lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip} handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{history,topic,level}} actions={{goBack:quitPractice,retry:()=>fetchQuestion(topic,level,lang)}} levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable} isSolutionRevealed={isSolutionRevealed} showStreakModal={showStreakModal} setShowStreakModal={setShowStreakModal} showTotalModal={showTotalModal} setShowTotalModal={setShowTotalModal} totalCorrect={totalCorrect}/>)}</div><footer className="w-full py-6 text-gray-400 text-xs text-center border-t border-gray-200 font-medium flex justify-center items-center gap-4"><span>Created by: Charles Mejilla, 2026</span><button onClick={()=>setLang(l=>l==='sv'?'en':'sv')} className="text-sm font-semibold text-gray-600 hover:text-primary-600 transition-colors">{lang==='sv'?'🇸🇪 Svenska':'🇬🇧 English'}</button></footer></div>);}
+        const root=ReactDOM.createRoot(document.getElementById('root'));root.render(<App/>);
+    </script>
+</body>
+</html>
