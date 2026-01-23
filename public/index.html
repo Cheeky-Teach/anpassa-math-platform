@@ -843,7 +843,10 @@
 
             const handleSkip=()=>{
                 const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;
-                setHistory(prev=>[{topic,level,correct:false,skipped:true,text:descText||question.renderData.latex,clueUsed:revealedClues.length>0||isSolutionRevealed,time:Date.now()},...prev]);
+                // FIX: Use LaTeX if available for history text
+                const historyText = question.renderData.latex || descText;
+                
+                setHistory(prev=>[{topic,level,correct:false,skipped:true,text:historyText,clueUsed:revealedClues.length>0||isSolutionRevealed,time:Date.now()},...prev]);
                 setStreak(0);
                 updateStats('skipped');
                 updateGranularStats(topic, level, 'skipped'); 
@@ -855,68 +858,89 @@
             const handleSubmit=async(e,directInput)=>{
                 e.preventDefault();
                 if (showStreakModal || showTotalModal || timeUpOpen) return;
+                
+                // Prevent duplicate submission if already correct
+                if (feedback === 'correct') return;
 
                 let finalInput = directInput !== undefined ? directInput : input;
 
                 if(!question||!finalInput)return;
                 
-                const helpUsed=revealedClues.length>0||isSolutionRevealed;
+                // Track if stats should be locked (prevent cheating)
+                const isStatsLocked = isSolutionRevealed;
+                const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
                 
                 try{
                     const res=await fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:finalInput,token:question.token,streak:streak,level:level,topic:topic,usedHelp:helpUsed,solutionUsed:isSolutionRevealed,attempts:question.attempts})});
                     const result=await res.json();
                     const descText=typeof question.renderData.description==='object'?question.renderData.description[lang]:question.renderData.description;
+                    // FIX: Use LaTeX if available for history text
+                    const historyText = question.renderData.latex || descText;
                     
                     if(result.correct){
-                        setHistory(prev=>[{topic,level,correct:true,text:descText||question.renderData.latex,clueUsed:helpUsed,time:Date.now()},...prev]);
-                        setFeedback('correct');
-                        setStreak(result.newStreak);
-                        
-                        if (!helpUsed) {
-                            updateStats('correctNoHelp');
-                            updateGranularStats(topic, level, 'correctNoHelp');
-                        } else {
-                            updateStats('correctHelp');
-                            updateGranularStats(topic, level, 'correctHelp');
-                        }
-                        
-                        if (!isSolutionRevealed) {
+                        // ONLY update history/stats if the solution wasn't already revealed
+                        if (!isStatsLocked) {
+                            setHistory(prev=>[{topic,level,correct:true,text:historyText,clueUsed:helpUsed,time:Date.now()},...prev]);
+                            setStreak(result.newStreak);
+                            
+                            if (!helpUsed) {
+                                updateStats('correctNoHelp');
+                                updateGranularStats(topic, level, 'correctNoHelp');
+                            } else {
+                                updateStats('correctHelp');
+                                updateGranularStats(topic, level, 'correctHelp');
+                            }
+                            
                             const newTotal = totalCorrect + 1;
                             setTotalCorrect(newTotal);
                             if ([10, 20, 30, 40, 50].includes(newTotal)) {
                                 setShowTotalModal(true);
                             }
-                        }
 
-                        if ([15, 20, 30, 40, 50].includes(result.newStreak)) {
-                            setShowStreakModal(true);
+                            if ([15, 20, 30, 40, 50].includes(result.newStreak)) {
+                                setShowStreakModal(true);
+                            } else {
+                                if(result.levelUp) setLevelUpAvailable(true);
+                                setTimeout(()=>{
+                                    if (!showTotalModal && !showStreakModal) {
+                                        if(!result.levelUp) fetchQuestion(topic,level,lang);
+                                    }
+                                },1500);
+                            }
                         } else {
-                             if(result.levelUp) setLevelUpAvailable(true);
-                             setTimeout(()=>{
-                                 if (!showTotalModal && !showStreakModal) {
-                                    if(!result.levelUp) fetchQuestion(topic,level,lang);
-                                 }
-                             },1500);
+                            // If stats locked, still show feedback but don't advance automatically or log
+                            // Optional: Could auto-advance after delay, but user might be studying solution
                         }
+                        
+                        setFeedback('correct');
                     
                     } else {
                         // Incorrect
                         question.attempts=(question.attempts||0)+1; 
                         
-                        // Only count as incorrect stat if it's the first failed attempt or results in solution
-                        // However, for granular tracking, we usually want to know attempts. 
-                        // Let's count every submission failure as an "attempt" in granular stats to lower percentage.
-                        updateGranularStats(topic, level, 'incorrect');
-
-                        if(result.action==='next_clue'){
-                            handleHint();
-                        } else if(result.action==='show_solution'){
-                            handleSolution();
-                            updateStats('incorrect');
-                            setHistory(prev=>[{topic,level,correct:false,text:descText||question.renderData.latex,clueUsed:true,correctAnswer:result.correctAnswer,time:Date.now()},...prev]);
+                        // Logic for 2 attempts max
+                        if (question.attempts >= 2) {
+                             handleSolution(); // Reveal solution
+                             // Mark incorrect in history immediately
+                             if (!isStatsLocked) {
+                                 updateStats('incorrect');
+                                 updateGranularStats(topic, level, 'incorrect');
+                                 setHistory(prev=>[{
+                                     topic,
+                                     level,
+                                     correct:false,
+                                     text:historyText,
+                                     clueUsed:true,
+                                     correctAnswer: result.correctAnswer || "See Solution",
+                                     time:Date.now()
+                                 },...prev]);
+                             }
                         } else {
-                             updateStats('incorrect');
+                             // Attempt 1 fail: Show clue if available
+                             handleHint();
+                             // We don't log "incorrect" to history yet, waiting for attempt 2
                         }
+
                         setFeedback('incorrect');
                         setStreak(0);
                     }
