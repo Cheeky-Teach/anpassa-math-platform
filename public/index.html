@@ -51,6 +51,9 @@
         /* Scrollbar hiding for timer selector */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Do Now specific */
+        .print-break-inside-avoid { break-inside: avoid; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden flex flex-col min-h-screen">
@@ -212,7 +215,14 @@
                 stat_help: "Hjälp",
                 stat_correct: "Rätt",
                 stat_total: "Totalt",
-                lgr_btn: "LGR22"
+                lgr_btn: "LGR22",
+                donow_btn: "Do Now",
+                donow_title: "Uppstart (Do Now)",
+                donow_desc: "Välj upp till 3 nivåer. Systemet genererar 6 frågor totalt.",
+                donow_gen: "Generera",
+                donow_clear: "Rensa",
+                donow_show_all: "Visa alla svar",
+                donow_hide_all: "Dölj alla svar"
             },
             en:{
                 streak:"",
@@ -258,7 +268,14 @@
                 stat_help: "Help",
                 stat_correct: "Correct",
                 stat_total: "Total",
-                lgr_btn: "LGR22"
+                lgr_btn: "LGR22",
+                donow_btn: "Do Now",
+                donow_title: "Do Now Activity",
+                donow_desc: "Select up to 3 levels. System generates 6 questions total.",
+                donow_gen: "Generate",
+                donow_clear: "Clear",
+                donow_show_all: "Show all answers",
+                donow_hide_all: "Hide all answers"
             }
         };
 
@@ -644,10 +661,177 @@
         };
 
         /*******************************************************
-         * 4. MAIN VIEWS (Dashboard, PracticeView)
+         * 4. DO NOW COMPONENTS (New Feature)
          *******************************************************/
 
-        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect, timerSettings, toggleTimer, resetTimer, ui, onLgrOpen})=>{
+        const DoNowConfig = ({ ui, onBack, onGenerate, lang }) => {
+            const [selected, setSelected] = useState([]);
+
+            const handleToggle = (topicId, level) => {
+                setSelected(prev => {
+                    const exists = prev.find(p => p.topic === topicId && p.level === level);
+                    if (exists) {
+                        return prev.filter(p => !(p.topic === topicId && p.level === level));
+                    } else {
+                        if (prev.length >= 3) return prev; // Max 3
+                        return [...prev, { topic: topicId, level }];
+                    }
+                });
+            };
+
+            return (
+                <div className="max-w-5xl mx-auto p-6 h-full flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                        <button onClick={onBack} className="text-slate-500 hover:text-slate-800 font-bold flex items-center gap-2">
+                            <span>←</span> {ui.backBtn}
+                        </button>
+                        <h2 className="text-2xl font-bold text-slate-800">{ui.donow_title}</h2>
+                        <button 
+                            onClick={() => onGenerate(selected)} 
+                            disabled={selected.length === 0}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition-all active:scale-95"
+                        >
+                            {ui.donow_gen} ({selected.length}/3)
+                        </button>
+                    </div>
+                    
+                    <p className="text-slate-500 mb-6 text-center">{ui.donow_desc}</p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 overflow-y-auto custom-scrollbar pb-10">
+                        {Object.entries(CATEGORIES).map(([catKey, category]) => (
+                            <div key={catKey} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                <h3 className="font-bold text-slate-700 mb-3 border-b pb-2">{category.label[lang]}</h3>
+                                <div className="space-y-4">
+                                    {category.topics.map(topic => (
+                                        <div key={topic.id}>
+                                            <div className="text-xs font-bold text-slate-400 uppercase mb-2">{topic.label[lang]}</div>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {[1,2,3,4,5,6,7,8,9].map(lvl => {
+                                                    if(!LEVEL_DESCRIPTIONS[topic.id]?.[lvl]) return null;
+                                                    const isSelected = selected.some(s => s.topic === topic.id && s.level === lvl);
+                                                    return (
+                                                        <button 
+                                                            key={lvl}
+                                                            onClick={() => handleToggle(topic.id, lvl)}
+                                                            className={`text-sm py-1 rounded border transition-all ${isSelected ? 'bg-indigo-100 border-indigo-500 text-indigo-700 font-bold ring-1 ring-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-indigo-300'}`}
+                                                        >
+                                                            {lvl}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const DoNowCard = ({ q, index, showAnswer, onToggle, lang }) => {
+            // Need description text
+            const desc = typeof q.renderData.description === 'object' ? q.renderData.description[lang] : q.renderData.description;
+            
+            return (
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden print-break-inside-avoid">
+                    <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-400 uppercase">Q{index + 1} • {q.topic} L{q.level}</span>
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col items-center justify-center relative">
+                        {/* Scale down visualizations slightly for grid */}
+                        <div className="scale-90 origin-center w-full flex justify-center">
+                             {q.renderData.graph ? (
+                                <GraphCanvas data={q.renderData.graph}/>
+                            ) : q.renderData.geometry ? (
+                                ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(q.renderData.geometry.type) 
+                                ? <VolumeVisualization data={q.renderData.geometry}/> 
+                                : <GeometryVisual data={q.renderData.geometry}/>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center w-full">
+                                    {q.topic==='geometry' && <StaticGeometryVisual description={desc}/>}
+                                    {q.renderData.latex && <div className="text-xl font-mono text-gray-800 my-2 text-center"><MathText text={`$${q.renderData.latex}$`} large={false}/></div>}
+                                </div>
+                            )}
+                        </div>
+                        <div className="text-center text-sm text-slate-600 mt-2 font-medium"><MathText text={desc}/></div>
+                        
+                        {/* Answer Overlay */}
+                        {showAnswer && (
+                            <div className="absolute inset-0 bg-white/95 flex items-center justify-center backdrop-blur-sm z-10 fade-in">
+                                <div className="text-center">
+                                    <div className="text-xs text-slate-400 uppercase font-bold mb-1">Answer</div>
+                                    <div className="text-xl font-bold text-emerald-600 font-mono">{q.displayAnswer}</div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <button 
+                        onClick={onToggle}
+                        className="w-full py-2 bg-slate-50 hover:bg-slate-100 border-t border-slate-100 text-xs font-bold text-slate-500 transition-colors"
+                    >
+                        {showAnswer ? "Hide" : "Show Answer"}
+                    </button>
+                </div>
+            );
+        };
+
+        const DoNowGrid = ({ questions, ui, onBack, lang }) => {
+            const [revealed, setRevealed] = useState({}); // { 0: true, 1: false }
+            const [showAll, setShowAll] = useState(false);
+
+            const toggleOne = (idx) => {
+                setRevealed(prev => ({ ...prev, [idx]: !prev[idx] }));
+            };
+
+            const toggleAll = () => {
+                if (showAll) {
+                    setRevealed({});
+                    setShowAll(false);
+                } else {
+                    const all = {};
+                    questions.forEach((_, i) => all[i] = true);
+                    setRevealed(all);
+                    setShowAll(true);
+                }
+            };
+
+            return (
+                <div className="h-screen flex flex-col bg-slate-100">
+                    <header className="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center shadow-sm z-20">
+                        <button onClick={onBack} className="flex items-center gap-2 text-slate-600 font-bold hover:text-slate-900">
+                            <span>←</span> {ui.donow_title}
+                        </button>
+                        <div className="flex gap-4">
+                            <button onClick={toggleAll} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-sm transition-colors">
+                                {showAll ? ui.donow_hide_all : ui.donow_show_all}
+                            </button>
+                        </div>
+                    </header>
+                    <div className="flex-1 p-6 overflow-y-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full auto-rows-fr">
+                            {questions.map((q, i) => (
+                                <DoNowCard 
+                                    key={i} 
+                                    index={i} 
+                                    q={q} 
+                                    showAnswer={!!revealed[i]} 
+                                    onToggle={() => toggleOne(i)} 
+                                    lang={lang} 
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        /*******************************************************
+         * 5. MAIN VIEWS (Dashboard, PracticeView)
+         *******************************************************/
+
+        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect, timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onDoNowOpen})=>{
             const getCategoryColorClass=(category,type)=>{const colorMap={pink:'pink',indigo:'indigo',emerald:'emerald',purple:'purple'};const color=colorMap[category.color]||'primary';if(type==='bg-light')return `bg-${color}-50`;if(type==='bg-dark')return `bg-${color}-500`;if(type==='border')return `border-${color}-100`;if(type==='text')return `text-${color}-700`;if(type==='ring')return `ring-${color}-500`;if(type==='border-solid')return `border-${color}-500`;return '';};
             return(
                 <div className="max-w-6xl mx-auto w-full p-4 fade-in flex flex-col min-h-screen">
@@ -726,9 +910,14 @@
                         </button>
                     </div>
 
-                    <footer className="mt-auto py-6 border-t border-gray-200 flex justify-center">
+                    <footer className="mt-auto py-6 border-t border-gray-200 flex justify-center gap-4">
                         <button onClick={onLgrOpen} className="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-sky-200 shadow-sm">
                             {ui.lgr_btn}
+                        </button>
+                        
+                        {/* DO NOW BUTTON - Hidden on Mobile */}
+                        <button onClick={onDoNowOpen} className="hidden md:block bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-full text-sm transition-colors shadow-sm">
+                            {ui.donow_btn}
                         </button>
                     </footer>
                 </div>
@@ -845,7 +1034,7 @@
          *******************************************************/
 
         function App(){
-            const[view,setView]=useState('dashboard');
+            const[view,setView]=useState('dashboard'); // 'dashboard', 'practice', 'donow_config', 'donow_grid'
             const[lang,setLang]=useState('sv');
             const[topic,setTopic]=useState('');
             const[level,setLevel]=useState(0);
@@ -876,6 +1065,9 @@
             const[statsOpen, setStatsOpen] = useState(false);
             const[timeUpOpen, setTimeUpOpen] = useState(false);
             const[lgrOpen, setLgrOpen] = useState(false);
+
+            // Do Now State
+            const [doNowQuestions, setDoNowQuestions] = useState([]);
 
             // Modals State
             const[showStreakModal, setShowStreakModal] = useState(false);
@@ -967,6 +1159,28 @@
                 setStreak(0);
                 setView('dashboard');
                 setQuestion(null);
+            };
+
+            // DO NOW LOGIC
+            const handleDoNowGenerate = async (selected) => {
+                if (selected.length === 0) return;
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ configs: selected })
+                    });
+                    const data = await res.json();
+                    if (data.questions) {
+                        setDoNowQuestions(data.questions);
+                        setView('donow_grid');
+                    }
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    setLoading(false);
+                }
             };
 
             const handleSelection=(t,l)=>{setTopic(t);setLevel(l);};
@@ -1140,6 +1354,31 @@
                 setTimeUpOpen(false);
             };
 
+            // VIEW ROUTING
+            if (view === 'donow_config') {
+                return (
+                    <div className="min-h-screen bg-gray-50 font-sans">
+                        <DoNowConfig 
+                            ui={ui} 
+                            lang={lang}
+                            onBack={() => setView('dashboard')}
+                            onGenerate={handleDoNowGenerate}
+                        />
+                    </div>
+                );
+            }
+
+            if (view === 'donow_grid') {
+                return (
+                    <DoNowGrid 
+                        questions={doNowQuestions} 
+                        ui={ui} 
+                        onBack={() => setView('donow_config')} 
+                        lang={lang} 
+                    />
+                );
+            }
+
             return(
                 <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
                     <AboutModal visible={aboutOpen} onClose={()=>setAboutOpen(false)} ui={ui}/>
@@ -1163,7 +1402,7 @@
                                 {totalCorrect > 0 && <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-primary-200">✅ {totalCorrect}</div>}
                                 {streak > 0 && <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-yellow-200">🔥 {streak}</div>}
                                 <button onClick={()=>setStatsOpen(true)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title={ui.stats_title}>
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                                 </button>
                                 <button onClick={()=>setAboutOpen(true)} className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-1 px-4 text-xs rounded-full shadow-sm transition-transform transform active:scale-95">{ui.aboutBtn}</button>
                             </div>
@@ -1183,6 +1422,7 @@
                                 resetTimer={resetTimer}
                                 ui={ui}
                                 onLgrOpen={()=>setLgrOpen(true)}
+                                onDoNowOpen={()=>setView('donow_config')}
                             />
                         ):(
                             <PracticeView 
