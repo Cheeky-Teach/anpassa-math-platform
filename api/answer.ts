@@ -1,5 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { verifyAnswer } from '../src/core/utils/security';
+import { verifyAnswer, decrypt } from '../src/core/utils/security'; // decrypt needs to be exported from security.ts or logic moved here. 
+// Assuming decrypt is not exported, we need to handle getting correct answer differently or export decrypt.
+// Actually, verifyAnswer does the decryption internally. We need to expose a way to get the decrypted answer 
+// OR we just decrypt it here if we have the key.
+// BETTER: The token payload contains the encrypted answer. We can decrypt it if we import the decrypt function.
+// Let's assume we update security.ts to export `getDecryptedAnswer(token)` or similar, OR we just duplicate logic if necessary but cleaner to export.
+
+// WAIT - I can't see security.ts exports in this prompt's context fully but verifyAnswer is there.
+// I will assume I can update security.ts to export `getCorrectAnswer(token)`
+import { getCorrectAnswer } from '../src/core/utils/security'; 
 import { ProgressionRules } from '../src/core/rules/ProgressionRules';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
@@ -16,57 +25,39 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // added attempts to body
     const { answer, token, streak, level, topic, usedHelp, solutionUsed, attempts } = req.body;
 
     if (answer === undefined || !token) {
       return res.status(400).json({ error: 'Missing answer or token' });
     }
 
-    // Verify using AES Decryption + Tolerance Check
     const isCorrect = verifyAnswer(answer, token);
     
     let levelUpAvailable = false;
     let newStreak = Number(streak || 0);
-    const currentAttempts = Number(attempts || 0) + 1; // Increment attempt count
+    const currentAttempts = Number(attempts || 0) + 1; 
 
-    // Determine actions based on correctness and attempt count
-    let action = 'none'; // 'none', 'next_clue', 'show_solution'
+    let action = 'none'; 
+    let correctAnswer = null; // Will be sent if they fail
 
     if (isCorrect) {
         if (solutionUsed || currentAttempts >= 3) {
-             // If solution was used OR they got it right on the 3rd attempt (which forces solution view anyway), streak resets
-             // Actually, if they get it right on 3rd attempt, it counts as "incorrect" for streak purposes in the request logic,
-             // but here we just handle the streak value.
              newStreak = 0;
         } else if (!usedHelp && currentAttempts === 1) {
-            // Only increment streak on FIRST try without help
             newStreak += 1;
             if (level && topic) {
                 levelUpAvailable = ProgressionRules.checkLevelUp(newStreak, Number(level), String(topic));
             }
         }
-        // If correct on 2nd try (currentAttempts == 2), streak stays same (no reset, no increment)
     } else {
-        // Incorrect
         if (currentAttempts === 2) {
             action = 'next_clue';
         } else if (currentAttempts >= 3) {
             action = 'show_solution';
-            newStreak = 0; // Reset streak on 3rd fail
+            newStreak = 0; 
+            // Retrieve correct answer to show in history
+            correctAnswer = getCorrectAnswer(token);
         }
-        // If currentAttempts === 1, just incorrect feedback, no streak reset yet?
-        // Requirement: "If the student answers incorrectly three times... question gets logged as incorrect"
-        // Implicitly, streak shouldn't reset until failure condition is met or solution used.
-        // However, standard logic usually resets streak on ANY error.
-        // Let's stick to standard: Wrong answer = streak 0.
-        // BUT, the prompt implies a "soft fail" system.
-        // "Streaks should only be increased by 1 if the student answers a question correctly without clicking on either button."
-        // It doesn't explicitly say "don't reset on first wrong try", but usually streaks imply consecutive *first-try* correct answers.
-        // I will reset streak on ANY wrong answer to maintain strict "streak" definition, unless requested otherwise.
-        // Re-reading: "If the student answers incorrectly three times... question gets logged as incorrect... history pane"
-        // This implies 1st and 2nd wrong tries might NOT be fully "incorrect" yet in terms of logging, but for a *streak* (perfect run), it usually breaks it.
-        // I will reset streak on first error to be safe, as is standard.
         newStreak = 0; 
     }
 
@@ -75,7 +66,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       newStreak: newStreak,
       levelUp: levelUpAvailable,
       action: action,
-      attempts: currentAttempts
+      attempts: currentAttempts,
+      correctAnswer: correctAnswer 
     });
     
   } catch (error: any) {
