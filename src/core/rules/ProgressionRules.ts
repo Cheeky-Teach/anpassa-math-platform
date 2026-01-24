@@ -3,13 +3,14 @@ export class ProgressionRules {
 
     private static readonly MAX_LEVELS: Record<string, number> = {
         arithmetic: 9,
-        negative: 5, // Added new topic max level
+        negative: 5,
         scale: 7,
         equation: 7,
         simplify: 6,
         geometry: 5,
         volume: 7,
-        graph: 5
+        graph: 5,
+        similarity: 4 // ADDED
     };
 
     public static checkLevelUp(newStreak: number, currentLevel: number, topic: string): boolean {

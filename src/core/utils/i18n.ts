@@ -44,6 +44,56 @@ export const TERMS = {
         
         step_calc: { sv: "Beräkna nästa steg.", en: "Calculate the next step." }
     },
+    // ADDED FOR SIMILARITY MODULE
+    similarity: {
+        ratio: { sv: "Förhållande", en: "Ratio" },
+        scale: { sv: "Skala", en: "Scale" },
+        
+        // Basic Rules
+        rule_sides: { sv: "För att vara likformiga måste kvoten av motsvarande sidor vara densamma.", en: "To be similar, the ratio of corresponding sides must be constant." },
+        rule_angles: { sv: "För att vara likformiga måste motsvarande vinklar vara lika stora.", en: "To be similar, corresponding angles must be equal." },
+        step_k: { sv: "Hitta skalan (k) genom att jämföra motsvarande sidor.", en: "Find the scale factor (k) by comparing corresponding sides." },
+        step_calc: { sv: "Använd skalan för att beräkna den okända sidan.", en: "Use the scale factor to calculate the unknown side." },
+        rule_top: { sv: "Topptriangeln och hela triangeln delar en vinkel och har parallella baser, alltså är de likformiga.", en: "The top triangle and the whole triangle share an angle and have parallel bases, so they are similar." },
+        rule_hourglass: { sv: "Vertikalvinklar är lika och alternatvinklar är lika (parallella linjer), så trianglarna är likformiga.", en: "Vertical angles are equal and alternate interior angles are equal (parallel lines), so the triangles are similar." },
+        
+        // Detailed pedagogical explanations (The "Why")
+        expl_sides_rule: { 
+            sv: "För likformighet krävs att kvoten mellan alla motsvarande sidor är densamma.", 
+            en: "For similarity, the ratio between all corresponding sides must be equal." 
+        },
+        expl_sides_check: {
+            sv: "Vi kontrollerar skalfaktorn för varje par av sidor:",
+            en: "We check the scale factor for each pair of sides:"
+        },
+        expl_conclusion: { sv: "Slutsats:", en: "Conclusion:" },
+        
+        expl_angles_rule: {
+            sv: "Likformiga figurer måste ha exakt samma vinklar.",
+            en: "Similar shapes must have exactly the same angles."
+        },
+        expl_angles_calc: {
+            sv: "Vi vet att triangelns vinkelsumma är 180°. Vi beräknar den saknade vinkeln:",
+            en: "We know the sum of angles in a triangle is 180°. We calculate the missing angle:"
+        },
+        
+        expl_scale_k: { 
+            sv: "Hur många gånger större är den stora figuren? Vi räknar ut skalan (k):", 
+            en: "How many times bigger is the large shape? We calculate the scale (k):" 
+        },
+        
+        expl_calc_mult: { sv: "Multiplicera den lilla sidan med skalan:", en: "Multiply the small side by the scale:" },
+        expl_calc_div: { sv: "Dividera den stora sidan med skalan:", en: "Divide the large side by the scale:" },
+        
+        expl_top_tri_rule: {
+            sv: "Eftersom baserna är parallella har trianglarna samma vinklar och är därför likformiga.",
+            en: "Since the bases are parallel, the triangles share the same angles and are therefore similar."
+        },
+        expl_hourglass_rule: {
+            sv: "Vertikalvinklar är lika stora. Parallella linjer ger lika alternatvinklar. Trianglarna är likformiga.",
+            en: "Vertical angles are equal. Parallel lines give equal alternate angles. The triangles are similar."
+        }
+    },
     scale: {
         scale: { sv: "Skala", en: "Scale" },
         drawing: { sv: "Bild", en: "Image" },
