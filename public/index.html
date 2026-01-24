@@ -758,7 +758,7 @@
                                     {q.renderData.latex ? (
                                         <div className="text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${q.renderData.latex}$`} large={false}/></div>
                                     ) : (
-                                        <div className="text-3xl font-serif text-gray-800 my-4 text-center px-4 leading-relaxed"><MathText text={desc}/></div>
+                                        <div className="text-base font-medium text-gray-700 my-4 text-left px-4 leading-relaxed"><MathText text={desc}/></div>
                                     )}
                                 </div>
                             )}
@@ -1177,7 +1177,7 @@
                     const res = await fetch('/api/batch', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ configs: selected })
+                        body: JSON.stringify({ config: selected, lang })
                     });
                     const data = await res.json();
                     if (data.questions) {

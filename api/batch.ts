@@ -43,18 +43,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
       const { config, lang = 'sv' } = req.body;
-
-      // Config is an array of { topic, level, count }
-      // We generate deterministic questions based on a seed we create here
-      
       const generatedQuestions: any[] = [];
       const timestamp = Date.now();
 
       if (Array.isArray(config)) {
           for (const item of config) {
               const { topic, level } = item;
-              // Generate a stable seed for this specific slot in the batch
-              // In a real "Do Now", we might want 1-3 questions per config item
               const seed = `batch-${timestamp}-${topic}-${level}`;
               const lvl = Number(level);
 
@@ -80,8 +74,19 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
                   }
 
                   if (qData) {
+                      // NORMALIZE DESCRIPTION:
+                      // Some generators return {sv, en}, others return string.
+                      // We resolve it to a single string here to simplify frontend.
+                      let desc = qData.renderData.description;
+                      if (typeof desc === 'object' && desc !== null) {
+                          desc = desc[lang] || desc['sv'] || "";
+                      }
+
                       generatedQuestions.push({
-                          renderData: qData.renderData,
+                          renderData: {
+                              ...qData.renderData,
+                              description: desc // Ensure this is always a string
+                          },
                           displayAnswer: formatAnswer(qData.serverData.answer),
                           topic: topic,
                           level: lvl
@@ -89,9 +94,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
                   }
               } catch (genError) {
                   console.error(`Error generating question for ${topic} level ${lvl}:`, genError);
-                  // Push an error placeholder so the batch doesn't fail completely
                   generatedQuestions.push({
-                      renderData: { question: "Error generating question", text: "Please try again." },
+                      renderData: { description: "Error generating question", latex: "" },
                       displayAnswer: "Error",
                       topic: topic,
                       level: lvl
