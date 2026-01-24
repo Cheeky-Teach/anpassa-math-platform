@@ -758,15 +758,15 @@
                             </div>
                         </div>
 
-                        {/* 2. TEXT ZONE */}
-                        <div className="shrink-0 text-center space-y-2 min-h-[3rem] flex flex-col justify-center">
+                        {/* 2. TEXT ZONE - IMPROVED VISIBILITY FOR PROJECTORS */}
+                        <div className="shrink-0 text-center space-y-3 min-h-[6rem] flex flex-col justify-center py-2">
                             {q.renderData.latex && (
-                                <div className="text-xl font-mono text-slate-800 font-bold">
+                                <div className="text-3xl md:text-5xl font-mono text-slate-900 font-bold tracking-wider">
                                     <MathText text={`$${q.renderData.latex}$`} large={false}/>
                                 </div>
                             )}
                             {desc && (
-                                <div className="text-sm font-medium text-slate-600 leading-snug">
+                                <div className="text-lg md:text-2xl font-medium text-slate-700 leading-snug max-w-prose mx-auto">
                                     <MathText text={desc}/>
                                 </div>
                             )}
@@ -775,15 +775,15 @@
                         {/* ANSWER OVERLAY (Inside content area) */}
                         <div className={`absolute inset-0 bg-white/95 backdrop-blur-sm z-10 flex items-center justify-center transition-opacity duration-300 ${showAnswer ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                             <div className="text-center transform scale-110">
-                                <div className="text-xs text-slate-400 uppercase font-bold mb-1">Facit</div>
-                                <div className="text-2xl font-bold text-emerald-600 font-mono px-4">{q.displayAnswer}</div>
+                                <div className="text-sm text-slate-400 uppercase font-bold mb-2">Facit</div>
+                                <div className="text-4xl font-bold text-emerald-600 font-mono px-4">{q.displayAnswer}</div>
                             </div>
                         </div>
                     </div>
 
                     <button 
                         onClick={onToggle}
-                        className="w-full py-3 bg-slate-50 hover:bg-slate-100 border-t border-slate-100 text-sm font-bold text-slate-500 transition-colors shrink-0 z-20"
+                        className="w-full py-4 bg-slate-50 hover:bg-slate-100 border-t border-slate-100 text-sm font-bold text-slate-500 transition-colors shrink-0 z-20"
                     >
                         {showAnswer ? (lang === 'sv' ? "Dölj" : "Hide") : (lang === 'sv' ? "Visa svar" : "Show Answer")}
                     </button>

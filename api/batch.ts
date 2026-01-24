@@ -47,9 +47,15 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       const timestamp = Date.now();
 
       if (Array.isArray(config)) {
-          for (const item of config) {
+          // Use index loop to incorporate index into the seed
+          // This ensures that if we request 6 identical configs (to fill the grid),
+          // we get 6 different questions instead of 6 duplicates.
+          for (let i = 0; i < config.length; i++) {
+              const item = config[i];
               const { topic, level } = item;
-              const seed = `batch-${timestamp}-${topic}-${level}`;
+              
+              // Seed now includes loop index 'i'
+              const seed = `batch-${timestamp}-${topic}-${level}-${i}`;
               const lvl = Number(level);
 
               try {
