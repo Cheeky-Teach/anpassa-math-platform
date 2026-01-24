@@ -735,51 +735,57 @@
             // Need description text
             const desc = typeof q.renderData.description === 'object' ? q.renderData.description[lang] : q.renderData.description;
             
-            // Check if we need to show description instead of empty latex
-            const showDescAsMain = !q.renderData.latex && desc;
-
             return (
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden print-break-inside-avoid">
-                    <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 flex justify-between items-center">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden print-break-inside-avoid relative">
+                    <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 flex justify-between items-center shrink-0">
                         <span className="text-xs font-bold text-slate-400 uppercase">Q{index + 1} • {q.topic} L{q.level}</span>
                     </div>
-                    <div className="p-4 flex-1 flex flex-col items-center justify-center relative">
-                        {/* Scale down visualizations slightly for grid */}
-                        <div className="scale-90 origin-center w-full flex justify-center">
-                             {q.renderData.graph ? (
-                                <GraphCanvas data={q.renderData.graph}/>
-                            ) : q.renderData.geometry ? (
-                                ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(q.renderData.geometry.type) 
-                                ? <VolumeVisualization data={q.renderData.geometry}/> 
-                                : <GeometryVisual data={q.renderData.geometry}/>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center w-full">
-                                    {q.topic==='geometry' && <StaticGeometryVisual description={desc}/>}
-                                    {q.renderData.latex ? (
-                                        <div className="text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${q.renderData.latex}$`} large={false}/></div>
-                                    ) : (
-                                        <div className="text-base font-medium text-gray-700 my-4 text-left px-4 leading-relaxed"><MathText text={desc}/></div>
-                                    )}
+                    
+                    <div className="p-4 flex-1 flex flex-col gap-4 relative">
+                        {/* 1. VISUALIZATION ZONE */}
+                        <div className="flex-1 bg-slate-50/50 rounded-lg border border-slate-100 flex items-center justify-center min-h-[150px] p-2 relative overflow-hidden">
+                            <div className="scale-90 origin-center w-full flex justify-center">
+                                 {q.renderData.graph ? (
+                                    <GraphCanvas data={q.renderData.graph}/>
+                                ) : q.renderData.geometry ? (
+                                    ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(q.renderData.geometry.type) 
+                                    ? <VolumeVisualization data={q.renderData.geometry}/> 
+                                    : <GeometryVisual data={q.renderData.geometry}/>
+                                ) : (
+                                    q.topic === 'geometry' ? <StaticGeometryVisual description={desc}/> : 
+                                    <div className="text-4xl text-slate-200 font-bold select-none opacity-20">#</div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 2. TEXT ZONE */}
+                        <div className="shrink-0 text-center space-y-2 min-h-[3rem] flex flex-col justify-center">
+                            {q.renderData.latex && (
+                                <div className="text-xl font-mono text-slate-800 font-bold">
+                                    <MathText text={`$${q.renderData.latex}$`} large={false}/>
+                                </div>
+                            )}
+                            {desc && (
+                                <div className="text-sm font-medium text-slate-600 leading-snug">
+                                    <MathText text={desc}/>
                                 </div>
                             )}
                         </div>
-                        {q.renderData.latex && <div className="text-center text-xl text-slate-600 mt-4 font-medium"><MathText text={desc}/></div>}
-                        
-                        {/* Answer Overlay */}
-                        {showAnswer && (
-                            <div className="absolute inset-0 bg-white/95 flex items-center justify-center backdrop-blur-sm z-10 fade-in">
-                                <div className="text-center">
-                                    <div className="text-xs text-slate-400 uppercase font-bold mb-1">Answer</div>
-                                    <div className="text-3xl font-bold text-emerald-600 font-mono">{q.displayAnswer}</div>
-                                </div>
+
+                        {/* ANSWER OVERLAY (Inside content area) */}
+                        <div className={`absolute inset-0 bg-white/95 backdrop-blur-sm z-10 flex items-center justify-center transition-opacity duration-300 ${showAnswer ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                            <div className="text-center transform scale-110">
+                                <div className="text-xs text-slate-400 uppercase font-bold mb-1">Facit</div>
+                                <div className="text-2xl font-bold text-emerald-600 font-mono px-4">{q.displayAnswer}</div>
                             </div>
-                        )}
+                        </div>
                     </div>
+
                     <button 
                         onClick={onToggle}
-                        className="w-full py-3 bg-slate-50 hover:bg-slate-100 border-t border-slate-100 text-sm font-bold text-slate-500 transition-colors"
+                        className="w-full py-3 bg-slate-50 hover:bg-slate-100 border-t border-slate-100 text-sm font-bold text-slate-500 transition-colors shrink-0 z-20"
                     >
-                        {showAnswer ? "Hide" : "Show Answer"}
+                        {showAnswer ? (lang === 'sv' ? "Dölj" : "Hide") : (lang === 'sv' ? "Visa svar" : "Show Answer")}
                     </button>
                 </div>
             );
