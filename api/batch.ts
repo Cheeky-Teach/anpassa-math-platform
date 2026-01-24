@@ -3,7 +3,8 @@ import { ScaleGenerator } from '../src/core/generators/ScaleGenerator';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
 import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
-import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
+// Remove static import that might cause crash if file is missing/broken
+// import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
@@ -29,7 +30,7 @@ function formatAnswer(answer: any): string {
     }
 }
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
@@ -72,13 +73,18 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
                       case 'equation':
                             // Correctly route Word Problems (Level 5 & 6) to the Problem Generator
                             if (lvl === 5 || lvl === 6) {
-                                // Ensure the generator exists before calling
-                                if (LinearEquationProblemGen && typeof LinearEquationProblemGen.generate === 'function') {
-                                     qData = LinearEquationProblemGen.generate(lvl, seed, lang as any);
-                                } else {
-                                     console.error("LinearEquationProblemGen missing or invalid");
-                                     // Fallback to standard generator to prevent crash
-                                     qData = LinearEquationGenerator.generate(lvl, seed, lang as any);
+                                try {
+                                    // Dynamic import to prevent top-level crashes if file is missing/broken
+                                    const module = await import('../src/core/generators/LinearEquationProblemGen');
+                                    if (module && module.LinearEquationProblemGen) {
+                                        qData = module.LinearEquationProblemGen.generate(lvl, seed, lang as any);
+                                    } else {
+                                        throw new Error("Module loaded but LinearEquationProblemGen export missing");
+                                    }
+                                } catch (err) {
+                                    console.error("Failed to load LinearEquationProblemGen:", err);
+                                    // Fallback to standard generator so the user sees SOMETHING
+                                    qData = LinearEquationGenerator.generate(lvl, seed, lang as any);
                                 }
                             } else {
                                 // Standard equations (Level 1-4, 7)
