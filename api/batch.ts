@@ -3,14 +3,13 @@ import { ScaleGenerator } from '../src/core/generators/ScaleGenerator';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
 import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
-// Remove static import that might cause crash if file is missing/broken
-// import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
+import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
 
-// Helper to format answers for display
+// Helper to format answers for display in the grid
 function formatAnswer(answer: any): string {
     try {
         if (typeof answer === 'object' && answer !== null) {
@@ -24,16 +23,17 @@ function formatAnswer(answer: any): string {
             }
             return JSON.stringify(answer);
         }
-        return answer !== undefined && answer !== null ? answer.toString() : "?";
+        return String(answer);
     } catch (e) {
-        return "?";
+        return String(answer);
     }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -42,55 +42,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-      // Parse query params
-      const { config, lang = 'sv' } = req.query as { config: string, lang: string };
+      const { config, lang = 'sv' } = req.body;
+
+      // Config is an array of { topic, level, count }
+      // We generate deterministic questions based on a seed we create here
       
-      if (!config) {
-          return res.status(400).json({ error: "Missing config" });
-      }
-
-      let requests;
-      try {
-        requests = JSON.parse(config); // Array of { topic, level, count }
-      } catch (e) {
-        return res.status(400).json({ error: "Invalid config JSON" });
-      }
-
       const generatedQuestions: any[] = [];
+      const timestamp = Date.now();
 
-      for (const reqItem of requests) {
-          const { topic, level, count } = reqItem;
-          const lvl = Number(level);
-          
-          for (let i = 0; i < count; i++) {
-              const seed = `${topic}-${lvl}-${Date.now()}-${i}-${Math.random()}`;
-              let qData = null;
+      if (Array.isArray(config)) {
+          for (const item of config) {
+              const { topic, level } = item;
+              // Generate a stable seed for this specific slot in the batch
+              // In a real "Do Now", we might want 1-3 questions per config item
+              const seed = `batch-${timestamp}-${topic}-${level}`;
+              const lvl = Number(level);
 
               try {
+                  let qData: any = null;
+
                   switch (topic) {
                       case 'arithmetic': qData = BasicArithmeticGen.generate(lvl, seed, lang as any); break;
                       case 'negative': qData = NegativeNumbersGen.generate(lvl, seed, lang as any); break;
-                      case 'equation':
-                            // Correctly route Word Problems (Level 5 & 6) to the Problem Generator
-                            if (lvl === 5 || lvl === 6) {
-                                try {
-                                    // Dynamic import to prevent top-level crashes if file is missing/broken
-                                    const module = await import('../src/core/generators/LinearEquationProblemGen');
-                                    if (module && module.LinearEquationProblemGen) {
-                                        qData = module.LinearEquationProblemGen.generate(lvl, seed, lang as any);
-                                    } else {
-                                        throw new Error("Module loaded but LinearEquationProblemGen export missing");
-                                    }
-                                } catch (err) {
-                                    console.error("Failed to load LinearEquationProblemGen:", err);
-                                    // Fallback to standard generator so the user sees SOMETHING
-                                    qData = LinearEquationGenerator.generate(lvl, seed, lang as any);
-                                }
-                            } else {
-                                // Standard equations (Level 1-4, 7)
-                                qData = LinearEquationGenerator.generate(lvl, seed, lang as any);
-                            }
-                            break;
+                      case 'equation': 
+                          // FIXED: Route Level 5 (Word Problems) to the correct generator
+                          if (lvl === 5) {
+                              qData = LinearEquationProblemGen.generate(lvl, seed, lang as any);
+                          } else {
+                              qData = LinearEquationGenerator.generate(lvl, seed, lang as any); 
+                          }
+                          break;
                       case 'geometry': qData = GeometryGenerator.generate(lvl, seed, lang as any); break;
                       case 'volume': qData = VolumeGenerator.generate(lvl, seed, lang as any); break;
                       case 'graph': qData = LinearGraphGenerator.generate(lvl, seed, lang as any); break;
