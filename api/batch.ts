@@ -3,6 +3,7 @@ import { ScaleGenerator } from '../src/core/generators/ScaleGenerator';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
 import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
+import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
@@ -27,7 +28,7 @@ function formatAnswer(answer: any): string {
 export default function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -35,44 +36,42 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const { configs } = req.body; 
-  // configs expected format: [{ topic: 'arithmetic', level: 1 }, { topic: 'geometry', level: 2 }]
-
-  if (!configs || !Array.isArray(configs) || configs.length === 0) {
-      return res.status(400).json({ error: "Invalid config" });
-  }
-
-  const generatedQuestions = [];
-  
-  // Logic: 
-  // 1 config -> 6 questions
-  // 2 configs -> 3 questions each
-  // 3 configs -> 2 questions each
-  const totalSlots = 6;
-  const countPerConfig = Math.floor(totalSlots / configs.length);
-
   try {
-      for (const config of configs) {
-          for (let i = 0; i < countPerConfig; i++) {
-              const seed = `${Date.now()}-${Math.random()}`;
-              const lang = 'sv'; // Default for Do Now
-              const lvl = config.level;
-              const topic = config.topic;
-              
-              let qData;
+      // Parse query params
+      const { config, lang = 'sv' } = req.query as { config: string, lang: string };
+      
+      if (!config) {
+          return res.status(400).json({ error: "Missing config" });
+      }
+
+      const requests = JSON.parse(config); // Array of { topic, level, count }
+      const generatedQuestions: any[] = [];
+
+      for (const reqItem of requests) {
+          const { topic, level, count } = reqItem;
+          const lvl = Number(level);
+          
+          for (let i = 0; i < count; i++) {
+              const seed = `${topic}-${lvl}-${Date.now()}-${i}-${Math.random()}`;
+              let qData = null;
 
               switch (topic) {
-                  case 'arithmetic': qData = BasicArithmeticGen.generate(lvl, seed, lang); break;
-                  case 'negative': qData = NegativeNumbersGen.generate(lvl, seed, lang); break;
+                  case 'arithmetic': qData = BasicArithmeticGen.generate(lvl, seed, lang as any); break;
+                  case 'negative': qData = NegativeNumbersGen.generate(lvl, seed, lang as any); break;
                   case 'equation':
-                        if (lvl === 5) qData = LinearEquationGenerator.generate(5, seed, lang); // Using standard generator for simplicity in batch
-                        else qData = LinearEquationGenerator.generate(lvl, seed, lang);
+                        // Correctly route Word Problems (Level 5 & 6) to the Problem Generator
+                        if (lvl === 5 || lvl === 6) {
+                            qData = LinearEquationProblemGen.generate(lvl, seed, lang as any);
+                        } else {
+                            // Standard equations (Level 1-4, 7)
+                            qData = LinearEquationGenerator.generate(lvl, seed, lang as any);
+                        }
                         break;
-                  case 'geometry': qData = GeometryGenerator.generate(lvl, seed, lang); break;
-                  case 'volume': qData = VolumeGenerator.generate(lvl, seed, lang); break;
-                  case 'graph': qData = LinearGraphGenerator.generate(lvl, seed, lang); break;
-                  case 'simplify': qData = ExpressionSimplificationGen.generate(lvl, seed, lang); break;
-                  default: qData = ScaleGenerator.generate(lvl, seed, lang); break;
+                  case 'geometry': qData = GeometryGenerator.generate(lvl, seed, lang as any); break;
+                  case 'volume': qData = VolumeGenerator.generate(lvl, seed, lang as any); break;
+                  case 'graph': qData = LinearGraphGenerator.generate(lvl, seed, lang as any); break;
+                  case 'simplify': qData = ExpressionSimplificationGen.generate(lvl, seed, lang as any); break;
+                  default: qData = ScaleGenerator.generate(lvl, seed, lang as any); break;
               }
 
               if (qData) {
