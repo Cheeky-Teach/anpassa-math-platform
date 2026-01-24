@@ -9,7 +9,9 @@ import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGe
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
 import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
-import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator'; // Added
+import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator'; // Import Added
+import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
+import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
 
 function formatAnswerForToken(answer: any): string | number {
     if (typeof answer === 'object' && answer !== null) {
@@ -48,7 +50,6 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   const seed = (seedStr as string) || Math.random().toString(36).substring(7);
   const lg = (lang === 'sv' || lang === 'en') ? lang : 'sv';
   
-  // Deterministic multiplier logic based on date (optional, kept 1 for simplicity here)
   const multiplier = 1;
 
   try {
@@ -57,44 +58,36 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     switch (topic) {
       case 'arithmetic':
-        // Import if needed or assume handled by other files
-        // Keeping it simple for this snippet, assuming you have BasicArithmeticGen imported in full file
+        qData = BasicArithmeticGen.generate(lvl, seed, lg, multiplier);
         break;
-      
-      // ... (Other cases) ...
-
-      case 'similarity': // ADDED
-        qData = SimilarityGenerator.generate(lvl, seed, lg, multiplier);
-        tolerance = 0.1; // Allow small float diffs
+      case 'negative':
+        qData = NegativeNumbersGen.generate(lvl, seed, lg, multiplier);
         break;
-
-      case 'geometry':
-        qData = GeometryGenerator.generate(lvl, seed, lg, multiplier);
-        tolerance = 0.5; 
-        break;
-        
-      case 'volume':
-        qData = VolumeGenerator.generate(lvl, seed, lg, multiplier);
-        tolerance = 0.5;
-        break;
-      
-      case 'graph':
-        qData = LinearGraphGenerator.generate(lvl, seed, lg);
-        break;
-        
-      case 'simplify':
-        qData = ExpressionSimplificationGen.generate(lvl, seed, lg, multiplier);
-        break;
-        
       case 'equation':
-        // ... equation logic ...
         if (lvl === 5 || lvl === 6) {
              qData = LinearEquationProblemGen.generate(lvl, seed, lg);
         } else {
             qData = LinearEquationGenerator.generate(lvl, seed, lg, multiplier);
         }
         break;
-
+      case 'geometry':
+        qData = GeometryGenerator.generate(lvl, seed, lg, multiplier);
+        tolerance = 0.5; 
+        break;
+      case 'graph':
+        qData = LinearGraphGenerator.generate(lvl, seed, lg);
+        break;
+      case 'simplify':
+        qData = ExpressionSimplificationGen.generate(lvl, seed, lg, multiplier);
+        break;
+      case 'volume':
+        qData = VolumeGenerator.generate(lvl, seed, lg, multiplier);
+        tolerance = 0.5;
+        break;
+      case 'similarity': // FIXED: Added case so it doesn't fall to default
+        qData = SimilarityGenerator.generate(lvl, seed, lg, multiplier);
+        tolerance = 0.1;
+        break;
       case 'scale':
       default:
         qData = ScaleGenerator.generate(lvl, seed, lg, multiplier);
@@ -102,8 +95,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!qData || !qData.serverData) {
-      // Fallback for types not fully implemented in this snippet
-      throw new Error(`Generator for topic '${topic}' failed or not linked.`);
+      throw new Error(`Generator for topic '${topic}' failed to return data.`);
     }
 
     const tokenAnswer = formatAnswerForToken(qData.serverData.answer);
