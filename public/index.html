@@ -1178,12 +1178,20 @@
             // DO NOW LOGIC
             const handleDoNowGenerate = async (selected) => {
                 if (selected.length === 0) return;
+                
+                // FORCE 6 QUESTIONS: Cycle through selections to fill the grid
+                // This ensures we always get a full 3x2 grid even if only 1 topic is selected
+                const fullConfig = [];
+                for (let i = 0; i < 6; i++) {
+                    fullConfig.push(selected[i % selected.length]);
+                }
+
                 setLoading(true);
                 try {
                     const res = await fetch('/api/batch', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ config: selected, lang })
+                        body: JSON.stringify({ config: fullConfig, lang })
                     });
                     const data = await res.json();
                     if (data.questions) {
