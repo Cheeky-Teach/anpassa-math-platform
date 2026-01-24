@@ -47,14 +47,13 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       const timestamp = Date.now();
 
       if (Array.isArray(config)) {
-          // Use index loop to incorporate index into the seed
-          // This ensures that if we request 6 identical configs (to fill the grid),
-          // we get 6 different questions instead of 6 duplicates.
+          // Iterate through the array. 
+          // The frontend now ensures this array has 6 items to fill the grid.
           for (let i = 0; i < config.length; i++) {
               const item = config[i];
               const { topic, level } = item;
               
-              // Seed now includes loop index 'i'
+              // Seed includes index 'i' to guarantee uniqueness even if same topic/level is requested multiple times
               const seed = `batch-${timestamp}-${topic}-${level}-${i}`;
               const lvl = Number(level);
 
@@ -65,8 +64,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
                       case 'arithmetic': qData = BasicArithmeticGen.generate(lvl, seed, lang as any); break;
                       case 'negative': qData = NegativeNumbersGen.generate(lvl, seed, lang as any); break;
                       case 'equation': 
-                          // FIXED: Route Level 5 (Word Problems) to the correct generator
-                          if (lvl === 5) {
+                          // FIXED: Route BOTH Level 5 and 6 (Word Problems) to the correct generator
+                          if (lvl === 5 || lvl === 6) {
                               qData = LinearEquationProblemGen.generate(lvl, seed, lang as any);
                           } else {
                               qData = LinearEquationGenerator.generate(lvl, seed, lang as any); 
@@ -75,7 +74,10 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
                       case 'geometry': qData = GeometryGenerator.generate(lvl, seed, lang as any); break;
                       case 'volume': qData = VolumeGenerator.generate(lvl, seed, lang as any); break;
                       case 'graph': qData = LinearGraphGenerator.generate(lvl, seed, lang as any); break;
-                      case 'simplify': qData = ExpressionSimplificationGen.generate(lvl, seed, lang as any); break;
+                      case 'simplify': 
+                          // Simplification generator check
+                          qData = ExpressionSimplificationGen.generate(lvl, seed, lang as any); 
+                          break;
                       default: qData = ScaleGenerator.generate(lvl, seed, lang as any); break;
                   }
 
