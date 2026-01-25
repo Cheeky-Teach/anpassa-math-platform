@@ -118,106 +118,113 @@ export class ExpressionSimplificationGen {
         // --- LEVEL 5: Word Problems (Text) ---
         else if (mode === 5) {
             
-            // Constants for the logic: Ax + B + Cx
+            // Constants for the logic: Ax + Cx +/- B
             const A = rng.intBetween(2, 6);  // Variable group 1
-            const B = rng.intBetween(2, 20); // Constant
+            const B = rng.intBetween(5, 30); // Constant
             const C = rng.intBetween(2, 6);  // Variable group 2
             
             const totalX = A + C;
-            answer = `${totalX}x + ${B}`;
 
-            // Define Scenarios
+            // Define Scenarios with Subtraction (Loss/Cost) and Addition (Gain/Total)
             const scenarios = [
+                // --- ADDITION SCENARIOS (ax + b) ---
                 {
-                    id: 'candy',
-                    sv: `Du har ${A} påsar med godis (x) och ${B} lösa godisar. Din kompis har ${C} påsar.`,
-                    en: `You have ${A} bags of candy (x) and ${B} loose candies. Your friend has ${C} bags.`,
-                    unitSv: "godisar", unitEn: "candies", varSv: "påse", varEn: "bag"
+                    type: 'add',
+                    sv: `Du har ${A} påsar med godis (x) och köper ${C} påsar till. Du har också ${B} lösa godisar.`,
+                    en: `You have ${A} bags of candy (x) and buy ${C} more bags. You also have ${B} loose candies.`,
+                    unitSv: "godisar", unitEn: "candies", varSv: "påsar", varEn: "bags",
+                    explSv: "lösa godisar läggs till (+)", explEn: "loose candies are added (+)"
                 },
                 {
-                    id: 'money_saving',
-                    sv: `Du sparar x kr i veckan i ${A} veckor och får sedan ${B} kr i present. Sedan sparar du i ${C} veckor till.`,
-                    en: `You save x kr per week for ${A} weeks, then get a ${B} kr gift. Then you save for ${C} more weeks.`,
-                    unitSv: "kronor", unitEn: "kr", varSv: "vecka", varEn: "week"
+                    type: 'add',
+                    sv: `Du sparar x kr i ${A} veckor och sedan i ${C} veckor till. Du får också ${B} kr i present.`,
+                    en: `You save x kr for ${A} weeks and then for ${C} more weeks. You also get ${B} kr as a gift.`,
+                    unitSv: "kr", unitEn: "kr", varSv: "veckor", varEn: "weeks",
+                    explSv: "presenten läggs till sparandet (+)", explEn: "the gift adds to the savings (+)"
                 },
                 {
-                    id: 'running',
-                    sv: `Du springer x km varje träningspass. Vecka 1 springer du ${A} pass. Vecka 2 springer du ${C} pass plus ett extra lopp på ${B} km.`,
-                    en: `You run x km every session. Week 1 you run ${A} sessions. Week 2 you run ${C} sessions plus an extra ${B} km race.`,
-                    unitSv: "km", unitEn: "km", varSv: "pass", varEn: "session"
+                    type: 'add',
+                    sv: `Du bygger ett staket med ${A} sektioner av längden x och ${C} sektioner till. Du har också en grind på ${B} meter.`,
+                    en: `You build a fence with ${A} sections of length x and ${C} more sections. You also have a gate of ${B} meters.`,
+                    unitSv: "meter", unitEn: "meters", varSv: "sektioner", varEn: "sections",
+                    explSv: "grinden lägger till längd (+)", explEn: "the gate adds length (+)"
+                },
+                // --- SUBTRACTION SCENARIOS (ax - b) ---
+                {
+                    type: 'sub',
+                    sv: `Du köper ${A} tröjor och ${C} byxor som alla kostar x kr styck. Du har en rabattkupong på ${B} kr.`,
+                    en: `You buy ${A} shirts and ${C} pants that all cost x kr each. You have a discount coupon for ${B} kr.`,
+                    unitSv: "kr", unitEn: "kr", varSv: "plagg", varEn: "items",
+                    explSv: "en rabatt dras bort från priset (-)", explEn: "a discount is subtracted from the price (-)"
                 },
                 {
-                    id: 'apples',
-                    sv: `En låda innehåller x äpplen. I butiken finns en hög med ${A} lådor och ${B} lösa äpplen, samt en annan hög med ${C} lådor.`,
-                    en: `A box contains x apples. The shop has a pile of ${A} boxes and ${B} loose apples, and another pile of ${C} boxes.`,
-                    unitSv: "äpplen", unitEn: "apples", varSv: "låda", varEn: "box"
+                    type: 'sub',
+                    sv: `Du plockar ${A} korgar med jordgubbar och din kompis plockar ${C} korgar (x liter per korg). Ni råkar spilla ut ${B} liter.`,
+                    en: `You pick ${A} baskets of strawberries and your friend picks ${C} baskets (x liters per basket). You accidentally spill ${B} liters.`,
+                    unitSv: "liter", unitEn: "liters", varSv: "korgar", varEn: "baskets",
+                    explSv: "det utspillda dras bort (-)", explEn: "the spilled amount is subtracted (-)"
                 },
                 {
-                    id: 'subscription',
-                    sv: `En streamingtjänst kostar x kr/månad. Du betalar för ${A} månader. Startavgiften är ${B} kr. Din vän betalar för ${C} månader.`,
-                    en: `A streaming service costs x kr/month. You pay for ${A} months. The signup fee is ${B} kr. Your friend pays for ${C} months.`,
-                    unitSv: "kr", unitEn: "kr", varSv: "månad", varEn: "month"
+                    type: 'sub',
+                    sv: `Du har sparat x kr i veckan i ${A} veckor plus ${C} veckor till. Sedan köper du en sak för ${B} kr.`,
+                    en: `You saved x kr a week for ${A} weeks plus ${C} more weeks. Then you buy an item for ${B} kr.`,
+                    unitSv: "kr", unitEn: "kr", varSv: "veckor", varEn: "weeks",
+                    explSv: "kostnaden dras bort från sparandet (-)", explEn: "the cost is subtracted from savings (-)"
                 },
                 {
-                    id: 'construction',
-                    sv: `Du bygger ett staket. Du använder ${A} sektioner av längden x meter, en grind på ${B} meter, och sedan ${C} sektioner till.`,
-                    en: `You build a fence. You use ${A} sections of length x meters, a gate of ${B} meters, and then ${C} more sections.`,
-                    unitSv: "meter", unitEn: "meters", varSv: "sektion", varEn: "section"
+                    type: 'sub',
+                    sv: `En snickare har ${A} långa plankor och ${C} korta plankor som alla är x meter långa. Han sågar bort totalt ${B} meter spillvirke.`,
+                    en: `A carpenter has ${A} long boards and ${C} short boards that are all x meters long. He cuts off a total of ${B} meters waste.`,
+                    unitSv: "meter", unitEn: "meters", varSv: "plankor", varEn: "boards",
+                    explSv: "spillvirket dras bort (-)", explEn: "the waste is subtracted (-)"
                 },
                 {
-                    id: 'points',
-                    sv: `I ett spel får du x poäng per träff. Du får ${A} träffar i första rundan, ${B} bonuspoäng, och ${C} träffar i andra rundan.`,
-                    en: `In a game you get x points per hit. You get ${A} hits in round 1, ${B} bonus points, and ${C} hits in round 2.`,
-                    unitSv: "poäng", unitEn: "points", varSv: "träff", varEn: "hit"
-                },
-                {
-                    id: 'weight',
-                    sv: `En lastpall väger x kg. En lastbil lastar ${A} pallar plus en låda på ${B} kg. En annan lastbil lastar ${C} pallar.`,
-                    en: `A pallet weighs x kg. A truck loads ${A} pallets plus a box of ${B} kg. Another truck loads ${C} pallets.`,
-                    unitSv: "kg", unitEn: "kg", varSv: "pall", varEn: "pallet"
-                },
-                {
-                    id: 'pencils',
-                    sv: `En ask innehåller x pennor. Läraren köper ${A} askar till 7A, ${C} askar till 7B och har ${B} pennor sedan tidigare.`,
-                    en: `A box contains x pencils. The teacher buys ${A} boxes for 7A, ${C} boxes for 7B and has ${B} pencils from before.`,
-                    unitSv: "pennor", unitEn: "pencils", varSv: "ask", varEn: "box"
-                },
-                {
-                    id: 'cards',
-                    sv: `Ett paket samlarkort innehåller x kort. Du köper ${A} paket på måndagen, får ${B} kort av en vän, och köper ${C} paket på tisdagen.`,
-                    en: `A booster pack contains x cards. You buy ${A} packs on Monday, get ${B} cards from a friend, and buy ${C} packs on Tuesday.`,
-                    unitSv: "kort", unitEn: "cards", varSv: "paket", varEn: "pack"
-                },
-                {
-                    id: 'baking',
-                    sv: `Ett recept kräver x dl mjöl. Du bakar ${A} satser till festen och ${C} satser till familjen. Du spiller ut ${B} dl mjöl på golvet (räkna med det också).`,
-                    en: `A recipe needs x dl flour. You bake ${A} batches for the party and ${C} batches for the family. You spill ${B} dl flour on the floor (count that too).`,
-                    unitSv: "dl", unitEn: "dl", varSv: "sats", varEn: "batch"
+                    type: 'sub',
+                    sv: `Du prenumererar på en tjänst (x kr/mån) i ${A} månader åt dig själv och ${C} månader åt en vän. Du får ${B} kr i återbäring.`,
+                    en: `You subscribe to a service (x kr/mo) for ${A} months for yourself and ${C} months for a friend. You get ${B} kr cash back.`,
+                    unitSv: "kr", unitEn: "kr", varSv: "månader", varEn: "months",
+                    explSv: "återbäringen minskar kostnaden (-)", explEn: "cash back reduces the cost (-)"
                 }
             ];
 
             const s = rng.pick(scenarios);
+            const isSub = s.type === 'sub';
+            const operator = isSub ? "-" : "+";
+            
+            // Construct Answer: e.g. "8x - 20"
+            answer = `${totalX}x ${operator} ${B}`;
 
+            // Adjust the final question text based on type
+            const totalTextSv = isSub ? "det som återstår/slutsumman" : "totalen";
+            const totalTextEn = isSub ? "what remains/net total" : "the total";
+            
             description = {
-                sv: `${s.sv} Skriv ett uttryck för totalen och förenkla det.`,
-                en: `${s.en} Write an expression for the total and simplify it.`
+                sv: `${s.sv} Skriv ett uttryck för ${totalTextSv} och förenkla det.`,
+                en: `${s.en} Write an expression for ${totalTextEn} and simplify it.`
             };
             
+            // Pedagogical Steps (Explaining how to get each term)
             steps = [
                 { 
                     text: t(lang, { 
-                        sv: `Variabeln x representerar varje ${s.varSv}. Det fasta värdet är ${s.unitSv}.`, 
-                        en: `The variable x represents each ${s.varEn}. The fixed value is ${s.unitEn}.` 
+                        sv: `Steg 1: Hitta x-termerna. Du har ${A} ${s.varSv} och ${C} ${s.varSv}. Det blir ${A}x + ${C}x.`, 
+                        en: `Step 1: Find the x-terms. You have ${A} ${s.varEn} and ${C} ${s.varEn}. That makes ${A}x + ${C}x.` 
                     }), 
-                    latex: "" 
+                    latex: `${A}x + ${C}x` 
                 },
                 { 
-                    text: t(lang, { sv: "Ställ upp uttrycket (x-termer + konstant).", en: "Set up the expression (x-terms + constant)." }), 
-                    latex: `${A}x + ${C}x + ${B}` 
+                    text: t(lang, { 
+                        sv: `Steg 2: Hantera konstanten (${B} ${s.unitSv}). Eftersom ${s.explSv}, skriver vi ${operator} ${B}.`, 
+                        en: `Step 2: Handle the constant (${B} ${s.unitEn}). Since ${s.explEn}, we write ${operator} ${B}.` 
+                    }), 
+                    latex: isSub ? `- ${B}` : `+ ${B}`
                 },
                 { 
-                    text: t(lang, { sv: "Förenkla genom att addera x-termerna.", en: "Simplify by adding the x-terms." }), 
-                    latex: formatColor(answer) 
+                    text: t(lang, { 
+                        sv: `Steg 3: Sätt ihop och förenkla. ${A}x plus ${C}x blir ${totalX}x.`, 
+                        en: `Step 3: Combine and simplify. ${A}x plus ${C}x becomes ${totalX}x.` 
+                    }), 
+                    latex: `${totalX}x ${operator} ${B} = ${formatColor(answer)}` 
                 }
             ];
             
