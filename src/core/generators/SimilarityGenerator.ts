@@ -1,6 +1,6 @@
 import { GeneratedQuestion, Clue } from "../types/generator";
 import { Random } from "../utils/random";
-import { t, Language } from "../utils/i18n";
+import { TERMS, t, Language } from "../utils/i18n";
 
 export class SimilarityGenerator {
     public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
@@ -146,7 +146,7 @@ export class SimilarityGenerator {
         }
 
         // --- LEVEL 3: Top Triangle Theorem (Transversal) ---
-        else if (level === 3) {
+        else {
             const topSide = rng.intBetween(5, 12);
             const addSide = rng.intBetween(4, 10);
             const totSide = topSide + addSide;
@@ -206,59 +206,6 @@ export class SimilarityGenerator {
             qData.answer = answerVal;
             qData.description = { sv: "Linjen i mitten är parallell med basen. Beräkna x.", en: "The middle line is parallel to the base. Calculate x." };
             qData.renderData = { text_key: "top_tri", description: qData.description, latex: "", answerType: "numeric", geometry: { type: 'transversal', ...geom } };
-        }
-
-        // --- LEVEL 4: Hourglass / Butterfly ---
-        else {
-            const k = rng.pick([1.5, 2, 2.5, 3]);
-            
-            const topBase = rng.intBetween(5, 12);
-            const botBase = topBase * k;
-            
-            const topSide = rng.intBetween(4, 10);
-            const botSide = topSide * k;
-
-            const findBot = rng.intBetween(0, 1) === 1;
-            const answerVal = findBot ? botSide : topSide;
-
-            let geom = { 
-                type: 'hourglass',
-                labels: {
-                    top_base: topBase,
-                    bot_base: botBase,
-                    top_side: findBot ? topSide : 'x',
-                    bot_side: findBot ? 'x' : botSide
-                }
-            };
-
-            qData.answer = answerVal;
-            qData.description = { sv: "De horisontella linjerna är parallella. Beräkna x.", en: "The horizontal lines are parallel. Calculate x." };
-            
-            steps = [
-                { 
-                    text: t(lang, { 
-                        sv: "Eftersom linjerna är parallella är vinklarna lika (Z-regeln). Trianglarna är likformiga.", 
-                        en: "Since the lines are parallel, the angles are equal (Z-rule). The triangles are similar." 
-                    }), 
-                    latex: "\\Delta_{\\text{upp}} \\sim \\Delta_{\\text{ner}}" 
-                },
-                { 
-                    text: t(lang, { 
-                        sv: "Räkna ut skalan genom att jämföra baserna (botten / toppen).", 
-                        en: "Calculate the scale by comparing the bases (bottom / top)." 
-                    }), 
-                    latex: `k = \\frac{${botBase}}{${topBase}} = ${k}` 
-                },
-                { 
-                    text: t(lang, { 
-                        sv: findBot ? "Multiplicera med skalan för att få den större sidan." : "Dela med skalan för att få den mindre sidan.", 
-                        en: findBot ? "Multiply by the scale to get the larger side." : "Divide by the scale to get the smaller side." 
-                    }), 
-                    latex: findBot ? `x = ${topSide} \\cdot ${k} = ${formatColor(answerVal)}` : `x = ${botSide} / ${k} = ${formatColor(answerVal)}` 
-                }
-            ];
-
-            qData.renderData = { text_key: "hourglass", description: qData.description, latex: "", answerType: "numeric", geometry: geom };
         }
 
         return {
