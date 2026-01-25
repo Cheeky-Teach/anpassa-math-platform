@@ -11,6 +11,7 @@ import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationP
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen'; // Added
+import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator';
 
 function formatAnswerForToken(answer: any): string | number {
     if (typeof answer === 'object' && answer !== null) {
@@ -85,6 +86,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       case 'volume':
         qData = VolumeGenerator.generate(lvl, seed, lg, multiplier);
         tolerance = 0.5;
+        break;
+        
+      case 'similarity':
+        qData = SimilarityGenerator.generate(lvl, seed, lg, multiplier);
+        tolerance = 0.1;
         break;
 
       case 'scale':
