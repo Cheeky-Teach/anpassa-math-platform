@@ -100,48 +100,89 @@ export class GeometryGenerator {
     // --- LEVEL 4: Circles (Area & Circumference) ---
     else if (mode === 4) {
         const isArea = rng.intBetween(0, 1) === 1;
+        const showDiameter = rng.intBetween(0, 1) === 1; // 50% chance to show diameter
         const r = rng.intBetween(s(3), s(10));
+        const d = r * 2;
         
         if (isArea) {
             const area = Math.PI * r * r;
             qData.answer = Math.round(area * 10) / 10;
             qData.description = { sv: "Beräkna arean (avrunda till 1 decimal).", en: "Calculate the area (round to 1 decimal)." };
             
-            steps = [
-                { 
-                    text: t(lang, { sv: "För att räkna ut ytan (arean) på en cirkel använder vi radien (r) och talet Pi (π ≈ 3.14).", en: "To find the surface (area) of a circle, we use the radius (r) and Pi (π ≈ 3.14)." }), 
-                    latex: "Area = \\pi \\cdot r^2" 
-                },
-                { 
-                    text: t(lang, { sv: "Radien i kvadrat betyder radien gånger sig själv.", en: "Radius squared means radius times itself." }), 
-                    latex: `r^2 = ${r} \\cdot ${r} = ${r*r}` 
-                },
-                { 
-                    text: t(lang, { sv: "Multiplicera med Pi.", en: "Multiply by Pi." }), 
-                    latex: `3.14 \\cdot ${r*r} \\approx ${formatColor(qData.answer)}` 
-                }
-            ];
+            if (showDiameter) {
+                // Diameter given, ask for Area
+                steps = [
+                    { 
+                        text: t(lang, { 
+                            sv: "För att räkna ut arean behöver vi radien (r). Radien är hälften av diametern (d).", 
+                            en: "To calculate the area we need the radius (r). The radius is half of the diameter (d)." 
+                        }), 
+                        latex: `r = \\frac{d}{2} = \\frac{${d}}{2} = ${r}` 
+                    },
+                    { 
+                        text: t(lang, { sv: "Använd formeln för cirkelns area.", en: "Use the formula for the area of a circle." }), 
+                        latex: "Area = \\pi \\cdot r^2" 
+                    },
+                    { 
+                        text: t(lang, { sv: "Sätt in radien och räkna ut.", en: "Insert the radius and calculate." }), 
+                        latex: `3.14 \\cdot ${r}^2 = 3.14 \\cdot ${r*r} \\approx ${formatColor(qData.answer)}` 
+                    }
+                ];
+            } else {
+                // Radius given, ask for Area
+                steps = [
+                    { 
+                        text: t(lang, { sv: "För att räkna ut ytan (arean) på en cirkel använder vi radien (r) och talet Pi (π ≈ 3.14).", en: "To find the surface (area) of a circle, we use the radius (r) and Pi (π ≈ 3.14)." }), 
+                        latex: "Area = \\pi \\cdot r^2" 
+                    },
+                    { 
+                        text: t(lang, { sv: "Radien i kvadrat betyder radien gånger sig själv.", en: "Radius squared means radius times itself." }), 
+                        latex: `r^2 = ${r} \\cdot ${r} = ${r*r}` 
+                    },
+                    { 
+                        text: t(lang, { sv: "Multiplicera med Pi.", en: "Multiply by Pi." }), 
+                        latex: `3.14 \\cdot ${r*r} \\approx ${formatColor(qData.answer)}` 
+                    }
+                ];
+            }
         } else {
+            // Circumference
             const circ = 2 * Math.PI * r;
             qData.answer = Math.round(circ * 10) / 10;
             qData.description = { sv: "Beräkna omkretsen (avrunda till 1 decimal).", en: "Calculate the circumference (round to 1 decimal)." };
             
-            steps = [
-                { 
-                    text: t(lang, { sv: "Omkretsen är sträckan runt cirkeln. Vi kan använda diametern (som är 2 gånger radien) eller formeln med radien.", en: "Circumference is the distance around the circle. We can use the diameter (2 times radius) or the radius formula." }), 
-                    latex: "Omkrets = 2 \\cdot \\pi \\cdot r" 
-                },
-                { 
-                    text: t(lang, { sv: "Räkna ut diametern först (dubbla radien).", en: "Calculate the diameter first (double the radius)." }), 
-                    latex: `d = 2 \\cdot ${r} = ${2*r}` 
-                },
-                { 
-                    text: t(lang, { sv: "Multiplicera diametern med Pi (≈ 3.14).", en: "Multiply the diameter by Pi (≈ 3.14)." }), 
-                    latex: `${2*r} \\cdot 3.14 \\approx ${formatColor(qData.answer)}` 
-                }
-            ];
+            if (showDiameter) {
+                // Diameter given, ask for Circumference
+                steps = [
+                    { 
+                        text: t(lang, { sv: "Omkretsen är sträckan runt cirkeln. Med diametern (d) är formeln enkel.", en: "Circumference is the distance around the circle. With diameter (d), the formula is simple." }), 
+                        latex: "Omkrets = \\pi \\cdot d" 
+                    },
+                    { 
+                        text: t(lang, { sv: "Multiplicera diametern med Pi (≈ 3.14).", en: "Multiply the diameter by Pi (≈ 3.14)." }), 
+                        latex: `3.14 \\cdot ${d} \\approx ${formatColor(qData.answer)}` 
+                    }
+                ];
+            } else {
+                // Radius given, ask for Circumference
+                steps = [
+                    { 
+                        text: t(lang, { sv: "Omkretsen är sträckan runt cirkeln. Vi kan använda diametern (som är 2 gånger radien) eller formeln med radien.", en: "Circumference is the distance around the circle. We can use the diameter (2 times radius) or the radius formula." }), 
+                        latex: "Omkrets = 2 \\cdot \\pi \\cdot r" 
+                    },
+                    { 
+                        text: t(lang, { sv: "Räkna ut diametern först (dubbla radien).", en: "Calculate the diameter first (double the radius)." }), 
+                        latex: `d = 2 \\cdot ${r} = ${2*r}` 
+                    },
+                    { 
+                        text: t(lang, { sv: "Multiplicera diametern med Pi (≈ 3.14).", en: "Multiply the diameter by Pi (≈ 3.14)." }), 
+                        latex: `${2*r} \\cdot 3.14 \\approx ${formatColor(qData.answer)}` 
+                    }
+                ];
+            }
         }
-        geometry = { type: 'circle', radius: r, value: r, show: 'radius' };
+        
+        geometry = { type: 'circle', radius: r, value: showDiameter ? d : r, show: showDiameter ? 'diameter' : 'radius' };
     }
 
     // --- LEVEL 5: Composite Shapes ---
@@ -254,7 +295,8 @@ export class GeometryGenerator {
                     }
                 ];
             }
-            geometry = { type: 'composite', subtype: 'portal', w: width, labels: { w: width } };
+            // FIXED: Added 'h' to labels so frontend can draw vertical sides
+            geometry = { type: 'composite', subtype: 'portal', w: width, labels: { w: width, h: height } };
         }
         
         qData.text_key = isArea ? "calc_area" : "calc_perim";
