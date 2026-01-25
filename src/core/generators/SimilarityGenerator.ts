@@ -19,7 +19,6 @@ export class SimilarityGenerator {
         // --- LEVEL 1: Similar or Not? (Visual/Concept) ---
         if (level === 1) {
             const isSimilar = rng.intBetween(0, 1) === 1;
-            // Weighted choice: rectangles are easier, triangles with angles are distinct
             const type = rng.pick(['rect_sides', 'tri_sides', 'tri_angles']);
             
             let shapeData: any = { type: 'similarity_compare', shapeType: 'triangle', left: {}, right: {} };
@@ -35,7 +34,6 @@ export class SimilarityGenerator {
                 
                 const k = isSimilar ? rng.pick([1.5, 2, 0.5]) : rng.pick([1.2, 1.8, 0.8]);
                 const w2 = Math.round(w1 * k);
-                // If similar, h2 matches k. If not, h2 is distorted.
                 const h2 = isSimilar ? Math.round(h1 * k) : Math.round(h1 * (k + 0.5));
 
                 shapeData.left = { labels: { b: w1, h: h1 } };
@@ -49,11 +47,9 @@ export class SimilarityGenerator {
             } 
             else if (type === 'tri_angles') {
                 shapeData.shapeType = 'triangle';
-                // Generate base angles for Isosceles or Scalene
                 const a1 = rng.intBetween(40, 75);
                 const a2 = rng.intBetween(40, 75);
                 
-                // Similar = same angles. Not similar = change one angle significantly.
                 const b1 = isSimilar ? a1 : a1 + rng.pick([-15, 15]);
                 const b2 = isSimilar ? a2 : a2;
 
@@ -72,7 +68,6 @@ export class SimilarityGenerator {
                 const s2 = rng.intBetween(4, 9);
                 
                 const k = isSimilar ? 2 : 1.5;
-                // If not similar, distort one side
                 const r1 = s1 * k;
                 const r2 = isSimilar ? s2 * k : Math.floor(s2 * (k + 0.4));
 
@@ -111,7 +106,6 @@ export class SimilarityGenerator {
                 if (missing === 'w2') { rLabels.b = 'x'; answerVal = w2; }
                 else { rLabels.h = 'x'; answerVal = h2; }
             } else {
-                // Triangle sides mapping
                 lLabels = { s1: w1, s2: h1 };
                 rLabels = { s1: w2, s2: h2 };
                 if (missing === 'w2') { rLabels.s1 = 'x'; answerVal = w2; }
@@ -138,12 +132,10 @@ export class SimilarityGenerator {
 
         // --- LEVEL 3: Top Triangle Theorem (Transversal) ---
         else if (level === 3) {
-            // Setup: Small triangle on top of big triangle
             const topSide = rng.intBetween(5, 12);
             const addSide = rng.intBetween(4, 10);
             const totSide = topSide + addSide;
-            
-            const k = totSide / topSide; // Scale factor
+            const k = totSide / topSide; 
             
             const baseTop = rng.intBetween(6, 14);
             const baseBot = Math.round(baseTop * k * 10) / 10;
@@ -153,7 +145,6 @@ export class SimilarityGenerator {
             let geom: any = { labels: { base_top: baseTop, base_bot: baseBot, left_top: topSide, left_tot: totSide } };
 
             if (mode === 'find_base') {
-                // Hide baseBot
                 answerVal = baseBot;
                 geom.labels.base_bot = 'x';
                 steps = [
@@ -161,7 +152,6 @@ export class SimilarityGenerator {
                     { text: t(lang, { sv: "Beräkna x", en: "Calculate x" }), latex: `x = \\frac{${baseTop} \\cdot ${totSide}}{${topSide}} = ${formatColor(answerVal)}` }
                 ];
             } else {
-                // Hide total side
                 answerVal = totSide;
                 geom.labels.left_tot = 'x';
                 steps = [
@@ -185,8 +175,6 @@ export class SimilarityGenerator {
             const topSide = rng.intBetween(4, 10);
             const botSide = topSide * k;
 
-            // Decide which to hide. Usually hide a side on the 'x' variable.
-            // In hourglass, top corresponds to bottom.
             const findBot = rng.intBetween(0, 1) === 1;
             const answerVal = findBot ? botSide : topSide;
 
