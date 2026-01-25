@@ -1009,7 +1009,7 @@
          * 5. MAIN VIEWS (Dashboard, PracticeView)
          *******************************************************/
 
-        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect, timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onDoNowOpen})=>{
+        const Dashboard=({lang,onStart,selectedTopic,selectedLevel,onSelect, timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onDoNowOpen, toggleLang})=>{
             const getCategoryColorClass=(category,type)=>{const colorMap={pink:'pink',indigo:'indigo',emerald:'emerald',purple:'purple'};const color=colorMap[category.color]||'primary';if(type==='bg-light')return `bg-${color}-50`;if(type==='bg-dark')return `bg-${color}-500`;if(type==='border')return `border-${color}-100`;if(type==='text')return `text-${color}-700`;if(type==='ring')return `ring-${color}-500`;if(type==='border-solid')return `border-${color}-500`;return '';};
             return(
                 <div className="max-w-6xl mx-auto w-full p-4 fade-in flex flex-col min-h-screen">
@@ -1088,15 +1088,27 @@
                         </button>
                     </div>
 
-                    <footer className="mt-auto py-6 border-t border-gray-200 flex justify-between items-center px-4">
-                        {/* DO NOW BUTTON - Left Aligned, Hidden on Mobile */}
-                        <button onClick={onDoNowOpen} className="hidden md:block bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-full text-sm transition-colors shadow-sm">
+                    <footer className="mt-auto py-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center px-4 gap-4">
+                        {/* DO NOW BUTTON - Left Aligned */}
+                        <button onClick={onDoNowOpen} className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-full text-sm transition-colors shadow-sm order-2 md:order-1">
                             {ui.donow_btn}
                         </button>
                         
-                        <button onClick={onLgrOpen} className="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-sky-200 shadow-sm ml-auto md:ml-0">
-                            {ui.lgr_btn}
-                        </button>
+                        {/* Right Side Group: Language Switch + LGR22 */}
+                        <div className="flex items-center gap-3 order-1 md:order-2 w-full md:w-auto justify-center md:justify-end">
+                            <button 
+                                onClick={toggleLang} 
+                                className="px-4 py-2 rounded-full text-sm font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-2"
+                                title={lang === 'sv' ? "Byt språk" : "Switch Language"}
+                            >
+                                <span className="text-lg">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</span>
+                                <span>{lang === 'sv' ? 'SE' : 'ENG'}</span>
+                            </button>
+
+                            <button onClick={onLgrOpen} className="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-sky-200 shadow-sm">
+                                {ui.lgr_btn}
+                            </button>
+                        </div>
                     </footer>
                 </div>
             );
@@ -1538,6 +1550,8 @@
             const closeTimeUp = () => {
                 setTimeUpOpen(false);
             };
+            
+            const toggleLang = () => setLang(prev => prev === 'sv' ? 'en' : 'sv');
 
             // VIEW ROUTING
             if (view === 'donow_config') {
@@ -1608,6 +1622,7 @@
                                 ui={ui}
                                 onLgrOpen={()=>setLgrOpen(true)}
                                 onDoNowOpen={()=>setView('donow_config')}
+                                toggleLang={toggleLang}
                             />
                         ):(
                             <PracticeView 
