@@ -19,7 +19,6 @@ export class SimilarityGenerator {
         // --- LEVEL 1: Similar or Not? (Visual/Concept) ---
         if (level === 1) {
             const isSimilar = rng.intBetween(0, 1) === 1;
-            // Weighted choice: rectangles are easier, triangles with angles are distinct
             const type = rng.pick(['rect_sides', 'tri_sides', 'tri_angles']);
             
             let shapeData: any = { type: 'similarity_compare', shapeType: 'triangle', left: {}, right: {} };
@@ -34,9 +33,8 @@ export class SimilarityGenerator {
                 const h1 = rng.intBetween(2, 5) * 10;
                 
                 const k = isSimilar ? rng.pick([1.5, 2, 0.5]) : rng.pick([1.2, 1.8, 0.8]);
-                const w2 = w1 * k;
-                // If similar, h2 matches k. If not, h2 is distorted.
-                const h2 = isSimilar ? h1 * k : h1 * (k + 0.5);
+                const w2 = Math.round(w1 * k);
+                const h2 = isSimilar ? Math.round(h1 * k) : Math.round(h1 * (k + 0.5));
 
                 shapeData.left = { labels: { b: w1, h: h1 } };
                 shapeData.right = { labels: { b: w2, h: h2 } };
@@ -46,14 +44,13 @@ export class SimilarityGenerator {
             } 
             else if (type === 'tri_angles') {
                 shapeData.shapeType = 'triangle';
-                // Generate base angles for Isosceles or Scalene
-                const a1 = rng.intBetween(30, 80);
-                const a2 = rng.intBetween(30, 80);
+                const a1 = rng.intBetween(40, 75);
+                const a2 = rng.intBetween(40, 75);
                 
-                // Similar = same angles. Not similar = change one angle significantly.
                 const b1 = isSimilar ? a1 : a1 + rng.pick([-15, 15]);
                 const b2 = isSimilar ? a2 : a2;
 
+                // Pass strings with degree symbol
                 shapeData.left = { labels: { a1: `${a1}°`, a2: `${a2}°` } };
                 shapeData.right = { labels: { a1: `${b1}°`, a2: `${b2}°` } };
 
@@ -62,17 +59,22 @@ export class SimilarityGenerator {
             }
             else { // tri_sides
                 shapeData.shapeType = 'triangle';
-                const s1 = rng.intBetween(3, 8);
-                const s2 = rng.intBetween(3, 8);
+                const s1 = rng.intBetween(4, 9);
+                const s2 = rng.intBetween(4, 9);
                 
                 const k = isSimilar ? 2 : 1.5;
-                // If not similar, distort one side
                 const r1 = s1 * k;
-                const r2 = isSimilar ? s2 * k : s2 * (k + 0.5);
+                const r2 = isSimilar ? s2 * k : Math.floor(s2 * (k + 0.4));
 
                 shapeData.left = { labels: { s1: s1, s2: s2 } };
                 shapeData.right = { labels: { s1: r1, s2: r2 } };
                 qData.description = { sv: "Är trianglarna likformiga?", en: "Are the triangles similar?" };
+                
+                // FIXED: Added steps here to prevent crash
+                steps.push({ 
+                    text: { sv: "Jämför kvoterna mellan motsvarande sidor.", en: "Compare the ratios of corresponding sides." }, 
+                    latex: `${r1}/${s1} \\text{ vs } ${r2}/${s2}` 
+                });
             }
 
             qData.renderData = { text_key: "sim_check", description: qData.description, latex: "", answerType: "multiple_choice", choices: qData.choices, geometry: shapeData };
@@ -80,11 +82,11 @@ export class SimilarityGenerator {
 
         // --- LEVEL 2: Find Side (x) in Similar Shapes ---
         else if (level === 2) {
-            const k = rng.pick([2, 3, 4, 5, 1.5, 2.5]);
+            const k = rng.pick([2, 3, 4, 1.5]);
             const isRect = rng.intBetween(0, 1) === 1;
             
-            let w1 = rng.intBetween(2, 9);
-            let h1 = rng.intBetween(3, 12);
+            let w1 = rng.intBetween(3, 8);
+            let h1 = rng.intBetween(4, 10);
             let w2 = Math.round(w1 * k * 10) / 10;
             let h2 = Math.round(h1 * k * 10) / 10;
 
@@ -100,7 +102,6 @@ export class SimilarityGenerator {
                 if (missing === 'w2') { rLabels.b = 'x'; answerVal = w2; }
                 else { rLabels.h = 'x'; answerVal = h2; }
             } else {
-                // Triangle sides mapping
                 lLabels = { s1: w1, s2: h1 };
                 rLabels = { s1: w2, s2: h2 };
                 if (missing === 'w2') { rLabels.s1 = 'x'; answerVal = w2; }
@@ -127,14 +128,12 @@ export class SimilarityGenerator {
 
         // --- LEVEL 3: Top Triangle Theorem (Transversal) ---
         else if (level === 3) {
-            // Setup: Small triangle on top of big triangle
-            const topSide = rng.intBetween(4, 12);
-            const addSide = rng.intBetween(3, 10);
+            const topSide = rng.intBetween(5, 12);
+            const addSide = rng.intBetween(4, 10);
             const totSide = topSide + addSide;
+            const k = totSide / topSide; 
             
-            const k = totSide / topSide; // Scale factor
-            
-            const baseTop = rng.intBetween(5, 15);
+            const baseTop = rng.intBetween(6, 14);
             const baseBot = Math.round(baseTop * k * 10) / 10;
 
             const mode = rng.pick(['find_base', 'find_side']);
@@ -142,7 +141,6 @@ export class SimilarityGenerator {
             let geom: any = { labels: { base_top: baseTop, base_bot: baseBot, left_top: topSide, left_tot: totSide } };
 
             if (mode === 'find_base') {
-                // Hide baseBot
                 answerVal = baseBot;
                 geom.labels.base_bot = 'x';
                 steps = [
@@ -150,7 +148,6 @@ export class SimilarityGenerator {
                     { text: { sv: "Beräkna x", en: "Calculate x" }, latex: `x = \\frac{${baseTop} \\cdot ${totSide}}{${topSide}} = ${formatColor(answerVal)}` }
                 ];
             } else {
-                // Hide total side
                 answerVal = totSide;
                 geom.labels.left_tot = 'x';
                 steps = [
@@ -164,18 +161,16 @@ export class SimilarityGenerator {
             qData.renderData = { text_key: "top_tri", description: qData.description, latex: "", answerType: "numeric", geometry: { type: 'transversal', ...geom } };
         }
 
-        // --- LEVEL 4: Hourglass / Butterfly (Likformighet) ---
+        // --- LEVEL 4: Hourglass / Butterfly ---
         else {
             const k = rng.pick([1.5, 2, 2.5, 3]);
             
-            const topBase = rng.intBetween(4, 10);
+            const topBase = rng.intBetween(5, 12);
             const botBase = topBase * k;
             
-            const topSide = rng.intBetween(3, 8);
+            const topSide = rng.intBetween(4, 10);
             const botSide = topSide * k;
 
-            // Decide which to hide. Usually hide a side on the 'x' variable.
-            // In hourglass, top corresponds to bottom.
             const findBot = rng.intBetween(0, 1) === 1;
             const answerVal = findBot ? botSide : topSide;
 
