@@ -27,17 +27,17 @@ export class GeometryGenerator {
         
         steps = [
             { 
-                text: { 
+                text: t(lang, { 
                     sv: "Omkretsen är sträckan runt hela figuren. En rektangel har två baser och två höjder.", 
                     en: "Perimeter is the distance around the shape. A rectangle has two bases and two heights." 
-                }, 
+                }), 
                 latex: "" 
             },
             { 
-                text: { 
+                text: t(lang, { 
                     sv: "Addera alla fyra sidor.", 
                     en: "Add all four sides together." 
-                }, 
+                }), 
                 latex: `${w} + ${w} + ${h} + ${h} = ${formatColor(qData.answer)}` 
             }
         ];
@@ -53,17 +53,17 @@ export class GeometryGenerator {
         
         steps = [
             { 
-                text: { 
+                text: t(lang, { 
                     sv: "Arean berättar hur stor yta figuren täcker. För en rektangel multiplicerar vi basen med höjden.", 
                     en: "Area tells us how much surface the shape covers. For a rectangle, we multiply the base by the height." 
-                }, 
+                }), 
                 latex: "Area = b \\cdot h" 
             },
             { 
-                text: { 
+                text: t(lang, { 
                     sv: "Sätt in värdena och räkna ut.", 
                     en: "Insert the values and calculate." 
-                }, 
+                }), 
                 latex: `${w} \\cdot ${h} = ${formatColor(qData.answer)}` 
             }
         ];
@@ -81,17 +81,17 @@ export class GeometryGenerator {
         
         steps = [
             { 
-                text: { 
+                text: t(lang, { 
                     sv: "En triangel är alltid hälften av en rektangel med samma bas och höjd.", 
                     en: "A triangle is always half of a rectangle with the same base and height." 
-                }, 
+                }), 
                 latex: "Area = \\frac{b \\cdot h}{2}" 
             },
             { 
-                text: { 
+                text: t(lang, { 
                     sv: "Multiplicera basen med höjden och dela sedan med 2.", 
                     en: "Multiply the base by the height, then divide by 2." 
-                }, 
+                }), 
                 latex: `\\frac{${b} \\cdot ${h}}{2} = \\frac{${b*h}}{2} = ${formatColor(qData.answer)}` 
             }
         ];
@@ -109,15 +109,15 @@ export class GeometryGenerator {
             
             steps = [
                 { 
-                    text: { sv: "För att räkna ut ytan (arean) på en cirkel använder vi radien (r) och talet Pi (π ≈ 3.14).", en: "To find the surface (area) of a circle, we use the radius (r) and Pi (π ≈ 3.14)." }, 
+                    text: t(lang, { sv: "För att räkna ut ytan (arean) på en cirkel använder vi radien (r) och talet Pi (π ≈ 3.14).", en: "To find the surface (area) of a circle, we use the radius (r) and Pi (π ≈ 3.14)." }), 
                     latex: "Area = \\pi \\cdot r^2" 
                 },
                 { 
-                    text: { sv: "Radien i kvadrat betyder radien gånger sig själv.", en: "Radius squared means radius times itself." }, 
+                    text: t(lang, { sv: "Radien i kvadrat betyder radien gånger sig själv.", en: "Radius squared means radius times itself." }), 
                     latex: `r^2 = ${r} \\cdot ${r} = ${r*r}` 
                 },
                 { 
-                    text: { sv: "Multiplicera med Pi.", en: "Multiply by Pi." }, 
+                    text: t(lang, { sv: "Multiplicera med Pi.", en: "Multiply by Pi." }), 
                     latex: `3.14 \\cdot ${r*r} \\approx ${formatColor(qData.answer)}` 
                 }
             ];
@@ -128,15 +128,15 @@ export class GeometryGenerator {
             
             steps = [
                 { 
-                    text: { sv: "Omkretsen är sträckan runt cirkeln. Vi kan använda diametern (som är 2 gånger radien) eller formeln med radien.", en: "Circumference is the distance around the circle. We can use the diameter (2 times radius) or the radius formula." }, 
+                    text: t(lang, { sv: "Omkretsen är sträckan runt cirkeln. Vi kan använda diametern (som är 2 gånger radien) eller formeln med radien.", en: "Circumference is the distance around the circle. We can use the diameter (2 times radius) or the radius formula." }), 
                     latex: "Omkrets = 2 \\cdot \\pi \\cdot r" 
                 },
                 { 
-                    text: { sv: "Räkna ut diametern först (dubbla radien).", en: "Calculate the diameter first (double the radius)." }, 
+                    text: t(lang, { sv: "Räkna ut diametern först (dubbla radien).", en: "Calculate the diameter first (double the radius)." }), 
                     latex: `d = 2 \\cdot ${r} = ${2*r}` 
                 },
                 { 
-                    text: { sv: "Multiplicera diametern med Pi (≈ 3.14).", en: "Multiply the diameter by Pi (≈ 3.14)." }, 
+                    text: t(lang, { sv: "Multiplicera diametern med Pi (≈ 3.14).", en: "Multiply the diameter by Pi (≈ 3.14)." }), 
                     latex: `${2*r} \\cdot 3.14 \\approx ${formatColor(qData.answer)}` 
                 }
             ];
@@ -166,19 +166,19 @@ export class GeometryGenerator {
                 
                 steps = [
                     { 
-                        text: { sv: "Dela upp figuren i två delar: en rektangel i botten och en triangel på toppen.", en: "Split the shape into two parts: a rectangle at the bottom and a triangle on top." }, 
+                        text: t(lang, { sv: "Dela upp figuren i två delar: en rektangel i botten och en triangel på toppen.", en: "Split the shape into two parts: a rectangle at the bottom and a triangle on top." }), 
                         latex: "" 
                     },
                     { 
-                        text: { sv: "Räkna ut arean för rektangeln.", en: "Calculate the area of the rectangle." }, 
+                        text: t(lang, { sv: "Räkna ut arean för rektangeln.", en: "Calculate the area of the rectangle." }), 
                         latex: `${width} \\cdot ${height} = ${areaRect}` 
                     },
                     { 
-                        text: { sv: "Räkna ut arean för taket (triangeln).", en: "Calculate the area of the roof (triangle)." }, 
+                        text: t(lang, { sv: "Räkna ut arean för taket (triangeln).", en: "Calculate the area of the roof (triangle)." }), 
                         latex: `\\frac{${width} \\cdot ${hRoof}}{2} = ${areaTri}` 
                     },
                     { 
-                        text: { sv: "Addera delarna för att få totalen.", en: "Add the parts to get the total." }, 
+                        text: t(lang, { sv: "Addera delarna för att få totalen.", en: "Add the parts to get the total." }), 
                         latex: `${areaRect} + ${areaTri} = ${formatColor(qData.answer)}` 
                     }
                 ];
@@ -192,15 +192,15 @@ export class GeometryGenerator {
                 
                 steps = [
                     { 
-                        text: { sv: "Omkretsen är vägen runt huset (golvet + väggarna + taket).", en: "The perimeter is the path around the house (floor + walls + roof)." }, 
+                        text: t(lang, { sv: "Omkretsen är vägen runt huset (golvet + väggarna + taket).", en: "The perimeter is the path around the house (floor + walls + roof)." }), 
                         latex: "" 
                     },
                     { 
-                        text: { sv: "För att hitta takets längd använder vi Pythagoras sats på halva taket.", en: "To find the roof length, we use Pythagoras theorem on half the roof." }, 
+                        text: t(lang, { sv: "För att hitta takets längd använder vi Pythagoras sats på halva taket.", en: "To find the roof length, we use Pythagoras theorem on half the roof." }), 
                         latex: `\\sqrt{${halfBase}^2 + ${hRoof}^2} \\approx ${Math.round(slope*10)/10}` 
                     },
                     { 
-                        text: { sv: "Addera alla sidor runt om.", en: "Add all sides around the outside." }, 
+                        text: t(lang, { sv: "Addera alla sidor runt om.", en: "Add all sides around the outside." }), 
                         latex: `${width} + ${height} + ${height} + ${Math.round(slope*10)/10} + ${Math.round(slope*10)/10} \\approx ${formatColor(qData.answer)}` 
                     }
                 ];
@@ -218,19 +218,19 @@ export class GeometryGenerator {
                 
                 steps = [
                     { 
-                        text: { sv: "Dela upp figuren: en rektangel och en halvcirkel.", en: "Split the shape: a rectangle and a semicircle." }, 
+                        text: t(lang, { sv: "Dela upp figuren: en rektangel och en halvcirkel.", en: "Split the shape: a rectangle and a semicircle." }), 
                         latex: "" 
                     },
                     { 
-                        text: { sv: "Rektangelns area:", en: "Rectangle area:" }, 
+                        text: t(lang, { sv: "Rektangelns area:", en: "Rectangle area:" }), 
                         latex: `${width} \\cdot ${height} = ${areaRect}` 
                     },
                     { 
-                        text: { sv: "Halvcirkelns area (radien är hälften av bredden).", en: "Semicircle area (radius is half the width)." }, 
+                        text: t(lang, { sv: "Halvcirkelns area (radien är hälften av bredden).", en: "Semicircle area (radius is half the width)." }), 
                         latex: `\\frac{\\pi \\cdot ${r}^2}{2} \\approx ${Math.round(areaSemi*10)/10}` 
                     },
                     { 
-                        text: { sv: "Addera dem.", en: "Add them together." }, 
+                        text: t(lang, { sv: "Addera dem.", en: "Add them together." }), 
                         latex: `${formatColor(qData.answer)}` 
                     }
                 ];
@@ -241,15 +241,15 @@ export class GeometryGenerator {
                 
                 steps = [
                     { 
-                        text: { sv: "Vi ska gå runt figuren: botten + två sidor + den bågformade toppen.", en: "We walk around the shape: bottom + two sides + the curved top." }, 
+                        text: t(lang, { sv: "Vi ska gå runt figuren: botten + två sidor + den bågformade toppen.", en: "We walk around the shape: bottom + two sides + the curved top." }), 
                         latex: "" 
                     },
                     { 
-                        text: { sv: "Toppen är en halvcirkel. Räkna ut omkretsen för en hel cirkel och dela med 2.", en: "The top is a semicircle. Calculate circumference for a full circle and divide by 2." }, 
+                        text: t(lang, { sv: "Toppen är en halvcirkel. Räkna ut omkretsen för en hel cirkel och dela med 2.", en: "The top is a semicircle. Calculate circumference for a full circle and divide by 2." }), 
                         latex: `\\frac{\\pi \\cdot ${width}}{2} \\approx ${Math.round(arc*10)/10}` 
                     },
                     { 
-                        text: { sv: "Lägg ihop alla delar.", en: "Sum all the parts." }, 
+                        text: t(lang, { sv: "Lägg ihop alla delar.", en: "Sum all the parts." }), 
                         latex: `${width} + ${height} + ${height} + ${Math.round(arc*10)/10} \\approx ${formatColor(qData.answer)}` 
                     }
                 ];
@@ -258,6 +258,11 @@ export class GeometryGenerator {
         }
         
         qData.text_key = isArea ? "calc_area" : "calc_perim";
+        qData.description = {
+            sv: `Beräkna ${isArea ? 'arean' : 'omkretsen'} av ${shapeNameSv}.`,
+            en: `Calculate the ${isArea ? 'area' : 'perimeter'} of ${shapeNameEn}.`
+        };
+            
         if (!geometry) geometry = { type: 'composite', subtype: 'ice_cream', width: width, height: height, labels: { top: width, side: height } };
     }
 

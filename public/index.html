@@ -394,8 +394,6 @@
                 return (<svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm w-full max-w-[200px]">{content()}{areaText && <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
             };
 
-
-            // --- SIMILARITY COMPARISON (Side-by-Side) ---
             // --- SIMILARITY COMPARISON (Side-by-Side) ---
             if (data.type === 'similarity_compare') {
                 const isRect = data.shapeType === 'rectangle';
@@ -487,6 +485,14 @@
                             )}
                         </g>
                     </SvgContainer>
+                );
+            }
+
+            if (data.type === 'rectangle' || data.type === 'square' || data.type === 'parallelogram') {
+                return (
+                    <div className="flex justify-center my-4">
+                        <RenderShape type={data.type} dims={data} labels={true} areaText={null} />
+                    </div>
                 );
             }
             
