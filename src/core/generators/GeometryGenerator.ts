@@ -1,6 +1,6 @@
 import { GeneratedQuestion, Clue } from "../types/generator";
 import { Random } from "../utils/random";
-import { TERMS, t, Language } from "../utils/i18n";
+import { t, Language } from "../utils/i18n";
 
 export class GeometryGenerator {
   public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
