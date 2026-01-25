@@ -13,207 +13,220 @@ export class ExpressionSimplificationGen {
         let expr = "";
         let steps: Clue[] = [];
         let answer = "";
-        let description = { sv: "Förenkla uttrycket så långt som möjligt.", en: "Simplify the expression as much as possible." };
+        let description: string | { sv: string, en: string } = { sv: "", en: "" };
 
-        // Helper to format terms with signs correctly
-        // e.g., (3, 'x') -> "+ 3x", (-3, 'x') -> "- 3x"
-        const termStr = (val: number, variable: string = '', isFirst: boolean = false): string => {
-            if (val === 0) return "";
-            const abs = Math.abs(val);
-            const sign = val < 0 ? "-" : (isFirst ? "" : "+");
-            const valStr = (abs === 1 && variable) ? "" : abs.toString(); // Don't show '1' in '1x'
-            return `${sign} ${valStr}${variable}`.trim();
-        };
-
-        // --- LEVEL 1: Combine Like Terms (ax + b + cx + d) ---
+        // --- LEVEL 1: Combine like terms (addition) ---
+        // 3x + 5x
         if (mode === 1) {
-            const a = rng.intBetween(2, 9);
-            const b = rng.intBetween(1, 9);
-            const c = rng.intBetween(-8, 8); // Can be negative
-            const d = rng.intBetween(-8, 8);
-
-            if (c === 0) return ExpressionSimplificationGen.generate(level, seed + "r", lang, multiplier);
+            const v = rng.pick(['x', 'y', 'a', 'b']);
+            const c1 = rng.intBetween(2, 9);
+            const c2 = rng.intBetween(2, 9);
             
-            // Raw: 3x + 5 - 2x + 4
-            expr = `${termStr(a, 'x', true)} ${termStr(b)} ${termStr(c, 'x')} ${termStr(d)}`;
+            expr = `${c1}${v} + ${c2}${v}`;
+            answer = `${c1+c2}${v}`;
             
-            // Logic
-            const finalX = a + c;
-            const finalNum = b + d;
-            answer = `${termStr(finalX, 'x', true)} ${termStr(finalNum)}`;
-
-            // Step 1: Group visually (The fix requested)
-            // Instead of (3-2)x, we show 3x - 2x + 5 + 4
-            const groupLatex = `${termStr(a, 'x', true)} ${termStr(c, 'x')} ${termStr(b)} ${termStr(d)}`;
-            
-            steps = [
-                { 
-                    text: { 
-                        sv: "Samla alla x-termer för sig och alla vanliga tal för sig. Kom ihåg att tecknet framför talet (plus eller minus) alltid följer med!", 
-                        en: "Collect all x-terms together and all numbers together. Remember that the sign in front of the number (plus or minus) always moves with it!" 
-                    }, 
-                    latex: groupLatex 
-                },
-                { 
-                    text: { 
-                        sv: `Räkna ut delarna: $${a}x ${c < 0 ? '-' : '+'} ${Math.abs(c)}x$ blir $${finalX}x$, och $${b} ${d < 0 ? '-' : '+'} ${Math.abs(d)}$ blir $${finalNum}$.`, 
-                        en: `Calculate the parts: $${a}x ${c < 0 ? '-' : '+'} ${Math.abs(c)}x$ becomes $${finalX}x$, and $${b} ${d < 0 ? '-' : '+'} ${Math.abs(d)}$ becomes $${finalNum}$.` 
-                    }, 
-                    latex: formatColor(answer) 
-                }
-            ];
+            steps.push({
+                text: t(lang, { sv: "Addera koefficienterna (siffrorna framför variabeln).", en: "Add the coefficients (numbers in front of the variable)." }),
+                latex: `${c1} + ${c2} = ${c1+c2}`
+            });
+            steps.push({
+                text: t(lang, { sv: "Svaret behåller variabeln.", en: "The answer keeps the variable." }),
+                latex: formatColor(answer)
+            });
         }
 
-        // --- LEVEL 2: Parentheses a(x + b) ---
+        // --- LEVEL 2: Parentheses (Distribution) ---
+        // 3(2x + 4)
         else if (mode === 2) {
-            const a = rng.intBetween(2, 9);
-            const b = rng.intBetween(1, 9);
-            const isSub = rng.bool(); // + or - inside
-
-            expr = `${a}(x ${isSub ? '-' : '+'} ${b})`;
+            const v = 'x';
+            const outer = rng.intBetween(2, 5);
+            const innerC = rng.intBetween(2, 5);
+            const innerK = rng.intBetween(1, 5);
             
-            const term1 = `${a}x`;
-            const val2 = isSub ? (a * -b) : (a * b);
-            answer = `${term1} ${termStr(val2)}`;
+            expr = `${outer}(${innerC}${v} + ${innerK})`;
+            const resC = outer * innerC;
+            const resK = outer * innerK;
+            answer = `${resC}${v} + ${resK}`; // e.g. 6x + 12
 
-            steps = [
-                { 
-                    text: { 
-                        sv: `Multiplicera in $${a}$ i parentesen. $${a} \\cdot x$ och $${a} \\cdot ${isSub ? -b : b}$.`, 
-                        en: `Multiply $${a}$ into the parentheses. $${a} \\cdot x$ and $${a} \\cdot ${isSub ? -b : b}$.` 
-                    }, 
-                    latex: `${a} \\cdot x ${val2 < 0 ? '-' : '+'} ${a} \\cdot ${Math.abs(b)}` 
-                },
-                { 
-                    text: { sv: "Förenkla multiplikationerna.", en: "Simplify the multiplications." }, 
-                    latex: formatColor(answer) 
-                }
-            ];
+            steps.push({
+                text: t(lang, { sv: "Multiplicera in talet utanför parentesen med båda termerna inuti.", en: "Multiply the number outside the parentheses with both terms inside." }),
+                latex: `${outer} \\cdot ${innerC}${v} + ${outer} \\cdot ${innerK}`
+            });
+            steps.push({
+                text: t(lang, { sv: "Beräkna produkterna.", en: "Calculate the products." }),
+                latex: formatColor(answer)
+            });
         }
 
-        // --- LEVEL 3: Distribute & Simplify a(x + b) + cx ---
+        // --- LEVEL 3: Distribute & Combine ---
+        // 2(3x + 1) + 4x
         else if (mode === 3) {
-            const a = rng.intBetween(2, 5);
-            const b = rng.intBetween(1, 5);
-            const c = rng.intBetween(2, 6);
+            const outer = rng.intBetween(2, 4);
+            const inC = rng.intBetween(2, 4);
+            const inK = rng.intBetween(1, 5);
+            const extraX = rng.intBetween(2, 6);
             
-            // a(x + b) + cx
-            expr = `${a}(x + ${b}) + ${c}x`;
+            expr = `${outer}(${inC}x + ${inK}) + ${extraX}x`;
             
-            const distB = a * b;
-            const finalX = a + c;
-
-            answer = `${finalX}x + ${distB}`;
-
-            steps = [
-                { 
-                    text: { sv: "Börja med att multiplicera in i parentesen.", en: "Start by multiplying into the parentheses." }, 
-                    latex: `${a}x + ${distB} + ${c}x` 
-                },
-                { 
-                    text: { sv: "Samla x-termerna. Talen står kvar.", en: "Collect the x-terms. The numbers stay." }, 
-                    latex: `${a}x + ${c}x + ${distB}` // Visual grouping
-                },
-                { 
-                    text: { sv: "Lägg ihop x-termerna.", en: "Add the x-terms together." }, 
-                    latex: formatColor(answer) 
-                }
-            ];
+            const distX = outer * inC;
+            const distK = outer * inK;
+            const totalX = distX + extraX;
+            
+            answer = `${totalX}x + ${distK}`;
+            
+            steps.push({
+                text: t(lang, { sv: "Börja med att multiplicera in i parentesen.", en: "Start by distributing into the parentheses." }),
+                latex: `${distX}x + ${distK} + ${extraX}x`
+            });
+            steps.push({
+                text: t(lang, { sv: "Lägg ihop x-termerna.", en: "Combine the x-terms." }),
+                latex: `${distX}x + ${extraX}x = ${totalX}x`
+            });
+            steps.push({
+                text: t(lang, { sv: "Sätt ihop allt.", en: "Put it all together." }),
+                latex: formatColor(answer)
+            });
         }
 
-        // --- LEVEL 4: Subtracting Parentheses a(x+b) - c(x-d) ---
+        // --- LEVEL 4: Subtracting Parentheses ---
+        // 5x - (2x + 3)
         else if (mode === 4) {
-            // This is the specific requested change
-            const a = rng.intBetween(2, 5);
-            const b = rng.intBetween(1, 5);
-            const c = rng.intBetween(2, 4); // Keep numbers reasonable
-            const d = rng.intBetween(1, 5);
+            const startX = rng.intBetween(5, 10);
+            const subX = rng.intBetween(1, startX - 1);
+            const subK = rng.intBetween(1, 5);
             
-            // a(x + b) - c(x - d)
-            // Minus before second parenthesis is key concept here
-            expr = `${a}(x + ${b}) - ${c}(x - ${d})`;
-
-            // Step 1 Expansion values
-            // 1st part: ax + ab
-            const val1 = a * b;
-            // 2nd part: -cx + cd (because -c * -d is positive)
-            const val2 = -c * d; // This is the raw result of c*d, but we have -c.
-            // Wait, logic check: -c * (x - d) -> -cx + cd
-            const termX2 = -c;
-            const termNum2 = (-c) * (-d); // Positive
-
-            const finalX = a - c;
-            const finalNum = val1 + termNum2;
-
-            answer = `${termStr(finalX, 'x', true)} ${termStr(finalNum)}`;
-
-            steps = [
-                { 
-                    text: { 
-                        sv: "Multiplicera in. Var noga med minustecknet framför den andra parentesen! $-" + c + " \\cdot -" + d + "$ blir plus.", 
-                        en: "Multiply in. Be careful with the minus sign before the second parenthesis! $-" + c + " \\cdot -" + d + "$ becomes positive." 
-                    }, 
-                    // Expansion: ax + ab - cx + cd
-                    latex: `${a}x + ${val1} - ${c}x + ${termNum2}` 
-                },
-                { 
-                    text: { 
-                        sv: "Samla x-termer och vanliga tal. Flytta med tecknen framför varje term.", 
-                        en: "Collect x-terms and numbers. Move the signs in front of each term with them." 
-                    }, 
-                    // Visual Grouping: ax - cx + ab + cd
-                    latex: `${a}x - ${c}x + ${val1} + ${termNum2}` 
-                },
-                { 
-                    text: { 
-                        sv: `Räkna ut: $${a}x - ${c}x$ är $${finalX}x$. $${val1} + ${termNum2}$ är $${finalNum}$.`, 
-                        en: `Calculate: $${a}x - ${c}x$ is $${finalX}x$. $${val1} + ${termNum2}$ is $${finalNum}$.` 
-                    }, 
-                    latex: formatColor(answer) 
-                }
-            ];
+            expr = `${startX}x - (${subX}x + ${subK})`;
+            const resX = startX - subX;
+            const resK = -subK; // Minus becomes negative
+            
+            answer = `${resX}x - ${Math.abs(resK)}`;
+            
+            steps.push({
+                text: t(lang, { sv: "Minus framför en parentes ändrar tecken på allt inuti när vi tar bort parentesen.", en: "A minus in front of parentheses changes the sign of everything inside when removed." }),
+                latex: `${startX}x - ${subX}x - ${subK}`
+            });
+            steps.push({
+                text: t(lang, { sv: "Förenkla x-termerna.", en: "Simplify the x-terms." }),
+                latex: `${startX}x - ${subX}x = ${resX}x`
+            });
+            steps.push({
+                text: t(lang, { sv: "Resultat", en: "Result" }),
+                latex: formatColor(answer)
+            });
         }
 
-        // --- LEVEL 5: Word Problems ---
+        // --- LEVEL 5: Word Problems (Text) ---
         else if (mode === 5) {
-            // Simple logic: "I have 3 bags with x apples and 2 loose ones. My friend has 2 bags..."
-            const myBags = rng.intBetween(2, 5);
-            const myLoose = rng.intBetween(1, 10);
-            const friendBags = rng.intBetween(1, 3);
             
+            // Constants for the logic: Ax + B + Cx
+            const A = rng.intBetween(2, 6);  // Variable group 1
+            const B = rng.intBetween(2, 20); // Constant
+            const C = rng.intBetween(2, 6);  // Variable group 2
+            
+            const totalX = A + C;
+            answer = `${totalX}x + ${B}`;
+
+            // Define Scenarios
+            const scenarios = [
+                {
+                    id: 'candy',
+                    sv: `Du har ${A} påsar med godis (x) och ${B} lösa godisar. Din kompis har ${C} påsar.`,
+                    en: `You have ${A} bags of candy (x) and ${B} loose candies. Your friend has ${C} bags.`,
+                    unitSv: "godisar", unitEn: "candies", varSv: "påse", varEn: "bag"
+                },
+                {
+                    id: 'money_saving',
+                    sv: `Du sparar x kr i veckan i ${A} veckor och får sedan ${B} kr i present. Sedan sparar du i ${C} veckor till.`,
+                    en: `You save x kr per week for ${A} weeks, then get a ${B} kr gift. Then you save for ${C} more weeks.`,
+                    unitSv: "kronor", unitEn: "kr", varSv: "vecka", varEn: "week"
+                },
+                {
+                    id: 'running',
+                    sv: `Du springer x km varje träningspass. Vecka 1 springer du ${A} pass. Vecka 2 springer du ${C} pass plus ett extra lopp på ${B} km.`,
+                    en: `You run x km every session. Week 1 you run ${A} sessions. Week 2 you run ${C} sessions plus an extra ${B} km race.`,
+                    unitSv: "km", unitEn: "km", varSv: "pass", varEn: "session"
+                },
+                {
+                    id: 'apples',
+                    sv: `En låda innehåller x äpplen. I butiken finns en hög med ${A} lådor och ${B} lösa äpplen, samt en annan hög med ${C} lådor.`,
+                    en: `A box contains x apples. The shop has a pile of ${A} boxes and ${B} loose apples, and another pile of ${C} boxes.`,
+                    unitSv: "äpplen", unitEn: "apples", varSv: "låda", varEn: "box"
+                },
+                {
+                    id: 'subscription',
+                    sv: `En streamingtjänst kostar x kr/månad. Du betalar för ${A} månader. Startavgiften är ${B} kr. Din vän betalar för ${C} månader.`,
+                    en: `A streaming service costs x kr/month. You pay for ${A} months. The signup fee is ${B} kr. Your friend pays for ${C} months.`,
+                    unitSv: "kr", unitEn: "kr", varSv: "månad", varEn: "month"
+                },
+                {
+                    id: 'construction',
+                    sv: `Du bygger ett staket. Du använder ${A} sektioner av längden x meter, en grind på ${B} meter, och sedan ${C} sektioner till.`,
+                    en: `You build a fence. You use ${A} sections of length x meters, a gate of ${B} meters, and then ${C} more sections.`,
+                    unitSv: "meter", unitEn: "meters", varSv: "sektion", varEn: "section"
+                },
+                {
+                    id: 'points',
+                    sv: `I ett spel får du x poäng per träff. Du får ${A} träffar i första rundan, ${B} bonuspoäng, och ${C} träffar i andra rundan.`,
+                    en: `In a game you get x points per hit. You get ${A} hits in round 1, ${B} bonus points, and ${C} hits in round 2.`,
+                    unitSv: "poäng", unitEn: "points", varSv: "träff", varEn: "hit"
+                },
+                {
+                    id: 'weight',
+                    sv: `En lastpall väger x kg. En lastbil lastar ${A} pallar plus en låda på ${B} kg. En annan lastbil lastar ${C} pallar.`,
+                    en: `A pallet weighs x kg. A truck loads ${A} pallets plus a box of ${B} kg. Another truck loads ${C} pallets.`,
+                    unitSv: "kg", unitEn: "kg", varSv: "pall", varEn: "pallet"
+                },
+                {
+                    id: 'pencils',
+                    sv: `En ask innehåller x pennor. Läraren köper ${A} askar till 7A, ${C} askar till 7B och har ${B} pennor sedan tidigare.`,
+                    en: `A box contains x pencils. The teacher buys ${A} boxes for 7A, ${C} boxes for 7B and has ${B} pencils from before.`,
+                    unitSv: "pennor", unitEn: "pencils", varSv: "ask", varEn: "box"
+                },
+                {
+                    id: 'cards',
+                    sv: `Ett paket samlarkort innehåller x kort. Du köper ${A} paket på måndagen, får ${B} kort av en vän, och köper ${C} paket på tisdagen.`,
+                    en: `A booster pack contains x cards. You buy ${A} packs on Monday, get ${B} cards from a friend, and buy ${C} packs on Tuesday.`,
+                    unitSv: "kort", unitEn: "cards", varSv: "paket", varEn: "pack"
+                },
+                {
+                    id: 'baking',
+                    sv: `Ett recept kräver x dl mjöl. Du bakar ${A} satser till festen och ${C} satser till familjen. Du spiller ut ${B} dl mjöl på golvet (räkna med det också).`,
+                    en: `A recipe needs x dl flour. You bake ${A} batches for the party and ${C} batches for the family. You spill ${B} dl flour on the floor (count that too).`,
+                    unitSv: "dl", unitEn: "dl", varSv: "sats", varEn: "batch"
+                }
+            ];
+
+            const s = rng.pick(scenarios);
+
             description = {
-                sv: `Du har ${myBags} påsar med godis (x) och ${myLoose} lösa godisar. Din kompis har ${friendBags} påsar. Skriv ett uttryck för hur mycket ni har tillsammans och förenkla det.`,
-                en: `You have ${myBags} bags of candy (x) and ${myLoose} loose candies. Your friend has ${friendBags} bags. Write an expression for how much you have together and simplify it.`
+                sv: `${s.sv} Skriv ett uttryck för totalen och förenkla det.`,
+                en: `${s.en} Write an expression for the total and simplify it.`
             };
             
-            expr = "Textuppgift (se ovan)"; // Not used for calculation, just identifier if needed
-            
-            // (Ax + B) + Cx
-            const totalX = myBags + friendBags;
-            answer = `${totalX}x + ${myLoose}`;
-            
             steps = [
                 { 
-                    text: { sv: "Skriv uttrycket. Påsarna är x.", en: "Write the expression. The bags are x." }, 
-                    latex: `${myBags}x + ${myLoose} + ${friendBags}x` 
+                    text: t(lang, { 
+                        sv: `Variabeln x representerar varje ${s.varSv}. Det fasta värdet är ${s.unitSv}.`, 
+                        en: `The variable x represents each ${s.varEn}. The fixed value is ${s.unitEn}.` 
+                    }), 
+                    latex: "" 
                 },
                 { 
-                    text: { sv: "Lägg ihop alla x (påsar) för sig.", en: "Add all x (bags) together." }, 
-                    latex: `${myBags}x + ${friendBags}x + ${myLoose}` 
+                    text: t(lang, { sv: "Ställ upp uttrycket (x-termer + konstant).", en: "Set up the expression (x-terms + constant)." }), 
+                    latex: `${A}x + ${C}x + ${B}` 
                 },
                 { 
-                    text: { sv: "Resultat", en: "Result" }, 
+                    text: t(lang, { sv: "Förenkla genom att addera x-termerna.", en: "Simplify by adding the x-terms." }), 
                     latex: formatColor(answer) 
                 }
             ];
             
-            // Override renderData latex to be empty so user relies on text
             return {
                 questionId: `simp-l${level}-${seed}`,
                 renderData: {
                     text_key: "simplify_word",
                     description: description,
-                    latex: "", // No latex prompt
+                    latex: "", 
                     answerType: "text",
                     variables: {}
                 },
