@@ -395,8 +395,27 @@
             };
 
             // --- SIMILARITY COMPARISON (Side-by-Side) ---
+            // --- SIMILARITY COMPARISON (Side-by-Side) ---
             if (data.type === 'similarity_compare') {
                 const isRect = data.shapeType === 'rectangle';
+                
+                // Helper to draw angle arc
+                // x,y: vertex. r: radius. startAng, endAng: in radians.
+                const drawAngle = (x, y, r, startAng, endAng, label) => {
+                    const x1 = x + r * Math.cos(startAng);
+                    const y1 = y - r * Math.sin(startAng); // SVG y is down
+                    const x2 = x + r * Math.cos(endAng);
+                    const y2 = y - r * Math.sin(endAng);
+                    
+                    // Simple quadratic curve for visual flair
+                    return (
+                        <g>
+                            <path d={`M ${x1} ${y1} A ${r} ${r} 0 0 0 ${x2} ${y2}`} fill="none" stroke="#ef4444" strokeWidth="2" />
+                            {label && <text x={x + r*1.5 * Math.cos((startAng+endAng)/2)} y={y - r*1.5 * Math.sin((startAng+endAng)/2)} textAnchor="middle" fontSize="10" fill="#ef4444" fontWeight="bold">{label}</text>}
+                        </g>
+                    );
+                };
+
                 // Draw two shapes
                 return (
                     <SvgContainer viewBox="0 0 300 150">
@@ -411,9 +430,12 @@
                             ) : (
                                 <>
                                 <polygon points="0,60 40,60 10,10" fill="#ecfdf5" stroke="#10b981" strokeWidth="2" />
+                                {/* Side Labels */}
                                 {data.left.labels?.s1 && <text x="20" y="75" textAnchor="middle" fontSize="10">{data.left.labels.s1}</text>}
                                 {data.left.labels?.s2 && <text x="35" y="30" textAnchor="start" fontSize="10">{data.left.labels.s2}</text>}
-                                {data.left.labels?.a1 && <text x="12" y="55" fontSize="8">{data.left.labels.a1}</text>}
+                                {/* Angle Arcs */}
+                                {data.left.labels?.a1 && drawAngle(0, 60, 15, 0, Math.PI/3, data.left.labels.a1)} 
+                                {data.left.labels?.a2 && drawAngle(40, 60, 15, Math.PI/1.5, Math.PI, data.left.labels.a2)}
                                 </>
                             )}
                         </g>
@@ -432,9 +454,12 @@
                             ) : (
                                 <>
                                 <polygon points="0,90 60,90 15,15" fill="#ecfdf5" stroke="#10b981" strokeWidth="2" />
+                                {/* Side Labels */}
                                 {data.right.labels?.s1 && <text x="30" y="105" textAnchor="middle" fontSize="10">{data.right.labels.s1}</text>}
                                 {data.right.labels?.s2 && <text x="50" y="45" textAnchor="start" fontSize="10">{data.right.labels.s2}</text>}
-                                {data.right.labels?.a1 && <text x="18" y="85" fontSize="8">{data.right.labels.a1}</text>}
+                                {/* Angle Arcs */}
+                                {data.right.labels?.a1 && drawAngle(0, 90, 20, 0, Math.PI/3, data.right.labels.a1)}
+                                {data.right.labels?.a2 && drawAngle(60, 90, 20, Math.PI/1.5, Math.PI, data.right.labels.a2)}
                                 </>
                             )}
                         </g>

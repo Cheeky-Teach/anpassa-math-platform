@@ -16,9 +16,10 @@ export class SimilarityGenerator {
             answerType: "numeric"
         };
 
-        // --- LEVEL 1: Similar or Not? (Yes/No) ---
+        // --- LEVEL 1: Similar or Not? (Visual/Concept) ---
         if (level === 1) {
             const isSimilar = rng.intBetween(0, 1) === 1;
+            // Weighted choice: rectangles are easier, triangles with angles are distinct
             const type = rng.pick(['rect_sides', 'tri_sides', 'tri_angles']);
             
             let shapeData: any = { type: 'similarity_compare', shapeType: 'triangle', left: {}, right: {} };
@@ -26,273 +27,184 @@ export class SimilarityGenerator {
             qData.answerType = 'multiple_choice';
             qData.choices = lang === 'sv' ? ['Ja', 'Nej'] : ['Yes', 'No'];
             qData.answer = isSimilar ? qData.choices[0] : qData.choices[1];
-            qData.description = { sv: "Är figurerna likformiga?", en: "Are the shapes similar?" };
 
-            if (type === 'rect_sides' || type === 'tri_sides') {
-                const isRect = type === 'rect_sides';
-                shapeData.shapeType = isRect ? 'rectangle' : 'triangle';
+            if (type === 'rect_sides') {
+                shapeData.shapeType = 'rectangle';
+                const w1 = rng.intBetween(2, 5) * 10;
+                const h1 = rng.intBetween(2, 5) * 10;
                 
-                // Base dimensions
-                const w1 = rng.intBetween(3, 8);
-                const h1 = rng.intBetween(4, 10);
-                const k = rng.pick([2, 3, 1.5, 2.5]);
-                
-                let w2 = w1 * k;
-                let h2 = h1 * k;
+                const k = isSimilar ? rng.pick([1.5, 2, 0.5]) : rng.pick([1.2, 1.8, 0.8]);
+                const w2 = w1 * k;
+                // If similar, h2 matches k. If not, h2 is distorted.
+                const h2 = isSimilar ? h1 * k : h1 * (k + 0.5);
 
-                if (!isSimilar) {
-                    // Distort one side to break the ratio
-                    if (rng.bool()) w2 += rng.pick([-1, 1]);
-                    else h2 += rng.pick([-1, 1]);
-                }
+                shapeData.left = { labels: { b: w1, h: h1 } };
+                shapeData.right = { labels: { b: w2, h: h2 } };
+                
+                qData.description = { sv: "Är rektanglarna likformiga?", en: "Are the rectangles similar?" };
+                steps.push({ text: { sv: `Jämför sidornas förhållande: ${w2}/${w1} vs ${h2}/${h1}`, en: `Compare ratios: ${w2}/${w1} vs ${h2}/${h1}` }, latex: "" });
+            } 
+            else if (type === 'tri_angles') {
+                shapeData.shapeType = 'triangle';
+                // Generate base angles for Isosceles or Scalene
+                const a1 = rng.intBetween(30, 80);
+                const a2 = rng.intBetween(30, 80);
+                
+                // Similar = same angles. Not similar = change one angle significantly.
+                const b1 = isSimilar ? a1 : a1 + rng.pick([-15, 15]);
+                const b2 = isSimilar ? a2 : a2;
 
-                // Populate shapes
-                if (isRect) {
-                    shapeData.left = { w: w1, h: h1, labels: { b: w1, h: h1 } };
-                    shapeData.right = { w: w2, h: h2, labels: { b: w2, h: h2 } };
-                } else {
-                    // Simplified triangle logic for Level 1 visuals
-                    shapeData.left = { w: w1, h: h1, labels: { s1: w1, s2: h1 } };
-                    shapeData.right = { w: w2, h: h2, labels: { s1: w2, s2: h2 } };
-                }
-                
-                const ratioW = Math.round(w2/w1 * 100)/100;
-                const ratioH = Math.round(h2/h1 * 100)/100;
-                
-                // Pedagogical Clues
-                steps.push({
-                    text: t(lang, TERMS.similarity.rule_sides), // "To be similar, side ratios must be constant."
-                    latex: ""
-                });
-                steps.push({
-                    text: { sv: "Jämför sidornas förhållanden:", en: "Compare the side ratios:" },
-                    latex: `\\frac{${w2}}{${w1}} \\approx ${ratioW}, \\quad \\frac{${h2}}{${h1}} \\approx ${ratioH}`
-                });
-                steps.push({
-                    text: { sv: "Slutsats:", en: "Conclusion:" },
-                    latex: isSimilar ? `\\text{${t(lang, 'Yes')}} (${ratioW} = ${ratioH})` : `\\text{${t(lang, 'No')}} (${ratioW} \\neq ${ratioH})`
-                });
+                shapeData.left = { labels: { a1: `${a1}°`, a2: `${a2}°` } };
+                shapeData.right = { labels: { a1: `${b1}°`, a2: `${b2}°` } };
 
-            } else {
-                // Triangles by Angles
-                const A = rng.intBetween(30, 80);
-                const B = rng.intBetween(30, 100 - A);
-                const C = 180 - A - B;
-                
-                shapeData.left = { angles: [A, B, null], labels: { a1: A+"°", a2: B+"°" } };
-                
-                if (isSimilar) {
-                    // Show corresponding angles or require sum of angles deduction
-                    if (rng.bool()) {
-                        shapeData.right = { angles: [A, null, C], labels: { a1: A+"°", a3: C+"°" } };
-                        steps.push({ text: t(lang, TERMS.similarity.rule_angles), latex: "" });
-                        steps.push({ 
-                            text: { sv: "Beräkna den saknade vinkeln.", en: "Calculate the missing angle." }, 
-                            latex: `180^\\circ - ${A}^\\circ - ${C}^\\circ = ${formatColor(B)}^\\circ` 
-                        });
-                    } else {
-                        shapeData.right = { angles: [A, B, null], labels: { a1: A+"°", a2: B+"°" } };
-                        steps.push({ text: t(lang, TERMS.similarity.rule_angles), latex: "" });
-                    }
-                } else {
-                    const Wrong = B + rng.pick([-10, 15]);
-                    shapeData.right = { angles: [A, Wrong, null], labels: { a1: A+"°", a2: Wrong+"°" } };
-                    steps.push({ text: t(lang, TERMS.similarity.rule_angles), latex: "" });
-                    steps.push({ text: {sv: "Vinklarna matchar inte.", en: "Angles do not match."}, latex: `${B}^\\circ \\neq ${Wrong}^\\circ` });
-                }
+                qData.description = { sv: "Är trianglarna likformiga?", en: "Are the triangles similar?" };
+                steps.push({ text: { sv: "Likformiga trianglar har samma vinklar.", en: "Similar triangles have equal angles." }, latex: "" });
             }
-            
-            qData.renderData = {
-                text_key: "sim_check",
-                description: qData.description,
-                latex: "",
-                answerType: "multiple_choice",
-                choices: qData.choices,
-                geometry: shapeData,
-                variables: {}
-            };
+            else { // tri_sides
+                shapeData.shapeType = 'triangle';
+                const s1 = rng.intBetween(3, 8);
+                const s2 = rng.intBetween(3, 8);
+                
+                const k = isSimilar ? 2 : 1.5;
+                // If not similar, distort one side
+                const r1 = s1 * k;
+                const r2 = isSimilar ? s2 * k : s2 * (k + 0.5);
+
+                shapeData.left = { labels: { s1: s1, s2: s2 } };
+                shapeData.right = { labels: { s1: r1, s2: r2 } };
+                qData.description = { sv: "Är trianglarna likformiga?", en: "Are the triangles similar?" };
+            }
+
+            qData.renderData = { text_key: "sim_check", description: qData.description, latex: "", answerType: "multiple_choice", choices: qData.choices, geometry: shapeData };
         }
 
-        // --- LEVEL 2: Calculate Length (Basic) ---
+        // --- LEVEL 2: Find Side (x) in Similar Shapes ---
         else if (level === 2) {
-            const k = rng.pick([2, 3, 4, 1.5, 2.5]);
-            const smallSide = rng.intBetween(4, 12);
-            const largeSide = smallSide * k;
+            const k = rng.pick([2, 3, 4, 5, 1.5, 2.5]);
+            const isRect = rng.intBetween(0, 1) === 1;
             
-            const findLarge = rng.bool();
-            const xVal = findLarge ? largeSide : smallSide;
-            const knownPairSmall = rng.intBetween(3, 8);
-            const knownPairLarge = knownPairSmall * k;
+            let w1 = rng.intBetween(2, 9);
+            let h1 = rng.intBetween(3, 12);
+            let w2 = Math.round(w1 * k * 10) / 10;
+            let h2 = Math.round(h1 * k * 10) / 10;
 
-            qData.answer = xVal;
-            qData.description = { sv: "Beräkna sidan markerad med x.", en: "Calculate the side marked x." };
+            const missing = rng.pick(['w2', 'h2']);
+            let answerVal = 0;
 
-            const geom = {
-                type: 'similarity_compare',
-                shapeType: 'triangle',
-                left: { labels: { s1: knownPairSmall, s2: findLarge ? smallSide : 'x' } },
-                right: { labels: { s1: knownPairLarge, s2: findLarge ? 'x' : largeSide } }
-            };
+            let lLabels: any = {};
+            let rLabels: any = {};
 
-            steps = [
-                { 
-                    text: t(lang, TERMS.similarity.step_k), // "Find scale factor k..."
-                    latex: `k = \\frac{${knownPairLarge}}{${knownPairSmall}} = ${k}` 
-                },
-                { 
-                    text: t(lang, TERMS.similarity.step_calc), // "Use k to find x..."
-                    latex: findLarge 
-                        ? `x = ${smallSide} \\cdot ${k} = ${formatColor(xVal)}` 
-                        : `x = \\frac{${largeSide}}{${k}} = ${formatColor(xVal)}` 
-                }
-            ];
-
-            qData.renderData = {
-                text_key: "sim_calc",
-                description: qData.description,
-                latex: "",
-                answerType: "numeric",
-                geometry: geom,
-                variables: {}
-            };
-        }
-
-        // --- LEVEL 3: Top Triangle Theorem (Easy) ---
-        else if (level === 3) {
-            const k = rng.intBetween(2, 4);
-            const topBase = rng.intBetween(4, 10);
-            const topSide = rng.intBetween(3, 8);
-            
-            const bigBase = topBase * k;
-            const bigSide = topSide * k;
-            
-            const findBase = rng.bool();
-            const findBig = rng.bool(); // Find the larger triangle dimension or smaller?
-            
-            qData.answer = findBase 
-                ? (findBig ? bigBase : topBase)
-                : (findBig ? bigSide : topSide);
-
-            let geom: any = { type: 'transversal', labels: {} };
-            
-            // Populate logic
-            if (findBase) {
-                // We know sides, find base
-                geom.labels = {
-                    left_top: topSide,
-                    left_tot: bigSide,
-                    base_top: findBig ? topBase : 'x',
-                    base_bot: findBig ? 'x' : bigBase
-                };
-                
-                steps.push({
-                    text: t(lang, TERMS.similarity.rule_top), // "Top triangle is similar..."
-                    latex: "\\Delta_{\\text{liten}} \\sim \\Delta_{\\text{stor}}"
-                });
-                steps.push({
-                    text: t(lang, TERMS.similarity.step_k),
-                    latex: `k = \\frac{${bigSide}}{${topSide}} = ${k}`
-                });
-                steps.push({
-                    text: t(lang, TERMS.similarity.step_calc),
-                    latex: findBig 
-                        ? `x = ${topBase} \\cdot ${k} = ${formatColor(bigBase)}`
-                        : `x = \\frac{${bigBase}}{${k}} = ${formatColor(topBase)}`
-                });
-
+            if (isRect) {
+                lLabels = { b: w1, h: h1 };
+                rLabels = { b: w2, h: h2 };
+                if (missing === 'w2') { rLabels.b = 'x'; answerVal = w2; }
+                else { rLabels.h = 'x'; answerVal = h2; }
             } else {
-                // We know bases, find side
-                geom.labels = {
-                    base_top: topBase,
-                    base_bot: bigBase,
-                    right_top: findBig ? topSide : 'x',
-                    right_tot: findBig ? 'x' : bigSide
-                };
-
-                steps.push({
-                    text: t(lang, TERMS.similarity.rule_top),
-                    latex: "\\Delta_{\\text{liten}} \\sim \\Delta_{\\text{stor}}"
-                });
-                steps.push({
-                    text: t(lang, TERMS.similarity.step_k),
-                    latex: `k = \\frac{${bigBase}}{${topBase}} = ${k}`
-                });
-                steps.push({
-                    text: t(lang, TERMS.similarity.step_calc),
-                    latex: findBig
-                        ? `x = ${topSide} \\cdot ${k} = ${formatColor(bigSide)}`
-                        : `x = \\frac{${bigSide}}{${k}} = ${formatColor(topSide)}`
-                });
+                // Triangle sides mapping
+                lLabels = { s1: w1, s2: h1 };
+                rLabels = { s1: w2, s2: h2 };
+                if (missing === 'w2') { rLabels.s1 = 'x'; answerVal = w2; }
+                else { rLabels.s2 = 'x'; answerVal = h2; }
             }
 
-            qData.description = { sv: "Linjerna med pilar är parallella. Beräkna x.", en: "The lines with arrows are parallel. Calculate x." };
+            qData.answer = answerVal;
+            qData.description = { sv: "Figurerna är likformiga. Beräkna x.", en: "The shapes are similar. Calculate x." };
+            
+            steps.push({
+                text: { sv: "Skala = Stor / Liten", en: "Scale = Big / Small" },
+                latex: missing === 'w2' ? `k = ${h2}/${h1} = ${k}` : `k = ${w2}/${w1} = ${k}`
+            });
+            steps.push({
+                text: { sv: "Multiplicera sidan med skalan", en: "Multiply side by scale" },
+                latex: `x = ${missing === 'w2' ? w1 : h1} \\cdot ${k} = ${formatColor(answerVal)}`
+            });
+
             qData.renderData = {
-                text_key: "top_tri",
-                description: qData.description,
-                latex: "",
-                answerType: "numeric",
-                geometry: geom,
-                variables: {}
+                text_key: "sim_calc", description: qData.description, latex: "", answerType: "numeric",
+                geometry: { type: 'similarity_compare', shapeType: isRect ? 'rectangle' : 'triangle', left: { labels: lLabels }, right: { labels: rLabels } }
             };
         }
 
-        // --- LEVEL 4: Hourglass (Vertical Angles) ---
+        // --- LEVEL 3: Top Triangle Theorem (Transversal) ---
+        else if (level === 3) {
+            // Setup: Small triangle on top of big triangle
+            const topSide = rng.intBetween(4, 12);
+            const addSide = rng.intBetween(3, 10);
+            const totSide = topSide + addSide;
+            
+            const k = totSide / topSide; // Scale factor
+            
+            const baseTop = rng.intBetween(5, 15);
+            const baseBot = Math.round(baseTop * k * 10) / 10;
+
+            const mode = rng.pick(['find_base', 'find_side']);
+            let answerVal = 0;
+            let geom: any = { labels: { base_top: baseTop, base_bot: baseBot, left_top: topSide, left_tot: totSide } };
+
+            if (mode === 'find_base') {
+                // Hide baseBot
+                answerVal = baseBot;
+                geom.labels.base_bot = 'x';
+                steps = [
+                    { text: { sv: "Topptriangelsatsen: Liten/Stor", en: "Top Triangle Theorem: Small/Big" }, latex: `\\frac{${topSide}}{${totSide}} = \\frac{${baseTop}}{x}` },
+                    { text: { sv: "Beräkna x", en: "Calculate x" }, latex: `x = \\frac{${baseTop} \\cdot ${totSide}}{${topSide}} = ${formatColor(answerVal)}` }
+                ];
+            } else {
+                // Hide total side
+                answerVal = totSide;
+                geom.labels.left_tot = 'x';
+                steps = [
+                    { text: { sv: "Skala mellan baserna", en: "Scale between bases" }, latex: `k = \\frac{${baseBot}}{${baseTop}}` },
+                    { text: { sv: "Multiplicera toppens sida", en: "Multiply top side" }, latex: `x = ${topSide} \\cdot ${Math.round(k*100)/100} = ${formatColor(answerVal)}` }
+                ];
+            }
+
+            qData.answer = answerVal;
+            qData.description = { sv: "Linjen i mitten är parallell med basen. Beräkna x.", en: "The middle line is parallel to the base. Calculate x." };
+            qData.renderData = { text_key: "top_tri", description: qData.description, latex: "", answerType: "numeric", geometry: { type: 'transversal', ...geom } };
+        }
+
+        // --- LEVEL 4: Hourglass / Butterfly (Likformighet) ---
         else {
             const k = rng.pick([1.5, 2, 2.5, 3]);
+            
             const topBase = rng.intBetween(4, 10);
-            const topSide = rng.intBetween(4, 10);
-            
             const botBase = topBase * k;
+            
+            const topSide = rng.intBetween(3, 8);
             const botSide = topSide * k;
-            
-            const findBig = rng.bool();
-            qData.answer = findBig ? botSide : topSide;
-            
-            const geom = {
+
+            // Decide which to hide. Usually hide a side on the 'x' variable.
+            // In hourglass, top corresponds to bottom.
+            const findBot = rng.intBetween(0, 1) === 1;
+            const answerVal = findBot ? botSide : topSide;
+
+            let geom = { 
                 type: 'hourglass',
                 labels: {
                     top_base: topBase,
                     bot_base: botBase,
-                    top_side: findBig ? topSide : 'x',
-                    bot_side: findBig ? 'x' : botSide
+                    top_side: findBot ? topSide : 'x',
+                    bot_side: findBot ? 'x' : botSide
                 }
             };
+
+            qData.answer = answerVal;
+            qData.description = { sv: "De horisontella linjerna är parallella. Beräkna x.", en: "The horizontal lines are parallel. Calculate x." };
             
             steps = [
-                { 
-                    text: t(lang, TERMS.similarity.rule_hourglass), // "Vertical angles + Parallel = Similar"
-                    latex: "\\Delta_{\\text{upp}} \\sim \\Delta_{\\text{ner}}" 
-                },
-                { 
-                    text: t(lang, TERMS.similarity.step_k),
-                    latex: `k = \\frac{${botBase}}{${topBase}} = ${k}` 
-                },
-                { 
-                    text: t(lang, TERMS.similarity.step_calc),
-                    latex: findBig 
-                        ? `x = ${topSide} \\cdot ${k} = ${formatColor(botSide)}` 
-                        : `x = \\frac{${botSide}}{${k}} = ${formatColor(topSide)}` 
-                }
+                { text: { sv: "Vertikalvinklar + Parallell = Likformiga", en: "Vertical angles + Parallel = Similar" }, latex: "\\Delta_{upp} \\sim \\Delta_{ner}" },
+                { text: { sv: "Beräkna skalan k", en: "Calculate scale k" }, latex: `k = \\frac{${botBase}}{${topBase}} = ${k}` },
+                { text: { sv: "Använd skalan", en: "Use the scale" }, latex: findBot ? `x = ${topSide} \\cdot ${k} = ${formatColor(answerVal)}` : `x = ${botSide} / ${k} = ${formatColor(answerVal)}` }
             ];
 
-            qData.description = { sv: "De horisontella linjerna är parallella. Beräkna x.", en: "The horizontal lines are parallel. Calculate x." };
-            qData.renderData = {
-                text_key: "hourglass",
-                description: qData.description,
-                latex: "",
-                answerType: "numeric",
-                geometry: geom,
-                variables: {}
-            };
+            qData.renderData = { text_key: "hourglass", description: qData.description, latex: "", answerType: "numeric", geometry: geom };
         }
 
         return {
             questionId: `sim-l${level}-${seed}`,
             renderData: qData.renderData,
-            serverData: {
-                answer: qData.answer,
-                solutionSteps: steps
-            }
+            serverData: { answer: qData.answer, solutionSteps: steps }
         };
     }
 }
