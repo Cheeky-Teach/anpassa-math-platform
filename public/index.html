@@ -1393,17 +1393,12 @@
                 }
             };
 
-            // UPDATED: Mobile-safe focus logic
+            // Mobile-safe focus logic
             useEffect(() => {
                 if (question) {
-                    // Reset inputs
                     setScaleInputLeft('');
                     setScaleInputRight('');
-
-                    // 1. Scroll to top to ensure question is visible
                     window.scrollTo({ top: 0, behavior: 'smooth' });
-
-                    // 2. Conditional Autofocus: Only on Desktop (>= 768px)
                     const isMobile = window.innerWidth < 768;
                     if (!isMobile && inputRef.current) {
                         inputRef.current.focus();
@@ -1415,9 +1410,23 @@
 
             return (
                 <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
+                    
+                    {/* UPDATED LEVEL UP MODAL: Handles forced refetching */}
+                    <LevelUpModal 
+                        visible={levelUpAvailable} 
+                        ui={ui} 
+                        onNext={() => { 
+                            handleChangeLevel(1); 
+                            setLevelUpAvailable(false); 
+                        }} 
+                        onStay={() => { 
+                            setLevelUpAvailable(false); 
+                            // Force retry (fetch) when staying
+                            actions.retry(true); 
+                        }} 
+                    />
 
-                    <LevelUpModal visible={levelUpAvailable} ui={ui} onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }} onStay={() => setLevelUpAvailable(false)} />
-                    <StreakModal visible={showStreakModal} streak={streak} ui={ui} onClose={() => { setShowStreakModal(false); actions.retry(); }} />
+                    <StreakModal visible={showStreakModal} streak={streak} ui={ui} onClose={() => { setShowStreakModal(false); actions.retry(true); }} />
                     <TotalCorrectModal visible={showTotalModal} total={totalCorrect} ui={ui} onClose={() => { setShowTotalModal(false); }} />
 
                     <div className="flex-1 w-full min-w-0">
@@ -1428,7 +1437,7 @@
 
                             {/* Right: Controls */}
                             <div className="flex items-center gap-3">
-                                {/* Timer Display (if active) */}
+                                {/* Timer Display */}
                                 {timerSettings.duration > 0 && (
                                     <div className={`font-mono text-sm font-bold px-3 py-1.5 rounded-lg border hidden sm:block ${timerSettings.remaining < 60 ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-white text-gray-700 border-gray-200'}`}>
                                         {formatTime(timerSettings.remaining)}
@@ -1472,7 +1481,7 @@
                                     ) : (
                                         <div className="relative"><input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-primary-500 bg-primary-50 text-primary-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} placeholder={ui.placeholder} autoFocus={false} disabled={feedback === 'correct'} /></div>
                                     )}
-                                    <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-primary-500 shadow-green-200 cursor-default' : 'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}>{feedback === 'correct' ? ui.correct : feedback === 'incorrect' ? ui.incorrect : ui.submit}</button></form>)}<div className="mt-6 flex gap-3 justify-center flex-wrap"><button type="button" onClick={handleHint} disabled={!question.clues || revealedClues.length >= question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-accent-50 text-accent-700 border border-accent-200 hover:bg-accent-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button><button type="button" onClick={handleSolution} disabled={!question.clues || isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button><button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"><span>⏭️</span> {ui.btnSkip}</button></div></div>) : (<div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={actions.retry} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>)}</main>
+                                    <button type="submit" className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-primary-500 shadow-green-200 cursor-default' : 'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}>{feedback === 'correct' ? ui.correct : feedback === 'incorrect' ? ui.incorrect : ui.submit}</button></form>)}<div className="mt-6 flex gap-3 justify-center flex-wrap"><button type="button" onClick={handleHint} disabled={!question.clues || revealedClues.length >= question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-accent-50 text-accent-700 border border-accent-200 hover:bg-accent-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button><button type="button" onClick={handleSolution} disabled={!question.clues || isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button><button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"><span>⏭️</span> {ui.btnSkip}</button></div></div>) : (<div className="p-12 text-center text-red-400"><p>{ui.error}</p><button onClick={() => actions.retry(true)} className="text-indigo-600 underline text-sm mt-2">Retry</button></div>)}</main>
                     </div>
                     <div className="lg:w-80 w-full shrink-0 flex flex-col gap-4 hidden lg:flex">
                         <CluePanel revealedClues={revealedClues} question={question} ui={ui} isSolutionRevealed={isSolutionRevealed} />
@@ -1508,7 +1517,7 @@
                 skipped: 0,
                 maxStreak: 0
             });
-            // NEW: Granular Stats
+            // Granular Stats
             const [granularStats, setGranularStats] = useState({});
 
             const [history, setHistory] = useState([]);
@@ -1574,8 +1583,9 @@
                 }
             }, [streak]);
 
-            const fetchQuestion = async (t = topic, l = level, lg = lang) => {
-                if (showStreakModal || showTotalModal || levelUpAvailable || timeUpOpen) return;
+            // UPDATED: Added 'force' parameter to bypass modal checks
+            const fetchQuestion = async (t = topic, l = level, lg = lang, force = false) => {
+                if (!force && (showStreakModal || showTotalModal || levelUpAvailable || timeUpOpen)) return;
                 if (!t || !l) return;
                 setLoading(true);
                 setFeedback(null);
@@ -1671,7 +1681,7 @@
                 }));
             };
 
-            // NEW: Granular Stats Updater
+            // Granular Stats Updater
             const updateGranularStats = (topicId, levelId, resultType) => {
                 setGranularStats(prev => {
                     const topicData = prev[topicId] || {};
@@ -1702,7 +1712,16 @@
                 fetchQuestion(topic, level, lang);
             };
 
-            const handleChangeLevel = (delta) => { const newLevel = level + delta; const max = Object.keys(LEVEL_DESCRIPTIONS[topic] || {}).length; if (newLevel >= 1 && newLevel <= max) { setStreak(0); setLevel(newLevel); fetchQuestion(topic, newLevel, lang); } };
+            // UPDATED: Pass 'true' to force fetch even if modal was just open
+            const handleChangeLevel = (delta) => { 
+                const newLevel = level + delta; 
+                const max = Object.keys(LEVEL_DESCRIPTIONS[topic] || {}).length; 
+                if (newLevel >= 1 && newLevel <= max) { 
+                    setStreak(0); 
+                    setLevel(newLevel); 
+                    fetchQuestion(topic, newLevel, lang, true); 
+                } 
+            };
 
             const handleSubmit = async (e, directInput) => {
                 e.preventDefault();
@@ -1724,7 +1743,6 @@
                     const result = await res.json();
 
                     const descText = typeof question.renderData.description === 'object' ? question.renderData.description[lang] : question.renderData.description;
-                    // FIX: Use LaTeX if available for history text
                     const historyText = question.renderData.latex || descText;
 
                     if (result.correct) {
@@ -1757,8 +1775,6 @@
                                     }
                                 }, 1500);
                             }
-                        } else {
-                            // If stats locked, do not update history or stats. Just allow visual feedback.
                         }
 
                         setFeedback('correct');
@@ -1770,7 +1786,6 @@
                         // Logic for 2 attempts max
                         if (question.attempts >= 2) {
                             handleSolution(); // Reveal solution - LOCKS STATS
-                            // Mark incorrect in history immediately
                             if (!isStatsLocked) {
                                 updateStats('incorrect');
                                 updateGranularStats(topic, level, 'incorrect');
@@ -1787,7 +1802,6 @@
                         } else {
                             // Attempt 1 fail: Show clue if available
                             handleHint();
-                            // We don't log "incorrect" to history yet, waiting for attempt 2
                         }
 
                         setFeedback('incorrect');
@@ -1863,6 +1877,14 @@
                             <div className="flex items-center gap-3">
                                 <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-primary-200">✅ {totalCorrect}</div>
                                 <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-yellow-200">🔥 {streak}</div>
+                                <button 
+                                    onClick={() => setLang(prev => prev === 'sv' ? 'en' : 'sv')} 
+                                    className="px-3 py-1 rounded-md text-xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-1.5"
+                                    title={lang === 'sv' ? "Byt språk" : "Switch Language"}
+                                >
+                                    <span className="text-sm">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</span>
+                                    <span>{lang === 'sv' ? 'SE' : 'ENG'}</span>
+                                </button>
                                 <button onClick={() => setStatsOpen(true)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title={ui.stats_title}>
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                                 </button>
@@ -1904,7 +1926,8 @@
                                 handleChangeLevel={handleChangeLevel}
                                 revealedClues={revealedClues}
                                 uiState={{ history, topic, level }}
-                                actions={{ retry: () => fetchQuestion(topic, level, lang), goBack: quitPractice }}
+                                // UPDATED: Pass force=true to retry to ensure fetch happens even if modal state lingers slightly
+                                actions={{ retry: (force) => fetchQuestion(topic, level, lang, force), goBack: quitPractice }}
                                 levelUpAvailable={levelUpAvailable}
                                 setLevelUpAvailable={setLevelUpAvailable}
                                 isSolutionRevealed={isSolutionRevealed}
@@ -1922,7 +1945,6 @@
                 </div>
             );
         }
-
         const root = ReactDOM.createRoot(document.getElementById('root')); root.render(<App />);
     </script>
 </body>
