@@ -1,6 +1,6 @@
 import { GeneratedQuestion, Clue } from "../types/generator";
 import { Random } from "../utils/random";
-import { TERMS, t, Language } from "../utils/i18n";
+import { t, Language } from "../utils/i18n";
 
 export class SimilarityGenerator {
     public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
@@ -41,8 +41,11 @@ export class SimilarityGenerator {
                 
                 qData.description = { sv: "Är rektanglarna likformiga?", en: "Are the rectangles similar?" };
                 steps.push({ 
-                    text: t(lang, { sv: `Jämför sidornas förhållande: ${w2}/${w1} vs ${h2}/${h1}`, en: `Compare ratios: ${w2}/${w1} vs ${h2}/${h1}` }), 
-                    latex: "" 
+                    text: t(lang, { 
+                        sv: `För att de ska vara likformiga måste förhållandet mellan sidorna vara samma. Jämför baserna och höjderna.`, 
+                        en: `For them to be similar, the ratio between sides must be the same. Compare the bases and heights.` 
+                    }), 
+                    latex: `\\frac{${w2}}{${w1}} \\text{ vs } \\frac{${h2}}{${h1}}` 
                 });
             } 
             else if (type === 'tri_angles') {
@@ -58,7 +61,10 @@ export class SimilarityGenerator {
 
                 qData.description = { sv: "Är trianglarna likformiga?", en: "Are the triangles similar?" };
                 steps.push({ 
-                    text: t(lang, { sv: "Likformiga trianglar har samma vinklar.", en: "Similar triangles have equal angles." }), 
+                    text: t(lang, { 
+                        sv: "Likformiga trianglar måste ha exakt samma vinklar. Jämför vinklarna i figurerna.", 
+                        en: "Similar triangles must have exactly the same angles. Compare the angles in the figures." 
+                    }), 
                     latex: "" 
                 });
             }
@@ -76,8 +82,11 @@ export class SimilarityGenerator {
                 qData.description = { sv: "Är trianglarna likformiga?", en: "Are the triangles similar?" };
                 
                 steps.push({ 
-                    text: t(lang, { sv: "Jämför kvoterna mellan motsvarande sidor.", en: "Compare the ratios of corresponding sides." }), 
-                    latex: `${r1}/${s1} \\text{ vs } ${r2}/${s2}` 
+                    text: t(lang, { 
+                        sv: "Kolla om båda sidorna har växt lika mycket (samma multiplikationstabell).", 
+                        en: "Check if both sides have grown by the same amount (same multiplication table)." 
+                    }), 
+                    latex: `\\frac{${r1}}{${s1}} \\text{ vs } \\frac{${r2}}{${s2}}` 
                 });
             }
 
@@ -116,11 +125,17 @@ export class SimilarityGenerator {
             qData.description = { sv: "Figurerna är likformiga. Beräkna x.", en: "The shapes are similar. Calculate x." };
             
             steps.push({
-                text: t(lang, { sv: "Skala = Stor / Liten", en: "Scale = Big / Small" }),
-                latex: missing === 'w2' ? `k = ${h2}/${h1} = ${k}` : `k = ${w2}/${w1} = ${k}`
+                text: t(lang, { 
+                    sv: "Först räknar vi ut hur många gånger större den stora figuren är (skalan). Vi jämför de sidor vi vet.", 
+                    en: "First, figure out how many times bigger the large shape is (the scale). Compare the known sides." 
+                }),
+                latex: missing === 'w2' ? `k = \\frac{${h2}}{${h1}} = ${k}` : `k = \\frac{${w2}}{${w1}} = ${k}`
             });
             steps.push({
-                text: t(lang, { sv: "Multiplicera sidan med skalan", en: "Multiply side by scale" }),
+                text: t(lang, { 
+                    sv: "Nu använder vi skalan för att hitta x. Vi multiplicerar den lilla sidan med skalan.", 
+                    en: "Now use the scale to find x. Multiply the small side by the scale." 
+                }),
                 latex: `x = ${missing === 'w2' ? w1 : h1} \\cdot ${k} = ${formatColor(answerVal)}`
             });
 
@@ -148,15 +163,43 @@ export class SimilarityGenerator {
                 answerVal = baseBot;
                 geom.labels.base_bot = 'x';
                 steps = [
-                    { text: t(lang, { sv: "Topptriangelsatsen: Liten/Stor", en: "Top Triangle Theorem: Small/Big" }), latex: `\\frac{${topSide}}{${totSide}} = \\frac{${baseTop}}{x}` },
-                    { text: t(lang, { sv: "Beräkna x", en: "Calculate x" }), latex: `x = \\frac{${baseTop} \\cdot ${totSide}}{${topSide}} = ${formatColor(answerVal)}` }
+                    { 
+                        text: t(lang, { 
+                            sv: "Den lilla triangeln i toppen är likformig med den stora triangeln. Jämför lilla sidan med hela stora sidan.", 
+                            en: "The small triangle at the top is similar to the big triangle. Compare the small side to the full big side." 
+                        }), 
+                        latex: `\\frac{\\text{Liten}}{\\text{Stor}} = \\frac{${topSide}}{${totSide}}` 
+                    },
+                    { 
+                        text: t(lang, { 
+                            sv: "Samma förhållande gäller för baserna. Ställ upp en ekvation.", 
+                            en: "The same ratio applies to the bases. Set up an equation." 
+                        }), 
+                        latex: `\\frac{${topSide}}{${totSide}} = \\frac{${baseTop}}{x}` 
+                    },
+                    { 
+                        text: t(lang, { sv: "Lös ut x.", en: "Solve for x." }), 
+                        latex: `x = \\frac{${baseTop} \\cdot ${totSide}}{${topSide}} = ${formatColor(answerVal)}` 
+                    }
                 ];
             } else {
                 answerVal = totSide;
                 geom.labels.left_tot = 'x';
                 steps = [
-                    { text: t(lang, { sv: "Skala mellan baserna", en: "Scale between bases" }), latex: `k = \\frac{${baseBot}}{${baseTop}}` },
-                    { text: t(lang, { sv: "Multiplicera toppens sida", en: "Multiply top side" }), latex: `x = ${topSide} \\cdot ${Math.round(k*100)/100} = ${formatColor(answerVal)}` }
+                    { 
+                        text: t(lang, { 
+                            sv: "Räkna ut hur mycket basen har växt (skalan).", 
+                            en: "Calculate how much the base has grown (the scale)." 
+                        }), 
+                        latex: `k = \\frac{${baseBot}}{${baseTop}}` 
+                    },
+                    { 
+                        text: t(lang, { 
+                            sv: "Multiplicera den lilla sidan med skalan för att få den stora sidan.", 
+                            en: "Multiply the small side by the scale to get the big side." 
+                        }), 
+                        latex: `x = ${topSide} \\cdot ${Math.round(k*100)/100} = ${formatColor(answerVal)}` 
+                    }
                 ];
             }
 
@@ -165,7 +208,7 @@ export class SimilarityGenerator {
             qData.renderData = { text_key: "top_tri", description: qData.description, latex: "", answerType: "numeric", geometry: { type: 'transversal', ...geom } };
         }
 
-        // --- LEVEL 4: Hourglass / Butterfly (Likformighet) ---
+        // --- LEVEL 4: Hourglass / Butterfly ---
         else {
             const k = rng.pick([1.5, 2, 2.5, 3]);
             
@@ -192,9 +235,27 @@ export class SimilarityGenerator {
             qData.description = { sv: "De horisontella linjerna är parallella. Beräkna x.", en: "The horizontal lines are parallel. Calculate x." };
             
             steps = [
-                { text: t(lang, { sv: "Vertikalvinklar + Parallell = Likformiga", en: "Vertical angles + Parallel = Similar" }), latex: "\\Delta_{upp} \\sim \\Delta_{ner}" },
-                { text: t(lang, { sv: "Beräkna skalan k", en: "Calculate scale k" }), latex: `k = \\frac{${botBase}}{${topBase}} = ${k}` },
-                { text: t(lang, { sv: "Använd skalan", en: "Use the scale" }), latex: findBot ? `x = ${topSide} \\cdot ${k} = ${formatColor(answerVal)}` : `x = ${botSide} / ${k} = ${formatColor(answerVal)}` }
+                { 
+                    text: t(lang, { 
+                        sv: "Eftersom linjerna är parallella är vinklarna lika (Z-regeln). Trianglarna är likformiga.", 
+                        en: "Since the lines are parallel, the angles are equal (Z-rule). The triangles are similar." 
+                    }), 
+                    latex: "\\Delta_{\\text{upp}} \\sim \\Delta_{\\text{ner}}" 
+                },
+                { 
+                    text: t(lang, { 
+                        sv: "Räkna ut skalan genom att jämföra baserna (botten / toppen).", 
+                        en: "Calculate the scale by comparing the bases (bottom / top)." 
+                    }), 
+                    latex: `k = \\frac{${botBase}}{${topBase}} = ${k}` 
+                },
+                { 
+                    text: t(lang, { 
+                        sv: findBot ? "Multiplicera med skalan för att få den större sidan." : "Dela med skalan för att få den mindre sidan.", 
+                        en: findBot ? "Multiply by the scale to get the larger side." : "Divide by the scale to get the smaller side." 
+                    }), 
+                    latex: findBot ? `x = ${topSide} \\cdot ${k} = ${formatColor(answerVal)}` : `x = ${botSide} / ${k} = ${formatColor(answerVal)}` 
+                }
             ];
 
             qData.renderData = { text_key: "hourglass", description: qData.description, latex: "", answerType: "numeric", geometry: geom };

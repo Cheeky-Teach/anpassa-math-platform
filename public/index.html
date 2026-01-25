@@ -396,16 +396,19 @@
 
 
             // --- SIMILARITY COMPARISON (Side-by-Side) ---
+            // --- SIMILARITY COMPARISON (Side-by-Side) ---
             if (data.type === 'similarity_compare') {
                 const isRect = data.shapeType === 'rectangle';
                 
                 // Helper to draw angle arc with curved path
-                // x,y: vertex coordinates
+                // x,y: vertex coordinates (SVG pixels)
                 // r: radius of arc
-                // startAng, endAng: angles in radians
+                // startAng, endAng: standard math angles in radians (0 = Right, PI/2 = Up)
                 const drawAngle = (x, y, r, startAng, endAng, label) => {
+                    // Convert Math angles (Up=Pos) to SVG angles (Down=Pos) for calculation
+                    // We invert the Y component because SVG Y grows downwards
                     const x1 = x + r * Math.cos(startAng);
-                    const y1 = y - r * Math.sin(startAng); // SVG y is down, so minus sin
+                    const y1 = y - r * Math.sin(startAng); 
                     const x2 = x + r * Math.cos(endAng);
                     const y2 = y - r * Math.sin(endAng);
                     
@@ -425,7 +428,7 @@
                     );
                 };
 
-                // Canvas Container - Increased size for better visibility
+                // Canvas Container - Increased size (350x180) for better visibility
                 return (
                     <SvgContainer viewBox="0 0 350 180">
                         {/* Shape 1 (Left) */}
@@ -446,9 +449,12 @@
                                 {data.left.labels?.s1 && <text x="40" y="115" textAnchor="middle" fontSize="12" fontWeight="bold" fill="#374151">{data.left.labels.s1}</text>}
                                 {data.left.labels?.s2 && <text x="60" y="55" textAnchor="start" fontSize="12" fontWeight="bold" fill="#374151">{data.left.labels.s2}</text>}
                                 
-                                {/* Angle Arcs (Bottom Left & Top) */}
-                                {data.left.labels?.a1 && drawAngle(0, 100, 25, 0, 0.9, data.left.labels.a1)} 
-                                {data.left.labels?.a2 && drawAngle(20, 20, 25, 3.5, 5.5, data.left.labels.a2)}
+                                {/* Angle Arcs (Bottom Left & Top) 
+                                    BL Angle: From 0 (Right) to ~1.3 rad (Up-Right towards Top)
+                                    Top Angle: From ~4.4 rad (Down-Left) to ~5.3 rad (Down-Right) 
+                                */}
+                                {data.left.labels?.a1 && drawAngle(0, 100, 25, 0, 1.1, data.left.labels.a1)} 
+                                {data.left.labels?.a2 && drawAngle(20, 20, 25, 4.3, 5.3, data.left.labels.a2)}
                                 </>
                             )}
                         </g>
@@ -475,15 +481,15 @@
                                 {data.right.labels?.s2 && <text x="90" y="60" textAnchor="start" fontSize="12" fontWeight="bold" fill="#374151">{data.right.labels.s2}</text>}
                                 
                                 {/* Angle Arcs */}
-                                {data.right.labels?.a1 && drawAngle(0, 120, 30, 0, 0.9, data.right.labels.a1)}
-                                {data.right.labels?.a2 && drawAngle(30, 0, 30, 3.5, 5.5, data.right.labels.a2)}
+                                {data.right.labels?.a1 && drawAngle(0, 120, 30, 0, 1.1, data.right.labels.a1)}
+                                {data.right.labels?.a2 && drawAngle(30, 0, 30, 4.3, 5.3, data.right.labels.a2)}
                                 </>
                             )}
                         </g>
                     </SvgContainer>
                 );
             }
-
+            
             // --- TRANSVERSAL (Top Triangle) ---
             if (data.type === 'transversal') {
                 // Large triangle with parallel cut
