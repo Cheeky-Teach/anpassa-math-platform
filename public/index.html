@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Anpassa | Math Platform</title>
     
     <!-- React & Core Dependencies -->
@@ -30,8 +30,8 @@
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
         .katex { font-size: 1.1em; } 
         .drawer-enter { transform: translateX(-100%); }
         .drawer-enter-active { transform: translateX(0); transition: transform 300ms; }
@@ -54,6 +54,9 @@
         
         /* Do Now specific */
         .print-break-inside-avoid { break-inside: avoid; }
+        
+        /* Mobile Input Fixes */
+        input, button, select, textarea { touch-action: manipulation; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-x-hidden flex flex-col min-h-screen">
@@ -465,10 +468,17 @@
                             {/* Labels */}
                             {data.labels.base_top && <text x="50" y="45" textAnchor="middle" fontSize="12" fontWeight="bold">{data.labels.base_top}</text>}
                             {data.labels.base_bot && <text x="50" y="165" textAnchor="middle" fontSize="12" fontWeight="bold">{data.labels.base_bot}</text>}
+                            
+                            {/* Left Side: Top and (Total OR Bottom) */}
                             {data.labels.left_top && <text x="5" y="30" textAnchor="end" fontSize="12" fontWeight="bold">{data.labels.left_top}</text>}
                             {data.labels.left_tot && <text x="-10" y="80" textAnchor="end" fontSize="12" fontWeight="bold">{data.labels.left_tot}</text>}
+                            {data.labels.left_bot && <text x="0" y="110" textAnchor="end" fontSize="12" fontWeight="bold">{data.labels.left_bot}</text>}
+
+                            {/* Right Side: Top and (Total OR Bottom) */}
                             {data.labels.right_top && <text x="95" y="30" textAnchor="start" fontSize="12" fontWeight="bold">{data.labels.right_top}</text>}
                             {data.labels.right_tot && <text x="110" y="80" textAnchor="start" fontSize="12" fontWeight="bold">{data.labels.right_tot}</text>}
+                            {data.labels.right_bot && <text x="100" y="110" textAnchor="start" fontSize="12" fontWeight="bold">{data.labels.right_bot}</text>}
+
                         </g>
                     </SvgContainer>
                 );
