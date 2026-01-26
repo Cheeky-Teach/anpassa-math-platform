@@ -534,18 +534,20 @@
                     r = Math.max(30, Math.min(r, 80));
 
                     const drawCircleData = (centerY, showLabel=true) => {
-                         const val = data.labels.val || (data.labels.r ? `r=${data.labels.r}` : `d=${data.labels.d}`);
-                         
-                         if (data.show === 'diameter') {
-                             drawDashed(cx - r, centerY, cx + r, centerY);
-                             if(showLabel) drawLabel(val, cx, centerY - 10);
-                         } else {
-                             // Radius - Draw from center to right
-                             ctx.beginPath(); ctx.arc(cx, centerY, 2, 0, 2*Math.PI); ctx.fill(); // Center dot
-                             drawDashed(cx, centerY, cx + r, centerY);
-                             if(showLabel) drawLabel(val, cx + r/2, centerY - 10);
-                         }
-                    };
+                     const val = data.labels.val || (data.labels.r ? `r=${data.labels.r}` : `d=${data.labels.d}`);
+                     
+                     // Check for both 'diameter' AND 'd' to ensure the line is drawn across the full width
+                     if (data.show === 'diameter' || data.show === 'd') {
+                         drawDashed(cx - r, centerY, cx + r, centerY);
+                         if(showLabel) drawLabel(val, cx, centerY - 10);
+                            } 
+                        else {
+                         // Radius - Draw from center to right
+                         ctx.beginPath(); ctx.arc(cx, centerY, 2, 0, 2*Math.PI); ctx.fill(); // Center dot
+                         drawDashed(cx, centerY, cx + r, centerY);
+                         if(showLabel) drawLabel(val, cx + r/2, centerY - 10);
+                            }
+                     };
 
                     if (data.type === 'sphere' || data.type === 'hemisphere') {
                         const isHemi = data.type === 'hemisphere';
