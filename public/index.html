@@ -26,7 +26,14 @@
                     },
                     fontFamily: { sans: ['Inter', 'sans-serif'] }
                 }
-            }
+            },
+            // This safelist ensures dynamic colors (pink, indigo, etc.) are generated
+            safelist: [
+                {
+                    pattern: /(bg|text|border|ring)-(pink|indigo|emerald|purple|primary|accent)-(50|100|200|500|600|700)/,
+                    variants: ['hover', 'focus'],
+                }
+            ]
         }
     </script>
 
