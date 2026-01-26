@@ -724,7 +724,7 @@
                  );
             }
             
-            // --- PYTHAGORAS TRIANGLE ---
+            // --- TRIANGLES (Pythagoras & Area) ---
             if (data.type === 'triangle') { 
                 const w = data.width || 0, h = data.height || 0; 
                 const maxDim = Math.max(w, h); 
@@ -732,39 +732,68 @@
                 const bVal = w * scale; 
                 const hVal = h * scale; 
                 const cx = 150, cy = 100; 
+
+                // Bounding Box Corners
+                const L = cx - bVal/2; // Left
+                const R = cx + bVal/2; // Right
+                const T = cy - hVal/2; // Top
+                const B = cy + hVal/2; // Bottom
                 
-                let points = "", hLine = null, bLabel = null, hLabel = null, hypLabel = null, rightAngle = null; 
+                let points = "", rightAngle = null, hLine = null;
+                let bLabel = null, hLabel = null, hypLabel = null;
+                
                 const orient = data.orientation || 'up'; 
                 const isRight = data.subtype === 'right'; 
 
-                // Helper: Draw Right Angle Marker
-                const getRightMarker = (x, y) => <path d={`M ${x} ${y} L ${x} ${y} L ${x} ${y}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />; // Placeholder logic
+                // Helper for text
+                const mkTxt = (x, y, txt, anchor="middle", baseline="middle") => 
+                    <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill="#374151">{txt}</text>;
 
                 if (orient === 'up') { 
-                    const x1 = cx - bVal/2, y1 = cy + hVal/2; const x2 = cx + bVal/2, y1_right = cy + hVal/2; const x3 = cx - bVal/2, y2 = cy - hVal/2; 
-                    points = `${x1},${y1} ${x2},${y1_right} ${x3},${y2}`;
-                    if (isRight) rightAngle = <path d={`M ${x1+10} ${y1} L ${x1+10} ${y1-10} L ${x1} ${y1-10}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
-                    bLabel = <text x={cx} y={y1 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; 
-                    hLabel = <text x={x1 - 15} y={cy} textAnchor="end" fontWeight="bold" fill="#374151">{data.labels.height}</text>; 
-                    hypLabel = <text x={(x2+x3)/2 + 20} y={(y1_right+y2)/2 - 10} textAnchor="start" fontWeight="bold" fill="#374151">{data.labels.hypotenuse}</text>;
+                    if (isRight) {
+                        // 90 deg at Bottom-Left (Pythagoras Standard)
+                        points = `${L},${B} ${R},${B} ${L},${T}`;
+                        rightAngle = <path d={`M ${L+10} ${B} L ${L+10} ${B-10} L ${L} ${B-10}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
+                        bLabel = mkTxt(cx, B + 20, data.labels.base, "middle");
+                        hLabel = mkTxt(L - 15, cy, data.labels.height, "end");
+                        if(data.labels.hypotenuse) hypLabel = mkTxt((R+L)/2 + 10, (B+T)/2 - 10, data.labels.hypotenuse, "start");
+                    } else {
+                        // Generic/Isosceles (Area Problems)
+                        points = `${L},${B} ${R},${B} ${cx},${T}`;
+                        hLine = <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
+                        bLabel = mkTxt(cx, B + 20, data.labels.base, "middle");
+                        hLabel = <text x={cx + 5} y={cy} textAnchor="start" dominantBaseline="middle" fontWeight="bold" fill="#374151">h={data.labels.height}</text>;
+                    }
                 } 
-                else { // Fallback for other orientations
-                     return <div className="text-center">Rotated Triangle</div>;
+                else if (orient === 'down') {
+                    // 90 deg at Top-Right (Rotated 180)
+                    points = `${R},${T} ${L},${T} ${R},${B}`;
+                    if (isRight) rightAngle = <path d={`M ${R-10} ${T} L ${R-10} ${T+10} L ${R} ${T+10}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
+                    
+                    bLabel = mkTxt(cx, T - 20, data.labels.base, "middle");
+                    hLabel = mkTxt(R + 15, cy, data.labels.height, "start");
+                    if(data.labels.hypotenuse) hypLabel = mkTxt((L+R)/2 - 10, (B+T)/2 + 10, data.labels.hypotenuse, "end");
+                }
+                else if (orient === 'left') {
+                    // 90 deg at Bottom-Right (Points Left)
+                    points = `${R},${B} ${L},${B} ${R},${T}`;
+                    if (isRight) rightAngle = <path d={`M ${R-10} ${B} L ${R-10} ${B-10} L ${R} ${B-10}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
+                    
+                    bLabel = mkTxt(cx, B + 20, data.labels.base, "middle");
+                    hLabel = mkTxt(R + 15, cy, data.labels.height, "start");
+                    if(data.labels.hypotenuse) hypLabel = mkTxt((L+R)/2 - 10, (B+T)/2 - 10, data.labels.hypotenuse, "end");
+                }
+                else if (orient === 'right') {
+                    // 90 deg at Top-Left (Points Right)
+                    points = `${L},${T} ${R},${T} ${L},${B}`;
+                    if (isRight) rightAngle = <path d={`M ${L+10} ${T} L ${L+10} ${T+10} L ${L} ${T+10}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
+                    
+                    bLabel = mkTxt(cx, T - 20, data.labels.base, "middle");
+                    hLabel = mkTxt(L - 15, cy, data.labels.height, "end");
+                    if(data.labels.hypotenuse) hypLabel = mkTxt((L+R)/2 + 10, (B+T)/2 + 10, data.labels.hypotenuse, "start");
                 }
                 
                 return ( <SvgContainer>{rightAngle}<polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />{hLine}{bLabel}{hLabel}{hypLabel}</SvgContainer> ); 
-            }
-            
-            if (data.type === 'circle') { const cx = 100, cy = 100, r = 70; return (<SvgContainer><circle cx={cx} cy={cy} r={r} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{data.show === 'diameter' ? (<><line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151">d = {data.value}</text></>) : (<><line x1={cx} y1={cy} x2={cx + r} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx + r / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151">r = {data.value}</text></>)}</SvgContainer>); } 
-            
-            // --- COMPOSITES (House/Portal) ---
-            if (data.type === 'composite') {
-                if (data.subtype === 'house') {
-                    return (<SvgContainer><rect x="50" y="80" width="100" height="80" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><polygon points="50,80 150,80 100,20" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><text x="160" y="120" fontWeight="bold" fill="#374151">{data.labels.h}</text><text x="100" y="180" textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.w}</text><text x="130" y="50" fontWeight="bold" fill="#374151">{data.labels.h_roof}</text></SvgContainer>);
-                }
-                if (data.subtype === 'portal') {
-                    return (<SvgContainer><rect x="50" y="70" width="100" height="100" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><path d="M 50 70 A 50 50 0 0 1 150 70" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" /><text x="100" y="190" textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.w}</text><text x="160" y="120" textAnchor="start" fontWeight="bold" fill="#374151">{data.labels.h}</text></SvgContainer>);
-                }
             }
 
             if (data.type === 'compare_shapes' || data.type === 'compare_shapes_area') { const showLabels = data.type === 'compare_shapes'; const showArea = data.type === 'compare_shapes_area'; return (<div className="flex flex-wrap justify-center gap-8 items-end my-4"><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.left.label}</span><RenderShape type={data.shapeType} dims={data.left} labels={showLabels} areaText={showArea ? data.left.area : null} /></div><div className="pb-20 text-gray-300 text-3xl">→</div><div className="flex flex-col items-center gap-2"><span className="text-xs font-bold uppercase text-gray-400">{data.right.label}</span><RenderShape type={data.shapeType} dims={data.right} labels={showLabels} areaText={showArea ? data.right.area : null} /></div></div>); }
