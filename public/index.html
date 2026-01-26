@@ -237,7 +237,8 @@
             similarity: {
                 1: { sv: "Likformig eller inte?", en: "Similar or not?" },
                 2: { sv: "Beräkna längden (x)", en: "Calculate length (x)" },
-                3: { sv: "Topptriangelsatsen", en: "Top Triangle Theorem" }
+                3: { sv: "Topptriangelsatsen", en: "Top Triangle Theorem" },
+                4: { sv: "Pythagoras sats", en: "Pythagorean Theorem" } // Added
             },
             graph: {
                 1: { sv: "Hitta m (skärning)", en: "Find y-intercept (m)" },
@@ -705,8 +706,114 @@
                     </SvgContainer>
                 );
             }
+            
+            if (data.type === 'triangle') { 
+                const w = data.width || 0, h = data.height || 0; 
+                // Scale logic: Fit within a 140px box
+                const maxDim = Math.max(w, h); 
+                const scale = 140 / (maxDim || 1); 
+                const bVal = w * scale; 
+                const hVal = h * scale; 
+                const cx = 150, cy = 100; // Center of the 300x200 canvas
+                
+                let points = "", hLine = null, bLabel = null, hLabel = null, hypLabel = null, rightAngle = null; 
+                const orient = data.orientation || 'up'; 
+                const isRight = data.subtype === 'right'; 
 
-            if (data.type === 'triangle') { const w = data.width || 0, h = data.height || 0; const maxDim = Math.max(w, h); const scale = 140 / (maxDim || 1); const bVal = w * scale; const hVal = h * scale; const cx = 100, cy = 100; let points = "", hLine = null, bLabel = null, hLabel = null; const orient = data.orientation || 'up'; const isRight = data.subtype === 'right'; if (orient === 'up') { const x1 = cx - bVal / 2, y1 = cy + hVal / 2; const x2 = cx + bVal / 2, y2 = cy + hVal / 2; const x3 = isRight ? x1 : cx, y3 = cy - hVal / 2; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x3} y2={y1} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x1} y1={y1} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={cx} y={y1 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={isRight ? x1 - 15 : cx + 5} y={cy} textAnchor={isRight ? "end" : "start"} fontWeight="bold" fill="#374151">{data.labels.height}</text>; } else if (orient === 'down') { const x1 = cx - bVal / 2, y1 = cy - hVal / 2; const x2 = cx + bVal / 2, y2 = cy - hVal / 2; const x3 = isRight ? x1 : cx, y3 = cy + hVal / 2; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x3} y2={y1} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x1} y1={y1} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={cx} y={y1 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={isRight ? x1 - 15 : cx + 5} y={cy} textAnchor={isRight ? "end" : "start"} fontWeight="bold" fill="#374151">{data.labels.height}</text>; } else if (orient === 'left') { const x1 = cx + hVal / 2, y1 = cy - bVal / 2; const x2 = cx + hVal / 2, y2 = cy + bVal / 2; const x3 = cx - hVal / 2, y3 = isRight ? y2 : cy; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x1} y2={y3} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x2} y1={y2} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={x1 + 15} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={cx} y={isRight ? y2 + 20 : y3 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.height}</text>; } else { const x1 = cx - hVal / 2, y1 = cy - bVal / 2; const x2 = cx - hVal / 2, y2 = cy + bVal / 2; const x3 = cx + hVal / 2, y3 = isRight ? y2 : cy; points = `${x1},${y1} ${x2},${y2} ${x3},${y3}`; hLine = !isRight ? <line x1={x3} y1={y3} x2={x1} y2={y3} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /> : <line x1={x2} y1={y2} x2={x3} y2={y3} stroke="#10b981" strokeWidth="3" />; bLabel = <text x={x1 - 15} y={cy} textAnchor="end" fontWeight="bold" fill="#374151">{data.labels.base}</text>; hLabel = <text x={cx} y={isRight ? y2 + 20 : y3 - 10} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.height}</text>; } return (<SvgContainer><polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{hLine}{bLabel}{hLabel}</SvgContainer>); } if (data.type === 'circle') { const cx = 100, cy = 100, r = 70; return (<SvgContainer><circle cx={cx} cy={cy} r={r} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{data.show === 'diameter' ? (<><line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151">d = {data.value}</text></>) : (<><line x1={cx} y1={cy} x2={cx + r} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx + r / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151">r = {data.value}</text></>)}</SvgContainer>); } 
+                // Helper: Calc midpoint and offset for hypotenuse label
+                const getHypLabel = (x1, y1, x2, y2, offset = 20) => {
+                    if (!data.labels || !data.labels.hypotenuse) return null;
+                    const mx = (x1 + x2) / 2;
+                    const my = (y1 + y2) / 2;
+                    
+                    // Vector logic to push text away from the center of the triangle
+                    const dx = mx - cx;
+                    const dy = my - cy;
+                    const len = Math.sqrt(dx*dx + dy*dy) || 1;
+                    const ox = (dx/len) * offset;
+                    const oy = (dy/len) * offset;
+                    
+                    return <text x={mx + ox} y={my + oy} textAnchor="middle" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="14">{data.labels.hypotenuse}</text>;
+                };
+
+                // Helper: Draw Right Angle Marker
+                const getRightMarker = (x, y, orient) => {
+                    const s = 12; // Size of marker
+                    let path = "";
+                    if (orient === 'up' || orient === 'right') path = `M ${x} ${y-s} L ${x+s} ${y-s} L ${x+s} ${y}`; // Bottom-Left corner logic (adjusted for svg coords)
+                    // Simplified logic based on visual "corner" type
+                    if (orient === 'up') path = isRight ? `M ${x+s} ${y} L ${x+s} ${y-s} L ${x} ${y-s}` : ""; // Bottom Left
+                    // For this specific generator, we map standard orientations to corners:
+                    // up = bottom-left 90deg, down = top-left 90deg, etc.
+                    // We construct specific paths inside the main logic for precision.
+                    return <path d={path} fill="none" stroke="#374151" strokeWidth="1.5" />;
+                };
+
+                if (orient === 'up') { 
+                    // 90 degree at Bottom Left
+                    const x1 = cx - bVal/2, y1 = cy + hVal/2; // Corner (90)
+                    const x2 = cx + bVal/2, y1_right = cy + hVal/2; // Right
+                    const x1_top = cx - bVal/2, y2 = cy - hVal/2; // Top
+                    
+                    // For non-right triangles, x3 might be centered, but for pythagoras we stick to right triangles
+                    const x3 = isRight ? x1_top : cx; 
+                    
+                    points = `${x1},${y1} ${x2},${y1_right} ${x3},${y2}`;
+                    
+                    // Right Angle Marker at x1, y1
+                    if (isRight) rightAngle = <path d={`M ${x1+10} ${y1} L ${x1+10} ${y1-10} L ${x1} ${y1-10}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
+                    
+                    bLabel = <text x={cx} y={y1 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; 
+                    hLabel = <text x={x1 - 15} y={cy} textAnchor="end" fontWeight="bold" fill="#374151">{data.labels.height}</text>; 
+                    hypLabel = getHypLabel(x2, y1_right, x3, y2);
+                } 
+                else if (orient === 'down') { 
+                     // 90 degree at Top Left
+                    const x1 = cx - bVal/2, y1 = cy - hVal/2; // Corner (90)
+                    const x2 = cx + bVal/2, y1_right = cy - hVal/2; 
+                    const x1_bot = cx - bVal/2, y2 = cy + hVal/2;
+
+                    points = `${x1},${y1} ${x2},${y1_right} ${x1_bot},${y2}`;
+                    
+                    if (isRight) rightAngle = <path d={`M ${x1+10} ${y1} L ${x1+10} ${y1+10} L ${x1} ${y1+10}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
+
+                    bLabel = <text x={cx} y={y1 - 15} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; 
+                    hLabel = <text x={x1 - 15} y={cy} textAnchor="end" fontWeight="bold" fill="#374151">{data.labels.height}</text>; 
+                    hypLabel = getHypLabel(x2, y1_right, x1_bot, y2);
+                }
+                else if (orient === 'left') { 
+                    // 90 degree at Bottom Right (visually) - "pointing left"
+                    const x1 = cx + bVal/2, y1 = cy + hVal/2; // Corner
+                    const x2 = cx - bVal/2, y1_left = cy + hVal/2; 
+                    const x1_top = cx + bVal/2, y2 = cy - hVal/2; 
+
+                    points = `${x1},${y1} ${x2},${y1_left} ${x1_top},${y2}`;
+                    
+                    if (isRight) rightAngle = <path d={`M ${x1-10} ${y1} L ${x1-10} ${y1-10} L ${x1} ${y1-10}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
+
+                    bLabel = <text x={cx} y={y1 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; 
+                    hLabel = <text x={x1 + 15} y={cy} textAnchor="start" fontWeight="bold" fill="#374151">{data.labels.height}</text>; 
+                    hypLabel = getHypLabel(x2, y1_left, x1_top, y2);
+                } 
+                else { 
+                    // Default / Right: 90 degree at Bottom Left
+                    const x1 = cx - bVal/2, y1 = cy + hVal/2; 
+                    const x2 = cx + bVal/2, y1_right = cy + hVal/2; 
+                    const x1_top = cx - bVal/2, y2 = cy - hVal/2; 
+                    
+                    points = `${x1},${y1} ${x2},${y1_right} ${x1_top},${y2}`;
+                    if (isRight) rightAngle = <path d={`M ${x1+10} ${y1} L ${x1+10} ${y1-10} L ${x1} ${y1-10}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
+                    
+                    bLabel = <text x={cx} y={y1 + 20} textAnchor="middle" fontWeight="bold" fill="#374151">{data.labels.base}</text>; 
+                    hLabel = <text x={x1 - 15} y={cy} textAnchor="end" fontWeight="bold" fill="#374151">{data.labels.height}</text>; 
+                    hypLabel = getHypLabel(x2, y1_right, x1_top, y2);
+                } 
+                
+                return ( <SvgContainer>{rightAngle}<polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />{hLine}{bLabel}{hLabel}{hypLabel}</SvgContainer> ); 
+            }
+            if (data.type === 'circle') { 
+                const cx = 100, cy = 100, r = 70; 
+                return (<SvgContainer><circle cx={cx} cy={cy} r={r} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{data.show === 'diameter' ? (<><line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151">d = {data.value}</text></>) : (<><line x1={cx} y1={cy} x2={cx + r} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx + r / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151">r = {data.value}</text></>)}</SvgContainer>); } 
 // --- COMPOSITE SHAPES (Level 5) ---
             if (data.type === 'composite') {
                 const subtype = data.subtype;

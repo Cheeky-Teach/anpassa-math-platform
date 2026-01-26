@@ -57,6 +57,12 @@ export const TERMS = {
         rule_top: { sv: "Topptriangeln och hela triangeln delar en vinkel och har parallella baser, alltså är de likformiga.", en: "The top triangle and the whole triangle share an angle and have parallel bases, so they are similar." },
         rule_hourglass: { sv: "Vertikalvinklar är lika och alternatvinklar är lika (parallella linjer), så trianglarna är likformiga.", en: "Vertical angles are equal and alternate interior angles are equal (parallel lines), so the triangles are similar." },
         
+        // Pythagoras sats
+        pythagoras_rule: { sv: "Pythagoras sats: $a^2 + b^2 = c^2$ (c är hypotenusan).", en: "Pythagorean theorem: $a^2 + b^2 = c^2$ (c is the hypotenuse)." },
+        calc_hyp: { sv: "Vi söker hypotenusan (lång sida) -> Addera kvadraterna.", en: "Finding hypotenuse (long side) -> Add the squares." },
+        calc_leg: { sv: "Vi söker en katet (kort sida) -> Subtrahera kvadraterna.", en: "Finding a leg (short side) -> Subtract the squares." },
+        step_root: { sv: "Dra roten ur:", en: "Take the square root:" }
+
         // Detailed pedagogical explanations (The "Why")
         expl_sides_rule: { 
             sv: "För likformighet krävs att kvoten mellan alla motsvarande sidor är densamma.", 

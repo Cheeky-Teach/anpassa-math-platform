@@ -12,7 +12,7 @@ import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
 import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator';
-import { TenPowersGenerator } from '../src/core/generators/TenPowersGen'; // Added
+import { TenPowersGenerator } from '../src/core/generators/TenPowersGen';
 
 function formatAnswerForToken(answer: any): string | number {
     if (typeof answer === 'object' && answer !== null) {

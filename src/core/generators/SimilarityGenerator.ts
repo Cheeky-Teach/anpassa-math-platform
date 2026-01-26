@@ -56,8 +56,8 @@ export class SimilarityGenerator {
                 const b1 = isSimilar ? a1 : a1 + rng.pick([-15, 15]);
                 const b2 = isSimilar ? a2 : a2;
 
-                shapeData.left = { labels: { a1: `${a1}°`, a2: `${a2}°` } };
-                shapeData.right = { labels: { a1: `${b1}°`, a2: `${b2}°` } };
+                shapeData.left = { angles: [a1, a2, null], labels: { a1: `${a1}°`, a2: `${a2}°` } };
+                shapeData.right = { angles: [b1, b2, null], labels: { a1: `${b1}°`, a2: `${b2}°` } };
 
                 qData.description = { sv: "Är trianglarna likformiga?", en: "Are the triangles similar?" };
                 steps.push({ 
@@ -146,7 +146,7 @@ export class SimilarityGenerator {
         }
 
         // --- LEVEL 3: Top Triangle Theorem (Transversal) ---
-        else {
+        else if (level === 3) {
             const topSide = rng.intBetween(5, 12);
             const addSide = rng.intBetween(4, 10);
             const totSide = topSide + addSide;
@@ -206,6 +206,100 @@ export class SimilarityGenerator {
             qData.answer = answerVal;
             qData.description = { sv: "Linjen i mitten är parallell med basen. Beräkna x.", en: "The middle line is parallel to the base. Calculate x." };
             qData.renderData = { text_key: "top_tri", description: qData.description, latex: "", answerType: "numeric", geometry: { type: 'transversal', ...geom } };
+        }
+
+        // --- LEVEL 4: Pythagorean Theorem (NEW) ---
+        else {
+            // 1. Generate Primitive Triple using Euclid's Formula
+            // m > n > 0.
+            const m = rng.intBetween(2, 6);
+            const n = rng.intBetween(1, m - 1);
+            
+            let a = m*m - n*n;
+            let b = 2*m*n;
+            let c = m*m + n*n;
+
+            // 2. Scale the triple to create answer variety (multiples)
+            const k = rng.pick([1, 1, 1, 2, 2, 3, 4, 5, 10]);
+            a *= k;
+            b *= k;
+            c *= k;
+
+            // 3. Randomize leg orientation (swap a and b visuals)
+            if (rng.bool()) [a, b] = [b, a];
+
+            // 4. Select Question Type
+            const mode = rng.pick(['find_hyp', 'find_leg_a', 'find_leg_b']);
+            let qDesc: any;
+            let labels: any = {};
+            
+            if (mode === 'find_hyp') {
+                // a^2 + b^2 = x^2
+                qData.answer = c;
+                labels = { base: a, height: b, hypotenuse: 'x' };
+                qDesc = { sv: "Beräkna hypotenusan (den långa sidan).", en: "Calculate the hypotenuse (the long side)." };
+                
+                steps.push({
+                    text: t(lang, { sv: "Använd Pythagoras sats:", en: "Use the Pythagorean theorem:" }),
+                    latex: "a^2 + b^2 = c^2"
+                });
+                steps.push({
+                    text: t(lang, { sv: "Sätt in värdena:", en: "Substitute the values:" }),
+                    latex: `${a}^2 + ${b}^2 = x^2`
+                });
+                steps.push({
+                    text: t(lang, { sv: "Beräkna och dra roten ur:", en: "Calculate and take the square root:" }),
+                    latex: `x = \\sqrt{${a*a + b*b}} = ${formatColor(c)}`
+                });
+            } 
+            else {
+                // Find a Leg.  c^2 - b^2 = a^2
+                // Visual variation: sometimes finding base, sometimes height
+                const findingBase = (mode === 'find_leg_a');
+                
+                qData.answer = findingBase ? a : b;
+                labels = {
+                    base: findingBase ? 'x' : a,
+                    height: findingBase ? b : 'x',
+                    hypotenuse: c
+                };
+                
+                qDesc = { sv: "Beräkna kateten (den korta sidan).", en: "Calculate the leg (the short side)." };
+                
+                const knownLeg = findingBase ? b : a;
+                
+                steps.push({
+                    text: t(lang, { sv: "När vi söker en kort sida, subtraherar vi:", en: "When finding a short side, we subtract:" }),
+                    latex: "c^2 - b^2 = a^2"
+                });
+                steps.push({
+                    text: t(lang, { sv: "Sätt in värdena:", en: "Substitute the values:" }),
+                    latex: `${c}^2 - ${knownLeg}^2 = x^2`
+                });
+                steps.push({
+                    text: t(lang, { sv: "Beräkna och dra roten ur:", en: "Calculate and take the square root:" }),
+                    latex: `x = \\sqrt{${c*c - knownLeg*knownLeg}} = ${formatColor(qData.answer)}`
+                });
+            }
+
+            // Visual Orientation
+            const orient = rng.pick(['up', 'left', 'right', 'down']); // Ensure frontend handles these
+
+            qData.description = qDesc;
+            qData.renderData = {
+                text_key: "pythagoras",
+                description: qData.description,
+                latex: "",
+                answerType: "numeric",
+                geometry: {
+                    type: 'triangle',
+                    subtype: 'right', // Frontend triggers square marker
+                    orientation: orient,
+                    width: a,
+                    height: b,
+                    labels: labels
+                }
+            };
         }
 
         return {
