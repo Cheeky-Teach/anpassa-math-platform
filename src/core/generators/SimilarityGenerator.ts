@@ -43,7 +43,7 @@ export class SimilarityGenerator {
                 steps.push({ 
                     text: t(lang, { 
                         sv: `För att de ska vara likformiga måste förhållandet mellan sidorna vara samma. Jämför baserna och höjderna.`, 
-                        en: `For them to be similar, the ratio between sides must be the same. Compare the bases and heights.` 
+                        en: `For them to be similar, the ratio of sides must be the same. Compare the bases and heights.` 
                     }), 
                     latex: `\\frac{${w2}}{${w1}} \\text{ vs } \\frac{${h2}}{${h1}}` 
                 });
@@ -226,7 +226,8 @@ export class SimilarityGenerator {
             c *= k;
 
             // 3. Randomize leg orientation (swap a and b visuals)
-            if (rng.bool()) [a, b] = [b, a];
+            // Use intBetween instead of bool() to be safe if random.ts isn't updated
+            if (rng.intBetween(0, 1) === 1) [a, b] = [b, a];
 
             // 4. Select Question Type
             const mode = rng.pick(['find_hyp', 'find_leg_a', 'find_leg_b']);

@@ -12,4 +12,9 @@ export class Random {
     public pick<T>(array: T[]): T {
         return array[this.intBetween(0, array.length - 1)];
     }
+
+    // Added missing method caused the crash in Similarity Level 4
+    public bool(): boolean {
+        return Math.random() < 0.5;
+    }
 }
