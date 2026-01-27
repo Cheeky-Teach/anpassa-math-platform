@@ -1,17 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// --- Generators (STRICTLY Existing Files Only) ---
-import { ScaleGenerator } from '../src/core/generators/ScaleGenerator';
-import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
-import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
-import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
-import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
-import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
-import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
+// --- Generators ---
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
-import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator';
 import { TenPowersGenerator } from '../src/core/generators/TenPowersGen';
+import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
+import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
+import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
+import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
+import { ScaleGenerator } from '../src/core/generators/ScaleGenerator';
+import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
+import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator';
+import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
 
 // --- Interface ---
 interface QuestionResponse {
@@ -27,7 +27,6 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { topic, level = '1', lang = 'sv' } = req.query;
     
-    // Parse Level
     const lvl = parseInt(Array.isArray(level) ? level[0] : level) || 1;
     const language = (Array.isArray(lang) ? lang[0] : lang) || 'sv';
     const topicKey = Array.isArray(topic) ? topic[0] : topic;
@@ -36,38 +35,66 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Missing 'topic' parameter" });
     }
 
-    let generator: any; 
+    let question: any; 
+    const seed = Math.random().toString(36).substring(7);
 
-    // --- Router (Mapped STRICTLY to src/constants/curriculum.js) ---
+    // --- Static Router ---
+    // Calls static methods directly: Generator.generate(...)
     switch (topicKey) {
       // Arithmetic
-      case 'arithmetic': generator = new BasicArithmeticGen(); break;
-      case 'negative': generator = new NegativeNumbersGen(); break;
-      case 'ten_powers': generator = new ScientificNotationGen(); break; // Mapped to ScientificNotationGen
+      case 'arithmetic': 
+        question = BasicArithmeticGen.generate(lvl, seed, language); 
+        break;
+      case 'negative': 
+        question = NegativeNumbersGen.generate(lvl, seed, language); 
+        break;
+      case 'ten_powers': 
+        question = TenPowersGenerator.generate(lvl, seed, language); 
+        break;
       
       // Algebra
-      case 'simplify': generator = new ExpressionSimplificationGen(); break;
-      case 'equation': generator = new LinearEquationGen(); break;
+      case 'simplify': 
+        question = ExpressionSimplificationGen.generate(lvl, seed, language); 
+        break;
+      case 'equation': 
+        // Route Word Problems (Lvl 5 & 6) to Problem Gen
+        if (lvl === 5 || lvl === 6) {
+            question = LinearEquationProblemGen.generate(lvl, seed, language);
+        } else {
+            question = LinearEquationGenerator.generate(lvl, seed, language);
+        }
+        break;
 
       // Geometry
-      case 'geometry': generator = new GeometryGenerator(); break;
-      case 'scale': generator = new SimilarityGen(); break; // 'Scale' uses Similarity logic
-      case 'volume': generator = new VolumeGen(); break;
-      case 'similarity': generator = new SimilarityGen(); break;
+      case 'geometry': 
+        question = GeometryGenerator.generate(lvl, seed, language); 
+        break;
+      case 'scale': 
+        question = ScaleGenerator.generate(lvl, seed, language); 
+        break;
+      case 'volume': 
+        question = VolumeGenerator.generate(lvl, seed, language); 
+        break;
+      case 'similarity': 
+        question = SimilarityGenerator.generate(lvl, seed, language); 
+        break;
 
       // Functions
-      case 'graph': generator = new LinearGraphGenerator(); break;
+      case 'graph': 
+        question = LinearGraphGenerator.generate(lvl, seed, language); 
+        break;
 
       default:
         return res.status(404).json({ error: `Generator not found for topic: ${topicKey}` });
     }
 
-    // --- Generation ---
-    const question = generator.generate(lvl, language);
+    if (!question) {
+        throw new Error("Generator returned null");
+    }
 
     // Create Token (Base64)
     const tokenPayload = JSON.stringify({
-      a: question.answer,
+      a: question.serverData ? question.serverData.answer : question.answer,
       t: Date.now()
     });
     const token = Buffer.from(tokenPayload).toString('base64');
@@ -76,7 +103,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       text: question.text,
       visual: question.visual,
       renderData: question.renderData,
-      clues: question.clues,
+      clues: question.serverData ? question.serverData.solutionSteps : question.clues,
       token: token
     };
 
