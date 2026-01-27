@@ -1,61 +1,64 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// --- Generators (STRICTLY Existing Files Only) ---
-import { ScaleGenerator } from '../src/core/generators/ScaleGen';
-import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
-import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
-import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
-import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
-import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
-import { VolumeGenerator } from '../src/core/generators/VolumeGen';
-import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
-import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
-import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator';
-import { TenPowersGenerator } from '../src/core/generators/TenPowersGen';
-
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  try {
+    // CORS Headers
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
+        return res.status(405).json({ error: "Method not allowed. Use POST." });
     }
 
-    const { token, answer, topic, level } = req.body;
+    try {
+        const { answer, token, streak = 0 } = req.body;
 
-    if (!token || answer === undefined) {
-        return res.status(400).json({ error: 'Missing token or answer' });
-    }
-
-    // Decode Token
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf-8'));
-    const correctAnswer = decoded.a;
-
-    // --- Validation Logic ---
-    // 1. Basic String Match (Case insensitive, trimmed)
-    const normalize = (s: any) => String(s).toLowerCase().replace(/\s+/g, '').replace(',', '.');
-    
-    let isCorrect = normalize(answer) === normalize(correctAnswer);
-
-    // 2. Generator-Specific Validation (if needed)
-    // Used for equivalent expressions (e.g. "x + 1" == "1 + x")
-    if (!isCorrect && topic) {
-        let generator: any = null;
-        switch (topic) {
-            case 'simplify': generator = new ExpressionSimplificationGen(); break;
-            case 'equation': generator = new LinearEquationGen(); break;
+        if (!token) {
+            return res.status(400).json({ error: "Missing token" });
         }
 
-        if (generator && typeof generator.validate === 'function') {
-            isCorrect = generator.validate(answer, correctAnswer);
+        // 1. Decode the correct answer from the Base64 token
+        const correctAnswer = Buffer.from(token, 'base64').toString('utf-8');
+
+        // 2. Normalize inputs for comparison
+        // We remove spaces and convert to lowercase to be forgiving
+        // e.g. "x + 5" should match "x+5"
+        const normalize = (str: any) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.');
+        
+        const userClean = normalize(answer);
+        const correctClean = normalize(correctAnswer);
+
+        const isCorrect = userClean === correctClean;
+
+        let newStreak = streak;
+        let levelUp = false;
+
+        // 3. Update Streak Logic
+        if (isCorrect) {
+            newStreak++;
+            // Propose level up every 8 correct answers
+            if (newStreak > 0 && newStreak % 8 === 0) {
+                levelUp = true;
+            }
+        } else {
+            newStreak = 0;
         }
+
+        return res.status(200).json({
+            correct: isCorrect,
+            correctAnswer, // Send back correct answer so UI can display it if wrong
+            newStreak,
+            levelUp
+        });
+
+    } catch (error) {
+        console.error("Answer Validation Error:", error);
+        return res.status(500).json({ error: "Validation failed." });
     }
-
-    return res.status(200).json({
-        correct: isCorrect,
-        correctAnswer: correctAnswer
-    });
-
-  } catch (error: any) {
-    console.error("Answer API Error:", error);
-    return res.status(500).json({ error: "Validation Failed", details: error.message });
-  }
 }

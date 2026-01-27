@@ -28,26 +28,50 @@ const getGenerator = (topic: string) => {
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
+    console.log("Batch endpoint hit. Method:", req.method); // Debug log
+
+    // Enable CORS for local development if needed
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: "Method not allowed. Use POST." });
     }
 
-    const { config, lang } = req.body; // config is array of { topic, level }
-
-    if (!config || !Array.isArray(config)) {
-        return res.status(400).json({ error: "Invalid config format." });
-    }
-
-    const language = (lang as string) || 'sv';
-    const results = [];
-
     try {
+        // Robust Body Parsing
+        let body = req.body;
+        if (typeof body === 'string') {
+            try {
+                body = JSON.parse(body);
+            } catch (e) {
+                console.error("JSON Parse Error:", e);
+                return res.status(400).json({ error: "Invalid JSON body" });
+            }
+        }
+
+        const config = body?.config; 
+        const lang = body?.lang || 'sv';
+
+        if (!config || !Array.isArray(config)) {
+            return res.status(400).json({ error: "Invalid config format. Expected array." });
+        }
+
+        const results = [];
+
         for (const item of config) {
             const { topic, level } = item;
             const generator = getGenerator(topic);
 
             if (generator) {
-                const questionData = generator.generate(parseInt(level), language);
+                const questionData = generator.generate(parseInt(level), lang);
                 
                 // Add display answer for the key
                 let displayAnswer = "";
@@ -84,6 +108,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     } catch (error) {
         console.error("Batch Generator Error:", error);
-        return res.status(500).json({ error: "Failed to generate batch." });
+        // Return JSON error so frontend doesn't hang, but logs details
+        return res.status(500).json({ error: "Failed to generate batch.", details: String(error) });
     }
 }
