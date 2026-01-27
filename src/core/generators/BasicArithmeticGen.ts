@@ -1,190 +1,139 @@
-import { GeneratedQuestion, Clue } from "../types/generator";
-import { Random } from "../utils/random";
-import { TERMS, t, Language } from "../utils/i18n";
+import { MathUtils } from '../utils/MathUtils';
 
 export class BasicArithmeticGen {
-    public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
-        const rng = new Random(seed);
-        const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
-
-        let mode = level;
-
-        // --- LEVEL 8: Mixed Integers (1, 2, 4, 7) ---
-        if (level === 8) {
-            mode = rng.pick([1, 2, 4, 7]);
+    generate(level: number, lang: string = 'sv') {
+        switch (level) {
+            case 1: return this.level1_AddSimple(lang);
+            case 2: return this.level2_SubSimple(lang);
+            case 3: return this.level3_Decimals(lang);
+            case 4: return this.level4_MultEasy(lang);
+            case 5: return this.level5_MultMedium(lang);
+            case 6: return this.level6_MultHard(lang);
+            case 7: return this.level7_DivEasy(lang);
+            case 8: return this.level8_MixedIntegers(lang);
+            case 9: return this.level9_MixedDecimals(lang);
+            default: return this.level1_AddSimple(lang);
         }
+    }
+
+    // Level 1: Addition (1-3 digits)
+    private level1_AddSimple(lang: string) {
+        const a = MathUtils.randomInt(5, 500);
+        const b = MathUtils.randomInt(5, 500);
+        return this.createProblem(a, b, '+', lang);
+    }
+
+    // Level 2: Subtraction
+    private level2_SubSimple(lang: string) {
+        const a = MathUtils.randomInt(20, 900);
+        const b = MathUtils.randomInt(5, a); // Ensure positive result for basic level
+        return this.createProblem(a, b, '-', lang);
+    }
+
+    // Level 3: Decimals (+/-)
+    private level3_Decimals(lang: string) {
+        const op = MathUtils.randomChoice(['+', '-']);
+        const a = MathUtils.randomFloat(1, 50, 1);
+        const b = MathUtils.randomFloat(1, 20, 1);
+        // Ensure clean subtraction
+        const val1 = op === '-' ? Math.max(a, b) : a;
+        const val2 = op === '-' ? Math.min(a, b) : b;
         
-        // --- LEVEL 9: Mixed All (1-7) ---
-        if (level === 9) {
-            mode = rng.intBetween(1, 7);
-        }
+        return this.createProblem(val1, val2, op, lang, "text", [
+            { text: lang === 'sv' ? "Ställ upp talen ovanpå varandra." : "Line up the numbers vertically." },
+            { text: lang === 'sv' ? "Se till att decimaltecknen hamnar rakt under varandra." : "Make sure the decimal points line up." }
+        ]);
+    }
 
-        let steps: Clue[] = [];
-        let answer: number = 0;
-        let latex = "";
+    // Level 4: Mult Easy (Tables 2-9)
+    private level4_MultEasy(lang: string) {
+        const a = MathUtils.randomInt(2, 9);
+        const b = MathUtils.randomInt(2, 12);
+        return this.createProblem(a, b, '*', lang);
+    }
+
+    // Level 5: Mult Medium (2 digit x 1 digit)
+    private level5_MultMedium(lang: string) {
+        const a = MathUtils.randomInt(11, 50);
+        const b = MathUtils.randomInt(2, 9);
+        return this.createProblem(a, b, '*', lang);
+    }
+
+    // Level 6: Mult Hard (2 digit x 2 digit)
+    private level6_MultHard(lang: string) {
+        const a = MathUtils.randomInt(11, 30);
+        const b = MathUtils.randomInt(11, 30);
+        return this.createProblem(a, b, '*', lang, "text", [
+            { text: lang === 'sv' ? "Dela upp multiplikationen: räkna ental först, sen tiotal." : "Split the multiplication: calculate ones first, then tens." }
+        ]);
+    }
+
+    // Level 7: Division Easy (Integer results)
+    private level7_DivEasy(lang: string) {
+        const divisor = MathUtils.randomInt(2, 9);
+        const quotient = MathUtils.randomInt(4, 20);
+        const dividend = divisor * quotient;
         
-        // Description defaults
-        let description = { sv: "Beräkna", en: "Calculate" };
-
-        // Helper for vertical layout
-        const makeVertical = (top: number | string, bottom: number | string, op: string) => {
-            return `\\begin{array}{r} ${top} \\\\ ${op} \\; ${bottom} \\\\ \\hline \\end{array}`;
-        };
-
-        // --- LEVEL 1: Addition (1-3 digits) ---
-        if (mode === 1) {
-            const a = rng.intBetween(1, 999);
-            const b = rng.intBetween(1, 999);
-            answer = a + b;
-            
-            if (rng.intBetween(0, 1) === 1) {
-                latex = makeVertical(a, b, '+');
-                description = { sv: "Ställ upp och addera.", en: "Set up and add." };
-            } else {
-                latex = `${a} + ${b} =`;
-                description = { sv: "Addera.", en: "Add." };
-            }
-
-            steps = [
-                { text: t(lang, TERMS.common.calculate), latex: `${a} + ${b} = ${formatColor(answer)}` }
-            ];
-        }
-
-        // --- LEVEL 2: Subtraction (1-3 digits, a > b) ---
-        else if (mode === 2) {
-            const a = rng.intBetween(2, 999);
-            const b = rng.intBetween(1, a - 1); 
-            answer = a - b;
-
-            if (rng.intBetween(0, 1) === 1) {
-                latex = makeVertical(a, b, '-');
-                description = { sv: "Ställ upp och subtrahera.", en: "Set up and subtract." };
-            } else {
-                latex = `${a} - ${b} =`;
-                description = { sv: "Subtrahera.", en: "Subtract." };
-            }
-
-            steps = [
-                { text: t(lang, TERMS.common.calculate), latex: `${a} - ${b} = ${formatColor(answer)}` }
-            ];
-        }
-
-        // --- LEVEL 3: Decimal (+/-) ---
-        else if (mode === 3) {
-            const isAdd = rng.intBetween(0, 1) === 1;
-            
-            const getDec = () => {
-                const num = rng.intBetween(1, 4900); 
-                return num / 100; 
-            };
-
-            let a = getDec();
-            let b = getDec();
-            
-            if (isAdd) {
-                while (Math.floor(a + b) > 50) { a = getDec(); b = getDec(); }
-                answer = Math.round((a + b) * 100) / 100;
-                latex = `${a} + ${b} =`;
-            } else {
-                if (b > a) [a, b] = [b, a];
-                while (Math.floor(a - b) > 50) { a = getDec(); b = getDec(); if (b>a) [a,b]=[b,a];}
-                answer = Math.round((a - b) * 100) / 100;
-                latex = `${a} - ${b} =`;
-            }
-
-            description = { sv: "Beräkna decimaltalen.", en: "Calculate the decimals." };
-            steps = [{ text: t(lang, TERMS.common.calculate), latex: `${latex} ${formatColor(answer)}` }];
-        }
-
-        // --- LEVEL 4: Multiplication Easy (<= 10) ---
-        else if (mode === 4) {
-            const a = rng.intBetween(1, 10);
-            const b = rng.intBetween(1, 10);
-            answer = a * b;
-
-            if (rng.intBetween(0, 1) === 1) {
-                const top = Math.max(a, b);
-                const bot = Math.min(a, b);
-                latex = makeVertical(top, bot, '\\times');
-            } else {
-                latex = `${a} \\cdot ${b} =`;
-            }
-
-            description = { sv: "Multiplicera.", en: "Multiply." };
-            steps = [{ text: t(lang, TERMS.common.calculate), latex: `${a} \\cdot ${b} = ${formatColor(answer)}` }];
-        }
-
-        // --- LEVEL 5: Multiplication Medium (<= 20) ---
-        else if (mode === 5) {
-            const a = rng.intBetween(2, 20);
-            const b = rng.intBetween(2, 20);
-            answer = a * b;
-
-            if (rng.intBetween(0, 1) === 1) {
-                const top = Math.max(a, b);
-                const bot = Math.min(a, b);
-                latex = makeVertical(top, bot, '\\times');
-            } else {
-                latex = `${a} \\cdot ${b} =`;
-            }
-
-            description = { sv: "Multiplicera.", en: "Multiply." };
-            steps = [{ text: t(lang, TERMS.common.calculate), latex: `${a} \\cdot ${b} = ${formatColor(answer)}` }];
-        }
-
-        // --- LEVEL 6: Multiplication Hard (Decimals) ---
-        else if (mode === 6) {
-            const type = rng.intBetween(1, 4);
-            let a = 0, b = 0;
-
-            if (type === 1) { // 0.x * 0.y
-                a = rng.intBetween(1, 9) / 10;
-                b = rng.intBetween(1, 9) / 10;
-            } else if (type === 2) { // Int * 0.x
-                a = rng.intBetween(2, 20);
-                b = rng.intBetween(1, 9) / 10;
-            } else if (type === 3) { // 0.x * 0.yz
-                a = rng.intBetween(1, 9) / 10;
-                b = rng.intBetween(1, 99) / 100;
-            } else { // Int * 0.yz
-                a = rng.intBetween(2, 20);
-                b = rng.intBetween(1, 99) / 100;
-            }
-
-            answer = Math.round((a * b) * 1000) / 1000;
-            latex = `${a} \\cdot ${b} =`;
-            description = { sv: "Multiplicera decimaltalen.", en: "Multiply the decimals." };
-            steps = [{ text: t(lang, TERMS.common.calculate), latex: `${a} \\cdot ${b} = ${formatColor(answer)}` }];
-        }
-
-        // --- LEVEL 7: Division (Tables) ---
-        else if (mode === 7) {
-            const f1 = rng.intBetween(1, 10);
-            const f2 = rng.intBetween(1, 10);
-            const product = f1 * f2;
-            
-            const divisor = rng.intBetween(0, 1) === 1 ? f1 : f2;
-            answer = product / divisor; 
-
-            latex = `\\frac{${product}}{${divisor}} =`;
-            description = { sv: "Dividera.", en: "Divide." };
-            
-            steps = [{ text: t(lang, TERMS.common.calculate), latex: `\\frac{${product}}{${divisor}} = ${formatColor(answer)}` }];
-        }
+        const latex = `\\frac{${dividend}}{${divisor}}`;
+        const desc = lang === 'sv' ? "Beräkna" : "Calculate";
 
         return {
-            questionId: `arith-l${level}-${seed}`,
-            renderData: {
-                text_key: "arithmetic",
-                description: description,
-                latex: latex,
-                answerType: "numeric",
-                variables: {}
-            },
-            serverData: {
-                answer: answer,
-                solutionSteps: steps
-            }
+            renderData: { latex, description: desc, answerType: 'text' },
+            token: Buffer.from(quotient.toString()).toString('base64'),
+            clues: [
+                { text: lang === 'sv' ? `Hur många gånger får ${divisor} plats i ${dividend}?` : `How many times does ${divisor} fit into ${dividend}?` }
+            ]
+        };
+    }
+
+    // Level 8: Mixed Integers
+    private level8_MixedIntegers(lang: string) {
+        const type = MathUtils.randomInt(1, 4);
+        switch(type) {
+            case 1: return this.level1_AddSimple(lang);
+            case 2: return this.level2_SubSimple(lang);
+            case 3: return this.level5_MultMedium(lang);
+            case 4: return this.level7_DivEasy(lang);
+            default: return this.level1_AddSimple(lang);
+        }
+    }
+
+    // Level 9: Mixed Decimals
+    private level9_MixedDecimals(lang: string) {
+        // Includes decimal multiplication/division
+        const type = MathUtils.randomInt(1, 4);
+        if (type <= 2) return this.level3_Decimals(lang);
+        
+        // Decimal Mult
+        const a = MathUtils.randomFloat(2, 9, 1);
+        const b = MathUtils.randomInt(2, 9);
+        // JS float precision fix
+        const ans = Math.round(a * b * 10) / 10;
+        
+        return {
+            renderData: { latex: `${a} \\cdot ${b}`, description: lang === 'sv' ? "Beräkna" : "Calculate", answerType: 'text' },
+            token: Buffer.from(ans.toString()).toString('base64'),
+            clues: [{ text: lang === 'sv' ? "Ignorera decimalen först, räkna, och sätt tillbaka den." : "Ignore the decimal first, calculate, then put it back." }]
+        };
+    }
+
+    // Helper
+    private createProblem(a: number, b: number, op: string, lang: string, type: 'text' = 'text', extraClues: any[] = []) {
+        let ans = 0;
+        let latexOp = op;
+        if (op === '+') ans = a + b;
+        if (op === '-') ans = a - b;
+        if (op === '*') { ans = a * b; latexOp = '\\cdot'; }
+        
+        // JS Floating point fix
+        ans = Math.round(ans * 100) / 100;
+
+        return {
+            renderData: { latex: `${a} ${latexOp} ${b}`, description: lang === 'sv' ? "Beräkna" : "Calculate", answerType: type },
+            token: Buffer.from(ans.toString()).toString('base64'),
+            clues: extraClues.length > 0 ? extraClues : [
+                { text: lang === 'sv' ? "Använd papper och penna om det behövs." : "Use paper and pencil if needed." }
+            ]
         };
     }
 }

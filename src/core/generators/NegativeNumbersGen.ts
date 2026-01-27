@@ -1,160 +1,109 @@
-import { GeneratedQuestion, Clue } from "../types/generator";
-import { Random } from "../utils/random";
-import { TERMS, t, Language } from "../utils/i18n";
+import { MathUtils } from '../utils/MathUtils';
 
 export class NegativeNumbersGen {
-    public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
-        const rng = new Random(seed);
-        const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
-
-        let mode = level;
-        if (level === 5) mode = rng.intBetween(1, 4);
-
-        let steps: Clue[] = [];
-        let answer: number = 0;
-        let latex = "";
-        let description = { sv: "Beräkna.", en: "Calculate." };
-
-        const p = (n: number) => n < 0 ? `(${n})` : `${n}`;
-
-        // --- LEVELS 1 & 2: Add/Sub ---
-        if (mode === 1 || mode === 2) {
-            const range = mode === 1 ? 10 : 50;
-            const min = mode === 1 ? -10 : -20;
-            const numCount = mode === 1 ? rng.intBetween(2, 3) : rng.intBetween(3, 4);
-            
-            let nums: number[] = [];
-            let ops: string[] = [];
-
-            nums.push(rng.intBetween(min, range));
-            
-            for(let i=1; i<numCount; i++) {
-                nums.push(rng.intBetween(min, range));
-                ops.push(rng.pick(['+', '-']));
-            }
-
-            latex = `${nums[0]}`;
-            for(let i=0; i<ops.length; i++) {
-                latex += ` ${ops[i]} ${p(nums[i+1])}`;
-            }
-            latex += " =";
-
-            let runningVal = nums[0];
-            
-            for(let i=0; i<ops.length; i++) {
-                const nextNum = nums[i+1];
-                const op = ops[i];
-                let stepExpl = "";
-                let stepLatex = "";
-
-                if (op === '+') {
-                    if (nextNum < 0) {
-                        stepExpl = "add_neg";
-                        stepLatex = `${runningVal} + (${nextNum}) = ${runningVal} - ${Math.abs(nextNum)}`;
-                        runningVal += nextNum;
-                    } else {
-                        stepExpl = "simple_calc";
-                        stepLatex = `${runningVal} + ${nextNum}`;
-                        runningVal += nextNum;
-                    }
-                } else {
-                    if (nextNum < 0) {
-                        stepExpl = "sub_neg";
-                        stepLatex = `${runningVal} - (${nextNum}) = ${runningVal} + ${Math.abs(nextNum)}`;
-                        runningVal -= nextNum;
-                    } else {
-                        stepExpl = "simple_calc";
-                        stepLatex = `${runningVal} - ${nextNum}`;
-                        runningVal -= nextNum;
-                    }
-                }
-
-                if (stepExpl) {
-                    // Safe access to TERMS
-                    const explText = (TERMS.neg_signs as any)[stepExpl] 
-                        ? t(lang, (TERMS.neg_signs as any)[stepExpl]) 
-                        : "Calculate:";
-                    steps.push({ text: explText, latex: stepLatex });
-                }
-                
-                steps.push({ text: t(lang, TERMS.neg_signs.step_calc), latex: `= ${formatColor(runningVal)}` });
-            }
-            
-            answer = runningVal;
+    generate(level: number, lang: string = 'sv') {
+        switch (level) {
+            case 1: return this.level1_AddSubSimple(lang);
+            case 2: return this.level2_AddSubHard(lang);
+            case 3: return this.level3_Multiplication(lang);
+            case 4: return this.level4_Division(lang);
+            case 5: return this.level5_Mixed(lang);
+            default: return this.level1_AddSubSimple(lang);
         }
+    }
 
-        // --- LEVEL 3: Multiplication ---
-        else if (mode === 3) {
-            const count = rng.intBetween(2, 3);
-            const nums: number[] = [];
-            for(let i=0; i<count; i++) nums.push(rng.intBetween(-10, 10));
-            nums.forEach((n, i) => { if(n===0) nums[i] = 2; });
-
-            latex = nums.map(n => p(n)).join(' \\cdot ') + " =";
-            
-            let runningVal = nums[0];
-            
-            for(let i=1; i<nums.length; i++) {
-                const prev = runningVal;
-                const next = nums[i];
-                const isPrevNeg = prev < 0;
-                const isNextNeg = next < 0;
-                
-                let explKey = "";
-                if (isPrevNeg && isNextNeg) explKey = "mul_neg_neg";
-                else if (isPrevNeg !== isNextNeg) explKey = "mul_pos_neg";
-                else explKey = "simple_calc";
-                
-                runningVal *= next;
-                
-                const explText = (TERMS.neg_signs as any)[explKey] 
-                    ? t(lang, (TERMS.neg_signs as any)[explKey]) 
-                    : "";
-
-                steps.push({ 
-                    text: explText, 
-                    latex: `${p(prev)} \\cdot ${p(next)} = ${formatColor(runningVal)}` 
-                });
-            }
-            answer = runningVal;
-        }
-
-        // --- LEVEL 4: Division ---
-        else { 
-            let b = 0;
-            while(b === 0) b = rng.intBetween(-10, 10);
-            
-            const maxRes = Math.floor(100 / Math.abs(b));
-            let res = 0;
-            while(res === 0) res = rng.intBetween(-maxRes, maxRes);
-            
-            const a = res * b;
-            answer = res;
-            
-            latex = `\\frac{${a}}{${b}} =`;
-
-            const sameSign = (a > 0 && b > 0) || (a < 0 && b < 0);
-            const explKey = sameSign ? "div_sign_same" : "div_sign_diff";
-            
-            steps.push({
-                text: t(lang, (TERMS.neg_signs as any)[explKey]),
-                latex: `${a} / ${b} = ${formatColor(answer)}`
-            });
-        }
+    // Level 1: Simple (-5 + 3, 2 - 8)
+    private level1_AddSubSimple(lang: string) {
+        const start = MathUtils.randomInt(-10, 10);
+        const change = MathUtils.randomInt(1, 10);
+        const op = Math.random() > 0.5 ? '+' : '-';
+        const ans = op === '+' ? start + change : start - change;
 
         return {
-            questionId: `neg-l${level}-${seed}`,
-            renderData: {
-                text_key: "arithmetic", 
-                description: description,
-                latex: latex,
-                answerType: "numeric",
-                variables: {}
+            renderData: { 
+                latex: `${start} ${op} ${change}`, 
+                description: lang === 'sv' ? "Beräkna" : "Calculate", 
+                answerType: 'text' 
             },
-            serverData: {
-                answer: answer,
-                solutionSteps: steps
-            }
+            token: Buffer.from(ans.toString()).toString('base64'),
+            clues: [
+                { text: lang === 'sv' ? "Tänk på en termometer." : "Think of a thermometer." },
+                { 
+                    text: op === '+' 
+                        ? (lang === 'sv' ? "Du går UPPÅT på termometern." : "You move UP the thermometer.") 
+                        : (lang === 'sv' ? "Du går NEDÅT på termometern." : "You move DOWN the thermometer.") 
+                }
+            ]
         };
+    }
+
+    // Level 2: Double signs (5 - (-3))
+    private level2_AddSubHard(lang: string) {
+        const a = MathUtils.randomInt(-10, 10);
+        const b = MathUtils.randomInt(-10, -1); // Negative second number
+        const op = Math.random() > 0.5 ? '+' : '-';
+        const ans = op === '+' ? a + b : a - b;
+
+        return {
+            renderData: { 
+                latex: `${a} ${op} (${b})`, 
+                description: lang === 'sv' ? "Beräkna" : "Calculate", 
+                answerType: 'text' 
+            },
+            token: Buffer.from(ans.toString()).toString('base64'),
+            clues: [
+                { 
+                    text: op === '-' 
+                        ? (lang === 'sv' ? "Två minus blir plus: $(-)$ och $(-)$ blir $(+)$" : "Two minuses become plus: $(-)$ and $(-)$ becomes $(+)$") 
+                        : (lang === 'sv' ? "Plus och minus blir minus." : "Plus and minus becomes minus.")
+                },
+                {
+                    latex: op === '-' ? `${a} + ${Math.abs(b)}` : `${a} - ${Math.abs(b)}`
+                }
+            ]
+        };
+    }
+
+    // Level 3: Multiplication (-5 * -5)
+    private level3_Multiplication(lang: string) {
+        const a = MathUtils.randomInt(2, 9) * (Math.random() > 0.5 ? 1 : -1);
+        const b = MathUtils.randomInt(2, 9) * (Math.random() > 0.5 ? 1 : -1);
+        const ans = a * b;
+
+        return {
+            renderData: { 
+                latex: `${a} \\cdot ${b < 0 ? '('+b+')' : b}`, 
+                description: lang === 'sv' ? "Beräkna" : "Calculate", 
+                answerType: 'text' 
+            },
+            token: Buffer.from(ans.toString()).toString('base64'),
+            clues: [
+                { text: lang === 'sv' ? "Lika tecken ger PLUS. Olika tecken ger MINUS." : "Same signs give PLUS. Different signs give MINUS." }
+            ]
+        };
+    }
+
+    // Level 4: Division
+    private level4_Division(lang: string) {
+        const b = MathUtils.randomInt(2, 9) * (Math.random() > 0.5 ? 1 : -1);
+        const ans = MathUtils.randomInt(2, 9) * (Math.random() > 0.5 ? 1 : -1);
+        const a = b * ans;
+
+        return {
+            renderData: { 
+                latex: `\\frac{${a}}{${b}}`, 
+                description: lang === 'sv' ? "Beräkna" : "Calculate", 
+                answerType: 'text' 
+            },
+            token: Buffer.from(ans.toString()).toString('base64'),
+            clues: [
+                { text: lang === 'sv' ? "Samma regel som multiplikation: Lika tecken (+) och Olika tecken (-)." : "Same rule as multiplication: Same signs (+) and Different signs (-)." }
+            ]
+        };
+    }
+
+    private level5_Mixed(lang: string) {
+        const lvl = MathUtils.randomInt(1, 4);
+        return this.generate(lvl, lang);
     }
 }

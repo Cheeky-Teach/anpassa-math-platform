@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ScaleGenerator } from '../src/core/generators/ScaleGenerator';
+import { ScaleGenerator } from '../src/core/generators/ScaleGen';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
 import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
 import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
-import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
+import { VolumeGenerator } from '../src/core/generators/VolumeGen';
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
 

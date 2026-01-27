@@ -1,264 +1,134 @@
-import { GeneratedQuestion, Clue } from "../types/generator";
-import { Random } from "../utils/random";
-import { TERMS, t, Language } from "../utils/i18n";
+import { MathUtils } from '../utils/MathUtils';
+import { LinearEquationProblemGen } from './LinearEquationProblemGen';
 
-export class LinearEquationGenerator {
-  public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
-    const rng = new Random(seed);
-    const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
+export class LinearEquationGen {
+    private problemGen: LinearEquationProblemGen;
 
-    let mode = level;
-    // Level 7 is now the Mixed Level for drills
-    if (level >= 7) mode = rng.intBetween(1, 4); 
+    constructor() {
+        this.problemGen = new LinearEquationProblemGen();
+    }
 
-    const s = (val: number) => Math.round(val * multiplier);
-    let eq = "", answer = 0, steps: Clue[] = [];
-    let description = { sv: "Lös ekvationen", en: "Solve the equation" };
-
-    // --- LEVEL 1: One-Step Equations ---
-    if (mode === 1) {
-        const type = rng.intBetween(1, 4); 
+    public generate(level: number, lang: string = 'sv'): any {
+        // DELEGATION LOGIC
+        if (level === 5 || level === 6) {
+            return this.problemGen.generate(level, lang);
+        }
         
-        if (type === 1) { // x / k = res
-            const k = rng.intBetween(s(2), s(9));
-            const res = rng.intBetween(s(2), s(10)); 
-            answer = res * k;
-            eq = `\\frac{x}{${k}} = ${res}`;
-            
-            steps = [
-                { text: t(lang, TERMS.algebra.intro(eq)), latex: eq },
-                { text: t(lang, TERMS.algebra.multiply(k)), latex: `x = ${res} \\cdot ${k} = ${formatColor(answer)}` }
-            ];
-        } else if (type === 2) { // k * x = res
-            const k = rng.intBetween(s(2), s(9));
-            const x = rng.intBetween(s(2), s(10));
-            answer = x;
-            const res = k * x;
-            eq = `${k}x = ${res}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.intro(eq)), latex: eq },
-                { text: t(lang, TERMS.algebra.divide(k)), latex: `x = \\frac{${res}}{${k}} = ${formatColor(answer)}` }
-            ];
-        } else if (type === 3) { // x + k = res
-            const k = rng.intBetween(s(1), s(20));
-            const x = rng.intBetween(s(1), s(20));
-            answer = x;
-            eq = `x + ${k} = ${x + k}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.intro(eq)), latex: eq },
-                { text: t(lang, TERMS.algebra.subtract(k)), latex: `x = ${x+k} - ${k} = ${formatColor(answer)}` }
-            ];
-        } else { // x - k = res
-            const k = rng.intBetween(s(1), s(20));
-            const x = rng.intBetween(s(1), s(20));
-            answer = x;
-            eq = `x - ${k} = ${x - k}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.intro(eq)), latex: eq },
-                { text: t(lang, TERMS.algebra.add(k)), latex: `x = ${x-k} + ${k} = ${formatColor(answer)}` }
-            ];
+        if (level === 7) {
+            return this.level7_Mixed(lang);
+        }
+
+        // INTERNAL LOGIC (Levels 1-4)
+        switch (level) {
+            case 1: return this.level1_OneStep(lang);
+            case 2: return this.level2_TwoStep(lang);
+            case 3: return this.level3_Parentheses(lang);
+            case 4: return this.level4_BothSides(lang);
+            default: return this.level1_OneStep(lang);
         }
     }
 
-    // --- LEVEL 2: Two-Step Equations ---
-    // Variations: ax+b=c, ax-b=c, x/a+b=c, x/a-b=c
-    else if (mode === 2) {
-        const type = rng.intBetween(1, 4);
-        const x = rng.intBetween(2, 12); // Solution
+    // --- PROCEDURAL LEVELS (1-4) ---
 
-        if (type === 1) { // ax + b = c
-            const a = rng.intBetween(2, 9);
-            const b = rng.intBetween(1, 15);
-            const c = a * x + b;
-            answer = x;
-            eq = `${a}x + ${b} = ${c}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.subtract(b)), latex: `${a}x = ${c} - ${b} = ${c-b}` },
-                { text: t(lang, TERMS.algebra.divide(a)), latex: `x = \\frac{${c-b}}{${a}} = ${formatColor(answer)}` }
-            ];
-        } 
-        else if (type === 2) { // ax - b = c
-            const a = rng.intBetween(2, 9);
-            const b = rng.intBetween(1, 15);
-            const c = a * x - b;
-            answer = x;
-            eq = `${a}x - ${b} = ${c}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.add(b)), latex: `${a}x = ${c} + ${b} = ${c+b}` },
-                { text: t(lang, TERMS.algebra.divide(a)), latex: `x = \\frac{${c+b}}{${a}} = ${formatColor(answer)}` }
-            ];
+    // Level 1: One-step equations (x + a = b, x - a = b, ax = b, x/a = b)
+    private level1_OneStep(lang: string) {
+        const type = MathUtils.randomInt(0, 3);
+        const x = MathUtils.randomInt(2, 15);
+        let latex = '', answer = x.toString();
+        let clues = [];
+
+        if (type === 0) { // x + a = b
+            const a = MathUtils.randomInt(1, 10);
+            latex = `x + ${a} = ${x + a}`;
+            clues = [{ text: lang === 'sv' ? `Subtrahera ${a} från båda sidor.` : `Subtract ${a} from both sides.`, latex: `x = ${x + a} - ${a}` }];
+        } else if (type === 1) { // x - a = b
+            const a = MathUtils.randomInt(1, 10);
+            latex = `x - ${a} = ${x - a}`;
+            clues = [{ text: lang === 'sv' ? `Addera ${a} till båda sidor.` : `Add ${a} to both sides.`, latex: `x = ${x - a} + ${a}` }];
+        } else if (type === 2) { // ax = b
+            const a = MathUtils.randomInt(2, 9);
+            latex = `${a}x = ${a * x}`;
+            clues = [{ text: lang === 'sv' ? `Dela båda sidor med ${a}.` : `Divide both sides by ${a}.`, latex: `x = \\frac{${a * x}}{${a}}` }];
+        } else { // x/a = b
+            const a = MathUtils.randomInt(2, 9);
+            const b = MathUtils.randomInt(2, 9);
+            const num = b * a; 
+            latex = `\\frac{x}{${a}} = ${b}`;
+            answer = num.toString();
+            clues = [{ text: lang === 'sv' ? `Multiplicera båda sidor med ${a}.` : `Multiply both sides by ${a}.`, latex: `x = ${b} \\cdot ${a}` }];
         }
-        else if (type === 3) { // x/a + b = c
-            const a = rng.intBetween(2, 8);
-            const b = rng.intBetween(1, 10);
-            const realX = x * a; 
-            answer = realX;
-            const c = x + b;
-            eq = `\\frac{x}{${a}} + ${b} = ${c}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.subtract(b)), latex: `\\frac{x}{${a}} = ${c} - ${b} = ${c-b}` },
-                { text: t(lang, TERMS.algebra.multiply(a)), latex: `x = ${c-b} \\cdot ${a} = ${formatColor(answer)}` }
-            ];
-        }
-        else { // x/a - b = c
-            const a = rng.intBetween(2, 8);
-            const b = rng.intBetween(1, 10);
-            const realX = x * a;
-            answer = realX;
-            const c = x - b; 
-            eq = `\\frac{x}{${a}} - ${b} = ${c}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.add(b)), latex: `\\frac{x}{${a}} = ${c} + ${b} = ${c+b}` },
-                { text: t(lang, TERMS.algebra.multiply(a)), latex: `x = ${c+b} \\cdot ${a} = ${formatColor(answer)}` }
-            ];
-        }
+
+        return {
+            renderData: { latex, description: lang === 'sv' ? "Lös ekvationen" : "Solve the equation", answerType: 'text' },
+            token: Buffer.from(answer).toString('base64'),
+            clues
+        };
     }
 
-    // --- LEVEL 3: Parentheses (Moved from Level 4) ---
-    // Variations: a(x+b)=c, a(x-b)=c, a(bx-c)=d, a(bx+c)=d
-    else if (mode === 3) {
-        const type = rng.intBetween(1, 4);
-        const a = rng.intBetween(2, 6);
-        
-        if (type === 1) { // a(x + b) = c
-            const x = rng.intBetween(1, 10);
-            const b = rng.intBetween(1, 9);
-            const c = a * (x + b);
-            answer = x;
-            eq = `${a}(x + ${b}) = ${c}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.distribute(a)), latex: `${a}x + ${a*b} = ${c}` },
-                { text: t(lang, TERMS.algebra.subtract(a*b)), latex: `${a}x = ${c - a*b}` },
-                { text: t(lang, TERMS.algebra.divide(a)), latex: `x = ${formatColor(answer)}` }
-            ];
-        }
-        else if (type === 2) { // a(x - b) = c
-            const x = rng.intBetween(5, 15);
-            const b = rng.intBetween(1, x - 1); 
-            const c = a * (x - b);
-            answer = x;
-            eq = `${a}(x - ${b}) = ${c}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.distribute(a)), latex: `${a}x - ${a*b} = ${c}` },
-                { text: t(lang, TERMS.algebra.add(a*b)), latex: `${a}x = ${c + a*b}` },
-                { text: t(lang, TERMS.algebra.divide(a)), latex: `x = ${formatColor(answer)}` }
-            ];
-        }
-        else if (type === 3) { // a(bx - c) = d
-            const bVar = rng.intBetween(2, 5);
-            const x = rng.intBetween(2, 8);
-            const cVar = rng.intBetween(1, bVar * x - 1);
-            const d = a * (bVar * x - cVar);
-            answer = x;
-            eq = `${a}(${bVar}x - ${cVar}) = ${d}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.distribute(a)), latex: `${a*bVar}x - ${a*cVar} = ${d}` },
-                { text: t(lang, TERMS.algebra.add(a*cVar)), latex: `${a*bVar}x = ${d + a*cVar}` },
-                { text: t(lang, TERMS.algebra.divide(a*bVar)), latex: `x = ${formatColor(answer)}` }
-            ];
-        }
-        else { // a(bx + c) = d
-            const bVar = rng.intBetween(2, 5);
-            const x = rng.intBetween(1, 8);
-            const cVar = rng.intBetween(1, 9);
-            const d = a * (bVar * x + cVar);
-            answer = x;
-            eq = `${a}(${bVar}x + ${cVar}) = ${d}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.distribute(a)), latex: `${a*bVar}x + ${a*cVar} = ${d}` },
-                { text: t(lang, TERMS.algebra.subtract(a*cVar)), latex: `${a*bVar}x = ${d - a*cVar}` },
-                { text: t(lang, TERMS.algebra.divide(a*bVar)), latex: `x = ${formatColor(answer)}` }
-            ];
-        }
+    // Level 2: Two-step equations (ax + b = c)
+    private level2_TwoStep(lang: string) {
+        const x = MathUtils.randomInt(2, 10);
+        const a = MathUtils.randomInt(2, 6);
+        const b = MathUtils.randomInt(1, 15) * (Math.random() > 0.5 ? 1 : -1);
+        const c = a * x + b;
+        const op = b < 0 ? '-' : '+';
+        const bAbs = Math.abs(b);
+
+        return {
+            renderData: { latex: `${a}x ${op} ${bAbs} = ${c}`, description: lang === 'sv' ? "Lös ekvationen" : "Solve the equation", answerType: 'text' },
+            token: Buffer.from(x.toString()).toString('base64'),
+            clues: [
+                { text: lang === 'sv' ? `Få bort konstanten (${b}) först.` : `Get rid of the constant (${b}) first.`, latex: `${a}x = ${c} ${b < 0 ? '+' : '-'} ${bAbs}` },
+                { text: lang === 'sv' ? `Dela nu med koefficienten framför x (${a}).` : `Now divide by the coefficient of x (${a}).`, latex: `x = \\frac{${c - b}}{${a}}` }
+            ]
+        };
     }
 
-    // --- LEVEL 4: X on Both Sides (Moved from Level 3) ---
-    // Constraints: x > 0.
-    // Variations: ax+b=cx+d, ax-b=cx+d, ax+b=cx-d, ax-b=cx-d
-    else if (mode === 4) {
-        const type = rng.intBetween(1, 4);
-        const x = rng.intBetween(1, 10); // x > 0 constraint
-        let a = rng.intBetween(3, 9);
-        let c = rng.intBetween(2, a - 1); // Ensure a > c to keep x positive
-        
-        if (a === c) a++;
-        
-        if (type === 1) { // ax + b = cx + d
-            const b = rng.intBetween(1, 15);
-            const d = a*x + b - c*x;
-            if (d <= 0) return LinearEquationGenerator.generate(level, seed + "retry", lang, multiplier);
+    // Level 3: Parentheses a(x + b) = c
+    private level3_Parentheses(lang: string) {
+        const x = MathUtils.randomInt(2, 8);
+        const a = MathUtils.randomInt(2, 5);
+        const b = MathUtils.randomInt(1, 5) * (Math.random() > 0.5 ? 1 : -1);
+        const rhs = a * (x + b);
+        const op = b < 0 ? '-' : '+';
 
-            answer = x;
-            eq = `${a}x + ${b} = ${c}x + ${d}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.sub_var(`${c}x`)), latex: `${a-c}x + ${b} = ${d}` },
-                { text: t(lang, TERMS.algebra.subtract(b)), latex: `${a-c}x = ${d-b}` },
-                { text: t(lang, TERMS.algebra.divide(a-c)), latex: `x = ${formatColor(answer)}` }
-            ];
-        }
-        else if (type === 2) { // ax - b = cx + d
-            const b = rng.intBetween(1, 15);
-            const d = a*x - b - c*x;
-            if (d <= 0) return LinearEquationGenerator.generate(level, seed + "retry", lang, multiplier);
-
-            answer = x;
-            eq = `${a}x - ${b} = ${c}x + ${d}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.sub_var(`${c}x`)), latex: `${a-c}x - ${b} = ${d}` },
-                { text: t(lang, TERMS.algebra.add(b)), latex: `${a-c}x = ${d+b}` },
-                { text: t(lang, TERMS.algebra.divide(a-c)), latex: `x = ${formatColor(answer)}` }
-            ];
-        }
-        else if (type === 3) { // ax + b = cx - d
-            const temp = a; a = c; c = temp; // Swap so c > a (negative x term on left, or we solve differently)
-            // Wait, if we want a positive answer with form ax + b = cx - d, then cx - d > b.
-            // Also ax < cx.
-            
-            const b = rng.intBetween(1, 15);
-            const d = c*x - a*x - b;
-            
-            if (d <= 0) return LinearEquationGenerator.generate(level, seed + "retry", lang, multiplier);
-
-            answer = x;
-            eq = `${a}x + ${b} = ${c}x - ${d}`;
-            // Move ax to right: b + d = (c-a)x
-            steps = [
-                { text: t(lang, TERMS.algebra.sub_var(`${a}x`)), latex: `${b} = ${c-a}x - ${d}` },
-                { text: t(lang, TERMS.algebra.add(d)), latex: `${b+d} = ${c-a}x` },
-                { text: t(lang, TERMS.algebra.divide(c-a)), latex: `x = ${formatColor(answer)}` }
-            ];
-        }
-        else { // ax - b = cx - d
-            if (a < c) { const t = a; a = c; c = t; }
-            
-            const b = rng.intBetween(5, 20);
-            const d = b - (a*x - c*x);
-            
-            if (d <= 0) return LinearEquationGenerator.generate(level, seed + "retry", lang, multiplier);
-
-            answer = x;
-            eq = `${a}x - ${b} = ${c}x - ${d}`;
-            steps = [
-                { text: t(lang, TERMS.algebra.sub_var(`${c}x`)), latex: `${a-c}x - ${b} = -${d}` },
-                { text: t(lang, TERMS.algebra.add(b)), latex: `${a-c}x = ${b} - ${d} = ${b-d}` },
-                { text: t(lang, TERMS.algebra.divide(a-c)), latex: `x = ${formatColor(answer)}` }
-            ];
-        }
+        return {
+            renderData: { latex: `${a}(x ${op} ${Math.abs(b)}) = ${rhs}`, description: lang === 'sv' ? "Lös ekvationen" : "Solve the equation", answerType: 'text' },
+            token: Buffer.from(x.toString()).toString('base64'),
+            clues: [
+                { text: lang === 'sv' ? "Multiplicera in i parentesen." : "Multiply into the parentheses (distribute).", latex: `${a}x ${a * b < 0 ? '-' : '+'} ${Math.abs(a * b)} = ${rhs}` },
+                { text: lang === 'sv' ? "Nu har du en vanlig ekvation. Lös ut x." : "Now you have a standard equation. Solve for x." }
+            ]
+        };
     }
 
-    return {
-        questionId: `leq-l${level}-${seed}`,
-        renderData: {
-            text_key: "solve_eq",
-            description: description,
-            latex: eq,
-            answerType: "numeric",
-            variables: {}
-        },
-        serverData: {
-            answer: answer,
-            solutionSteps: steps
+    // Level 4: Variables on both sides (ax + b = cx + d)
+    private level4_BothSides(lang: string) {
+        const x = MathUtils.randomInt(2, 8);
+        const c = MathUtils.randomInt(2, 5); // Smaller x coefficient
+        const a = c + MathUtils.randomInt(1, 4); // Larger x coefficient
+        const b = MathUtils.randomInt(1, 10);
+        const d = (a * x + b) - (c * x);
+
+        return {
+            renderData: { latex: `${a}x + ${b} = ${c}x + ${d}`, description: lang === 'sv' ? "Lös ekvationen" : "Solve the equation", answerType: 'text' },
+            token: Buffer.from(x.toString()).toString('base64'),
+            clues: [
+                { text: lang === 'sv' ? `Samla alla x på ena sidan (subtrahera ${c}x).` : `Gather all x's on one side (subtract ${c}x).`, latex: `${a - c}x + ${b} = ${d}` },
+                { text: lang === 'sv' ? "Flytta över konstanterna och lös ut x." : "Move constants to the other side and solve." }
+            ]
+        };
+    }
+
+    // Level 7: Mixed (Procedural + Word Problems)
+    private level7_Mixed(lang: string) {
+        // 80% chance of procedural, 20% chance of word problem
+        if (Math.random() > 0.8) {
+            const lvl = MathUtils.randomInt(5, 6);
+            return this.problemGen.generate(lvl, lang);
+        } else {
+            const lvl = MathUtils.randomInt(1, 4);
+            return this.generate(lvl, lang);
         }
-    };
-  }
+    }
 }

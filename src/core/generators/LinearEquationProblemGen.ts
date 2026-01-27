@@ -1,227 +1,64 @@
-import { GeneratedQuestion, Clue } from "../types/generator";
-import { Random } from "../utils/random";
-import { TERMS, t, Language } from "../utils/i18n";
-import { TextEngine, ContextKey, CONTEXTS } from "../utils/textEngine";
-
-interface ProblemScenario {
-    id: string;
-    type: 'A' | 'B' | 'C' | 'D';
-    logic: (rng: Random) => MathData;
-    templates: { sv: string, en: string }[];
-    context: ContextKey;
-}
-
-interface MathData {
-    vars: Record<string, number>; // Constants a, b, c
-    solution: number; // x
-    equation: string;
-    stepsSolve: (lang: Language, formatColor: (v:any)=>string) => Clue[];
-    stepsWrite: (lang: Language, formatColor: (v:any)=>string) => Clue[];
-}
+import { MathUtils } from '../utils/MathUtils';
 
 export class LinearEquationProblemGen {
-    
-    private static getScenarios(): ProblemScenario[] {
-        return [
-            // --- TYPE A: ax + b = c (Shopping/Taxi) ---
-            {
-                id: 'shopping_bag',
-                type: 'A',
-                context: 'shopping',
-                templates: [ TERMS.problem_solving.a_buy ],
-                logic: (rng) => {
-                    const x = rng.intBetween(3, 15); 
-                    const a = rng.intBetween(5, 25); 
-                    const b = rng.pick([2, 5, 10]); 
-                    const c = a * x + b;
-                    
-                    // x IS NOT PASSED in vars to prevent auto-replacement in text
-                    return {
-                        vars: { a, b, c }, 
-                        solution: x,
-                        equation: `${a}x + ${b} = ${c}`,
-                        stepsWrite: (lang, fc) => [
-                            { text: t(lang, TERMS.problem_solving.clue_var), latex: "x" },
-                            { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `\\text{Pris} \\cdot \\text{Antal} = ${a} \\cdot x = ${a}x` },
-                            { text: t(lang, TERMS.problem_solving.expl_fixed_val), latex: `+ ${b}` },
-                            { text: t(lang, TERMS.problem_solving.clue_total), latex: `${a}x + ${b} = ${c}` }
-                        ],
-                        stepsSolve: (lang, fc) => [
-                            { text: t(lang, TERMS.common.equation), latex: `${a}x + ${b} = ${c}` },
-                            { text: t(lang, TERMS.algebra.subtract(b)), latex: `${a}x = ${c - b} = ${c - b}` },
-                            { text: t(lang, TERMS.algebra.divide(a)), latex: `x = \\frac{${c - b}}{${a}} = ${fc(x)}` }
-                        ]
-                    };
-                }
-            },
-            {
-                id: 'taxi',
-                type: 'A',
-                context: 'shopping',
-                templates: [ TERMS.problem_solving.a_taxi ],
-                logic: (rng) => {
-                    const x = rng.intBetween(5, 30); 
-                    const a = rng.intBetween(10, 50); 
-                    const b = rng.pick([45, 50, 75, 100]); 
-                    const c = a * x + b;
-                    return {
-                        vars: { a, b, c },
-                        solution: x,
-                        equation: `${a}x + ${b} = ${c}`,
-                        stepsWrite: (lang, fc) => [
-                             { text: t(lang, TERMS.problem_solving.clue_var), latex: "x" },
-                             { text: t(lang, TERMS.problem_solving.expl_rate_val), latex: `${a} \\cdot x` },
-                             { text: t(lang, TERMS.problem_solving.expl_fixed_val), latex: `+ ${b}` },
-                             { text: t(lang, TERMS.problem_solving.clue_total), latex: `${a}x + ${b} = ${c}` }
-                        ],
-                        stepsSolve: (lang, fc) => [
-                            { text: t(lang, TERMS.common.equation), latex: `${a}x + ${b} = ${c}` },
-                            { text: t(lang, TERMS.algebra.subtract(b)), latex: `${a}x = ${c - b}` },
-                            { text: t(lang, TERMS.algebra.divide(a)), latex: `x = ${fc(x)}` }
-                        ]
-                    };
-                }
-            },
-
-            // --- TYPE B: ax - b = c (Discount) ---
-            {
-                id: 'shopping_discount',
-                type: 'B',
-                context: 'shopping',
-                templates: [ TERMS.problem_solving.b_discount ],
-                logic: (rng) => {
-                    const x = rng.intBetween(2, 10); 
-                    const a = rng.intBetween(50, 200); 
-                    const b = rng.pick([20, 50, 100]); 
-                    const c = a * x - b;
-                    return {
-                        vars: { a, b, c }, // x excluded
-                        solution: x,
-                        equation: `${a}x - ${b} = ${c}`,
-                        stepsWrite: (lang, fc) => [
-                            { text: t(lang, TERMS.problem_solving.clue_var), latex: "x" },
-                            { text: t(lang, TERMS.problem_solving.expl_item_cost), latex: `${a}x` },
-                            { text: t(lang, TERMS.problem_solving.expl_discount_sub), latex: `-${b}` },
-                            { text: t(lang, TERMS.problem_solving.clue_total), latex: `${a}x - ${b} = ${c}` }
-                        ],
-                        stepsSolve: (lang, fc) => [
-                            { text: t(lang, TERMS.common.equation), latex: `${a}x - ${b} = ${c}` },
-                            { text: t(lang, TERMS.algebra.add(b)), latex: `${a}x = ${c + b}` },
-                            { text: t(lang, TERMS.algebra.divide(a)), latex: `x = ${fc(x)}` }
-                        ]
-                    };
-                }
-            },
-
-            // --- TYPE C: x + (x + a) = c (Comparison Sum) ---
-            {
-                id: 'compare_sum',
-                type: 'C',
-                context: 'hobbies',
-                templates: [ TERMS.problem_solving.c_compare ],
-                logic: (rng) => {
-                    const x = rng.intBetween(5, 20); 
-                    const a = rng.intBetween(2, 10); 
-                    const total = x + (x + a);
-                    return {
-                        vars: { a, c: total }, // x excluded
-                        solution: x,
-                        equation: `2x + ${a} = ${total}`,
-                        stepsWrite: (lang, fc) => [
-                            { text: t(lang, TERMS.problem_solving.expl_person1), latex: "x" },
-                            { text: t(lang, TERMS.problem_solving.expl_person2_more), latex: `x + ${a}` },
-                            { text: t(lang, TERMS.problem_solving.expl_compare_sum), latex: `x + (x + ${a}) = ${total}` },
-                            { text: t(lang, TERMS.common.simplify), latex: `2x + ${a} = ${total}` }
-                        ],
-                        stepsSolve: (lang, fc) => [
-                            { text: t(lang, TERMS.common.equation), latex: `2x + ${a} = ${total}` },
-                            { text: t(lang, TERMS.algebra.subtract(a)), latex: `2x = ${total - a}` },
-                            { text: t(lang, TERMS.algebra.divide(2)), latex: `x = ${fc(x)}` }
-                        ]
-                    };
-                }
-            },
-
-            // --- TYPE D: x + (x - b) = c (Comparison Diff) ---
-            {
-                id: 'compare_diff',
-                type: 'D',
-                context: 'hobbies',
-                templates: [ TERMS.problem_solving.d_compare ],
-                logic: (rng) => {
-                    const x = rng.intBetween(10, 30); 
-                    const b = rng.intBetween(2, 8);   
-                    const total = x + (x - b);
-                    return {
-                        vars: { b, c: total }, // x excluded
-                        solution: x,
-                        equation: `2x - ${b} = ${total}`,
-                        stepsWrite: (lang, fc) => [
-                            { text: t(lang, TERMS.problem_solving.expl_person1), latex: "x" },
-                            { text: t(lang, TERMS.problem_solving.expl_person2_less), latex: `x - ${b}` },
-                            { text: t(lang, TERMS.problem_solving.expl_compare_sum), latex: `x + (x - ${b}) = ${total}` },
-                            { text: t(lang, TERMS.common.simplify), latex: `2x - ${b} = ${total}` }
-                        ],
-                        stepsSolve: (lang, fc) => [
-                            { text: t(lang, TERMS.common.equation), latex: `2x - ${b} = ${total}` },
-                            { text: t(lang, TERMS.algebra.add(b)), latex: `2x = ${total + b}` },
-                            { text: t(lang, TERMS.algebra.divide(2)), latex: `x = ${fc(x)}` }
-                        ]
-                    };
-                }
-            }
-        ];
+    public generate(level: number, lang: string = 'sv') {
+        switch (level) {
+            case 5: return this.level5_WordProblemsWrite(lang);
+            case 6: return this.level6_WordProblemsSolve(lang);
+            default: return this.level5_WordProblemsWrite(lang);
+        }
     }
 
-    public static generate(level: number, seed: string, lang: Language = 'sv'): GeneratedQuestion {
-        const rng = new Random(seed);
-        const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
-
-        const scenarios = this.getScenarios();
-        const scenario = rng.pick(scenarios);
+    // Level 5: Word Problems (Write Equation)
+    // Focus: Translating text to mathematical notation without solving
+    private level5_WordProblemsWrite(lang: string) {
+        const x = MathUtils.randomInt(2, 10);
+        const add = MathUtils.randomInt(2, 9);
+        const sum = x + add;
         
-        // Generate math - x is NOT in math.vars
-        const math = scenario.logic(rng);
+        // Scenario: "I think of a number..."
+        const textSV = `Om jag tänker på ett tal (x) och lägger till ${add} får jag ${sum}. Skriv ekvationen.`;
+        const textEN = `If I think of a number (x) and add ${add}, I get ${sum}. Write the equation.`;
         
-        const rawTemplateObj = rng.pick(scenario.templates);
-        let text = t(lang, rawTemplateObj);
+        // We expect the student to write the full equation
+        const expected = `x+${add}=${sum}`; 
 
-        // Replace math variables ($a$, $b$, $c$)
-        Object.entries(math.vars).forEach(([key, val]) => {
-            text = text.replace(new RegExp(`\\$${key}\\$`, 'g'), `$${val}$`);
-            text = text.replace(new RegExp(`\\$${key}`, 'g'), `$${val}`);
-        });
-
-        // Replace Context
-        const ctxData = CONTEXTS[scenario.context];
-        if (ctxData) {
-            const itemObj = rng.pick(ctxData.items);
-            const itemStr = t(lang, itemObj);
-            const name1 = rng.pick(ctxData.people);
-            let name2 = rng.pick(ctxData.people);
-            while (name1 === name2) name2 = rng.pick(ctxData.people);
-
-            text = text.replace(/{item}/g, itemStr);
-            text = text.replace(/{name1}/g, name1);
-            text = text.replace(/{name2}/g, name2);
-        }
-
-        const isWriteMode = level === 5;
-        const taskText = isWriteMode ? t(lang, TERMS.problem_solving.task_write) : t(lang, TERMS.problem_solving.task_solve);
-        
         return {
-            questionId: `prob-l${level}-${seed}`,
-            renderData: {
-                text_key: "problem_solving",
-                description: `${text} ${taskText}`,
-                latex: "",
-                answerType: isWriteMode ? 'text' : 'numeric', 
-                variables: {}
+            renderData: { 
+                latex: "", // No latex displayed initially, it's a text problem
+                description: lang === 'sv' ? textSV : textEN, 
+                answerType: 'text' 
             },
-            serverData: {
-                answer: isWriteMode ? math.equation : math.solution,
-                solutionSteps: isWriteMode ? math.stepsWrite(lang, formatColor) : math.stepsSolve(lang, formatColor)
-            }
+            token: Buffer.from(expected).toString('base64'),
+            clues: [
+                { text: lang === 'sv' ? "\"Lägger till\" betyder plus (+)." : "\"Add\" means plus (+)." },
+                { text: lang === 'sv' ? "Resultatet \"får jag\" betyder likamedtecken (=)." : "The result \"I get\" means equals sign (=)." }
+            ]
+        };
+    }
+
+    // Level 6: Word Problems (Solve)
+    // Focus: Modeling a problem and finding the value
+    private level6_WordProblemsSolve(lang: string) {
+        const x = MathUtils.randomInt(2, 10);
+        const factor = MathUtils.randomInt(2, 5);
+        const prod = x * factor;
+
+        // Scenario: "Multiplication..."
+        const textSV = `Ett tal multiplicerat med ${factor} blir ${prod}. Vilket är talet?`;
+        const textEN = `A number multiplied by ${factor} becomes ${prod}. What is the number?`;
+
+        return {
+            renderData: { 
+                latex: "", 
+                description: lang === 'sv' ? textSV : textEN, 
+                answerType: 'text' 
+            },
+            token: Buffer.from(x.toString()).toString('base64'),
+            clues: [
+                { text: lang === 'sv' ? `Teckna ekvationen: ${factor}x = ${prod}` : `Write the equation: ${factor}x = ${prod}` },
+                { text: lang === 'sv' ? `Dela med ${factor} för att få svaret.` : `Divide by ${factor} to get the answer.` }
+            ]
         };
     }
 }
