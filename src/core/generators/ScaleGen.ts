@@ -1,7 +1,7 @@
 import { MathUtils } from '../utils/MathUtils';
 
 export class ScaleGen {
-    public generate(level: number, lang: string = 'sv') {
+    public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
             case 1: return this.level1_Concepts(lang);
             case 2: return this.level2_CalcLengthSimple(lang);
@@ -15,7 +15,7 @@ export class ScaleGen {
     }
 
     // --- Level 1: Concepts (What does 1:100 mean?) ---
-    private level1_Concepts(lang: string) {
+    private level1_Concepts(lang: string): any {
         const scale = MathUtils.randomChoice([10, 50, 100, 1000]);
         const isReduction = Math.random() > 0.5;
         
@@ -64,7 +64,7 @@ export class ScaleGen {
     }
 
     // --- Level 2: Simple Length Calc (Integer Multipliers) ---
-    private level2_CalcLengthSimple(lang: string) {
+    private level2_CalcLengthSimple(lang: string): any {
         const scale = MathUtils.randomChoice([2, 3, 4, 5, 10]);
         const imgVal = MathUtils.randomInt(2, 12);
         const realVal = imgVal * scale;
@@ -93,7 +93,7 @@ export class ScaleGen {
     }
 
     // --- Level 3: Harder Length (Decimals/Map) ---
-    private level3_CalcLengthHard(lang: string) {
+    private level3_CalcLengthHard(lang: string): any {
         const scale = MathUtils.randomChoice([1000, 5000, 10000, 50000]);
         const cm = MathUtils.randomInt(2, 15); // Map distance in cm
         const realCm = cm * scale;
@@ -122,7 +122,7 @@ export class ScaleGen {
     }
 
     // --- Level 4: Determine Scale (Visual Comparison) ---
-    private level4_DetermineScale(lang: string) {
+    private level4_DetermineScale(lang: string): any {
         const factor = MathUtils.randomChoice([2, 3, 4, 5]);
         const base = MathUtils.randomInt(2, 8);
         const enlarged = base * factor;
@@ -153,7 +153,7 @@ export class ScaleGen {
     }
 
     // --- Level 5: No Pictures (Word Problems) ---
-    private level5_NoPictures(lang: string) {
+    private level5_NoPictures(lang: string): any {
         // "A tower is 50m high. A model is 25cm high. What is the scale?"
         const hRealM = MathUtils.randomChoice([20, 50, 100]);
         const ratio = MathUtils.randomChoice([100, 200]); // Scale 1:100 or 1:200
@@ -179,7 +179,7 @@ export class ScaleGen {
     }
 
     // --- Level 6: Area Scale (Squared Relationship) ---
-    private level6_AreaScale(lang: string) {
+    private level6_AreaScale(lang: string): any {
         // Length scale L: 1:3 -> Area Scale A: 1:9
         const L = MathUtils.randomInt(2, 5); 
         const A = L * L;
@@ -211,7 +211,7 @@ export class ScaleGen {
     }
 
     // --- Level 7: Mixed ---
-    private level7_Mixed(lang: string) {
+    private level7_Mixed(lang: string): any {
         const lvl = MathUtils.randomInt(2, 6);
         return this.generate(lvl, lang);
     }

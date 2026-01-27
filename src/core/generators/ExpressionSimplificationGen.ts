@@ -1,7 +1,7 @@
 import { MathUtils } from '../utils/MathUtils';
 
 export class ExpressionSimplificationGen {
-    public generate(level: number, lang: string = 'sv') {
+    public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
             case 1: return this.level1_CombineTerms(lang);
             case 2: return this.level2_Parentheses(lang);
@@ -15,7 +15,7 @@ export class ExpressionSimplificationGen {
 
     // --- LEVEL 1: Combine Like Terms ---
     // Ex: 3x + 5 + 2x - 3 -> 5x + 2
-    private level1_CombineTerms(lang: string) {
+    private level1_CombineTerms(lang: string): any {
         const x1 = MathUtils.randomInt(2, 9);
         const x2 = MathUtils.randomInt(1, 9) * (Math.random() > 0.5 ? 1 : -1);
         const c1 = MathUtils.randomInt(1, 10);
@@ -57,7 +57,7 @@ export class ExpressionSimplificationGen {
 
     // --- LEVEL 2: Parentheses (Distribution) ---
     // Ex: 3(x + 2) -> 3x + 6
-    private level2_Parentheses(lang: string) {
+    private level2_Parentheses(lang: string): any {
         const a = MathUtils.randomInt(2, 9);
         const b = MathUtils.randomInt(1, 9);
         const op = Math.random() > 0.5 ? '+' : '-';
@@ -84,7 +84,7 @@ export class ExpressionSimplificationGen {
 
     // --- LEVEL 3: Distribute & Simplify ---
     // Ex: 2(x + 3) + 4x -> 6x + 6
-    private level3_DistributeAndSimplify(lang: string) {
+    private level3_DistributeAndSimplify(lang: string): any {
         const a = MathUtils.randomInt(2, 5);
         const b = MathUtils.randomInt(1, 5);
         const extraX = MathUtils.randomInt(2, 6);
@@ -113,7 +113,7 @@ export class ExpressionSimplificationGen {
 
     // --- LEVEL 4: Subtracting Parentheses ---
     // Ex: 5x - (2x + 3) -> 3x - 3
-    private level4_SubtractParentheses(lang: string) {
+    private level4_SubtractParentheses(lang: string): any {
         const startX = MathUtils.randomInt(5, 12);
         const subX = MathUtils.randomInt(1, startX - 1); // Ensure positive x result
         const b = MathUtils.randomInt(1, 9);
@@ -145,7 +145,7 @@ export class ExpressionSimplificationGen {
     }
 
     // --- LEVEL 5: Word Problems ---
-    private level5_WordProblems(lang: string) {
+    private level5_WordProblems(lang: string): any {
         const types = ['geometry', 'apples', 'age'];
         const type = MathUtils.randomChoice(types);
 
@@ -189,7 +189,7 @@ export class ExpressionSimplificationGen {
     }
 
     // --- LEVEL 6: Mixed ---
-    private level6_Mixed(lang: string) {
+    private level6_Mixed(lang: string): any {
         const lvl = MathUtils.randomInt(1, 4);
         return this.generate(lvl, lang);
     }

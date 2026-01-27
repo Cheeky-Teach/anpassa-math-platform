@@ -1,7 +1,7 @@
 import { MathUtils } from '../utils/MathUtils';
 
 export class NegativeNumbersGen {
-    generate(level: number, lang: string = 'sv') {
+    public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
             case 1: return this.level1_AddSubSimple(lang);
             case 2: return this.level2_AddSubHard(lang);
@@ -13,7 +13,7 @@ export class NegativeNumbersGen {
     }
 
     // Level 1: Simple (-5 + 3, 2 - 8)
-    private level1_AddSubSimple(lang: string) {
+    private level1_AddSubSimple(lang: string): any {
         const start = MathUtils.randomInt(-10, 10);
         const change = MathUtils.randomInt(1, 10);
         const op = Math.random() > 0.5 ? '+' : '-';
@@ -38,7 +38,7 @@ export class NegativeNumbersGen {
     }
 
     // Level 2: Double signs (5 - (-3))
-    private level2_AddSubHard(lang: string) {
+    private level2_AddSubHard(lang: string): any {
         const a = MathUtils.randomInt(-10, 10);
         const b = MathUtils.randomInt(-10, -1); // Negative second number
         const op = Math.random() > 0.5 ? '+' : '-';
@@ -65,7 +65,7 @@ export class NegativeNumbersGen {
     }
 
     // Level 3: Multiplication (-5 * -5)
-    private level3_Multiplication(lang: string) {
+    private level3_Multiplication(lang: string): any {
         const a = MathUtils.randomInt(2, 9) * (Math.random() > 0.5 ? 1 : -1);
         const b = MathUtils.randomInt(2, 9) * (Math.random() > 0.5 ? 1 : -1);
         const ans = a * b;
@@ -84,7 +84,7 @@ export class NegativeNumbersGen {
     }
 
     // Level 4: Division
-    private level4_Division(lang: string) {
+    private level4_Division(lang: string): any {
         const b = MathUtils.randomInt(2, 9) * (Math.random() > 0.5 ? 1 : -1);
         const ans = MathUtils.randomInt(2, 9) * (Math.random() > 0.5 ? 1 : -1);
         const a = b * ans;
@@ -102,7 +102,7 @@ export class NegativeNumbersGen {
         };
     }
 
-    private level5_Mixed(lang: string) {
+    private level5_Mixed(lang: string): any {
         const lvl = MathUtils.randomInt(1, 4);
         return this.generate(lvl, lang);
     }

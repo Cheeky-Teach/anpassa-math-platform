@@ -1,7 +1,7 @@
 import { MathUtils } from '../utils/MathUtils';
 
 export class TenPowersGen {
-    generate(level: number, lang: string = 'sv') {
+    public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
             case 1: return this.level1_MultDivBig(lang);
             case 2: return this.level2_Concepts(lang);
@@ -11,7 +11,7 @@ export class TenPowersGen {
     }
 
     // Level 1: Mult/Div by 10, 100, 1000
-    private level1_MultDivBig(lang: string) {
+    private level1_MultDivBig(lang: string): any {
         const isMult = Math.random() > 0.5;
         const base = MathUtils.randomFloat(1.1, 99.9, 1);
         const power = MathUtils.randomChoice([10, 100, 1000]);
@@ -47,7 +47,7 @@ export class TenPowersGen {
     }
 
     // Level 2: Conceptual (Multiple Choice)
-    private level2_Concepts(lang: string) {
+    private level2_Concepts(lang: string): any {
         // Concept: 10^3 = 1000, 10^-2 = 0.01
         const power = MathUtils.randomInt(-3, 4);
         if (power === 0) return this.level2_Concepts(lang); // Skip 0 for now to keep it interesting
@@ -90,7 +90,7 @@ export class TenPowersGen {
     }
 
     // Level 3: Decimal Factors (0.1, 0.01)
-    private level3_Decimals(lang: string) {
+    private level3_Decimals(lang: string): any {
         const base = MathUtils.randomInt(5, 500);
         const factor = MathUtils.randomChoice([0.1, 0.01, 0.001]);
         

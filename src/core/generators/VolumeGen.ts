@@ -1,7 +1,7 @@
 import { MathUtils } from '../utils/MathUtils';
 
 export class VolumeGen {
-    public generate(level: number, lang: string = 'sv') {
+    public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
             case 1: return this.level1_Cuboid(lang);
             case 2: return this.level2_TriPrism(lang);
@@ -15,7 +15,7 @@ export class VolumeGen {
     }
 
     // Level 1: Rectangular Prism (Cuboid) & Cube
-    private level1_Cuboid(lang: string) {
+    private level1_Cuboid(lang: string): any {
         const w = MathUtils.randomInt(2, 10);
         const d = MathUtils.randomInt(2, 10);
         const h = MathUtils.randomInt(2, 10);
@@ -39,7 +39,7 @@ export class VolumeGen {
     }
 
     // Level 2: Triangular Prism
-    private level2_TriPrism(lang: string) {
+    private level2_TriPrism(lang: string): any {
         const b = MathUtils.randomInt(3, 10);
         const hTri = MathUtils.randomInt(2, 8); // Height of triangle base
         const len = MathUtils.randomInt(5, 15); // Length of prism
@@ -63,7 +63,7 @@ export class VolumeGen {
     }
 
     // Level 3: Cylinder
-    private level3_Cylinder(lang: string) {
+    private level3_Cylinder(lang: string): any {
         const r = MathUtils.randomInt(2, 6);
         const h = MathUtils.randomInt(5, 15);
         // Approximation for input simplicity
@@ -89,7 +89,7 @@ export class VolumeGen {
     }
 
     // Level 4: Pyramid & Cone
-    private level4_PyramidCone(lang: string) {
+    private level4_PyramidCone(lang: string): any {
         const isCone = Math.random() > 0.5;
         
         if (isCone) {
@@ -127,7 +127,7 @@ export class VolumeGen {
     }
 
     // Level 5: Sphere
-    private level5_Sphere(lang: string) {
+    private level5_Sphere(lang: string): any {
         const r = MathUtils.randomInt(3, 15); // Use integers divisible by 3 for cleaner math? No, just round.
         // V = 4 * pi * r^3 / 3
         const vol = Math.round((4 * Math.PI * Math.pow(r, 3)) / 3);
@@ -144,12 +144,12 @@ export class VolumeGen {
     }
 
     // Level 6: Mixed
-    private level6_Mixed(lang: string) {
+    private level6_Mixed(lang: string): any {
         return this.generate(MathUtils.randomInt(1, 5), lang);
     }
 
     // Level 7: Units Conversion Logic
-    private level7_Units(lang: string) {
+    private level7_Units(lang: string): any {
         // Example: Cube with side 10cm. Answer in Liters.
         const sideCm = 10;
         const volCm3 = 1000;
