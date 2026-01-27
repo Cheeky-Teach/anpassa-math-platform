@@ -1,121 +1,89 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ScaleGenerator } from '../src/core/generators/ScaleGen';
+import { LinearEquationGen } from '../src/core/generators/LinearEquationGen';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
-import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
-import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
-import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
-import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
-import { VolumeGenerator } from '../src/core/generators/VolumeGen';
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
+import { TenPowersGen } from '../src/core/generators/TenPowersGen';
+import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
+import { ScaleGen } from '../src/core/generators/ScaleGen';
+import { VolumeGen } from '../src/core/generators/VolumeGen';
+import { SimilarityGen } from '../src/core/generators/SimilarityGen';
+import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
 
-// Helper to format answers for display in the grid
-function formatAnswer(answer: any): string {
-    try {
-        if (typeof answer === 'object' && answer !== null) {
-            if ('k' in answer && 'm' in answer) {
-                const { k, m } = answer;
-                const mStr = m >= 0 ? `+ ${m}` : `- ${Math.abs(m)}`;
-                return `y = ${k}x ${mStr}`; 
-            }
-            if ('left' in answer && 'right' in answer) {
-                return `${answer.left}:${answer.right}`; 
-            }
-            return JSON.stringify(answer);
-        }
-        return String(answer);
-    } catch (e) {
-        return String(answer);
+// Helper to get generator instance
+const getGenerator = (topic: string) => {
+    switch (topic) {
+        case 'equation': return new LinearEquationGen();
+        case 'simplify': return new ExpressionSimplificationGen();
+        case 'geometry': return new GeometryGenerator();
+        case 'scale': return new ScaleGen();
+        case 'volume': return new VolumeGen();
+        case 'similarity': return new SimilarityGen();
+        case 'arithmetic': return new BasicArithmeticGen();
+        case 'negative': return new NegativeNumbersGen();
+        case 'ten_powers': return new TenPowersGen();
+        case 'graph': return new LinearGraphGenerator();
+        default: return null;
     }
-}
+};
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: "Method not allowed. Use POST." });
+    }
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+    const { config, lang } = req.body; // config is array of { topic, level }
 
-  try {
-      const { config, lang = 'sv' } = req.body;
-      const generatedQuestions: any[] = [];
-      const timestamp = Date.now();
+    if (!config || !Array.isArray(config)) {
+        return res.status(400).json({ error: "Invalid config format." });
+    }
 
-      if (Array.isArray(config)) {
-          // Iterate through the array. 
-          // The frontend now ensures this array has 6 items to fill the grid.
-          for (let i = 0; i < config.length; i++) {
-              const item = config[i];
-              const { topic, level } = item;
-              
-              // Seed includes index 'i' to guarantee uniqueness even if same topic/level is requested multiple times
-              const seed = `batch-${timestamp}-${topic}-${level}-${i}`;
-              const lvl = Number(level);
+    const language = (lang as string) || 'sv';
+    const results = [];
 
-              try {
-                  let qData: any = null;
+    try {
+        for (const item of config) {
+            const { topic, level } = item;
+            const generator = getGenerator(topic);
 
-                  switch (topic) {
-                      case 'arithmetic': qData = BasicArithmeticGen.generate(lvl, seed, lang as any); break;
-                      case 'negative': qData = NegativeNumbersGen.generate(lvl, seed, lang as any); break;
-                      case 'equation': 
-                          // FIXED: Route BOTH Level 5 and 6 (Word Problems) to the correct generator
-                          if (lvl === 5 || lvl === 6) {
-                              qData = LinearEquationProblemGen.generate(lvl, seed, lang as any);
-                          } else {
-                              qData = LinearEquationGenerator.generate(lvl, seed, lang as any); 
-                          }
-                          break;
-                      case 'geometry': qData = GeometryGenerator.generate(lvl, seed, lang as any); break;
-                      case 'volume': qData = VolumeGenerator.generate(lvl, seed, lang as any); break;
-                      case 'graph': qData = LinearGraphGenerator.generate(lvl, seed, lang as any); break;
-                      case 'simplify': 
-                          // Simplification generator check
-                          qData = ExpressionSimplificationGen.generate(lvl, seed, lang as any); 
-                          break;
-                      default: qData = ScaleGenerator.generate(lvl, seed, lang as any); break;
-                  }
+            if (generator) {
+                const questionData = generator.generate(parseInt(level), language);
+                
+                // Add display answer for the key
+                let displayAnswer = "";
+                try {
+                    // Decode token to get raw answer
+                    const rawAnswer = Buffer.from(questionData.token, 'base64').toString('utf-8');
+                    displayAnswer = rawAnswer;
+                } catch (e) {
+                    displayAnswer = "Error";
+                }
 
-                  if (qData) {
-                      // NORMALIZE DESCRIPTION:
-                      // Some generators return {sv, en}, others return string.
-                      // We resolve it to a single string here to simplify frontend.
-                      let desc = qData.renderData.description;
-                      if (typeof desc === 'object' && desc !== null) {
-                          desc = desc[lang] || desc['sv'] || "";
-                      }
+                results.push({
+                    ...questionData,
+                    topic,
+                    level,
+                    displayAnswer
+                });
+            } else {
+                // Fallback for unknown topic to prevent crash
+                results.push({
+                    renderData: { 
+                        description: "Topic not found", 
+                        latex: topic, 
+                        answerType: 'text' 
+                    },
+                    displayAnswer: "-",
+                    topic,
+                    level
+                });
+            }
+        }
 
-                      generatedQuestions.push({
-                          renderData: {
-                              ...qData.renderData,
-                              description: desc // Ensure this is always a string
-                          },
-                          displayAnswer: formatAnswer(qData.serverData.answer),
-                          topic: topic,
-                          level: lvl
-                      });
-                  }
-              } catch (genError) {
-                  console.error(`Error generating question for ${topic} level ${lvl}:`, genError);
-                  generatedQuestions.push({
-                      renderData: { description: "Error generating question", latex: "" },
-                      displayAnswer: "Error",
-                      topic: topic,
-                      level: lvl
-                  });
-              }
-          }
-      }
+        return res.status(200).json({ questions: results });
 
-      return res.status(200).json({ questions: generatedQuestions });
-
-  } catch (e) {
-      console.error("Batch generation fatal error:", e);
-      return res.status(500).json({ error: "Generation failed" });
-  }
+    } catch (error) {
+        console.error("Batch Generator Error:", error);
+        return res.status(500).json({ error: "Failed to generate batch." });
+    }
 }
