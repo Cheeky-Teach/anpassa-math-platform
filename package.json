@@ -1,21 +1,36 @@
 {
   "name": "anpassa-math-platform",
-  "version": "2.0.0",
-  "description": "Adaptive Math Learning Platform",
-  "main": "api/index.ts",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "start": "echo 'Please use: vercel dev' && exit 1",
-    "build": "echo 'No build step required for serverless functions' && exit 0"
+    "dev": "concurrently \"npm run dev:server\" \"vite\"",
+    "dev:frontend": "vite",
+    "dev:server": "tsx watch dev-server.ts",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "katex": "^0.16.9"
+    "katex": "^0.16.9",
+    "lucide-react": "^0.344.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@vercel/node": "^3.0.0",
-    "typescript": "^5.3.0"
-  },
-  "engines": {
-    "node": "20.x"
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.24",
+    "@types/react": "^18.2.64",
+    "@types/react-dom": "^18.2.21",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.18",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.3",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.6"
   }
 }
