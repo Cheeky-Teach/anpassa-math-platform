@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-// Updated to Named Imports to match the existing component exports
+// Views - Named Imports
 import { Dashboard } from './components/views/Dashboard';
 import { PracticeView } from './components/views/PracticeView';
 import { DoNowConfig } from './components/views/DoNowConfig';
 import { DoNowGrid } from './components/views/DoNowGrid';
-import StatsModal from './components/modals/StatsModal';
-import AboutModal from './components/modals/AboutModal';
+// Modals - Named Imports (Fixing the build error here)
+import { StatsModal } from './components/modals/StatsModal';
+import { AboutModal } from './components/modals/AboutModal';
+// Utils
 import { UI_STRINGS } from './core/utils/i18n'; 
 
 // Counters Component for the Header
