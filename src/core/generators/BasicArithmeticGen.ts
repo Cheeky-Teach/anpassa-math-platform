@@ -1,7 +1,7 @@
-import { MathUtils } from '../utils/MathUtils';
+import { MathUtils } from '../utils/MathUtils.js';
 
 export class BasicArithmeticGen {
-    generate(level: number, lang: string = 'sv') {
+    public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
             case 1: return this.level1_AddSimple(lang);
             case 2: return this.level2_SubSimple(lang);
@@ -17,21 +17,21 @@ export class BasicArithmeticGen {
     }
 
     // Level 1: Addition (1-3 digits)
-    private level1_AddSimple(lang: string) {
+    private level1_AddSimple(lang: string): any {
         const a = MathUtils.randomInt(5, 500);
         const b = MathUtils.randomInt(5, 500);
         return this.createProblem(a, b, '+', lang);
     }
 
     // Level 2: Subtraction
-    private level2_SubSimple(lang: string) {
+    private level2_SubSimple(lang: string): any {
         const a = MathUtils.randomInt(20, 900);
         const b = MathUtils.randomInt(5, a); // Ensure positive result for basic level
         return this.createProblem(a, b, '-', lang);
     }
 
     // Level 3: Decimals (+/-)
-    private level3_Decimals(lang: string) {
+    private level3_Decimals(lang: string): any {
         const op = MathUtils.randomChoice(['+', '-']);
         const a = MathUtils.randomFloat(1, 50, 1);
         const b = MathUtils.randomFloat(1, 20, 1);
@@ -46,21 +46,21 @@ export class BasicArithmeticGen {
     }
 
     // Level 4: Mult Easy (Tables 2-9)
-    private level4_MultEasy(lang: string) {
+    private level4_MultEasy(lang: string): any {
         const a = MathUtils.randomInt(2, 9);
         const b = MathUtils.randomInt(2, 12);
         return this.createProblem(a, b, '*', lang);
     }
 
     // Level 5: Mult Medium (2 digit x 1 digit)
-    private level5_MultMedium(lang: string) {
+    private level5_MultMedium(lang: string): any {
         const a = MathUtils.randomInt(11, 50);
         const b = MathUtils.randomInt(2, 9);
         return this.createProblem(a, b, '*', lang);
     }
 
     // Level 6: Mult Hard (2 digit x 2 digit)
-    private level6_MultHard(lang: string) {
+    private level6_MultHard(lang: string): any {
         const a = MathUtils.randomInt(11, 30);
         const b = MathUtils.randomInt(11, 30);
         return this.createProblem(a, b, '*', lang, "text", [
@@ -69,7 +69,7 @@ export class BasicArithmeticGen {
     }
 
     // Level 7: Division Easy (Integer results)
-    private level7_DivEasy(lang: string) {
+    private level7_DivEasy(lang: string): any {
         const divisor = MathUtils.randomInt(2, 9);
         const quotient = MathUtils.randomInt(4, 20);
         const dividend = divisor * quotient;
@@ -87,7 +87,7 @@ export class BasicArithmeticGen {
     }
 
     // Level 8: Mixed Integers
-    private level8_MixedIntegers(lang: string) {
+    private level8_MixedIntegers(lang: string): any {
         const type = MathUtils.randomInt(1, 4);
         switch(type) {
             case 1: return this.level1_AddSimple(lang);
@@ -99,7 +99,7 @@ export class BasicArithmeticGen {
     }
 
     // Level 9: Mixed Decimals
-    private level9_MixedDecimals(lang: string) {
+    private level9_MixedDecimals(lang: string): any {
         // Includes decimal multiplication/division
         const type = MathUtils.randomInt(1, 4);
         if (type <= 2) return this.level3_Decimals(lang);

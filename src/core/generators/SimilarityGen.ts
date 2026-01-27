@@ -1,7 +1,7 @@
-import { MathUtils } from '../utils/MathUtils';
+import { MathUtils } from '../utils/MathUtils.js';
 
 export class SimilarityGen {
-    public generate(level: number, lang: string = 'sv') {
+    public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
             case 1: return this.level1_Concept(lang);
             case 2: return this.level2_CalcSide(lang);
@@ -12,7 +12,7 @@ export class SimilarityGen {
     }
 
     // Level 1: Concept (Multiple Choice)
-    private level1_Concept(lang: string) {
+    private level1_Concept(lang: string): any {
         // Theoretical question
         return {
             renderData: {
@@ -36,7 +36,7 @@ export class SimilarityGen {
     }
 
     // Level 2: Calculate Side (X) using Ratio
-    private level2_CalcSide(lang: string) {
+    private level2_CalcSide(lang: string): any {
         const ratio = MathUtils.randomInt(2, 4);
         const s1 = MathUtils.randomInt(3, 8);
         const s2 = MathUtils.randomInt(4, 10); // Unrelated side
@@ -66,17 +66,13 @@ export class SimilarityGen {
     }
 
     // Level 3: Top Triangle Theorem (Transversal)
-    private level3_TopTriangle(lang: string) {
+    private level3_TopTriangle(lang: string): any {
         const top = MathUtils.randomInt(2, 6);
         const bot = MathUtils.randomInt(2, 6); // Additive part of side
         const wholeSide = top + bot;
         
         const baseSmall = MathUtils.randomInt(3, 8);
         // Ratio = whole / top
-        const baseLarge = (wholeSide / top) * baseSmall;
-        
-        // Ensure integer math if possible, otherwise use simple numbers
-        // Let's force simple ratios: top=10, whole=20 (scale 2)
         // Redo for integer safety:
         const scale = MathUtils.randomInt(2, 3);
         const smallH = MathUtils.randomInt(4, 8);
@@ -107,13 +103,14 @@ export class SimilarityGen {
     }
 
     // Level 4: Pythagorean Theorem
-    private level4_Pythagoras(lang: string) {
+    private level4_Pythagoras(lang: string): any {
         // Generate Pythagorean triples for clean integers
         // k*(3,4,5) or k*(5,12,13)
         const triples = [[3,4,5], [5,12,13], [8,15,17]];
         const baseTriple = MathUtils.randomChoice(triples);
         const k = MathUtils.randomInt(1, 3);
-        const [a, b, c] = baseTriple.map(n => n * k);
+        // Explicitly type parameter n to number to satisfy noImplicitAny
+        const [a, b, c] = baseTriple.map((n: number) => n * k);
 
         // Randomly solving for hypotenuse (c) or a leg (a)
         const solveHyp = Math.random() > 0.5;

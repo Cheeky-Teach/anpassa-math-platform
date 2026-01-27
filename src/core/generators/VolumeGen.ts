@@ -1,4 +1,4 @@
-import { MathUtils } from '../utils/MathUtils';
+import { MathUtils } from '../utils/MathUtils.js';
 
 export class VolumeGen {
     public generate(level: number, lang: string = 'sv'): any {

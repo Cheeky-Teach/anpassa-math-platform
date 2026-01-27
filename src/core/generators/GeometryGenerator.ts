@@ -1,7 +1,7 @@
-import { MathUtils } from '../utils/MathUtils';
+import { MathUtils } from '../utils/MathUtils.js';
 
 export class GeometryGenerator {
-    generate(level: number, lang: string = 'sv') {
+    public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
             case 1: return this.level1_PerimeterRect(lang);
             case 2: return this.level2_AreaRect(lang);
@@ -13,7 +13,7 @@ export class GeometryGenerator {
     }
 
     // Level 1: Perimeter (Rectangle)
-    private level1_PerimeterRect(lang: string) {
+    private level1_PerimeterRect(lang: string): any {
         const w = MathUtils.randomInt(3, 12);
         const h = MathUtils.randomInt(3, 12);
         const ans = 2 * w + 2 * h;
@@ -33,7 +33,7 @@ export class GeometryGenerator {
     }
 
     // Level 2: Area (Rectangle)
-    private level2_AreaRect(lang: string) {
+    private level2_AreaRect(lang: string): any {
         const w = MathUtils.randomInt(3, 12);
         const h = MathUtils.randomInt(3, 12);
         const ans = w * h;
@@ -53,7 +53,7 @@ export class GeometryGenerator {
     }
 
     // Level 3: Area (Triangle)
-    private level3_AreaTriangle(lang: string) {
+    private level3_AreaTriangle(lang: string): any {
         const b = MathUtils.randomInt(4, 14);
         // Ensure height is even so area is integer, or handle .5 in answer
         const h = MathUtils.randomInt(2, 6) * 2; 
@@ -74,13 +74,12 @@ export class GeometryGenerator {
     }
 
     // Level 4: Circles (Perimeter & Area)
-    private level4_Circles(lang: string) {
+    private level4_Circles(lang: string): any {
         const r = MathUtils.randomInt(3, 10);
         // Randomly ask for Area or Circumference
         const isArea = Math.random() > 0.5;
         
-        // Simple approximation for integer input, or accept range. 
-        // For this app, we typically round to nearest integer or use 3.14
+        // Simple approximation for integer input
         const pi = 3.14; 
         const exact = isArea ? pi * r * r : 2 * pi * r;
         const ans = Math.round(exact); 
@@ -108,7 +107,7 @@ export class GeometryGenerator {
     }
 
     // Level 5: Composite Shapes (e.g., House shape: Rect + Triangle)
-    private level5_Composite(lang: string) {
+    private level5_Composite(lang: string): any {
         const w = 10;
         const hRect = 8;
         const hTri = 4;

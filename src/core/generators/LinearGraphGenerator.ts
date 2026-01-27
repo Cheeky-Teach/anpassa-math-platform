@@ -1,4 +1,4 @@
-import { MathUtils } from '../utils/MathUtils';
+import { MathUtils } from '../utils/MathUtils.js';
 
 export class LinearGraphGenerator {
     public generate(level: number, lang: string = 'sv'): any {
@@ -96,7 +96,7 @@ export class LinearGraphGenerator {
                 description: lang === 'sv' ? "Skriv funktionens formel (y=kx+m)." : "Write the equation of the line (y=kx+m).",
                 answerType: 'text'
             },
-            token: Buffer.from(ans).toString('base64'),
+            token: Buffer.from(ans.toString()).toString('base64'),
             clues: [
                 { text: lang === 'sv' ? "Hitta m (y-skärning) först." : "Find m (y-intercept) first.", latex: `m = ${m}` },
                 { text: lang === 'sv' ? "Hitta sedan k (lutning)." : "Then find k (slope).", latex: `k = ${k}` }

@@ -1,5 +1,5 @@
-import { MathUtils } from '../utils/MathUtils';
-import { LinearEquationProblemGen } from './LinearEquationProblemGen';
+import { MathUtils } from '../utils/MathUtils.js';
+import { LinearEquationProblemGen } from './LinearEquationProblemGen.js';
 
 export class LinearEquationGen {
     private problemGen: LinearEquationProblemGen;
@@ -31,7 +31,7 @@ export class LinearEquationGen {
     // --- PROCEDURAL LEVELS (1-4) ---
 
     // Level 1: One-step equations (x + a = b, x - a = b, ax = b, x/a = b)
-    private level1_OneStep(lang: string) {
+    private level1_OneStep(lang: string): any {
         const type = MathUtils.randomInt(0, 3);
         const x = MathUtils.randomInt(2, 15);
         let latex = '', answer = x.toString();
@@ -51,6 +51,8 @@ export class LinearEquationGen {
             clues = [{ text: lang === 'sv' ? `Dela båda sidor med ${a}.` : `Divide both sides by ${a}.`, latex: `x = \\frac{${a * x}}{${a}}` }];
         } else { // x/a = b
             const a = MathUtils.randomInt(2, 9);
+            latex = `\\frac{x}{${a}} = ${x / a}`;
+            // Ensure x is divisible by a for cleaner integer math in generation, though logic holds
             const b = MathUtils.randomInt(2, 9);
             const num = b * a; 
             latex = `\\frac{x}{${a}} = ${b}`;
@@ -66,7 +68,7 @@ export class LinearEquationGen {
     }
 
     // Level 2: Two-step equations (ax + b = c)
-    private level2_TwoStep(lang: string) {
+    private level2_TwoStep(lang: string): any {
         const x = MathUtils.randomInt(2, 10);
         const a = MathUtils.randomInt(2, 6);
         const b = MathUtils.randomInt(1, 15) * (Math.random() > 0.5 ? 1 : -1);
@@ -85,7 +87,7 @@ export class LinearEquationGen {
     }
 
     // Level 3: Parentheses a(x + b) = c
-    private level3_Parentheses(lang: string) {
+    private level3_Parentheses(lang: string): any {
         const x = MathUtils.randomInt(2, 8);
         const a = MathUtils.randomInt(2, 5);
         const b = MathUtils.randomInt(1, 5) * (Math.random() > 0.5 ? 1 : -1);
@@ -103,7 +105,7 @@ export class LinearEquationGen {
     }
 
     // Level 4: Variables on both sides (ax + b = cx + d)
-    private level4_BothSides(lang: string) {
+    private level4_BothSides(lang: string): any {
         const x = MathUtils.randomInt(2, 8);
         const c = MathUtils.randomInt(2, 5); // Smaller x coefficient
         const a = c + MathUtils.randomInt(1, 4); // Larger x coefficient
@@ -121,7 +123,7 @@ export class LinearEquationGen {
     }
 
     // Level 7: Mixed (Procedural + Word Problems)
-    private level7_Mixed(lang: string) {
+    private level7_Mixed(lang: string): any {
         // 80% chance of procedural, 20% chance of word problem
         if (Math.random() > 0.8) {
             const lvl = MathUtils.randomInt(5, 6);
