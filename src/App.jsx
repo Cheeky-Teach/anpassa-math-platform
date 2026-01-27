@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Dashboard from './components/views/Dashboard';
-import PracticeView from './components/views/PracticeView';
-import DoNowConfig from './components/views/DoNowConfig';
-import DoNowGrid from './components/views/DoNowGrid';
+// Updated to Named Imports to match the existing component exports
+import { Dashboard } from './components/views/Dashboard';
+import { PracticeView } from './components/views/PracticeView';
+import { DoNowConfig } from './components/views/DoNowConfig';
+import { DoNowGrid } from './components/views/DoNowGrid';
 import StatsModal from './components/modals/StatsModal';
 import AboutModal from './components/modals/AboutModal';
 import { UI_STRINGS } from './core/utils/i18n'; 
