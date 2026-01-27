@@ -1,4 +1,4 @@
-PROJECT EXPORT GENERATED AT 2026-01-27T18:32:47.066Z
+PROJECT EXPORT GENERATED AT 2026-01-27T19:47:19.138Z
 
 --- FILE STRUCTURE ---
 api\answer.ts
@@ -343,127 +343,98 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 // =======================================================
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-// --- Generators ---
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
-import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
-import { TenPowersGenerator } from '../src/core/generators/TenPowersGen';
-import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
-import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
+import { LinearEquationGen } from '../src/core/generators/LinearEquationGen';
 import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
+import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator';
+import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
+import { TenPowersGen } from '../src/core/generators/TenPowersGen';
+import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
+import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
+// Ensure these exist in the file system before importing, 
+// otherwise this file will fail to build. 
+// Assuming ScaleGenerator and VolumeGenerator exist based on project context.
 import { ScaleGenerator } from '../src/core/generators/ScaleGenerator';
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
-import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator';
-import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
 
-// --- Interface ---
-interface QuestionResponse {
-  text?: string;
-  visual?: any;
-  renderData?: any;
-  clues?: string[];
-  token: string;
-  error?: string;
-}
+// --- Generator Registry ---
+// Maps topic IDs (from dashboard) to their respective classes.
+// These keys MUST match the 'topics' object in src/core/utils/i18n.ts
+const GENERATORS: Record<string, any> = {
+  'arithmetic': BasicArithmeticGen,
+  'linear_eq': LinearEquationGen,
+  'linear_eq_prob': LinearEquationProblemGen,
+  'geometry': GeometryGenerator,
+  'similarity': SimilarityGenerator,
+  'simplification': ExpressionSimplificationGen,
+  'ten_powers': TenPowersGen,
+  'negative': NegativeNumbersGen,
+  'linear_graph': LinearGraphGenerator,
+  'scale': ScaleGenerator,
+  'volume': VolumeGenerator
+};
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  try {
-    const { topic, level = '1', lang = 'sv' } = req.query;
-    
-    const lvl = parseInt(Array.isArray(level) ? level[0] : level) || 1;
-    const language = (Array.isArray(lang) ? lang[0] : lang) || 'sv';
-    const topicKey = Array.isArray(topic) ? topic[0] : topic;
+  // --- CORS Configuration ---
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-    if (!topicKey) {
-      return res.status(400).json({ error: "Missing 'topic' parameter" });
-    }
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
-    let question: any; 
-    const seed = Math.random().toString(36).substring(7);
+  // --- Request Validation ---
+  const { topic, difficulty } = req.query;
 
-    // --- Static Router ---
-    // FIXED: Call static methods directly. NO 'new Generator()'.
-    switch (topicKey) {
-      // Arithmetic
-      case 'arithmetic': 
-        question = BasicArithmeticGen.generate(lvl, seed, language); 
-        break;
-      case 'negative': 
-      case 'negative_numbers': // Alias
-        question = NegativeNumbersGen.generate(lvl, seed, language); 
-        break;
-      case 'ten_powers': 
-        question = TenPowersGenerator.generate(lvl, seed, language); 
-        break;
-      
-      // Algebra
-      case 'simplify': 
-      case 'simplification': // Alias to prevent 404
-        question = ExpressionSimplificationGen.generate(lvl, seed, language); 
-        break;
-      case 'equation': 
-      case 'equations': // Alias
-        // FIXED: Route Level 5 & 6 to Word Problems
-        if (lvl === 5 || lvl === 6) {
-            question = LinearEquationProblemGen.generate(lvl, seed, language);
-        } else {
-            question = LinearEquationGenerator.generate(lvl, seed, language);
-        }
-        break;
+  if (!topic) {
+    return res.status(400).json({ error: 'Missing required parameter: topic' });
+  }
 
-      // Geometry
-      case 'geometry': 
-      case 'geometry_2d': // Alias
-        question = GeometryGenerator.generate(lvl, seed, language); 
-        break;
-      case 'scale': 
-        question = ScaleGenerator.generate(lvl, seed, language); 
-        break;
-      case 'volume': 
-      case 'geometry_3d': // Alias
-        question = VolumeGenerator.generate(lvl, seed, language); 
-        break;
-      case 'similarity': 
-        question = SimilarityGenerator.generate(lvl, seed, language); 
-        break;
+  const topicKey = topic as string;
 
-      // Functions
-      case 'graph': 
-      case 'linear_graphs': // Alias
-        question = LinearGraphGenerator.generate(lvl, seed, language); 
-        break;
-
-      default:
-        return res.status(404).json({ error: `Generator not found for topic: ${topicKey}` });
-    }
-
-    if (!question) {
-        throw new Error("Generator returned null");
-    }
-
-    // Create Token (Base64)
-    const tokenPayload = JSON.stringify({
-      a: question.serverData ? question.serverData.answer : question.answer,
-      t: Date.now()
+  if (!GENERATORS[topicKey]) {
+    // Return available topics to help with debugging frontend configuration
+    return res.status(404).json({ 
+      error: `Topic '${topicKey}' not found.`,
+      availableTopics: Object.keys(GENERATORS) 
     });
-    const token = Buffer.from(tokenPayload).toString('base64');
+  }
 
-    const response: QuestionResponse = {
-      text: question.text,
-      visual: question.visual,
-      renderData: question.renderData,
-      clues: question.serverData ? question.serverData.solutionSteps : question.clues,
-      token: token
-    };
+  // --- Question Generation ---
+  try {
+    // Default to difficulty 1 if not provided or invalid
+    const diffLevel = difficulty ? Math.max(1, Math.min(3, parseInt(difficulty as string))) : 1;
+    
+    const GeneratorClass = GENERATORS[topicKey];
+    
+    // Support both static methods (preferred) and class instances (legacy)
+    let question;
+    
+    if (typeof GeneratorClass.getQuestion === 'function') {
+        question = GeneratorClass.getQuestion(diffLevel);
+    } else {
+        const instance = new GeneratorClass();
+        question = instance.getQuestion(diffLevel);
+    }
 
-    return res.status(200).json(response);
+    // --- Response ---
+    return res.status(200).json(question);
 
   } catch (error: any) {
-    console.error("API Error:", error);
+    console.error(`[API Error] Failed to generate question for topic: ${topicKey}`, error);
+    
     return res.status(500).json({ 
-      error: "Internal Server Error", 
-      details: error.message 
+        error: 'Internal Server Error during question generation.', 
+        message: error.message,
+        topic: topicKey
     });
   }
 }
@@ -2118,240 +2089,254 @@ export default {
 // =======================================================
 
 import React, { useState, useEffect } from 'react';
-import { Dashboard } from './components/views/Dashboard';
-import { PracticeView } from './components/views/PracticeView';
-import { DoNowConfig } from './components/views/DoNowConfig';
-import { DoNowGrid } from './components/views/DoNowGrid';
-import { AboutModal } from './components/modals/AboutModal';
-import { LgrModal } from './components/modals/LgrModal';
-import { StatsModal } from './components/modals/StatsModal';
-import { UI_TEXT } from './constants/localization';
+import Dashboard from './components/views/Dashboard';
+import PracticeView from './components/views/PracticeView';
+import DoNowConfig from './components/views/DoNowConfig';
+import DoNowGrid from './components/views/DoNowGrid';
+import StatsModal from './components/modals/StatsModal';
+import AboutModal from './components/modals/AboutModal';
+import LgrModal from './components/modals/LgrModal';
+import { UI_STRINGS } from './core/utils/i18n'; 
 
-function App() {
+// Counters Component for the Header
+const StatsCounter = ({ icon, value, colorClass, title, onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${colorClass} transition-all duration-200 cursor-pointer hover:bg-opacity-80 active:scale-95`}
+    title={title}
+  >
+    <span className="text-lg select-none">{icon}</span>
+    <span className={`font-bold text-sm sm:text-base ${colorClass.split(' ')[1]}`.replace('border-', 'text-')}>
+      {value}
+    </span>
+  </div>
+);
+
+const App = () => {
   // --- Global State ---
-  const [view, setView] = useState('dashboard'); // 'dashboard', 'practice', 'donow_config', 'donow_grid'
-  const [lang, setLang] = useState('sv');
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [doNowConfig, setDoNowConfig] = useState(null);
+  const [lang, setLang] = useState('sv'); // Default language
   
-  // Practice State
-  const [activeGenerator, setActiveGenerator] = useState(null);
-  const [activeLevel, setActiveLevel] = useState(1);
+  // Modal State
+  const [showStats, setShowStats] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showLgr, setShowLgr] = useState(false);
   
-  // Do Now State
-  const [doNowQuestions, setDoNowQuestions] = useState([]);
-  
-  // Stats (Session)
-  const [streak, setStreak] = useState(0);
-  const [totalCorrect, setTotalCorrect] = useState(0);
-  const [sessionStats, setSessionStats] = useState({
-      attempted: 0,
-      correctNoHelp: 0,
-      correctHelp: 0,
-      incorrect: 0,
-      skipped: 0,
-      maxStreak: 0
+  // Persisted User Stats
+  const [stats, setStats] = useState({
+    totalCorrect: 0,
+    streak: 0,
+    history: []
   });
 
-  // Modals
-  const [aboutOpen, setAboutOpen] = useState(false);
-  const [lgrOpen, setLgrOpen] = useState(false);
-  const [statsOpen, setStatsOpen] = useState(false);
-  
-  // Timer State
-  const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
-
-  // --- Stats Logic ---
-  const updateStats = (type) => {
-      setSessionStats(prev => ({
-          ...prev,
-          attempted: type !== 'skipped' ? prev.attempted + 1 : prev.attempted, // Usually skipped counts as attempt, but legacy didn't increment 'attempted' for skips in same way. Let's increment for consistency.
-          [type]: prev[type] + 1
-      }));
-      // Note: attempted is incremented for all types in this logic:
-      if (type === 'skipped') {
-           setSessionStats(prev => ({ ...prev, attempted: prev.attempted + 1 }));
-      }
-  };
-
+  // Load stats on mount
   useEffect(() => {
-      if (streak > sessionStats.maxStreak) {
-          setSessionStats(prev => ({ ...prev, maxStreak: streak }));
+    try {
+      const saved = localStorage.getItem('anpassa_stats');
+      if (saved) {
+        setStats(JSON.parse(saved));
       }
-  }, [streak]);
+    } catch (e) {
+      console.error("Failed to load stats", e);
+    }
+  }, []);
 
-  // --- Timer Logic ---
+  // Save stats on change
   useEffect(() => {
-    let interval = null;
-    if (timerSettings.isActive && timerSettings.remaining > 0 && view === 'practice') {
-        interval = setInterval(() => {
-            setTimerSettings(prev => {
-                if (prev.remaining <= 1) return { ...prev, remaining: 0, isActive: false };
-                return { ...prev, remaining: prev.remaining - 1 };
-            });
-        }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [timerSettings.isActive, view, timerSettings.remaining]);
+    localStorage.setItem('anpassa_stats', JSON.stringify(stats));
+  }, [stats]);
 
-  const toggleTimer = (minutes) => {
-    const seconds = minutes * 60;
-    setTimerSettings({ duration: seconds, remaining: seconds, isActive: minutes > 0 });
-  };
-
-  const resetTimer = () => {
-    setTimerSettings({ duration: 0, remaining: 0, isActive: false });
-  };
-
-  // --- Navigation Handlers ---
-  const handleStartPractice = (generatorId, level) => {
-    setActiveGenerator(generatorId);
-    setActiveLevel(level);
-    setView('practice');
-    setStreak(0); 
-    if (timerSettings.duration > 0) {
-        setTimerSettings(prev => ({...prev, isActive: true}));
-    }
+  // --- Handlers ---
+  const handleStartPractice = (topic) => {
+    if (!topic) return;
+    setSelectedTopic(topic);
+    setCurrentView('practice');
     window.scrollTo(0, 0);
   };
 
-  const handleBackToDashboard = () => {
-    setActiveGenerator(null);
-    setView('dashboard');
-    setTimerSettings(prev => ({...prev, isActive: false}));
+  const handleStartDoNow = (config) => {
+    setDoNowConfig(config);
+    setCurrentView('donow_grid');
+    window.scrollTo(0, 0);
   };
 
-  // --- Do Now Logic ---
-  const handleDoNowGenerate = async (selectedConfig) => {
-    if (selectedConfig.length === 0) return;
-    const fullConfig = [];
-    for (let i = 0; i < 6; i++) {
-        fullConfig.push(selectedConfig[i % selectedConfig.length]);
-    }
-
-    try {
-        const res = await fetch('/api/batch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ config: fullConfig, lang })
-        });
-        const data = await res.json();
-        
-        if (data.questions) {
-            setDoNowQuestions(data.questions);
-            setView('donow_grid');
-        }
-    } catch (err) {
-        console.error("Do Now Generation Failed", err);
-    }
+  const handleCorrectAnswer = (topicId) => {
+    setStats(prev => ({
+      ...prev,
+      totalCorrect: prev.totalCorrect + 1,
+      streak: prev.streak + 1,
+      history: [...prev.history, { date: new Date().toISOString(), result: 'correct', topic: topicId }]
+    }));
   };
 
-  const toggleLang = () => setLang(prev => prev === 'sv' ? 'en' : 'sv');
+  const handleIncorrectAnswer = () => {
+    setStats(prev => ({
+      ...prev,
+      streak: 0
+    }));
+  };
 
+  const handleHome = () => {
+    setCurrentView('dashboard');
+    setSelectedTopic(null);
+  };
+
+  const UI = UI_STRINGS[lang];
+
+  // --- Render ---
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
-      
-      {/* --- GLOBAL STICKY HEADER --- */}
-      {view !== 'donow_grid' && (
-          <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm">
-            <div className="max-w-7xl mx-auto flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-xl font-bold text-primary-700 tracking-tight cursor-pointer" onClick={handleBackToDashboard}>
-                        Anpassa
-                    </h1>
-                    
-                    {view === 'dashboard' && timerSettings.remaining > 0 && (
-                        <div className="hidden sm:flex bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold items-center gap-2 border border-orange-200">
-                            <span>⏸ Paused</span>
-                            <span className="font-mono text-sm">
-                                {Math.floor(timerSettings.remaining / 60)}:{(timerSettings.remaining % 60).toString().padStart(2, '0')}
-                            </span>
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-3">
-                    {totalCorrect > 0 && (
-                        <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-primary-200">
-                            ✅ {totalCorrect}
-                        </div>
-                    )}
-                    {streak > 0 && (
-                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-yellow-200">
-                            🔥 {streak}
-                        </div>
-                    )}
-                    
-                    {/* Stats Button */}
-                    <button 
-                        onClick={() => setStatsOpen(true)} 
-                        className="p-2 text-gray-400 hover:text-primary-600 transition-colors" 
-                        title="Statistics"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </button>
-
-                    <button onClick={() => setAboutOpen(true)} className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-1 px-4 text-xs rounded-full shadow-sm transition-transform transform active:scale-95">
-                       {lang === 'sv' ? 'Om' : 'About'}
-                    </button>
-                </div>
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col pb-20"> {/* pb-20 for fixed footer */}
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm px-4 py-3">
+        <div className="max-w-5xl mx-auto flex justify-between items-center">
+          
+          {/* Logo / Home */}
+          <div 
+            className="flex items-center gap-2 cursor-pointer group" 
+            onClick={handleHome}
+          >
+            <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:bg-indigo-700 transition-colors">
+              A
             </div>
-          </header>
-      )}
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight hidden sm:block group-hover:text-indigo-700 transition-colors">
+              Anpassa
+            </h1>
+          </div>
 
-      {/* --- MAIN CONTENT --- */}
-      <main className="flex-1">
-        {view === 'dashboard' && (
+          {/* Stats Counters */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <StatsCounter 
+              icon="🔥" 
+              value={stats.streak} 
+              colorClass="bg-orange-50 border-orange-100 text-orange-600"
+              title={UI.streak}
+              onClick={() => setShowStats(true)}
+            />
+            
+            <StatsCounter 
+              icon="✅" 
+              value={stats.totalCorrect} 
+              colorClass="bg-emerald-50 border-emerald-100 text-emerald-600"
+              title={UI.score}
+              onClick={() => setShowStats(true)}
+            />
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+        {currentView === 'dashboard' && (
           <Dashboard 
-            onStartPractice={handleStartPractice} 
+            onStart={handleStartPractice}
             lang={lang}
-            timerSettings={timerSettings}
-            toggleTimer={toggleTimer}
-            resetTimer={resetTimer}
-            onLgrOpen={() => setLgrOpen(true)}
-            toggleLang={toggleLang}
-            onDoNowOpen={() => setView('donow_config')}
           />
         )}
 
-        {view === 'practice' && activeGenerator && (
+        {currentView === 'practice' && selectedTopic && (
           <PracticeView 
-            generatorId={activeGenerator} 
-            initialLevel={activeLevel}
-            onBack={handleBackToDashboard} 
+            topic={selectedTopic}
+            onCorrect={handleCorrectAnswer}
+            onIncorrect={handleIncorrectAnswer}
+            onBack={handleHome}
             lang={lang}
-            streak={streak}
-            setStreak={setStreak}
-            setTotalCorrect={setTotalCorrect}
-            updateStats={updateStats}
           />
         )}
 
-        {view === 'donow_config' && (
-            <DoNowConfig 
-                onBack={() => setView('dashboard')}
-                onGenerate={handleDoNowGenerate}
-                lang={lang}
-            />
+        {currentView === 'donow_config' && (
+          <DoNowConfig 
+            onStart={handleStartDoNow} 
+            onBack={handleHome}
+            lang={lang}
+          />
         )}
 
-        {view === 'donow_grid' && (
-            <DoNowGrid 
-                questions={doNowQuestions}
-                onBack={() => setView('donow_config')}
-                lang={lang}
-            />
+        {currentView === 'donow_grid' && doNowConfig && (
+          <DoNowGrid 
+            config={doNowConfig}
+            onComplete={handleHome}
+            lang={lang}
+          />
         )}
       </main>
 
-      {/* --- MODALS --- */}
-      <StatsModal visible={statsOpen} stats={sessionStats} onClose={() => setStatsOpen(false)} lang={lang} />
-      <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} lang={lang} />
-      <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} />
+      {/* FIXED FOOTER NAVIGATION (Restored from Project Context) */}
+      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-40 px-4 py-3">
+        <div className="max-w-xl mx-auto flex justify-between items-center text-xs font-medium text-slate-500">
+          
+          {/* 1. Do Now Button */}
+          <button 
+            onClick={() => {
+                setCurrentView('donow_config');
+                window.scrollTo(0,0);
+            }}
+            className="flex flex-col items-center gap-1 hover:text-indigo-600 transition-colors w-16"
+          >
+            <span className="text-xl">⚡</span>
+            <span>{UI.donow}</span>
+          </button>
+
+          {/* 2. LGR22 Modal Button */}
+          <button 
+            onClick={() => setShowLgr(true)}
+            className="flex flex-col items-center gap-1 hover:text-indigo-600 transition-colors w-16"
+          >
+            <span className="text-xl">📚</span>
+            <span>LGR22</span>
+          </button>
+
+          {/* 3. Language Toggle */}
+          <button 
+            onClick={() => setLang(l => l === 'sv' ? 'en' : 'sv')}
+            className="flex flex-col items-center gap-1 hover:text-indigo-600 transition-colors w-16"
+          >
+            <span className="text-xl">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</span>
+            <span>{lang.toUpperCase()}</span>
+          </button>
+
+          {/* 4. About Modal Button */}
+          <button 
+            onClick={() => setShowAbout(true)}
+            className="flex flex-col items-center gap-1 hover:text-indigo-600 transition-colors w-16"
+          >
+            <span className="text-xl">ℹ️</span>
+            <span>{UI.aboutBtn}</span>
+          </button>
+
+        </div>
+      </footer>
+
+      {/* --- Modals --- */}
+      {showStats && (
+        <StatsModal 
+          isOpen={showStats}
+          onClose={() => setShowStats(false)} 
+          stats={stats}
+          lang={lang}
+        />
+      )}
+      
+      {showAbout && (
+        <AboutModal 
+          isOpen={showAbout}
+          onClose={() => setShowAbout(false)}
+          lang={lang}
+        />
+      )}
+      
+      {showLgr && (
+        <LgrModal 
+          isOpen={showLgr}
+          onClose={() => setShowLgr(false)}
+          lang={lang}
+        />
+      )}
 
     </div>
   );
-}
+};
 
 export default App;
 
@@ -3694,161 +3679,150 @@ export const PracticeView = ({
 import React from 'react';
 
 /**
- * GeometryVisual
- * Handles SVG rendering for 2D Geometry and Similarity problems.
+ * Renders SVG geometry. Handles 'similarity' by rendering multiple shapes.
+ * Updated to use named export to match PracticeView imports.
  */
-export const GeometryVisual = ({ visual }) => {
-  if (!visual) return null;
+export const GeometryVisual = ({ data }) => {
+  if (!data) return null;
 
-  // Helper to draw angle arcs
-  const drawAngle = (cx, cy, startAngle, endAngle, radius = 20, color = "red") => {
-    // Convert degrees to radians
-    const startRad = (startAngle * Math.PI) / 180;
-    const endRad = (endAngle * Math.PI) / 180;
-
-    const x1 = cx + radius * Math.cos(startRad);
-    const y1 = cy + radius * Math.sin(startRad);
-    const x2 = cx + radius * Math.cos(endRad);
-    const y2 = cy + radius * Math.sin(endRad);
-
-    // Large arc flag (always 0 for acute angles in our generation logic)
-    const largeArcFlag = Math.abs(endAngle - startAngle) > 180 ? 1 : 0;
+  // --- Helper: Render a Single Polygon ---
+  const renderShape = (points, offsetX = 0, offsetY = 0, color = 'black', key) => {
+    if (!points || points.length < 2) return null;
+    
+    // SVG Coordinate System: Y increases downwards.
+    // Math Coordinate System: Y increases upwards.
+    // We flip Y (-p.y) so math coordinates (0,10) render above (0,0).
+    const pathData = points.map((p, i) => 
+      `${i === 0 ? 'M' : 'L'} ${p.x + offsetX} ${-p.y + offsetY}`
+    ).join(' ') + ' Z';
 
     return (
-      <path
-        d={`M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
-        fill="none"
-        stroke={color}
+      <path 
+        key={key}
+        d={pathData} 
+        fill={color} 
+        fillOpacity="0.2" 
+        stroke={color} 
         strokeWidth="2"
+        vectorEffect="non-scaling-stroke" // Keeps stroke width constant on zoom
+        strokeLinejoin="round"
       />
     );
   };
 
-  // 1. Similarity Comparison Visuals
-  // FIXED: Handle both legacy shape1/shape2 and new left/right properties from generator
-  if (visual.type === 'similarity_compare') {
-    const shape1 = visual.left || visual.shape1;
-    const shape2 = visual.right || visual.shape2;
+  // --- Helper: Render Labels ---
+  const renderLabels = (labels, shapes) => {
+    if (!labels) return null;
+    
+    return labels.map((lbl, i) => {
+      let x = lbl.x;
+      let y = -lbl.y; // Flip Y to match shape coordinate system
+      
+      // Determine offset based on shapeIndex
+      // If shapeIndex is 1 (the second shape), we shift it right
+      if (lbl.shapeIndex === 1 && shapes && shapes.length > 0) {
+        // Find max width of shape 0 to calculate the gap offset
+        const shape0Width = shapes[0].points.reduce((max, p) => Math.max(max, p.x), 0);
+        const gap = 4; // Must match the gap used in ViewBox calculation
+        x += (shape0Width + gap); 
+      }
 
-    if (!shape1 || !shape2) return null;
-
-    return (
-      <div className="flex justify-center my-4 overflow-hidden">
-        <svg width="100%" height="200" viewBox="-10 0 370 200" className="max-w-md">
-          {/* Shape 1 - Offset (30, 50) */}
-          <g transform="translate(30, 50)">
-            {shape1.points && (
-              <polygon 
-                points={shape1.points.map(p => `${p.x},${p.y}`).join(' ')}
-                className="fill-blue-100 stroke-blue-500 stroke-2"
-              />
-            )}
-            {/* Fallback for simple rect/triangle without explicit points */}
-            {!shape1.points && visual.shapeType === 'rectangle' && (
-                <rect x="0" y="0" width={shape1.labels.b} height={shape1.labels.h} className="fill-blue-100 stroke-blue-500 stroke-2" />
-            )}
-            
-            {shape1.labels && Object.entries(shape1.labels).map(([key, val], i) => {
-               // Simple label positioning logic if explicit coords missing
-               const x = key === 'b' ? (val/2 || 20) : (key === 'h' ? -10 : 10);
-               const y = key === 'b' ? (shape1.labels.h || 50) + 15 : (shape1.labels.h/2 || 20);
-               return (
-                  <text key={i} x={x} y={y} className="text-xs fill-gray-700 font-bold">
-                    {val}
-                  </text>
-               );
-            })}
-            
-            {/* Arcs for Shape 1 */}
-            {shape1.angles && shape1.angles.map((ang, i) => (
-              <g key={`arc1-${i}`}>
-                 {drawAngle(ang.x, ang.y, ang.start, ang.end)}
-              </g>
-            ))}
-          </g>
-
-          {/* Shape 2 - Offset (220, 30) */}
-          <g transform="translate(220, 30)">
-            {shape2.points && (
-              <polygon 
-                points={shape2.points.map(p => `${p.x},${p.y}`).join(' ')}
-                className="fill-green-100 stroke-green-500 stroke-2"
-              />
-            )}
-             {!shape2.points && visual.shapeType === 'rectangle' && (
-                <rect x="0" y="0" width={shape2.labels.b} height={shape2.labels.h} className="fill-green-100 stroke-green-500 stroke-2" />
-            )}
-
-             {shape2.labels && Object.entries(shape2.labels).map(([key, val], i) => {
-               const x = key === 'b' ? (shape2.labels.b/2 || 20) : (key === 'h' ? -10 : 10);
-               const y = key === 'b' ? (shape2.labels.h || 50) + 15 : (shape2.labels.h/2 || 20);
-               return (
-                  <text key={i} x={x} y={y} className="text-xs fill-gray-700 font-bold">
-                    {val}
-                  </text>
-               );
-            })}
-             {/* Arcs for Shape 2 */}
-            {shape2.angles && shape2.angles.map((ang, i) => (
-              <g key={`arc2-${i}`}>
-                 {drawAngle(ang.x, ang.y, ang.start, ang.end)}
-              </g>
-            ))}
-          </g>
-        </svg>
-      </div>
-    );
-  }
-
-  // 2. Standard Polygon Visuals
-  if (visual.points) {
-    return (
-      <div className="flex justify-center my-4">
-        <svg width="300" height="200" viewBox="0 0 300 200">
-          <polygon
-            points={visual.points.map(p => `${p.x},${p.y}`).join(' ')}
-            className="fill-gray-50 stroke-gray-800 stroke-2"
-          />
-          {visual.labels && visual.labels.map((label, idx) => (
-            <text 
-              key={idx} 
-              x={label.x} 
-              y={label.y}
-              className="text-sm font-sans fill-gray-700"
-              textAnchor="middle"
-            >
-              {label.text}
-            </text>
-          ))}
-        </svg>
-      </div>
-    );
-  }
-  
-  // 3. Fallback for basic shape types (rectangle/triangle) defined by props but not points
-  if (visual.type === 'rectangle' || visual.type === 'triangle' || visual.type === 'circle') {
-      // Basic SVG construction based on width/height props
-      const w = visual.width || 100;
-      const h = visual.height || 100;
       return (
-        <div className="flex justify-center my-4">
-            <svg width={w + 40} height={h + 40} viewBox={`0 0 ${w+40} ${h+40}`}>
-                <g transform="translate(20, 20)">
-                    {visual.type === 'rectangle' && <rect width={w} height={h} className="fill-green-50 stroke-green-600 stroke-2" />}
-                    {visual.type === 'triangle' && <polygon points={`0,${h} ${w},${h} ${visual.subtype==='right'?0:w/2},0`} className="fill-green-50 stroke-green-600 stroke-2" />}
-                    {visual.type === 'circle' && <circle cx={w/2} cy={w/2} r={w/2} className="fill-green-50 stroke-green-600 stroke-2" />}
-                    
-                    {/* Simple Labels */}
-                    {visual.labels && Object.values(visual.labels).map((l, i) => (
-                        <text key={i} x={w/2} y={h+20} textAnchor="middle" className="text-xs font-bold">{l}</text>
-                    ))}
-                </g>
-            </svg>
-        </div>
+        <text 
+          key={`lbl-${i}`} 
+          x={x} 
+          y={y} 
+          className="text-[0.6px] fill-gray-800 font-medium font-sans select-none"
+          textAnchor="middle" 
+          dominantBaseline="middle"
+        >
+          {lbl.text}
+        </text>
       );
+    });
+  };
+
+  // --- ViewBox Calculation ---
+  // We need to determine the bounding box of ALL shapes to zoom the SVG correctly.
+  let allPoints = [];
+  const gap = 4; // Space between similarity shapes
+
+  if (data.type === 'similarity' && data.shapes) {
+    // Shape 1 points (no offset)
+    const s0Points = data.shapes[0].points;
+    
+    // Shape 2 points (offset by Shape 1 width + gap)
+    const s0Width = s0Points.reduce((max, p) => Math.max(max, p.x), 0);
+    const s1Points = data.shapes[1].points.map(p => ({
+        x: p.x + s0Width + gap,
+        y: p.y
+    }));
+
+    allPoints = [...s0Points, ...s1Points];
+  } else if (data.points) {
+    // Standard single shape
+    allPoints = data.points;
   }
 
-  return null;
+  // Safety check
+  if (allPoints.length === 0) {
+      return <div className="p-4 text-gray-400 italic text-sm text-center">Visual unavailable</div>;
+  }
+
+  const minX = Math.min(...allPoints.map(p => p.x));
+  const maxX = Math.max(...allPoints.map(p => p.x));
+  const minY = Math.min(...allPoints.map(p => -p.y)); // SVG Y
+  const maxY = Math.max(...allPoints.map(p => -p.y));
+
+  const padding = 2; // Breathing room around shapes
+  const width = maxX - minX + (padding * 2);
+  const height = maxY - minY + (padding * 2);
+  
+  // Construct ViewBox
+  const viewBox = `${minX - padding} ${minY - padding} ${width} ${height}`;
+
+  return (
+    <div className="w-full flex justify-center items-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 my-4">
+      <svg 
+        viewBox={viewBox} 
+        className="w-full max-w-[500px] h-auto overflow-visible"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {/* Debug Grid/Axes if requested */}
+        {data.showAxes && (
+           <g stroke="#e5e7eb" strokeWidth="0.1">
+             <line x1="-100" y1="0" x2="100" y2="0" stroke="#9ca3af" />
+             <line x1="0" y1="-100" x2="0" y2="100" stroke="#9ca3af" />
+           </g>
+        )}
+
+        {/* --- Render Logic for Similarity --- */}
+        {data.type === 'similarity' && data.shapes && (
+          <>
+            {/* Shape 1 */}
+            {renderShape(data.shapes[0].points, 0, 0, data.shapes[0].color, 's1')}
+            
+            {/* Shape 2 (Offset) */}
+            {(() => {
+              const s1Offset = data.shapes[0].points.reduce((max, p) => Math.max(max, p.x), 0) + gap;
+              return renderShape(data.shapes[1].points, s1Offset, 0, data.shapes[1].color, 's2');
+            })()}
+            
+            {/* Labels */}
+            {renderLabels(data.labels, data.shapes)}
+          </>
+        )}
+
+        {/* --- Render Logic for Standard Single Shape --- */}
+        {(!data.type || data.type !== 'similarity') && (
+           <g>
+             {renderShape(data.points, 0, 0, '#3B82F6', 'single')}
+             {/* If standard shapes have labels, render them here. Currently assumes custom labels array is for similarity */}
+           </g>
+        )}
+      </svg>
+    </div>
+  );
 };
 
 // FILE END: src\components\visuals\GeometryVisual.jsx
@@ -5663,115 +5637,109 @@ export class LinearEquationProblemGen {
 // FILE START: src\core\generators\LinearGraphGenerator.ts
 // =======================================================
 
-import { GeneratedQuestion, Clue } from "../types/generator";
-import { Random } from "../utils/random";
-import { t, Language, TERMS } from "../utils/i18n";
+import { UI_STRINGS } from '../utils/i18n';
+
+interface Point { x: number; y: number; label?: string; }
+interface Line { x1: number; y1: number; x2: number; y2: number; color: string; width: number; }
+
+interface VisualData {
+    type: 'graph';
+    lines: Line[];
+    points: Point[];
+    showGrid: boolean;
+    showAxes: boolean;
+}
+
+interface Question {
+    text: string;
+    correctAnswer: number | string;
+    visual: VisualData;
+    meta: { topic: string; difficulty: number };
+}
 
 export class LinearGraphGenerator {
-    public static generate(level: number, seed: string, lang: Language = 'sv'): GeneratedQuestion {
-        const rng = new Random(seed);
-        const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
-        
-        let mode = level;
-        if (level >= 5) mode = rng.intBetween(1, 4);
+    /**
+     * Generates a linear graph problem.
+     * Level 1: Find m (y-intercept).
+     * Level 2: Find k (slope).
+     * Level 3: Find the full equation y = kx + m.
+     */
+    public static getQuestion(difficulty: number): Question {
+        let k: number, m: number;
+        let questionKey = "";
+        let answer: number | string = "";
 
-        let k = 1, m = 0, steps: Clue[] = [];
-        let answer: string | number = 0; 
-        let answerType: any = 'numeric';
-        let description = { sv: "", en: "" };
-
-        const getSlope = (min: number, max: number) => rng.intBetween(min, max);
-
-        // --- LEVEL 1: Find m (intercept) ---
-        if (mode === 1) {
-            k = getSlope(-3, 3); 
-            m = rng.intBetween(-5, 5); 
+        // --- Difficulty Logic ---
+        if (difficulty === 1) {
+            // Level 1: Find m (intercept)
+            // We use simple slopes (+/- 1 or 2) to keep the graph readable
+            // m ranges from -4 to 4 to stay well within the standard -10 to 10 grid
+            k = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 2) + 1);
+            m = Math.floor(Math.random() * 9) - 4; // -4 to 4
             
+            questionKey = "graph.q_intercept";
             answer = m;
-            description = TERMS.graph.q_intercept;
-            
-            steps = [
-                { text: t(lang, TERMS.graph.look_x0), latex: "(0, y)" }, 
-                { text: t(lang, TERMS.graph.step_intercept(m)), latex: `m = ${formatColor(m)}` }
-            ];
         } 
-        
-        // --- LEVEL 2: Find k (positive slope) ---
-        else if (mode === 2) {
-            k = rng.intBetween(0, 3); 
-            m = rng.intBetween(-5, 5); 
+        else if (difficulty === 2) {
+            // Level 2: Find k (slope)
+            // m is strictly integer, k is integer
+            k = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 3) + 1);
+            m = Math.floor(Math.random() * 7) - 3;
             
+            questionKey = "graph.q_slope";
             answer = k;
-            description = TERMS.graph.q_slope;
-            
-            steps = [
-                { text: t(lang, TERMS.graph.step_delta), latex: "k = \\frac{\\Delta y}{\\Delta x}" },
-                { text: t(lang, TERMS.graph.step_slope_calc), latex: `k = ${formatColor(k)}` }
-            ];
-        }
-
-        // --- LEVEL 3: Find k (negative slope) ---
-        else if (mode === 3) {
-            k = rng.intBetween(-3, 0);
-            m = rng.intBetween(-5, 5); 
-            
-            answer = k;
-            description = TERMS.graph.q_slope;
-            
-            steps = [
-                { text: t(lang, TERMS.graph.step_delta), latex: "k = \\frac{\\Delta y}{\\Delta x}" },
-                { text: t(lang, TERMS.graph.step_slope_calc), latex: `k = ${formatColor(k)}` }
-            ];
-        }
-
-        // --- LEVEL 4: Find Equation (y = kx + m) ---
+        } 
         else {
-            k = getSlope(-3, 3); 
-            m = rng.intBetween(-5, 5); 
-            
-            let eqStr = "";
-            if (k === 0) {
-                eqStr = `y=${m}`;
-            } else {
-                const mPart = m >= 0 ? `+${m}` : `${m}`; 
-                eqStr = `y=${k}x${mPart}`; 
-            }
-            
-            answer = eqStr;
-            answerType = 'function_model'; 
+            // Level 3: Find Equation y = kx + m
+            // Slopes can be steeper here
+            k = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 3) + 1);
+            m = Math.floor(Math.random() * 7) - 3;
 
-            description = TERMS.graph.q_func;
+            questionKey = "graph.q_func";
             
-            const eqDisplay = k === 0 
-                ? `y = ${formatColor(m)}` 
-                : `y = ${formatColor(k)}x ${m >= 0 ? '+' : ''}${formatColor(m)}`;
-
-            steps = [
-                { text: t(lang, TERMS.graph.find_m), latex: `m = ${m}` }, 
-                { text: t(lang, TERMS.graph.find_k), latex: `k = ${k}` }, 
-                { text: t(lang, TERMS.graph.q_func), latex: eqDisplay }
-            ];
+            // Format answer string: y = kx + m
+            // We handle the edge cases for x (1x) and sign formatting
+            let kStr = `${k}`;
+            if (k === 1) kStr = "";
+            if (k === -1) kStr = "-";
+            
+            const sign = m >= 0 ? '+' : '';
+            
+            answer = `y=${kStr}x${sign}${m}`;
+            
+            // Cleanup: if m is 0, we don't usually write +0
+            if (m === 0) answer = `y=${kStr}x`;
         }
 
-        const lines = [{ slope: k, intercept: m, color: '#2563eb' }];
+        // --- Visuals ---
+        // Generate line points that extend across the typical view (-10 to 10)
+        // Calculating y at x=-10 and x=10 ensures the line spans the canvas
+        const x1 = -10;
+        const y1 = k * x1 + m;
+        const x2 = 10;
+        const y2 = k * x2 + m;
+
+        const visual: VisualData = {
+            type: 'graph',
+            lines: [
+                { x1, y1, x2, y2, color: '#4F46E5', width: 3 } // Indigo-600
+            ],
+            points: [],
+            showGrid: true,
+            showAxes: true
+        };
+
+        // For Level 1, some pedagogical designs place a point at the intercept to focus attention.
+        // We add it as a visual aid without a label to avoid giving the answer explicitly.
+        if (difficulty === 1) {
+            visual.points.push({ x: 0, y: m, label: '' });
+        }
 
         return {
-            questionId: `graph-l${level}-${seed}`,
-            renderData: {
-                text_key: "graph_gen",
-                description: description,
-                latex: "",
-                answerType: answerType,
-                graph: {
-                    lines: lines,
-                    range: 10, 
-                    gridStep: 1
-                }
-            },
-            serverData: {
-                answer: answer,
-                solutionSteps: steps
-            }
+            text: questionKey,
+            correctAnswer: answer,
+            visual: visual,
+            meta: { topic: 'linear_graph', difficulty }
         };
     }
 }
@@ -6343,207 +6311,137 @@ export class ScaleGenerator {
 // FILE START: src\core\generators\SimilarityGenerator.ts
 // =======================================================
 
-import { GeneratedQuestion, Clue } from "../types/generator";
-import { Random } from "../utils/random";
-import { TERMS, t, Language } from "../utils/i18n";
+import { UI_STRINGS } from '../utils/i18n';
+
+// Interfaces for strict typing
+interface Point { x: number; y: number; }
+interface ShapeData { points: Point[]; color: string; }
+interface LabelData { x: number; y: number; text: string; shapeIndex: number; }
+
+interface VisualData {
+  type: 'similarity';
+  shapes: ShapeData[];
+  labels: LabelData[];
+  showAxes: boolean;
+}
+
+interface Question {
+  text: string; // The raw translation key to be processed by frontend
+  correctAnswer: number | string;
+  visual: VisualData;
+  meta: { topic: string; difficulty: number };
+}
 
 export class SimilarityGenerator {
-    public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
-        const rng = new Random(seed);
-        const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
-
-        let steps: Clue[] = [];
-        let qData: any = { 
-            text_key: "", 
-            description: "", 
-            latex: "", 
-            answer: 0,
-            answerType: "numeric"
-        };
-
-        // Helper: Generate points for a right triangle starting at 0,0
-        const getTriPoints = (w: number, h: number) => {
-            return [{x:0, y:h}, {x:w, y:h}, {x:0, y:0}];
-        };
-
-        // Helper: Generate points for a rectangle
-        const getRectPoints = (w: number, h: number) => {
-            return [{x:0, y:0}, {x:w, y:0}, {x:w, y:h}, {x:0, y:h}];
-        };
-
-        // --- LEVEL 1: Similar or Not? ---
-        if (level === 1) {
-            const isSimilar = rng.bool(); // Using rng.bool() from random.ts
-            const type = rng.pick(['rect_sides', 'tri_sides']);
-            
-            qData.answerType = 'multiple_choice';
-            qData.choices = lang === 'sv' ? ['Ja', 'Nej'] : ['Yes', 'No'];
-            qData.answer = isSimilar ? qData.choices[0] : qData.choices[1];
-
-            let leftPoints, rightPoints;
-            let lLabels:any = {}, rLabels:any = {};
-
-            if (type === 'rect_sides') {
-                const w1 = rng.intBetween(20, 60);
-                const h1 = rng.intBetween(20, 60);
-                const k = isSimilar ? 1.5 : 1.2;
-                
-                const w2 = Math.round(w1 * k);
-                const h2 = isSimilar ? Math.round(h1 * k) : Math.round(h1 * (k + 0.3));
-
-                leftPoints = getRectPoints(w1, h1);
-                rightPoints = getRectPoints(w2, h2);
-                lLabels = { b: Math.round(w1/10), h: Math.round(h1/10) };
-                rLabels = { b: Math.round(w2/10), h: Math.round(h2/10) };
-                qData.description = { sv: "Är rektanglarna likformiga?", en: "Are the rectangles similar?" };
-            } 
-            else { // tri_sides
-                const w1 = rng.intBetween(30, 60);
-                const h1 = rng.intBetween(30, 60);
-                const k = isSimilar ? 1.5 : 1.3;
-
-                const w2 = Math.round(w1 * k);
-                const h2 = isSimilar ? Math.round(h1 * k) : Math.round(h1 * (k + 0.2));
-
-                leftPoints = getTriPoints(w1, h1);
-                rightPoints = getTriPoints(w2, h2);
-                lLabels = { s1: Math.round(w1/10), s2: Math.round(h1/10) };
-                rLabels = { s1: Math.round(w2/10), s2: Math.round(h2/10) };
-                qData.description = { sv: "Är trianglarna likformiga?", en: "Are the triangles similar?" };
-            }
-
-            steps.push({ 
-                text: t(lang, { sv: "Jämför sidornas proportioner.", en: "Compare the proportions of the sides." }), 
-                latex: "" 
-            });
-
-            qData.renderData = { 
-                text_key: "sim_check", 
-                description: qData.description, 
-                latex: "", 
-                answerType: "multiple_choice", 
-                choices: qData.choices, 
-                geometry: {
-                    type: 'similarity_compare',
-                    left: { points: leftPoints, labels: lLabels },
-                    right: { points: rightPoints, labels: rLabels }
-                }
-            };
-        }
-
-        // --- LEVEL 2: Find Side (x) ---
-        else if (level === 2) {
-            const k = rng.pick([1.5, 2, 2.5]);
-            const w1 = rng.intBetween(30, 60);
-            const h1 = rng.intBetween(30, 60);
-            const w2 = Math.round(w1 * k);
-            const h2 = Math.round(h1 * k);
-
-            const missing = rng.pick(['w', 'h']);
-            let answerVal = 0;
-            let lLabels: any = { b: Math.round(w1/10), h: Math.round(h1/10) };
-            let rLabels: any = { b: Math.round(w2/10), h: Math.round(h2/10) };
-
-            if (missing === 'w') {
-                rLabels.b = 'x';
-                answerVal = rLabels.b_val = Math.round(w2/10);
-            } else {
-                rLabels.h = 'x';
-                answerVal = rLabels.h_val = Math.round(h2/10);
-            }
-
-            qData.answer = answerVal;
-            qData.description = { sv: "Figurerna är likformiga. Beräkna x.", en: "Shapes are similar. Find x." };
-            
-            steps.push({
-                text: t(lang, { sv: "Räkna ut skalan.", en: "Calculate the scale." }),
-                latex: `k = ${k}`
-            });
-
-            qData.renderData = {
-                text_key: "sim_calc", 
-                description: qData.description, 
-                latex: "", 
-                answerType: "numeric", 
-                geometry: {
-                    type: 'similarity_compare',
-                    left: { points: getTriPoints(w1, h1), labels: lLabels },
-                    right: { points: getTriPoints(w2, h2), labels: rLabels }
-                }
-            };
-        }
-
-        // --- LEVEL 3: Top Triangle Theorem (Transversal) ---
-        else if (level === 3) {
-            // Revert to simple visual for now since GeometryVisual handles 'transversal' separately
-            const topSide = rng.intBetween(5, 12);
-            const addSide = rng.intBetween(4, 10);
-            const totSide = topSide + addSide;
-            const k = totSide / topSide; 
-            
-            const baseTop = rng.intBetween(6, 14);
-            const baseBot = Math.round(baseTop * k * 10) / 10;
-
-            const mode = rng.pick(['find_base', 'find_side']);
-            let answerVal = 0;
-            let geom: any = { labels: { base_top: baseTop, base_bot: baseBot, left_top: topSide, left_tot: totSide } };
-
-            if (mode === 'find_base') {
-                answerVal = baseBot;
-                geom.labels.base_bot = 'x';
-            } else {
-                answerVal = totSide;
-                geom.labels.left_tot = 'x';
-            }
-
-            qData.answer = answerVal;
-            qData.description = { sv: "Linjen i mitten är parallell med basen. Beräkna x.", en: "The middle line is parallel to the base. Calculate x." };
-            qData.renderData = { text_key: "top_tri", description: qData.description, latex: "", answerType: "numeric", geometry: { type: 'transversal', ...geom } };
-        }
-
-        // --- LEVEL 4: Pythagoras ---
-        else {
-            // Generate standard right triangle data
-            const a = rng.intBetween(3, 8);
-            const b = rng.intBetween(4, 10);
-            const c = Math.round(Math.sqrt(a*a + b*b) * 10) / 10;
-            
-            const mode = rng.pick(['hyp', 'leg']);
-            let answer = 0;
-            let labels: any = { base: a, height: b, hypotenuse: c };
-
-            if (mode === 'hyp') {
-                answer = c;
-                labels.hypotenuse = 'x';
-                qData.description = { sv: "Beräkna hypotenusan.", en: "Calculate the hypotenuse." };
-            } else {
-                answer = a;
-                labels.base = 'x';
-                qData.description = { sv: "Beräkna kateten.", en: "Calculate the leg." };
-            }
-
-            qData.answer = answer;
-            qData.renderData = {
-                text_key: "pythagoras",
-                description: qData.description,
-                latex: "",
-                answerType: "numeric",
-                geometry: {
-                    type: 'triangle',
-                    subtype: 'right',
-                    width: a * 10,
-                    height: b * 10,
-                    labels: labels
-                }
-            };
-        }
-
-        return {
-            questionId: `sim-l${level}-${seed}`,
-            renderData: qData.renderData,
-            serverData: { answer: qData.answer, solutionSteps: steps }
-        };
+  /**
+   * Generates a similarity problem.
+   */
+  public static getQuestion(difficulty: number): Question {
+    // 1. Determine Scale Factor (k)
+    let k: number;
+    
+    if (difficulty === 1) {
+      // Level 1: Simple Integer (x2, x3, x4)
+      k = Math.floor(Math.random() * 3) + 2; 
+    } else {
+      // Level 2 & 3: Decimals (1.5, 2.5, 3.5)
+      // We ensure base dimensions are even so multiplying by 1.5 results in integer/clean decimal
+      k = (Math.floor(Math.random() * 4) * 0.5) + 1.5; 
     }
+
+    // 2. Base Triangle Dimensions
+    // Ensure base dimensions are even to play nice with 0.5 scale factors
+    const baseW = (Math.floor(Math.random() * 3) + 2) * 2; // 4, 6, 8, 10
+    const baseH = (Math.floor(Math.random() * 3) + 2) * 2; // 4, 6, 8, 10
+
+    // 3. Scaled Triangle Dimensions
+    const scaledW = Number((baseW * k).toFixed(2));
+    const scaledH = Number((baseH * k).toFixed(2));
+
+    // 4. Determine Problem Mode
+    const modes = ['find_height_big', 'find_width_big'];
+    
+    if (difficulty > 1) {
+       modes.push('find_height_small', 'find_width_small');
+    }
+    if (difficulty === 3) {
+        modes.push('find_k'); // Level 3 special: Find the scale factor
+    }
+
+    const mode = modes[Math.floor(Math.random() * modes.length)];
+
+    let answer: number;
+    let questionKey = "geometry.missing_side"; 
+    
+    const labels: LabelData[] = [];
+
+    // --- Shape Definitions ---
+    // Shape 1 (Small)
+    const shape1Points: Point[] = [
+      { x: 0, y: 0 },
+      { x: baseW, y: 0 },
+      { x: 0, y: baseH }
+    ];
+
+    // Shape 2 (Large)
+    const shape2Points: Point[] = [
+      { x: 0, y: 0 },
+      { x: scaledW, y: 0 },
+      { x: 0, y: scaledH }
+    ];
+
+    // --- Labeling Logic ---
+    // Default: Label small shape fully
+    labels.push({ x: baseW / 2, y: -0.5, text: `${baseW}`, shapeIndex: 0 }); // Base
+    labels.push({ x: -0.5, y: baseH / 2, text: `${baseH}`, shapeIndex: 0 }); // Height
+
+    if (mode === 'find_k') {
+        questionKey = "geometry.scale_factor";
+        answer = k;
+        // Label everything
+        labels.push({ x: scaledW / 2, y: -0.5, text: `${scaledW}`, shapeIndex: 1 });
+        labels.push({ x: -0.5, y: scaledH / 2, text: `${scaledH}`, shapeIndex: 1 });
+    }
+    else if (mode === 'find_height_big') {
+      answer = scaledH;
+      labels.push({ x: scaledW / 2, y: -0.5, text: `${scaledW}`, shapeIndex: 1 });
+      labels.push({ x: -0.5, y: scaledH / 2, text: "?", shapeIndex: 1 });
+    } 
+    else if (mode === 'find_width_big') {
+      answer = scaledW;
+      labels.push({ x: scaledW / 2, y: -0.5, text: "?", shapeIndex: 1 });
+      labels.push({ x: -0.5, y: scaledH / 2, text: `${scaledH}`, shapeIndex: 1 });
+    }
+    else if (mode === 'find_height_small') {
+      answer = baseH;
+      labels[1].text = "?"; // Remove small height label
+      labels.push({ x: scaledW / 2, y: -0.5, text: `${scaledW}`, shapeIndex: 1 });
+      labels.push({ x: -0.5, y: scaledH / 2, text: `${scaledH}`, shapeIndex: 1 });
+    }
+    else if (mode === 'find_width_small') {
+        answer = baseW;
+        labels[0].text = "?"; // Remove small width label
+        labels.push({ x: scaledW / 2, y: -0.5, text: `${scaledW}`, shapeIndex: 1 });
+        labels.push({ x: -0.5, y: scaledH / 2, text: `${scaledH}`, shapeIndex: 1 });
+    } else {
+        answer = 0;
+    }
+
+    return {
+      text: questionKey,
+      correctAnswer: answer,
+      visual: {
+        type: 'similarity',
+        shapes: [
+          { points: shape1Points, color: '#3B82F6' },
+          { points: shape2Points, color: '#F59E0B' }
+        ],
+        labels: labels,
+        showAxes: false
+      },
+      meta: { topic: 'similarity', difficulty }
+    };
+  }
 }
 
 // FILE END: src\core\generators\SimilarityGenerator.ts
@@ -7235,12 +7133,46 @@ export const UI_STRINGS = {
         donow_hide_all: "Dölj alla",
         aboutBtn: "Om skaparen",
 
-        // --- Math Vocabulary (CRITICAL FOR GENERATORS) ---
+        // --- Dashboard Topics ---
+        topics: {
+            arithmetic: "Aritmetik",
+            negative: "Negativa Tal",
+            simplification: "Förenkling",
+            linear_eq: "Ekvationer",
+            linear_eq_prob: "Problemlösning",
+            geometry: "Geometri",
+            volume: "Volym & Area",
+            similarity: "Likformighet",
+            scale: "Skala",
+            linear_graph: "Räta Linjen",
+            ten_powers: "Tiopotenser"
+        },
+
+        // --- Math Vocabulary (Common) ---
         common: {
             calculate: "Beräkna",
             equation: "Ekvation",
-            simplify: "Förenkla"
+            simplify: "Förenkla",
+            solve: "Lös ut x",
+            evaluate: "Beräkna",
+            find_k: "Bestäm k-värdet",
+            find_m: "Bestäm m-värdet",
+            find_equation: "Bestäm linjens ekvation",
+            match_graph: "Vilken ekvation hör till grafen?",
+            determine_equation: "Bestäm ekvationen för linjen som går genom:"
         },
+
+        // --- Arithmetic ---
+        arithmetic: {
+            add: "Beräkna summan",
+            sub: "Beräkna differensen",
+            mul: "Beräkna produkten",
+            div: "Beräkna kvoten",
+            mixed: "Beräkna",
+            missing_term: "Hitta det saknade talet"
+        },
+
+        // --- Algebra ---
         algebra: {
             intro: (eq: string) => `Vi har ekvationen: $${eq}$`,
             multiply: (k: any) => `Multiplicera båda sidor med $${k}$ för att bli av med divisionen.`,
@@ -7248,8 +7180,14 @@ export const UI_STRINGS = {
             add: (k: any) => `Addera $${k}$ på båda sidor.`,
             subtract: (k: any) => `Subtrahera $${k}$ på båda sidor.`,
             distribute: (k: any) => `Multiplicera in $${k}$ i parentesen.`,
-            sub_var: (term: string) => `Subtrahera $${term}$ från båda sidor för att samla $x$ på en sida.`
+            sub_var: (term: string) => `Subtrahera $${term}$ från båda sidor för att samla $x$ på en sida.`,
+            collect: "Samla lika termer",
+            expand: "Utveckla parentesen",
+            factorise: "Faktorisera uttrycket",
+            substitute: "Ersätt och beräkna"
         },
+
+        // --- Negative Numbers ---
         neg_signs: {
             add_neg: "Att addera ett negativt tal är samma som subtraktion.",
             sub_neg: "Två minus blir plus (– – blir +).",
@@ -7258,8 +7196,17 @@ export const UI_STRINGS = {
             div_sign_same: "Lika tecken ger positivt svar.",
             div_sign_diff: "Olika tecken ger negativt svar.",
             simple_calc: "Beräkna:", 
-            step_calc: "Beräkna:"
+            step_calc: "Beräkna:",
+            plus_plus: "Positivt + Positivt",
+            plus_minus: "Positivt + Negativt",
+            minus_plus: "Negativt + Positivt",
+            minus_minus: "Negativt - Negativt",
+            mixed: "Blandat",
+            multiplication: "Multiplikation",
+            division: "Division"
         },
+
+        // --- Linear Graphs ---
         graph: {
             q_intercept: { sv: "Bestäm m-värdet (där linjen skär y-axeln).", en: "Find the intercept (m)." },
             q_slope: { sv: "Bestäm k-värdet (lutningen).", en: "Find the slope (k)." },
@@ -7269,9 +7216,22 @@ export const UI_STRINGS = {
             step_delta: "Lutningen $k$ är skillnaden i $y$ delat med skillnaden i $x$.",
             step_slope_calc: "Räkna rutor: Hur mycket ändras $y$ när vi går 1 steg åt höger?",
             find_m: "Hitta m-värdet (skärning med y-axeln).",
-            find_k: "Hitta k-värdet (lutningen)."
+            find_k: "Hitta k-värdet (lutningen).",
+            parallel: "Bestäm lutningen för en linje som är parallell med:",
+            perpendicular: "Bestäm lutningen för en linje som är vinkelrät mot:",
+            find_gradient: "Beräkna lutningen (k)",
+            find_intercept: "Hitta y-axelskärningen (m)"
         },
+
+        // --- Scale & Maps ---
         scale: {
+            map: "Skala",
+            real: "Verklig sträcka",
+            map_dist: "Avstånd på kartan",
+            ratio: "Skala",
+            problem_map_to_real: "Beräkna det verkliga avståndet.",
+            problem_real_to_map: "Beräkna avståndet på kartan.",
+            problem_find_scale: "Bestäm kartans skala.",
             reduction: "Förminskning",
             enlargement: "Förstoring",
             reality: "Verkligheten",
@@ -7288,6 +7248,8 @@ export const UI_STRINGS = {
             calc_area_real: "Beräkna verklighetens area.",
             calc_area_scale: "Areaskalan är längdskalan i kvadrat."
         },
+
+        // --- Problem Solving ---
         problem_solving: {
             task_solve: "Lös ekvationen och beräkna $x$.",
             task_write: "Skriv en ekvation som beskriver situationen (du behöver inte lösa den).",
@@ -7301,13 +7263,45 @@ export const UI_STRINGS = {
             expl_person2_more: "Person 2 har mer.",
             expl_person2_less: "Person 2 har mindre.",
             expl_compare_sum: "Summan av båda är totalen.",
-            // Templates
             a_buy: { sv: "Du köper $a$ st {item} för $x$ kr/st och en påse för $b$ kr. Totalt betalar du $c$ kr.", en: "You buy $a$ {item} for $x$ kr each and a bag for $b$ kr. Total cost is $c$ kr." },
             a_taxi: { sv: "En taxiresa kostar $b$ kr i startavgift och $a$ kr per km. Resan kostar totalt $c$ kr. Hur många km ($x$) åkte du?", en: "A taxi ride has a start fee of $b$ kr and costs $a$ kr per km. Total cost is $c$ kr. How many km ($x$) did you travel?" },
             b_discount: { sv: "Du köper $a$ st {item} som kostar $x$ kr/st. Du har en rabattkupong på $b$ kr. Du betalar totalt $c$ kr.", en: "You buy $a$ {item} costing $x$ kr each. You have a discount coupon of $b$ kr. You pay $c$ kr in total." },
             c_compare: { sv: "{name1} och {name2} samlar på {item}. {name2} har $a$ fler än {name1}. Tillsammans har de $c$ st. Hur många har {name1} ($x$)?", en: "{name1} and {name2} collect {item}. {name2} has $a$ more than {name1}. Together they have $c$. How many does {name1} have ($x$)?" },
             d_compare: { sv: "{name1} och {name2} har $c$ {item} tillsammans. {name2} har $b$ färre än {name1}. Hur många har {name1} ($x$)?", en: "{name1} and {name2} have $c$ {item} together. {name2} has $b$ fewer than {name1}. How many does {name1} have ($x$)?" }
         },
+
+        // --- Geometry & Volume ---
+        geometry: {
+            area: "Beräkna arean",
+            perimeter: "Beräkna omkretsen",
+            circumference: "Beräkna omkretsen",
+            volume: "Beräkna volymen",
+            surface_area: "Beräkna begränsningsarean",
+            similarity: "Likformighet",
+            scale_factor: "Hitta skalfaktorn (k)",
+            missing_side: "Beräkna den saknade sidan",
+            shape: "Figur",
+            cube: "Kub",
+            cuboid: "Rätblock",
+            cylinder: "Cylinder",
+            sphere: "Klot",
+            cone: "Kon",
+            triangle: "Triangel",
+            rectangle: "Rektangel",
+            circle: "Cirkel",
+            parallelogram: "Parallellogram",
+            trapezium: "Trapets"
+        },
+
+        // --- Ten Powers ---
+        ten_powers: {
+            mult: "Multiplikation med tiopotenser",
+            div: "Division med tiopotenser",
+            standard_form: "Grundpotensform",
+            prefix: "Prefix"
+        },
+
+        // --- Shapes ---
         shapes: {
             square: "kvadrat",
             rectangle: "rektangel",
@@ -7336,8 +7330,24 @@ export const UI_STRINGS = {
             circle: "cirklar",
             semicircle: "halvcirklar",
             parallelogram: "parallellogram"
+        },
+
+        // --- Units ---
+        units: {
+            cm: "cm",
+            m: "m",
+            km: "km",
+            mm: "mm",
+            cm2: "cm²",
+            m2: "m²",
+            km2: "km²",
+            cm3: "cm³",
+            m3: "m³",
+            liter: "L",
+            degrees: "°"
         }
     },
+
     en: {
         // --- General UI ---
         submit: "Submit Answer",
@@ -7368,12 +7378,46 @@ export const UI_STRINGS = {
         donow_hide_all: "Hide All",
         aboutBtn: "About",
 
+        // --- Dashboard Topics ---
+        topics: {
+            arithmetic: "Arithmetic",
+            negative: "Negative Numbers",
+            simplification: "Simplification",
+            linear_eq: "Linear Equations",
+            linear_eq_prob: "Equation Problems",
+            geometry: "Geometry",
+            volume: "Volume & Surface Area",
+            similarity: "Similarity",
+            scale: "Scale & Maps",
+            linear_graph: "Linear Graphs",
+            ten_powers: "Powers of 10"
+        },
+
         // --- Math Vocabulary ---
         common: {
             calculate: "Calculate",
             equation: "Equation",
-            simplify: "Simplify"
+            simplify: "Simplify",
+            solve: "Solve for x",
+            evaluate: "Evaluate",
+            find_k: "Find the gradient (k)",
+            find_m: "Find the y-intercept (m)",
+            find_equation: "Find the equation of the line",
+            match_graph: "Which equation matches the graph?",
+            determine_equation: "Determine the equation of the line passing through:"
         },
+
+        // --- Arithmetic ---
+        arithmetic: {
+            add: "Calculate the sum",
+            sub: "Calculate the difference",
+            mul: "Calculate the product",
+            div: "Calculate the quotient",
+            mixed: "Evaluate the expression",
+            missing_term: "Find the missing number"
+        },
+
+        // --- Algebra ---
         algebra: {
             intro: (eq: string) => `Equation: $${eq}$`,
             multiply: (k: any) => `Multiply both sides by $${k}$ to remove the division.`,
@@ -7381,8 +7425,14 @@ export const UI_STRINGS = {
             add: (k: any) => `Add $${k}$ to both sides.`,
             subtract: (k: any) => `Subtract $${k}$ from both sides.`,
             distribute: (k: any) => `Distribute $${k}$ into the parentheses.`,
-            sub_var: (term: string) => `Subtract $${term}$ from both sides to collect $x$ on one side.`
+            sub_var: (term: string) => `Subtract $${term}$ from both sides to collect $x$ on one side.`,
+            collect: "Collect like terms",
+            expand: "Expand the brackets",
+            factorise: "Factorise the expression",
+            substitute: "Substitute and evaluate"
         },
+
+        // --- Negative Numbers ---
         neg_signs: {
             add_neg: "Adding a negative number is the same as subtraction.",
             sub_neg: "Subtracting a negative number is the same as addition (– – becomes +).",
@@ -7391,20 +7441,42 @@ export const UI_STRINGS = {
             div_sign_same: "Same signs give a positive result.",
             div_sign_diff: "Different signs give a negative result.",
             simple_calc: "Calculate:",
-            step_calc: "Calculate:"
+            step_calc: "Calculate:",
+            plus_plus: "Positive + Positive",
+            plus_minus: "Positive + Negative",
+            minus_plus: "Negative + Positive",
+            minus_minus: "Negative - Negative",
+            mixed: "Mixed",
+            multiplication: "Multiplication",
+            division: "Division"
         },
+
+        // --- Linear Graphs ---
         graph: {
             q_intercept: { sv: "", en: "Find the intercept (m)." },
             q_slope: { sv: "", en: "Find the slope (k)." },
-            q_func: { sv: "", en: "Find the line equation ($y = kx + m$)." },
+            q_func: { sv: "", en: "Find the line equation ($y = kx + m$).", en: "Find the line equation ($y = kx + m$)." },
             look_x0: "Look at the graph: Where does the line cross the y-axis (where $x=0$)?",
             step_intercept: (m:any) => `The line crosses the y-axis at $y = ${m}$.`,
             step_delta: "The slope $k$ is the change in $y$ divided by the change in $x$.",
             step_slope_calc: "Count squares: How much does $y$ change when we go 1 step to the right?",
             find_m: "Find the m-value (y-intercept).",
-            find_k: "Find the k-value (slope)."
+            find_k: "Find the k-value (slope).",
+            parallel: "Find the slope of a line parallel to:",
+            perpendicular: "Find the slope of a line perpendicular to:",
+            find_gradient: "Calculate the gradient",
+            find_intercept: "Find the intercept"
         },
+
+        // --- Scale & Maps ---
         scale: {
+            map: "Map Scale",
+            real: "Real Distance",
+            map_dist: "Map Distance",
+            ratio: "Ratio",
+            problem_map_to_real: "Calculate the real world distance.",
+            problem_real_to_map: "Calculate the distance on the map.",
+            problem_find_scale: "Determine the scale of the map.",
             reduction: "Reduction",
             enlargement: "Enlargement",
             reality: "Reality",
@@ -7421,6 +7493,8 @@ export const UI_STRINGS = {
             calc_area_real: "Calculate the area of reality.",
             calc_area_scale: "The area scale is the length scale squared."
         },
+
+        // --- Problem Solving ---
         problem_solving: {
             task_solve: "Solve the equation and calculate $x$.",
             task_write: "Write an equation that describes the situation (you don't need to solve it).",
@@ -7434,12 +7508,45 @@ export const UI_STRINGS = {
             expl_person2_more: "Person 2 has more.",
             expl_person2_less: "Person 2 has less.",
             expl_compare_sum: "The sum of both is the total.",
-            a_buy: { sv: "", en: "You buy $a$ {item} for $x$ kr each and a bag for $b$ kr. Total cost is $c$ kr." },
+            a_buy: { sv: "", en: "You buy $a$ {item} for $x$ kr/st and a bag for $b$ kr. Total cost is $c$ kr." },
             a_taxi: { sv: "", en: "A taxi ride has a start fee of $b$ kr and costs $a$ kr per km. Total cost is $c$ kr. How many km ($x$) did you travel?" },
             b_discount: { sv: "", en: "You buy $a$ {item} costing $x$ kr each. You have a discount coupon of $b$ kr. You pay $c$ kr in total." },
             c_compare: { sv: "", en: "{name1} and {name2} collect {item}. {name2} has $a$ more than {name1}. Together they have $c$. How many does {name1} have ($x$)?" },
             d_compare: { sv: "", en: "{name1} and {name2} have $c$ {item} together. {name2} has $b$ fewer than {name1}. How many does {name1} have ($x$)?" }
         },
+
+        // --- Geometry & Volume ---
+        geometry: {
+            area: "Calculate the Area",
+            perimeter: "Calculate the Perimeter",
+            circumference: "Calculate the Circumference",
+            volume: "Calculate the Volume",
+            surface_area: "Calculate the Surface Area",
+            similarity: "Similarity",
+            scale_factor: "Find the Scale Factor",
+            missing_side: "Find the missing side length",
+            shape: "Shape",
+            cube: "Cube",
+            cuboid: "Rectangular Prism",
+            cylinder: "Cylinder",
+            sphere: "Sphere",
+            cone: "Cone",
+            triangle: "Triangle",
+            rectangle: "Rectangle",
+            circle: "Circle",
+            parallelogram: "Parallelogram",
+            trapezium: "Trapezium"
+        },
+
+        // --- Ten Powers ---
+        ten_powers: {
+            mult: "Multiplication by powers of 10",
+            div: "Division by powers of 10",
+            standard_form: "Standard Form (Scientific Notation)",
+            prefix: "Unit Prefixes"
+        },
+
+        // --- Shapes ---
         shapes: {
             square: "square",
             rectangle: "rectangle",
@@ -7468,6 +7575,21 @@ export const UI_STRINGS = {
             circle: "circles",
             semicircle: "semicircles",
             parallelogram: "parallelograms"
+        },
+
+        // --- Units ---
+        units: {
+            cm: "cm",
+            m: "m",
+            km: "km",
+            mm: "mm",
+            cm2: "cm²",
+            m2: "m²",
+            km2: "km²",
+            cm3: "cm³",
+            m3: "m³",
+            liter: "L",
+            degrees: "°"
         }
     }
 };
@@ -7478,11 +7600,28 @@ export const TERMS = UI_STRINGS;
 export function t(lang: Language, keyOrObj: string | { sv: string, en: string }): string {
     const l = (lang === 'en') ? 'en' : 'sv';
     
+    // Check if input is a localized object {sv:..., en:...}
     if (typeof keyOrObj === 'object' && keyOrObj !== null) {
+        // @ts-ignore
         return keyOrObj[l] || keyOrObj['sv'] || "";
     }
     
+    // Check if input is a dot-notation string "geometry.area"
     if (typeof keyOrObj === 'string') {
+        if (keyOrObj.includes('.')) {
+            const keys = keyOrObj.split('.');
+            let value: any = UI_STRINGS[l];
+            for (const k of keys) {
+                if (value && value[k]) {
+                    value = value[k];
+                } else {
+                    return keyOrObj; // Return key if missing
+                }
+            }
+            return typeof value === 'string' ? value : keyOrObj;
+        }
+        
+        // Direct key lookup in UI root
         // @ts-ignore
         return UI_STRINGS[l][keyOrObj] || keyOrObj;
     }

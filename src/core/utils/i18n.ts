@@ -353,7 +353,7 @@ export const UI_STRINGS = {
         graph: {
             q_intercept: { sv: "", en: "Find the intercept (m)." },
             q_slope: { sv: "", en: "Find the slope (k)." },
-            q_func: { sv: "", en: "Find the line equation ($y = kx + m$).", en: "Find the line equation ($y = kx + m$)." },
+            q_func: { sv: "", en: "Find the line equation ($y = kx + m$)."},
             look_x0: "Look at the graph: Where does the line cross the y-axis (where $x=0$)?",
             step_intercept: (m:any) => `The line crosses the y-axis at $y = ${m}$.`,
             step_delta: "The slope $k$ is the change in $y$ divided by the change in $x$.",

@@ -1,231 +1,364 @@
 import React, { useState, useEffect } from 'react';
-// Views - Named Imports
-import { Dashboard } from './components/views/Dashboard';
-import { PracticeView } from './components/views/PracticeView';
-import { DoNowConfig } from './components/views/DoNowConfig';
-import { DoNowGrid } from './components/views/DoNowGrid';
-// Modals - Named Imports (Fixing the build error here)
-import { StatsModal } from './components/modals/StatsModal';
-import { AboutModal } from './components/modals/AboutModal';
-// Utils
-import { UI_STRINGS } from './core/utils/i18n'; 
+import Dashboard from './components/views/Dashboard';
+import PracticeView from './components/views/PracticeView';
+import DoNowConfig from './components/views/DoNowConfig';
+import DoNowGrid from './components/views/DoNowGrid';
+import AboutModal from './components/modals/AboutModal';
+import LgrModal from './components/modals/LgrModal';
+import StatsModal from './components/modals/StatsModal';
+import StreakModal from './components/modals/StreakModal'; // Ensure this exists
+import MobileDrawer from './components/practice/MobileDrawer';
+import { UI_TEXT, CATEGORIES, LEVEL_DESCRIPTIONS } from './constants/localization';
 
-// Counters Component for the Header
-const StatsCounter = ({ icon, value, colorClass, title, onClick }) => (
-  <div 
-    onClick={onClick}
-    className={`flex items-center gap-1.5 px-3 py-1 rounded-full border ${colorClass} transition-all duration-200 cursor-pointer hover:bg-opacity-80 active:scale-95`}
-    title={title}
-  >
-    <span className="text-lg select-none">{icon}</span>
-    <span className={`font-bold text-sm sm:text-base ${colorClass.split(' ')[1]}`.replace('border-', 'text-')}>
-      {value}
-    </span>
-  </div>
-);
+function App() {
+    const [view, setView] = useState('dashboard'); // 'dashboard', 'practice', 'donow_config', 'donow_grid'
+    const [lang, setLang] = useState('sv');
+    const [topic, setTopic] = useState('');
+    const [level, setLevel] = useState(0);
 
-const App = () => {
-  // --- Global State ---
-  const [currentView, setCurrentView] = useState('dashboard');
-  const [selectedTopic, setSelectedTopic] = useState(null);
-  const [doNowConfig, setDoNowConfig] = useState(null);
-  const [lang, setLang] = useState('sv'); // Default language
-  
-  // Modal State
-  const [showStats, setShowStats] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
-  
-  // Persisted User Stats
-  const [stats, setStats] = useState({
-    totalCorrect: 0,
-    streak: 0,
-    history: []
-  });
+    const [question, setQuestion] = useState(null);
+    const [input, setInput] = useState('');
+    const [feedback, setFeedback] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-  // Load stats on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('anpassa_stats');
-      if (saved) {
-        setStats(JSON.parse(saved));
-      }
-    } catch (e) {
-      console.error("Failed to load stats", e);
+    // Session Stats
+    const [streak, setStreak] = useState(0);
+    const [totalCorrect, setTotalCorrect] = useState(0);
+    const [sessionStats, setSessionStats] = useState({
+        attempted: 0,
+        correctNoHelp: 0,
+        correctHelp: 0,
+        incorrect: 0,
+        skipped: 0,
+        maxStreak: 0
+    });
+    
+    const [granularStats, setGranularStats] = useState({});
+    const [history, setHistory] = useState([]);
+    const [revealedClues, setRevealedClues] = useState([]);
+    const [levelUpAvailable, setLevelUpAvailable] = useState(false);
+    const [aboutOpen, setAboutOpen] = useState(false);
+    const [statsOpen, setStatsOpen] = useState(false);
+    const [timeUpOpen, setTimeUpOpen] = useState(false);
+    const [lgrOpen, setLgrOpen] = useState(false);
+
+    // Do Now State
+    const [doNowQuestions, setDoNowQuestions] = useState([]);
+
+    // Modals State
+    const [showStreakModal, setShowStreakModal] = useState(false);
+    const [showTotalModal, setShowTotalModal] = useState(false);
+    const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
+
+    const [usedHelp, setUsedHelp] = useState(false);
+    const [isSolutionRevealed, setIsSolutionRevealed] = useState(false);
+
+    // Timer State
+    const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
+
+    const ui = UI_TEXT[lang];
+
+    // Timer Logic
+    useEffect(() => {
+        let interval = null;
+        if (timerSettings.isActive && timerSettings.remaining > 0 && view === 'practice') {
+            interval = setInterval(() => {
+                setTimerSettings(prev => {
+                    if (prev.remaining <= 1) {
+                        clearInterval(interval);
+                        setTimeUpOpen(true);
+                        return { ...prev, remaining: 0, isActive: false };
+                    }
+                    return { ...prev, remaining: prev.remaining - 1 };
+                });
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [timerSettings.isActive, view, timerSettings.remaining]);
+
+    const toggleTimer = (minutes) => {
+        const seconds = minutes * 60;
+        setTimerSettings({ duration: seconds, remaining: seconds, isActive: minutes > 0 });
+    };
+
+    const resetTimer = () => {
+        setTimerSettings({ duration: 0, remaining: 0, isActive: false });
+    };
+
+    const formatTime = (seconds) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    useEffect(() => {
+        if (streak > sessionStats.maxStreak) {
+            setSessionStats(prev => ({ ...prev, maxStreak: streak }));
+        }
+    }, [streak]);
+
+    const fetchQuestion = async (t = topic, l = level, lg = lang, force = false) => {
+        if (!force && (showStreakModal || showTotalModal || levelUpAvailable || timeUpOpen)) return;
+        if (!t || !l) return;
+        setLoading(true);
+        setFeedback(null);
+        setInput('');
+        setRevealedClues([]);
+        setUsedHelp(false);
+        setIsSolutionRevealed(false);
+        setLevelUpAvailable(false);
+        try {
+            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}`);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            setQuestion(data);
+        } catch (e) {
+            console.error(e);
+            setQuestion(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const startPractice = () => {
+        if (topic && level) {
+            setStreak(0);
+            setView('practice');
+            if (timerSettings.duration > 0) {
+                setTimerSettings(prev => ({ ...prev, isActive: true }));
+            }
+            fetchQuestion(topic, level, lang);
+        }
+    };
+
+    const quitPractice = () => {
+        setStreak(0);
+        setView('dashboard');
+        setQuestion(null);
+    };
+
+    const handleDoNowGenerate = async (selected) => {
+        if (selected.length === 0) return;
+        setLoading(true);
+        const fullConfig = [];
+        for (let i = 0; i < 6; i++) {
+            fullConfig.push(selected[i % selected.length]);
+        }
+        try {
+            const res = await fetch('/api/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ config: fullConfig, lang })
+            });
+            const data = await res.json();
+            if (data.questions) {
+                setDoNowQuestions(data.questions);
+                setView('donow_grid');
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSelection = (t, l) => { setTopic(t); setLevel(l); };
+
+    const handleHint = () => {
+        if (question?.clues) {
+            setUsedHelp(true);
+            const currentLen = revealedClues.length;
+            if (currentLen < question.clues.length) {
+                setRevealedClues([...revealedClues, question.clues[currentLen]]);
+            }
+        }
+    };
+
+    const handleSolution = () => {
+        if (question?.clues) {
+            setUsedHelp(true);
+            setRevealedClues(question.clues);
+            setIsSolutionRevealed(true);
+            setStreak(0);
+        }
+    };
+
+    const updateStats = (type) => {
+        setSessionStats(prev => ({
+            ...prev,
+            attempted: prev.attempted + 1,
+            [type]: prev[type] + 1
+        }));
+    };
+
+    const updateGranularStats = (topicId, levelId, resultType) => {
+        setGranularStats(prev => {
+            const topicData = prev[topicId] || {};
+            const levelData = topicData[levelId] || { skipped: 0, incorrect: 0, correctHelp: 0, correctNoHelp: 0 };
+            return {
+                ...prev,
+                [topicId]: {
+                    ...topicData,
+                    [levelId]: {
+                        ...levelData,
+                        [resultType]: (levelData[resultType] || 0) + 1
+                    }
+                }
+            };
+        });
+    };
+
+    const handleSkip = () => {
+        const descText = typeof question.renderData.description === 'object' ? question.renderData.description[lang] : question.renderData.description;
+        const historyText = question.renderData.latex || descText;
+        setHistory(prev => [{ topic, level, correct: false, skipped: true, text: historyText, clueUsed: revealedClues.length > 0 || isSolutionRevealed, time: Date.now() }, ...prev]);
+        setStreak(0);
+        updateStats('skipped');
+        updateGranularStats(topic, level, 'skipped');
+        fetchQuestion(topic, level, lang);
+    };
+
+    const handleChangeLevel = (delta) => { 
+        const newLevel = level + delta; 
+        const max = Object.keys(LEVEL_DESCRIPTIONS[topic] || {}).length; 
+        if (newLevel >= 1 && newLevel <= max) { 
+            setStreak(0); 
+            setLevel(newLevel); 
+            fetchQuestion(topic, newLevel, lang, true); 
+        } 
+    };
+
+    const handleSubmit = async (e, directInput) => {
+        e.preventDefault();
+        if (showStreakModal || showTotalModal || timeUpOpen) return;
+        if (feedback === 'correct') return;
+        let finalInput = directInput !== undefined ? directInput : input;
+        if (!question || !finalInput) return;
+
+        const isStatsLocked = isSolutionRevealed;
+        const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
+
+        try {
+            const res = await fetch('/api/answer', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ 
+                    answer: finalInput, 
+                    token: question.token, 
+                    streak: streak, 
+                    level: level, 
+                    topic: topic, 
+                    usedHelp: helpUsed, 
+                    solutionUsed: isSolutionRevealed, 
+                    attempts: question.attempts 
+                }) 
+            });
+            const result = await res.json();
+            const descText = typeof question.renderData.description === 'object' ? question.renderData.description[lang] : question.renderData.description;
+            const historyText = question.renderData.latex || descText;
+
+            if (result.correct) {
+                if (!isStatsLocked) {
+                    setHistory(prev => [{ topic, level, correct: true, text: historyText, clueUsed: helpUsed, time: Date.now() }, ...prev]);
+                    setStreak(result.newStreak);
+                    if (!helpUsed) {
+                        updateStats('correctNoHelp');
+                        updateGranularStats(topic, level, 'correctNoHelp');
+                    } else {
+                        updateStats('correctHelp');
+                        updateGranularStats(topic, level, 'correctHelp');
+                    }
+
+                    const newTotal = totalCorrect + 1;
+                    setTotalCorrect(newTotal);
+                    if ([10, 20, 30, 40, 50].includes(newTotal)) setShowTotalModal(true);
+                    if ([15, 20, 30, 40, 50].includes(result.newStreak)) setShowStreakModal(true);
+                    else {
+                        if (result.levelUp) setLevelUpAvailable(true);
+                        setTimeout(() => {
+                            if (!showTotalModal && !showStreakModal) {
+                                if (!result.levelUp) fetchQuestion(topic, level, lang);
+                            }
+                        }, 1500);
+                    }
+                }
+                setFeedback('correct');
+            } else {
+                question.attempts = (question.attempts || 0) + 1;
+                if (question.attempts >= 2) {
+                    handleSolution();
+                    if (!isStatsLocked) {
+                        updateStats('incorrect');
+                        updateGranularStats(topic, level, 'incorrect');
+                        setHistory(prev => [{
+                            topic, level, correct: false, text: historyText, clueUsed: true, correctAnswer: result.correctAnswer || "See Solution", time: Date.now()
+                        }, ...prev]);
+                    }
+                } else {
+                    handleHint();
+                }
+                setFeedback('incorrect');
+                setStreak(0);
+            }
+        } catch (e) { console.error(e); }
+    };
+
+    const toggleLang = () => setLang(prev => prev === 'sv' ? 'en' : 'sv');
+
+    // RENDER LOGIC
+    if (view === 'donow_config') {
+        return <div className="min-h-screen bg-gray-50 font-sans"><DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
     }
-  }, []);
+    if (view === 'donow_grid') {
+        return <DoNowGrid questions={doNowQuestions} ui={ui} onBack={() => setView('donow_config')} lang={lang} />;
+    }
 
-  // Save stats on change
-  useEffect(() => {
-    localStorage.setItem('anpassa_stats', JSON.stringify(stats));
-  }, [stats]);
+    return (
+        <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
+            <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
+            <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
+            <MobileDrawer open={mobileHistoryOpen} onClose={() => setMobileHistoryOpen(false)} history={history} ui={ui} />
+            <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
+            <StatsModal visible={timeUpOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setTimeUpOpen(false)} title={ui.stats_times_up} />
 
-  // --- Handlers ---
-  const handleStartPractice = (topic) => {
-    setSelectedTopic(topic);
-    setCurrentView('practice');
-    window.scrollTo(0, 0);
-  };
+            <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm">
+                <div className="max-w-7xl mx-auto flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-xl font-bold text-primary-700 tracking-tight cursor-pointer" onClick={quitPractice}>Anpassa</h1>
+                        {view === 'dashboard' && timerSettings.remaining > 0 && (
+                            <div className="hidden sm:flex bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold items-center gap-2 border border-orange-200">
+                                <span>⏸ {ui.timer_paused}</span>
+                                <span className="font-mono text-sm">{formatTime(timerSettings.remaining)}</span>
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-primary-200">✅ {totalCorrect}</div>
+                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-yellow-200">🔥 {streak}</div>
+                        <button onClick={toggleLang} className="px-3 py-1 rounded-md text-xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-1.5" title={lang === 'sv' ? "Byt språk" : "Switch Language"}>
+                            <span className="text-sm">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</span><span>{lang === 'sv' ? 'SE' : 'ENG'}</span>
+                        </button>
+                        <button onClick={() => setStatsOpen(true)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title={ui.stats_title}>
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        </button>
+                        <button onClick={() => setAboutOpen(true)} className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-1 px-4 text-xs rounded-full shadow-sm transition-transform transform active:scale-95">{ui.aboutBtn}</button>
+                    </div>
+                </div>
+            </header>
 
-  const handleStartDoNow = (config) => {
-    setDoNowConfig(config);
-    setCurrentView('donow_grid');
-    window.scrollTo(0, 0);
-  };
-
-  const handleCorrectAnswer = (topicId) => {
-    setStats(prev => ({
-      ...prev,
-      totalCorrect: prev.totalCorrect + 1,
-      streak: prev.streak + 1,
-      history: [...prev.history, { date: new Date().toISOString(), result: 'correct', topic: topicId }]
-    }));
-  };
-
-  const handleIncorrectAnswer = () => {
-    setStats(prev => ({
-      ...prev,
-      streak: 0
-    }));
-  };
-
-  const handleHome = () => {
-    setCurrentView('dashboard');
-    setSelectedTopic(null);
-  };
-
-  const UI = UI_STRINGS[lang];
-
-  // --- Render ---
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm px-4 py-3">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          
-          {/* Logo / Home */}
-          <div 
-            className="flex items-center gap-2 cursor-pointer group" 
-            onClick={handleHome}
-          >
-            <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:bg-indigo-700 transition-colors">
-              A
+            <div className="flex-1 flex flex-col">
+                {view === 'dashboard' ? (
+                    <Dashboard
+                        lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice} timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} onLgrOpen={() => setLgrOpen(true)} onDoNowOpen={() => setView('donow_config')} toggleLang={toggleLang}
+                    />
+                ) : (
+                    <PracticeView
+                        lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip} handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{ history, topic, level }} actions={{ retry: (force) => fetchQuestion(topic, level, lang, force), goBack: quitPractice }} levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable} isSolutionRevealed={isSolutionRevealed} showStreakModal={showStreakModal} setShowStreakModal={setShowStreakModal} showTotalModal={showTotalModal} setShowTotalModal={setShowTotalModal} totalCorrect={totalCorrect} timerSettings={timerSettings} formatTime={formatTime} setMobileHistoryOpen={setMobileHistoryOpen}
+                    />
+                )}
             </div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight hidden sm:block group-hover:text-indigo-700 transition-colors">
-              Anpassa
-            </h1>
-          </div>
-
-          {/* Stats & Actions */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            <StatsCounter 
-              icon="🔥" 
-              value={stats.streak} 
-              colorClass="bg-orange-50 border-orange-100 text-orange-600"
-              title={UI.streak}
-              onClick={() => setShowStats(true)}
-            />
-            
-            <StatsCounter 
-              icon="✅" 
-              value={stats.totalCorrect} 
-              colorClass="bg-emerald-50 border-emerald-100 text-emerald-600"
-              title={UI.score}
-              onClick={() => setShowStats(true)}
-            />
-
-            {/* Language Toggle */}
-             <button 
-              onClick={() => setLang(l => l === 'sv' ? 'en' : 'sv')}
-              className="px-2 py-1 text-xs font-bold bg-slate-100 text-slate-500 rounded border border-slate-200 hover:bg-slate-200 transition-colors"
-              title="Switch Language"
-            >
-              {lang.toUpperCase()}
-            </button>
-
-            {/* Menu / About */}
-            <button 
-              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-full transition-colors"
-              aria-label="Menu"
-              onClick={() => setShowAbout(true)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          </div>
         </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
-        {currentView === 'dashboard' && (
-          <Dashboard 
-            onSelectPractice={handleStartPractice}
-            onConfigDoNow={() => {
-              setCurrentView('donow_config');
-              window.scrollTo(0, 0);
-            }}
-            lang={lang}
-          />
-        )}
-
-        {currentView === 'practice' && selectedTopic && (
-          <PracticeView 
-            topic={selectedTopic}
-            onCorrect={handleCorrectAnswer}
-            onIncorrect={handleIncorrectAnswer}
-            onBack={handleHome}
-            lang={lang}
-          />
-        )}
-
-        {currentView === 'donow_config' && (
-          <DoNowConfig 
-            onStart={handleStartDoNow} 
-            onBack={handleHome}
-            lang={lang}
-          />
-        )}
-
-        {currentView === 'donow_grid' && doNowConfig && (
-          <DoNowGrid 
-            config={doNowConfig}
-            onComplete={handleHome}
-            lang={lang}
-          />
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white mt-auto">
-        <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row justify-between items-center text-sm text-slate-400">
-          <p>&copy; {new Date().getFullYear()} Anpassa Learning.</p>
-          <div className="flex gap-4 mt-2 sm:mt-0">
-            <button onClick={() => setShowAbout(true)} className="hover:text-slate-600">Om Anpassa</button>
-          </div>
-        </div>
-      </footer>
-
-      {/* --- Modals --- */}
-      {showStats && (
-        <StatsModal 
-          isOpen={showStats}
-          onClose={() => setShowStats(false)} 
-          stats={stats}
-          lang={lang}
-        />
-      )}
-      
-      {showAbout && (
-        <AboutModal 
-          isOpen={showAbout}
-          onClose={() => setShowAbout(false)}
-          lang={lang}
-        />
-      )}
-
-    </div>
-  );
-};
+    );
+}
 
 export default App;
