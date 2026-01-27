@@ -4,8 +4,7 @@ import { TERMS, t, Language } from "../utils/i18n";
 
 export class ScaleGenerator {
     
-    // --- CONSTANTS & DATA ---
-
+    // Matched exactly to i18n.ts shapes to prevent crashes
     private static readonly SHAPES = [
         'square', 'rectangle', 'circle', 'triangle', 
         'rhombus', 'parallelogram', 'pentagon', 'hexagon', 'octagon',
@@ -15,12 +14,6 @@ export class ScaleGenerator {
 
     private static readonly AREA_SHAPES = ['rectangle', 'triangle', 'circle', 'semicircle', 'parallelogram'];
 
-    /**
-     * Generate diverse scale factors:
-     * - Small integers (2-25)
-     * - Medium multiples of 5 (30-100)
-     * - Large multiples of 10 (100-1000)
-     */
     private static getScaleFactor(rng: Random): number {
         const type = rng.intBetween(1, 10);
         if (type <= 4) return rng.intBetween(2, 25);
@@ -30,21 +23,15 @@ export class ScaleGenerator {
 
     public static generate(level: number, seed: string, lang: Language = 'sv', multiplier: number = 1): GeneratedQuestion {
         const rng = new Random(seed);
-        
-        // Correct LaTeX color formatting
         const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
         
         let mode = level;
-        
-        // --- LEVEL 7: MIXED ---
-        if (level === 7) {
-            mode = rng.intBetween(1, 6); 
-        }
+        if (level === 7) mode = rng.intBetween(1, 6); 
 
-        // --- LEVEL 1: CONCEPTUAL (Multiple Choice) ---
+        // --- LEVEL 1: CONCEPTUAL ---
         if (mode === 1) {
             const isReduction = rng.intBetween(0, 1) === 1; 
-            const ratio = rng.pick([2, 5, 10, 20, 50, 100]); // Keep Level 1 simple
+            const ratio = rng.pick([2, 5, 10, 20, 50, 100]);
             const scaleStr = isReduction ? `1:${ratio}` : `${ratio}:1`;
             const qType = rng.intBetween(1, 2);
             let descObj = { sv: "", en: "" }, correct = "", choices: string[] = [], expl = "";
@@ -78,28 +65,24 @@ export class ScaleGenerator {
 
         // Shared Setup for L2-6
         const shape = rng.pick(this.SHAPES);
-        const svShape = t('sv', TERMS.shapes[shape]) || shape;
-        const enShape = t('en', TERMS.shapes[shape]) || shape;
+        // Safe access to shape terms using fallback
+        const svShape = t('sv', (TERMS.shapes as any)[shape] || shape);
+        const enShape = t('en', (TERMS.shapes as any)[shape] || shape);
         
         const scaleFactor = ScaleGenerator.getScaleFactor(rng);
 
         // --- LEVEL 2: FIND LENGTH (EASY - SAME UNITS) ---
         if (mode === 2) {
-            // Support X:1
             const isReduction = rng.intBetween(0, 1) === 1;
             const scaleStr = isReduction ? `1:${scaleFactor}` : `${scaleFactor}:1`;
-            
             const subType = rng.intBetween(0, 1);
             let drawingVal = 0, realVal = 0, answer = 0;
             let steps: Clue[] = [];
             let geomLabel = "";
             let descriptionObj = { sv: "", en: "" };
-
-            // Base integer to ensure clean numbers
             const baseInt = rng.intBetween(2, 15);
 
             if (isReduction) {
-                // 1:X
                 if (subType === 0) { // Find Real
                     drawingVal = baseInt; 
                     realVal = drawingVal * scaleFactor; 
@@ -108,14 +91,13 @@ export class ScaleGenerator {
                     geomLabel = `${drawingVal} cm`;
                     steps = [{ text: t(lang, TERMS.common.calculate), latex: `${drawingVal} \\cdot ${scaleFactor} = ${formatColor(realVal)}` }];
                 } else { // Find Drawing
-                    answer = baseInt; // Drawing is the small base int
+                    answer = baseInt;
                     realVal = answer * scaleFactor;
                     descriptionObj = { sv: `I verkligheten är en ${svShape} ${realVal} cm lång. Hur lång blir den på en ritning i skala ${scaleStr}? (Svara i cm)`, en: `In reality, a ${enShape} is ${realVal} cm long. How long will it be on a drawing with scale ${scaleStr}? (Answer in cm)` };
                     geomLabel = `${realVal} cm`;
                     steps = [{ text: t(lang, TERMS.scale.step_plug_in), latex: `\\frac{${realVal}}{${scaleFactor}} = ${formatColor(answer)}` }];
                 }
             } else {
-                // X:1 (Enlargement)
                 if (subType === 0) { // Find Drawing
                     realVal = baseInt; 
                     drawingVal = realVal * scaleFactor; 
@@ -147,7 +129,6 @@ export class ScaleGenerator {
 
         // --- LEVEL 3: FIND LENGTH (HARD - MIXED UNITS) ---
         if (mode === 3) {
-            // Usually map scales (1:X)
             const subType = rng.intBetween(0, 1);
             let answer = 0;
             let steps: Clue[] = [];
@@ -194,12 +175,11 @@ export class ScaleGenerator {
             };
         }
 
-        // --- LEVEL 4: FIND SCALE (RANDOM POSITIONING & TYPE) ---
+        // --- LEVEL 4: FIND SCALE ---
         if (mode === 4) {
             const base = rng.intBetween(2, 5); 
             const factor = ScaleGenerator.getScaleFactor(rng);
             
-            // Randomize Reduction (1:X) vs Enlargement (X:1)
             const isReduction = rng.intBetween(0, 1) === 1;
             
             let drawVal, realVal;
@@ -221,7 +201,6 @@ export class ScaleGenerator {
                     { text: t(lang, TERMS.scale.step_simplify), latex: `1 : \\frac{${realVal}}{${drawVal}} \\implies ${formatColor('1:' + factor)}` }
                 ];
             } else {
-                // Enlargement
                 realVal = base;
                 drawVal = base * factor; 
                 ansLeft = factor;
@@ -234,13 +213,10 @@ export class ScaleGenerator {
             }
 
             const descriptionObj = { sv: `Bestäm skalan.`, en: `Determine the scale.` };
-            
-            // Visual Randomization
             const leftIsDrawing = rng.intBetween(0, 1) === 1;
             const leftLabel = leftIsDrawing ? t(lang, TERMS.scale.drawing) : t(lang, TERMS.scale.reality);
             const rightLabel = leftIsDrawing ? t(lang, TERMS.scale.reality) : t(lang, TERMS.scale.drawing);
             
-            // Value Formatting
             const realUnit = (!isReduction && factor < 100) ? 'cm' : (factor >= 100 ? 'm' : 'cm');
             const realDisplay = (realUnit === 'm' ? realVal / 100 : realVal);
 
@@ -264,7 +240,6 @@ export class ScaleGenerator {
         if (mode === 5) {
             const base = rng.intBetween(3, 8); 
             const factor = ScaleGenerator.getScaleFactor(rng); 
-            
             const isReduction = rng.intBetween(0, 1) === 1;
 
             let drawVal, realVal, ansLeft, ansRight;
@@ -273,7 +248,7 @@ export class ScaleGenerator {
 
             if (isReduction) {
                 drawVal = base;
-                realVal = base * factor; // cm
+                realVal = base * factor; 
                 const realM = realVal / 100;
                 const showM = factor >= 100;
                 
@@ -291,7 +266,6 @@ export class ScaleGenerator {
                 steps.push({ text: t(lang, TERMS.scale.step_simplify), latex: `1 : \\frac{${realVal}}{${drawVal}} \\implies ${formatColor('1:' + factor)}` });
 
             } else {
-                // Enlargement
                 realVal = base;
                 drawVal = base * factor; 
                 ansLeft = factor; ansRight = 1;
@@ -318,7 +292,7 @@ export class ScaleGenerator {
         if (mode === 6) {
             const areaShape = rng.pick(ScaleGenerator.AREA_SHAPES);
             const subType = rng.intBetween(1, 4);
-            const lengthScale = rng.pick([2, 3, 4, 5, 10]); // Keep square roots clean
+            const lengthScale = rng.pick([2, 3, 4, 5, 10]);
             const areaScale = lengthScale * lengthScale;
 
             const isReduction = rng.intBetween(0, 1) === 1;
@@ -329,8 +303,8 @@ export class ScaleGenerator {
             let answer: any = 0;
             let answerType: any = 'numeric';
 
-            const shapePluralSv = (t('sv', TERMS.shapes_plural[areaShape]) || areaShape);
-            const shapePluralEn = (t('en', TERMS.shapes_plural[areaShape]) || areaShape);
+            const shapePluralSv = (t('sv', (TERMS.shapes_plural as any)[areaShape]) || areaShape);
+            const shapePluralEn = (t('en', (TERMS.shapes_plural as any)[areaShape]) || areaShape);
 
             if (subType === 1) { // Find Scale (Visual)
                 const w = rng.intBetween(2, 6);

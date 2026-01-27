@@ -5,7 +5,7 @@ export const CATEGORIES = {
         color: 'pink',
         generators: [
             { id: 'BasicArithmeticGen', api: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
-            { id: 'NegativeNumbersGen', api: 'negative_numbers', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
+            { id: 'NegativeNumbersGen', api: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
             { id: 'TenPowersGen', api: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } }
         ]
     },
@@ -14,8 +14,8 @@ export const CATEGORIES = {
         label: { en: 'Algebra', sv: 'Algebra' },
         color: 'indigo',
         generators: [
-            { id: 'ExpressionSimplificationGen', api: 'simplification', label: { sv: "Uttryck", en: "Expressions" } },
-            { id: 'EquationGenerator', api: 'equations', label: { sv: "Ekvationer", en: "Equations" } }
+            { id: 'ExpressionSimplificationGen', api: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
+            { id: 'EquationGenerator', api: 'equation', label: { sv: "Ekvationer", en: "Equations" } }
         ]
     },
     GEOMETRY: {
@@ -23,9 +23,9 @@ export const CATEGORIES = {
         label: { en: 'Geometry', sv: 'Geometri' },
         color: 'emerald',
         generators: [
-            { id: 'GeometryGenerator', api: 'geometry_2d', label: { sv: "Area & Omkrets", en: "Area & Perimeter" } },
+            { id: 'GeometryGenerator', api: 'geometry', label: { sv: "Area & Omkrets", en: "Area & Perimeter" } },
             { id: 'ScaleGenerator', api: 'scale', label: { sv: "Skala", en: "Scale" } },
-            { id: 'VolumeGenerator', api: 'geometry_3d', label: { sv: "Volym", en: "Volume" } },
+            { id: 'VolumeGenerator', api: 'volume', label: { sv: "Volym", en: "Volume" } },
             { id: 'SimilarityGenerator', api: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } }
         ]
     },
@@ -34,7 +34,7 @@ export const CATEGORIES = {
         label: { en: 'Functions', sv: 'Samband' },
         color: 'purple',
         generators: [
-            { id: 'LinearGraphGenerator', api: 'linear_graphs', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
+            { id: 'LinearGraphGenerator', api: 'graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
         ]
     }
 };

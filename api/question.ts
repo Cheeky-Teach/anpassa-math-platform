@@ -39,13 +39,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const seed = Math.random().toString(36).substring(7);
 
     // --- Static Router ---
-    // FIXED: Calls static methods directly. Do not use 'new'.
+    // FIXED: Call static methods directly. NO 'new Generator()'.
     switch (topicKey) {
       // Arithmetic
       case 'arithmetic': 
         question = BasicArithmeticGen.generate(lvl, seed, language); 
         break;
       case 'negative': 
+      case 'negative_numbers': // Alias
         question = NegativeNumbersGen.generate(lvl, seed, language); 
         break;
       case 'ten_powers': 
@@ -54,9 +55,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       
       // Algebra
       case 'simplify': 
+      case 'simplification': // Alias to prevent 404
         question = ExpressionSimplificationGen.generate(lvl, seed, language); 
         break;
       case 'equation': 
+      case 'equations': // Alias
         // FIXED: Route Level 5 & 6 to Word Problems
         if (lvl === 5 || lvl === 6) {
             question = LinearEquationProblemGen.generate(lvl, seed, language);
@@ -67,12 +70,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
       // Geometry
       case 'geometry': 
+      case 'geometry_2d': // Alias
         question = GeometryGenerator.generate(lvl, seed, language); 
         break;
       case 'scale': 
         question = ScaleGenerator.generate(lvl, seed, language); 
         break;
       case 'volume': 
+      case 'geometry_3d': // Alias
         question = VolumeGenerator.generate(lvl, seed, language); 
         break;
       case 'similarity': 
@@ -81,6 +86,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
       // Functions
       case 'graph': 
+      case 'linear_graphs': // Alias
         question = LinearGraphGenerator.generate(lvl, seed, language); 
         break;
 

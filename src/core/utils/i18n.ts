@@ -2,22 +2,25 @@ export type Language = 'sv' | 'en';
 
 export const UI_STRINGS = {
     sv: {
+        // --- General UI ---
         submit: "Svara",
         next: "Nästa fråga",
         correct: "Rätt!",
         incorrect: "Inte riktigt, försök igen",
+        try_again: "Försök igen",
+        score: "Poäng",
+        streak: "Svit",
+        level: "Nivå",
+        loading: "Laddar...",
+        error: "Fel vid laddning",
         dashboard_title: "Välj område att öva på",
         backBtn: "Meny",
         history: "Historik",
         noHistory: "Inga svar än.",
-        level: "Nivå",
-        streak: "Svit",
         btnHint: "Ledtråd",
         btnSolution: "Visa lösning",
         btnSkip: "Hoppa över",
         placeholder: "Skriv ditt svar...",
-        loading: "Laddar...",
-        error: "Fel vid laddning",
         hintsTitle: "Ledtrådar",
         clueUsed: "Hjälp",
         donow: "Startuppgift",
@@ -27,8 +30,8 @@ export const UI_STRINGS = {
         donow_show_all: "Visa alla",
         donow_hide_all: "Dölj alla",
         aboutBtn: "Om skaparen",
-        
-        // --- Math Vocabulary (Restored) ---
+
+        // --- Math Vocabulary (CRITICAL FOR GENERATORS) ---
         common: {
             calculate: "Beräkna",
             equation: "Ekvation",
@@ -50,7 +53,7 @@ export const UI_STRINGS = {
             mul_pos_neg: "Plus gånger minus blir minus.",
             div_sign_same: "Lika tecken ger positivt svar.",
             div_sign_diff: "Olika tecken ger negativt svar.",
-            simple_calc: "Beräkna:", // Fixed key name
+            simple_calc: "Beräkna:", 
             step_calc: "Beräkna:"
         },
         graph: {
@@ -94,13 +97,13 @@ export const UI_STRINGS = {
             expl_person2_more: "Person 2 har mer.",
             expl_person2_less: "Person 2 har mindre.",
             expl_compare_sum: "Summan av båda är totalen.",
-            // Templates
             a_buy: { sv: "Du köper $a$ st {item} för $x$ kr/st och en påse för $b$ kr. Totalt betalar du $c$ kr.", en: "You buy $a$ {item} for $x$ kr each and a bag for $b$ kr. Total cost is $c$ kr." },
             a_taxi: { sv: "En taxiresa kostar $b$ kr i startavgift och $a$ kr per km. Resan kostar totalt $c$ kr. Hur många km ($x$) åkte du?", en: "A taxi ride has a start fee of $b$ kr and costs $a$ kr per km. Total cost is $c$ kr. How many km ($x$) did you travel?" },
             b_discount: { sv: "Du köper $a$ st {item} som kostar $x$ kr/st. Du har en rabattkupong på $b$ kr. Du betalar totalt $c$ kr.", en: "You buy $a$ {item} costing $x$ kr each. You have a discount coupon of $b$ kr. You pay $c$ kr in total." },
             c_compare: { sv: "{name1} och {name2} samlar på {item}. {name2} har $a$ fler än {name1}. Tillsammans har de $c$ st. Hur många har {name1} ($x$)?", en: "{name1} and {name2} collect {item}. {name2} has $a$ more than {name1}. Together they have $c$. How many does {name1} have ($x$)?" },
             d_compare: { sv: "{name1} och {name2} har $c$ {item} tillsammans. {name2} har $b$ färre än {name1}. Hur många har {name1} ($x$)?", en: "{name1} and {name2} have $c$ {item} together. {name2} has $b$ fewer than {name1}. How many does {name1} have ($x$)?" }
         },
+        // --- Full Shape List (Fixes ScaleGenerator) ---
         shapes: {
             square: "kvadrat",
             rectangle: "rektangel",
@@ -110,6 +113,13 @@ export const UI_STRINGS = {
             parallelogram: "parallellogram",
             pentagon: "femhörning",
             hexagon: "sexhörning",
+            octagon: "åttahörning",
+            star: "stjärna",
+            arrow: "pil",
+            heart: "hjärta",
+            cross: "kors",
+            lightning: "blixt",
+            kite: "drake",
             cube: "kub",
             cylinder: "cylinder",
             pyramid: "pyramid",
@@ -120,35 +130,19 @@ export const UI_STRINGS = {
             rectangle: "rektanglar",
             triangle: "trianglar",
             circle: "cirklar",
+            semicircle: "halvcirklar",
             parallelogram: "parallellogram"
         }
     },
     en: {
-        submit: "Submit",
-        next: "Next",
+        submit: "Submit Answer",
+        next: "Next Question",
         correct: "Correct!",
-        incorrect: "Incorrect",
-        dashboard_title: "Choose a topic",
-        backBtn: "Menu",
-        history: "History",
-        noHistory: "No history",
+        incorrect: "Incorrect.",
+        try_again: "Try Again",
         level: "Level",
-        streak: "Streak",
-        btnHint: "Hint",
-        btnSolution: "Solution",
-        btnSkip: "Skip",
-        placeholder: "Answer...",
         loading: "Loading...",
         error: "Error",
-        hintsTitle: "Hints",
-        clueUsed: "Clue",
-        donow: "Do Now",
-        donow_title: "Do Now",
-        donow_desc: "Select levels",
-        donow_gen: "Generate",
-        donow_show_all: "Show All",
-        donow_hide_all: "Hide All",
-        aboutBtn: "About",
         
         // English mappings
         common: { calculate: "Calculate", equation: "Equation", simplify: "Simplify" },
@@ -221,19 +215,29 @@ export const UI_STRINGS = {
         shapes: {
             square: "square", rectangle: "rectangle", circle: "circle", triangle: "triangle",
             rhombus: "rhombus", parallelogram: "parallelogram", pentagon: "pentagon", hexagon: "hexagon",
+            octagon: "octagon", star: "star", arrow: "arrow", heart: "heart", cross: "cross", lightning: "lightning", kite: "kite",
             cube: "cube", cylinder: "cylinder", pyramid: "pyramid", cone: "cone", sphere: "sphere"
         },
         shapes_plural: {
-            rectangle: "rectangles", triangle: "triangles", circle: "circles", parallelogram: "parallelograms"
+            rectangle: "rectangles", triangle: "triangles", circle: "circles", semicircle: "semicircles", parallelogram: "parallelograms"
         }
     }
 };
 
 export const TERMS = UI_STRINGS;
 
+// Helper to handle both string and object keys safely
 export function t(lang: Language, keyOrObj: string | { sv: string, en: string }): string {
-    if (typeof keyOrObj === 'object') {
-        return keyOrObj[lang] || keyOrObj['sv'] || "";
+    const l = (lang === 'en') ? 'en' : 'sv';
+    
+    if (typeof keyOrObj === 'object' && keyOrObj !== null) {
+        return keyOrObj[l] || keyOrObj['sv'] || "";
     }
-    return keyOrObj;
+    
+    if (typeof keyOrObj === 'string') {
+        // @ts-ignore
+        return UI_STRINGS[l][keyOrObj] || keyOrObj;
+    }
+    
+    return String(keyOrObj);
 }
