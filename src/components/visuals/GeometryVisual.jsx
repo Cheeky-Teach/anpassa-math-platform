@@ -1,159 +1,149 @@
 import React from 'react';
 
 /**
- * GeometryVisual
- * Handles SVG rendering for 2D Geometry and Similarity problems.
+ * Renders SVG geometry. Handles 'similarity' by rendering multiple shapes.
+ * Updated to prevent crashes when shapes array is undefined.
  */
-export const GeometryVisual = ({ visual }) => {
-  if (!visual) return null;
+const GeometryVisual = ({ data }) => {
+  if (!data) return null;
 
-  // Helper to draw angle arcs
-  const drawAngle = (cx, cy, startAngle, endAngle, radius = 20, color = "red") => {
-    // Convert degrees to radians
-    const startRad = (startAngle * Math.PI) / 180;
-    const endRad = (endAngle * Math.PI) / 180;
-
-    const x1 = cx + radius * Math.cos(startRad);
-    const y1 = cy + radius * Math.sin(startRad);
-    const x2 = cx + radius * Math.cos(endRad);
-    const y2 = cy + radius * Math.sin(endRad);
-
-    // Large arc flag (always 0 for acute angles in our generation logic)
-    const largeArcFlag = Math.abs(endAngle - startAngle) > 180 ? 1 : 0;
+  // --- Helper: Render a Single Polygon ---
+  const renderShape = (points, offsetX = 0, offsetY = 0, color = 'black', key) => {
+    if (!points || points.length < 2) return null;
+    
+    // SVG Coordinate System: Y increases downwards.
+    // Math Coordinate System: Y increases upwards.
+    // We flip Y (-p.y) so math coordinates (0,10) render above (0,0).
+    const pathData = points.map((p, i) => 
+      `${i === 0 ? 'M' : 'L'} ${p.x + offsetX} ${-p.y + offsetY}`
+    ).join(' ') + ' Z';
 
     return (
-      <path
-        d={`M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
-        fill="none"
-        stroke={color}
+      <path 
+        key={key}
+        d={pathData} 
+        fill={color} 
+        fillOpacity="0.2" 
+        stroke={color} 
         strokeWidth="2"
+        vectorEffect="non-scaling-stroke" // Keeps stroke width constant on zoom
+        strokeLinejoin="round"
       />
     );
   };
 
-  // 1. Similarity Comparison Visuals
-  // FIXED: Handle both legacy shape1/shape2 and new left/right properties from generator
-  if (visual.type === 'similarity_compare') {
-    const shape1 = visual.left || visual.shape1;
-    const shape2 = visual.right || visual.shape2;
+  // --- Helper: Render Labels ---
+  const renderLabels = (labels, shapes) => {
+    if (!labels) return null;
+    
+    return labels.map((lbl, i) => {
+      let x = lbl.x;
+      let y = -lbl.y; // Flip Y to match shape coordinate system
+      
+      // Determine offset based on shapeIndex
+      // If shapeIndex is 1 (the second shape), we shift it right
+      if (lbl.shapeIndex === 1 && shapes && shapes.length > 0) {
+        // Find max width of shape 0 to calculate the gap offset
+        const shape0Width = shapes[0].points.reduce((max, p) => Math.max(max, p.x), 0);
+        const gap = 4; // Must match the gap used in ViewBox calculation
+        x += (shape0Width + gap); 
+      }
 
-    if (!shape1 || !shape2) return null;
-
-    return (
-      <div className="flex justify-center my-4 overflow-hidden">
-        <svg width="100%" height="200" viewBox="-10 0 370 200" className="max-w-md">
-          {/* Shape 1 - Offset (30, 50) */}
-          <g transform="translate(30, 50)">
-            {shape1.points && (
-              <polygon 
-                points={shape1.points.map(p => `${p.x},${p.y}`).join(' ')}
-                className="fill-blue-100 stroke-blue-500 stroke-2"
-              />
-            )}
-            {/* Fallback for simple rect/triangle without explicit points */}
-            {!shape1.points && visual.shapeType === 'rectangle' && (
-                <rect x="0" y="0" width={shape1.labels.b} height={shape1.labels.h} className="fill-blue-100 stroke-blue-500 stroke-2" />
-            )}
-            
-            {shape1.labels && Object.entries(shape1.labels).map(([key, val], i) => {
-               // Simple label positioning logic if explicit coords missing
-               const x = key === 'b' ? (val/2 || 20) : (key === 'h' ? -10 : 10);
-               const y = key === 'b' ? (shape1.labels.h || 50) + 15 : (shape1.labels.h/2 || 20);
-               return (
-                  <text key={i} x={x} y={y} className="text-xs fill-gray-700 font-bold">
-                    {val}
-                  </text>
-               );
-            })}
-            
-            {/* Arcs for Shape 1 */}
-            {shape1.angles && shape1.angles.map((ang, i) => (
-              <g key={`arc1-${i}`}>
-                 {drawAngle(ang.x, ang.y, ang.start, ang.end)}
-              </g>
-            ))}
-          </g>
-
-          {/* Shape 2 - Offset (220, 30) */}
-          <g transform="translate(220, 30)">
-            {shape2.points && (
-              <polygon 
-                points={shape2.points.map(p => `${p.x},${p.y}`).join(' ')}
-                className="fill-green-100 stroke-green-500 stroke-2"
-              />
-            )}
-             {!shape2.points && visual.shapeType === 'rectangle' && (
-                <rect x="0" y="0" width={shape2.labels.b} height={shape2.labels.h} className="fill-green-100 stroke-green-500 stroke-2" />
-            )}
-
-             {shape2.labels && Object.entries(shape2.labels).map(([key, val], i) => {
-               const x = key === 'b' ? (shape2.labels.b/2 || 20) : (key === 'h' ? -10 : 10);
-               const y = key === 'b' ? (shape2.labels.h || 50) + 15 : (shape2.labels.h/2 || 20);
-               return (
-                  <text key={i} x={x} y={y} className="text-xs fill-gray-700 font-bold">
-                    {val}
-                  </text>
-               );
-            })}
-             {/* Arcs for Shape 2 */}
-            {shape2.angles && shape2.angles.map((ang, i) => (
-              <g key={`arc2-${i}`}>
-                 {drawAngle(ang.x, ang.y, ang.start, ang.end)}
-              </g>
-            ))}
-          </g>
-        </svg>
-      </div>
-    );
-  }
-
-  // 2. Standard Polygon Visuals
-  if (visual.points) {
-    return (
-      <div className="flex justify-center my-4">
-        <svg width="300" height="200" viewBox="0 0 300 200">
-          <polygon
-            points={visual.points.map(p => `${p.x},${p.y}`).join(' ')}
-            className="fill-gray-50 stroke-gray-800 stroke-2"
-          />
-          {visual.labels && visual.labels.map((label, idx) => (
-            <text 
-              key={idx} 
-              x={label.x} 
-              y={label.y}
-              className="text-sm font-sans fill-gray-700"
-              textAnchor="middle"
-            >
-              {label.text}
-            </text>
-          ))}
-        </svg>
-      </div>
-    );
-  }
-  
-  // 3. Fallback for basic shape types (rectangle/triangle) defined by props but not points
-  if (visual.type === 'rectangle' || visual.type === 'triangle' || visual.type === 'circle') {
-      // Basic SVG construction based on width/height props
-      const w = visual.width || 100;
-      const h = visual.height || 100;
       return (
-        <div className="flex justify-center my-4">
-            <svg width={w + 40} height={h + 40} viewBox={`0 0 ${w+40} ${h+40}`}>
-                <g transform="translate(20, 20)">
-                    {visual.type === 'rectangle' && <rect width={w} height={h} className="fill-green-50 stroke-green-600 stroke-2" />}
-                    {visual.type === 'triangle' && <polygon points={`0,${h} ${w},${h} ${visual.subtype==='right'?0:w/2},0`} className="fill-green-50 stroke-green-600 stroke-2" />}
-                    {visual.type === 'circle' && <circle cx={w/2} cy={w/2} r={w/2} className="fill-green-50 stroke-green-600 stroke-2" />}
-                    
-                    {/* Simple Labels */}
-                    {visual.labels && Object.values(visual.labels).map((l, i) => (
-                        <text key={i} x={w/2} y={h+20} textAnchor="middle" className="text-xs font-bold">{l}</text>
-                    ))}
-                </g>
-            </svg>
-        </div>
+        <text 
+          key={`lbl-${i}`} 
+          x={x} 
+          y={y} 
+          className="text-[0.6px] fill-gray-800 font-medium font-sans select-none"
+          textAnchor="middle" 
+          dominantBaseline="middle"
+        >
+          {lbl.text}
+        </text>
       );
+    });
+  };
+
+  // --- ViewBox Calculation ---
+  // We need to determine the bounding box of ALL shapes to zoom the SVG correctly.
+  let allPoints = [];
+  const gap = 4; // Space between similarity shapes
+
+  if (data.type === 'similarity' && data.shapes) {
+    // Shape 1 points (no offset)
+    const s0Points = data.shapes[0].points;
+    
+    // Shape 2 points (offset by Shape 1 width + gap)
+    const s0Width = s0Points.reduce((max, p) => Math.max(max, p.x), 0);
+    const s1Points = data.shapes[1].points.map(p => ({
+        x: p.x + s0Width + gap,
+        y: p.y
+    }));
+
+    allPoints = [...s0Points, ...s1Points];
+  } else if (data.points) {
+    // Standard single shape
+    allPoints = data.points;
   }
 
-  return null;
+  // Safety check
+  if (allPoints.length === 0) {
+      return <div className="p-4 text-gray-400 italic text-sm text-center">Visual unavailable</div>;
+  }
+
+  const minX = Math.min(...allPoints.map(p => p.x));
+  const maxX = Math.max(...allPoints.map(p => p.x));
+  const minY = Math.min(...allPoints.map(p => -p.y)); // SVG Y
+  const maxY = Math.max(...allPoints.map(p => -p.y));
+
+  const padding = 2; // Breathing room around shapes
+  const width = maxX - minX + (padding * 2);
+  const height = maxY - minY + (padding * 2);
+  
+  // Construct ViewBox
+  const viewBox = `${minX - padding} ${minY - padding} ${width} ${height}`;
+
+  return (
+    <div className="w-full flex justify-center items-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 my-4">
+      <svg 
+        viewBox={viewBox} 
+        className="w-full max-w-[500px] h-auto overflow-visible"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {/* Debug Grid/Axes if requested */}
+        {data.showAxes && (
+           <g stroke="#e5e7eb" strokeWidth="0.1">
+             <line x1="-100" y1="0" x2="100" y2="0" stroke="#9ca3af" />
+             <line x1="0" y1="-100" x2="0" y2="100" stroke="#9ca3af" />
+           </g>
+        )}
+
+        {/* --- Render Logic for Similarity --- */}
+        {data.type === 'similarity' && data.shapes && (
+          <>
+            {/* Shape 1 */}
+            {renderShape(data.shapes[0].points, 0, 0, data.shapes[0].color, 's1')}
+            
+            {/* Shape 2 (Offset) */}
+            {(() => {
+              const s1Offset = data.shapes[0].points.reduce((max, p) => Math.max(max, p.x), 0) + gap;
+              return renderShape(data.shapes[1].points, s1Offset, 0, data.shapes[1].color, 's2');
+            })()}
+            
+            {/* Labels */}
+            {renderLabels(data.labels, data.shapes)}
+          </>
+        )}
+
+        {/* --- Render Logic for Standard Single Shape --- */}
+        {(!data.type || data.type !== 'similarity') && (
+           <g>
+             {renderShape(data.points, 0, 0, '#3B82F6', 'single')}
+           </g>
+        )}
+      </svg>
+    </div>
+  );
 };
+
+export default GeometryVisual;

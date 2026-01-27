@@ -1,112 +1,106 @@
-import { GeneratedQuestion, Clue } from "../types/generator";
-import { Random } from "../utils/random";
-import { t, Language, TERMS } from "../utils/i18n";
+import { UI_STRINGS } from '../utils/i18n';
+
+interface Point { x: number; y: number; label?: string; }
+interface Line { x1: number; y1: number; x2: number; y2: number; color: string; width: number; }
+
+interface VisualData {
+    type: 'graph';
+    lines: Line[];
+    points: Point[];
+    showGrid: boolean;
+    showAxes: boolean;
+}
+
+interface Question {
+    text: string;
+    correctAnswer: number | string;
+    visual: VisualData;
+    meta: { topic: string; difficulty: number };
+}
 
 export class LinearGraphGenerator {
-    public static generate(level: number, seed: string, lang: Language = 'sv'): GeneratedQuestion {
-        const rng = new Random(seed);
-        const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
-        
-        let mode = level;
-        if (level >= 5) mode = rng.intBetween(1, 4);
+    /**
+     * Generates a linear graph problem.
+     * Level 1: Find m (y-intercept).
+     * Level 2: Find k (slope).
+     * Level 3: Find the full equation y = kx + m.
+     */
+    public static getQuestion(difficulty: number): Question {
+        let k: number, m: number;
+        let questionKey = "";
+        let answer: number | string = "";
 
-        let k = 1, m = 0, steps: Clue[] = [];
-        let answer: string | number = 0; 
-        let answerType: any = 'numeric';
-        let description = { sv: "", en: "" };
-
-        const getSlope = (min: number, max: number) => rng.intBetween(min, max);
-
-        // --- LEVEL 1: Find m (intercept) ---
-        if (mode === 1) {
-            k = getSlope(-3, 3); 
-            m = rng.intBetween(-5, 5); 
+        // --- Difficulty Logic ---
+        if (difficulty === 1) {
+            // Level 1: Find m (intercept)
+            // We use simple slopes (+/- 1 or 2) to keep the graph readable
+            // m ranges from -4 to 4 to stay well within the standard -10 to 10 grid
+            k = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 2) + 1);
+            m = Math.floor(Math.random() * 9) - 4; // -4 to 4
             
+            questionKey = "graph.q_intercept";
             answer = m;
-            description = TERMS.graph.q_intercept;
-            
-            steps = [
-                { text: t(lang, TERMS.graph.look_x0), latex: "(0, y)" }, 
-                { text: t(lang, TERMS.graph.step_intercept(m)), latex: `m = ${formatColor(m)}` }
-            ];
         } 
-        
-        // --- LEVEL 2: Find k (positive slope) ---
-        else if (mode === 2) {
-            k = rng.intBetween(0, 3); 
-            m = rng.intBetween(-5, 5); 
+        else if (difficulty === 2) {
+            // Level 2: Find k (slope)
+            // m is strictly integer, k is integer
+            k = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 3) + 1);
+            m = Math.floor(Math.random() * 7) - 3;
             
+            questionKey = "graph.q_slope";
             answer = k;
-            description = TERMS.graph.q_slope;
-            
-            steps = [
-                { text: t(lang, TERMS.graph.step_delta), latex: "k = \\frac{\\Delta y}{\\Delta x}" },
-                { text: t(lang, TERMS.graph.step_slope_calc), latex: `k = ${formatColor(k)}` }
-            ];
-        }
-
-        // --- LEVEL 3: Find k (negative slope) ---
-        else if (mode === 3) {
-            k = rng.intBetween(-3, 0);
-            m = rng.intBetween(-5, 5); 
-            
-            answer = k;
-            description = TERMS.graph.q_slope;
-            
-            steps = [
-                { text: t(lang, TERMS.graph.step_delta), latex: "k = \\frac{\\Delta y}{\\Delta x}" },
-                { text: t(lang, TERMS.graph.step_slope_calc), latex: `k = ${formatColor(k)}` }
-            ];
-        }
-
-        // --- LEVEL 4: Find Equation (y = kx + m) ---
+        } 
         else {
-            k = getSlope(-3, 3); 
-            m = rng.intBetween(-5, 5); 
-            
-            let eqStr = "";
-            if (k === 0) {
-                eqStr = `y=${m}`;
-            } else {
-                const mPart = m >= 0 ? `+${m}` : `${m}`; 
-                eqStr = `y=${k}x${mPart}`; 
-            }
-            
-            answer = eqStr;
-            answerType = 'function_model'; 
+            // Level 3: Find Equation y = kx + m
+            // Slopes can be steeper here
+            k = (Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random() * 3) + 1);
+            m = Math.floor(Math.random() * 7) - 3;
 
-            description = TERMS.graph.q_func;
+            questionKey = "graph.q_func";
             
-            const eqDisplay = k === 0 
-                ? `y = ${formatColor(m)}` 
-                : `y = ${formatColor(k)}x ${m >= 0 ? '+' : ''}${formatColor(m)}`;
-
-            steps = [
-                { text: t(lang, TERMS.graph.find_m), latex: `m = ${m}` }, 
-                { text: t(lang, TERMS.graph.find_k), latex: `k = ${k}` }, 
-                { text: t(lang, TERMS.graph.q_func), latex: eqDisplay }
-            ];
+            // Format answer string: y = kx + m
+            // We handle the edge cases for x (1x) and sign formatting
+            let kStr = `${k}`;
+            if (k === 1) kStr = "";
+            if (k === -1) kStr = "-";
+            
+            const sign = m >= 0 ? '+' : '';
+            
+            answer = `y=${kStr}x${sign}${m}`;
+            
+            // Cleanup: if m is 0, we don't usually write +0
+            if (m === 0) answer = `y=${kStr}x`;
         }
 
-        const lines = [{ slope: k, intercept: m, color: '#2563eb' }];
+        // --- Visuals ---
+        // Generate line points that extend across the typical view (-10 to 10)
+        // Calculating y at x=-10 and x=10 ensures the line spans the canvas
+        const x1 = -10;
+        const y1 = k * x1 + m;
+        const x2 = 10;
+        const y2 = k * x2 + m;
+
+        const visual: VisualData = {
+            type: 'graph',
+            lines: [
+                { x1, y1, x2, y2, color: '#4F46E5', width: 3 } // Indigo-600
+            ],
+            points: [],
+            showGrid: true,
+            showAxes: true
+        };
+
+        // For Level 1, some pedagogical designs place a point at the intercept to focus attention.
+        // We add it as a visual aid without a label to avoid giving the answer explicitly.
+        if (difficulty === 1) {
+            visual.points.push({ x: 0, y: m, label: '' });
+        }
 
         return {
-            questionId: `graph-l${level}-${seed}`,
-            renderData: {
-                text_key: "graph_gen",
-                description: description,
-                latex: "",
-                answerType: answerType,
-                graph: {
-                    lines: lines,
-                    range: 10, 
-                    gridStep: 1
-                }
-            },
-            serverData: {
-                answer: answer,
-                solutionSteps: steps
-            }
+            text: questionKey,
+            correctAnswer: answer,
+            visual: visual,
+            meta: { topic: 'linear_graph', difficulty }
         };
     }
 }

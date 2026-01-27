@@ -1,125 +1,96 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-// --- Generators ---
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
-import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
-import { TenPowersGenerator } from '../src/core/generators/TenPowersGen';
-import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
-import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
+import { LinearEquationGen } from '../src/core/generators/LinearEquationGen';
 import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
+import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator';
+import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
+import { TenPowersGen } from '../src/core/generators/TenPowersGen';
+import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
+import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
+// Ensure these exist in the file system before importing, 
+// otherwise this file will fail to build. 
+// Assuming ScaleGenerator and VolumeGenerator exist based on project context.
 import { ScaleGenerator } from '../src/core/generators/ScaleGenerator';
 import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
-import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator';
-import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
 
-// --- Interface ---
-interface QuestionResponse {
-  text?: string;
-  visual?: any;
-  renderData?: any;
-  clues?: string[];
-  token: string;
-  error?: string;
-}
+// --- Generator Registry ---
+// Maps topic IDs (from dashboard) to their respective classes.
+// These keys MUST match the 'topics' object in src/core/utils/i18n.ts
+const GENERATORS: Record<string, any> = {
+  'arithmetic': BasicArithmeticGen,
+  'linear_eq': LinearEquationGen,
+  'linear_eq_prob': LinearEquationProblemGen,
+  'geometry': GeometryGenerator,
+  'similarity': SimilarityGenerator,
+  'simplification': ExpressionSimplificationGen,
+  'ten_powers': TenPowersGen,
+  'negative': NegativeNumbersGen,
+  'linear_graph': LinearGraphGenerator,
+  'scale': ScaleGenerator,
+  'volume': VolumeGenerator
+};
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  try {
-    const { topic, level = '1', lang = 'sv' } = req.query;
-    
-    const lvl = parseInt(Array.isArray(level) ? level[0] : level) || 1;
-    const language = (Array.isArray(lang) ? lang[0] : lang) || 'sv';
-    const topicKey = Array.isArray(topic) ? topic[0] : topic;
+  // --- CORS Configuration ---
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-    if (!topicKey) {
-      return res.status(400).json({ error: "Missing 'topic' parameter" });
-    }
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
-    let question: any; 
-    const seed = Math.random().toString(36).substring(7);
+  // --- Request Validation ---
+  const { topic, difficulty } = req.query;
 
-    // --- Static Router ---
-    // FIXED: Call static methods directly. NO 'new Generator()'.
-    switch (topicKey) {
-      // Arithmetic
-      case 'arithmetic': 
-        question = BasicArithmeticGen.generate(lvl, seed, language); 
-        break;
-      case 'negative': 
-      case 'negative_numbers': // Alias
-        question = NegativeNumbersGen.generate(lvl, seed, language); 
-        break;
-      case 'ten_powers': 
-        question = TenPowersGenerator.generate(lvl, seed, language); 
-        break;
-      
-      // Algebra
-      case 'simplify': 
-      case 'simplification': // Alias to prevent 404
-        question = ExpressionSimplificationGen.generate(lvl, seed, language); 
-        break;
-      case 'equation': 
-      case 'equations': // Alias
-        // FIXED: Route Level 5 & 6 to Word Problems
-        if (lvl === 5 || lvl === 6) {
-            question = LinearEquationProblemGen.generate(lvl, seed, language);
-        } else {
-            question = LinearEquationGenerator.generate(lvl, seed, language);
-        }
-        break;
+  if (!topic) {
+    return res.status(400).json({ error: 'Missing required parameter: topic' });
+  }
 
-      // Geometry
-      case 'geometry': 
-      case 'geometry_2d': // Alias
-        question = GeometryGenerator.generate(lvl, seed, language); 
-        break;
-      case 'scale': 
-        question = ScaleGenerator.generate(lvl, seed, language); 
-        break;
-      case 'volume': 
-      case 'geometry_3d': // Alias
-        question = VolumeGenerator.generate(lvl, seed, language); 
-        break;
-      case 'similarity': 
-        question = SimilarityGenerator.generate(lvl, seed, language); 
-        break;
+  const topicKey = topic as string;
 
-      // Functions
-      case 'graph': 
-      case 'linear_graphs': // Alias
-        question = LinearGraphGenerator.generate(lvl, seed, language); 
-        break;
-
-      default:
-        return res.status(404).json({ error: `Generator not found for topic: ${topicKey}` });
-    }
-
-    if (!question) {
-        throw new Error("Generator returned null");
-    }
-
-    // Create Token (Base64)
-    const tokenPayload = JSON.stringify({
-      a: question.serverData ? question.serverData.answer : question.answer,
-      t: Date.now()
+  if (!GENERATORS[topicKey]) {
+    // Return available topics to help with debugging frontend configuration
+    return res.status(404).json({ 
+      error: `Topic '${topicKey}' not found.`,
+      availableTopics: Object.keys(GENERATORS) 
     });
-    const token = Buffer.from(tokenPayload).toString('base64');
+  }
 
-    const response: QuestionResponse = {
-      text: question.text,
-      visual: question.visual,
-      renderData: question.renderData,
-      clues: question.serverData ? question.serverData.solutionSteps : question.clues,
-      token: token
-    };
+  // --- Question Generation ---
+  try {
+    // Default to difficulty 1 if not provided or invalid
+    const diffLevel = difficulty ? Math.max(1, Math.min(3, parseInt(difficulty as string))) : 1;
+    
+    const GeneratorClass = GENERATORS[topicKey];
+    
+    // Support both static methods (preferred) and class instances (legacy)
+    let question;
+    
+    if (typeof GeneratorClass.getQuestion === 'function') {
+        question = GeneratorClass.getQuestion(diffLevel);
+    } else {
+        const instance = new GeneratorClass();
+        question = instance.getQuestion(diffLevel);
+    }
 
-    return res.status(200).json(response);
+    // --- Response ---
+    return res.status(200).json(question);
 
   } catch (error: any) {
-    console.error("API Error:", error);
+    console.error(`[API Error] Failed to generate question for topic: ${topicKey}`, error);
+    
     return res.status(500).json({ 
-      error: "Internal Server Error", 
-      details: error.message 
+        error: 'Internal Server Error during question generation.', 
+        message: error.message,
+        topic: topicKey
     });
   }
 }
