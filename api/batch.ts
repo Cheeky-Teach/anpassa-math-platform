@@ -1,34 +1,35 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+// Static imports ensure code is bundled into the function
+import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
+import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
+import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
+import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen.js';
+import { TenPowersGen } from '../src/core/generators/TenPowersGen.js';
+import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen.js';
+import { ScaleGen } from '../src/core/generators/ScaleGen.js';
+import { VolumeGen } from '../src/core/generators/VolumeGen.js';
+import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
+import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
 
-// Define the shape of our generators
-interface Generator {
-    generate(level: number, lang: string): any;
-}
-
-// Helper to dynamically import generator instance
-const getGenerator = async (topic: string): Promise<Generator | null> => {
-    try {
-        switch (topic) {
-            case 'equation': return new (await import('../src/core/generators/LinearEquationGen')).LinearEquationGen();
-            case 'simplify': return new (await import('../src/core/generators/ExpressionSimplificationGen')).ExpressionSimplificationGen();
-            case 'geometry': return new (await import('../src/core/generators/GeometryGenerator')).GeometryGenerator();
-            case 'scale': return new (await import('../src/core/generators/ScaleGen')).ScaleGen();
-            case 'volume': return new (await import('../src/core/generators/VolumeGen')).VolumeGen();
-            case 'similarity': return new (await import('../src/core/generators/SimilarityGen')).SimilarityGen();
-            case 'arithmetic': return new (await import('../src/core/generators/BasicArithmeticGen')).BasicArithmeticGen();
-            case 'negative': return new (await import('../src/core/generators/NegativeNumbersGen')).NegativeNumbersGen();
-            case 'ten_powers': return new (await import('../src/core/generators/TenPowersGen')).TenPowersGen();
-            case 'graph': return new (await import('../src/core/generators/LinearGraphGenerator')).LinearGraphGenerator();
-            default: return null;
-        }
-    } catch (e) {
-        console.error(`Failed to load generator for ${topic}:`, e);
-        return null;
+// Helper to instantiate
+const getGenerator = (topic: string) => {
+    switch (topic) {
+        case 'equation': return new LinearEquationGen();
+        case 'simplify': return new ExpressionSimplificationGen();
+        case 'geometry': return new GeometryGenerator();
+        case 'scale': return new ScaleGen();
+        case 'volume': return new VolumeGen();
+        case 'similarity': return new SimilarityGen();
+        case 'arithmetic': return new BasicArithmeticGen();
+        case 'negative': return new NegativeNumbersGen();
+        case 'ten_powers': return new TenPowersGen();
+        case 'graph': return new LinearGraphGenerator();
+        default: return null;
     }
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // Enable CORS
+export default function handler(req: VercelRequest, res: VercelResponse) {
+    // CORS Headers
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
@@ -54,9 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         for (const item of config) {
             const { topic, level } = item;
-            
-            // Await the dynamic import
-            const generator = await getGenerator(topic);
+            const generator = getGenerator(topic);
 
             if (generator) {
                 try {

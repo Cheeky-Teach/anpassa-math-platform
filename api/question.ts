@@ -1,6 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+// Static imports with .js extension for TS resolution
+import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
+import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
+import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
+import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen.js';
+import { TenPowersGen } from '../src/core/generators/TenPowersGen.js';
+import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen.js';
+import { ScaleGen } from '../src/core/generators/ScaleGen.js';
+import { VolumeGen } from '../src/core/generators/VolumeGen.js';
+import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
+import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default function handler(req: VercelRequest, res: VercelResponse) {
     const { topic, level, lang } = req.query;
 
     if (!topic || !level) {
@@ -13,18 +24,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
         let generator;
 
-        // Dynamic Imports
         switch (topic) {
-            case 'equation': generator = new (await import('../src/core/generators/LinearEquationGen')).LinearEquationGen(); break;
-            case 'simplify': generator = new (await import('../src/core/generators/ExpressionSimplificationGen')).ExpressionSimplificationGen(); break;
-            case 'geometry': generator = new (await import('../src/core/generators/GeometryGenerator')).GeometryGenerator(); break;
-            case 'scale': generator = new (await import('../src/core/generators/ScaleGen')).ScaleGen(); break;
-            case 'volume': generator = new (await import('../src/core/generators/VolumeGen')).VolumeGen(); break;
-            case 'similarity': generator = new (await import('../src/core/generators/SimilarityGen')).SimilarityGen(); break;
-            case 'arithmetic': generator = new (await import('../src/core/generators/BasicArithmeticGen')).BasicArithmeticGen(); break;
-            case 'negative': generator = new (await import('../src/core/generators/NegativeNumbersGen')).NegativeNumbersGen(); break;
-            case 'ten_powers': generator = new (await import('../src/core/generators/TenPowersGen')).TenPowersGen(); break;
-            case 'graph': generator = new (await import('../src/core/generators/LinearGraphGenerator')).LinearGraphGenerator(); break;
+            case 'equation': generator = new LinearEquationGen(); break;
+            case 'simplify': generator = new ExpressionSimplificationGen(); break;
+            case 'geometry': generator = new GeometryGenerator(); break;
+            case 'scale': generator = new ScaleGen(); break;
+            case 'volume': generator = new VolumeGen(); break;
+            case 'similarity': generator = new SimilarityGen(); break;
+            case 'arithmetic': generator = new BasicArithmeticGen(); break;
+            case 'negative': generator = new NegativeNumbersGen(); break;
+            case 'ten_powers': generator = new TenPowersGen(); break;
+            case 'graph': generator = new LinearGraphGenerator(); break;
             default:
                 return res.status(404).json({ error: `Generator for topic '${topic}' not found.` });
         }
