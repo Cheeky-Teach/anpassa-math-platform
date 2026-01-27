@@ -1,6 +1,23 @@
-import React, { useState } from 'react';
-import { CATEGORIES, LEVEL_DESCRIPTIONS, getColorClasses } from '../../constants/curriculum';
+import React, { useState, useEffect } from 'react';
+import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/curriculum';
 import { UI_TEXT } from '../../constants/localization';
+
+// --- Local Helper for Tailwind Classes (Safe Fallback) ---
+const getLocalColorClasses = (color, type) => {
+  const c = color || 'emerald';
+  const validColors = ['pink', 'indigo', 'emerald', 'purple', 'primary'];
+  const safeColor = validColors.includes(c) ? c : 'emerald';
+
+  switch (type) {
+      case 'bg-light': return `bg-${safeColor}-50`;
+      case 'bg-dark': return `bg-${safeColor}-500`;
+      case 'border': return `border-${safeColor}-100`;
+      case 'text': return `text-${safeColor}-700`;
+      case 'ring': return `ring-${safeColor}-500`;
+      case 'border-solid': return `border-${safeColor}-500`;
+      default: return '';
+  }
+};
 
 export const Dashboard = ({ 
   onStartPractice, 
@@ -9,10 +26,24 @@ export const Dashboard = ({
   toggleTimer, 
   resetTimer, 
   onLgrOpen, 
+  onDoNowOpen, 
   toggleLang 
 }) => {
   const [selectedGenId, setSelectedGenId] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(0);
+
+  // Safety Check: Ensure CRITICAL Data exists before rendering
+  // If UI_TEXT is missing, it likely means the localization file wasn't saved correctly.
+  if (!UI_TEXT || !CATEGORIES) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="p-8 bg-white rounded-xl shadow text-center max-w-md">
+          <h2 className="text-red-500 font-bold text-xl mb-2">Configuration Error</h2>
+          <p className="text-gray-600 mb-4">Core data files (UI_TEXT or CATEGORIES) failed to load.</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSelection = (genId, level) => {
     setSelectedGenId(genId);
@@ -25,6 +56,8 @@ export const Dashboard = ({
     }
   };
 
+  const titleText = UI_TEXT.dashboard_title ? UI_TEXT.dashboard_title[lang] : "Anpassa Math";
+
   return (
     <div className="max-w-6xl mx-auto w-full p-4 fade-in flex flex-col min-h-[85vh]">
       
@@ -34,7 +67,7 @@ export const Dashboard = ({
             Anpassa
         </h1>
         <p className="text-xl md:text-2xl text-gray-500 font-medium tracking-wide relative z-10">
-            {UI_TEXT.dashboard_title[lang]}
+            {titleText}
         </p>
 
         {/* Timer Selector */}
@@ -46,7 +79,7 @@ export const Dashboard = ({
               <div className="relative group">
                  <select 
                     value={timerSettings?.duration / 60 || 0}
-                    onChange={(e) => toggleTimer(Number(e.target.value))}
+                    onChange={(e) => toggleTimer && toggleTimer(Number(e.target.value))}
                     className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-1 pl-3 pr-8 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
                  >
                     <option value="0">{lang === 'sv' ? 'Av' : 'Off'}</option>
@@ -60,12 +93,13 @@ export const Dashboard = ({
       {/* --- CATEGORY CARDS --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-8 mb-20">
         {Object.values(CATEGORIES).map((cat) => {
-          const bgLight = getColorClasses(cat.color, 'bg-light');
-          const border = getColorClasses(cat.color, 'border');
-          const text = getColorClasses(cat.color, 'text');
-          const bgDark = getColorClasses(cat.color, 'bg-dark');
-          const ring = getColorClasses(cat.color, 'ring');
-          const borderSolid = getColorClasses(cat.color, 'border-solid');
+          // Use local helper to prevent import crashes
+          const bgLight = getLocalColorClasses(cat.color, 'bg-light');
+          const border = getLocalColorClasses(cat.color, 'border');
+          const text = getLocalColorClasses(cat.color, 'text');
+          const bgDark = getLocalColorClasses(cat.color, 'bg-dark');
+          const ring = getLocalColorClasses(cat.color, 'ring');
+          const borderSolid = getLocalColorClasses(cat.color, 'border-solid');
 
           return (
             <div key={cat.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
@@ -79,29 +113,34 @@ export const Dashboard = ({
                <div className="p-4 space-y-4 flex-1">
                  {/* Generator List Loop */}
                  {cat.generators.map(gen => {
-                    const isSelected = selectedGenId === gen.id;
+                    // ROBUST DATA HANDLING:
+                    // Check if 'gen' is an object (new format) or string (old format)
+                    const genId = typeof gen === 'string' ? gen : gen.id;
+                    const genLabel = typeof gen === 'string' ? gen : (gen.label ? gen.label[lang] : genId);
                     
-                    // Retrieve levels specifically for this generator ID
-                    const levels = LEVEL_DESCRIPTIONS[gen.id] || {};
+                    const isSelected = selectedGenId === genId;
+                    
+                    // Safe Level Access
+                    const levels = (LEVEL_DESCRIPTIONS && LEVEL_DESCRIPTIONS[genId]) || {};
                     const levelKeys = Object.keys(levels).map(Number).sort((a,b) => a - b);
 
                     return (
-                        <div key={gen.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                        <div key={genId} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
                            <div className="font-semibold text-gray-700 mb-3 ml-1">
-                               {gen.label[lang]}
+                               {genLabel}
                            </div>
                            <div className="relative">
                               <select 
                                 value={isSelected ? selectedLevel : 0}
-                                onChange={(e) => handleSelection(gen.id, Number(e.target.value))}
+                                onChange={(e) => handleSelection(genId, Number(e.target.value))}
                                 className={`w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 appearance-none cursor-pointer ${isSelected ? `ring-2 ${ring} ${borderSolid}` : `focus:${ring}`}`}
                               >
                                  <option value={0} disabled>{lang === 'sv' ? "Välj nivå:" : "Select Level:"}</option>
-                                 {levelKeys.map(lvl => (
+                                 {levelKeys.length > 0 ? levelKeys.map(lvl => (
                                      <option key={lvl} value={lvl}>
-                                        {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} - {levels[lvl][lang]}
+                                        {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} - {levels[lvl] ? levels[lvl][lang] : ''}
                                      </option>
-                                 ))}
+                                 )) : <option disabled>No levels available</option>}
                               </select>
                            </div>
                         </div>
@@ -119,14 +158,17 @@ export const Dashboard = ({
            onClick={handleStartClick}
            className={`px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 ${selectedGenId && selectedLevel > 0 ? 'bg-accent-500 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-accent-600' : 'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}`}
          >
-            {UI_TEXT.dashboard_title[lang] === 'Matematikpanel' ? 'Börja öva' : 'Start Practice'} <span>🚀</span>
+            {lang === 'sv' ? 'Börja öva' : 'Start Practice'} <span>🚀</span>
          </button>
       </div>
 
       {/* --- FOOTER --- */}
       <footer className="mt-auto py-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center px-4 gap-4">
-          <button className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-full text-sm transition-colors shadow-sm order-2 md:order-1">
-              Do Now (Coming Soon)
+          <button 
+            onClick={onDoNowOpen} 
+            className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-full text-sm transition-colors shadow-sm order-2 md:order-1"
+          >
+              {UI_TEXT?.donow ? (UI_TEXT.donow[lang] || "Do Now") : "Do Now"}
           </button>
 
           <div className="flex items-center gap-3 order-1 md:order-2 w-full md:w-auto justify-center md:justify-end">

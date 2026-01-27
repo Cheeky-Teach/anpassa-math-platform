@@ -1,13 +1,8 @@
 import React from 'react';
-import { UI_TEXT } from '../../constants/localization';
 
 /**
  * GeometryVisual
  * Handles SVG rendering for 2D Geometry and Similarity problems.
- * * MIGRATION NOTE:
- * - Preserved viewBox="-10 0 370 200" for similarity to prevent clipping.
- * - Preserved translation offsets (30, 50) and (220, 30).
- * - Implemented custom drawAngle for red arcs.
  */
 export const GeometryVisual = ({ visual }) => {
   if (!visual) return null;
@@ -36,23 +31,41 @@ export const GeometryVisual = ({ visual }) => {
     );
   };
 
-  // 1. Similarity Comparison Visuals (Specific Fix Applied)
+  // 1. Similarity Comparison Visuals
+  // FIXED: Handle both legacy shape1/shape2 and new left/right properties from generator
   if (visual.type === 'similarity_compare') {
-    const { shape1, shape2 } = visual;
+    const shape1 = visual.left || visual.shape1;
+    const shape2 = visual.right || visual.shape2;
+
+    if (!shape1 || !shape2) return null;
+
     return (
       <div className="flex justify-center my-4 overflow-hidden">
         <svg width="100%" height="200" viewBox="-10 0 370 200" className="max-w-md">
           {/* Shape 1 - Offset (30, 50) */}
           <g transform="translate(30, 50)">
-            <polygon 
-              points={shape1.points.map(p => `${p.x},${p.y}`).join(' ')}
-              className="fill-blue-100 stroke-blue-500 stroke-2"
-            />
-            {shape1.labels && shape1.labels.map((lbl, i) => (
-              <text key={i} x={lbl.x} y={lbl.y} className="text-xs fill-gray-700 font-bold">
-                {lbl.text}
-              </text>
-            ))}
+            {shape1.points && (
+              <polygon 
+                points={shape1.points.map(p => `${p.x},${p.y}`).join(' ')}
+                className="fill-blue-100 stroke-blue-500 stroke-2"
+              />
+            )}
+            {/* Fallback for simple rect/triangle without explicit points */}
+            {!shape1.points && visual.shapeType === 'rectangle' && (
+                <rect x="0" y="0" width={shape1.labels.b} height={shape1.labels.h} className="fill-blue-100 stroke-blue-500 stroke-2" />
+            )}
+            
+            {shape1.labels && Object.entries(shape1.labels).map(([key, val], i) => {
+               // Simple label positioning logic if explicit coords missing
+               const x = key === 'b' ? (val/2 || 20) : (key === 'h' ? -10 : 10);
+               const y = key === 'b' ? (shape1.labels.h || 50) + 15 : (shape1.labels.h/2 || 20);
+               return (
+                  <text key={i} x={x} y={y} className="text-xs fill-gray-700 font-bold">
+                    {val}
+                  </text>
+               );
+            })}
+            
             {/* Arcs for Shape 1 */}
             {shape1.angles && shape1.angles.map((ang, i) => (
               <g key={`arc1-${i}`}>
@@ -63,15 +76,25 @@ export const GeometryVisual = ({ visual }) => {
 
           {/* Shape 2 - Offset (220, 30) */}
           <g transform="translate(220, 30)">
-            <polygon 
-              points={shape2.points.map(p => `${p.x},${p.y}`).join(' ')}
-              className="fill-green-100 stroke-green-500 stroke-2"
-            />
-             {shape2.labels && shape2.labels.map((lbl, i) => (
-              <text key={i} x={lbl.x} y={lbl.y} className="text-xs fill-gray-700 font-bold">
-                {lbl.text}
-              </text>
-            ))}
+            {shape2.points && (
+              <polygon 
+                points={shape2.points.map(p => `${p.x},${p.y}`).join(' ')}
+                className="fill-green-100 stroke-green-500 stroke-2"
+              />
+            )}
+             {!shape2.points && visual.shapeType === 'rectangle' && (
+                <rect x="0" y="0" width={shape2.labels.b} height={shape2.labels.h} className="fill-green-100 stroke-green-500 stroke-2" />
+            )}
+
+             {shape2.labels && Object.entries(shape2.labels).map(([key, val], i) => {
+               const x = key === 'b' ? (shape2.labels.b/2 || 20) : (key === 'h' ? -10 : 10);
+               const y = key === 'b' ? (shape2.labels.h || 50) + 15 : (shape2.labels.h/2 || 20);
+               return (
+                  <text key={i} x={x} y={y} className="text-xs fill-gray-700 font-bold">
+                    {val}
+                  </text>
+               );
+            })}
              {/* Arcs for Shape 2 */}
             {shape2.angles && shape2.angles.map((ang, i) => (
               <g key={`arc2-${i}`}>
@@ -107,6 +130,29 @@ export const GeometryVisual = ({ visual }) => {
         </svg>
       </div>
     );
+  }
+  
+  // 3. Fallback for basic shape types (rectangle/triangle) defined by props but not points
+  if (visual.type === 'rectangle' || visual.type === 'triangle' || visual.type === 'circle') {
+      // Basic SVG construction based on width/height props
+      const w = visual.width || 100;
+      const h = visual.height || 100;
+      return (
+        <div className="flex justify-center my-4">
+            <svg width={w + 40} height={h + 40} viewBox={`0 0 ${w+40} ${h+40}`}>
+                <g transform="translate(20, 20)">
+                    {visual.type === 'rectangle' && <rect width={w} height={h} className="fill-green-50 stroke-green-600 stroke-2" />}
+                    {visual.type === 'triangle' && <polygon points={`0,${h} ${w},${h} ${visual.subtype==='right'?0:w/2},0`} className="fill-green-50 stroke-green-600 stroke-2" />}
+                    {visual.type === 'circle' && <circle cx={w/2} cy={w/2} r={w/2} className="fill-green-50 stroke-green-600 stroke-2" />}
+                    
+                    {/* Simple Labels */}
+                    {visual.labels && Object.values(visual.labels).map((l, i) => (
+                        <text key={i} x={w/2} y={h+20} textAnchor="middle" className="text-xs font-bold">{l}</text>
+                    ))}
+                </g>
+            </svg>
+        </div>
+      );
   }
 
   return null;

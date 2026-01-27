@@ -58,7 +58,14 @@ export const UI_TEXT = {
     // --- Footer & Misc ---
     mastery: { en: "Mastery", sv: "Bemästrande" },
     donow: { en: "Do Now", sv: "Startuppgift" },
-    check: { en: "Check Answer", sv: "Kontrollera svar" }, // Legacy compat
-    next: { en: "Next Question", sv: "Nästa fråga" }, // Legacy compat
-    retry: { en: "Try Again", sv: "Försök igen" } // Legacy compat
+    donow_title: { en: "Do Now Activity", sv: "Uppstart (Do Now)" },
+    donow_desc: { en: "Select up to 3 levels. System generates 6 questions total.", sv: "Välj upp till 3 nivåer. Systemet genererar 6 frågor totalt." },
+    donow_gen: { en: "Generate", sv: "Generera" },
+    donow_show_all: { en: "Show All", sv: "Visa alla" },
+    donow_hide_all: { en: "Hide All", sv: "Dölj alla" },
+    lgr_btn: { en: "LGR22", sv: "LGR22" },
+    aboutBtn: { en: "About", sv: "Om" },
+    check: { en: "Check Answer", sv: "Kontrollera svar" },
+    next: { en: "Next Question", sv: "Nästa fråga" },
+    retry: { en: "Try Again", sv: "Försök igen" }
 };

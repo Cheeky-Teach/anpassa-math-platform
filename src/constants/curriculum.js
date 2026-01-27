@@ -1,14 +1,12 @@
-// Maps internal generator IDs to UI categories, colors, and detailed legacy metadata.
-
 export const CATEGORIES = {
     ARITHMETIC: {
         id: 'ARITHMETIC',
         label: { en: 'Number Theory', sv: 'Taluppfattning' },
         color: 'pink',
         generators: [
-            { id: 'BasicArithmeticGen', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
-            { id: 'NegativeNumbersGen', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
-            { id: 'TenPowersGen', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } }
+            { id: 'BasicArithmeticGen', api: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
+            { id: 'NegativeNumbersGen', api: 'negative_numbers', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
+            { id: 'TenPowersGen', api: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } }
         ]
     },
     ALGEBRA: {
@@ -16,8 +14,8 @@ export const CATEGORIES = {
         label: { en: 'Algebra', sv: 'Algebra' },
         color: 'indigo',
         generators: [
-            { id: 'ExpressionSimplificationGen', label: { sv: "Uttryck", en: "Expressions" } },
-            { id: 'EquationGenerator', label: { sv: "Ekvationer", en: "Equations" } }
+            { id: 'ExpressionSimplificationGen', api: 'simplification', label: { sv: "Uttryck", en: "Expressions" } },
+            { id: 'EquationGenerator', api: 'equations', label: { sv: "Ekvationer", en: "Equations" } }
         ]
     },
     GEOMETRY: {
@@ -25,10 +23,10 @@ export const CATEGORIES = {
         label: { en: 'Geometry', sv: 'Geometri' },
         color: 'emerald',
         generators: [
-            { id: 'GeometryGenerator', label: { sv: "Area & Omkrets", en: "Area & Perimeter" } },
-            { id: 'ScaleGenerator', label: { sv: "Skala", en: "Scale" } },
-            { id: 'VolumeGenerator', label: { sv: "Volym", en: "Volume" } },
-            { id: 'SimilarityGenerator', label: { sv: "Likformighet", en: "Similar Shapes" } }
+            { id: 'GeometryGenerator', api: 'geometry_2d', label: { sv: "Area & Omkrets", en: "Area & Perimeter" } },
+            { id: 'ScaleGenerator', api: 'scale', label: { sv: "Skala", en: "Scale" } },
+            { id: 'VolumeGenerator', api: 'geometry_3d', label: { sv: "Volym", en: "Volume" } },
+            { id: 'SimilarityGenerator', api: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } }
         ]
     },
     FUNCTIONS: {
@@ -36,12 +34,11 @@ export const CATEGORIES = {
         label: { en: 'Functions', sv: 'Samband' },
         color: 'purple',
         generators: [
-            { id: 'LinearGraphGenerator', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
+            { id: 'LinearGraphGenerator', api: 'linear_graphs', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
         ]
     }
 };
 
-// Legacy Level Descriptions mapped to Backend Generator IDs
 export const LEVEL_DESCRIPTIONS = {
     BasicArithmeticGen: {
         1: { sv: "Addition (1-3 siffror)", en: "Addition (1-3 digits)" },

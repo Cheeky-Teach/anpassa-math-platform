@@ -1,60 +1,61 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { verifyAnswer } from '../src/core/utils/security'; 
-import { getCorrectAnswer } from '../src/core/utils/security'; 
-import { ProgressionRules } from '../src/core/rules/ProgressionRules';
+
+// --- Generators (STRICTLY Existing Files Only) ---
+import { ScaleGenerator } from '../src/core/generators/ScaleGenerator';
+import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
+import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
+import { LinearEquationGenerator } from '../src/core/generators/LinearEquationGen';
+import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
+import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen';
+import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
+import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
+import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
+import { SimilarityGenerator } from '../src/core/generators/SimilarityGenerator';
+import { TenPowersGenerator } from '../src/core/generators/TenPowersGen';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  try {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
+    }
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    const { token, answer, topic, level } = req.body;
+
+    if (!token || answer === undefined) {
+        return res.status(400).json({ error: 'Missing token or answer' });
+    }
+
+    // Decode Token
+    const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf-8'));
+    const correctAnswer = decoded.a;
+
+    // --- Validation Logic ---
+    // 1. Basic String Match (Case insensitive, trimmed)
+    const normalize = (s: any) => String(s).toLowerCase().replace(/\s+/g, '').replace(',', '.');
+    
+    let isCorrect = normalize(answer) === normalize(correctAnswer);
+
+    // 2. Generator-Specific Validation (if needed)
+    // Used for equivalent expressions (e.g. "x + 1" == "1 + x")
+    if (!isCorrect && topic) {
+        let generator: any = null;
+        switch (topic) {
+            case 'simplify': generator = new ExpressionSimplificationGen(); break;
+            case 'equation': generator = new LinearEquationGen(); break;
+        }
+
+        if (generator && typeof generator.validate === 'function') {
+            isCorrect = generator.validate(answer, correctAnswer);
+        }
+    }
+
+    return res.status(200).json({
+        correct: isCorrect,
+        correctAnswer: correctAnswer
+    });
+
+  } catch (error: any) {
+    console.error("Answer API Error:", error);
+    return res.status(500).json({ error: "Validation Failed", details: error.message });
   }
-
-  const { answer, token, streak, level, topic, usedHelp, solutionUsed, attempts } = req.body;
-
-  if (!answer || !token) {
-    return res.status(400).json({ error: 'Missing answer or token' });
-  }
-
-  const isCorrect = verifyAnswer(answer, token);
-  
-  let levelUpAvailable = false;
-  let newStreak = Number(streak || 0);
-  const currentAttempts = Number(attempts || 0) + 1; 
-
-  let action = 'none'; 
-  let correctAnswer = null; 
-
-  if (isCorrect) {
-      if (solutionUsed || currentAttempts >= 2) { // Changed 3 to 2
-           newStreak = 0;
-      } else if (!usedHelp && currentAttempts === 1) {
-          newStreak += 1;
-          if (level && topic) {
-              levelUpAvailable = ProgressionRules.checkLevelUp(newStreak, Number(level), String(topic));
-          }
-      }
-  } else {
-      if (currentAttempts === 1) { // Changed 2 to 1 for first clue
-          action = 'next_clue';
-      } else if (currentAttempts >= 2) { // Changed 3 to 2 for show solution
-          action = 'show_solution';
-          newStreak = 0; 
-          correctAnswer = getCorrectAnswer(token);
-      }
-      newStreak = 0; 
-  }
-
-  return res.status(200).json({
-    correct: isCorrect,
-    newStreak: newStreak,
-    levelUp: levelUpAvailable,
-    action: action,
-    correctAnswer: correctAnswer
-  });
 }

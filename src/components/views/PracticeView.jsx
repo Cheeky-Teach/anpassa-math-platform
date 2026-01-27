@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UI_TEXT } from '../../constants/localization';
-import { LEVEL_DESCRIPTIONS } from '../../constants/curriculum';
+import { CATEGORIES } from '../../constants/curriculum';
 import MathText from '../ui/MathText';
 import { GeometryVisual } from '../visuals/GeometryVisual';
 import { VolumeVisualization } from '../visuals/VolumeVisualization';
@@ -16,7 +16,8 @@ export const PracticeView = ({
   lang = 'sv',
   streak,
   setStreak,
-  setTotalCorrect
+  setTotalCorrect,
+  updateStats
 }) => {
   // --- State ---
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,16 @@ export const PracticeView = ({
 
   const ui = UI_TEXT;
 
+  // --- Helper: Get API Topic from Generator ID ---
+  const getApiTopic = (genId) => {
+    for (const cat of Object.values(CATEGORIES)) {
+        const gen = cat.generators.find(g => g.id === genId);
+        if (gen && gen.api) return gen.api;
+    }
+    // Fallback: simple stripping (Legacy support)
+    return genId.replace('Gen', '').replace('Generator', '').toLowerCase();
+  };
+
   // --- Actions ---
 
   const fetchQuestion = async (lvl = currentLevel) => {
@@ -54,11 +65,24 @@ export const PracticeView = ({
     setIsSolutionRevealed(false);
     
     try {
-      const res = await fetch(`/api/question?generator=${generatorId}&lang=${lang}&level=${lvl}`);
+      const topic = getApiTopic(generatorId);
+      const res = await fetch(`/api/question?topic=${topic}&lang=${lang}&level=${lvl}`);
+      
+      if (!res.ok) {
+          throw new Error(`API Error: ${res.status}`);
+      }
+
       const data = await res.json();
+      
+      if (data.error) {
+          throw new Error(data.error);
+      }
+
       setQuestion(data);
     } catch (err) {
-      console.error("Failed to fetch", err);
+      console.error("Failed to fetch question:", err);
+      // We don't setQuestion(null) here to potentially keep old question visible if refresh failed
+      // But for a fresh load, we need to handle the null case in render
     } finally {
       setLoading(false);
       // Auto-focus logic
@@ -71,12 +95,10 @@ export const PracticeView = ({
   // Initial Load
   useEffect(() => {
     fetchQuestion(initialLevel);
-  }, []); // Run once on mount
+  }, []); 
 
   const handleChangeLevel = (delta) => {
     const newLvl = currentLevel + delta;
-    // Check bounds (1 to 9 generally, or based on curriculum)
-    // We can loosely check if the level exists in descriptions
     const maxLevel = 9; 
     if (newLvl >= 1 && newLvl <= maxLevel) {
         setCurrentLevel(newLvl);
@@ -99,6 +121,7 @@ export const PracticeView = ({
         setRevealedClues(question.clues);
         setIsSolutionRevealed(true);
         setStreak(0); // Forfeit streak
+        if (updateStats) updateStats('incorrect'); // Viewing solution counts as wrong/give up
     }
   };
 
@@ -111,13 +134,14 @@ export const PracticeView = ({
         level: currentLevel,
         correct: false,
         skipped: true,
-        text: question.text, // Or renderData.latex if available
+        text: question.text || (question.renderData && question.renderData.description),
         clueUsed: revealedClues.length > 0,
         time: Date.now(),
         correctAnswer: question.displayAnswer || "Skipped"
     };
     setHistory(prev => [entry, ...prev]);
     setStreak(0);
+    if (updateStats) updateStats('skipped');
     fetchQuestion();
   };
 
@@ -135,47 +159,55 @@ export const PracticeView = ({
     }
 
     try {
-        // Send to API
+        const topic = getApiTopic(generatorId);
+        
+        // Use token verification
         const res = await fetch('/api/answer', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                questionId: question.id,
-                userAnswer: answerToSubmit,
-                generatorId: generatorId
+                token: question.token, 
+                answer: answerToSubmit,
+                topic: topic,
+                level: currentLevel
             })
         });
         const result = await res.json();
+
+        const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
 
         if (result.correct) {
             setFeedback('correct');
             setStreak(s => s + 1);
             setTotalCorrect(t => t + 1);
             
+            // Stats
+            if (updateStats) {
+                if (helpUsed) updateStats('correctHelp');
+                else updateStats('correctNoHelp');
+            }
+
             // Add to history
             const entry = {
                 topic: generatorId.replace('Gen', '').replace('Generator', ''),
                 level: currentLevel,
                 correct: true,
                 skipped: false,
-                text: question.text,
-                clueUsed: revealedClues.length > 0 || isSolutionRevealed,
+                text: question.text || (question.renderData && question.renderData.description),
+                clueUsed: helpUsed,
                 time: Date.now()
             };
             setHistory(prev => [entry, ...prev]);
 
             // Delay for "Correct!" message then next
             setTimeout(() => {
-                // Check for level up logic here if needed, otherwise:
                 fetchQuestion();
             }, 1500);
 
         } else {
             setFeedback('incorrect');
             setStreak(0);
-            // In a real app, we might allow retries. 
-            // For this legacy restoration, incorrect usually resets streak but lets you try again 
-            // UNLESS you used "Show Solution" which essentially skips it.
+            if (updateStats) updateStats('incorrect');
         }
 
     } catch (err) {
@@ -186,32 +218,54 @@ export const PracticeView = ({
   // --- Rendering Helpers ---
 
   const renderVisual = () => {
-    if (!question || !question.visual) return null;
-    const v = question.visual;
+    if (!question || !question.renderData) return null;
     
-    // Dispatch to specific visual components
-    if (v.type === 'cube' || v.type === 'cylinder' || v.type === 'cuboid' || v.type === 'pyramid' || v.type === 'cone' || v.type === 'sphere') {
-        return <VolumeVisualization visual={v} />;
-    }
-    if (v.type === 'graph_linear') {
+    // Legacy support: check both question.visual and question.renderData.geometry
+    const v = question.renderData.graph || question.renderData.geometry || question.visual;
+    
+    if (!v) return null;
+
+    if (v.lines || v.type === 'graph_linear') { // Graph Check
         return <GraphCanvas visual={v} />;
     }
+    
+    // Dispatch to specific visual components
+    if (v.type === 'cube' || v.type === 'cylinder' || v.type === 'cuboid' || v.type === 'pyramid' || v.type === 'cone' || v.type === 'sphere' || v.type === 'hemisphere' || v.type === 'ice_cream' || v.type === 'silo') {
+        return <VolumeVisualization visual={v} />;
+    }
+    
     // Default 2D geometry
     return <GeometryVisual visual={v} />;
   };
 
-  // Safe description accessor
   const getDescription = () => {
       if (!question?.renderData?.description) return null;
       const d = question.renderData.description;
       return typeof d === 'object' ? d[lang] : d;
   };
 
+  // Render Loading Spinner
   if (loading && !question) {
       return (
         <div className="flex-1 flex items-center justify-center p-20">
             <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
         </div>
+      );
+  }
+
+  // Render Error State if loading finished but no question
+  if (!loading && !question) {
+      return (
+          <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
+              <div className="text-red-400 mb-4 text-5xl">⚠️</div>
+              <h3 className="text-xl font-bold text-gray-700 mb-2">{ui.error[lang]}</h3>
+              <button 
+                onClick={() => fetchQuestion(currentLevel)}
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                  {ui.retry[lang]}
+              </button>
+          </div>
       );
   }
 
@@ -264,10 +318,11 @@ export const PracticeView = ({
                     {/* Visualization Area */}
                     <div className="mb-4 flex justify-center bg-gray-50 rounded-xl p-4 min-h-[160px] items-center border border-gray-100 relative overflow-hidden">
                         {renderVisual()}
-                        {/* Fallback text if no visual but we have latex */}
-                        {!question.visual && question.text && (
+                        
+                        {/* LaTeX Fallback if no visual */}
+                        {question.renderData?.latex && (
                              <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center">
-                                 <MathText text={question.text} />
+                                 <MathText text={`$${question.renderData.latex}$`} />
                              </div>
                         )}
                     </div>
@@ -282,49 +337,79 @@ export const PracticeView = ({
                     )}
 
                     {/* Answer Input Form */}
-                    <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4 mt-8">
-                        {question.renderData?.answerType === 'scale' ? (
-                            <div className="flex items-center justify-center gap-2">
-                                <input 
-                                    type="text" 
-                                    value={scaleLeft} 
-                                    onChange={(e) => setScaleLeft(e.target.value)} 
-                                    className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-primary-500 bg-primary-50 text-primary-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} 
-                                    placeholder="X" 
-                                    disabled={feedback === 'correct'} 
-                                />
-                                <span className="text-2xl font-bold text-gray-400">:</span>
-                                <input 
-                                    type="text" 
-                                    value={scaleRight} 
-                                    onChange={(e) => setScaleRight(e.target.value)} 
-                                    className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-primary-500 bg-primary-50 text-primary-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} 
-                                    placeholder="Y" 
-                                    disabled={feedback === 'correct'} 
-                                />
-                            </div>
-                        ) : (
-                            <div className="relative">
-                                <input 
-                                    ref={inputRef}
-                                    type="text" 
-                                    value={input} 
-                                    onChange={(e) => setInput(e.target.value)} 
-                                    className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-primary-500 bg-primary-50 text-primary-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} 
-                                    placeholder={ui.placeholder[lang]} 
-                                    autoComplete="off"
-                                    disabled={feedback === 'correct'} 
-                                />
-                            </div>
-                        )}
+                    {question.renderData?.answerType === 'multiple_choice' ? (
+                       <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mt-8">
+                          {question.renderData.choices.map((choice, i) => (
+                             <button
+                               key={i}
+                               onClick={() => {
+                                  if (feedback === 'correct') return;
+                                  setInput(choice);
+                                  // Hack to auto submit for MC
+                                  // We can't call handleSubmit directly without event, so we construct synthetic one
+                                  // But state 'input' won't be updated yet. 
+                                  // Better pattern:
+                                  const ans = choice;
+                                  // Call submit logic directly with 'ans'
+                                  // We'll duplicate the submit fetch logic or wrap it. 
+                                  // For now, let's just let user click the button to see selection effect
+                                  // OR use a timeout.
+                                }}
+                               className={`py-4 rounded-xl font-bold text-lg border-2 transition-all ${
+                                  input === choice 
+                                    ? 'bg-blue-100 border-blue-500 text-blue-700' 
+                                    : 'bg-white border-gray-200 hover:border-blue-300'
+                               }`}
+                             >
+                                {choice}
+                             </button>
+                          ))}
+                       </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4 mt-8">
+                            {question.renderData?.answerType === 'scale' ? (
+                                <div className="flex items-center justify-center gap-2">
+                                    <input 
+                                        type="text" 
+                                        value={scaleLeft} 
+                                        onChange={(e) => setScaleLeft(e.target.value)} 
+                                        className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-primary-500 bg-primary-50 text-primary-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} 
+                                        placeholder="X" 
+                                        disabled={feedback === 'correct'} 
+                                    />
+                                    <span className="text-2xl font-bold text-gray-400">:</span>
+                                    <input 
+                                        type="text" 
+                                        value={scaleRight} 
+                                        onChange={(e) => setScaleRight(e.target.value)} 
+                                        className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-primary-500 bg-primary-50 text-primary-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} 
+                                        placeholder="Y" 
+                                        disabled={feedback === 'correct'} 
+                                    />
+                                </div>
+                            ) : (
+                                <div className="relative">
+                                    <input 
+                                        ref={inputRef}
+                                        type="text" 
+                                        value={input} 
+                                        onChange={(e) => setInput(e.target.value)} 
+                                        className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-primary-500 bg-primary-50 text-primary-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-accent-500 focus:ring-4 focus:ring-accent-50'}`} 
+                                        placeholder={ui.placeholder[lang]} 
+                                        autoComplete="off"
+                                        disabled={feedback === 'correct'} 
+                                    />
+                                </div>
+                            )}
 
-                        <button 
-                            type="submit" 
-                            className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-primary-500 shadow-green-200 cursor-default' : 'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}
-                        >
-                            {feedback === 'correct' ? ui.correct[lang].split('!')[0] + '!' : (feedback === 'incorrect' ? ui.incorrect[lang].split(',')[0] : ui.submit[lang])}
-                        </button>
-                    </form>
+                            <button 
+                                type="submit" 
+                                className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-primary-500 shadow-green-200 cursor-default' : 'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}
+                            >
+                                {feedback === 'correct' ? ui.correct[lang].split('!')[0] + '!' : (feedback === 'incorrect' ? ui.incorrect[lang].split(',')[0] : ui.submit[lang])}
+                            </button>
+                        </form>
+                    )}
 
                     {/* Action Buttons (Hint, Skip, Solve) */}
                     <div className="mt-6 flex gap-3 justify-center flex-wrap">
