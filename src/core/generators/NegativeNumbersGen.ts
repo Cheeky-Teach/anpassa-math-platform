@@ -8,7 +8,6 @@ export class NegativeNumbersGen {
         const formatColor = (val: string | number) => `\\textcolor{#D35400}{\\mathbf{${val}}}`;
 
         let mode = level;
-        // Level 5: Mixed (1-4)
         if (level === 5) mode = rng.intBetween(1, 4);
 
         let steps: Clue[] = [];
@@ -25,25 +24,21 @@ export class NegativeNumbersGen {
             const numCount = mode === 1 ? rng.intBetween(2, 3) : rng.intBetween(3, 4);
             
             let nums: number[] = [];
-            let ops: string[] = []; // '+' or '-'
+            let ops: string[] = [];
 
-            // Generate first number
             nums.push(rng.intBetween(min, range));
             
-            // Generate rest
             for(let i=1; i<numCount; i++) {
                 nums.push(rng.intBetween(min, range));
                 ops.push(rng.pick(['+', '-']));
             }
 
-            // Build full expression string
             latex = `${nums[0]}`;
             for(let i=0; i<ops.length; i++) {
                 latex += ` ${ops[i]} ${p(nums[i+1])}`;
             }
             latex += " =";
 
-            // Calculate Answer & Generate Iterative Steps
             let runningVal = nums[0];
             
             for(let i=0; i<ops.length; i++) {
@@ -54,24 +49,20 @@ export class NegativeNumbersGen {
 
                 if (op === '+') {
                     if (nextNum < 0) {
-                        // Adding a negative -> Subtract
                         stepExpl = "add_neg";
                         stepLatex = `${runningVal} + (${nextNum}) = ${runningVal} - ${Math.abs(nextNum)}`;
                         runningVal += nextNum;
                     } else {
-                        // Standard addition
                         stepExpl = "simple_calc";
                         stepLatex = `${runningVal} + ${nextNum}`;
                         runningVal += nextNum;
                     }
-                } else { // op === '-'
+                } else {
                     if (nextNum < 0) {
-                        // Subtracting a negative -> Add
                         stepExpl = "sub_neg";
                         stepLatex = `${runningVal} - (${nextNum}) = ${runningVal} + ${Math.abs(nextNum)}`;
                         runningVal -= nextNum;
                     } else {
-                        // Standard subtraction
                         stepExpl = "simple_calc";
                         stepLatex = `${runningVal} - ${nextNum}`;
                         runningVal -= nextNum;
@@ -79,10 +70,13 @@ export class NegativeNumbersGen {
                 }
 
                 if (stepExpl) {
-                    steps.push({ text: t(lang, TERMS.neg_signs[stepExpl]), latex: stepLatex });
+                    // Safe access to TERMS
+                    const explText = (TERMS.neg_signs as any)[stepExpl] 
+                        ? t(lang, (TERMS.neg_signs as any)[stepExpl]) 
+                        : "Calculate:";
+                    steps.push({ text: explText, latex: stepLatex });
                 }
                 
-                // Show intermediate result
                 steps.push({ text: t(lang, TERMS.neg_signs.step_calc), latex: `= ${formatColor(runningVal)}` });
             }
             
@@ -91,10 +85,9 @@ export class NegativeNumbersGen {
 
         // --- LEVEL 3: Multiplication ---
         else if (mode === 3) {
-            const count = rng.intBetween(2, 3); // a*b or a*b*c
+            const count = rng.intBetween(2, 3);
             const nums: number[] = [];
             for(let i=0; i<count; i++) nums.push(rng.intBetween(-10, 10));
-            // Ensure no zeros for clearer sign rules
             nums.forEach((n, i) => { if(n===0) nums[i] = 2; });
 
             latex = nums.map(n => p(n)).join(' \\cdot ') + " =";
@@ -104,32 +97,29 @@ export class NegativeNumbersGen {
             for(let i=1; i<nums.length; i++) {
                 const prev = runningVal;
                 const next = nums[i];
-                // Check signs for rule explanation
                 const isPrevNeg = prev < 0;
                 const isNextNeg = next < 0;
                 
                 let explKey = "";
-                // Logic: 
-                // + * - = -
-                // - * + = -
-                // - * - = +
-                // + * + = + (no special rule needed, usually)
-
                 if (isPrevNeg && isNextNeg) explKey = "mul_neg_neg";
                 else if (isPrevNeg !== isNextNeg) explKey = "mul_pos_neg";
                 else explKey = "simple_calc";
                 
                 runningVal *= next;
                 
+                const explText = (TERMS.neg_signs as any)[explKey] 
+                    ? t(lang, (TERMS.neg_signs as any)[explKey]) 
+                    : "";
+
                 steps.push({ 
-                    text: t(lang, TERMS.neg_signs[explKey]), 
+                    text: explText, 
                     latex: `${p(prev)} \\cdot ${p(next)} = ${formatColor(runningVal)}` 
                 });
             }
             answer = runningVal;
         }
 
-        // --- LEVEL 4: Division (a/b) ---
+        // --- LEVEL 4: Division ---
         else { 
             let b = 0;
             while(b === 0) b = rng.intBetween(-10, 10);
@@ -147,7 +137,7 @@ export class NegativeNumbersGen {
             const explKey = sameSign ? "div_sign_same" : "div_sign_diff";
             
             steps.push({
-                text: t(lang, TERMS.neg_signs[explKey]),
+                text: t(lang, (TERMS.neg_signs as any)[explKey]),
                 latex: `${a} / ${b} = ${formatColor(answer)}`
             });
         }

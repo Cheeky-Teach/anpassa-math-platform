@@ -39,7 +39,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const seed = Math.random().toString(36).substring(7);
 
     // --- Static Router ---
-    // Calls static methods directly: Generator.generate(...)
+    // FIXED: Calls static methods directly. Do not use 'new'.
     switch (topicKey) {
       // Arithmetic
       case 'arithmetic': 
@@ -57,7 +57,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         question = ExpressionSimplificationGen.generate(lvl, seed, language); 
         break;
       case 'equation': 
-        // Route Word Problems (Lvl 5 & 6) to Problem Gen
+        // FIXED: Route Level 5 & 6 to Word Problems
         if (lvl === 5 || lvl === 6) {
             question = LinearEquationProblemGen.generate(lvl, seed, language);
         } else {

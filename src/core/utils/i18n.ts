@@ -28,7 +28,7 @@ export const UI_STRINGS = {
         donow_hide_all: "Dölj alla",
         aboutBtn: "Om skaparen",
         
-        // --- Missing Math Vocab (CRITICAL) ---
+        // --- Math Vocabulary (Restored) ---
         common: {
             calculate: "Beräkna",
             equation: "Ekvation",
@@ -50,6 +50,7 @@ export const UI_STRINGS = {
             mul_pos_neg: "Plus gånger minus blir minus.",
             div_sign_same: "Lika tecken ger positivt svar.",
             div_sign_diff: "Olika tecken ger negativt svar.",
+            simple_calc: "Beräkna:", // Fixed key name
             step_calc: "Beräkna:"
         },
         graph: {
@@ -149,7 +150,7 @@ export const UI_STRINGS = {
         donow_hide_all: "Hide All",
         aboutBtn: "About",
         
-        // English mappings for math terms (simplified for this fix)
+        // English mappings
         common: { calculate: "Calculate", equation: "Equation", simplify: "Simplify" },
         algebra: {
             intro: (eq: string) => `Equation: $${eq}$`,
@@ -167,6 +168,7 @@ export const UI_STRINGS = {
             mul_pos_neg: "Pos * Neg = Neg",
             div_sign_same: "Same sign = Positive",
             div_sign_diff: "Diff sign = Negative",
+            simple_calc: "Calculate:",
             step_calc: "Calculate:"
         },
         graph: {
@@ -233,7 +235,5 @@ export function t(lang: Language, keyOrObj: string | { sv: string, en: string })
     if (typeof keyOrObj === 'object') {
         return keyOrObj[lang] || keyOrObj['sv'] || "";
     }
-    // Deep access for string keys not supported by this simple function, 
-    // but the generators usually pass objects or access TERMS directly.
     return keyOrObj;
 }
