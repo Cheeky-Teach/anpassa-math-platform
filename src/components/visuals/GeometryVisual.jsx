@@ -2,9 +2,9 @@ import React from 'react';
 
 /**
  * Renders SVG geometry. Handles 'similarity' by rendering multiple shapes.
- * Updated to prevent crashes when shapes array is undefined.
+ * Updated to use named export to match PracticeView imports.
  */
-const GeometryVisual = ({ data }) => {
+export const GeometryVisual = ({ data }) => {
   if (!data) return null;
 
   // --- Helper: Render a Single Polygon ---
@@ -139,11 +139,10 @@ const GeometryVisual = ({ data }) => {
         {(!data.type || data.type !== 'similarity') && (
            <g>
              {renderShape(data.points, 0, 0, '#3B82F6', 'single')}
+             {/* If standard shapes have labels, render them here. Currently assumes custom labels array is for similarity */}
            </g>
         )}
       </svg>
     </div>
   );
 };
-
-export default GeometryVisual;
