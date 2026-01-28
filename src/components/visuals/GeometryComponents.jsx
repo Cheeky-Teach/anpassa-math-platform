@@ -1,5 +1,4 @@
 import React, { useRef, useEffect } from 'react';
-import katex from 'katex';
 
 // Graph Canvas Component
 export const GraphCanvas = ({ data }) => {
@@ -197,12 +196,10 @@ export const VolumeVisualization = ({ data }) => {
                 drawCircleData(yBase);
             }
             else if (data.type === 'cylinder' || data.type === 'silo' || data.type === 'ice_cream') {
-                 // Simplified logic for composite types based on cylinder
                 const hCyl = (parseInt(data.labels.h) || 10) * scale;
                 const topY = cy - hCyl/2;
                 const botY = cy + hCyl/2;
                 
-                // Draw logic for cylinder body
                 if (data.type === 'cylinder' || data.type === 'silo') {
                      ctx.beginPath(); ctx.ellipse(cx, topY, r, r/4, 0, 0, 2*Math.PI); ctx.stroke();
                      ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, 0, Math.PI); ctx.stroke();
@@ -212,12 +209,9 @@ export const VolumeVisualization = ({ data }) => {
                      drawLabel(data.labels.h, cx + r + 15, cy);
                 }
                 
-                // Additional tops/bottoms for composites would go here, 
-                // keeping it simple for now to ensure rendering
                 drawCircleData(data.type === 'ice_cream' ? cy : topY, true);
             }
             else if (data.type === 'cone' || data.type === 'pyramid') {
-                 // Simplified cone logic
                  const hCone = (parseInt(data.labels.h) || 10) * scale;
                  const botY = cy + hCone/2;
                  const topY = cy - hCone/2;
@@ -238,39 +232,77 @@ export const GeometryVisual = ({ data }) => {
     if (!data) return null;
     const SvgContainer = ({ children, w = 300, h = 200, viewBox = "0 0 300 200" }) => <svg width={w} height={h} viewBox={viewBox} className="my-2 w-full max-w-[300px] mx-auto">{children}</svg>;
     
-    // Auto-scale to fit 180x180 box
     const RenderShape = ({ type, dims, labels, areaText }) => {
         const w = dims.width || 0, h = dims.height || 0, r = dims.radius || 0;
         const size = Math.max(w, h, r * 2);
-        const scale = 120 / (size || 1);
+        
+        // Slightly reduced scale to leave room for labels
+        const scale = 140 / (size || 1);
+        
         let sw = w * scale, sh = h * scale, sr = r * scale;
-        const cx = 90, cy = 90;
+        const cx = 150, cy = 100; // Center in 300x200 viewbox
 
         const mkTxt = (x, y, txt, anchor="middle", baseline="middle") => 
-            <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill="#374151" fontSize="24">{txt}</text>;
+            <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill="#374151" fontSize="22">{txt}</text>;
 
         const content = () => {
             if (type === 'rectangle' || type === 'square' || type === 'parallelogram') 
-                return (<><rect x={cx - sw / 2} y={cy - sh / 2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><text x={cx} y={cy + sh / 2 + 25} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="24">{dims.width}</text><text x={cx + sw / 2 + 10} y={cy} textAnchor="start" fontWeight="bold" fill="#374151" fontSize="24">{dims.height}</text></>)}</>);
+                return (<><rect x={cx - sw / 2} y={cy - sh / 2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><text x={cx} y={cy + sh / 2 + 25} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{dims.width}</text><text x={cx + sw / 2 + 10} y={cy} textAnchor="start" fontWeight="bold" fill="#374151" fontSize="22">{dims.height}</text></>)}</>);
             
             if (type === 'triangle') {
                 const L = cx - sw/2, R = cx + sw/2, T = cy - sh/2, B = cy + sh/2;
-                let points = `${L},${B} ${R},${B} ${cx},${T}`;
-                if (dims.subtype === 'right') points = `${L},${B} ${R},${B} ${L},${T}`; // Right angle adjustment
-                return (<><polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />{labels && <>{mkTxt(cx, B + 25, dims.width)}<text x={cx - sw/2 - 15} y={cy} textAnchor="end" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="24">h={dims.height}</text></>}</>);
+                
+                if (dims.subtype === 'right') {
+                    // Right Triangle: 90 deg at bottom-left
+                    const points = `${L},${B} ${R},${B} ${L},${T}`;
+                    const rightAngle = <path d={`M ${L+15} ${B} L ${L+15} ${B-15} L ${L} ${B-15}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
+                    return (<>
+                        {rightAngle}
+                        <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
+                        {labels && <>{mkTxt(cx, B + 25, dims.width)}<text x={L - 10} y={cy} textAnchor="end" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="22">h={dims.height}</text></>}
+                    </>);
+                } else {
+                    // Isosceles / Scalene: Standard "Tent" shape
+                    const points = `${L},${B} ${R},${B} ${cx},${T}`;
+                    const hLine = <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
+                    return (<>
+                        {hLine}
+                        <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
+                        {labels && <>{mkTxt(cx, B + 25, dims.width)}<text x={cx + 5} y={cy} textAnchor="start" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="22">h={dims.height}</text></>}
+                    </>);
+                }
             }
-            if (type === 'circle') return (<><circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx + sr / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="24">{dims.val || `r=${dims.radius}`}</text></>)}</>);
+            if (type === 'circle') {
+                const isDiameter = dims.show === 'diameter';
+                return (<>
+                    <circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                    {labels && (
+                        isDiameter ? (
+                            <>
+                                <line x1={cx - sr} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" strokeDasharray="4" />
+                                <text x={cx} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{dims.val || `d=${dims.diameter}`}</text>
+                            </>
+                        ) : (
+                            <>
+                                <circle cx={cx} cy={cy} r={2} fill="#374151" />
+                                <line x1={cx} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" />
+                                <text x={cx + sr / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{dims.val || `r=${dims.radius}`}</text>
+                            </>
+                        )
+                    )}
+                </>);
+            }
             
             return null;
         };
-        return (<svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm w-full max-w-[200px]">{content()}{areaText && <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
+        return (<svg width="300" height="200" viewBox="0 0 300 200" className="border border-gray-100 rounded-lg bg-white shadow-sm w-full max-w-[300px]">{content()}{areaText && <text x="150" y="180" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
     };
 
     if (data.type === 'scale_single' || data.type === 'scale_compare') { 
         const shapeEmojis = { 
             square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', cube: '🧊', cylinder: '🛢️', 
             pyramid: '⛰️', cone: '🍦', sphere: '🔮', arrow: '➡', star: '⭐', lightning: '⚡', 
-            key: '🔑', heart: '❤️', cloud: '☁️', moon: '🌙', sun: '☀️' 
+            key: '🔑', heart: '❤️', cloud: '☁️', moon: '🌙', sun: '☀️', magnifying_glass: '🔍', map: '🗺️' 
         }; 
         const emoji = shapeEmojis[data.shape] || '📦'; 
         const ShapeIcon = ({ size }) => <div className="flex items-center justify-center text-6xl select-none" style={{ fontSize: size }}>{emoji}</div>; 
@@ -287,12 +319,10 @@ export const GeometryVisual = ({ data }) => {
         ); 
     }
 
-    // UPDATED: Allow Triangle and Circle and Composite types to render
     if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle'].includes(data.type)) {
         return (<div className="flex justify-center my-4"><RenderShape type={data.type} dims={data} labels={true} areaText={null} /></div>);
     }
     
-    // Composite (House/Portal)
     if (data.type === 'composite') {
         const w = data.labels.w || 50;
         const h = data.labels.h || 50;
@@ -305,6 +335,7 @@ export const GeometryVisual = ({ data }) => {
                             <polygon points="50,80 150,80 100,20" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
                             <text x="160" y="120" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.h}</text>
                             <text x="100" y="180" textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.w}</text>
+                            <text x="130" y="60" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.h_roof}</text>
                         </>
                     ) : (
                         <>
@@ -319,7 +350,6 @@ export const GeometryVisual = ({ data }) => {
         );
     }
 
-    // Default Fallback
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
 
