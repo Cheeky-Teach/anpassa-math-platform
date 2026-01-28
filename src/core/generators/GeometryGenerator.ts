@@ -99,27 +99,70 @@ export class GeometryGenerator {
 
     private level5_Composite(lang: string): any {
         const type = MathUtils.randomChoice(['house', 'portal']);
-        const w = 6, h = 5;
-        let ans = 0, steps = [], geom: any = {};
+        // Increased random range up to 20
+        let w = MathUtils.randomInt(4, 20);
+        const h = MathUtils.randomInt(4, 20);
         
+        const isArea = MathUtils.randomInt(0, 1) === 1;
+        let ans = 0, steps = [], geom: any = {}, desc = "";
+
         if (type === 'house') {
-            const hRoof = 3;
-            const aRect = w*h;
-            const aTri = w*hRoof/2;
-            ans = aRect + aTri;
-            steps = [{ latex: `${aRect} + ${aTri} = \\mathbf{${ans}}` }];
+            const hRoof = MathUtils.randomInt(3, 10);
+
+            if (isArea) {
+                const aRect = w * h;
+                const aTri = (w * hRoof) / 2;
+                ans = aRect + aTri;
+                
+                desc = lang === 'sv' 
+                    ? `Beräkna arean av huset (Rektangel ${w}x${h} + Tak ${hRoof}).` 
+                    : `Calculate house area (Rectangle ${w}x${h} + Roof ${hRoof}).`;
+
+                steps = [{ latex: `${w}\\cdot${h} + \\frac{${w}\\cdot${hRoof}}{2} = \\mathbf{${ans}}` }];
+            } else {
+                // Perimeter
+                const half = w / 2;
+                const slope = Math.sqrt(half*half + hRoof*hRoof);
+                ans = Math.round((w + 2*h + 2*slope) * 10) / 10;
+                
+                desc = lang === 'sv' 
+                    ? `Beräkna omkretsen (Bredd ${w}, Vägg ${h}, Takhöjd ${hRoof}).` 
+                    : `Calculate perimeter (Width ${w}, Wall ${h}, Roof height ${hRoof}).`;
+
+                steps = [{ latex: `${w} + 2\\cdot${h} + 2\\cdot${Math.round(slope*10)/10} \\approx \\mathbf{${ans}}` }];
+            }
             geom = { type: 'composite', subtype: 'house', labels: { w, h, h_roof: hRoof } };
         } else {
-            const r = w/2;
-            const aRect = w*h;
-            const aSemi = Math.round(3.14*r*r/2 * 10)/10;
-            ans = Math.round((aRect + aSemi)*10)/10;
-            steps = [{ latex: `${aRect} + ${aSemi} \\approx \\mathbf{${ans}}` }];
+            // Portal (Rectangle + Semicircle)
+            // Ensure width is even for cleaner radius
+            if (w % 2 !== 0) w += 1;
+            const r = w / 2;
+
+            if (isArea) {
+                const aRect = w * h;
+                const aSemi = Math.round(3.14 * r * r / 2 * 10) / 10;
+                ans = Math.round((aRect + aSemi)*10)/10;
+                
+                desc = lang === 'sv' 
+                    ? `Beräkna arean av portalen (Bredd ${w}, Höjd ${h}).` 
+                    : `Calculate portal area (Width ${w}, Height ${h}).`;
+
+                steps = [{ latex: `${w}\\cdot${h} + \\frac{3.14\\cdot${r}^2}{2} \\approx \\mathbf{${ans}}` }];
+            } else {
+                const arc = 3.14 * r; // half circ
+                ans = Math.round((w + 2*h + arc) * 10) / 10;
+                
+                desc = lang === 'sv' 
+                    ? `Beräkna omkretsen (Bredd ${w}, Höjd ${h}).` 
+                    : `Calculate perimeter (Width ${w}, Height ${h}).`;
+
+                steps = [{ latex: `${w} + 2\\cdot${h} + 3.14\\cdot${r} \\approx \\mathbf{${ans}}` }];
+            }
             geom = { type: 'composite', subtype: 'portal', labels: { w, h } };
         }
 
         return {
-            renderData: { geometry: geom, description: lang === 'sv' ? "Beräkna arean." : "Calculate area.", answerType: 'text' },
+            renderData: { geometry: geom, description: desc, answerType: 'text' },
             token: Buffer.from(ans.toString()).toString('base64'),
             clues: steps
         };
