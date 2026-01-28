@@ -168,7 +168,10 @@ export class VolumeGen {
             
             vol = Math.round((w * l * h) / 3);
             
-            desc = lang === 'sv' ? "Beräkna volymen av pyramiden (heltal)." : "Calculate the volume of the pyramid (integer).";
+            // --- UPDATED DESCRIPTION TO INCLUDE DIMENSIONS ---
+            desc = lang === 'sv' 
+                ? `Beräkna volymen. Basen är ${w} · ${l} och höjden är ${h}.` 
+                : `Calculate volume. Base is ${w} · ${l} and height is ${h}.`;
 
             steps.push({
                 text: lang === 'sv' ? "1. Räkna ut basytan (rektangeln)." : "1. Calculate the base area (rectangle).",
