@@ -74,6 +74,8 @@ export const GraphCanvas = ({ data }) => {
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
 
+GraphCanvas.requiresCanvas = true;
+
 // Volume Visualization Component (3D shapes on Canvas)
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
@@ -219,6 +221,8 @@ export const VolumeVisualization = ({ data }) => {
     return <div className="flex justify-center my-2 w-full"><canvas ref={canvasRef} width={320} height={240} className="w-full max-w-[320px] h-auto bg-white rounded-lg" /></div>;
 };
 
+VolumeVisualization.requiresCanvas = true;
+
 // SVG Geometry Visual
 export const GeometryVisual = ({ data }) => {
     if (!data) return null;
@@ -281,4 +285,4 @@ export const StaticGeometryVisual = ({ description }) => {
     return null; 
 };
 
-GeometryComponents.requiresCanvas = true;
+GeometryVisual.requiresCanvas = true;
