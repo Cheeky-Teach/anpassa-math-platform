@@ -74,10 +74,9 @@ export const GraphCanvas = ({ data }) => {
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
 
-// Volume Visualization Component (3D shapes on Canvas)
+// Volume Visualization Component
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
-    
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas || !data) return;
@@ -106,7 +105,6 @@ export const VolumeVisualization = ({ data }) => {
             ctx.fillText(text, x, y); 
             ctx.restore(); 
         };
-        
         const drawDashed = (x1, y1, x2, y2) => { 
             ctx.save(); 
             ctx.setLineDash([5, 5]); 
@@ -129,47 +127,32 @@ export const VolumeVisualization = ({ data }) => {
             const dw = (parseInt(data.labels.w) || 10) * scale;
             const dh = (parseInt(data.labels.h) || 10) * scale;
             const dd = (parseInt(data.labels.d) || 10) * scale * 0.5;
-
             const x0 = cx - dw/2 - dd/2;
             const y0 = cy + dh/2 + dd/2;
-
             ctx.strokeRect(x0, y0 - dh, dw, dh);
             ctx.beginPath();
             ctx.moveTo(x0, y0 - dh); ctx.lineTo(x0 + dd, y0 - dh - dd); ctx.lineTo(x0 + dw + dd, y0 - dh - dd); ctx.lineTo(x0 + dw, y0 - dh); ctx.stroke();
             ctx.beginPath();
             ctx.moveTo(x0 + dw + dd, y0 - dh - dd); ctx.lineTo(x0 + dw + dd, y0 - dd); ctx.lineTo(x0 + dw, y0); ctx.stroke();
-
             drawLabel(data.labels.w, x0 + dw/2, y0 + 15);
             drawLabel(data.labels.h, x0 - 20, y0 - dh/2);
             drawLabel(data.labels.d, x0 + dw + dd/2 + 5, y0 - dd/2);
-        } 
-        else if (data.type === 'triangular_prism') {
+        } else if (data.type === 'triangular_prism') {
             const b = (parseInt(data.labels.b) || 10) * scale;
             const hTri = (parseInt(data.labels.h) || 10) * scale;
             const len = (parseInt(data.labels.l) || 20) * scale * 0.7;
-
             const startX = cx - b/2 - len/2;
             const startY = cy + hTri/2;
-
             ctx.beginPath();
-            ctx.moveTo(startX, startY);
-            ctx.lineTo(startX + b, startY);
-            ctx.lineTo(startX + b/2, startY - hTri);
-            ctx.closePath();
-            ctx.stroke();
-
+            ctx.moveTo(startX, startY); ctx.lineTo(startX + b, startY); ctx.lineTo(startX + b/2, startY - hTri); ctx.closePath(); ctx.stroke();
             const offX = len; const offY = -len * 0.3;
-            ctx.beginPath();
-            ctx.moveTo(startX + b/2, startY - hTri); ctx.lineTo(startX + b/2 + offX, startY - hTri + offY); ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(startX + b, startY); ctx.lineTo(startX + b + offX, startY + offY); ctx.lineTo(startX + b/2 + offX, startY - hTri + offY); ctx.stroke();
-            
+            ctx.beginPath(); ctx.moveTo(startX + b/2, startY - hTri); ctx.lineTo(startX + b/2 + offX, startY - hTri + offY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(startX + b, startY); ctx.lineTo(startX + b + offX, startY + offY); ctx.lineTo(startX + b/2 + offX, startY - hTri + offY); ctx.stroke();
             drawDashed(startX + b/2, startY, startX + b/2, startY - hTri);
             drawLabel(data.labels.h, startX + b/2 + 10, startY - hTri/2);
             drawLabel(data.labels.b, startX + b/2, startY + 15);
             drawLabel(data.labels.l, startX + b + offX/2 + 10, startY + offY/2);
-        }
-        else {
+        } else {
             let r = 50; 
             if(data.labels.r) r = parseInt(data.labels.r) * scale;
             if(data.labels.d) r = (parseInt(data.labels.d)/2) * scale;
@@ -180,26 +163,22 @@ export const VolumeVisualization = ({ data }) => {
              if (data.show === 'diameter' || data.show === 'd') {
                  drawDashed(cx - r, centerY, cx + r, centerY);
                  if(showLabel) drawLabel(val, cx, centerY - 10);
-                } 
-                else {
+                } else {
                  ctx.beginPath(); ctx.arc(cx, centerY, 2, 0, 2*Math.PI); ctx.fill();
                  drawDashed(cx, centerY, cx + r, centerY);
                  if(showLabel) drawLabel(val, cx + r/2, centerY - 10);
                 }
              };
-
             if (data.type === 'sphere' || data.type === 'hemisphere') {
                 const isHemi = data.type === 'hemisphere';
                 const yBase = isHemi ? cy + 10 : cy;
                 ctx.beginPath(); ctx.arc(cx, yBase, r, isHemi ? Math.PI : 0, isHemi ? 0 : 2*Math.PI); ctx.stroke();
                 ctx.beginPath(); ctx.ellipse(cx, yBase, r, r/4, 0, 0, 2*Math.PI); ctx.stroke();
                 drawCircleData(yBase);
-            }
-            else if (data.type === 'cylinder' || data.type === 'silo' || data.type === 'ice_cream') {
+            } else if (data.type === 'cylinder' || data.type === 'silo' || data.type === 'ice_cream') {
                 const hCyl = (parseInt(data.labels.h) || 10) * scale;
                 const topY = cy - hCyl/2;
                 const botY = cy + hCyl/2;
-                
                 if (data.type === 'cylinder' || data.type === 'silo') {
                      ctx.beginPath(); ctx.ellipse(cx, topY, r, r/4, 0, 0, 2*Math.PI); ctx.stroke();
                      ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, 0, Math.PI); ctx.stroke();
@@ -208,10 +187,8 @@ export const VolumeVisualization = ({ data }) => {
                      ctx.beginPath(); ctx.moveTo(cx+r, topY); ctx.lineTo(cx+r, botY); ctx.stroke();
                      drawLabel(data.labels.h, cx + r + 15, cy);
                 }
-                
                 drawCircleData(data.type === 'ice_cream' ? cy : topY, true);
-            }
-            else if (data.type === 'cone' || data.type === 'pyramid') {
+            } else if (data.type === 'cone' || data.type === 'pyramid') {
                  const hCone = (parseInt(data.labels.h) || 10) * scale;
                  const botY = cy + hCone/2;
                  const topY = cy - hCone/2;
@@ -223,7 +200,6 @@ export const VolumeVisualization = ({ data }) => {
             }
         }
     }, [data]);
-
     return <div className="flex justify-center my-2 w-full"><canvas ref={canvasRef} width={320} height={240} className="w-full max-w-[320px] h-auto bg-white rounded-lg" /></div>;
 };
 
@@ -232,18 +208,35 @@ export const GeometryVisual = ({ data }) => {
     if (!data) return null;
     const SvgContainer = ({ children, w = 300, h = 200, viewBox = "0 0 300 200" }) => <svg width={w} height={h} viewBox={viewBox} className="my-2 w-full max-w-[300px] mx-auto">{children}</svg>;
     
+    // Auto-scale to fit 140x140 box to ensure padding
     const RenderShape = ({ type, dims, labels, areaText }) => {
         const w = dims.width || 0, h = dims.height || 0, r = dims.radius || 0;
         const size = Math.max(w, h, r * 2);
-        
-        // Slightly reduced scale to leave room for labels
         const scale = 140 / (size || 1);
-        
         let sw = w * scale, sh = h * scale, sr = r * scale;
-        const cx = 150, cy = 100; // Center in 300x200 viewbox
+        const cx = 150, cy = 100;
 
         const mkTxt = (x, y, txt, anchor="middle", baseline="middle") => 
             <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill="#374151" fontSize="22">{txt}</text>;
+
+        // Angle Arc Helper
+        const AngleArc = ({ cx, cy, startAngle, endAngle, radius, label }) => {
+             // Basic arc drawing
+             const x1 = cx + radius * Math.cos(startAngle);
+             const y1 = cy - radius * Math.sin(startAngle); // SVG Y is down
+             const x2 = cx + radius * Math.cos(endAngle);
+             const y2 = cy - radius * Math.sin(endAngle);
+             
+             // Very simple arc path for now (assuming small angles < 180)
+             const d = `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 0 0 ${x2} ${y2} Z`;
+             
+             return (
+                 <g>
+                    <path d={d} fill="rgba(239, 68, 68, 0.2)" stroke="#ef4444" strokeWidth="1" />
+                    {label && <text x={cx + (radius + 15) * Math.cos((startAngle+endAngle)/2)} y={cy - (radius + 15) * Math.sin((startAngle+endAngle)/2)} textAnchor="middle" fontSize="14" fill="#dc2626">{label}</text>}
+                 </g>
+             );
+        };
 
         const content = () => {
             if (type === 'rectangle' || type === 'square' || type === 'parallelogram') 
@@ -253,7 +246,6 @@ export const GeometryVisual = ({ data }) => {
                 const L = cx - sw/2, R = cx + sw/2, T = cy - sh/2, B = cy + sh/2;
                 
                 if (dims.subtype === 'right') {
-                    // Right Triangle: 90 deg at bottom-left
                     const points = `${L},${B} ${R},${B} ${L},${T}`;
                     const rightAngle = <path d={`M ${L+15} ${B} L ${L+15} ${B-15} L ${L} ${B-15}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
                     return (<>
@@ -262,13 +254,26 @@ export const GeometryVisual = ({ data }) => {
                         {labels && <>{mkTxt(cx, B + 25, dims.width)}<text x={L - 10} y={cy} textAnchor="end" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="22">h={dims.height}</text></>}
                     </>);
                 } else {
-                    // Isosceles / Scalene: Standard "Tent" shape
+                    // Standard Triangle
                     const points = `${L},${B} ${R},${B} ${cx},${T}`;
                     const hLine = <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
                     return (<>
                         {hLine}
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {labels && <>{mkTxt(cx, B + 25, dims.width)}<text x={cx + 5} y={cy} textAnchor="start" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="22">h={dims.height}</text></>}
+                        {/* Angle Arcs if present */}
+                        {dims.angles && (
+                            <>
+                                {/* Approx angles for visual effect only - Bottom Left (0 to 60 deg) */}
+                                <path d={`M ${L} ${B} L ${L+20} ${B} A 20 20 0 0 0 ${L+10} ${B-18} Z`} fill="rgba(239,68,68,0.2)" stroke="#ef4444" />
+                                {labels.a1 && <text x={L+5} y={B-30} fontSize="14" fill="#dc2626">{labels.a1}</text>}
+                                
+                                {/* Bottom Right (120 to 180 deg) */}
+                                <path d={`M ${R} ${B} L ${R-20} ${B} A 20 20 0 0 1 ${R-10} ${B-18} Z`} fill="rgba(239,68,68,0.2)" stroke="#ef4444" />
+                                {labels.a2 && <text x={R-15} y={B-30} fontSize="14" fill="#dc2626">{labels.a2}</text>}
+                            </>
+                        )}
+                        
+                        {labels && !dims.angles && <>{mkTxt(cx, B + 25, dims.width)}<text x={cx + 5} y={cy} textAnchor="start" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="22">h={dims.height}</text></>}
                     </>);
                 }
             }

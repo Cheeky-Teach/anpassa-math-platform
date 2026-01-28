@@ -22,7 +22,10 @@ export class GeometryGenerator {
         return {
             renderData: { geometry: { type: 'rectangle', width: w, height: h, labels: { width: w, height: h } }, description: lang === 'sv' ? "Beräkna omkretsen." : "Calculate the perimeter.", answerType: 'text' },
             token: Buffer.from(ans.toString()).toString('base64'),
-            serverData: { answer: ans, solutionSteps: [{ text: lang === 'sv' ? "Omkretsen är sträckan runt hela figuren." : "Perimeter is the distance around the shape.", latex: "" }, { text: lang === 'sv' ? "Addera alla fyra sidor." : "Add all four sides.", latex: `${w} + ${w} + ${h} + ${h} = \\mathbf{${ans}}` }] }
+            clues: [
+                { text: lang === 'sv' ? "Omkretsen är sträckan runt hela figuren." : "Perimeter is the distance around the shape.", latex: "" },
+                { text: lang === 'sv' ? "Addera alla fyra sidor." : "Add all four sides.", latex: `${w} + ${w} + ${h} + ${h} = \\mathbf{${ans}}` }
+            ]
         };
     }
 
@@ -33,7 +36,10 @@ export class GeometryGenerator {
         return {
             renderData: { geometry: { type: 'rectangle', width: w, height: h, labels: { width: w, height: h } }, description: lang === 'sv' ? "Beräkna arean." : "Calculate the area.", answerType: 'text' },
             token: Buffer.from(ans.toString()).toString('base64'),
-            serverData: { answer: ans, solutionSteps: [{ text: lang === 'sv' ? "Area = Basen · Höjden" : "Area = Base · Height", latex: `A = ${w} \\cdot ${h}` }, { latex: `\\mathbf{${ans}}` }] }
+            clues: [
+                { text: lang === 'sv' ? "Area = Basen · Höjden" : "Area = Base · Height", latex: `A = ${w} \\cdot ${h}` },
+                { latex: `\\mathbf{${ans}}` }
+            ]
         };
     }
 
@@ -44,17 +50,14 @@ export class GeometryGenerator {
         const subtype = MathUtils.randomChoice(['right', 'isosceles']); 
         return {
             renderData: { 
-                geometry: { 
-                    type: 'triangle', 
-                    subtype, 
-                    width: b, 
-                    height: h, 
-                    labels: { width: b, height: h } 
-                }, 
+                geometry: { type: 'triangle', subtype, width: b, height: h, labels: { width: b, height: h } }, 
                 description: lang === 'sv' ? "Beräkna arean." : "Calculate the area.", answerType: 'text' 
             },
             token: Buffer.from(ans.toString()).toString('base64'),
-            serverData: { answer: ans, solutionSteps: [{ text: lang === 'sv' ? "Area = (Basen · Höjden) / 2" : "Area = (Base · Height) / 2", latex: `A = \\frac{${b} \\cdot ${h}}{2}` }, { latex: `A = \\frac{${b*h}}{2} = \\mathbf{${ans}}` }] }
+            clues: [
+                { text: lang === 'sv' ? "Area = (Basen · Höjden) / 2" : "Area = (Base · Height) / 2", latex: `A = \\frac{${b} \\cdot ${h}}{2}` },
+                { latex: `A = \\frac{${b*h}}{2} = \\mathbf{${ans}}` }
+            ]
         };
     }
 
@@ -90,7 +93,7 @@ export class GeometryGenerator {
                 description: desc, answerType: 'text' 
             },
             token: Buffer.from(ans.toString()).toString('base64'),
-            serverData: { answer: ans, solutionSteps: steps }
+            clues: steps
         };
     }
 
@@ -118,7 +121,7 @@ export class GeometryGenerator {
         return {
             renderData: { geometry: geom, description: lang === 'sv' ? "Beräkna arean." : "Calculate area.", answerType: 'text' },
             token: Buffer.from(ans.toString()).toString('base64'),
-            serverData: { answer: ans, solutionSteps: steps }
+            clues: steps
         };
     }
 }
