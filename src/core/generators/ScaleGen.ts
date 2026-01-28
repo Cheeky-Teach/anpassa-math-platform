@@ -149,7 +149,7 @@ export class ScaleGen {
             const unit = useKm ? 'km' : 'm';
             answer = useKm ? realKm : realCm / 100;
             
-            icon = 'map'; // Using the map emoji supported in frontend
+            icon = 'map'; 
             label = `${drawVal} cm`;
             
             desc = lang === 'sv' 
@@ -169,8 +169,8 @@ export class ScaleGen {
             const realCm = drawVal * scale;
             answer = realCm / 100; // meters
             
-            icon = 'square'; // Fallback shape, but label carries emoji
-            label = `🏠 ${drawVal} cm`;
+            icon = 'house'; 
+            label = `${drawVal} cm`; // No emoji in label
             
             desc = lang === 'sv'
                 ? `På en ritning är en vägg ${drawVal} cm lång. Skalan är ${scaleStr}. Hur lång är den i verkligheten? (Svara i m)`
@@ -194,8 +194,8 @@ export class ScaleGen {
             
             answer = adjRealCm / scale;
             
-            icon = 'key'; // Represents car key/model
-            label = `🚗 ${adjRealM} m`; // Real size shown
+            icon = 'car'; 
+            label = `${adjRealM} m`; // No emoji in label
             
             desc = lang === 'sv'
                 ? `En bil är ${adjRealM} m lång i verkligheten. Skalan på modellen är ${scaleStr}. Hur lång är modellen på ritningen? (Svara i cm)`
@@ -216,8 +216,8 @@ export class ScaleGen {
             // Draw cm = (real mm * scale) / 10
             const drawCm = (realMm * scale) / 10;
             
-            icon = 'magnifying_glass';
-            label = `🐞 ${drawCm} cm`; // Image size shown
+            icon = 'ladybug';
+            label = `${drawCm} cm`; // No emoji in label
             
             desc = lang === 'sv'
                 ? `På en bild är en insekt ${drawCm} cm lång. Skalan är ${scaleStr} (förstoring). Hur lång är den i verkligheten? (Svara i mm)`
