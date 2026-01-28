@@ -263,7 +263,7 @@ export const GeometryVisual = ({ data }) => {
             
             return null;
         };
-        return (<svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm w-full max-w-[150px] md:max-w-[200px]">{content()}{areaText && <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
+        return (<svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm w-full max-w-[200px]">{content()}{areaText && <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
     };
 
     if (data.type === 'scale_single' || data.type === 'scale_compare') { 
@@ -324,3 +324,10 @@ export const GeometryVisual = ({ data }) => {
 };
 
 GeometryVisual.requiresCanvas = true;
+
+export const StaticGeometryVisual = ({ description }) => { 
+    if (!description) return null; 
+    const d = description.toLowerCase(); 
+    if (d.includes("rect") || d.includes("rektangel")) return <div className="flex justify-center my-4 opacity-80"><div className="w-28 h-16 border-2 border-primary-500 bg-primary-50 rounded-sm"></div></div>; 
+    return null; 
+};
