@@ -5,7 +5,7 @@ export class TenPowersGen {
         switch (level) {
             case 1: return this.level1_MultDivBig(lang);
             case 2: return this.level2_Concepts(lang);
-            case 3: return this.level3_Decimals(lang);
+            case 3: return this.level3_MixedFactors(lang);
             default: return this.level1_MultDivBig(lang);
         }
     }
@@ -16,140 +16,93 @@ export class TenPowersGen {
     private level1_MultDivBig(lang: string): any {
         const power = MathUtils.randomChoice([10, 100, 1000]);
         const isMult = MathUtils.randomInt(0, 1) === 1;
+        const num = MathUtils.randomInt(2, 900);
+        let ans = 0, latex = "";
         
-        // Generate number (integer or decimal)
-        const isDecimal = MathUtils.randomInt(0, 1) === 1;
-        let num = 0;
-        if (isDecimal) {
-            const base = MathUtils.randomInt(1, 9999);
-            const div = MathUtils.randomChoice([10, 100, 1000]);
-            num = base / div;
-        } else {
-            num = MathUtils.randomInt(2, 900);
-        }
-
-        let ans = 0;
-        let latex = "";
         const zeros = power.toString().length - 1;
+        const stepsText = lang === 'sv' ? "steg" : "steps";
 
         if (isMult) {
-            ans = this.fixFloat(num * power);
+            ans = num * power;
             latex = `${num} \\cdot ${power}`;
-            
             const dir = lang === 'sv' ? "HÖGER" : "RIGHT";
-            const stepsText = lang === 'sv' ? "steg" : "steps";
-            
             return {
                 renderData: { latex, description: lang === 'sv' ? "Beräkna." : "Calculate.", answerType: 'text' },
                 token: Buffer.from(ans.toString()).toString('base64'),
-                clues: [{ 
-                    text: lang === 'sv' 
-                    ? `Vid multiplikation med ${power}, flytta kommatecknet ${zeros} ${stepsText} åt ${dir}.` 
-                    : `When multiplying by ${power}, move the decimal point ${zeros} ${stepsText} to the ${dir}.` 
-                }]
+                serverData: { answer: ans, solutionSteps: [{ text: lang === 'sv' ? `Flytta kommatecknet ${zeros} ${stepsText} åt ${dir} (lägg till nollor).` : `Move decimal ${zeros} ${stepsText} ${dir} (add zeros).`, latex: "" }] }
             };
         } else {
-            // Division
-            // Legacy uses horizontal division visual here
             ans = this.fixFloat(num / power);
             latex = `${num} / ${power}`;
-
             const dir = lang === 'sv' ? "VÄNSTER" : "LEFT";
-            const stepsText = lang === 'sv' ? "steg" : "steps";
-
             return {
                 renderData: { latex, description: lang === 'sv' ? "Beräkna." : "Calculate.", answerType: 'text' },
                 token: Buffer.from(ans.toString()).toString('base64'),
-                clues: [{ 
-                    text: lang === 'sv' 
-                    ? `Vid division med ${power}, flytta kommatecknet ${zeros} ${stepsText} åt ${dir}.` 
-                    : `When dividing by ${power}, move the decimal point ${zeros} ${stepsText} to the ${dir}.` 
-                }]
+                serverData: { answer: ans, solutionSteps: [{ text: lang === 'sv' ? `Flytta kommatecknet ${zeros} ${stepsText} åt ${dir}.` : `Move decimal ${zeros} ${stepsText} ${dir}.`, latex: "" }] }
             };
         }
     }
 
-    // Level 2: Conceptual Equivalence (Legacy: Match operations)
+    // Level 2: Conceptual Equivalence
     private level2_Concepts(lang: string): any {
         const pairs = [
             { op: 'mul', val: 10, equivOp: 'div', equivVal: 0.1 },
-            { op: 'mul', val: 100, equivOp: 'div', equivVal: 0.01 },
-            { op: 'mul', val: 1000, equivOp: 'div', equivVal: 0.001 },
             { op: 'mul', val: 0.1, equivOp: 'div', equivVal: 10 },
-            { op: 'mul', val: 0.01, equivOp: 'div', equivVal: 100 },
-            
             { op: 'div', val: 10, equivOp: 'mul', equivVal: 0.1 },
-            { op: 'div', val: 100, equivOp: 'mul', equivVal: 0.01 },
-            { op: 'div', val: 0.1, equivOp: 'mul', equivVal: 10 },
-            { op: 'div', val: 0.01, equivOp: 'mul', equivVal: 100 }
+            { op: 'div', val: 0.1, equivOp: 'mul', equivVal: 10 }
         ];
-
         const s = MathUtils.randomChoice(pairs);
         
-        const opStr = (op: string) => lang === 'sv' 
-            ? (op === 'mul' ? "Att multiplicera med" : "Att dividera med") 
-            : (op === 'mul' ? "Multiplying by" : "Dividing by");
-            
-        const targetOpStr = (op: string) => lang === 'sv'
-            ? (op === 'div' ? "dividera med..." : "multiplicera med...")
-            : (op === 'div' ? "dividing by..." : "multiplying by...");
-
-        const description = lang === 'sv'
-            ? `${opStr(s.op)} ${s.val} är samma sak som att ${targetOpStr(s.equivOp)}`
-            : `${opStr(s.op)} ${s.val} is the same as ${targetOpStr(s.equivOp)}`;
-
-        // Valid choices for the answer
-        const choices = ["10", "100", "1000", "0.1", "0.01", "0.001"];
+        const opStr = s.op === 'mul' ? '\\cdot' : '/';
+        const targetOpStr = s.equivOp === 'div' ? '/' : '\\cdot';
+        
+        const desc = lang === 'sv' 
+            ? `Att räkna $x ${opStr} ${s.val}$ är samma sak som $x ${targetOpStr} ...$`
+            : `Calculating $x ${opStr} ${s.val}$ is the same as $x ${targetOpStr} ...$`;
 
         return {
-            renderData: { 
-                latex: "", 
-                description, 
-                answerType: 'multiple_choice', 
-                choices 
-            },
+            renderData: { description: desc, latex: "", answerType: 'multiple_choice', choices: ["10", "100", "0.1", "0.01"] },
             token: Buffer.from(s.equivVal.toString()).toString('base64'),
-            clues: [
-                { text: lang === 'sv' ? "Tänk på bråkformen: Att dividera med 10 är samma som att multiplicera med 1/10 (0.1)." : "Think fractions: Dividing by 10 is the same as multiplying by 1/10 (0.1)." }
-            ]
+            serverData: { answer: s.equivVal.toString(), solutionSteps: [{ text: lang === 'sv' ? "Multiplikation och division är motsatser (inverser)." : "Multiplication and division are inverses.", latex: "" }] }
         };
     }
 
-    // Level 3: Decimal Factors (0.1, 0.01)
-    private level3_Decimals(lang: string): any {
-        const base = MathUtils.randomInt(5, 500);
-        const factor = MathUtils.randomChoice([0.1, 0.01, 0.001]);
+    // Level 3: Mixed Factors (0.1...1000)
+    private level3_MixedFactors(lang: string): any {
+        const factor = MathUtils.randomChoice([0.1, 0.01, 0.001, 10, 100, 1000]);
         const isMult = MathUtils.randomInt(0, 1) === 1;
-        let ans = 0;
-        let latex = "";
-
-        // Determine number of decimal steps (0.1->1, 0.01->2)
-        const stepsCount = factor.toString().length - 2; 
+        const num = MathUtils.randomFloat(2, 50, 1);
+        
+        let ans = 0, latex = "";
+        let direction = "";
+        let steps = 0;
+        
+        // Count decimal shift
+        if (factor >= 10) steps = factor.toString().length - 1;
+        else steps = factor.toString().length - 2;
 
         if (isMult) {
-            // Mult by 0.1 = Left Shift
-            ans = this.fixFloat(base * factor);
-            latex = `${base} \\cdot ${factor}`;
-            return {
-                renderData: { latex, description: lang === 'sv' ? "Beräkna." : "Calculate.", answerType: 'text' },
-                token: Buffer.from(ans.toString()).toString('base64'),
-                clues: [
-                    { text: lang === 'sv' ? `Multiplikation med ${factor} är samma som division med ${1/factor}.` : `Multiplying by ${factor} is like dividing by ${1/factor}.` },
-                    { text: lang === 'sv' ? `Flytta kommatecknet ${stepsCount} steg åt VÄNSTER.` : `Move decimal ${stepsCount} steps LEFT.` }
-                ]
-            };
+            ans = this.fixFloat(num * factor);
+            latex = `${num} \\cdot ${factor}`;
+            // Rule: Mult by >1 = Right, Mult by <1 = Left
+            const isRight = factor >= 10;
+            direction = isRight ? (lang === 'sv' ? "HÖGER" : "RIGHT") : (lang === 'sv' ? "VÄNSTER" : "LEFT");
         } else {
-            // Div by 0.1 = Right Shift
-            ans = this.fixFloat(base / factor);
-            latex = `${base} / ${factor}`;
-            return {
-                renderData: { latex, description: lang === 'sv' ? "Beräkna." : "Calculate.", answerType: 'text' },
-                token: Buffer.from(ans.toString()).toString('base64'),
-                clues: [
-                    { text: lang === 'sv' ? `Division med ${factor} är samma som multiplikation med ${1/factor}.` : `Dividing by ${factor} is like multiplying by ${1/factor}.` },
-                    { text: lang === 'sv' ? `Flytta kommatecknet ${stepsCount} steg åt HÖGER.` : `Move decimal ${stepsCount} steps RIGHT.` }
-                ]
-            };
+            ans = this.fixFloat(num / factor);
+            latex = `${num} / ${factor}`;
+            // Rule: Div by >1 = Left, Div by <1 = Right
+            const isRight = factor < 1;
+            direction = isRight ? (lang === 'sv' ? "HÖGER" : "RIGHT") : (lang === 'sv' ? "VÄNSTER" : "LEFT");
         }
+
+        const clue = lang === 'sv' 
+            ? `Flytta kommatecknet ${steps} steg åt ${direction}.` 
+            : `Move decimal ${steps} steps ${direction}.`;
+
+        return {
+            renderData: { latex, description: lang === 'sv' ? "Beräkna." : "Calculate.", answerType: 'text' },
+            token: Buffer.from(ans.toString()).toString('base64'),
+            serverData: { answer: ans, solutionSteps: [{ text: clue, latex: `\\mathbf{${ans}}` }] }
+        };
     }
 }

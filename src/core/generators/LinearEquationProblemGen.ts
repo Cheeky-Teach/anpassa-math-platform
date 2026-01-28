@@ -2,12 +2,9 @@ import { MathUtils } from '../utils/MathUtils.js';
 
 export class LinearEquationProblemGen {
     public generate(level: number, lang: string = 'sv'): any {
-        // Level 5 = Write Equation (text input)
-        // Level 6 = Solve Equation (numeric input)
         const isWriteMode = level === 5;
-        
-        // Pick a scenario type
         const type = MathUtils.randomChoice(['A', 'B', 'C', 'D']);
+        
         let data: any;
 
         switch (type) {
@@ -19,7 +16,7 @@ export class LinearEquationProblemGen {
         }
 
         const taskText = isWriteMode 
-            ? (lang === 'sv' ? "Skriv en ekvation för att lösa problemet (du behöver inte lösa den)." : "Write an equation to solve the problem (you don't need to solve it).")
+            ? (lang === 'sv' ? "Skriv en ekvation som beskriver problemet (du behöver inte lösa den)." : "Write an equation that describes the problem (you don't need to solve it).")
             : (lang === 'sv' ? "Lös problemet. Vilket tal är x?" : "Solve the problem. What number is x?");
 
         const answer = isWriteMode ? data.equation : data.solution;
@@ -27,129 +24,185 @@ export class LinearEquationProblemGen {
 
         return {
             renderData: {
-                latex: "", // Text problem, no initial latex
+                latex: "",
                 description: `${data.text} ${taskText}`,
-                answerType: isWriteMode ? 'text' : 'text' // Both are text input, but validation differs
+                answerType: isWriteMode ? 'text' : 'text'
             },
             token: Buffer.from(answer.toString()).toString('base64'),
             serverData: { answer: answer, solutionSteps: steps }
         };
     }
 
-    // --- Type A: ax + b = c (e.g. Buying X items + Bag) ---
+    // --- Type A: ax + b = c (Rate + Fixed Cost) ---
     private scenarioA_RatePlusFixed(lang: string) {
-        const x = MathUtils.randomInt(3, 15); // Quantity
-        const a = MathUtils.randomInt(5, 25); // Price per item
-        const b = MathUtils.randomChoice([2, 5, 10]); // Fixed cost (bag/shipping)
-        const c = a * x + b; // Total
+        // Expanded Scenarios
+        const scenarios = [
+            {   // Shopping
+                item: lang === 'sv' ? "äpplen" : "apples",
+                unit: lang === 'sv' ? "st" : "each",
+                fixed: lang === 'sv' ? "kasse" : "bag",
+                textSv: (a:number, b:number, c:number) => `Du köper x äpplen för ${a} kr/st och en kasse för ${b} kr. Totalt betalar du ${c} kr.`,
+                textEn: (a:number, b:number, c:number) => `You buy x apples for ${a} kr each and a bag for ${b} kr. In total you pay ${c} kr.`
+            },
+            {   // Taxi
+                item: "km",
+                unit: "km",
+                fixed: lang === 'sv' ? "startavgift" : "start fee",
+                textSv: (a:number, b:number, c:number) => `En taxi kostar ${a} kr/km plus ${b} kr i startavgift. Resan kostade totalt ${c} kr. Du åkte x km.`,
+                textEn: (a:number, b:number, c:number) => `A taxi costs ${a} kr/km plus a ${b} kr start fee. The trip cost ${c} kr in total. You traveled x km.`
+            },
+            {   // Rental
+                item: "min",
+                unit: "min",
+                fixed: lang === 'sv' ? "upplåsningsavgift" : "unlock fee",
+                textSv: (a:number, b:number, c:number) => `Att hyra en elscooter kostar ${b} kr i startavgift och ${a} kr per minut. Du betalade ${c} kr för x minuter.`,
+                textEn: (a:number, b:number, c:number) => `Renting an e-scooter costs ${b} kr to unlock and ${a} kr per minute. You paid ${c} kr for x minutes.`
+            },
+            {   // Subscription
+                item: lang === 'sv' ? "månader" : "months",
+                unit: lang === 'sv' ? "mån" : "mo",
+                fixed: lang === 'sv' ? "startavgift" : "signup fee",
+                textSv: (a:number, b:number, c:number) => `Ett gymkort kostar ${a} kr i månaden och ${b} kr i startavgift. Du har betalat totalt ${c} kr. Hur många månader (x) har du tränat?`,
+                textEn: (a:number, b:number, c:number) => `A gym membership costs ${a} kr/month plus a ${b} kr signup fee. You have paid ${c} kr in total. For how many months (x)?`
+            }
+        ];
 
-        // Context: Shopping
-        const items = lang === 'sv' ? ['äpplen', 'pennor', 'bullar'] : ['apples', 'pencils', 'buns'];
-        const container = lang === 'sv' ? 'kasse' : 'bag';
-        const item = MathUtils.randomChoice(items);
-
-        const text = lang === 'sv'
-            ? `Du köper x stycken ${item} som kostar ${a} kr styck. Du betalar också ${b} kr för en ${container}. Totalt betalar du ${c} kr.`
-            : `You buy x ${item} that cost ${a} kr each. You also pay ${b} kr for a ${container}. In total you pay ${c} kr.`;
+        const s = MathUtils.randomChoice(scenarios);
+        const x = MathUtils.randomInt(3, 15);
+        const a = MathUtils.randomInt(5, 30);
+        const b = MathUtils.randomChoice([10, 20, 49, 50, 99]);
+        const c = a * x + b;
 
         const equation = `${a}x+${b}=${c}`;
+        const text = lang === 'sv' ? s.textSv(a,b,c) : s.textEn(a,b,c);
 
         const stepsWrite = [
-            { text: lang === 'sv' ? "Pris för varorna:" : "Price for items:", latex: `${a} \\cdot x = ${a}x` },
-            { text: lang === 'sv' ? "Plus fast kostnad:" : "Plus fixed cost:", latex: `+ ${b}` },
-            { text: lang === 'sv' ? "Lika med totalen:" : "Equals total:", latex: `${a}x + ${b} = ${c}` }
+            { text: lang === 'sv' ? `1. Den rörliga kostnaden är priset per ${s.unit} gånger antalet (x).` : `1. The variable cost is the price per ${s.unit} times the quantity (x).`, latex: `${a} \\cdot x = ${a}x` },
+            { text: lang === 'sv' ? `2. Lägg till den fasta avgiften (${s.fixed}).` : `2. Add the fixed fee (${s.fixed}).`, latex: `+ ${b}` },
+            { text: lang === 'sv' ? `3. Summan ska bli totalbeloppet ${c}.` : `3. The sum must equal the total ${c}.`, latex: `${a}x + ${b} = ${c}` }
         ];
 
         const stepsSolve = [
-            { text: lang === 'sv' ? "Ekvationen är:" : "The equation is:", latex: `${a}x + ${b} = ${c}` },
-            { text: lang === 'sv' ? "Subtrahera den fasta kostnaden:" : "Subtract fixed cost:", latex: `${a}x = ${c - b}` },
-            { text: lang === 'sv' ? "Dela med styckpriset:" : "Divide by unit price:", latex: `x = ${x}` }
+            { text: lang === 'sv' ? `Ta bort den fasta avgiften (${b}) från totalen.` : `Subtract the fixed fee (${b}) from the total.`, latex: `${a}x = ${c} - ${b} = ${c-b}` },
+            { text: lang === 'sv' ? `Dela det som är kvar med priset per ${s.unit} (${a}).` : `Divide the remainder by the price per ${s.unit} (${a}).`, latex: `x = \\frac{${c-b}}{${a}} = ${x}` }
         ];
 
         return { text, equation, solution: x, stepsWrite, stepsSolve };
     }
 
-    // --- Type B: ax - b = c (e.g. Discount) ---
+    // --- Type B: ax - b = c (Discount) ---
     private scenarioB_RateMinusFixed(lang: string) {
-        const x = MathUtils.randomInt(2, 10); // Items
-        const a = MathUtils.randomInt(50, 200); // Price
-        const b = MathUtils.randomChoice([20, 50, 100]); // Discount
+        const scenarios = [
+            {
+                textSv: (a:number, b:number, c:number) => `Du köper x datorspel för ${a} kr/st. Du har en rabattkupong på ${b} kr. Totalt betalar du ${c} kr.`,
+                textEn: (a:number, b:number, c:number) => `You buy x video games for ${a} kr each. You have a discount coupon for ${b} kr. You pay ${c} kr total.`
+            },
+            {
+                textSv: (a:number, b:number, c:number) => `En grupp på x personer går på bio. Biljetten kostar ${a} kr. Gruppen får en grupprabatt på ${b} kr. De betalar totalt ${c} kr.`,
+                textEn: (a:number, b:number, c:number) => `A group of x people go to the cinema. Tickets are ${a} kr. The group gets a ${b} kr discount. They pay ${c} kr total.`
+            },
+            {
+                textSv: (a:number, b:number, c:number) => `Du köper x tröjor som kostar ${a} kr styck. Eftersom du är medlem får du ${b} kr rabatt på hela köpet. Du betalar ${c} kr.`,
+                textEn: (a:number, b:number, c:number) => `You buy x shirts costing ${a} kr each. As a member, you get ${b} kr off the total purchase. You pay ${c} kr.`
+            }
+        ];
+
+        const s = MathUtils.randomChoice(scenarios);
+        const x = MathUtils.randomInt(2, 8);
+        const a = MathUtils.randomInt(50, 150);
+        const b = MathUtils.randomChoice([20, 50, 100]);
         const c = a * x - b;
 
-        const text = lang === 'sv'
-            ? `Du köper ${x} st tröjor som kostar x kr styck (lite ovanligt, men låt oss säga antalet är känt men priset x okänt för variation). Vänta, standard är x antal. Låt oss köra: Du köper x st datorspel för ${a} kr styck. Du har en rabattkupong på ${b} kr. Du betalar totalt ${c} kr.`
-            : `You buy x video games for ${a} kr each. You have a discount coupon of ${b} kr. You pay a total of ${c} kr.`;
-        
-        // Correcting the variables to match the text above:
-        // x is amount of items. a is price. equation is a*x - b = c.
-        
         const equation = `${a}x-${b}=${c}`;
+        const text = lang === 'sv' ? s.textSv(a,b,c) : s.textEn(a,b,c);
 
         const stepsWrite = [
-            { text: lang === 'sv' ? "Kostnad före rabatt:" : "Cost before discount:", latex: `${a}x` },
-            { text: lang === 'sv' ? "Minus rabatten:" : "Minus discount:", latex: `- ${b}` },
-            { text: lang === 'sv' ? "Totalt att betala:" : "Total to pay:", latex: `${a}x - ${b} = ${c}` }
+            { text: lang === 'sv' ? "1. Börja med vad det hade kostat utan rabatt (pris gånger antal)." : "1. Start with the cost without discount (price times quantity).", latex: `${a}x` },
+            { text: lang === 'sv' ? `2. Rabatten minskar priset, så vi subtraherar ${b}.` : `2. The discount reduces the price, so subtract ${b}.`, latex: `- ${b}` },
+            { text: lang === 'sv' ? "3. Sätt uttrycket lika med det du faktiskt betalade." : "3. Set the expression equal to what you actually paid.", latex: `${a}x - ${b} = ${c}` }
         ];
 
         const stepsSolve = [
-            { text: lang === 'sv' ? "Addera rabatten till totalen:" : "Add discount to total:", latex: `${a}x = ${c + b}` },
-            { text: lang === 'sv' ? "Dela med priset:" : "Divide by price:", latex: `x = ${x}` }
+            { text: lang === 'sv' ? "Lägg tillbaka rabatten på totalen för att se vad ordinarie pris var." : "Add the discount back to the total to find the original price.", latex: `${a}x = ${c} + ${b} = ${c+b}` },
+            { text: lang === 'sv' ? `Dela med styckpriset (${a}) för att se hur många du köpte.` : `Divide by the unit price (${a}) to see how many you bought.`, latex: `x = \\frac{${c+b}}{${a}} = ${x}` }
         ];
 
         return { text, equation, solution: x, stepsWrite, stepsSolve };
     }
 
-    // --- Type C: x + (x + a) = c (Comparison Sum) ---
+    // --- Type C: Compare Sum (x + (x+a) = c) ---
     private scenarioC_CompareSum(lang: string) {
-        const x = MathUtils.randomInt(5, 20); // Person 1
-        const a = MathUtils.randomInt(2, 10); // Difference
+        const scenarios = [
+            {   // Money
+                textSv: (a:number, c:number) => `Kim har x kr. Alex har ${a} kr mer än Kim. Tillsammans har de ${c} kr.`,
+                textEn: (a:number, c:number) => `Kim has x kr. Alex has ${a} kr more than Kim. Together they have ${c} kr.`
+            },
+            {   // Age
+                textSv: (a:number, c:number) => `Leo är x år. Hans syster är ${a} år äldre. Tillsammans är de ${c} år.`,
+                textEn: (a:number, c:number) => `Leo is x years old. His sister is ${a} years older. Together they are ${c} years old.`
+            },
+            {   // Election/Votes
+                textSv: (a:number, c:number) => `I ett val fick Parti A x röster. Parti B fick ${a} fler röster. Totalt fick de ${c} röster.`,
+                textEn: (a:number, c:number) => `In an election, Party A got x votes. Party B got ${a} more votes. In total they got ${c} votes.`
+            }
+        ];
+
+        const s = MathUtils.randomChoice(scenarios);
+        const x = MathUtils.randomInt(5, 25);
+        const a = MathUtils.randomInt(2, 10);
         const total = x + (x + a);
-
-        const name1 = "Kim";
-        const name2 = "Alex";
         
-        const text = lang === 'sv'
-            ? `${name1} har x kronor. ${name2} har ${a} kronor mer än ${name1}. Tillsammans har de ${total} kronor.`
-            : `${name1} has x kr. ${name2} has ${a} kr more than ${name1}. Together they have ${total} kr.`;
-
-        const equation = `2x+${a}=${total}`; // Simplified form usually expected
+        const equation = `2x+${a}=${total}`;
+        const text = lang === 'sv' ? s.textSv(a, total) : s.textEn(a, total);
 
         const stepsWrite = [
-            { text: `${name1}:`, latex: "x" },
-            { text: `${name2} (${a} mer):`, latex: `x + ${a}` },
-            { text: lang === 'sv' ? "Tillsammans (addera):" : "Together (add):", latex: `x + (x + ${a}) = ${total}` },
-            { text: lang === 'sv' ? "Förenkla:" : "Simplify:", latex: `2x + ${a} = ${total}` }
+            { text: lang === 'sv' ? "Person/Sak 1:" : "Person/Item 1:", latex: "x" },
+            { text: lang === 'sv' ? `Person/Sak 2 (som har ${a} mer):` : `Person/Item 2 (has ${a} more):`, latex: `x + ${a}` },
+            { text: lang === 'sv' ? "Addera dem för att få summan:" : "Add them to get the sum:", latex: `x + (x + ${a}) = ${total} \\implies 2x + ${a} = ${total}` }
         ];
 
         const stepsSolve = [
-            { text: lang === 'sv' ? "Ta bort skillnaden från totalen:" : "Remove difference from total:", latex: `2x = ${total - a}` },
-            { text: lang === 'sv' ? "Dela på två personer:" : "Divide by two people:", latex: `x = ${x}` }
+            { text: lang === 'sv' ? "Ta bort det extra (skillnaden) från totalen." : "Remove the extra difference from the total.", latex: `2x = ${total} - ${a} = ${total-a}` },
+            { text: lang === 'sv' ? "Dela resten lika på två." : "Divide the remainder equally by two.", latex: `x = \\frac{${total-a}}{2} = ${x}` }
         ];
 
         return { text, equation, solution: x, stepsWrite, stepsSolve };
     }
 
-    // --- Type D: x + (x - b) = c (Comparison Difference) ---
+    // --- Type D: Compare Diff (x + (x-b) = c) ---
     private scenarioD_CompareDiff(lang: string) {
-        const x = MathUtils.randomInt(10, 30); 
-        const b = MathUtils.randomInt(2, 8);
+        const scenarios = [
+            {   // Class size
+                textSv: (b:number, c:number) => `I klass 7A går det x elever. I 7B går det ${b} färre elever. Totalt går det ${c} elever i årskursen.`,
+                textEn: (b:number, c:number) => `Class 7A has x students. 7B has ${b} fewer students. There are ${c} students in total.`
+            },
+            {   // Lengths
+                textSv: (b:number, c:number) => `En planka delas i två bitar. Den första är x cm. Den andra är ${b} cm kortare. Hela plankan var ${c} cm.`,
+                textEn: (b:number, c:number) => `A plank is cut in two. The first piece is x cm. The second is ${b} cm shorter. The whole plank was ${c} cm.`
+            },
+            {   // Weight
+                textSv: (b:number, c:number) => `Hundvalpen väger x kg. Katten väger ${b} kg mindre. Tillsammans väger de ${c} kg.`,
+                textEn: (b:number, c:number) => `The puppy weighs x kg. The cat weighs ${b} kg less. Together they weigh ${c} kg.`
+            }
+        ];
+
+        const s = MathUtils.randomChoice(scenarios);
+        const x = MathUtils.randomInt(10, 50);
+        const b = MathUtils.randomInt(2, 9);
         const total = x + (x - b);
 
-        const text = lang === 'sv'
-            ? `I en klass går det x elever. I parallellklassen går det ${b} färre elever. Totalt går det ${total} elever i båda klasserna.`
-            : `There are x students in a class. The parallel class has ${b} fewer students. In total there are ${total} students.`;
-
         const equation = `2x-${b}=${total}`;
+        const text = lang === 'sv' ? s.textSv(b, total) : s.textEn(b, total);
 
         const stepsWrite = [
-            { text: lang === 'sv' ? "Klass 1:" : "Class 1:", latex: "x" },
-            { text: lang === 'sv' ? "Klass 2 (färre):" : "Class 2 (fewer):", latex: `x - ${b}` },
-            { text: lang === 'sv' ? "Summa:" : "Sum:", latex: `2x - ${b} = ${total}` }
+            { text: lang === 'sv' ? "Del 1:" : "Part 1:", latex: "x" },
+            { text: lang === 'sv' ? `Del 2 (som är ${b} mindre):` : `Part 2 (which is ${b} less):`, latex: `x - ${b}` },
+            { text: lang === 'sv' ? "Summan av delarna:" : "Sum of the parts:", latex: `x + (x - ${b}) = ${total} \\implies 2x - ${b} = ${total}` }
         ];
 
         const stepsSolve = [
-            { text: lang === 'sv' ? "Lägg till skillnaden till totalen:" : "Add difference to total:", latex: `2x = ${total + b}` },
-            { text: lang === 'sv' ? "Dela på två:" : "Divide by two:", latex: `x = ${x}` }
+            { text: lang === 'sv' ? "Lägg till skillnaden till totalen för att 'jämna ut' det." : "Add the difference to the total to 'even it out'.", latex: `2x = ${total} + ${b} = ${total+b}` },
+            { text: lang === 'sv' ? "Dela resultatet på två." : "Divide the result by two.", latex: `x = \\frac{${total+b}}{2} = ${x}` }
         ];
 
         return { text, equation, solution: x, stepsWrite, stepsSolve };
