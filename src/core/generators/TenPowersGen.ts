@@ -10,81 +10,107 @@ export class TenPowersGen {
         }
     }
 
+    private fixFloat(n: number) { return parseFloat(n.toFixed(6)); }
+
     // Level 1: Mult/Div by 10, 100, 1000
     private level1_MultDivBig(lang: string): any {
-        const isMult = Math.random() > 0.5;
-        const base = MathUtils.randomFloat(1.1, 99.9, 1);
         const power = MathUtils.randomChoice([10, 100, 1000]);
+        const isMult = MathUtils.randomInt(0, 1) === 1;
         
-        let ans, latex;
-        
-        if (isMult) {
-            ans = Math.round(base * power * 100) / 100; // avoid floating point errors
-            latex = `${base} \\cdot ${power}`;
+        // Generate number (integer or decimal)
+        const isDecimal = MathUtils.randomInt(0, 1) === 1;
+        let num = 0;
+        if (isDecimal) {
+            const base = MathUtils.randomInt(1, 9999);
+            const div = MathUtils.randomChoice([10, 100, 1000]);
+            num = base / div;
         } else {
-            // Ensure clean division for simple visual
-            const mult = Math.round(base * power * 100) / 100;
-            latex = `\\frac{${mult}}{${power}}`;
-            ans = base;
+            num = MathUtils.randomInt(2, 900);
         }
 
-        return {
-            renderData: { latex, description: lang === 'sv' ? "Beräkna" : "Calculate", answerType: 'text' },
-            token: Buffer.from(ans.toString()).toString('base64'),
-            clues: [
-                { 
-                    text: isMult 
-                    ? (lang === 'sv' ? "Flytta decimaltecknet till HÖGER." : "Move the decimal point to the RIGHT.") 
-                    : (lang === 'sv' ? "Flytta decimaltecknet till VÄNSTER." : "Move the decimal point to the LEFT.") 
-                },
-                { 
+        let ans = 0;
+        let latex = "";
+        const zeros = power.toString().length - 1;
+
+        if (isMult) {
+            ans = this.fixFloat(num * power);
+            latex = `${num} \\cdot ${power}`;
+            
+            const dir = lang === 'sv' ? "HÖGER" : "RIGHT";
+            const stepsText = lang === 'sv' ? "steg" : "steps";
+            
+            return {
+                renderData: { latex, description: lang === 'sv' ? "Beräkna." : "Calculate.", answerType: 'text' },
+                token: Buffer.from(ans.toString()).toString('base64'),
+                clues: [{ 
                     text: lang === 'sv' 
-                    ? `Antal nollor i ${power} avgör hur många steg.` 
-                    : `The number of zeros in ${power} determines how many steps.` 
-                }
-            ]
-        };
+                    ? `Vid multiplikation med ${power}, flytta kommatecknet ${zeros} ${stepsText} åt ${dir}.` 
+                    : `When multiplying by ${power}, move the decimal point ${zeros} ${stepsText} to the ${dir}.` 
+                }]
+            };
+        } else {
+            // Division
+            // Legacy uses horizontal division visual here
+            ans = this.fixFloat(num / power);
+            latex = `${num} / ${power}`;
+
+            const dir = lang === 'sv' ? "VÄNSTER" : "LEFT";
+            const stepsText = lang === 'sv' ? "steg" : "steps";
+
+            return {
+                renderData: { latex, description: lang === 'sv' ? "Beräkna." : "Calculate.", answerType: 'text' },
+                token: Buffer.from(ans.toString()).toString('base64'),
+                clues: [{ 
+                    text: lang === 'sv' 
+                    ? `Vid division med ${power}, flytta kommatecknet ${zeros} ${stepsText} åt ${dir}.` 
+                    : `When dividing by ${power}, move the decimal point ${zeros} ${stepsText} to the ${dir}.` 
+                }]
+            };
+        }
     }
 
-    // Level 2: Conceptual (Multiple Choice)
+    // Level 2: Conceptual Equivalence (Legacy: Match operations)
     private level2_Concepts(lang: string): any {
-        // Concept: 10^3 = 1000, 10^-2 = 0.01
-        const power = MathUtils.randomInt(-3, 4);
-        if (power === 0) return this.level2_Concepts(lang); // Skip 0 for now to keep it interesting
+        const pairs = [
+            { op: 'mul', val: 10, equivOp: 'div', equivVal: 0.1 },
+            { op: 'mul', val: 100, equivOp: 'div', equivVal: 0.01 },
+            { op: 'mul', val: 1000, equivOp: 'div', equivVal: 0.001 },
+            { op: 'mul', val: 0.1, equivOp: 'div', equivVal: 10 },
+            { op: 'mul', val: 0.01, equivOp: 'div', equivVal: 100 },
+            
+            { op: 'div', val: 10, equivOp: 'mul', equivVal: 0.1 },
+            { op: 'div', val: 100, equivOp: 'mul', equivVal: 0.01 },
+            { op: 'div', val: 0.1, equivOp: 'mul', equivVal: 10 },
+            { op: 'div', val: 0.01, equivOp: 'mul', equivVal: 100 }
+        ];
 
-        const isPositive = power > 0;
-        const latex = `10^{${power}}`;
+        const s = MathUtils.randomChoice(pairs);
         
-        let correctStr = "";
-        if (isPositive) {
-            correctStr = "1" + "0".repeat(power);
-        } else {
-            correctStr = "0." + "0".repeat(Math.abs(power) - 1) + "1";
-        }
+        const opStr = (op: string) => lang === 'sv' 
+            ? (op === 'mul' ? "Att multiplicera med" : "Att dividera med") 
+            : (op === 'mul' ? "Multiplying by" : "Dividing by");
+            
+        const targetOpStr = (op: string) => lang === 'sv'
+            ? (op === 'div' ? "dividera med..." : "multiplicera med...")
+            : (op === 'div' ? "dividing by..." : "multiplying by...");
 
-        // Generate distractors
-        const choices = new Set<string>();
-        choices.add(correctStr);
-        
-        while(choices.size < 4) {
-            const fakePower = MathUtils.randomInt(-4, 5);
-            if (fakePower === 0) continue;
-            let fakeStr = "";
-            if (fakePower > 0) fakeStr = "1" + "0".repeat(fakePower);
-            else fakeStr = "0." + "0".repeat(Math.abs(fakePower) - 1) + "1";
-            choices.add(fakeStr);
-        }
+        const description = lang === 'sv'
+            ? `${opStr(s.op)} ${s.val} är samma sak som att ${targetOpStr(s.equivOp)}`
+            : `${opStr(s.op)} ${s.val} is the same as ${targetOpStr(s.equivOp)}`;
+
+        // Valid choices for the answer
+        const choices = ["10", "100", "1000", "0.1", "0.01", "0.001"];
 
         return {
             renderData: { 
-                latex, 
-                description: lang === 'sv' ? "Vad är detta tal?" : "What is this number?", 
-                answerType: 'multiple_choice',
-                choices: Array.from(choices).sort() 
+                latex: "", 
+                description, 
+                answerType: 'multiple_choice', 
+                choices 
             },
-            token: Buffer.from(correctStr).toString('base64'),
+            token: Buffer.from(s.equivVal.toString()).toString('base64'),
             clues: [
-                { text: lang === 'sv' ? "Exponenten visar antalet nollor (eller decimalsteg)." : "The exponent shows the number of zeros (or decimal steps)." }
+                { text: lang === 'sv' ? "Tänk på bråkformen: Att dividera med 10 är samma som att multiplicera med 1/10 (0.1)." : "Think fractions: Dividing by 10 is the same as multiplying by 1/10 (0.1)." }
             ]
         };
     }
@@ -93,25 +119,37 @@ export class TenPowersGen {
     private level3_Decimals(lang: string): any {
         const base = MathUtils.randomInt(5, 500);
         const factor = MathUtils.randomChoice([0.1, 0.01, 0.001]);
-        
-        // Multiplication by 0.1 is same as div by 10
-        const ans = Math.round(base * factor * 10000) / 10000;
-        
-        return {
-            renderData: { 
-                latex: `${base} \\cdot ${factor}`, 
-                description: lang === 'sv' ? "Beräkna" : "Calculate", 
-                answerType: 'text' 
-            },
-            token: Buffer.from(ans.toString()).toString('base64'),
-            clues: [
-                { 
-                    text: lang === 'sv' 
-                    ? `Att multiplicera med ${factor} är samma som att dividera med ${1/factor}.` 
-                    : `Multiplying by ${factor} is the same as dividing by ${1/factor}.` 
-                },
-                { text: lang === 'sv' ? "Flytta decimaltecknet åt VÄNSTER." : "Move the decimal point to the LEFT." }
-            ]
-        };
+        const isMult = MathUtils.randomInt(0, 1) === 1;
+        let ans = 0;
+        let latex = "";
+
+        // Determine number of decimal steps (0.1->1, 0.01->2)
+        const stepsCount = factor.toString().length - 2; 
+
+        if (isMult) {
+            // Mult by 0.1 = Left Shift
+            ans = this.fixFloat(base * factor);
+            latex = `${base} \\cdot ${factor}`;
+            return {
+                renderData: { latex, description: lang === 'sv' ? "Beräkna." : "Calculate.", answerType: 'text' },
+                token: Buffer.from(ans.toString()).toString('base64'),
+                clues: [
+                    { text: lang === 'sv' ? `Multiplikation med ${factor} är samma som division med ${1/factor}.` : `Multiplying by ${factor} is like dividing by ${1/factor}.` },
+                    { text: lang === 'sv' ? `Flytta kommatecknet ${stepsCount} steg åt VÄNSTER.` : `Move decimal ${stepsCount} steps LEFT.` }
+                ]
+            };
+        } else {
+            // Div by 0.1 = Right Shift
+            ans = this.fixFloat(base / factor);
+            latex = `${base} / ${factor}`;
+            return {
+                renderData: { latex, description: lang === 'sv' ? "Beräkna." : "Calculate.", answerType: 'text' },
+                token: Buffer.from(ans.toString()).toString('base64'),
+                clues: [
+                    { text: lang === 'sv' ? `Division med ${factor} är samma som multiplikation med ${1/factor}.` : `Dividing by ${factor} is like multiplying by ${1/factor}.` },
+                    { text: lang === 'sv' ? `Flytta kommatecknet ${stepsCount} steg åt HÖGER.` : `Move decimal ${stepsCount} steps RIGHT.` }
+                ]
+            };
+        }
     }
 }

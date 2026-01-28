@@ -14,32 +14,14 @@ export class ExpressionSimplificationGen {
     }
 
     // --- LEVEL 1: Combine Like Terms ---
-    // Ex: 3x + 5 + 2x - 3 -> 5x + 2
+    // Legacy style: "3x + 5x"
     private level1_CombineTerms(lang: string): any {
-        const x1 = MathUtils.randomInt(2, 9);
-        const x2 = MathUtils.randomInt(1, 9) * (Math.random() > 0.5 ? 1 : -1);
-        const c1 = MathUtils.randomInt(1, 10);
-        const c2 = MathUtils.randomInt(1, 10) * (Math.random() > 0.5 ? 1 : -1);
-
-        // Ensure non-zero x result for clear questions
-        if (x1 + x2 === 0) return this.level1_CombineTerms(lang);
-
-        // Shuffle terms visually: 3x + 5 - 2x - 3
-        const parts = [
-            this.fmt(x1, 'x'),
-            this.fmt(c1, ''),
-            this.fmt(x2, 'x', true),
-            this.fmt(c2, '', true)
-        ];
+        const v = MathUtils.randomChoice(['x', 'y', 'a', 'b']);
+        const c1 = MathUtils.randomInt(2, 9);
+        const c2 = MathUtils.randomInt(2, 9);
         
-        // Randomize order slightly? For level 1, keep variables and constants grouped or interleaved.
-        // Let's stick to interleaved for challenge: 3x + 5 - 2x - 3
-        const latex = parts.join(' ');
-
-        // Calculate Answer
-        const ansX = x1 + x2;
-        const ansC = c1 + c2;
-        const answer = this.buildExpr(ansX, ansC);
+        const latex = `${c1}${v} + ${c2}${v}`;
+        const answer = `${c1+c2}${v}`;
 
         return {
             renderData: { 
@@ -49,193 +31,156 @@ export class ExpressionSimplificationGen {
             },
             token: Buffer.from(answer).toString('base64'),
             clues: [
-                { text: lang === 'sv' ? "Addera x-termer för sig och tal för sig." : "Add x-terms together and numbers together." },
-                { text: lang === 'sv' ? `x-termer: ${x1}x ${x2 > 0 ? '+ ' + x2 : x2}x` : `x-terms: ${x1}x ${x2 > 0 ? '+ ' + x2 : x2}x` }
+                { 
+                    text: lang === 'sv' ? "Addera koefficienterna (siffrorna framför variabeln)." : "Add the coefficients (numbers in front of the variable).", 
+                    latex: `${c1} + ${c2} = ${c1+c2}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Svaret behåller variabeln." : "The answer keeps the variable.", 
+                    latex: `\\mathbf{${answer}}` 
+                }
             ]
         };
     }
 
     // --- LEVEL 2: Parentheses (Distribution) ---
-    // Ex: 3(x + 2) -> 3x + 6
+    // Legacy style: "3(2x + 4)"
     private level2_Parentheses(lang: string): any {
-        const a = MathUtils.randomInt(2, 9);
-        const b = MathUtils.randomInt(1, 9);
-        const op = Math.random() > 0.5 ? '+' : '-';
+        const v = 'x';
+        const outer = MathUtils.randomInt(2, 5);
+        const innerC = MathUtils.randomInt(2, 5);
+        const innerK = MathUtils.randomInt(1, 5);
         
-        const latex = `${a}(x ${op} ${b})`;
-        
-        const ansX = a;
-        const ansC = op === '+' ? (a * b) : (a * -b);
-        const answer = this.buildExpr(ansX, ansC);
+        const latex = `${outer}(${innerC}${v} + ${innerK})`;
+        const resC = outer * innerC;
+        const resK = outer * innerK;
+        const answer = `${resC}${v} + ${resK}`;
 
         return {
-            renderData: { 
-                latex, 
-                description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", 
-                answerType: 'text' 
-            },
+            renderData: { latex, description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", answerType: 'text' },
             token: Buffer.from(answer).toString('base64'),
             clues: [
-                { text: lang === 'sv' ? "Multiplicera in talet framför parentesen med båda termerna inuti." : "Multiply the number outside the parentheses with both terms inside." },
-                { latex: `${a} \\cdot x \\text{ och } ${a} \\cdot ${op === '+' ? b : -b}` }
+                { 
+                    text: lang === 'sv' ? "Multiplicera talet utanför med BÅDA termerna inuti." : "Multiply the number outside with BOTH terms inside.", 
+                    latex: `${outer} \\cdot ${innerC}${v} + ${outer} \\cdot ${innerK}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Beräkna produkterna." : "Calculate the products." 
+                }
             ]
         };
     }
 
-    // --- LEVEL 3: Distribute & Simplify ---
-    // Ex: 2(x + 3) + 4x -> 6x + 6
+    // --- LEVEL 3: Distribute & Combine ---
+    // Legacy style: "2(3x + 1) + 4x"
     private level3_DistributeAndSimplify(lang: string): any {
-        const a = MathUtils.randomInt(2, 5);
-        const b = MathUtils.randomInt(1, 5);
+        const outer = MathUtils.randomInt(2, 4);
+        const inC = MathUtils.randomInt(2, 4);
+        const inK = MathUtils.randomInt(1, 5);
         const extraX = MathUtils.randomInt(2, 6);
-        const op = Math.random() > 0.5 ? '+' : '-'; // Sign inside parentheses
-
-        // 2(x + 3) + 4x
-        const latex = `${a}(x ${op} ${b}) + ${extraX}x`;
-
-        const distC = op === '+' ? (a * b) : (a * -b);
-        const totalX = a + extraX;
-        const answer = this.buildExpr(totalX, distC);
+        
+        const latex = `${outer}(${inC}x + ${inK}) + ${extraX}x`;
+        
+        const distX = outer * inC;
+        const distK = outer * inK;
+        const totalX = distX + extraX;
+        
+        const answer = `${totalX}x + ${distK}`;
 
         return {
-            renderData: { 
-                latex, 
-                description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", 
-                answerType: 'text' 
-            },
+            renderData: { latex, description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", answerType: 'text' },
             token: Buffer.from(answer).toString('base64'),
             clues: [
-                { text: lang === 'sv' ? "Börja med att ta bort parentesen." : "Start by removing the parentheses." },
-                { latex: `${a}x ${distC > 0 ? '+' + distC : distC} + ${extraX}x` }
+                { 
+                    text: lang === 'sv' ? "Börja med att ta bort parentesen." : "Start by removing the parentheses.", 
+                    latex: `${distX}x + ${distK} + ${extraX}x` 
+                },
+                { 
+                    text: lang === 'sv' ? "Lägg ihop x-termerna." : "Combine the x-terms.", 
+                    latex: `${distX}x + ${extraX}x = ${totalX}x` 
+                }
             ]
         };
     }
 
     // --- LEVEL 4: Subtracting Parentheses ---
-    // Ex: 5x - (2x + 3) -> 3x - 3
+    // Legacy style: "5x - (2x + 3)"
     private level4_SubtractParentheses(lang: string): any {
-        const startX = MathUtils.randomInt(5, 12);
-        const subX = MathUtils.randomInt(1, startX - 1); // Ensure positive x result
-        const b = MathUtils.randomInt(1, 9);
-        const op = Math.random() > 0.5 ? '+' : '-';
-
-        // 5x - (2x + 3)
-        const latex = `${startX}x - (${subX}x ${op} ${b})`;
-
-        // Logic: minus sign flips signs inside
-        // const inside = subX*x + (op==+ ? b : -b)
-        // result = startX*x - subX*x - (op==+ ? b : -b)
+        const startX = MathUtils.randomInt(5, 10);
+        const subX = MathUtils.randomInt(1, startX - 1);
+        const subK = MathUtils.randomInt(1, 5);
         
-        const ansX = startX - subX;
-        const ansC = op === '+' ? -b : b; // Flip sign
-        const answer = this.buildExpr(ansX, ansC);
+        const latex = `${startX}x - (${subX}x + ${subK})`;
+        const resX = startX - subX;
+        const resK = -subK; 
+        
+        const answer = `${resX}x - ${Math.abs(resK)}`;
 
         return {
-            renderData: { 
-                latex, 
-                description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", 
-                answerType: 'text' 
-            },
+            renderData: { latex, description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", answerType: 'text' },
             token: Buffer.from(answer).toString('base64'),
             clues: [
-                { text: lang === 'sv' ? "Ett minus framför parentesen ändrar tecknen inuti." : "A minus sign in front of parentheses changes the signs inside." },
-                { latex: `${startX}x - ${subX}x ${op === '+' ? '-' : '+'} ${b}` }
+                { 
+                    text: lang === 'sv' ? "Minus framför en parentes ändrar tecken på allt inuti." : "A minus in front of parentheses changes the sign of everything inside.", 
+                    latex: `${startX}x - ${subX}x - ${subK}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Förenkla x-termerna." : "Simplify the x-terms." 
+                }
             ]
         };
     }
 
-    // --- LEVEL 5: Word Problems ---
+    // --- LEVEL 5: Word Problems (Restored Legacy Scenarios) ---
     private level5_WordProblems(lang: string): any {
-        const types = ['geometry', 'apples', 'age'];
-        const type = MathUtils.randomChoice(types);
+        const A = MathUtils.randomInt(2, 6);  // Var group 1
+        const B = MathUtils.randomInt(5, 30); // Constant
+        const C = MathUtils.randomInt(2, 6);  // Var group 2
+        const totalX = A + C;
 
-        let desc = "";
-        let ans = "";
-        let clues = [];
+        const scenarios = [
+            {
+                type: 'add',
+                sv: `Du har ${A} påsar med godis (x) och köper ${C} påsar till. Du har också ${B} lösa godisar.`,
+                en: `You have ${A} bags of candy (x) and buy ${C} more bags. You also have ${B} loose candies.`,
+                explSv: "lösa godisar läggs till (+)",
+                operator: "+",
+                unit: "godisar"
+            },
+            {
+                type: 'sub',
+                sv: `Du köper ${A} tröjor och ${C} byxor som alla kostar x kr styck. Du har en rabattkupong på ${B} kr.`,
+                en: `You buy ${A} shirts and ${C} pants that all cost x kr each. You have a discount coupon for ${B} kr.`,
+                explSv: "rabatten dras bort (-)",
+                operator: "-",
+                unit: "kr"
+            }
+        ];
 
-        if (type === 'geometry') {
-            const side = MathUtils.randomInt(2, 9);
-            desc = lang === 'sv' 
-                ? `Skriv ett uttryck för omkretsen av en rektangel med basen x och höjden ${side}.`
-                : `Write an expression for the perimeter of a rectangle with base x and height ${side}.`;
-            // P = x + x + side + side = 2x + 2*side
-            ans = this.buildExpr(2, side * 2);
-            clues = [{ text: lang === 'sv' ? "Omkrets = sida + sida + sida + sida" : "Perimeter = side + side + side + side" }];
-        } else if (type === 'apples') {
-            const extra = MathUtils.randomInt(2, 5);
-            desc = lang === 'sv' 
-                ? `Du har x äpplen. Din kompis har dubbelt så många som du, plus ${extra}. Skriv ett uttryck för hur många din kompis har.`
-                : `You have x apples. Your friend has twice as many as you, plus ${extra}. Write an expression for how many your friend has.`;
-            ans = this.buildExpr(2, extra);
-            clues = [{ text: lang === 'sv' ? "Dubbelt så många = 2x" : "Twice as many = 2x" }];
-        } else {
-            const diff = MathUtils.randomInt(2, 5);
-            desc = lang === 'sv' 
-                ? `Elias är x år gammal. Hans syster är ${diff} år yngre. Skriv ett uttryck för systerns ålder.`
-                : `Elias is x years old. His sister is ${diff} years younger. Write an expression for the sister's age.`;
-            ans = this.buildExpr(1, -diff);
-            clues = [{ text: lang === 'sv' ? "Yngre betyder minus." : "Younger means minus." }];
-        }
+        const s = MathUtils.randomChoice(scenarios);
+        const answer = `${totalX}x ${s.operator} ${B}`;
+        
+        const description = lang === 'sv' 
+            ? `${s.sv} Skriv ett uttryck för totalen och förenkla.` 
+            : `${s.en} Write an expression for the total and simplify.`;
 
         return {
-            renderData: { 
-                latex: "", 
-                description: desc, 
-                answerType: 'text' 
-            },
-            token: Buffer.from(ans).toString('base64'),
-            clues
+            renderData: { latex: "", description, answerType: 'text' },
+            token: Buffer.from(answer).toString('base64'),
+            clues: [
+                { 
+                    text: lang === 'sv' ? `Steg 1: Hitta x-termerna (${A}x + ${C}x).` : `Step 1: Find x-terms (${A}x + ${C}x).`,
+                    latex: `${totalX}x`
+                },
+                { 
+                    text: lang === 'sv' ? `Steg 2: Hantera konstanten (${B}). Eftersom det är ${s.explSv}, skriver vi ${s.operator} ${B}.` : `Step 2: Handle the constant (${B}). Since it's ${s.operator}, write ${s.operator} ${B}.` 
+                }
+            ]
         };
     }
 
-    // --- LEVEL 6: Mixed ---
     private level6_Mixed(lang: string): any {
         const lvl = MathUtils.randomInt(1, 4);
         return this.generate(lvl, lang);
-    }
-
-    // --- HELPERS ---
-
-    // Format single term: 1x -> x, -1x -> -x, 0x -> '', 5 -> 5
-    private fmt(coeff: number, variable: string, explicitSign: boolean = false): string {
-        if (coeff === 0) return '';
-        
-        let sign = '';
-        if (explicitSign && coeff > 0) sign = '+ ';
-        if (coeff < 0) sign = '- '; // Space after minus for readability in non-latex parts if needed
-
-        const abs = Math.abs(coeff);
-        let valStr = abs.toString();
-        
-        // Don't show '1' if there is a variable, e.g. 1x -> x
-        if (variable && abs === 1) valStr = '';
-
-        return `${sign}${valStr}${variable}`;
-    }
-
-    // Build final expression string: 3x - 5
-    private buildExpr(xCoeff: number, constant: number): string {
-        if (xCoeff === 0 && constant === 0) return "0";
-        
-        let s = "";
-        
-        // X Term
-        if (xCoeff !== 0) {
-            if (xCoeff === 1) s += "x";
-            else if (xCoeff === -1) s += "-x";
-            else s += `${xCoeff}x`;
-        }
-
-        // Constant Term
-        if (constant !== 0) {
-            if (constant > 0) {
-                // Add plus only if we already have an x term
-                s += (s.length > 0 ? "+" : "") + constant;
-            } else {
-                s += constant; // Minus sign is built-in to negative number
-            }
-        }
-        
-        return s;
     }
 }
