@@ -6,22 +6,49 @@ const DoNowCard = ({ q, index, showAnswer, onToggle, lang }) => {
     const desc = typeof q.renderData.description === 'object' ? q.renderData.description[lang] : q.renderData.description;
     const latex = q.renderData.latex;
 
+    // --- Component Resolver Logic ---
+    // We determine which component to use BEFORE rendering.
+    // This allows us to check the .requiresCanvas property.
+    let VisualComponent = null;
+    let visualProps = {};
+
+    if (q.renderData.graph) {
+        VisualComponent = GraphCanvas;
+        visualProps = { data: q.renderData.graph };
+    } else if (q.renderData.geometry) {
+        // Check for Volume types
+        const volumeTypes = ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'];
+        if (volumeTypes.includes(q.renderData.geometry.type)) {
+            VisualComponent = VolumeVisualization;
+        } else {
+            VisualComponent = GeometryVisual;
+        }
+        visualProps = { data: q.renderData.geometry };
+    } else if (q.topic === 'geometry') {
+        VisualComponent = StaticGeometryVisual;
+        visualProps = { description: desc };
+    }
+
+    // Check if the resolved component explicitly requires the canvas wrapper.
+    // If VisualComponent is null, or requiresCanvas is undefined/false, this becomes false.
+    const showVisualZone = VisualComponent && VisualComponent.requiresCanvas;
+
     // --- Dynamic Text Scaling Logic ---
     const getDescSize = (text) => {
         if (!text) return 'text-lg md:text-2xl';
         const len = text.length;
-        if (len > 150) return 'text-xs md:text-sm leading-tight'; // Long word problems
+        if (len > 150) return 'text-xs md:text-sm leading-tight';
         if (len > 100) return 'text-sm md:text-base leading-snug';
         if (len > 60) return 'text-base md:text-xl leading-normal';
-        return 'text-lg md:text-2xl leading-relaxed'; // Short prompts
+        return 'text-lg md:text-2xl leading-relaxed';
     };
 
     const getLatexSize = (str) => {
         if (!str) return 'text-3xl md:text-5xl';
         const len = str.length;
-        if (len > 30) return 'text-lg md:text-2xl'; // Very complex equations
+        if (len > 30) return 'text-lg md:text-2xl';
         if (len > 15) return 'text-2xl md:text-3xl';
-        return 'text-3xl md:text-5xl'; // Standard equations
+        return 'text-3xl md:text-5xl';
     };
 
     return (
@@ -32,24 +59,18 @@ const DoNowCard = ({ q, index, showAnswer, onToggle, lang }) => {
 
             <div className="p-4 flex-1 flex flex-col gap-2 relative min-h-0">
                 
-                {/* Visuals Zone - Flexible height */}
-                <div className="flex-1 bg-slate-50/50 rounded-lg border border-slate-100 flex items-center justify-center min-h-[120px] p-2 relative overflow-hidden">
-                    <div className="scale-90 origin-center w-full flex justify-center">
-                        {q.renderData.graph ? (
-                            <GraphCanvas data={q.renderData.graph} />
-                        ) : q.renderData.geometry ? (
-                            ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(q.renderData.geometry.type)
-                                ? <VolumeVisualization data={q.renderData.geometry} />
-                                : <GeometryVisual data={q.renderData.geometry} />
-                        ) : (
-                            q.topic === 'geometry' ? <StaticGeometryVisual description={desc} /> :
-                                <div className="text-4xl text-slate-200 font-bold select-none opacity-20">#</div>
-                        )}
+                {/* Visuals Zone - Only renders if the component is whitelisted */}
+                {showVisualZone && (
+                    <div className="flex-1 bg-slate-50/50 rounded-lg border border-slate-100 flex items-center justify-center min-h-[120px] p-2 relative overflow-hidden">
+                        <div className="scale-90 origin-center w-full flex justify-center">
+                            <VisualComponent {...visualProps} />
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Text Zone - Auto Sized */}
-                <div className="shrink-0 text-center space-y-2 flex flex-col justify-center py-1">
+                {/* We added flex-grow so it expands if the visual zone is missing */}
+                <div className={`shrink-0 text-center space-y-2 flex flex-col justify-center py-1 ${!showVisualZone ? 'flex-grow' : ''}`}>
                     {latex && (
                         <div className={`${getLatexSize(latex)} font-mono text-slate-900 font-bold tracking-wider`}>
                             <MathText text={`$${latex}$`} large={false} />

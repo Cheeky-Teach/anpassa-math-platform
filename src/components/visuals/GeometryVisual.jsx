@@ -146,3 +146,5 @@ export const GeometryVisual = ({ data }) => {
     </div>
   );
 };
+
+GeometryVisual.requiresCanvas = true;

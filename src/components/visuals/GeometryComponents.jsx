@@ -280,3 +280,5 @@ export const StaticGeometryVisual = ({ description }) => {
     if (d.includes("rect") || d.includes("rektangel")) return <div className="flex justify-center my-4 opacity-80"><div className="w-28 h-16 border-2 border-primary-500 bg-primary-50 rounded-sm"></div></div>; 
     return null; 
 };
+
+GeometryComponents.requiresCanvas = true;

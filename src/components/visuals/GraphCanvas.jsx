@@ -102,3 +102,5 @@ export const GraphCanvas = ({ visual }) => {
     </div>
   );
 };
+
+GraphCanvas.requiresCanvas = true;

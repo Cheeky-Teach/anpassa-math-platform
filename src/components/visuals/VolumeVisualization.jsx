@@ -162,3 +162,5 @@ export const VolumeVisualization = ({ visual }) => {
     </div>
   );
 };
+
+VolumeVisualization.requiresCanvas = true;
