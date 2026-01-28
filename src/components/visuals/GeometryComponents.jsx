@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import katex from 'katex';
 
 // Graph Canvas Component
 export const GraphCanvas = ({ data }) => {
@@ -74,8 +75,6 @@ export const GraphCanvas = ({ data }) => {
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
 
-GraphCanvas.requiresCanvas = true;
-
 // Volume Visualization Component (3D shapes on Canvas)
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
@@ -89,17 +88,15 @@ export const VolumeVisualization = ({ data }) => {
         const cx = w / 2;
         const cy = h / 2;
 
-        // Reset Canvas
         ctx.clearRect(0, 0, w, h);
         ctx.strokeStyle = '#374151'; 
-        ctx.fillStyle = '#f3f4f6'; // Light gray fill
+        ctx.fillStyle = '#f3f4f6';
         ctx.lineWidth = 2; 
         ctx.lineJoin = 'round'; 
         ctx.font = "bold 14px Inter, sans-serif"; 
         ctx.textAlign = "center"; 
         ctx.textBaseline = "middle";
 
-        // Helpers
         const drawLabel = (text, x, y, color='#dc2626') => { 
             if (!text) return;
             ctx.save(); 
@@ -121,7 +118,6 @@ export const VolumeVisualization = ({ data }) => {
             ctx.restore(); 
         };
 
-        // --- SCALING LOGIC ---
         const TARGET_SIZE = 160;
         let dims = [];
         if (data.labels) {
@@ -130,7 +126,6 @@ export const VolumeVisualization = ({ data }) => {
         const maxVal = Math.max(...dims, 10);
         const scale = TARGET_SIZE / maxVal;
 
-        // Draw Logic based on Type
         if (data.type === 'cuboid') {
             const dw = (parseInt(data.labels.w) || 10) * scale;
             const dh = (parseInt(data.labels.h) || 10) * scale;
@@ -175,9 +170,7 @@ export const VolumeVisualization = ({ data }) => {
             drawLabel(data.labels.b, startX + b/2, startY + 15);
             drawLabel(data.labels.l, startX + b + offX/2 + 10, startY + offY/2);
         }
-        // ... (truncated other cases for brevity but logic is preserved in main deployment)
         else {
-            // SPHERES, CONES, CYLINDERS, COMPOSITES
             let r = 50; 
             if(data.labels.r) r = parseInt(data.labels.r) * scale;
             if(data.labels.d) r = (parseInt(data.labels.d)/2) * scale;
@@ -188,12 +181,12 @@ export const VolumeVisualization = ({ data }) => {
              if (data.show === 'diameter' || data.show === 'd') {
                  drawDashed(cx - r, centerY, cx + r, centerY);
                  if(showLabel) drawLabel(val, cx, centerY - 10);
-                    } 
+                } 
                 else {
                  ctx.beginPath(); ctx.arc(cx, centerY, 2, 0, 2*Math.PI); ctx.fill();
                  drawDashed(cx, centerY, cx + r, centerY);
                  if(showLabel) drawLabel(val, cx + r/2, centerY - 10);
-                    }
+                }
              };
 
             if (data.type === 'sphere' || data.type === 'hemisphere') {
@@ -203,17 +196,36 @@ export const VolumeVisualization = ({ data }) => {
                 ctx.beginPath(); ctx.ellipse(cx, yBase, r, r/4, 0, 0, 2*Math.PI); ctx.stroke();
                 drawCircleData(yBase);
             }
-            else if (data.type === 'cylinder') {
+            else if (data.type === 'cylinder' || data.type === 'silo' || data.type === 'ice_cream') {
+                 // Simplified logic for composite types based on cylinder
                 const hCyl = (parseInt(data.labels.h) || 10) * scale;
                 const topY = cy - hCyl/2;
                 const botY = cy + hCyl/2;
-                ctx.beginPath(); ctx.ellipse(cx, topY, r, r/4, 0, 0, 2*Math.PI); ctx.stroke();
-                ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, 0, Math.PI); ctx.stroke();
-                ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, Math.PI, 2*Math.PI); ctx.stroke(); ctx.restore();
-                ctx.beginPath(); ctx.moveTo(cx-r, topY); ctx.lineTo(cx-r, botY); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx+r, topY); ctx.lineTo(cx+r, botY); ctx.stroke();
-                drawLabel(data.labels.h, cx + r + 15, cy);
-                drawCircleData(topY, true);
+                
+                // Draw logic for cylinder body
+                if (data.type === 'cylinder' || data.type === 'silo') {
+                     ctx.beginPath(); ctx.ellipse(cx, topY, r, r/4, 0, 0, 2*Math.PI); ctx.stroke();
+                     ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, 0, Math.PI); ctx.stroke();
+                     ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, Math.PI, 2*Math.PI); ctx.stroke(); ctx.restore();
+                     ctx.beginPath(); ctx.moveTo(cx-r, topY); ctx.lineTo(cx-r, botY); ctx.stroke();
+                     ctx.beginPath(); ctx.moveTo(cx+r, topY); ctx.lineTo(cx+r, botY); ctx.stroke();
+                     drawLabel(data.labels.h, cx + r + 15, cy);
+                }
+                
+                // Additional tops/bottoms for composites would go here, 
+                // keeping it simple for now to ensure rendering
+                drawCircleData(data.type === 'ice_cream' ? cy : topY, true);
+            }
+            else if (data.type === 'cone' || data.type === 'pyramid') {
+                 // Simplified cone logic
+                 const hCone = (parseInt(data.labels.h) || 10) * scale;
+                 const botY = cy + hCone/2;
+                 const topY = cy - hCone/2;
+                 ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, 0, Math.PI); ctx.stroke();
+                 ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, Math.PI, 2*Math.PI); ctx.stroke(); ctx.restore();
+                 ctx.beginPath(); ctx.moveTo(cx-r, botY); ctx.lineTo(cx, topY); ctx.lineTo(cx+r, botY); ctx.stroke();
+                 drawLabel(data.labels.h, cx + 5, cy);
+                 drawCircleData(botY, true);
             }
         }
     }, [data]);
@@ -221,13 +233,12 @@ export const VolumeVisualization = ({ data }) => {
     return <div className="flex justify-center my-2 w-full"><canvas ref={canvasRef} width={320} height={240} className="w-full max-w-[320px] h-auto bg-white rounded-lg" /></div>;
 };
 
-VolumeVisualization.requiresCanvas = true;
-
 // SVG Geometry Visual
 export const GeometryVisual = ({ data }) => {
     if (!data) return null;
     const SvgContainer = ({ children, w = 300, h = 200, viewBox = "0 0 300 200" }) => <svg width={w} height={h} viewBox={viewBox} className="my-2 w-full max-w-[300px] mx-auto">{children}</svg>;
     
+    // Auto-scale to fit 180x180 box
     const RenderShape = ({ type, dims, labels, areaText }) => {
         const w = dims.width || 0, h = dims.height || 0, r = dims.radius || 0;
         const size = Math.max(w, h, r * 2);
@@ -245,16 +256,22 @@ export const GeometryVisual = ({ data }) => {
             if (type === 'triangle') {
                 const L = cx - sw/2, R = cx + sw/2, T = cy - sh/2, B = cy + sh/2;
                 let points = `${L},${B} ${R},${B} ${cx},${T}`;
-                return (<><line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" /><polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />{mkTxt(cx, B + 25, dims.width)}<text x={cx + 5} y={cy} textAnchor="start" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="24">h={dims.height}</text></>);
+                if (dims.subtype === 'right') points = `${L},${B} ${R},${B} ${L},${T}`; // Right angle adjustment
+                return (<><polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />{labels && <>{mkTxt(cx, B + 25, dims.width)}<text x={cx - sw/2 - 15} y={cy} textAnchor="end" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="24">h={dims.height}</text></>}</>);
             }
-            if (type === 'circle') return (<><circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx + sr / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="24">r={dims.radius}</text></>)}</>);
+            if (type === 'circle') return (<><circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><line x1={cx} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" /><text x={cx + sr / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="24">{dims.val || `r=${dims.radius}`}</text></>)}</>);
+            
             return null;
         };
         return (<svg width="180" height="180" viewBox="0 0 180 180" className="border border-gray-100 rounded-lg bg-white shadow-sm w-full max-w-[150px] md:max-w-[200px]">{content()}{areaText && <text x="90" y="90" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
     };
 
     if (data.type === 'scale_single' || data.type === 'scale_compare') { 
-        const shapeEmojis = { square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', cube: '🧊', cylinder: '🛢️', pyramid: '⛰️', cone: '🍦', sphere: '🔮' }; 
+        const shapeEmojis = { 
+            square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', cube: '🧊', cylinder: '🛢️', 
+            pyramid: '⛰️', cone: '🍦', sphere: '🔮', arrow: '➡', star: '⭐', lightning: '⚡', 
+            key: '🔑', heart: '❤️', cloud: '☁️', moon: '🌙', sun: '☀️' 
+        }; 
         const emoji = shapeEmojis[data.shape] || '📦'; 
         const ShapeIcon = ({ size }) => <div className="flex items-center justify-center text-6xl select-none" style={{ fontSize: size }}>{emoji}</div>; 
         
@@ -270,19 +287,40 @@ export const GeometryVisual = ({ data }) => {
         ); 
     }
 
-    if (data.type === 'rectangle' || data.type === 'square' || data.type === 'parallelogram') {
+    // UPDATED: Allow Triangle and Circle and Composite types to render
+    if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle'].includes(data.type)) {
         return (<div className="flex justify-center my-4"><RenderShape type={data.type} dims={data} labels={true} areaText={null} /></div>);
+    }
+    
+    // Composite (House/Portal)
+    if (data.type === 'composite') {
+        const w = data.labels.w || 50;
+        const h = data.labels.h || 50;
+        return (
+            <div className="flex justify-center my-4">
+                <svg width="200" height="200" viewBox="0 0 200 200" className="border border-gray-100 rounded-lg bg-white shadow-sm">
+                    {data.subtype === 'house' ? (
+                        <>
+                            <rect x="50" y="80" width="100" height="80" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            <polygon points="50,80 150,80 100,20" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            <text x="160" y="120" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.h}</text>
+                            <text x="100" y="180" textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.w}</text>
+                        </>
+                    ) : (
+                        <>
+                            <rect x="50" y="70" width="100" height="100" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            <path d="M 50 70 A 50 50 0 0 1 150 70" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            <text x="100" y="190" textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.w}</text>
+                            <text x="160" y="120" textAnchor="start" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.h}</text>
+                        </>
+                    )}
+                </svg>
+            </div>
+        );
     }
 
     // Default Fallback
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
-};
-
-export const StaticGeometryVisual = ({ description }) => { 
-    if (!description) return null; 
-    const d = description.toLowerCase(); 
-    if (d.includes("rect") || d.includes("rektangel")) return <div className="flex justify-center my-4 opacity-80"><div className="w-28 h-16 border-2 border-primary-500 bg-primary-50 rounded-sm"></div></div>; 
-    return null; 
 };
 
 GeometryVisual.requiresCanvas = true;
