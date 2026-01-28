@@ -24,7 +24,6 @@ export const GeometryVisual = ({ data }) => {
             
             if (type === 'triangle') {
                 const L = cx - sw/2, R = cx + sw/2, T = cy - sh/2, B = cy + sh/2;
-                
                 if (dims.subtype === 'right') {
                     const points = `${L},${B} ${R},${B} ${L},${T}`;
                     const rightAngle = <path d={`M ${L+15} ${B} L ${L+15} ${B-15} L ${L} ${B-15}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
@@ -95,6 +94,8 @@ export const GeometryVisual = ({ data }) => {
     }
     
     if (data.type === 'composite') {
+        const w = data.labels.w || 50;
+        const h = data.labels.h || 50;
         return (
             <div className="flex justify-center my-4">
                 <svg width="200" height="200" viewBox="0 0 200 200" className="border border-gray-100 rounded-lg bg-white shadow-sm">
@@ -123,7 +124,7 @@ export const GeometryVisual = ({ data }) => {
 };
 
 // ----------------------------------------------------------------------
-// 3D VOLUME VISUALIZATION (Canvas)
+// 3D VOLUME VISUALIZATION (Canvas) - Updated with Pyramid Support
 // ----------------------------------------------------------------------
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
@@ -155,7 +156,6 @@ export const VolumeVisualization = ({ data }) => {
             ctx.fillText(text, x, y); 
             ctx.restore(); 
         };
-
         const drawDashed = (x1, y1, x2, y2) => { 
             ctx.save(); 
             ctx.setLineDash([5, 5]); 
@@ -166,17 +166,13 @@ export const VolumeVisualization = ({ data }) => {
             ctx.restore(); 
         };
 
-        // --- SCALING LOGIC ---
         const TARGET_SIZE = 140; 
         let dims = [];
         if (data.labels) {
-            // Extract numeric values from labels to auto-scale
             dims = Object.values(data.labels).map(v => parseInt(String(v))).filter(v => !isNaN(v));
         }
         const maxVal = Math.max(...dims, 10);
         const scale = TARGET_SIZE / maxVal;
-
-        // --- SHAPE RENDERERS ---
 
         if (data.type === 'cuboid') {
             const dw = (parseInt(data.labels.w) || 10) * scale;
@@ -184,11 +180,9 @@ export const VolumeVisualization = ({ data }) => {
             const dd = (parseInt(data.labels.d) || 10) * scale * 0.5;
             const x0 = cx - dw/2 - dd/2;
             const y0 = cy + dh/2 + dd/2;
-
             ctx.strokeRect(x0, y0 - dh, dw, dh);
             ctx.beginPath(); ctx.moveTo(x0, y0 - dh); ctx.lineTo(x0 + dd, y0 - dh - dd); ctx.lineTo(x0 + dw + dd, y0 - dh - dd); ctx.lineTo(x0 + dw, y0 - dh); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(x0 + dw + dd, y0 - dh - dd); ctx.lineTo(x0 + dw + dd, y0 - dd); ctx.lineTo(x0 + dw, y0); ctx.stroke();
-
             drawLabel(data.labels.w, x0 + dw/2, y0 + 15);
             drawLabel(data.labels.h, x0 - 20, y0 - dh/2);
             drawLabel(data.labels.d, x0 + dw + dd/2 + 5, y0 - dd/2);
@@ -199,20 +193,18 @@ export const VolumeVisualization = ({ data }) => {
             const len = (parseInt(data.labels.l) || 20) * scale * 0.7;
             const startX = cx - b/2 - len/2;
             const startY = cy + hTri/2;
-
-            ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(startX + b, startY); ctx.lineTo(startX + b/2, startY - hTri); ctx.closePath(); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(startX, startY); ctx.lineTo(startX + b, startY); ctx.lineTo(startX + b/2, startY - hTri); ctx.closePath(); ctx.stroke();
             const offX = len; const offY = -len * 0.3;
             ctx.beginPath(); ctx.moveTo(startX + b/2, startY - hTri); ctx.lineTo(startX + b/2 + offX, startY - hTri + offY); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(startX + b, startY); ctx.lineTo(startX + b + offX, startY + offY); ctx.lineTo(startX + b/2 + offX, startY - hTri + offY); ctx.stroke();
-            
             drawDashed(startX + b/2, startY, startX + b/2, startY - hTri);
             drawLabel(data.labels.h, startX + b/2 + 10, startY - hTri/2);
             drawLabel(data.labels.b, startX + b/2, startY + 15);
             drawLabel(data.labels.l, startX + b + offX/2 + 10, startY + offY/2);
-        } 
+        }
         else if (data.type === 'pyramid') {
             // Square/Rect Pyramid
-            // labels: { w, d, h } or { s, h }
             const w = (parseInt(data.labels.w || data.labels.s || 10) * scale);
             const d = (parseInt(data.labels.d || data.labels.s || 10) * scale * 0.6); // Foreshorten
             const hPyr = (parseInt(data.labels.h) || 10) * scale;
@@ -220,15 +212,13 @@ export const VolumeVisualization = ({ data }) => {
             const x0 = cx - w/2 - d/2;
             const y0 = cy + hPyr/3; // Base Y position
 
-            // Base (Parallelogram)
-            // FL, FR, BR, BL
             const FL = {x: x0, y: y0};
             const FR = {x: x0+w, y: y0};
             const BR = {x: x0+w+d, y: y0-d};
             const BL = {x: x0+d, y: y0-d};
             const Apex = {x: x0 + w/2 + d/2, y: y0 - d/2 - hPyr};
 
-            // Draw Base
+            // Base
             ctx.beginPath(); ctx.moveTo(FL.x, FL.y); ctx.lineTo(FR.x, FR.y); ctx.lineTo(BR.x, BR.y); ctx.stroke();
             ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(BR.x, BR.y); ctx.lineTo(BL.x, BL.y); ctx.lineTo(FL.x, FL.y); ctx.stroke(); ctx.restore();
 
@@ -238,14 +228,13 @@ export const VolumeVisualization = ({ data }) => {
             ctx.beginPath(); ctx.moveTo(BR.x, BR.y); ctx.lineTo(Apex.x, Apex.y); ctx.stroke();
             ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(BL.x, BL.y); ctx.lineTo(Apex.x, Apex.y); ctx.stroke(); ctx.restore();
 
-            // Height line
+            // Height
             const centerBase = {x: x0 + w/2 + d/2, y: y0 - d/2};
             drawDashed(centerBase.x, centerBase.y, Apex.x, Apex.y);
             drawLabel("h=" + data.labels.h, Apex.x + 20, centerBase.y - hPyr/2);
             drawLabel(data.labels.w || data.labels.s, x0 + w/2, y0 + 15);
         }
         else {
-            // ROUND OBJECTS
             let r = 50; 
             if(data.labels.r) r = parseInt(data.labels.r) * scale;
             if(data.labels.d) r = (parseInt(data.labels.d)/2) * scale;
@@ -265,7 +254,6 @@ export const VolumeVisualization = ({ data }) => {
 
             if (data.type === 'sphere') {
                 ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2*Math.PI); ctx.stroke();
-                // Equator
                 ctx.beginPath(); ctx.ellipse(cx, cy, r, r/4, 0, 0, 2*Math.PI); ctx.stroke();
                 drawCircleData(cy);
             }
@@ -279,54 +267,32 @@ export const VolumeVisualization = ({ data }) => {
                 const hCyl = (parseInt(data.labels.h) || 10) * scale;
                 const topY = cy - hCyl/2;
                 const botY = cy + hCyl/2;
-                
-                // Cylinder Body
-                ctx.beginPath(); ctx.ellipse(cx, topY, r, r/4, 0, 0, 2*Math.PI); ctx.stroke(); // Top
-                ctx.beginPath(); ctx.moveTo(cx-r, topY); ctx.lineTo(cx-r, botY); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx+r, topY); ctx.lineTo(cx+r, botY); ctx.stroke();
-                ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, 0, Math.PI); ctx.stroke(); // Bot Front
-                ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, Math.PI, 2*Math.PI); ctx.stroke(); ctx.restore(); // Bot Back
-                
-                drawLabel(data.labels.h, cx + r + 15, cy);
-
-                if (data.type === 'silo') {
-                    // Add Hemisphere on top
-                    ctx.beginPath(); ctx.arc(cx, topY, r, Math.PI, 0); ctx.stroke();
+                if (data.type === 'cylinder' || data.type === 'silo') {
+                     ctx.beginPath(); ctx.ellipse(cx, topY, r, r/4, 0, 0, 2*Math.PI); ctx.stroke();
+                     ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, 0, Math.PI); ctx.stroke();
+                     ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, Math.PI, 2*Math.PI); ctx.stroke(); ctx.restore();
+                     ctx.beginPath(); ctx.moveTo(cx-r, topY); ctx.lineTo(cx-r, botY); ctx.stroke();
+                     ctx.beginPath(); ctx.moveTo(cx+r, topY); ctx.lineTo(cx+r, botY); ctx.stroke();
+                     drawLabel(data.labels.h, cx + r + 15, cy);
                 }
-                
-                // Draw radius/diameter on the visible top face (or body for silo)
+                if (data.type === 'silo') { ctx.beginPath(); ctx.arc(cx, topY, r, Math.PI, 0); ctx.stroke(); }
                 drawCircleData(topY, true);
             }
             else if (data.type === 'cone' || data.type === 'ice_cream') {
-                 // Cone
                  const hCone = (parseInt(data.labels.h) || 10) * scale;
-                 const topY = cy - hCone/2;
-                 const botY = cy + hCone/2;
-                 
                  if (data.type === 'cone') {
-                     // Standard Cone (Point Up)
+                     const topY = cy - hCone/2; const botY = cy + hCone/2;
                      ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, 0, Math.PI); ctx.stroke();
                      ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.ellipse(cx, botY, r, r/4, 0, Math.PI, 2*Math.PI); ctx.stroke(); ctx.restore();
                      ctx.beginPath(); ctx.moveTo(cx-r, botY); ctx.lineTo(cx, topY); ctx.lineTo(cx+r, botY); ctx.stroke();
-                     
-                     drawDashed(cx, botY, cx, topY); // Height line
+                     drawDashed(cx, botY, cx, topY);
                      drawLabel("h=" + data.labels.h, cx + 5, cy);
                      drawCircleData(botY, true);
-                 } 
-                 else {
-                     // Ice Cream (Cone Point Down + Hemisphere Top)
-                     const seamY = cy - 20;
-                     const tipY = seamY + hCone;
-                     
-                     // Cone body
+                 } else {
+                     const seamY = cy - 20; const tipY = seamY + hCone;
                      ctx.beginPath(); ctx.moveTo(cx-r, seamY); ctx.lineTo(cx, tipY); ctx.lineTo(cx+r, seamY); ctx.stroke();
-                     
-                     // Hemisphere top
                      ctx.beginPath(); ctx.arc(cx, seamY, r, Math.PI, 0); ctx.stroke();
-                     
-                     // Seam
                      ctx.beginPath(); ctx.ellipse(cx, seamY, r, r/4, 0, 0, 2*Math.PI); ctx.stroke();
-                     
                      drawLabel(data.labels.h, cx + r + 10, seamY + hCone/2);
                      drawCircleData(seamY, true);
                  }
@@ -382,3 +348,83 @@ export const GraphCanvas = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
+
+
+// ----------------------------------------------------------------------
+// NEW STATIC GEOMETRY VISUAL (Canvas-Based)
+// ----------------------------------------------------------------------
+export const StaticGeometryVisual = ({ type, params, width = 300, height = 200 }) => {
+    const canvasRef = useRef(null);
+  
+    useEffect(() => {
+      // 1. Guard clause: If no canvas, or NO type/params, stop.
+      if (!canvasRef.current || !type || !params) return;
+  
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+      
+      // Setup styles
+      ctx.strokeStyle = '#3b82f6'; // Blue line
+      ctx.lineWidth = 2;
+      ctx.fillStyle = '#eff6ff'; // Light blue fill
+      
+      const cx = width / 2;
+      const cy = height / 2;
+      
+      ctx.beginPath();
+  
+      // Simple switch to draw based on type
+      if (type === 'triangle' || type === 'right_triangle') {
+          // Draw generic triangle
+          ctx.moveTo(cx - 50, cy + 50);
+          ctx.lineTo(cx + 50, cy + 50);
+          ctx.lineTo(cx, cy - 50);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+      } else if (type === 'circle') {
+          ctx.arc(cx, cy, 50, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.stroke();
+      } else if (type === 'rectangle' || type === 'square' || type.includes('rect')) {
+          ctx.rect(cx - 60, cy - 40, 120, 80);
+          ctx.fill();
+          ctx.stroke();
+      } else if (type === 'cylinder') {
+          // Basic Cylinder
+          ctx.ellipse(cx, cy - 40, 40, 15, 0, 0, 2 * Math.PI);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.ellipse(cx, cy + 40, 40, 15, 0, 0, Math.PI);
+          ctx.stroke();
+          ctx.moveTo(cx - 40, cy - 40);
+          ctx.lineTo(cx - 40, cy + 40);
+          ctx.moveTo(cx + 40, cy - 40);
+          ctx.lineTo(cx + 40, cy + 40);
+          ctx.stroke();
+      }
+      
+      // You can add more shapes here as needed
+  
+    }, [type, params, width, height]);
+  
+    // --- THE BUG FIX ---
+    // If no type or params are provided, render NOTHING (null).
+    // This stops the empty white box from appearing when not needed.
+    if (!type || !params) {
+      return null;
+    }
+  
+    return (
+      <canvas 
+        ref={canvasRef} 
+        width={width} 
+        height={height} 
+        className="max-w-full h-auto mx-auto" 
+        style={{ display: 'block' }} 
+      />
+    );
+  };
