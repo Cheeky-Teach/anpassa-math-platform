@@ -8,7 +8,7 @@ export class ScaleGen {
         switch (level) {
             case 1: return this.level1_Concepts(lang);
             case 2: return this.level2_CalcLengthSimple(lang);
-            case 3: return this.level3_CalcLengthHard(lang);
+            case 3: return this.level3_MixedScenarios(lang);
             case 4: return this.level4_DetermineScale(lang);
             case 5: return this.level5_NoPictures(lang);
             case 6: return this.level6_AreaScale(lang);
@@ -48,13 +48,13 @@ export class ScaleGen {
             if (isReduction) {
                 correct = real; wrong = img;
                 expl = lang === 'sv' 
-                    ? `1 cm på bilden motsvarar ${ratio} cm i verkligheten.` 
-                    : `1 cm on the image equals ${ratio} cm in reality.`;
+                    ? `1 cm på bilden motsvarar ${ratio} cm i verkligheten. Verkligheten är alltså mycket större.` 
+                    : `1 cm on the image equals ${ratio} cm in reality. So reality is much larger.`;
             } else {
                 correct = img; wrong = real;
                 expl = lang === 'sv' 
-                    ? `${ratio} cm på bilden är bara 1 cm i verkligheten.` 
-                    : `${ratio} cm on the image is only 1 cm in reality.`;
+                    ? `${ratio} cm på bilden är bara 1 cm i verkligheten. Bilden är uppförstorad.` 
+                    : `${ratio} cm on the image is only 1 cm in reality. The image is magnified.`;
             }
         }
 
@@ -88,16 +88,16 @@ export class ScaleGen {
                 desc = lang === 'sv' ? `Bilden är ${imgVal} cm. Skalan är ${scaleStr}. Hur lång är den i verkligheten? (cm)` : `Image is ${imgVal} cm. Scale ${scaleStr}. Reality? (cm)`;
                 label = `${imgVal} cm`;
                 steps.push({ 
-                    text: lang === 'sv' ? "Verkligheten är större än bilden. Multiplicera." : "Reality is larger. Multiply.", 
+                    text: lang === 'sv' ? "Verkligheten är större än bilden. Multiplicera bilden med skalan." : "Reality is larger. Multiply image by scale.", 
                     latex: `${imgVal} \\cdot ${scale} = \\mathbf{${ans}}` 
                 });
             } else { // Find Image
                 const real = imgVal * scale;
                 ans = imgVal;
-                desc = lang === 'sv' ? `I verkligheten är den ${real} cm. Skalan är ${scaleStr}. Hur lång på ritningen?` : `Reality is ${real} cm. Scale ${scaleStr}. Drawing?`;
+                desc = lang === 'sv' ? `I verkligheten är den ${real} cm. Skalan är ${scaleStr}. Hur lång är den på ritningen?` : `Reality is ${real} cm. Scale ${scaleStr}. Drawing?`;
                 label = `${real} cm`; 
                 steps.push({ 
-                    text: lang === 'sv' ? "Bilden är mindre än verkligheten. Dividera." : "Image is smaller. Divide.", 
+                    text: lang === 'sv' ? "Bilden är mindre än verkligheten. Dividera verkligheten med skalan." : "Image is smaller. Divide reality by scale.", 
                     latex: `\\frac{${real}}{${scale}} = \\mathbf{${ans}}` 
                 });
             }
@@ -108,7 +108,7 @@ export class ScaleGen {
                 desc = lang === 'sv' ? `Verkligheten är ${imgVal} cm. Skala ${scaleStr}. Hur stor blir den på bild?` : `Reality is ${imgVal} cm. Scale ${scaleStr}. Image size?`;
                 label = `${imgVal} cm`;
                 steps.push({ 
-                    text: lang === 'sv' ? "Bilden är en förstoring. Multiplicera." : "Image is enlarged. Multiply.", 
+                    text: lang === 'sv' ? "Bilden är en förstoring. Multiplicera verkligheten med skalan." : "Image is enlarged. Multiply reality by scale.", 
                     latex: `${imgVal} \\cdot ${scale} = \\mathbf{${ans}}` 
                 });
             } else { // Find Real
@@ -117,7 +117,7 @@ export class ScaleGen {
                 desc = lang === 'sv' ? `På bilden är den ${drawVal} cm. Skala ${scaleStr}. Hur stor är den i verkligheten?` : `Image is ${drawVal} cm. Scale ${scaleStr}. Reality?`;
                 label = `${drawVal} cm`;
                 steps.push({ 
-                    text: lang === 'sv' ? "Verkligheten är mindre. Dividera." : "Reality is smaller. Divide.", 
+                    text: lang === 'sv' ? "Verkligheten är mindre än den förstorade bilden. Dividera bildens mått med skalan." : "Reality is smaller than the enlarged image. Divide the image measurement by the scale.", 
                     latex: `\\frac{${drawVal}}{${scale}} = \\mathbf{${ans}}` 
                 });
             }
@@ -130,30 +130,113 @@ export class ScaleGen {
         };
     }
 
-    // Level 3: Harder (Map)
-    private level3_CalcLengthHard(lang: string): any {
-        const scale = MathUtils.randomChoice([1000, 10000, 50000]);
-        const cm = MathUtils.randomInt(3, 15);
-        const realCm = cm * scale;
-        const realM = realCm / 100;
-        const realKm = realM / 1000;
+    // Level 3: Mixed Scenarios (Map, House, Model, Microscope)
+    private level3_MixedScenarios(lang: string): any {
+        const type = MathUtils.randomChoice(['map', 'house', 'model', 'microscope']);
         
-        const useKm = realKm >= 1;
-        const ans = useKm ? realKm : realM;
-        const unit = useKm ? 'km' : 'm';
+        let scale = 0, drawVal = 0, answer = 0;
+        let scaleStr = "", desc = "", label = "", shape = "scale_single", icon = "";
+        let steps: any[] = [];
 
-        const desc = lang === 'sv' ? `Karta: ${cm} cm. Skala 1:${scale}. Verkligheten (${unit})?` : `Map: ${cm} cm. Scale 1:${scale}. Reality (${unit})?`;
-        const steps = [
-            { text: lang === 'sv' ? "Multiplicera först för att få cm." : "Multiply first to get cm.", latex: `${cm} \\cdot ${scale} = ${realCm} \\text{ cm}` },
-            { 
-                text: lang === 'sv' ? `Omvandla till ${unit}.` : `Convert to ${unit}.`, 
-                latex: useKm ? `\\frac{${realCm}}{100000} = \\mathbf{${ans}}` : `\\frac{${realCm}}{100} = \\mathbf{${ans}}` 
-            }
-        ];
+        if (type === 'map') {
+            // Map: Find Reality in km/m
+            scale = MathUtils.randomChoice([10000, 20000, 50000]);
+            scaleStr = `1:${scale}`;
+            drawVal = MathUtils.randomInt(2, 10);
+            const realCm = drawVal * scale;
+            const realKm = realCm / 100000;
+            const useKm = realKm >= 1;
+            const unit = useKm ? 'km' : 'm';
+            answer = useKm ? realKm : realCm / 100;
+            
+            icon = 'map'; // Using the map emoji supported in frontend
+            label = `${drawVal} cm`;
+            
+            desc = lang === 'sv' 
+                ? `På en karta är avståndet ${drawVal} cm. Skalan är ${scaleStr}. Hur långt är det i verkligheten? (Svara i ${unit})`
+                : `On a map distance is ${drawVal} cm. Scale is ${scaleStr}. How far is it in reality? (Answer in ${unit})`;
+                
+            steps = [
+                { text: lang === 'sv' ? "1. Multiplicera först för att få svaret i cm." : "1. Multiply first to get answer in cm.", latex: `${drawVal} \\cdot ${scale} = ${realCm} \\text{ cm}` },
+                { text: lang === 'sv' ? `2. Omvandla till ${unit}.` : `2. Convert to ${unit}.`, latex: `\\mathbf{${answer}}` }
+            ];
+        } 
+        else if (type === 'house') {
+            // House Plan: Find Reality in m
+            scale = MathUtils.randomChoice([50, 100]);
+            scaleStr = `1:${scale}`;
+            drawVal = MathUtils.randomInt(4, 15);
+            const realCm = drawVal * scale;
+            answer = realCm / 100; // meters
+            
+            icon = 'square'; // Fallback shape, but label carries emoji
+            label = `🏠 ${drawVal} cm`;
+            
+            desc = lang === 'sv'
+                ? `På en ritning är en vägg ${drawVal} cm lång. Skalan är ${scaleStr}. Hur lång är den i verkligheten? (Svara i m)`
+                : `On a blueprint a wall is ${drawVal} cm. Scale ${scaleStr}. How long in reality? (Answer in m)`;
+                
+            steps = [
+                { text: lang === 'sv' ? "Verkligheten är större. Multiplicera med skalan." : "Reality is larger. Multiply by scale.", latex: `${drawVal} \\cdot ${scale} = ${realCm} \\text{ cm}` },
+                { text: lang === 'sv' ? "Omvandla cm till meter (dela med 100)." : "Convert cm to meters (divide by 100).", latex: `\\frac{${realCm}}{100} = \\mathbf{${answer}}` }
+            ];
+        }
+        else if (type === 'model') {
+            // Model Car: Find Model size in cm given Reality in m
+            scale = MathUtils.randomChoice([20, 24, 40]);
+            scaleStr = `1:${scale}`;
+            const realM = MathUtils.randomInt(3, 6);
+            const realCm = realM * 100;
+            // Ensure integer division
+            let adjRealCm = realCm;
+            while (adjRealCm % scale !== 0) adjRealCm += 100; // add meters until divisible
+            const adjRealM = adjRealCm / 100;
+            
+            answer = adjRealCm / scale;
+            
+            icon = 'key'; // Represents car key/model
+            label = `🚗 ${adjRealM} m`; // Real size shown
+            
+            desc = lang === 'sv'
+                ? `En bil är ${adjRealM} m lång i verkligheten. Skalan på modellen är ${scaleStr}. Hur lång är modellen på ritningen? (Svara i cm)`
+                : `A car is ${adjRealM} m long. Model scale is ${scaleStr}. How long is the model? (Answer in cm)`;
+                
+            steps = [
+                { text: lang === 'sv' ? "Gör om bilens längd till cm." : "Convert car length to cm.", latex: `${adjRealM} \\text{ m} = ${adjRealCm} \\text{ cm}` },
+                { text: lang === 'sv' ? "Modellen är mindre. Dividera med skalan." : "Model is smaller. Divide by scale.", latex: `\\frac{${adjRealCm}}{${scale}} = \\mathbf{${answer}}` }
+            ];
+        }
+        else {
+            // Microscope: Enlargement. Given Drawing cm, Find Reality mm.
+            scale = MathUtils.randomChoice([10, 20, 50]);
+            scaleStr = `${scale}:1`;
+            // Target real size in mm (integer)
+            const realMm = MathUtils.randomInt(2, 8);
+            answer = realMm;
+            // Draw cm = (real mm * scale) / 10
+            const drawCm = (realMm * scale) / 10;
+            
+            icon = 'magnifying_glass';
+            label = `🐞 ${drawCm} cm`; // Image size shown
+            
+            desc = lang === 'sv'
+                ? `På en bild är en insekt ${drawCm} cm lång. Skalan är ${scaleStr} (förstoring). Hur lång är den i verkligheten? (Svara i mm)`
+                : `In a picture an insect is ${drawCm} cm. Scale ${scaleStr}. Reality? (Answer in mm)`;
+                
+            steps = [
+                { text: lang === 'sv' ? "Gör om bildens mått till mm." : "Convert picture to mm.", latex: `${drawCm} \\text{ cm} = ${drawCm*10} \\text{ mm}` },
+                { text: lang === 'sv' ? "Verkligheten är mindre än den förstorade bilden. Dividera." : "Reality is smaller. Divide.", latex: `\\frac{${drawCm*10}}{${scale}} = \\mathbf{${answer}}` }
+            ];
+        }
 
         return {
-            renderData: { description: desc, latex: `1:${scale}`, answerType: 'numeric', geometry: { type: 'scale_single', shape: 'map', label: `${cm} cm` } },
-            token: Buffer.from(ans.toString()).toString('base64'),
+            renderData: {
+                description: desc,
+                latex: scaleStr,
+                answerType: 'numeric',
+                geometry: { type: 'scale_single', shape: icon, label: label }
+            },
+            token: Buffer.from(answer.toString()).toString('base64'),
             clues: steps
         };
     }
