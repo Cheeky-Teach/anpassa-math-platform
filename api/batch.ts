@@ -10,8 +10,9 @@ import { ScaleGen } from '../src/core/generators/ScaleGen.js';
 import { VolumeGen } from '../src/core/generators/VolumeGen.js';
 import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
-import { PercentGen } from '../src/core/generators/PercentGen.js';
+import { PercentGen } from '../src/core/generators/PercentGen.js'; // New Import
 import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js'; // New Import
+
 
 // Helper to instantiate
 const getGenerator = (topic: string) => {
@@ -26,6 +27,9 @@ const getGenerator = (topic: string) => {
         case 'negative': return new NegativeNumbersGen();
         case 'ten_powers': return new TenPowersGen();
         case 'graph': return new LinearGraphGenerator();
+        case 'linear_graph': return new LinearGraphGenerator(); // Alias for safety
+        case 'percent': return new PercentGen(); // New Case
+        case 'probability': return new ProbabilityGen(); // New Case
         default: return null;
     }
 };
@@ -68,6 +72,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
                         const rawAnswer = Buffer.from(questionData.token, 'base64').toString('utf-8');
                         displayAnswer = rawAnswer;
                     } catch (e) { displayAnswer = "Error"; }
+
+                    // Ensure geometry field is safe for frontend
+                    if (questionData.renderData && !questionData.renderData.geometry) {
+                        questionData.renderData.geometry = null;
+                    }
 
                     results.push({ ...questionData, topic, level, displayAnswer });
                 } catch (genError) {
