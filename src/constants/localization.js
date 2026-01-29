@@ -18,8 +18,7 @@ export const CATEGORIES = {
         levels: 6,
         topics: [
             { id: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
-            { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
-            { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
+            { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } }
         ]
     },
     geometry: {
@@ -34,10 +33,19 @@ export const CATEGORIES = {
             { id: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } }
         ]
     },
-    statistics: { // NEW CATEGORY
+    samband: { 
+        id: 'samband',
+        label: { sv: "Samband", en: "Relationships" },
+        color: "purple",
+        levels: 5,
+        topics: [
+             { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
+        ]
+    },
+    statistics: { 
         id: 'statistics',
         label: { sv: "Sannolikhet", en: "Probability" },
-        color: "purple",
+        color: "yellow", // Changed to Yellow
         levels: 6,
         topics: [
              { id: 'probability', label: { sv: "Sannolikhet", en: "Probability" } }
@@ -142,7 +150,7 @@ export const LEVEL_DESCRIPTIONS = {
         5: { sv: "Hitta helheten (100%)", en: "Find Whole" },
         6: { sv: "Verklig Förändring", en: "Real World Change" }
     },
-    probability: { // NEW DESCRIPTIONS
+    probability: { 
         1: { sv: "Visuell Sannolikhet", en: "Visual Probability" },
         2: { sv: "Tärning & Slump", en: "Dice & Chance" },
         3: { sv: "Sannolikhet som Procent", en: "Probability as Percent" },

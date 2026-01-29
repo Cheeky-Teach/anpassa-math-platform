@@ -11,7 +11,9 @@ export class ProgressionRules {
         geometry: 5,
         volume: 7,
         graph: 5,
-        similarity: 4 // UPDATED to 4
+        similarity: 4,
+        percent: 6,
+        probability: 6
     };
 
     public static checkLevelUp(newStreak: number, currentLevel: number, topic: string): boolean {
