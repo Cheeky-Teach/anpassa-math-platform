@@ -3,11 +3,21 @@ import React from 'react';
 const LevelUpModal = ({ visible, ui, onNext, onStay, lang }) => {
     if (!visible) return null;
 
-    // Fallback Logic: If UI keys are missing, use these defaults
-    const title = ui.levelUpTitle || (lang === 'sv' ? "Nivå upp?" : "Level Up?");
-    const desc = ui.levelUpDesc || (lang === 'sv' ? "Du verkar ha koll på detta! Vill du hoppa till nästa nivå?" : "You seem to know this! Do you want to skip to the next level?");
-    const btnYes = ui.levelUpYes || (lang === 'sv' ? "Ja, kör!" : "Yes, let's go!");
-    const btnNo = ui.levelUpNo || (lang === 'sv' ? "Nej, stanna här" : "No, stay here");
+    // Robust Fallback Logic: Ensure text exists even if UI keys are missing
+    // We use the 'lang' prop to determine the default language
+    const currentLang = lang || 'sv'; 
+    
+    const defaultTitle = currentLang === 'sv' ? "Nivå upp?" : "Level Up?";
+    const defaultDesc = currentLang === 'sv' 
+        ? "Du verkar ha koll på detta! Vill du hoppa till nästa nivå?" 
+        : "You seem to know this! Do you want to skip to the next level?";
+    const defaultYes = currentLang === 'sv' ? "Ja, kör!" : "Yes, let's go!";
+    const defaultNo = currentLang === 'sv' ? "Nej, stanna här" : "No, stay here";
+
+    const title = ui?.levelUpTitle || defaultTitle;
+    const desc = ui?.levelUpDesc || defaultDesc;
+    const btnYes = ui?.levelUpYes || defaultYes;
+    const btnNo = ui?.levelUpNo || defaultNo;
 
     return (
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm fade-in">

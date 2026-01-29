@@ -148,10 +148,6 @@ function App() {
         
         setLoading(true);
         const fullConfig = [];
-        // Ensure we fill the grid (min 6 items for visual balance, or exactly what user selected)
-        // Here we just cycle through selected items to fill a batch if needed, 
-        // or just pass them directly if the backend handles it.
-        // Assuming we want at least 6 cards:
         const targetCount = Math.max(selected.length, 6);
         for (let i = 0; i < targetCount; i++) {
             fullConfig.push(selected[i % selected.length]);
@@ -183,13 +179,11 @@ function App() {
 
     const handleRefreshOne = async (index, topic, level) => {
         try {
-            // Fetch single question with force=true to get a new variant
             const res = await fetch(`/api/question?topic=${topic}&level=${level}&lang=${lang}&force=true`);
             const newQuestion = await res.json();
             
             if (newQuestion.error) throw new Error(newQuestion.error);
 
-            // Update specific card in the grid
             setDoNowQuestions(prev => {
                 const copy = [...prev];
                 copy[index] = newQuestion;
@@ -258,11 +252,12 @@ function App() {
         fetchQuestion(topic, level, lang);
     };
 
+    // FIX: Removed setStreak(0) to preserve streak on level change
     const handleChangeLevel = (delta) => { 
         const newLevel = level + delta; 
         const max = Object.keys(LEVEL_DESCRIPTIONS[topic] || {}).length; 
         if (newLevel >= 1 && newLevel <= max) { 
-            setStreak(0); 
+            // setStreak(0); // REMOVED: Preserve streak when manually changing or leveling up
             setLevel(newLevel); 
             fetchQuestion(topic, newLevel, lang, true); 
         } 
