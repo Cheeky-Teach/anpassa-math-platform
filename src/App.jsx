@@ -44,6 +44,7 @@ function App() {
 
     // Do Now State
     const [doNowQuestions, setDoNowQuestions] = useState([]);
+    const [doNowConfig, setDoNowConfig] = useState([]); // Stores the selected topics for regeneration
 
     // Modals State
     const [showStreakModal, setShowStreakModal] = useState(false);
@@ -108,7 +109,7 @@ function App() {
         setIsSolutionRevealed(false);
         setLevelUpAvailable(false);
         try {
-            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}`);
+            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}${force ? '&force=true' : ''}`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             setQuestion(data);
@@ -137,13 +138,25 @@ function App() {
         setQuestion(null);
     };
 
+    // --- DO NOW LOGIC ---
+
     const handleDoNowGenerate = async (selected) => {
         if (selected.length === 0) return;
+        
+        // Save config for regeneration
+        setDoNowConfig(selected);
+        
         setLoading(true);
         const fullConfig = [];
-        for (let i = 0; i < 6; i++) {
+        // Ensure we fill the grid (min 6 items for visual balance, or exactly what user selected)
+        // Here we just cycle through selected items to fill a batch if needed, 
+        // or just pass them directly if the backend handles it.
+        // Assuming we want at least 6 cards:
+        const targetCount = Math.max(selected.length, 6);
+        for (let i = 0; i < targetCount; i++) {
             fullConfig.push(selected[i % selected.length]);
         }
+
         try {
             const res = await fetch('/api/batch', {
                 method: 'POST',
@@ -161,6 +174,33 @@ function App() {
             setLoading(false);
         }
     };
+
+    const handleRefreshAll = async () => {
+        if (doNowConfig.length > 0) {
+            await handleDoNowGenerate(doNowConfig);
+        }
+    };
+
+    const handleRefreshOne = async (index, topic, level) => {
+        try {
+            // Fetch single question with force=true to get a new variant
+            const res = await fetch(`/api/question?topic=${topic}&level=${level}&lang=${lang}&force=true`);
+            const newQuestion = await res.json();
+            
+            if (newQuestion.error) throw new Error(newQuestion.error);
+
+            // Update specific card in the grid
+            setDoNowQuestions(prev => {
+                const copy = [...prev];
+                copy[index] = newQuestion;
+                return copy;
+            });
+        } catch (e) {
+            console.error("Single refresh failed", e);
+        }
+    };
+
+    // -------------------
 
     const handleSelection = (t, l) => { setTopic(t); setLevel(l); };
 
@@ -310,7 +350,16 @@ function App() {
         return <div className="min-h-screen bg-gray-50 font-sans"><DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
     }
     if (view === 'donow_grid') {
-        return <DoNowGrid questions={doNowQuestions} ui={ui} onBack={() => setView('donow_config')} lang={lang} />;
+        return (
+            <DoNowGrid 
+                questions={doNowQuestions} 
+                ui={ui} 
+                onBack={() => setView('donow_config')} 
+                lang={lang} 
+                onRefreshAll={handleRefreshAll}
+                onRefreshOne={handleRefreshOne}
+            />
+        );
     }
 
     return (
