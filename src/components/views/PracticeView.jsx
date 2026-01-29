@@ -40,199 +40,173 @@ const PracticeView = ({
     const [scaleInputRight, setScaleInputRight] = useState('');
     const inputRef = useRef(null);
 
-    // Safe Description Access
-    const descriptionText = typeof question?.renderData?.description === 'object' 
-        ? question.renderData.description[lang] 
-        : question?.renderData?.description;
+    const descriptionText = typeof question?.renderData?.description === 'object' ? question.renderData.description[lang] : question?.renderData?.description;
     
-    // Auto-focus input on new question
-    useEffect(() => {
-        if (!loading && question && !feedback && inputRef.current) {
-            inputRef.current.focus();
-        }
-    }, [question, loading, feedback]);
-
-    // Handle "Enter" key
-    const onKeyDown = (e) => {
-        if (e.key === 'Enter' && !feedback) {
-            handleSubmit(e);
+    const handleChoiceClick = (choice) => { 
+        if (feedback === 'correct') return; 
+        setInput(choice); 
+        // Force update to parent if needed, but usually handleSubmit handles the logic
+        handleSubmit({ preventDefault: () => { } }, choice); 
+    };
+    
+    const handleFormSubmit = (e) => {
+        if (question.renderData.answerType === 'scale') {
+            const combined = `${scaleInputLeft}:${scaleInputRight}`;
+            handleSubmit(e, combined);
+        } else {
+            handleSubmit(e, input);
         }
     };
 
-    // Render Geometry
+    // Mobile-safe focus logic
+    useEffect(() => {
+        if (question && !loading) {
+            setScaleInputLeft('');
+            setScaleInputRight('');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            const isMobile = window.innerWidth < 768;
+            if (!isMobile && inputRef.current) {
+                inputRef.current.focus();
+            }
+        }
+    }, [question, loading]);
+
+    const maxLevels = Object.keys(LEVEL_DESCRIPTIONS[uiState.topic] || {}).length;
+
+    // Helper to determine visual component
     const renderVisual = () => {
         if (!question?.renderData) return null;
-        
-        // 1. Graph
+
         if (question.renderData.graph) {
             return <GraphCanvas data={question.renderData.graph} />;
-        }
-
-        // 2. Geometry / Volume
+        } 
+        
         const geom = question.renderData.geometry;
         if (geom) {
-            const volumeTypes = ['cuboid', 'cylinder', 'cone', 'sphere', 'hemisphere', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'];
+            const volumeTypes = ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'];
             if (volumeTypes.includes(geom.type)) {
                 return <VolumeVisualization data={geom} />;
             }
             return <GeometryVisual data={geom} />;
         }
 
-        // 3. Static Fallback
-        if (question.renderData.staticVisual) {
-            return <StaticGeometryVisual description={question.renderData.staticVisual} />;
+        if (uiState.topic === 'geometry') {
+            return <StaticGeometryVisual description={descriptionText} />;
         }
-        
-        return null;
+
+        if (question.renderData.latex) {
+             return <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true} /></div>;
+        }
+
+        return <div className="flex flex-col items-center justify-center w-full min-h-[100px]"></div>;
     };
 
     return (
-        <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
-            {/* Modals */}
-            <LevelUpModal visible={levelUpAvailable} onClose={() => setLevelUpAvailable(false)} onLevelUp={() => handleChangeLevel(1)} onStay={() => actions.retry(true)} lang={lang} />
+        <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
+            
+            <LevelUpModal 
+                visible={levelUpAvailable} 
+                ui={ui} 
+                onNext={() => { 
+                    handleChangeLevel(1); 
+                    setLevelUpAvailable(false); 
+                }} 
+                onStay={() => { 
+                    setLevelUpAvailable(false); 
+                    actions.retry(true); 
+                }} 
+                lang={lang} // Passed lang prop to modal
+            />
+
             <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
             
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-                
-                {/* Mobile History Toggle */}
-                <div className="lg:hidden p-2 flex justify-end">
-                    <button onClick={() => setMobileHistoryOpen(true)} className="text-sm font-bold text-slate-500 flex items-center gap-1">
-                        <span>📜</span> {ui.menu_btn || "History"}
-                    </button>
+            <div className="flex-1 w-full min-w-0">
+                {/* HEADER BAR */}
+                <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                    <button onClick={actions.goBack} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm px-4 py-2 rounded-lg shadow-sm border border-gray-300 transition-all active:scale-95"><span>←</span> {ui.backBtn}</button>
+
+                    <div className="flex items-center gap-3">
+                        {timerSettings.duration > 0 && (
+                            <div className={`font-mono text-sm font-bold px-3 py-1.5 rounded-lg border hidden sm:block ${timerSettings.remaining < 60 ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-white text-gray-700 border-gray-200'}`}>
+                                {formatTime(timerSettings.remaining)}
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200">
+                            <button onClick={() => handleChangeLevel(-1)} disabled={uiState.level <= 1} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.prevLevel || "<"}>&lt;</button>
+                            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 min-w-[80px] text-center">{uiState.topic} • Lvl {uiState.level}</span>
+                            <button onClick={() => handleChangeLevel(1)} disabled={uiState.level >= maxLevels} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.nextLevel || ">"}>&gt;</button>
+                        </div>
+
+                        <button onClick={() => setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </button>
+                    </div>
                 </div>
 
-                <main className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col items-center">
-                    
+                <main className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 relative">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center h-64 gap-4 animate-pulse">
-                            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                            <p className="text-slate-400 font-medium">Generating problem...</p>
+                        <div className="p-20 text-center flex flex-col items-center gap-4">
+                            <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
                         </div>
                     ) : question ? (
-                        <div className="w-full max-w-3xl bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-                            
-                            {/* Question Header */}
-                            <div className="bg-slate-50 border-b border-slate-100 p-6 flex justify-between items-center">
-                                <div>
-                                    <h2 className="text-lg font-bold text-slate-700">{LEVEL_DESCRIPTIONS[uiState.topic]?.[uiState.level]?.[lang] || `Level ${uiState.level}`}</h2>
-                                    {timerSettings.isActive && (
-                                        <div className="text-xs font-mono text-orange-600 font-bold mt-1">
-                                            ⏱ {formatTime(timerSettings.remaining)}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="text-sm font-bold px-3 py-1 bg-white border border-slate-200 rounded-full text-slate-500 shadow-sm">
-                                    Total: {totalCorrect}
-                                </div>
-                            </div>
-
-                            {/* Visual Area */}
-                            <div className="p-8 flex justify-center bg-white min-h-[200px] items-center">
+                        <div className="p-4 sm:p-6">
+                            <div className="mb-4 flex justify-center bg-gray-50 rounded-xl p-4 min-h-[160px] items-center border border-gray-100 relative">
                                 {renderVisual()}
                             </div>
-
-                            {/* Question Text */}
-                            <div className="px-8 pb-4 text-center">
-                                <p className="text-xl md:text-2xl text-slate-800 font-medium leading-relaxed">
-                                    {descriptionText}
-                                </p>
-                                {question.renderData.latex && (
-                                    <div className="mt-6 mb-2 text-3xl md:text-4xl text-indigo-900 font-bold">
-                                        <MathText text={question.renderData.latex} />
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Input Area */}
-                            <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-col items-center gap-4">
-                                {question.renderData.answerType === 'multiple_choice' ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
-                                        {question.renderData.options.map((opt, idx) => (
-                                            <button
-                                                key={idx}
-                                                onClick={(e) => handleSubmit(e, opt)}
-                                                disabled={feedback !== null}
-                                                className={`
-                                                    py-4 px-6 rounded-xl font-bold text-lg transition-all shadow-sm border-2
-                                                    ${feedback 
-                                                        ? (opt === (question.token ? atob(question.token) : "") 
-                                                            ? 'bg-green-100 border-green-500 text-green-800' 
-                                                            : 'bg-slate-100 border-slate-200 text-slate-400 opacity-50')
-                                                        : 'bg-white border-slate-200 text-slate-700 hover:border-indigo-500 hover:text-indigo-700 hover:shadow-md active:scale-98'
-                                                    }
-                                                `}
-                                            >
-                                                {opt}
-                                            </button>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-4">
-                                        <div className="relative">
-                                            <input
-                                                ref={inputRef}
-                                                type="text"
-                                                value={input}
-                                                onChange={(e) => setInput(e.target.value)}
-                                                disabled={feedback !== null}
-                                                placeholder={question.renderData.placeholder || "..."}
-                                                className={`
-                                                    w-full px-6 py-4 text-2xl font-bold text-center rounded-2xl border-2 outline-none transition-all shadow-sm
-                                                    ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-900' : ''}
-                                                    ${feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-900' : ''}
-                                                    ${!feedback ? 'border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10' : ''}
-                                                `}
-                                            />
-                                            {question.renderData.suffix && (
-                                                <span className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg pointer-events-none">
-                                                    {question.renderData.suffix}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {feedback && (
-                                            <div className={`p-4 rounded-xl text-center font-bold animate-in slide-in-from-bottom-2 ${feedback === 'correct' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                {feedback === 'correct' ? (
-                                                    <span>🎉 {ui.tagCorrect || "Correct!"}</span>
-                                                ) : (
-                                                    <span>❌ {ui.tagWrong || "Try again"}</span>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {!feedback && (
-                                            <button 
-                                                type="submit" 
-                                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-98 text-lg"
-                                            >
-                                                {ui.btnCheck || (lang === 'sv' ? "Svara" : "Submit")}
-                                            </button>
-                                        )}
-                                    </form>
-                                )}
-
-                                {/* Action Bar */}
-                                <div className="flex gap-4 mt-2">
-                                    {feedback && (
-                                        <button onClick={() => actions.retry(true)} className="flex-1 bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-900 transition-all shadow-lg">
-                                            Next ➡
+                            
+                            <div className="mb-4 text-center"><h2 className="text-lg sm:text-xl font-medium text-gray-700 leading-relaxed"><MathText text={descriptionText} /></h2></div>
+                            
+                            {question.renderData.answerType === 'multiple_choice' ? (
+                                <div className="max-w-md mx-auto grid grid-cols-2 gap-4">
+                                    {question.renderData.options && question.renderData.options.map((choice, idx) => (
+                                        <button 
+                                            key={idx} 
+                                            onClick={() => handleChoiceClick(choice)} 
+                                            className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback === 'correct' && choice === input ? 'bg-green-500 border-green-500 text-white' : feedback === 'incorrect' && choice === input ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-500 hover:text-indigo-600'}`} 
+                                            disabled={feedback !== null}
+                                        >
+                                            {choice}
                                         </button>
-                                    )}
-                                    {!feedback && (
-                                        <>
-                                            <button type="button" onClick={handleHint} disabled={isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 transition-colors flex items-center gap-2">
-                                                <span>💡</span> {ui.btnHint || "Hint"}
-                                            </button>
-                                            <button type="button" onClick={handleSolution} disabled={!question.clues || isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                                                {ui.btnSolution || "Solution"}
-                                            </button>
-                                            <button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2">
-                                                <span>⏭️</span> {ui.btnSkip || "Skip"}
-                                            </button>
-                                        </>
-                                    )}
+                                    ))}
+                                    {/* Fallback for 'choices' key if backend sends that instead of 'options' */}
+                                    {question.renderData.choices && question.renderData.choices.map((choice, idx) => (
+                                        <button 
+                                            key={idx} 
+                                            onClick={() => handleChoiceClick(choice)} 
+                                            className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback === 'correct' && choice === input ? 'bg-green-500 border-green-500 text-white' : feedback === 'incorrect' && choice === input ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-500 hover:text-indigo-600'}`} 
+                                            disabled={feedback !== null}
+                                        >
+                                            {choice}
+                                        </button>
+                                    ))}
                                 </div>
+                            ) : (
+                                <form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
+                                    {question.renderData.answerType === 'scale' ? (
+                                        <div className="flex items-center justify-center gap-2">
+                                            <input type="text" value={scaleInputLeft} onChange={(e) => setScaleInputLeft(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder="X" disabled={feedback === 'correct'} />
+                                            <span className="text-2xl font-bold text-gray-400">:</span>
+                                            <input type="text" value={scaleInputRight} onChange={(e) => setScaleInputRight(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder="X" disabled={feedback === 'correct'} />
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder={ui.placeholder || "..."} disabled={feedback === 'correct'} />
+                                        </div>
+                                    )}
+                                    <button 
+                                        type="submit" 
+                                        className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-green-500 shadow-green-200 cursor-default' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 hover:shadow-lg'}`}
+                                    >
+                                        {feedback === 'correct' ? (ui.tagCorrect || "Correct") : feedback === 'incorrect' ? (ui.tagWrong || "Incorrect") : (ui.btnCheck || (lang === 'sv' ? "Svara" : "Submit"))}
+                                    </button>
+                                </form>
+                            )}
+
+                            <div className="mt-6 flex gap-3 justify-center flex-wrap">
+                                <button type="button" onClick={handleHint} disabled={!question.clues || revealedClues.length >= question.clues.length} className="px-4 py-2 text-sm font-semibold rounded-lg bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"><span>💡</span> {ui.btnHint}</button>
+                                <button type="button" onClick={handleSolution} disabled={!question.clues || isSolutionRevealed} className="px-4 py-2 text-sm font-semibold rounded-lg bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{ui.btnSolution}</button>
+                                <button type="button" onClick={handleSkip} className="px-4 py-2 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-2"><span>⏭️</span> {ui.btnSkip}</button>
                             </div>
                         </div>
                     ) : (
@@ -244,7 +218,7 @@ const PracticeView = ({
                 </main>
             </div>
             
-            <div className="lg:w-80 w-full shrink-0 flex flex-col gap-4 hidden lg:flex border-l border-slate-200 bg-white p-4">
+            <div className="lg:w-80 w-full shrink-0 flex flex-col gap-4 hidden lg:flex">
                 <CluePanel revealedClues={revealedClues} question={question} ui={ui} isSolutionRevealed={isSolutionRevealed} />
                 <div className="flex-1 min-h-0"><HistoryList history={uiState.history} ui={ui} /></div>
             </div>
