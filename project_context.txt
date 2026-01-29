@@ -1,7 +1,6 @@
-PROJECT EXPORT GENERATED AT 2026-01-29T13:59:13.978Z
+PROJECT EXPORT GENERATED AT 2026-01-29T19:30:52.152Z
 
 --- FILE STRUCTURE ---
-.vercel\project.json
 api\answer.ts
 api\batch.ts
 api\curriculum.ts
@@ -9,7 +8,6 @@ api\debug.ts
 api\question.ts
 backup_UI.html
 bundle_project.ts
-create_context.js
 dev-server.ts
 index.html
 package-lock.json
@@ -65,14 +63,6 @@ vite.config.js
 
 ==================================================
 
-
-// =======================================================
-// FILE START: .vercel\project.json
-// =======================================================
-
-{"projectId":"prj_bAZRO01XQ7DU9a8O2vZDClzTSTHd","orgId":"team_HTxUb7ZViM2LYhSuJ6qkKEDI","projectName":"anpassa-math-platform"}
-
-// FILE END: .vercel\project.json
 
 // =======================================================
 // FILE START: api\answer.ts
@@ -1921,56 +1911,6 @@ function bundle() {
 bundle();
 
 // FILE END: bundle_project.ts
-
-// =======================================================
-// FILE START: create_context.js
-// =======================================================
-
-const fs = require('fs');
-const path = require('path');
-
-// List of all critical files to include in the context
-const files = [
-    'README.md',
-    'package.json',
-    'tsconfig.json',
-    'vercel.json',
-    'api/answer.ts',
-    'api/question.ts',
-    'public/index.html',
-    'src/core/types/generator.ts',
-    'src/core/utils/i18n.ts',
-    'src/core/utils/random.ts',
-    'src/core/utils/security.ts',
-    'src/core/utils/textEngine.ts',
-    'src/core/rules/ProgressionRules.ts',
-    'src/core/generators/ScaleGenerator.ts',
-    'src/core/generators/GeometryGenerator.ts',
-    'src/core/generators/LinearEquationGen.ts',
-    'src/core/generators/LinearGraphGenerator.ts',
-    'src/core/generators/ExpressionSimplificationGen.ts',
-    'src/core/generators/LinearEquationProblemGen.ts'
-];
-
-const outputFile = 'AI_CONTEXT.md';
-let output = "# Anpassa Project Context\n\n";
-
-output += content;
-            output += "\n```\n\n";
-            console.log(`✅ Added ${filePath}`);
-        } else {
-            console.warn(`⚠️  File not found: ${filePath}`);
-        }
-    } catch (err) {
-        console.error(`❌ Error reading ${filePath}:`, err.message);
-    }
-});
-
-// Write the result to AI_CONTEXT.md
-fs.writeFileSync(outputFile, output);
-console.log(`\n🎉 Success! All files concatenated into ${outputFile}`);
-
-// FILE END: create_context.js
 
 // =======================================================
 // FILE START: dev-server.ts
@@ -3873,7 +3813,7 @@ export const GeometryVisual = ({ data }) => {
 
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
-
+GeometryVisual.requiresCanvas = true;
 // ... VolumeVisualization and GraphCanvas remain unchanged ...
 export const GraphCanvas = ({ data }) => {
     const canvasRef = useRef(null);
@@ -3920,7 +3860,7 @@ export const GraphCanvas = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
-
+VolumeVisualization.requiresCanvas = true;
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
@@ -4083,7 +4023,7 @@ export const VolumeVisualization = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={320} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
-
+GraphCanvas.requiresCanvas = true;
 export const StaticGeometryVisual = ({ description }) => { 
     if (!description) return null; 
     const d = description.toLowerCase(); 
