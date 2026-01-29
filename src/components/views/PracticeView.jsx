@@ -10,10 +10,10 @@ import { LEVEL_DESCRIPTIONS } from '../../constants/localization';
 // --- SECURITY HELPERS ---
 
 const isValidInput = (val, type) => {
-    if (!val) return false;
+    // CRITICAL FIX: Allow empty string to enable deletion of the last character
+    if (val === '') return true;
     
     // Strict Numeric Check (allows negative, decimal, ratio colon)
-    // Regex: Optional minus, digits, optional decimal/comma/colon, digits
     const numericRegex = /^-?[\d\s]*([.,:]\d*)?$/;
 
     if (type === 'numeric' || type === 'scale') {
@@ -78,9 +78,9 @@ const PracticeView = ({
         const answerType = question.renderData.answerType;
 
         if (answerType === 'scale') {
-            // Validate both parts of scale
-            if (!isValidInput(scaleInputLeft, 'numeric') || !isValidInput(scaleInputRight, 'numeric')) {
-                // Shake effect or ignore (UI feedback could be added here)
+            // Validate both parts of scale (Must be non-empty for submission)
+            if (scaleInputLeft === '' || scaleInputRight === '' || 
+                !isValidInput(scaleInputLeft, 'numeric') || !isValidInput(scaleInputRight, 'numeric')) {
                 return; 
             }
             finalInput = `${scaleInputLeft}:${scaleInputRight}`;
@@ -95,7 +95,7 @@ const PracticeView = ({
             }
         }
 
-        // Prevent empty submissions
+        // Prevent empty submissions (Check after sanitization)
         if (!finalInput || finalInput.trim() === '') return;
 
         handleSubmit(e, finalInput);
@@ -104,6 +104,7 @@ const PracticeView = ({
     // --- SECURE INPUT CHANGE HANDLER ---
     const handleInputChange = (e, setter, type) => {
         const val = e.target.value;
+        // Logic: Always allow empty string (deletion), otherwise check regex
         if (isValidInput(val, type)) {
             setter(val);
         }
@@ -211,6 +212,17 @@ const PracticeView = ({
                             {question.renderData.answerType === 'multiple_choice' ? (
                                 <div className="max-w-md mx-auto grid grid-cols-2 gap-4">
                                     {question.renderData.options && question.renderData.options.map((choice, idx) => (
+                                        <button 
+                                            key={idx} 
+                                            onClick={() => handleChoiceClick(choice)} 
+                                            className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback === 'correct' && choice === input ? 'bg-green-500 border-green-500 text-white' : feedback === 'incorrect' && choice === input ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-500 hover:text-indigo-600'}`} 
+                                            disabled={feedback !== null}
+                                        >
+                                            {choice}
+                                        </button>
+                                    ))}
+                                    {/* Fallback for 'choices' key */}
+                                    {question.renderData.choices && question.renderData.choices.map((choice, idx) => (
                                         <button 
                                             key={idx} 
                                             onClick={() => handleChoiceClick(choice)} 
