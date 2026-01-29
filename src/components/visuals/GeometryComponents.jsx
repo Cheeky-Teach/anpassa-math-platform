@@ -251,7 +251,7 @@ export const GeometryVisual = ({ data }) => {
 
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
-
+GeometryVisual.requiresCanvas = true;
 // ... VolumeVisualization and GraphCanvas remain unchanged ...
 export const GraphCanvas = ({ data }) => {
     const canvasRef = useRef(null);
@@ -298,7 +298,7 @@ export const GraphCanvas = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
-
+VolumeVisualization.requiresCanvas = true;
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
@@ -461,7 +461,7 @@ export const VolumeVisualization = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={320} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
-
+GraphCanvas.requiresCanvas = true;
 export const StaticGeometryVisual = ({ description }) => { 
     if (!description) return null; 
     const d = description.toLowerCase(); 
