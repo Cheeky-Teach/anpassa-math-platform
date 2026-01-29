@@ -10,6 +10,8 @@ import { ScaleGen } from '../src/core/generators/ScaleGen.js';
 import { VolumeGen } from '../src/core/generators/VolumeGen.js';
 import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
+import { PercentGen } from '../src/core/generators/PercentGen.js';
+import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js'; // New Import
 
 // Helper to instantiate
 const getGenerator = (topic: string) => {
