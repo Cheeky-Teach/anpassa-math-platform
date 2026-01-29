@@ -11,7 +11,7 @@ export class SimilarityGen {
         }
     }
 
-    // Level 1: Concept
+    // Level 1: Concept (Similar or Not?)
     private level1_Concept(lang: string): any {
         const isSimilar = MathUtils.randomInt(0, 1) === 1;
         const type = MathUtils.randomChoice(['rect_sides', 'tri_sides', 'tri_angles']);
@@ -34,7 +34,7 @@ export class SimilarityGen {
             
             desc = lang === 'sv' ? "Är rektanglarna likformiga?" : "Are the rectangles similar?";
             steps.push({ 
-                text: lang === 'sv' ? "Jämför sidornas förhållande." : "Compare side ratios.", 
+                text: lang === 'sv' ? "För att de ska vara likformiga måste förhållandet mellan sidorna vara samma. Jämför baserna och höjderna." : "For similarity, side ratios must be equal. Compare bases and heights.", 
                 latex: `\\frac{${w2}}{${w1}} \\text{ vs } \\frac{${h2}}{${h1}}` 
             });
         } 
@@ -42,15 +42,17 @@ export class SimilarityGen {
             geom.shapeType = 'triangle';
             const a1 = MathUtils.randomInt(40, 75);
             const a2 = MathUtils.randomInt(40, 75);
+            
             const b1 = isSimilar ? a1 : a1 + MathUtils.randomChoice([-15, 15]);
             const b2 = isSimilar ? a2 : a2;
 
+            // Pass angles for visual arcs
             geom.left = { angles: [a1, a2, null], labels: { a1: `${a1}°`, a2: `${a2}°` } };
             geom.right = { angles: [b1, b2, null], labels: { a1: `${b1}°`, a2: `${b2}°` } };
 
             desc = lang === 'sv' ? "Är trianglarna likformiga?" : "Are the triangles similar?";
             steps.push({ 
-                text: lang === 'sv' ? "Jämför vinklarna." : "Compare the angles.", 
+                text: lang === 'sv' ? "Likformiga trianglar måste ha exakt samma vinklar. Jämför vinklarna." : "Similar triangles must have exactly the same angles. Compare them.", 
                 latex: "" 
             });
         }
@@ -68,7 +70,7 @@ export class SimilarityGen {
             
             desc = lang === 'sv' ? "Är trianglarna likformiga?" : "Are the triangles similar?";
             steps.push({ 
-                text: lang === 'sv' ? "Kolla skalningen." : "Check scaling.", 
+                text: lang === 'sv' ? "Kolla om båda sidorna har växt lika mycket (samma skalning)." : "Check if both sides scaled by the same factor.", 
                 latex: `\\frac{${r1}}{${s1}} \\text{ vs } \\frac{${r2}}{${s2}}` 
             });
         }
@@ -89,8 +91,9 @@ export class SimilarityGen {
         };
     }
 
-    // Level 2: Calc Side
+    // Level 2: Calc Side (Updated with more variety and division)
     private level2_CalcSide(lang: string): any {
+        // Expanded scale factors: decimals and larger integers
         const k = MathUtils.randomChoice([1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]);
         
         const s1 = MathUtils.randomInt(3, 12);
@@ -99,14 +102,18 @@ export class SimilarityGen {
         const bigS1 = Math.round(s1 * k * 10) / 10;
         const bigS2 = Math.round(s2 * k * 10) / 10;
         
-        const findBig = MathUtils.randomInt(0, 1) === 0; // 0 for Big (Multiply), 1 for Small (Divide)
-        
+        // Randomly find small side (division) or big side (multiplication)
+        const findBig = MathUtils.randomInt(0, 1) === 1;
         let ans = 0, clues = [];
-        let lLabels: any = { s1: s1, s2: s2 };
-        let rLabels: any = {}; // Init empty
+
+        let lLabels: any = { s1, s2 };
+        let rLabels: any = {};
 
         if (findBig) {
+            // Finding a side on the larger triangle
             ans = bigS1;
+            // Left (Small) has s1, s2. Right (Big) has x, bigS2.
+            lLabels = { s1: s1, s2: s2 };
             rLabels = { s1: 'x', s2: bigS2 };
             
             clues.push({ 
@@ -118,7 +125,9 @@ export class SimilarityGen {
                 latex: `x = ${s1} \\cdot ${k} = \\mathbf{${ans}}` 
             });
         } else {
+            // Finding a side on the smaller triangle
             ans = s1;
+            // Left (Small) has x, s2. Right (Big) has bigS1, bigS2.
             lLabels = { s1: 'x', s2: s2 };
             rLabels = { s1: bigS1, s2: bigS2 };
             
@@ -153,6 +162,8 @@ export class SimilarityGen {
         const smallBase = MathUtils.randomInt(5, 12);
         const largeBase = (tot / top) * smallBase;
         
+        // Ensure integer answer or simple decimal
+        // Reroll if ugly
         if (!Number.isInteger(largeBase) && (largeBase * 10) % 5 !== 0) return this.level3_TopTriangle(lang);
 
         return {

@@ -174,14 +174,11 @@ export const GeometryVisual = ({ data }) => {
         const leftDims = { ...data.left, width: 40, height: 40, radius: 20, subtype: data.shapeType === 'triangle' ? 'isosceles' : undefined };
         const rightDims = { ...data.right, width: 60, height: 60, radius: 30, subtype: data.shapeType === 'triangle' ? 'isosceles' : undefined };
 
-        // Center is 250 (500/2). 
-        // Left offset: -80 from center = 170.
-        // Right offset: +80 from center = 330.
         return (
             <SvgContainer w={500} h={200} viewBox="0 0 500 200">
-                <RenderShape type={data.shapeType} dims={leftDims} labels={data.left.labels} offsetX={-80} scale={0.8} />
+                <RenderShape type={data.shapeType} dims={leftDims} labels={data.left.labels} offsetX={-25} scale={0.8} />
                 <text x="250" y="100" textAnchor="middle" fontSize="30" fill="#cbd5e1">→</text>
-                <RenderShape type={data.shapeType} dims={rightDims} labels={data.right.labels} offsetX={80} scale={1.2} />
+                <RenderShape type={data.shapeType} dims={rightDims} labels={data.right.labels} offsetX={225} scale={1.2} />
             </SvgContainer>
         );
     }
@@ -236,7 +233,7 @@ export const GeometryVisual = ({ data }) => {
 
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
-GeometryVisual.requiresCanvas = true;
+
 // ----------------------------------------------------------------------
 // 3D VOLUME VISUALIZATION
 // ----------------------------------------------------------------------
@@ -402,7 +399,7 @@ export const VolumeVisualization = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-2 w-full"><canvas ref={canvasRef} width={320} height={240} className="w-full max-w-[320px] h-auto bg-white rounded-lg" /></div>;
 };
-VolumeVisualization.requiresCanvas = true;
+
 // Graph Canvas Component
 export const GraphCanvas = ({ data }) => {
     const canvasRef = useRef(null);
@@ -449,7 +446,7 @@ export const GraphCanvas = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
-GraphCanvas.requiresCanvas = true;
+
 export const StaticGeometryVisual = ({ description }) => { 
     if (!description) return null; 
     const d = description.toLowerCase(); 
