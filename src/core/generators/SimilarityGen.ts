@@ -89,31 +89,47 @@ export class SimilarityGen {
         };
     }
 
-    // Level 2: Calc Side (Fixed labels to only include s1, s2)
+    // Level 2: Calc Side
     private level2_CalcSide(lang: string): any {
-        const k = MathUtils.randomChoice([2, 3, 1.5]);
-        const s1 = MathUtils.randomInt(3, 8);
-        const s2 = MathUtils.randomInt(4, 10);
-        const bigS2 = s2 * k; 
+        const k = MathUtils.randomChoice([1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]);
         
-        const findBig = MathUtils.randomInt(0, 1) === 1;
+        const s1 = MathUtils.randomInt(3, 12);
+        const s2 = MathUtils.randomInt(3, 12);
+        
+        const bigS1 = Math.round(s1 * k * 10) / 10;
+        const bigS2 = Math.round(s2 * k * 10) / 10;
+        
+        const findBig = MathUtils.randomInt(0, 1) === 0; // 0 for Big (Multiply), 1 for Small (Divide)
+        
         let ans = 0, clues = [];
-
-        let lLabels: any = { s1, s2 };
-        let rLabels: any = {};
+        let lLabels: any = { s1: s1, s2: s2 };
+        let rLabels: any = {}; // Init empty
 
         if (findBig) {
-            ans = s1 * k;
+            ans = bigS1;
             rLabels = { s1: 'x', s2: bigS2 };
-            clues.push({ text: lang === 'sv' ? "Räkna ut skalan." : "Calculate scale.", latex: `k = ${bigS2} / ${s2} = ${k}` });
-            clues.push({ text: lang === 'sv' ? "Multiplicera." : "Multiply.", latex: `x = ${s1} \\cdot ${k} = \\mathbf{${ans}}` });
+            
+            clues.push({ 
+                text: lang === 'sv' ? "1. Hitta skalan genom att jämföra de kända sidorna." : "1. Find scale by comparing the known sides.", 
+                latex: `k = \\frac{${bigS2}}{${s2}} = ${k}` 
+            });
+            clues.push({ 
+                text: lang === 'sv' ? "2. Den okända sidan är i den stora figuren. Multiplicera." : "2. The unknown side is in the large shape. Multiply.", 
+                latex: `x = ${s1} \\cdot ${k} = \\mathbf{${ans}}` 
+            });
         } else {
-            const bigS1 = s1 * k;
             ans = s1;
             lLabels = { s1: 'x', s2: s2 };
             rLabels = { s1: bigS1, s2: bigS2 };
-            clues.push({ text: lang === 'sv' ? "Räkna ut skalan." : "Calculate scale.", latex: `k = ${bigS2} / ${s2} = ${k}` });
-            clues.push({ text: lang === 'sv' ? "Dela." : "Divide.", latex: `x = ${bigS1} / ${k} = \\mathbf{${ans}}` });
+            
+            clues.push({ 
+                text: lang === 'sv' ? "1. Hitta skalan genom att jämföra de kända sidorna." : "1. Find scale by comparing the known sides.", 
+                latex: `k = \\frac{${bigS2}}{${s2}} = ${k}` 
+            });
+            clues.push({ 
+                text: lang === 'sv' ? "2. Den okända sidan är i den lilla figuren. Dividera." : "2. The unknown side is in the small shape. Divide.", 
+                latex: `x = \\frac{${bigS1}}{${k}} = \\mathbf{${ans}}` 
+            });
         }
         
         return {
@@ -133,6 +149,7 @@ export class SimilarityGen {
         const top = MathUtils.randomInt(4, 10);
         const add = MathUtils.randomInt(2, 6);
         const tot = top + add;
+        
         const smallBase = MathUtils.randomInt(5, 12);
         const largeBase = (tot / top) * smallBase;
         
@@ -147,8 +164,8 @@ export class SimilarityGen {
             },
             token: Buffer.from(largeBase.toString()).toString('base64'),
             clues: [
-                { text: lang === 'sv' ? "Liten/Stor = Liten/Stor" : "Small/Big = Small/Big", latex: `\\frac{${top}}{${tot}} = \\frac{${smallBase}}{x}` },
-                { text: lang === 'sv' ? "Lös ut x." : "Solve for x.", latex: `x = \\mathbf{${largeBase}}` }
+                { text: lang === 'sv' ? "Topptriangelsatsen: Liten/Stor = Liten/Stor" : "Top Triangle Theorem: Small side / Big side = Small base / Big base", latex: `\\frac{${top}}{${tot}} = \\frac{${smallBase}}{x}` },
+                { text: lang === 'sv' ? "Lös ut x." : "Solve for x.", latex: `x = \\frac{${tot} \\cdot ${smallBase}}{${top}} = \\mathbf{${largeBase}}` }
             ]
         };
     }
@@ -162,28 +179,31 @@ export class SimilarityGen {
         let ans = 0;
         let labels: any = {};
         let clue = "";
+        let desc = "";
 
         if (findHyp) {
             ans = c;
             labels = { base: a, height: b, hypotenuse: 'x' };
             clue = `x = \\sqrt{${a}^2 + ${b}^2} = \\mathbf{${c}}`;
+            desc = lang === 'sv' ? "Beräkna hypotenusan (x)." : "Calculate hypotenuse (x).";
         } else {
             ans = a;
             labels = { base: 'x', height: b, hypotenuse: c };
             clue = `x = \\sqrt{${c}^2 - ${b}^2} = \\mathbf{${a}}`;
+            desc = lang === 'sv' ? "Beräkna kateten (x)." : "Calculate leg (x).";
         }
 
         return {
             renderData: { 
                 geometry: { type: 'triangle', subtype: 'right', width: a, height: b, labels, orientation: orient }, 
-                description: lang === 'sv' ? "Beräkna x." : "Calculate x.",
+                description: desc,
                 answerType: 'text',
                 latex: ""
             },
             token: Buffer.from(ans.toString()).toString('base64'),
             clues: [
                 { text: lang === 'sv' ? "Pythagoras sats:" : "Pythagoras theorem:", latex: "a^2 + b^2 = c^2" },
-                { latex: clue }
+                { text: lang === 'sv' ? (findHyp ? "För hypotenusan, addera kvadraterna." : "För en katet, subtrahera.") : (findHyp ? "Add squares." : "Subtract squares."), latex: clue }
             ]
         };
     }

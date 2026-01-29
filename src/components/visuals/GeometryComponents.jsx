@@ -16,6 +16,17 @@ export const GeometryVisual = ({ data }) => {
     const mkTxt = (x, y, txt, anchor="middle", baseline="middle", color="#374151") => 
         <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
 
+    // Angle Arc Helper (Restored for Similarity Level 1)
+    const AngleArc = ({ x, y, startAngle, endAngle, label }) => {
+        const r = 25;
+        return (
+            <g>
+                <circle cx={x} cy={y} r={r} fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray={`${r*1.5}, 1000`} transform={`rotate(${startAngle}, ${x}, ${y})`} />
+                {label && <text x={x + (startAngle === 0 ? 10 : -10)} y={y + (startAngle > 0 ? -35 : 35)} textAnchor="middle" fontSize="14" fill="#dc2626" fontWeight="bold">{label}</text>}
+            </g>
+        );
+    };
+
     const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
         const cx = 150 + offsetX;
         const cy = 100 + offsetY;
@@ -26,8 +37,7 @@ export const GeometryVisual = ({ data }) => {
         const sh = (dims.height || 0) * baseScale;
         const sr = (dims.radius || 0) * baseScale;
 
-        // Determine what labels to show based on keys present in 'labels' object
-        // This prevents 'h=' from showing up when we only want sides s1/s2
+        // Extract labels safely
         const l_b = labels?.b || labels?.base || labels?.width || labels?.w;
         const l_h = labels?.h || labels?.height;
         const l_s1 = labels?.s1;
@@ -48,10 +58,11 @@ export const GeometryVisual = ({ data }) => {
         if (type === 'triangle') {
             const L = cx - sw/2, R = cx + sw/2, T = cy - sh/2, B = cy + sh/2;
             
+            // RIGHT TRIANGLE
             if (dims.subtype === 'right') {
                 const orient = dims.orientation || 'up';
                 let p1, p2, p3; 
-                let lPos = {};
+                let lPos = { h:{x:0,y:0}, b:{x:0,y:0}, hyp:{x:0,y:0} };
 
                 // Vertices based on orientation
                 if (orient === 'up') {
@@ -77,16 +88,18 @@ export const GeometryVisual = ({ data }) => {
                         {l_hyp && mkTxt(lPos.hyp.x, lPos.hyp.y, l_hyp)}
                     </g>
                 );
-            } else {
-                // Standard Isosceles/Scalene
+            } 
+            // STANDARD TRIANGLE
+            else {
                 const points = `${L},${B} ${R},${B} ${cx},${T}`;
-                // Only draw height line if height label is explicitly provided and we aren't doing angles
-                const showHLine = l_h && !dims.angles;
+                // Only show height line/label if explicit height label exists AND no angles are being shown
+                // This prevents 'h=' overlapping 's1/s2' labels in similarity checks
+                const showHeight = l_h && !dims.angles;
                 const hLine = <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
                 
                 return (
                     <g>
-                        {showHLine && hLine}
+                        {showHeight && hLine}
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
                         
                         {/* Angles */}
@@ -97,9 +110,9 @@ export const GeometryVisual = ({ data }) => {
                             </>
                         )}
 
-                        {/* Base/Height Labels - Only if keys exist */}
+                        {/* Base/Height Labels - Only if keys exist and we aren't showing angles */}
                         {l_b && mkTxt(cx, B + 25, l_b)}
-                        {l_h && !dims.angles && mkTxt(cx + 5, cy, l_h, "start")}
+                        {showHeight && mkTxt(cx + 5, cy, l_h, "start")}
                         
                         {/* Side Comparison Labels (s1, s2) */}
                         {l_s1 && mkTxt(cx - sw/4 - 15, cy, l_s1, "end")}
@@ -108,6 +121,7 @@ export const GeometryVisual = ({ data }) => {
                 );
             }
         }
+        
         if (type === 'circle') {
             const isDiameter = dims.show === 'diameter';
             return (
@@ -117,7 +131,7 @@ export const GeometryVisual = ({ data }) => {
                         isDiameter ? (
                             <>
                                 <line x1={cx - sr} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" strokeDasharray="4" />
-                                <text x={cx} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labels.val || `d=${dims.diameter}`}</text>
+                                <text x={cx} y={cy - 15} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labels.val || `d=${dims.diameter}`}</text>
                             </>
                         ) : (
                             <>
@@ -160,11 +174,14 @@ export const GeometryVisual = ({ data }) => {
         const leftDims = { ...data.left, width: 40, height: 40, radius: 20, subtype: data.shapeType === 'triangle' ? 'isosceles' : undefined };
         const rightDims = { ...data.right, width: 60, height: 60, radius: 30, subtype: data.shapeType === 'triangle' ? 'isosceles' : undefined };
 
+        // Center is 250 (500/2). 
+        // Left offset: -80 from center = 170.
+        // Right offset: +80 from center = 330.
         return (
             <SvgContainer w={500} h={200} viewBox="0 0 500 200">
-                <RenderShape type={data.shapeType} dims={leftDims} labels={data.left.labels} offsetX={-25} scale={0.8} />
+                <RenderShape type={data.shapeType} dims={leftDims} labels={data.left.labels} offsetX={-80} scale={0.8} />
                 <text x="250" y="100" textAnchor="middle" fontSize="30" fill="#cbd5e1">→</text>
-                <RenderShape type={data.shapeType} dims={rightDims} labels={data.right.labels} offsetX={225} scale={1.2} />
+                <RenderShape type={data.shapeType} dims={rightDims} labels={data.right.labels} offsetX={80} scale={1.2} />
             </SvgContainer>
         );
     }
@@ -220,7 +237,9 @@ export const GeometryVisual = ({ data }) => {
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
 GeometryVisual.requiresCanvas = true;
-// ... VolumeVisualization and GraphCanvas remain unchanged (assumed to be correct from previous steps) ...
+// ----------------------------------------------------------------------
+// 3D VOLUME VISUALIZATION
+// ----------------------------------------------------------------------
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
