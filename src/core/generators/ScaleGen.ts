@@ -1,7 +1,6 @@
 import { MathUtils } from '../utils/MathUtils.js';
 
 export class ScaleGen {
-    // Ensure these match the keys in GeometryComponents.jsx
     private static readonly SHAPES = ['arrow', 'star', 'lightning', 'key', 'heart', 'cloud', 'moon', 'sun'];
     private static readonly AREA_SHAPES = ['rectangle', 'triangle', 'circle', 'square'];
 
@@ -86,7 +85,7 @@ export class ScaleGen {
         if (isReduction) {
             if (subType === 0) { // Find Real
                 ans = imgVal * scale;
-                desc = lang === 'sv' ? `Bilden är ${imgVal} cm. Skalan är ${scaleStr}. Hur lång är den i verkligheten? (cm)` : `Image is ${imgVal} cm. Scale ${scaleStr}. Reality? (cm)`;
+                desc = lang === 'sv' ? `Bilden är ${imgVal} cm. Skalan är ${scaleStr}. Hur lång är den i verkligheten?` : `Image is ${imgVal} cm. Scale ${scaleStr}. Reality?`;
                 label = `${imgVal} cm`;
                 steps.push({ 
                     text: lang === 'sv' ? "Verkligheten är större än bilden. Multiplicera bilden med skalan." : "Reality is larger. Multiply image by scale.", 
@@ -106,7 +105,7 @@ export class ScaleGen {
             // Enlargement
             if (subType === 0) { // Find Image
                 ans = imgVal * scale;
-                desc = lang === 'sv' ? `Verkligheten är ${imgVal} cm. Skala ${scaleStr}. Hur stor blir den på bild?` : `Reality is ${imgVal} cm. Scale ${scaleStr}. Image size?`;
+                desc = lang === 'sv' ? `Verkligheten är ${imgVal} cm. Skala ${scaleStr}. Hur stor är bilden?` : `Reality is ${imgVal} cm. Scale ${scaleStr}. Image size?`;
                 label = `${imgVal} cm`;
                 steps.push({ 
                     text: lang === 'sv' ? "Bilden är en förstoring. Multiplicera verkligheten med skalan." : "Image is enlarged. Multiply reality by scale.", 
@@ -115,7 +114,7 @@ export class ScaleGen {
             } else { // Find Real
                 ans = imgVal;
                 const drawVal = ans * scale;
-                desc = lang === 'sv' ? `På bilden är den ${drawVal} cm. Skala ${scaleStr}. Hur stor är den i verkligheten?` : `Image is ${drawVal} cm. Scale ${scaleStr}. Reality?`;
+                desc = lang === 'sv' ? `På bilden är den ${drawVal} cm. Skala ${scaleStr}. Verkligheten?` : `Image is ${drawVal} cm. Scale ${scaleStr}. Reality?`;
                 label = `${drawVal} cm`;
                 steps.push({ 
                     text: lang === 'sv' ? "Verkligheten är mindre än den förstorade bilden. Dividera bildens mått med skalan." : "Reality is smaller than the enlarged image. Divide the image measurement by the scale.", 
@@ -131,7 +130,7 @@ export class ScaleGen {
         };
     }
 
-    // Level 3: Mixed Scenarios (Map, House, Model, Microscope, Astronomy, Weather)
+    // Level 3: Mixed Scenarios
     private level3_MixedScenarios(lang: string): any {
         const type = MathUtils.randomChoice(['map', 'house', 'model', 'microscope', 'astro', 'cloud']);
         
@@ -158,8 +157,8 @@ export class ScaleGen {
                 : `On a map distance is ${drawVal} cm. Scale is ${scaleStr}. How far is it in reality? (Answer in ${unit})`;
                 
             steps = [
-                { text: lang === 'sv' ? "Kartor är förminskningar. Verkligheten är större, så vi multiplicerar med skalan." : "Maps are reductions. Reality is larger, so we multiply by the scale.", latex: `${drawVal} \\cdot ${scale} = ${realCm} \\text{ cm}` },
-                { text: lang === 'sv' ? `Omvandla cm till ${unit} (1 km = 100 000 cm, 1 m = 100 cm).` : `Convert cm to ${unit} (1 km = 100,000 cm, 1 m = 100 cm).`, latex: `\\mathbf{${answer}}` }
+                { text: lang === 'sv' ? "1. Multiplicera först för att få svaret i cm." : "1. Multiply first to get answer in cm.", latex: `${drawVal} \\cdot ${scale} = ${realCm} \\text{ cm}` },
+                { text: lang === 'sv' ? `2. Omvandla till ${unit}.` : `2. Convert to ${unit}.`, latex: `\\mathbf{${answer}}` }
             ];
         } 
         else if (type === 'house') {
@@ -282,7 +281,7 @@ export class ScaleGen {
         };
     }
 
-    // Level 4: Determine Scale
+    // Level 4: Determine Scale (Pedagogical Update)
     private level4_DetermineScale(lang: string): any {
         const factor = MathUtils.randomChoice([2, 3, 4, 5]);
         const base = MathUtils.randomInt(2, 6);
@@ -290,47 +289,77 @@ export class ScaleGen {
         const isReduction = MathUtils.randomInt(0, 1) === 1;
         const shape = MathUtils.randomChoice(ScaleGen.SHAPES);
         
-        let leftL, rightL, leftV, rightV, ansLeft, ansRight;
+        let leftL, rightL, leftV, rightV, ansLeft, ansRight, desc;
         if (isReduction) {
             leftL = lang === 'sv' ? "Bild" : "Image"; leftV = `${base} cm`;
             rightL = lang === 'sv' ? "Verklighet" : "Reality"; rightV = `${lg} cm`;
             ansLeft = 1; ansRight = factor;
+            desc = lang === 'sv' 
+                ? `Jämför måtten. Bilden (${base} cm) är mindre än verkligheten (${lg} cm). Vad är skalan? (1:X)`
+                : `Compare sizes. Image (${base} cm) is smaller than reality (${lg} cm). What is the scale? (1:X)`;
         } else {
             leftL = lang === 'sv' ? "Verklighet" : "Reality"; leftV = `${base} cm`;
             rightL = lang === 'sv' ? "Bild" : "Image"; rightV = `${lg} cm`;
             ansLeft = factor; ansRight = 1;
+            desc = lang === 'sv' 
+                ? `Jämför måtten. Bilden (${lg} cm) är större än verkligheten (${base} cm). Vad är skalan? (X:1)`
+                : `Compare sizes. Image (${lg} cm) is larger than reality (${base} cm). What is the scale? (X:1)`;
         }
 
         return {
             renderData: {
-                description: lang === 'sv' ? "Bestäm skalan." : "Determine the scale.",
+                description: desc,
                 answerType: 'scale',
                 geometry: { type: 'scale_compare', shape, leftLabel: leftL, leftValue: leftV, rightLabel: rightL, rightValue: rightV }
             },
             token: Buffer.from(`${ansLeft}:${ansRight}`).toString('base64'),
             clues: [
-                { text: lang === 'sv' ? "Skala = Bild : Verklighet" : "Scale = Image : Reality", latex: "" },
-                { text: lang === 'sv' ? "Förenkla." : "Simplify.", latex: `1:${factor}` }
+                { text: lang === 'sv' ? "Skala = Bild : Verklighet" : "Scale = Image : Reality" },
+                { 
+                    text: lang === 'sv' ? "Dividera det stora talet med det lilla." : "Divide the big number by the small number.", 
+                    latex: `${lg} / ${base} = ${factor}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Skriv som skala." : "Write as a ratio.", 
+                    latex: isReduction ? `1:${factor}` : `${factor}:1` 
+                }
             ]
         };
     }
 
-    // Level 5: Word Problems
+    // Level 5: Word Problems (Pedagogical Update)
     private level5_NoPictures(lang: string): any {
         const scenarios = [
-            { sv: "Ett torn är 50 m högt. En modell är 50 cm hög.", en: "Tower is 50 m. Model is 50 cm.", scale: "1:100", conv: "50 m = 5000 cm" },
-            { sv: "En insekt är 5 mm lång. På bild 10 cm.", en: "Insect is 5 mm. Image is 10 cm.", scale: "20:1", conv: "10 cm = 100 mm" }
+            { 
+                sv: "Ett torn är 50 m högt. En modell är 50 cm hög. Vad är skalan?", 
+                en: "A tower is 50 m high. A model is 50 cm high. What is the scale?", 
+                scale: "1:100", conv: "50 m = 5000 cm" 
+            },
+            { 
+                sv: "En insekt är 5 mm lång. På bild är den 10 cm. Vad är skalan?", 
+                en: "An insect is 5 mm long. In a picture it is 10 cm. What is the scale?", 
+                scale: "20:1", conv: "10 cm = 100 mm" 
+            }
         ];
         const s = MathUtils.randomChoice(scenarios);
         
         return {
-            renderData: { description: `${s.sv} (Skala?)`, answerType: 'scale' },
+            renderData: { description: s.sv, answerType: 'scale' },
             token: Buffer.from(s.scale).toString('base64'),
-            clues: [{ text: lang === 'sv' ? "Gör om till samma enhet." : "Convert to same unit.", latex: s.conv }]
+            clues: [
+                { 
+                    text: lang === 'sv' ? "För att jämföra måste vi ha samma enhet." : "To compare, we must use the same unit.", 
+                    latex: s.conv 
+                },
+                { 
+                    text: lang === 'sv' ? "Ställ upp förhållandet Bild : Verklighet och förenkla." : "Set up Image : Reality and simplify.", 
+                    latex: `\\text{Scale} = ${s.scale}` 
+                }
+            ]
         };
     }
 
-    // Level 6: Area Scale
+    // Level 6: Area Scale (Pedagogical Update)
     private level6_AreaScale(lang: string): any {
         const shape = MathUtils.randomChoice(ScaleGen.AREA_SHAPES);
         const L = MathUtils.randomInt(2, 5); 
@@ -338,14 +367,27 @@ export class ScaleGen {
         const baseArea = MathUtils.randomInt(2, 10);
         const bigArea = baseArea * A;
 
+        const desc = lang === 'sv' 
+            ? `Längdskalan är 1:${L}. Lilla arean är ${baseArea} cm². Hur stor är den stora arean?`
+            : `Length scale 1:${L}. Small area ${baseArea} cm². How big is the large area?`;
+
         return {
             renderData: {
-                description: lang === 'sv' ? `Längdskala 1:${L}. Lilla arean ${baseArea}. Stora arean?` : `Length scale 1:${L}. Small area ${baseArea}. Big area?`,
+                description: desc,
                 answerType: 'numeric',
                 geometry: { type: 'compare_shapes_area', shapeType: shape, left: { label: 'Bild', area: baseArea }, right: { label: 'Verklighet', area: '?' } }
             },
             token: Buffer.from(bigArea.toString()).toString('base64'),
-            clues: [{ latex: `A_{skala} = L_{skala}^2 = ${L}^2 = ${A}` }]
+            clues: [
+                { 
+                    text: lang === 'sv' ? "Kom ihåg: Areaskalan är längdskalan upphöjt till 2." : "Remember: Area scale is length scale squared.", 
+                    latex: `A_{skala} = L_{skala}^2 = ${L}^2 = ${A}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Arean blir ${A} gånger större.` : `Area becomes ${A} times larger.`, 
+                    latex: `${baseArea} \\cdot ${A} = \\mathbf{${bigArea}}` 
+                }
+            ]
         };
     }
 

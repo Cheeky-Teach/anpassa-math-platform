@@ -20,7 +20,16 @@ export class GeometryGenerator {
         const h = MathUtils.randomInt(2, 8);
         const ans = 2 * (w + h);
         return {
-            renderData: { geometry: { type: 'rectangle', width: w, height: h, labels: { width: w, height: h } }, description: lang === 'sv' ? "Beräkna omkretsen." : "Calculate the perimeter.", answerType: 'text' },
+            renderData: { 
+                geometry: { 
+                    type: 'rectangle', 
+                    width: w, 
+                    height: h, 
+                    labels: { b: w, h: h } // Explicit b/h
+                }, 
+                description: lang === 'sv' ? "Beräkna omkretsen." : "Calculate the perimeter.", 
+                answerType: 'text' 
+            },
             token: Buffer.from(ans.toString()).toString('base64'),
             clues: [
                 { text: lang === 'sv' ? "Omkretsen är sträckan runt hela figuren." : "Perimeter is the distance around the shape.", latex: "" },
@@ -34,7 +43,16 @@ export class GeometryGenerator {
         const h = MathUtils.randomInt(2, 8);
         const ans = w * h;
         return {
-            renderData: { geometry: { type: 'rectangle', width: w, height: h, labels: { width: w, height: h } }, description: lang === 'sv' ? "Beräkna arean." : "Calculate the area.", answerType: 'text' },
+            renderData: { 
+                geometry: { 
+                    type: 'rectangle', 
+                    width: w, 
+                    height: h, 
+                    labels: { b: w, h: h } // Explicit b/h
+                }, 
+                description: lang === 'sv' ? "Beräkna arean." : "Calculate the area.", 
+                answerType: 'text' 
+            },
             token: Buffer.from(ans.toString()).toString('base64'),
             clues: [
                 { text: lang === 'sv' ? "Area = Basen · Höjden" : "Area = Base · Height", latex: `A = ${w} \\cdot ${h}` },
@@ -50,8 +68,15 @@ export class GeometryGenerator {
         const subtype = MathUtils.randomChoice(['right', 'isosceles']); 
         return {
             renderData: { 
-                geometry: { type: 'triangle', subtype, width: b, height: h, labels: { width: b, height: h } }, 
-                description: lang === 'sv' ? "Beräkna arean." : "Calculate the area.", answerType: 'text' 
+                geometry: { 
+                    type: 'triangle', 
+                    subtype, 
+                    width: b, 
+                    height: h, 
+                    labels: { b: b, h: h } // Explicit b/h
+                }, 
+                description: lang === 'sv' ? "Beräkna arean." : "Calculate the area.", 
+                answerType: 'text' 
             },
             token: Buffer.from(ans.toString()).toString('base64'),
             clues: [
@@ -99,63 +124,41 @@ export class GeometryGenerator {
 
     private level5_Composite(lang: string): any {
         const type = MathUtils.randomChoice(['house', 'portal']);
-        // Increased random range up to 20
         let w = MathUtils.randomInt(4, 20);
         const h = MathUtils.randomInt(4, 20);
-        
+        if (type === 'portal' && w % 2 !== 0) w += 1;
+
         const isArea = MathUtils.randomInt(0, 1) === 1;
         let ans = 0, steps = [], geom: any = {}, desc = "";
 
         if (type === 'house') {
             const hRoof = MathUtils.randomInt(3, 10);
-
             if (isArea) {
                 const aRect = w * h;
                 const aTri = (w * hRoof) / 2;
                 ans = aRect + aTri;
-                
-                desc = lang === 'sv' 
-                    ? `Beräkna arean av huset (Rektangel ${w}x${h} + Tak ${hRoof}).` 
-                    : `Calculate house area (Rectangle ${w}x${h} + Roof ${hRoof}).`;
-
+                desc = lang === 'sv' ? `Beräkna arean. (Rektangel ${w}x${h} + Tak höjd ${hRoof})` : `Calculate area.`;
                 steps = [{ latex: `${w}\\cdot${h} + \\frac{${w}\\cdot${hRoof}}{2} = \\mathbf{${ans}}` }];
             } else {
-                // Perimeter
                 const half = w / 2;
                 const slope = Math.sqrt(half*half + hRoof*hRoof);
                 ans = Math.round((w + 2*h + 2*slope) * 10) / 10;
-                
-                desc = lang === 'sv' 
-                    ? `Beräkna omkretsen (Bredd ${w}, Vägg ${h}, Takhöjd ${hRoof}).` 
-                    : `Calculate perimeter (Width ${w}, Wall ${h}, Roof height ${hRoof}).`;
-
+                desc = lang === 'sv' ? `Beräkna omkretsen. (Bredd ${w}, Vägg ${h}, Tak höjd ${hRoof})` : `Calculate perimeter.`;
                 steps = [{ latex: `${w} + 2\\cdot${h} + 2\\cdot${Math.round(slope*10)/10} \\approx \\mathbf{${ans}}` }];
             }
             geom = { type: 'composite', subtype: 'house', labels: { w, h, h_roof: hRoof } };
         } else {
-            // Portal (Rectangle + Semicircle)
-            // Ensure width is even for cleaner radius
-            if (w % 2 !== 0) w += 1;
             const r = w / 2;
-
             if (isArea) {
                 const aRect = w * h;
                 const aSemi = Math.round(3.14 * r * r / 2 * 10) / 10;
                 ans = Math.round((aRect + aSemi)*10)/10;
-                
-                desc = lang === 'sv' 
-                    ? `Beräkna arean av portalen (Bredd ${w}, Höjd ${h}).` 
-                    : `Calculate portal area (Width ${w}, Height ${h}).`;
-
+                desc = lang === 'sv' ? `Beräkna arean av portalen (Bredd ${w}, Höjd ${h}).` : `Calculate portal area.`;
                 steps = [{ latex: `${w}\\cdot${h} + \\frac{3.14\\cdot${r}^2}{2} \\approx \\mathbf{${ans}}` }];
             } else {
-                const arc = 3.14 * r; // half circ
+                const arc = 3.14 * r;
                 ans = Math.round((w + 2*h + arc) * 10) / 10;
-                
-                desc = lang === 'sv' 
-                    ? `Beräkna omkretsen (Bredd ${w}, Höjd ${h}).` 
-                    : `Calculate perimeter (Width ${w}, Height ${h}).`;
-
+                desc = lang === 'sv' ? `Beräkna omkretsen (Bredd ${w}, Höjd ${h}).` : `Calculate perimeter.`;
                 steps = [{ latex: `${w} + 2\\cdot${h} + 3.14\\cdot${r} \\approx \\mathbf{${ans}}` }];
             }
             geom = { type: 'composite', subtype: 'portal', labels: { w, h } };

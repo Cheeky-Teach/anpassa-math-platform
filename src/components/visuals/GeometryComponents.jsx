@@ -10,29 +10,37 @@ export const GeometryVisual = ({ data }) => {
     const mkTxt = (x, y, txt, anchor = "middle", baseline = "middle", color = "#374151") =>
         <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
 
-    // Helper: Render Any Shape (Returns a <g> group, not an <svg>)
+    // Helper: Render Any Shape (Returns a <g> group)
     const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
-        const cx = 150 + offsetX; // Center X relative to container
-        const cy = 100 + offsetY; // Center Y relative to container
+        const cx = 150 + offsetX;
+        const cy = 125 + offsetY; // Center Y relative to container (Height 250)
         
-        // Dynamic scaling to fit shape in a ~120px box
-        const maxDim = Math.max(dims.width || 0, dims.height || 0, (dims.radius || 0) * 2) || 1;
+        // Scale logic
+        const maxDim = Math.max(dims.width || 0, dims.height || 0, (dims.radius || 0) * 2) || 10;
         const baseScale = (120 / maxDim) * scale;
 
         const sw = (dims.width || 0) * baseScale;
         const sh = (dims.height || 0) * baseScale;
         const sr = (dims.radius || 0) * baseScale;
 
+        // Robust Label Extraction
+        // Note: We access dims.width/height as fallback if labels are missing entirely
+        const l_b = labels?.b || labels?.base || labels?.width || labels?.w || (type === 'rectangle' ? dims.width : null);
+        const l_h = labels?.h || labels?.height || (type === 'rectangle' ? dims.height : null);
+        const l_s1 = labels?.s1;
+        const l_s2 = labels?.s2;
+        const l_hyp = labels?.hypotenuse;
+
         // --- RECTANGLE ---
         if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
             return (
                 <g>
                     <rect x={cx - sw / 2} y={cy - sh / 2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                    {labels?.b && mkTxt(cx, cy + sh / 2 + 20, labels.b)}
-                    {labels?.h && mkTxt(cx + sw / 2 + 15, cy, labels.h, "start")}
-                    {/* For scale/similarity where labels might be s1/s2 */}
-                    {labels?.s1 && mkTxt(cx, cy + sh / 2 + 20, labels.s1)} 
-                    {labels?.s2 && mkTxt(cx + sw / 2 + 15, cy, labels.s2, "start")}
+                    {/* Bottom Label: Adjusted Y offset to ensure visibility */}
+                    {l_b && mkTxt(cx, cy + sh / 2 + 25, l_b)}
+                    {/* Side Label */}
+                    {l_h && mkTxt(cx + sw / 2 + 15, cy, l_h, "start")}
+                    {/* Area Text (Center) */}
                     {areaText && mkTxt(cx, cy, `${areaText} cm²`, "middle", "middle", "#064e3b")}
                 </g>
             );
@@ -48,11 +56,10 @@ export const GeometryVisual = ({ data }) => {
             // Logic for Right Triangles (Pythagoras)
             if (dims.subtype === 'right') {
                 const orient = dims.orientation || 'up';
-                let p1, p2, p3; // Vertices
-                let lPos = { h: {}, b: {}, hyp: {} }; // Label Positions
+                let p1, p2, p3; 
+                let lPos = { h: {}, b: {}, hyp: {} }; 
 
-                // Define coordinates based on rotation
-                if (orient === 'up') { // Standard L-shape
+                if (orient === 'up') {
                     p1 = { x: L, y: T }; p2 = { x: L, y: B }; p3 = { x: R, y: B };
                     lPos = { h: { x: L - 15, y: cy }, b: { x: cx, y: B + 25 }, hyp: { x: cx + 10, y: cy - 10 } };
                 } else if (orient === 'down') {
@@ -70,10 +77,10 @@ export const GeometryVisual = ({ data }) => {
                 return (
                     <g>
                         <polygon points={path} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {labels?.height && mkTxt(lPos.h.x, lPos.h.y, labels.height)}
-                        {labels?.base && mkTxt(lPos.b.x, lPos.b.y, labels.base)}
-                        {labels?.hypotenuse && mkTxt(lPos.hyp.x, lPos.hyp.y, labels.hypotenuse)}
-                        {/* Fallback for s1/s2 keys */}
+                        {l_h && mkTxt(lPos.h.x, lPos.h.y, l_h)}
+                        {l_b && mkTxt(lPos.b.x, lPos.b.y, l_b)}
+                        {l_hyp && mkTxt(lPos.hyp.x, lPos.hyp.y, l_hyp)}
+                        {/* Fallbacks for s1/s2 if used in Similarity context on right triangles */}
                         {labels?.s1 && mkTxt(lPos.b.x, lPos.b.y, labels.s1)}
                         {labels?.s2 && mkTxt(lPos.h.x, lPos.h.y, labels.s2)}
                     </g>
@@ -82,8 +89,8 @@ export const GeometryVisual = ({ data }) => {
             // Standard Isosceles (Similarity/Area)
             else {
                 const points = `${L},${B} ${R},${B} ${cx},${T}`;
-                // Only show height line if 'h' or 'height' label exists AND no angles are shown
-                const showHLine = (labels?.h || labels?.height) && !dims.angles;
+                // Show height line only if 'h' label exists AND no angles are shown
+                const showHLine = l_h && !dims.angles;
                 
                 return (
                     <g>
@@ -99,13 +106,12 @@ export const GeometryVisual = ({ data }) => {
                         )}
 
                         {/* Labels */}
-                        {labels?.base && mkTxt(cx, B + 25, labels.base)}
-                        {labels?.b && mkTxt(cx, B + 25, labels.b)}
-                        {showHLine && mkTxt(cx + 10, cy + 10, labels.height || labels.h, "start")}
+                        {l_b && mkTxt(cx, B + 25, l_b)}
+                        {showHLine && mkTxt(cx + 5, cy, l_h, "start")}
                         
                         {/* Side Comparison Labels */}
-                        {labels?.s1 && mkTxt(cx - sw / 4 - 15, cy, labels.s1, "end")}
-                        {labels?.s2 && mkTxt(cx + sw / 4 + 15, cy, labels.s2, "start")}
+                        {l_s1 && mkTxt(cx - sw / 4 - 15, cy, l_s1, "end")}
+                        {l_s2 && mkTxt(cx + sw / 4 + 15, cy, l_s2, "start")}
                     </g>
                 );
             }
@@ -121,7 +127,7 @@ export const GeometryVisual = ({ data }) => {
                     {isDiameter ? (
                         <>
                             <line x1={cx - sr} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" strokeDasharray="4" />
-                            <text x={cx} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labelTxt}</text>
+                            <text x={cx} y={cy - 15} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labelTxt}</text>
                         </>
                     ) : (
                         <>
@@ -141,14 +147,16 @@ export const GeometryVisual = ({ data }) => {
 
     // 1. Similarity Comparison (Wide Canvas, Two Shapes)
     if (data.type === 'similarity_compare') {
-        const leftDims = { ...data.left, width: 40, height: 40, radius: 20, subtype: data.shapeType === 'triangle' ? 'isosceles' : undefined };
-        const rightDims = { ...data.right, width: 60, height: 60, radius: 30, subtype: data.shapeType === 'triangle' ? 'isosceles' : undefined };
+        // Ensure subtypes are set correctly
+        const shapeType = data.shapeType || 'triangle';
+        const leftDims = { ...data.left, width: 40, height: 40, radius: 20, subtype: shapeType === 'triangle' ? 'isosceles' : undefined };
+        const rightDims = { ...data.right, width: 60, height: 60, radius: 30, subtype: shapeType === 'triangle' ? 'isosceles' : undefined };
 
         return (
-            <svg width="500" height="200" viewBox="0 0 500 200" className="my-2 w-full mx-auto" style={{ maxWidth: '500px' }}>
-                <RenderShape type={data.shapeType} dims={leftDims} labels={data.left.labels} offsetX={-25} scale={0.8} />
-                <text x="250" y="100" textAnchor="middle" fontSize="30" fill="#cbd5e1">→</text>
-                <RenderShape type={data.shapeType} dims={rightDims} labels={data.right.labels} offsetX={225} scale={1.2} />
+            <svg width="500" height="250" viewBox="0 0 500 250" className="my-2 w-full mx-auto" style={{ maxWidth: '500px' }}>
+                <RenderShape type={shapeType} dims={leftDims} labels={data.left.labels} offsetX={-25} scale={0.8} />
+                <text x="250" y="125" textAnchor="middle" fontSize="30" fill="#cbd5e1">→</text>
+                <RenderShape type={shapeType} dims={rightDims} labels={data.right.labels} offsetX={225} scale={1.2} />
             </svg>
         );
     }
@@ -180,13 +188,17 @@ export const GeometryVisual = ({ data }) => {
     if (data.type === 'transversal') {
         const labels = data.labels;
         return (
-            <svg width="300" height="200" viewBox="0 0 300 200" className="my-2 w-full max-w-[300px] mx-auto">
-                <polygon points="150,20 50,180 250,180" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.3" />
-                <line x1="100" y1="100" x2="200" y2="100" stroke="#059669" strokeWidth="3" />
-                <text x="85" y="60" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_top}</text>
-                <text x="40" y="100" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_tot}</text>
-                <text x="150" y="90" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_top}</text>
-                <text x="150" y="200" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_bot}</text>
+            <svg width="300" height="250" viewBox="0 0 300 250" className="my-2 w-full max-w-[300px] mx-auto">
+                <polygon points="150,30 50,220 250,220" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.3" />
+                <line x1="100" y1="125" x2="200" y2="125" stroke="#059669" strokeWidth="3" />
+                
+                <text x="85" y="80" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_top}</text>
+                <text x="40" y="150" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_tot}</text>
+                <text x="150" y="115" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_top}</text>
+                <text x="150" y="240" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_bot}</text>
+                
+                <path d="M 150 125 l -5 -5 m 5 5 l -5 5" stroke="#059669" strokeWidth="2" fill="none"/>
+                <path d="M 150 220 l -5 -5 m 5 5 l -5 5" stroke="#10b981" strokeWidth="2" fill="none"/>
             </svg>
         );
     }
@@ -194,19 +206,18 @@ export const GeometryVisual = ({ data }) => {
     // 4. Area Scale Comparison
     if (data.type === 'compare_shapes_area') {
         return (
-             <svg width="500" height="200" viewBox="0 0 500 200" className="my-2 w-full mx-auto" style={{ maxWidth: '500px' }}>
+             <svg width="500" height="250" viewBox="0 0 500 250" className="my-2 w-full mx-auto" style={{ maxWidth: '500px' }}>
                 <RenderShape type={data.shapeType} dims={data.left} areaText={data.left.area} offsetX={-25} scale={0.8} />
-                <text x="250" y="100" textAnchor="middle" fontSize="30" fill="#cbd5e1">→</text>
+                <text x="250" y="125" textAnchor="middle" fontSize="30" fill="#cbd5e1">→</text>
                 <RenderShape type={data.shapeType} dims={data.right} areaText={data.right.area} offsetX={225} scale={1.2} />
             </svg>
         );
     }
 
     // 5. Standard Single Shapes (Rect, Tri, Circle)
-    // This catches Level 4 Similarity (Pythagoras) because type='triangle'
     if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle'].includes(data.type)) {
         return (
-            <svg width="300" height="200" viewBox="0 0 300 200" className="my-2 w-full max-w-[300px] mx-auto">
+            <svg width="300" height="250" viewBox="0 0 300 250" className="my-2 w-full max-w-[300px] mx-auto">
                 <RenderShape type={data.type} dims={data} labels={data.labels} />
             </svg>
         );
@@ -241,9 +252,7 @@ export const GeometryVisual = ({ data }) => {
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
 
-// ----------------------------------------------------------------------
-// 2. GRAPH CANVAS
-// ----------------------------------------------------------------------
+// ... VolumeVisualization and GraphCanvas remain unchanged ...
 export const GraphCanvas = ({ data }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
@@ -290,9 +299,6 @@ export const GraphCanvas = ({ data }) => {
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
 
-// ----------------------------------------------------------------------
-// 3. VOLUME VISUALIZATION
-// ----------------------------------------------------------------------
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
@@ -453,14 +459,9 @@ export const VolumeVisualization = ({ data }) => {
             }
         }
     }, [data]);
-    return <div className="flex justify-center my-2 w-full"><canvas ref={canvasRef} width={320} height={240} className="w-full max-w-[320px] h-auto bg-white rounded-lg" /></div>;
+    return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={320} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
 
-VolumeVisualization.requiresCanvas = true;
-
-// ----------------------------------------------------------------------
-// 4. STATIC FALLBACK VISUAL
-// ----------------------------------------------------------------------
 export const StaticGeometryVisual = ({ description }) => { 
     if (!description) return null; 
     const d = description.toLowerCase(); 
