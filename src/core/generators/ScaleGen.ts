@@ -17,6 +17,16 @@ export class ScaleGen {
         }
     }
 
+    // Helper to safely format numbers (replaces MathUtils.formatNumber dependency)
+    private formatNum(n: number): string {
+        return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    }
+
+    // Helper for Base64 (Node/Browser safe-ish)
+    private toBase64(str: string): string {
+        return Buffer.from(str).toString('base64');
+    }
+
     // Level 1: Basic Concepts (Understanding 1:X vs X:1)
     private level1_Concepts(lang: string): any {
         // Fallback for shuffle if MathUtils is missing it
@@ -59,7 +69,7 @@ export class ScaleGen {
                     shape: 'arrow' // Safe shape
                 }
             },
-            token: Buffer.from(correct).toString('base64'),
+            token: this.toBase64(correct),
             clues: []
         };
     }
@@ -88,14 +98,14 @@ export class ScaleGen {
                 },
                 suffix: 'cm'
             },
-            token: Buffer.from(realSize.toString()).toString('base64'),
+            token: this.toBase64(realSize.toString()),
             clues: [
                 { text: lang === 'sv' ? "Multiplicera med skalan." : "Multiply by the scale.", latex: `${imageSize} \\\\cdot ${scale}` }
             ]
         };
     }
 
-    // Level 3: Mixed Scenarios
+    // Level 3: Mixed Scenarios (Fixed formatting)
     private level3_MixedScenarios(lang: string): any {
         const scenarioType = MathUtils.randomChoice([0, 1, 2, 3]);
 
@@ -117,8 +127,8 @@ export class ScaleGen {
             suffix = useMeters ? 'm' : 'km';
 
             desc = lang === 'sv'
-                ? `På en karta i skala 1:${scaleBase} är avståndet mellan två stugor ${mapCm} cm. Hur långt är det i verkligheten? Svara i ${suffix}.`
-                : `On a map with scale 1:${scaleBase}, the distance between two cabins is ${mapCm} cm. How far is it in reality? Answer in ${suffix}.`;
+                ? `På en karta i skala 1:${this.formatNum(scaleBase)} är avståndet mellan två stugor ${mapCm} cm. Hur långt är det i verkligheten? Svara i ${suffix}.`
+                : `On a map with scale 1:${this.formatNum(scaleBase)}, the distance between two cabins is ${mapCm} cm. How far is it in reality? Answer in ${suffix}.`;
 
             visualData = {
                 type: 'scale_compare',
@@ -132,7 +142,7 @@ export class ScaleGen {
             clues = [
                 {
                     text: lang === 'sv' ? "Räkna ut cm i verkligheten." : "Calc real cm.",
-                    latex: `${mapCm} \\\\cdot ${scaleBase} = ${MathUtils.formatNumber(realCm)} \\\\text{ cm}`
+                    latex: `${mapCm} \\\\cdot ${this.formatNum(scaleBase)} = ${this.formatNum(realCm)} \\\\text{ cm}`
                 },
                 {
                     text: lang === 'sv' ? `Omvandla cm till ${suffix}.` : `Convert cm to ${suffix}.`,
@@ -253,7 +263,7 @@ export class ScaleGen {
                 geometry: visualData,
                 suffix: suffix
             },
-            token: Buffer.from(answer.toString()).toString('base64'),
+            token: this.toBase64(answer.toString()),
             clues: clues
         };
     }
@@ -274,7 +284,7 @@ export class ScaleGen {
                 answerType: 'text',
                 placeholder: '1:...'
             },
-            token: Buffer.from(`1:${scale}`).toString('base64'),
+            token: this.toBase64(`1:${scale}`),
             clues: [
                 { text: lang === 'sv' ? "Gör om till samma enhet (cm)." : "Convert to same unit (cm).", latex: `${realM} \\\\text{ m} = ${realM*100} \\\\text{ cm}` },
                 { text: lang === 'sv' ? "Jämför bild och verklighet." : "Compare image and reality.", latex: `${drawCm} : ${realM*100}` },
@@ -290,7 +300,7 @@ export class ScaleGen {
         return data;
     }
 
-    // Level 6: Area Scale (Fixed Dimensions)
+    // Level 6: Area Scale (Fixed Visuals)
     private level6_AreaScale(lang: string): any {
         const shape = MathUtils.randomChoice(['rectangle', 'triangle']);
         const L = MathUtils.randomInt(2, 5); 
@@ -326,11 +336,13 @@ export class ScaleGen {
                 geometry: { 
                     type: 'compare_shapes_area', 
                     shapeType: shape, 
+                    // Left (Image)
                     left: { 
                         width: width, height: height, subtype: subtype,
                         label: lang === 'sv'?'Bild':'Image', area: baseArea,
                         labels: { b: width, h: height } 
                     }, 
+                    // Right (Reality - Scaled)
                     right: { 
                         width: scaledWidth, height: scaledHeight, subtype: subtype,
                         label: lang === 'sv'?'Verklighet':'Reality', area: '?',
@@ -339,7 +351,7 @@ export class ScaleGen {
                 },
                 suffix: 'cm²'
             },
-            token: Buffer.from(bigArea.toString()).toString('base64'),
+            token: this.toBase64(bigArea.toString()),
             clues: [
                 { 
                     text: lang === 'sv' ? "Area skalan = (Längdskalan)²" : "Area scale = (Length scale)²", 
