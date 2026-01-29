@@ -7,6 +7,28 @@ import LevelUpModal from '../modals/LevelUpModal';
 import StreakModal from '../modals/StreakModal'; 
 import { LEVEL_DESCRIPTIONS } from '../../constants/localization'; 
 
+// --- SECURITY HELPERS ---
+
+const isValidInput = (val, type) => {
+    if (!val) return false;
+    
+    // Strict Numeric Check (allows negative, decimal, ratio colon)
+    // Regex: Optional minus, digits, optional decimal/comma/colon, digits
+    const numericRegex = /^-?[\d\s]*([.,:]\d*)?$/;
+
+    if (type === 'numeric' || type === 'scale') {
+        return numericRegex.test(val);
+    }
+    
+    // Text Sanitization (Block HTML/Script tags)
+    const dangerousRegex = /[<>{}]/g;
+    return !dangerousRegex.test(val);
+};
+
+const sanitize = (val) => {
+    return val.replace(/[<>{}]/g, "");
+};
+
 const PracticeView = ({ 
     lang, 
     ui, 
@@ -45,16 +67,45 @@ const PracticeView = ({
     const handleChoiceClick = (choice) => { 
         if (feedback === 'correct') return; 
         setInput(choice); 
-        // Force update to parent if needed, but usually handleSubmit handles the logic
         handleSubmit({ preventDefault: () => { } }, choice); 
     };
     
+    // --- SECURE SUBMIT HANDLER ---
     const handleFormSubmit = (e) => {
-        if (question.renderData.answerType === 'scale') {
-            const combined = `${scaleInputLeft}:${scaleInputRight}`;
-            handleSubmit(e, combined);
+        e.preventDefault();
+        
+        let finalInput = input;
+        const answerType = question.renderData.answerType;
+
+        if (answerType === 'scale') {
+            // Validate both parts of scale
+            if (!isValidInput(scaleInputLeft, 'numeric') || !isValidInput(scaleInputRight, 'numeric')) {
+                // Shake effect or ignore (UI feedback could be added here)
+                return; 
+            }
+            finalInput = `${scaleInputLeft}:${scaleInputRight}`;
         } else {
-            handleSubmit(e, input);
+            // Validate standard input
+            if (!isValidInput(input, answerType === 'numeric' ? 'numeric' : 'text')) {
+                return;
+            }
+            // Sanitize text inputs
+            if (answerType !== 'numeric') {
+                finalInput = sanitize(input);
+            }
+        }
+
+        // Prevent empty submissions
+        if (!finalInput || finalInput.trim() === '') return;
+
+        handleSubmit(e, finalInput);
+    };
+
+    // --- SECURE INPUT CHANGE HANDLER ---
+    const handleInputChange = (e, setter, type) => {
+        const val = e.target.value;
+        if (isValidInput(val, type)) {
+            setter(val);
         }
     };
 
@@ -115,7 +166,7 @@ const PracticeView = ({
                     setLevelUpAvailable(false); 
                     actions.retry(true); 
                 }} 
-                lang={lang} // Passed lang prop to modal
+                lang={lang} 
             />
 
             <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
@@ -169,29 +220,40 @@ const PracticeView = ({
                                             {choice}
                                         </button>
                                     ))}
-                                    {/* Fallback for 'choices' key if backend sends that instead of 'options' */}
-                                    {question.renderData.choices && question.renderData.choices.map((choice, idx) => (
-                                        <button 
-                                            key={idx} 
-                                            onClick={() => handleChoiceClick(choice)} 
-                                            className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback === 'correct' && choice === input ? 'bg-green-500 border-green-500 text-white' : feedback === 'incorrect' && choice === input ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-500 hover:text-indigo-600'}`} 
-                                            disabled={feedback !== null}
-                                        >
-                                            {choice}
-                                        </button>
-                                    ))}
                                 </div>
                             ) : (
                                 <form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
                                     {question.renderData.answerType === 'scale' ? (
                                         <div className="flex items-center justify-center gap-2">
-                                            <input type="text" value={scaleInputLeft} onChange={(e) => setScaleInputLeft(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder="X" disabled={feedback === 'correct'} />
+                                            <input 
+                                                type="text" 
+                                                value={scaleInputLeft} 
+                                                onChange={(e) => handleInputChange(e, setScaleInputLeft, 'numeric')} 
+                                                className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} 
+                                                placeholder="X" 
+                                                disabled={feedback === 'correct'} 
+                                            />
                                             <span className="text-2xl font-bold text-gray-400">:</span>
-                                            <input type="text" value={scaleInputRight} onChange={(e) => setScaleInputRight(e.target.value)} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder="X" disabled={feedback === 'correct'} />
+                                            <input 
+                                                type="text" 
+                                                value={scaleInputRight} 
+                                                onChange={(e) => handleInputChange(e, setScaleInputRight, 'numeric')} 
+                                                className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} 
+                                                placeholder="X" 
+                                                disabled={feedback === 'correct'} 
+                                            />
                                         </div>
                                     ) : (
                                         <div className="relative">
-                                            <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder={ui.placeholder || "..."} disabled={feedback === 'correct'} />
+                                            <input 
+                                                ref={inputRef} 
+                                                type="text" 
+                                                value={input} 
+                                                onChange={(e) => handleInputChange(e, setInput, question.renderData.answerType)} 
+                                                className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} 
+                                                placeholder={ui.placeholder || "..."} 
+                                                disabled={feedback === 'correct'} 
+                                            />
                                         </div>
                                     )}
                                     <button 
