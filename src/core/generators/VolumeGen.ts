@@ -170,7 +170,7 @@ export class VolumeGen {
             return {
                 renderData: {
                     geometry: { type: 'silo', labels: { r, h } }, // 'h' is cylinder part
-                    description: lang === 'sv' ? "Beräkna silons volym (Cylinder + Halvklot)." : "Calculate silo volume (Cylinder + Hemisphere).",
+                    description: lang === 'sv' ? "Beräkna silons volym." : "Calculate silo volume.",
                     answerType: 'numeric',
                     suffix: 'cm³'
                 },
@@ -194,7 +194,7 @@ export class VolumeGen {
             return {
                 renderData: {
                     geometry: { type: 'ice_cream', labels: { r, h } },
-                    description: lang === 'sv' ? "Beräkna volymen (Kon + Halvklot)." : "Calculate volume (Cone + Hemisphere).",
+                    description: lang === 'sv' ? "Beräkna volymen." : "Calculate volume.",
                     answerType: 'numeric',
                     suffix: 'cm³'
                 },
