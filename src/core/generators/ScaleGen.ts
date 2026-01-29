@@ -260,11 +260,11 @@ export class ScaleGen {
             label = `${drawCm} cm`;
             
             desc = lang === 'sv'
-                ? `På en bild är en insekt ${drawCm} cm lång. Skalan är ${scaleStr} (förstoring). Hur lång är den i verkligheten? (Svara i mm)`
+                ? `På en bild är en insekt ${drawCm} cm lång. Skalan är ${scaleStr} . Hur lång är den i verkligheten? (Svara i mm)`
                 : `In a picture an insect is ${drawCm} cm. Scale ${scaleStr}. Reality? (Answer in mm)`;
                 
             steps = [
-                { text: lang === 'sv' ? "Gör om bildens mått till mm (x10)." : "Convert picture to mm (x10).", latex: `${drawCm} \\text{ cm} = ${drawCm*10} \\text{ mm}` },
+                { text: lang === 'sv' ? "Gör om bildens mått till mm." : "Convert picture to mm.", latex: `${drawCm} \\text{ cm} = ${drawCm*10} \\text{ mm}` },
                 { text: lang === 'sv' ? "Verkligheten är mindre än den förstorade bilden. Dividera med skalan." : "Reality is smaller than the zoomed image. Divide by scale.", latex: `\\frac{${drawCm*10}}{${scale}} = \\mathbf{${answer}}` }
             ];
         }
@@ -295,15 +295,15 @@ export class ScaleGen {
             rightL = lang === 'sv' ? "Verklighet" : "Reality"; rightV = `${lg} cm`;
             ansLeft = 1; ansRight = factor;
             desc = lang === 'sv' 
-                ? `Jämför måtten. Bilden (${base} cm) är mindre än verkligheten (${lg} cm). Vad är skalan? (1:X)`
-                : `Compare sizes. Image (${base} cm) is smaller than reality (${lg} cm). What is the scale? (1:X)`;
+                ? `Jämför måtten. Avbildningen (${base} cm) är mindre än verkligheten (${lg} cm). Vad är skalan?`
+                : `Compare sizes. Image (${base} cm) is smaller than reality (${lg} cm). What is the scale?`;
         } else {
             leftL = lang === 'sv' ? "Verklighet" : "Reality"; leftV = `${base} cm`;
             rightL = lang === 'sv' ? "Bild" : "Image"; rightV = `${lg} cm`;
             ansLeft = factor; ansRight = 1;
             desc = lang === 'sv' 
-                ? `Jämför måtten. Bilden (${lg} cm) är större än verkligheten (${base} cm). Vad är skalan? (X:1)`
-                : `Compare sizes. Image (${lg} cm) is larger than reality (${base} cm). What is the scale? (X:1)`;
+                ? `Jämför måtten. Avbildningen (${lg} cm) är större än verkligheten (${base} cm). Vad är skalan?`
+                : `Compare sizes. Image (${lg} cm) is larger than reality (${base} cm). What is the scale?`;
         }
 
         return {

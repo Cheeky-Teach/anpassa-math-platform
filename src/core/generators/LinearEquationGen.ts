@@ -40,8 +40,10 @@ export class LinearEquationGen {
             latex = `\\frac{x}{${k}} = ${res}`;
             answer = val.toString();
             clues = [{ 
-                text: lang === 'sv' ? `För att få x ensamt, multiplicera båda sidor med ${k}.` : `To isolate x, multiply both sides by ${k}.`, 
-                latex: `x = ${res} \\cdot ${k}` 
+                text: lang === 'sv' 
+                    ? `Vi vill ha x ensamt. Eftersom x är delat med ${k}, gör vi det motsatta: vi multiplicerar med ${k}.` 
+                    : `We want x alone. Since x is divided by ${k}, we do the opposite: multiply by ${k}.`, 
+                latex: `x = ${res} \\cdot ${k} \\\\ x = ${val}` 
             }];
         } 
         else if (type === 2) { // k * x = res
@@ -51,8 +53,10 @@ export class LinearEquationGen {
             latex = `${k}x = ${res}`;
             answer = val.toString();
             clues = [{ 
-                text: lang === 'sv' ? `För att få x ensamt, dela båda sidor med ${k}.` : `To isolate x, divide both sides by ${k}.`, 
-                latex: `x = \\frac{${res}}{${k}}` 
+                text: lang === 'sv' 
+                    ? `Vi vill ha x ensamt. Eftersom x är multiplicerat med ${k}, gör vi det motsatta: vi dividerar med ${k}.` 
+                    : `We want x alone. Since x is multiplied by ${k}, we do the opposite: divide by ${k}.`, 
+                latex: `x = \\frac{${res}}{${k}} \\\\ x = ${val}` 
             }];
         } 
         else if (type === 3) { // x + k = res
@@ -62,8 +66,10 @@ export class LinearEquationGen {
             latex = `x + ${k} = ${res}`;
             answer = val.toString();
             clues = [{ 
-                text: lang === 'sv' ? `Subtrahera ${k} från båda sidor för att få x ensamt.` : `Subtract ${k} from both sides to isolate x.`, 
-                latex: `x = ${res} - ${k}` 
+                text: lang === 'sv' 
+                    ? `Vi vill ha x ensamt. Här står plus ${k}, så vi gör det motsatta: vi subtraherar ${k}.` 
+                    : `We want x alone. It says plus ${k}, so we do the opposite: subtract ${k}.`, 
+                latex: `x = ${res} - ${k} \\\\ x = ${val}` 
             }];
         } 
         else { // x - k = res
@@ -73,8 +79,10 @@ export class LinearEquationGen {
             latex = `x - ${k} = ${res}`;
             answer = val.toString();
             clues = [{ 
-                text: lang === 'sv' ? `Addera ${k} till båda sidor för att få x ensamt.` : `Add ${k} to both sides to isolate x.`, 
-                latex: `x = ${res} + ${k}` 
+                text: lang === 'sv' 
+                    ? `Vi vill ha x ensamt. Här står minus ${k}, så vi gör det motsatta: vi adderar ${k}.` 
+                    : `We want x alone. It says minus ${k}, so we do the opposite: add ${k}.`, 
+                latex: `x = ${res} + ${k} \\\\ x = ${val}` 
             }];
         }
 
@@ -90,7 +98,6 @@ export class LinearEquationGen {
     }
 
     // --- LEVEL 2: Two-Step Equations ---
-    // Varieties: ax+b=c, ax-b=c, x/a+b=c, x/a-b=c
     private level2_TwoStep(lang: string): any {
         const type = MathUtils.randomInt(1, 4);
         const x = MathUtils.randomInt(2, 12);
@@ -102,8 +109,18 @@ export class LinearEquationGen {
             const c = a * x + b;
             latex = `${a}x + ${b} = ${c}`;
             clues = [
-                { text: lang === 'sv' ? `Börja med att ta bort konstanten ${b} (subtrahera).` : `Start by removing the constant ${b} (subtract).`, latex: `${a}x = ${c} - ${b}` },
-                { text: lang === 'sv' ? `Dela nu med ${a} för att hitta x.` : `Now divide by ${a} to find x.`, latex: `x = \\frac{${c-b}}{${a}}` }
+                { 
+                    text: lang === 'sv' 
+                        ? `Först måste vi få termen med x ensam. Vi tar bort ${b} genom att subtrahera det.` 
+                        : `First isolate the x-term. Remove ${b} by subtracting it.`, 
+                    latex: `${a}x = ${c} - ${b} \\\\ ${a}x = ${c-b}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Nu sitter ${a} ihop med x (gånger). Vi dividerar med ${a} för att få svaret.` 
+                        : `Now ${a} is multiplied by x. Divide by ${a} to get the answer.`, 
+                    latex: `x = \\frac{${c-b}}{${a}} \\\\ x = ${x}` 
+                }
             ];
         }
         else if (type === 2) { // ax - b = c
@@ -112,20 +129,40 @@ export class LinearEquationGen {
             const c = a * x - b;
             latex = `${a}x - ${b} = ${c}`;
             clues = [
-                { text: lang === 'sv' ? `Börja med att ta bort ${b} genom att addera det.` : `Start by removing ${b} by adding it.`, latex: `${a}x = ${c} + ${b}` },
-                { text: lang === 'sv' ? `Dela med ${a}.` : `Divide by ${a}.`, latex: `x = \\frac{${c+b}}{${a}}` }
+                { 
+                    text: lang === 'sv' 
+                        ? `Först måste vi få termen med x ensam. Vi tar bort minus ${b} genom att addera ${b}.` 
+                        : `First isolate the x-term. Remove minus ${b} by adding ${b}.`, 
+                    latex: `${a}x = ${c} + ${b} \\\\ ${a}x = ${c+b}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Nu dividerar vi med ${a} för att få fram x.` 
+                        : `Now divide by ${a} to find x.`, 
+                    latex: `x = \\frac{${c+b}}{${a}} \\\\ x = ${x}` 
+                }
             ];
         }
         else if (type === 3) { // x/a + b = c
             const a = MathUtils.randomInt(2, 8);
             const b = MathUtils.randomInt(1, 10);
             const realX = x * a; 
-            const c = x + b; // Here x represents (x/a) value temporarily in logic
+            const c = x + b; 
             latex = `\\frac{x}{${a}} + ${b} = ${c}`;
             answer = realX.toString();
             clues = [
-                { text: lang === 'sv' ? `Ta bort ${b} först (subtrahera).` : `Remove ${b} first (subtract).`, latex: `\\frac{x}{${a}} = ${c} - ${b} = ${c-b}` },
-                { text: lang === 'sv' ? `Multiplicera med ${a} för att få x ensamt.` : `Multiply by ${a} to isolate x.`, latex: `x = ${c-b} \\cdot ${a}` }
+                { 
+                    text: lang === 'sv' 
+                        ? `Vi börjar med att isolera x-termen. Subtrahera ${b} från båda sidor.` 
+                        : `Start by isolating the x-term. Subtract ${b} from both sides.`, 
+                    latex: `\\frac{x}{${a}} = ${c} - ${b} \\\\ \\frac{x}{${a}} = ${c-b}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `För att bli av med divisionen multiplicerar vi med ${a}.` 
+                        : `To remove the division, multiply by ${a}.`, 
+                    latex: `x = ${c-b} \\cdot ${a} \\\\ x = ${realX}` 
+                }
             ];
         }
         else { // x/a - b = c
@@ -136,8 +173,18 @@ export class LinearEquationGen {
             latex = `\\frac{x}{${a}} - ${b} = ${c}`;
             answer = realX.toString();
             clues = [
-                { text: lang === 'sv' ? `Ta bort ${b} först (addera).` : `Remove ${b} first (add).`, latex: `\\frac{x}{${a}} = ${c} + ${b} = ${c+b}` },
-                { text: lang === 'sv' ? `Multiplicera med ${a} för att få x ensamt.` : `Multiply by ${a} to isolate x.`, latex: `x = ${c+b} \\cdot ${a}` }
+                { 
+                    text: lang === 'sv' 
+                        ? `Isolera x-termen genom att addera ${b} på båda sidor.` 
+                        : `Isolate the x-term by adding ${b} to both sides.`, 
+                    latex: `\\frac{x}{${a}} = ${c} + ${b} \\\\ \\frac{x}{${a}} = ${c+b}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Multiplicera med ${a} för att få x ensamt.` 
+                        : `Multiply by ${a} to get x alone.`, 
+                    latex: `x = ${c+b} \\cdot ${a} \\\\ x = ${realX}` 
+                }
             ];
         }
 
@@ -149,7 +196,6 @@ export class LinearEquationGen {
     }
 
     // --- LEVEL 3: Parentheses ---
-    // Varieties: a(x+b)=c, a(x-b)=c, a(bx-c)=d, a(bx+c)=d
     private level3_Parentheses(lang: string): any {
         const type = MathUtils.randomInt(1, 4);
         const a = MathUtils.randomInt(2, 6);
@@ -162,8 +208,18 @@ export class LinearEquationGen {
             answer = x.toString();
             latex = `${a}(x + ${b}) = ${c}`;
             clues = [
-                { text: lang === 'sv' ? "Multiplicera in i parentesen." : "Distribute into the parentheses.", latex: `${a}x + ${a*b} = ${c}` },
-                { text: lang === 'sv' ? "Lös sedan ekvationen som vanligt." : "Then solve the equation as usual.", latex: `${a}x = ${c - a*b}` }
+                { 
+                    text: lang === 'sv' 
+                        ? `Vi börjar med att multiplicera in ${a} i parentesen (distribuera).` 
+                        : `Start by multiplying ${a} into the parentheses (distribute).`, 
+                    latex: `${a} \\cdot x + ${a} \\cdot ${b} = ${c} \\\\ ${a}x + ${a*b} = ${c}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? "Nu löser vi ekvationen som vanligt. Subtrahera konstanten och dela sedan." 
+                        : "Now solve as usual. Subtract the constant then divide.", 
+                    latex: `${a}x = ${c - a*b} \\\\ x = ${x}` 
+                }
             ];
         }
         else if (type === 2) { // a(x - b) = c
@@ -173,8 +229,18 @@ export class LinearEquationGen {
             answer = x.toString();
             latex = `${a}(x - ${b}) = ${c}`;
             clues = [
-                { text: lang === 'sv' ? "Multiplicera in (kom ihåg minustecknet)." : "Distribute (remember the minus sign).", latex: `${a}x - ${a*b} = ${c}` },
-                { text: lang === 'sv' ? `Addera ${a*b} till båda sidor.` : `Add ${a*b} to both sides.`, latex: `${a}x = ${c + a*b}` }
+                { 
+                    text: lang === 'sv' 
+                        ? `Multiplicera in ${a} i parentesen. Kom ihåg minustecknet.` 
+                        : `Multiply ${a} into the parentheses. Remember the minus sign.`, 
+                    latex: `${a} \\cdot x - ${a} \\cdot ${b} = ${c} \\\\ ${a}x - ${a*b} = ${c}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Addera ${a*b} till båda sidor och dela sedan.` 
+                        : `Add ${a*b} to both sides and then divide.`, 
+                    latex: `${a}x = ${c + a*b} \\\\ x = ${x}` 
+                }
             ];
         }
         else if (type === 3) { // a(bx - c) = d (Inner coefficient)
@@ -185,8 +251,18 @@ export class LinearEquationGen {
             answer = x.toString();
             latex = `${a}(${bVar}x - ${cVar}) = ${d}`;
             clues = [
-                { text: lang === 'sv' ? `Multiplicera in ${a} i parentesen.` : `Distribute ${a} into the parentheses.`, latex: `${a*bVar}x - ${a*cVar} = ${d}` },
-                { text: lang === 'sv' ? "Addera konstanten och dela med koefficienten." : "Add the constant and divide by the coefficient." }
+                { 
+                    text: lang === 'sv' 
+                        ? `Multiplicera in ${a} med båda termerna i parentesen.` 
+                        : `Multiply ${a} with both terms in the parentheses.`, 
+                    latex: `${a} \\cdot ${bVar}x - ${a} \\cdot ${cVar} = ${d} \\\\ ${a*bVar}x - ${a*cVar} = ${d}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? "Addera konstanten och dela med koefficienten." 
+                        : "Add the constant and divide by the coefficient.", 
+                    latex: `${a*bVar}x = ${d + a*cVar} \\\\ x = ${x}` 
+                }
             ];
         }
         else { // a(bx + c) = d
@@ -197,8 +273,18 @@ export class LinearEquationGen {
             answer = x.toString();
             latex = `${a}(${bVar}x + ${cVar}) = ${d}`;
             clues = [
-                { text: lang === 'sv' ? "Multiplicera in i parentesen." : "Distribute into the parentheses.", latex: `${a*bVar}x + ${a*cVar} = ${d}` },
-                { text: lang === 'sv' ? "Subtrahera konstanten och dela med koefficienten." : "Subtract the constant and divide by the coefficient." }
+                { 
+                    text: lang === 'sv' 
+                        ? `Multiplicera in ${a} i parentesen.` 
+                        : `Distribute ${a} into the parentheses.`, 
+                    latex: `${a} \\cdot ${bVar}x + ${a} \\cdot ${cVar} = ${d} \\\\ ${a*bVar}x + ${a*cVar} = ${d}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? "Subtrahera konstanten och dela med koefficienten." 
+                        : "Subtract the constant and divide by the coefficient.", 
+                    latex: `${a*bVar}x = ${d - a*cVar} \\\\ x = ${x}` 
+                }
             ];
         }
 
@@ -214,7 +300,7 @@ export class LinearEquationGen {
         const type = MathUtils.randomInt(1, 4);
         const x = MathUtils.randomInt(1, 10);
         let a = MathUtils.randomInt(3, 9);
-        let c = MathUtils.randomInt(2, a - 1); // a > c to keep x positive usually
+        let c = MathUtils.randomInt(2, a - 1); 
         if (a === c) a++;
 
         let latex = '', answer = x.toString(), clues = [];
@@ -222,12 +308,22 @@ export class LinearEquationGen {
         if (type === 1) { // ax + b = cx + d
             const b = MathUtils.randomInt(1, 15);
             const d = a*x + b - c*x;
-            if (d <= 0) return this.level4_BothSides(lang); // Retry for clean numbers
+            if (d <= 0) return this.level4_BothSides(lang); 
 
             latex = `${a}x + ${b} = ${c}x + ${d}`;
             clues = [
-                { text: lang === 'sv' ? `Samla x på ena sidan. Subtrahera ${c}x.` : `Gather x on one side. Subtract ${c}x.`, latex: `${a-c}x + ${b} = ${d}` },
-                { text: lang === 'sv' ? "Flytta över konstanten och lös ut x." : "Move the constant and solve for x." }
+                { 
+                    text: lang === 'sv' 
+                        ? `Vi vill samla alla x på ena sidan. Vi subtraherar ${c}x från båda sidor.` 
+                        : `Gather all x on one side. Subtract ${c}x from both sides.`, 
+                    latex: `${a}x - ${c}x + ${b} = ${d} \\\\ ${a-c}x + ${b} = ${d}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? "Nu är det en vanlig ekvation. Flytta över konstanten och lös ut x." 
+                        : "Now solve as usual. Move the constant and solve for x.", 
+                    latex: `${a-c}x = ${d} - ${b} \\\\ x = ${x}` 
+                }
             ];
         }
         else if (type === 2) { // ax - b = cx + d
@@ -237,22 +333,40 @@ export class LinearEquationGen {
 
             latex = `${a}x - ${b} = ${c}x + ${d}`;
             clues = [
-                { text: lang === 'sv' ? `Subtrahera ${c}x från båda sidor.` : `Subtract ${c}x from both sides.`, latex: `${a-c}x - ${b} = ${d}` },
-                { text: lang === 'sv' ? `Addera ${b} till båda sidor.` : `Add ${b} to both sides.` }
+                { 
+                    text: lang === 'sv' 
+                        ? `Subtrahera ${c}x från båda sidor för att samla x.` 
+                        : `Subtract ${c}x from both sides to gather x.`, 
+                    latex: `${a}x - ${c}x - ${b} = ${d} \\\\ ${a-c}x - ${b} = ${d}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Addera ${b} till båda sidor och lös ut x.` 
+                        : `Add ${b} to both sides and solve for x.`, 
+                    latex: `${a-c}x = ${d} + ${b} \\\\ x = ${x}` 
+                }
             ];
         }
-        else if (type === 3) { // ax + b = cx - d (Requires swapping to keep x positive visual simple)
-            // Ensure c > a for this form typically, or handle negative
+        else if (type === 3) { // ax + b = cx - d
             const temp = a; a = c; c = temp; 
             const b = MathUtils.randomInt(1, 15);
-            const d = c*x - a*x - b; // derived d
-            if (d <= 0) return this.level4_BothSides(lang); // Retry
+            const d = c*x - a*x - b; 
+            if (d <= 0) return this.level4_BothSides(lang); 
 
-            // equation: ax + b = cx - d
             latex = `${a}x + ${b} = ${c}x - ${d}`;
             clues = [
-                { text: lang === 'sv' ? `Subtrahera ${a}x från båda sidor (för att hålla x positivt).` : `Subtract ${a}x from both sides (to keep x positive).`, latex: `${b} = ${c-a}x - ${d}` },
-                { text: lang === 'sv' ? `Addera ${d} till båda sidor.` : `Add ${d} to both sides.`, latex: `${b+d} = ${c-a}x` }
+                { 
+                    text: lang === 'sv' 
+                        ? `Subtrahera ${a}x från båda sidor (för att hålla x positivt).` 
+                        : `Subtract ${a}x from both sides (to keep x positive).`, 
+                    latex: `${b} = ${c}x - ${a}x - ${d} \\\\ ${b} = ${c-a}x - ${d}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Addera ${d} till båda sidor.` 
+                        : `Add ${d} to both sides.`, 
+                    latex: `${b} + ${d} = ${c-a}x \\\\ x = ${x}` 
+                }
             ];
         }
         else { // ax - b = cx - d
@@ -263,8 +377,18 @@ export class LinearEquationGen {
 
             latex = `${a}x - ${b} = ${c}x - ${d}`;
             clues = [
-                { text: lang === 'sv' ? `Subtrahera ${c}x från båda sidor.` : `Subtract ${c}x from both sides.`, latex: `${a-c}x - ${b} = -${d}` },
-                { text: lang === 'sv' ? `Addera ${b} till båda sidor.` : `Add ${b} to both sides.` }
+                { 
+                    text: lang === 'sv' 
+                        ? `Subtrahera ${c}x från båda sidor.` 
+                        : `Subtract ${c}x from both sides.`, 
+                    latex: `${a}x - ${c}x - ${b} = -${d} \\\\ ${a-c}x - ${b} = -${d}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Addera ${b} till båda sidor.` 
+                        : `Add ${b} to both sides.`, 
+                    latex: `${a-c}x = -${d} + ${b} \\\\ x = ${x}` 
+                }
             ];
         }
 
@@ -276,7 +400,6 @@ export class LinearEquationGen {
     }
 
     private level7_Mixed(lang: string): any {
-        // Random procedural level 1-4
         return this.generate(MathUtils.randomInt(1, 4), lang);
     }
 }
