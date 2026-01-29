@@ -16,17 +16,6 @@ export const GeometryVisual = ({ data }) => {
     const mkTxt = (x, y, txt, anchor="middle", baseline="middle", color="#374151") => 
         <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
 
-    // Angle Arc Helper (Restored for Similarity Level 1)
-    const AngleArc = ({ x, y, startAngle, endAngle, label }) => {
-        const r = 25;
-        return (
-            <g>
-                <circle cx={x} cy={y} r={r} fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray={`${r*1.5}, 1000`} transform={`rotate(${startAngle}, ${x}, ${y})`} />
-                {label && <text x={x + (startAngle === 0 ? 10 : -10)} y={y + (startAngle > 0 ? -35 : 35)} textAnchor="middle" fontSize="14" fill="#dc2626" fontWeight="bold">{label}</text>}
-            </g>
-        );
-    };
-
     const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
         const cx = 150 + offsetX;
         const cy = 100 + offsetY;
@@ -37,12 +26,20 @@ export const GeometryVisual = ({ data }) => {
         const sh = (dims.height || 0) * baseScale;
         const sr = (dims.radius || 0) * baseScale;
 
+        // Determine what labels to show based on keys present in 'labels' object
+        // This prevents 'h=' from showing up when we only want sides s1/s2
+        const l_b = labels?.b || labels?.base || labels?.width || labels?.w;
+        const l_h = labels?.h || labels?.height;
+        const l_s1 = labels?.s1;
+        const l_s2 = labels?.s2;
+        const l_hyp = labels?.hypotenuse;
+
         if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
             return (
                 <g>
                     <rect x={cx - sw / 2} y={cy - sh / 2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                    {labels && labels.b && mkTxt(cx, cy + sh / 2 + 20, labels.b)}
-                    {labels && labels.h && mkTxt(cx + sw / 2 + 15, cy, labels.h, "start")}
+                    {l_b && mkTxt(cx, cy + sh / 2 + 20, l_b)}
+                    {l_h && mkTxt(cx + sw / 2 + 15, cy, l_h, "start")}
                     {areaText && mkTxt(cx, cy, `${areaText} cm²`, "middle", "middle", "#064e3b")}
                 </g>
             );
@@ -56,6 +53,7 @@ export const GeometryVisual = ({ data }) => {
                 let p1, p2, p3; 
                 let lPos = {};
 
+                // Vertices based on orientation
                 if (orient === 'up') {
                     p1 = {x: L, y: T}; p2 = {x: L, y: B}; p3 = {x: R, y: B};
                     lPos = { h: {x: L-15, y: cy}, b: {x: cx, y: B+25}, hyp: {x: cx+10, y: cy-10} };
@@ -74,17 +72,21 @@ export const GeometryVisual = ({ data }) => {
                 return (
                     <g>
                         <polygon points={path} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {labels && labels.height && mkTxt(lPos.h.x, lPos.h.y, labels.height)}
-                        {labels && labels.base && mkTxt(lPos.b.x, lPos.b.y, labels.base)}
-                        {labels && labels.hypotenuse && mkTxt(lPos.hyp.x, lPos.hyp.y, labels.hypotenuse)}
+                        {l_h && mkTxt(lPos.h.x, lPos.h.y, l_h)}
+                        {l_b && mkTxt(lPos.b.x, lPos.b.y, l_b)}
+                        {l_hyp && mkTxt(lPos.hyp.x, lPos.hyp.y, l_hyp)}
                     </g>
                 );
             } else {
+                // Standard Isosceles/Scalene
                 const points = `${L},${B} ${R},${B} ${cx},${T}`;
+                // Only draw height line if height label is explicitly provided and we aren't doing angles
+                const showHLine = l_h && !dims.angles;
                 const hLine = <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
+                
                 return (
                     <g>
-                        {!dims.angles && hLine}
+                        {showHLine && hLine}
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
                         
                         {/* Angles */}
@@ -95,11 +97,13 @@ export const GeometryVisual = ({ data }) => {
                             </>
                         )}
 
-                        {labels && !dims.angles && <>{mkTxt(cx, B + 25, dims.width)}<text x={cx + 5} y={cy} textAnchor="start" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="22">h={dims.height}</text></>}
+                        {/* Base/Height Labels - Only if keys exist */}
+                        {l_b && mkTxt(cx, B + 25, l_b)}
+                        {l_h && !dims.angles && mkTxt(cx + 5, cy, l_h, "start")}
                         
-                        {/* Side comparison labels */}
-                        {labels && labels.s1 && mkTxt(cx - sw/4 - 10, cy, labels.s1)}
-                        {labels && labels.s2 && mkTxt(cx + sw/4 + 10, cy, labels.s2)}
+                        {/* Side Comparison Labels (s1, s2) */}
+                        {l_s1 && mkTxt(cx - sw/4 - 15, cy, l_s1, "end")}
+                        {l_s2 && mkTxt(cx + sw/4 + 15, cy, l_s2, "start")}
                     </g>
                 );
             }
@@ -113,13 +117,13 @@ export const GeometryVisual = ({ data }) => {
                         isDiameter ? (
                             <>
                                 <line x1={cx - sr} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" strokeDasharray="4" />
-                                <text x={cx} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{dims.val || `d=${dims.diameter}`}</text>
+                                <text x={cx} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labels.val || `d=${dims.diameter}`}</text>
                             </>
                         ) : (
                             <>
                                 <circle cx={cx} cy={cy} r={2} fill="#374151" />
                                 <line x1={cx} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" />
-                                <text x={cx + sr / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{dims.val || `r=${dims.radius}`}</text>
+                                <text x={cx + sr / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labels.val || `r=${dims.radius}`}</text>
                             </>
                         )
                     )}
@@ -158,10 +162,6 @@ export const GeometryVisual = ({ data }) => {
 
         return (
             <SvgContainer w={500} h={200} viewBox="0 0 500 200">
-                {/* Offset calculations based on center 150. New Center is 250. 
-                    Left Target: ~125. Offset: -25.
-                    Right Target: ~375. Offset: 225.
-                */}
                 <RenderShape type={data.shapeType} dims={leftDims} labels={data.left.labels} offsetX={-25} scale={0.8} />
                 <text x="250" y="100" textAnchor="middle" fontSize="30" fill="#cbd5e1">→</text>
                 <RenderShape type={data.shapeType} dims={rightDims} labels={data.right.labels} offsetX={225} scale={1.2} />
@@ -220,9 +220,7 @@ export const GeometryVisual = ({ data }) => {
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
 GeometryVisual.requiresCanvas = true;
-// ----------------------------------------------------------------------
-// 3D VOLUME VISUALIZATION
-// ----------------------------------------------------------------------
+// ... VolumeVisualization and GraphCanvas remain unchanged (assumed to be correct from previous steps) ...
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
