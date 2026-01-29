@@ -15,8 +15,22 @@ export const GeometryVisual = ({ data }) => {
         let sw = w * scale, sh = h * scale, sr = r * scale;
         const cx = 150, cy = 100;
 
-        const mkTxt = (x, y, txt, anchor="middle", baseline="middle") => 
-            <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill="#374151" fontSize="22">{txt}</text>;
+        const mkTxt = (x, y, txt, anchor="middle", baseline="middle", color="#374151") => 
+            <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
+
+        // Angle Arc Helper
+        const AngleArc = ({ x, y, startAngle, endAngle, label }) => {
+            const r = 25;
+            // Convert degrees to radians for path calculation if needed, 
+            // but for simple corners we can use relative paths or hardcoded quadrants
+            // Simplified approach for standard triangles:
+            return (
+                <g>
+                    <circle cx={x} cy={y} r={r} fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray={`${r*1.5}, 1000`} transform={`rotate(${startAngle}, ${x}, ${y})`} />
+                    {label && <text x={x + (startAngle === 0 ? 10 : -10)} y={y + (startAngle > 0 ? -35 : 35)} textAnchor="middle" fontSize="14" fill="#dc2626" fontWeight="bold">{label}</text>}
+                </g>
+            );
+        };
 
         const content = () => {
             if (type === 'rectangle' || type === 'square' || type === 'parallelogram') 
@@ -24,21 +38,80 @@ export const GeometryVisual = ({ data }) => {
             
             if (type === 'triangle') {
                 const L = cx - sw/2, R = cx + sw/2, T = cy - sh/2, B = cy + sh/2;
+                
                 if (dims.subtype === 'right') {
-                    const points = `${L},${B} ${R},${B} ${L},${T}`;
-                    const rightAngle = <path d={`M ${L+15} ${B} L ${L+15} ${B-15} L ${L} ${B-15}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />;
+                    // Handle Orientations
+                    let p1, p2, p3; // Vertices
+                    let labelPos = {}; // Positions for base, height, hyp labels
+                    
+                    const orient = dims.orientation || 'up';
+
+                    if (orient === 'up') { // Standard: Right angle Bottom-Left
+                        p1 = {x: L, y: T}; p2 = {x: L, y: B}; p3 = {x: R, y: B}; // Vertical, Corner, Horizontal
+                        labelPos = { h: {x: L-15, y: cy}, b: {x: cx, y: B+25}, hyp: {x: cx+10, y: cy-10} };
+                    } 
+                    else if (orient === 'down') { // Right angle Top-Right
+                        p1 = {x: R, y: B}; p2 = {x: R, y: T}; p3 = {x: L, y: T};
+                        labelPos = { h: {x: R+15, y: cy}, b: {x: cx, y: T-25}, hyp: {x: cx-10, y: cy+10} };
+                    }
+                    else if (orient === 'left') { // Right angle Bottom-Right
+                        p1 = {x: L, y: B}; p2 = {x: R, y: B}; p3 = {x: R, y: T};
+                        labelPos = { h: {x: R+15, y: cy}, b: {x: cx, y: B+25}, hyp: {x: cx-10, y: cy-10} };
+                    }
+                    else { // 'right' -> Right angle Top-Left
+                        p1 = {x: R, y: T}; p2 = {x: L, y: T}; p3 = {x: L, y: B};
+                        labelPos = { h: {x: L-15, y: cy}, b: {x: cx, y: T-25}, hyp: {x: cx+10, y: cy+10} };
+                    }
+
+                    const path = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
+                    
+                    // Small square for right angle
+                    // Calculate corner offset direction based on p2
+                    const dx = (p1.x === p2.x ? 1 : -1) * (p3.x > p2.x ? 1 : -1) * 15;
+                    // Simplified: just draw it? Hard with rotation. Let's skip the square for rotated ones for now or implement robust logic later.
+                    
                     return (<>
-                        {rightAngle}
-                        <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {labels && <>{mkTxt(cx, B + 25, dims.width)}<text x={L - 10} y={cy} textAnchor="end" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="22">h={dims.height}</text></>}
+                        <polygon points={path} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
+                        {labels && labels.height && mkTxt(labelPos.h.x, labelPos.h.y, labels.height)}
+                        {labels && labels.base && mkTxt(labelPos.b.x, labelPos.b.y, labels.base)}
+                        {labels && labels.hypotenuse && mkTxt(labelPos.hyp.x, labelPos.hyp.y, labels.hypotenuse)}
                     </>);
                 } else {
+                    // Standard Isosceles/Scalene
                     const points = `${L},${B} ${R},${B} ${cx},${T}`;
                     const hLine = <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
+                    
                     return (<>
-                        {hLine}
+                        {!dims.angles && hLine}
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {labels && <>{mkTxt(cx, B + 25, dims.width)}<text x={cx + 5} y={cy} textAnchor="start" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="22">h={dims.height}</text></>}
+                        
+                        {/* Angle Visualization */}
+                        {dims.angles && (
+                            <>
+                                {/* Left Angle */}
+                                {dims.angles[0] && (
+                                    <g>
+                                        <path d={`M ${L} ${B} L ${L+25} ${B} A 25 25 0 0 0 ${L+15} ${B-20}`} fill="none" stroke="#ef4444" strokeWidth="2" />
+                                        <text x={L+5} y={B-30} fontSize="14" fill="#dc2626" fontWeight="bold">{labels.a1}</text>
+                                    </g>
+                                )}
+                                {/* Right Angle */}
+                                {dims.angles[1] && (
+                                    <g>
+                                        <path d={`M ${R} ${B} L ${R-25} ${B} A 25 25 0 0 1 ${R-15} ${B-20}`} fill="none" stroke="#ef4444" strokeWidth="2" />
+                                        <text x={R-15} y={B-30} fontSize="14" fill="#dc2626" fontWeight="bold">{labels.a2}</text>
+                                    </g>
+                                )}
+                                {/* Top Angle */}
+                                {dims.angles[2] && (
+                                    <g>
+                                        <text x={cx} y={T-15} fontSize="14" fill="#dc2626" textAnchor="middle" fontWeight="bold">{labels.a3}</text>
+                                    </g>
+                                )}
+                            </>
+                        )}
+                        
+                        {labels && !dims.angles && <>{mkTxt(cx, B + 25, dims.width)}<text x={cx + 5} y={cy} textAnchor="start" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="22">h={dims.height}</text></>}
                     </>);
                 }
             }
@@ -94,8 +167,6 @@ export const GeometryVisual = ({ data }) => {
     }
     
     if (data.type === 'composite') {
-        const w = data.labels.w || 50;
-        const h = data.labels.h || 50;
         return (
             <div className="flex justify-center my-4">
                 <svg width="200" height="200" viewBox="0 0 200 200" className="border border-gray-100 rounded-lg bg-white shadow-sm">
@@ -124,7 +195,7 @@ export const GeometryVisual = ({ data }) => {
 };
 GeometryVisual.requiresCanvas = true;
 // ----------------------------------------------------------------------
-// 3D VOLUME VISUALIZATION (Canvas) - Updated with Pyramid Support
+// 3D VOLUME VISUALIZATION (Canvas)
 // ----------------------------------------------------------------------
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
@@ -193,8 +264,7 @@ export const VolumeVisualization = ({ data }) => {
             const len = (parseInt(data.labels.l) || 20) * scale * 0.7;
             const startX = cx - b/2 - len/2;
             const startY = cy + hTri/2;
-            ctx.beginPath();
-            ctx.moveTo(startX, startY); ctx.lineTo(startX + b, startY); ctx.lineTo(startX + b/2, startY - hTri); ctx.closePath(); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(startX + b, startY); ctx.lineTo(startX + b/2, startY - hTri); ctx.closePath(); ctx.stroke();
             const offX = len; const offY = -len * 0.3;
             ctx.beginPath(); ctx.moveTo(startX + b/2, startY - hTri); ctx.lineTo(startX + b/2 + offX, startY - hTri + offY); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(startX + b, startY); ctx.lineTo(startX + b + offX, startY + offY); ctx.lineTo(startX + b/2 + offX, startY - hTri + offY); ctx.stroke();
@@ -204,31 +274,20 @@ export const VolumeVisualization = ({ data }) => {
             drawLabel(data.labels.l, startX + b + offX/2 + 10, startY + offY/2);
         }
         else if (data.type === 'pyramid') {
-            // Square/Rect Pyramid
             const w = (parseInt(data.labels.w || data.labels.s || 10) * scale);
-            const d = (parseInt(data.labels.d || data.labels.s || 10) * scale * 0.6); // Foreshorten
+            const d = (parseInt(data.labels.d || data.labels.s || 10) * scale * 0.6);
             const hPyr = (parseInt(data.labels.h) || 10) * scale;
-
             const x0 = cx - w/2 - d/2;
-            const y0 = cy + hPyr/3; // Base Y position
-
-            const FL = {x: x0, y: y0};
-            const FR = {x: x0+w, y: y0};
-            const BR = {x: x0+w+d, y: y0-d};
-            const BL = {x: x0+d, y: y0-d};
+            const y0 = cy + hPyr/3;
+            const FL = {x: x0, y: y0}; const FR = {x: x0+w, y: y0};
+            const BR = {x: x0+w+d, y: y0-d}; const BL = {x: x0+d, y: y0-d};
             const Apex = {x: x0 + w/2 + d/2, y: y0 - d/2 - hPyr};
-
-            // Base
             ctx.beginPath(); ctx.moveTo(FL.x, FL.y); ctx.lineTo(FR.x, FR.y); ctx.lineTo(BR.x, BR.y); ctx.stroke();
             ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(BR.x, BR.y); ctx.lineTo(BL.x, BL.y); ctx.lineTo(FL.x, FL.y); ctx.stroke(); ctx.restore();
-
-            // Lines to Apex
             ctx.beginPath(); ctx.moveTo(FL.x, FL.y); ctx.lineTo(Apex.x, Apex.y); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(FR.x, FR.y); ctx.lineTo(Apex.x, Apex.y); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(BR.x, BR.y); ctx.lineTo(Apex.x, Apex.y); ctx.stroke();
             ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(BL.x, BL.y); ctx.lineTo(Apex.x, Apex.y); ctx.stroke(); ctx.restore();
-
-            // Height
             const centerBase = {x: x0 + w/2 + d/2, y: y0 - d/2};
             drawDashed(centerBase.x, centerBase.y, Apex.x, Apex.y);
             drawLabel("h=" + data.labels.h, Apex.x + 20, centerBase.y - hPyr/2);
@@ -239,7 +298,6 @@ export const VolumeVisualization = ({ data }) => {
             if(data.labels.r) r = parseInt(data.labels.r) * scale;
             if(data.labels.d) r = (parseInt(data.labels.d)/2) * scale;
             r = Math.max(30, Math.min(r, 70));
-
             const drawCircleData = (centerY, showLabel=true) => {
                  const val = data.labels.val || (data.labels.r ? `r=${data.labels.r}` : `d=${data.labels.d}`);
                  if (data.show === 'diameter') {
@@ -251,7 +309,6 @@ export const VolumeVisualization = ({ data }) => {
                      if(showLabel) drawLabel(val, cx + r/2, centerY - 10);
                  }
             };
-
             if (data.type === 'sphere') {
                 ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2*Math.PI); ctx.stroke();
                 ctx.beginPath(); ctx.ellipse(cx, cy, r, r/4, 0, 0, 2*Math.PI); ctx.stroke();
@@ -352,81 +409,10 @@ export const GraphCanvas = ({ data }) => {
 };
 
 GraphCanvas.requiresCanvas = true;
-// ----------------------------------------------------------------------
-// NEW STATIC GEOMETRY VISUAL (Canvas-Based)
-// ----------------------------------------------------------------------
-export const StaticGeometryVisual = ({ type, params, width = 300, height = 200 }) => {
-    const canvasRef = useRef(null);
-  
-    useEffect(() => {
-      // 1. Guard clause: If no canvas, or NO type/params, stop.
-      if (!canvasRef.current || !type || !params) return;
-  
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      
-      // Clear canvas
-      ctx.clearRect(0, 0, width, height);
-      
-      // Setup styles
-      ctx.strokeStyle = '#3b82f6'; // Blue line
-      ctx.lineWidth = 2;
-      ctx.fillStyle = '#eff6ff'; // Light blue fill
-      
-      const cx = width / 2;
-      const cy = height / 2;
-      
-      ctx.beginPath();
-  
-      // Simple switch to draw based on type
-      if (type === 'triangle' || type === 'right_triangle') {
-          // Draw generic triangle
-          ctx.moveTo(cx - 50, cy + 50);
-          ctx.lineTo(cx + 50, cy + 50);
-          ctx.lineTo(cx, cy - 50);
-          ctx.closePath();
-          ctx.fill();
-          ctx.stroke();
-      } else if (type === 'circle') {
-          ctx.arc(cx, cy, 50, 0, 2 * Math.PI);
-          ctx.fill();
-          ctx.stroke();
-      } else if (type === 'rectangle' || type === 'square' || type.includes('rect')) {
-          ctx.rect(cx - 60, cy - 40, 120, 80);
-          ctx.fill();
-          ctx.stroke();
-      } else if (type === 'cylinder') {
-          // Basic Cylinder
-          ctx.ellipse(cx, cy - 40, 40, 15, 0, 0, 2 * Math.PI);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.ellipse(cx, cy + 40, 40, 15, 0, 0, Math.PI);
-          ctx.stroke();
-          ctx.moveTo(cx - 40, cy - 40);
-          ctx.lineTo(cx - 40, cy + 40);
-          ctx.moveTo(cx + 40, cy - 40);
-          ctx.lineTo(cx + 40, cy + 40);
-          ctx.stroke();
-      }
-      
-      // You can add more shapes here as needed
-  
-    }, [type, params, width, height]);
-  
-    // --- THE BUG FIX ---
-    // If no type or params are provided, render NOTHING (null).
-    // This stops the empty white box from appearing when not needed.
-    if (!type || !params) {
-      return null;
-    }
-  
-    return (
-      <canvas 
-        ref={canvasRef} 
-        width={width} 
-        height={height} 
-        className="max-w-full h-auto mx-auto" 
-        style={{ display: 'block' }} 
-      />
-    );
-  };
+
+export const StaticGeometryVisual = ({ description }) => { 
+    if (!description) return null; 
+    const d = description.toLowerCase(); 
+    if (d.includes("rect") || d.includes("rektangel")) return <div className="flex justify-center my-4 opacity-80"><div className="w-28 h-16 border-2 border-primary-500 bg-primary-50 rounded-sm"></div></div>; 
+    return null; 
+};
