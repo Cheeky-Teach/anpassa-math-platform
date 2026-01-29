@@ -3,13 +3,13 @@ import { MathUtils } from '../utils/MathUtils.js';
 export class PercentGen {
     public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
-            case 1: return this.level1_Visuals(lang);
+            case 1: return this.level1_ConceptsAndConversions(lang);
             case 2: return this.level2_Benchmarks(lang);
             case 3: return this.level3_MultiplesOfTen(lang);
             case 4: return this.level4_GeneralCalculation(lang);
             case 5: return this.level5_FindWhole(lang);
             case 6: return this.level6_RealWorldChange(lang);
-            default: return this.level1_Visuals(lang);
+            default: return this.level1_ConceptsAndConversions(lang);
         }
     }
 
@@ -17,33 +17,136 @@ export class PercentGen {
         return Buffer.from(str).toString('base64');
     }
 
-    // Level 1: Visuals (The 100-Grid)
-    private level1_Visuals(lang: string): any {
-        const colored = MathUtils.randomChoice([1, 5, 10, 20, 25, 50, 75, 99]);
-        
-        return {
-            renderData: {
-                description: lang === 'sv' 
-                    ? "Hur många procent av rutan är färgad? (Hela rutan är 100%)" 
-                    : "What percent of the grid is colored? (The whole grid is 100%)",
-                answerType: 'numeric',
-                suffix: '%',
-                geometry: { type: 'percent_grid', total: 100, colored: colored }
-            },
-            token: this.toBase64(colored.toString()),
-            clues: [
-                { 
-                    text: lang === 'sv' ? "Ordet procent betyder 'av 100'. Räkna de färgade rutorna." : "Percent means 'out of 100'. Count the colored squares.",
-                    latex: `\\text{Antal} = ${colored}`
-                }
-            ]
-        };
+    // Level 1: Concepts & Conversions (Visuals + Fraction/Decimal/Percent drill)
+    private level1_ConceptsAndConversions(lang: string): any {
+        // Mode 0: Visual Grid (Legacy)
+        // Mode 1: Fraction -> Percent
+        // Mode 2: Decimal -> Percent
+        // Mode 3: Percent -> Fraction
+        // Mode 4: Fraction -> Decimal
+        const mode = MathUtils.randomChoice([0, 1, 2, 3, 4]);
+
+        // BENCHMARK DATA
+        // n: numerator, d: denominator, p: percent, dec: decimal string
+        const benchmarks = [
+            { n: 1, d: 2, p: 50, dec: "0.5" },
+            { n: 1, d: 4, p: 25, dec: "0.25" },
+            { n: 2, d: 4, p: 50, dec: "0.5" }, // Simplified to 1/2 usually, but good for drilling
+            { n: 3, d: 4, p: 75, dec: "0.75" },
+            { n: 1, d: 5, p: 20, dec: "0.2" },
+            { n: 2, d: 5, p: 40, dec: "0.4" },
+            { n: 3, d: 5, p: 60, dec: "0.6" },
+            { n: 4, d: 5, p: 80, dec: "0.8" },
+            { n: 1, d: 10, p: 10, dec: "0.1" },
+            { n: 2, d: 10, p: 10, dec: "0.2" },
+            { n: 3, d: 10, p: 30, dec: "0.3" },
+            { n: 4, d: 10, p: 10, dec: "0.4" },
+            { n: 5, d: 10, p: 10, dec: "0.5" },
+            { n: 6, d: 10, p: 10, dec: "0.6" },
+            { n: 7, d: 10, p: 70, dec: "0.7" },
+            { n: 8, d: 10, p: 10, dec: "0.8" },
+            { n: 9, d: 10, p: 10, dec: "0.9" },
+            { n: 1, d: 100, p: 1, dec: "0.01" },
+            { n: 10, d: 100, p: 10, dec: "0.1" }, // 10/100
+            { n: 50, d: 100, p: 50, dec: "0.5" }  // 50/100
+        ];
+
+        // Special handling for 1/3 (approximate)
+        const third = { n: 1, d: 3, p: 33.3, dec: "0.33" }; 
+
+        if (mode === 0) {
+            // Visual Grid (Keep existing logic but streamlined)
+            const colored = MathUtils.randomChoice([1, 5, 10, 20, 25, 50, 75, 99]);
+            return {
+                renderData: {
+                    description: lang === 'sv' ? "Hur många procent av rutan är färgad?" : "What percent of the grid is colored?",
+                    answerType: 'numeric',
+                    suffix: '%',
+                    geometry: { type: 'percent_grid', total: 100, colored: colored }
+                },
+                token: this.toBase64(colored.toString()),
+                clues: [{ text: lang === 'sv' ? "Räkna rutorna (av 100)." : "Count the squares (out of 100)." }]
+            };
+        }
+
+        const data = MathUtils.randomChoice(benchmarks); // Pick a benchmark
+        // We exclude 1/3 from some exact conversions unless we handle the rounding explicitly
+        // For simplicity in L1, let's stick to the exact ones for now or handle 1/3 separately if picked.
+
+        if (mode === 1) { // Fraction -> Percent
+            return {
+                renderData: {
+                    description: lang === 'sv' 
+                        ? `Skriv bråket ${data.n}/${data.d} som procent.` 
+                        : `Write the fraction ${data.n}/${data.d} as a percent.`,
+                    answerType: 'numeric',
+                    suffix: '%'
+                },
+                token: this.toBase64(data.p.toString()),
+                clues: [
+                    { text: lang === 'sv' ? "Procent betyder hundradelar." : "Percent means hundredths." },
+                    { text: lang === 'sv' ? `Förläng bråket så nämnaren blir 100.` : `Extend the fraction so the denominator is 100.`, latex: `\\frac{${data.n} \\cdot k}{${data.d} \\cdot k} = \\frac{${data.p}}{100}` }
+                ]
+            };
+        }
+
+        if (mode === 2) { // Decimal -> Percent
+            return {
+                renderData: {
+                    description: lang === 'sv' 
+                        ? `Skriv decimaltalet ${data.dec} som procent.` 
+                        : `Write the decimal ${data.dec} as a percent.`,
+                    answerType: 'numeric',
+                    suffix: '%'
+                },
+                token: this.toBase64(data.p.toString()),
+                clues: [
+                    { text: lang === 'sv' ? "Flytta kommatecknet två steg åt höger." : "Move the decimal point two steps to the right.", latex: `${data.dec} \\cdot 100 = ${data.p}` }
+                ]
+            };
+        }
+
+        if (mode === 3) { // Percent -> Fraction
+            // Use multiple choice for fractions to avoid input parsing hell (e.g. "1/4" vs "2/8")
+            const correct = `${data.n}/${data.d}`;
+            const wrong1 = `${data.d}/${data.n}`;
+            const wrong2 = `${data.n}/${data.d * 2}`;
+            
+            return {
+                renderData: {
+                    description: lang === 'sv' 
+                        ? `Vad är ${data.p}% i bråkform?` 
+                        : `What is ${data.p}% as a fraction?`,
+                    answerType: 'multiple_choice',
+                    options: MathUtils.shuffle([correct, wrong1, wrong2])
+                },
+                token: this.toBase64(correct),
+                clues: [
+                    { text: lang === 'sv' ? `${data.p}% betyder ${data.p} av 100.` : `${data.p}% means ${data.p} out of 100.`, latex: `\\frac{${data.p}}{100}` },
+                    { text: lang === 'sv' ? "Förenkla bråket." : "Simplify the fraction." }
+                ]
+            };
+        }
+
+        if (mode === 4) { // Fraction -> Decimal
+             return {
+                renderData: {
+                    description: lang === 'sv' 
+                        ? `Skriv bråket ${data.n}/${data.d} som decimaltal.` 
+                        : `Write the fraction ${data.n}/${data.d} as a decimal.`,
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(data.dec),
+                clues: [
+                    { text: lang === 'sv' ? "Dela täljaren med nämnaren." : "Divide numerator by denominator.", latex: `${data.n} / ${data.d} = ${data.dec}` }
+                ]
+            };
+        }
     }
 
     // Level 2: Benchmarks (Mental Math)
     private level2_Benchmarks(lang: string): any {
         const pct = MathUtils.randomChoice([10, 25, 50, 100]);
-        // Base is carefully chosen to be cleanly divisible
         const base = MathUtils.randomInt(2, 40) * (pct === 25 ? 4 : 10); 
         
         const ans = (base * pct) / 100;
@@ -159,9 +262,8 @@ export class PercentGen {
         };
     }
 
-    // Level 6: Real World Change (Whole Numbers Constraint)
+    // Level 6: Real World Change (Whole Numbers)
     private level6_RealWorldChange(lang: string): any {
-        // Scenarios: type, isIncrease, text templates
         const scenarios = [
             { id: 'salary', inc: true, sv: (b,p) => `Din lön är ${b} kr. Den höjs med ${p}%. Vad blir din nya lön?`, en: (b,p) => `Your salary is ${b} kr. It raises by ${p}%. What is your new salary?` },
             { id: 'sale', inc: false, sv: (b,p) => `En jacka kostar ${b} kr. Det är ${p}% rea. Vad kostar jackan nu?`, en: (b,p) => `A jacket costs ${b} kr. It is ${p}% off. What is the price now?` },
@@ -177,27 +279,14 @@ export class PercentGen {
 
         const s = MathUtils.randomChoice(scenarios);
         
-        // --- WHOLE NUMBER LOGIC ---
-        // To ensure the answer is an integer, (base * pct) must be divisible by 100.
-        // We pick 'pct' first (any 1-99), then calculate a valid 'base'.
-        
-        let pct = MathUtils.randomInt(1, 50); // Use 1-50 range for realism (99% tax is rare)
-        if (Math.random() > 0.8) pct = MathUtils.randomInt(50, 99); // Occasional high percent
+        let pct = MathUtils.randomInt(1, 50); 
+        if (Math.random() > 0.8) pct = MathUtils.randomInt(50, 99); 
 
-        // Find a base that makes (base * pct) / 100 an integer.
-        // Simplified: base must be a multiple of (100 / GCD(pct, 100)).
-        // Or just iterate multiples of 100/50/25/20/10/5/4/2 depending on pct divisibility.
-        // Brute force is fast enough: Pick a random multiplier 'k', let base = (100 * k) / GCD(pct, 100)?
-        // Easier: Just make base a multiple of 100. Always safe.
-        // To allow smaller bases (like 50), check divisibility.
-        
         const possibleBases = [];
-        // Generate candidate bases suitable for the context
         const minBase = s.id === 'salary' ? 20000 : (s.id === 'rent' ? 5000 : 50);
         const maxBase = s.id === 'salary' ? 40000 : (s.id === 'rent' ? 15000 : 500);
         const step = s.id === 'salary' || s.id === 'rent' ? 100 : 10;
 
-        // Try 20 random bases, pick first valid one
         let base = 100;
         for(let i=0; i<20; i++) {
             let candidate = MathUtils.randomInt(minBase/step, maxBase/step) * step;
@@ -206,7 +295,6 @@ export class PercentGen {
                 break;
             }
         }
-        // Fallback: multiple of 100 always works
         if ((base * pct) % 100 !== 0) base = MathUtils.randomInt(1, 10) * 100;
 
         const change = (base * pct) / 100;
