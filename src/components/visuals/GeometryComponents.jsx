@@ -7,139 +7,136 @@ export const GeometryVisual = ({ data }) => {
     if (!data) return null;
     const SvgContainer = ({ children, w = 300, h = 200, viewBox = "0 0 300 200" }) => <svg width={w} height={h} viewBox={viewBox} className="my-2 w-full max-w-[300px] mx-auto">{children}</svg>;
     
-    // Auto-scale to fit 140x140 box to ensure padding
-    const RenderShape = ({ type, dims, labels, areaText }) => {
-        const w = dims.width || 0, h = dims.height || 0, r = dims.radius || 0;
-        const size = Math.max(w, h, r * 2);
-        const scale = 140 / (size || 1);
-        let sw = w * scale, sh = h * scale, sr = r * scale;
-        const cx = 150, cy = 100;
+    const mkTxt = (x, y, txt, anchor="middle", baseline="middle", color="#374151") => 
+        <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
 
-        const mkTxt = (x, y, txt, anchor="middle", baseline="middle", color="#374151") => 
-            <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
+    // Helper to render individual shapes (used for single questions AND comparisons)
+    const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
+        // Local scale for the specific shape instance
+        const cx = 150 + offsetX;
+        const cy = 100 + offsetY;
+        
+        // Base size 120 ensures it fits in a half-view
+        const baseScale = (120 / (Math.max(dims.width || 0, dims.height || 0, (dims.radius || 0)*2) || 1)) * scale;
 
-        // Angle Arc Helper
-        const AngleArc = ({ x, y, startAngle, endAngle, label }) => {
-            const r = 25;
-            // Convert degrees to radians for path calculation if needed, 
-            // but for simple corners we can use relative paths or hardcoded quadrants
-            // Simplified approach for standard triangles:
+        const sw = (dims.width || 0) * baseScale;
+        const sh = (dims.height || 0) * baseScale;
+        const sr = (dims.radius || 0) * baseScale;
+
+        // --- RECTANGLE / SQUARE ---
+        if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
             return (
                 <g>
-                    <circle cx={x} cy={y} r={r} fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray={`${r*1.5}, 1000`} transform={`rotate(${startAngle}, ${x}, ${y})`} />
-                    {label && <text x={x + (startAngle === 0 ? 10 : -10)} y={y + (startAngle > 0 ? -35 : 35)} textAnchor="middle" fontSize="14" fill="#dc2626" fontWeight="bold">{label}</text>}
+                    <rect x={cx - sw / 2} y={cy - sh / 2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                    {labels && labels.b && mkTxt(cx, cy + sh / 2 + 20, labels.b)}
+                    {labels && labels.h && mkTxt(cx + sw / 2 + 15, cy, labels.h, "start")}
+                    {areaText && mkTxt(cx, cy, `${areaText} cm²`, "middle", "middle", "#064e3b")}
                 </g>
             );
-        };
-
-        const content = () => {
-            if (type === 'rectangle' || type === 'square' || type === 'parallelogram') 
-                return (<><rect x={cx - sw / 2} y={cy - sh / 2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />{labels && (<><text x={cx} y={cy + sh / 2 + 25} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{dims.width}</text><text x={cx + sw / 2 + 10} y={cy} textAnchor="start" fontWeight="bold" fill="#374151" fontSize="22">{dims.height}</text></>)}</>);
+        }
+        
+        // --- TRIANGLE ---
+        if (type === 'triangle') {
+            const L = cx - sw/2, R = cx + sw/2, T = cy - sh/2, B = cy + sh/2;
             
-            if (type === 'triangle') {
-                const L = cx - sw/2, R = cx + sw/2, T = cy - sh/2, B = cy + sh/2;
-                
-                if (dims.subtype === 'right') {
-                    // Handle Orientations
-                    let p1, p2, p3; // Vertices
-                    let labelPos = {}; // Positions for base, height, hyp labels
-                    
-                    const orient = dims.orientation || 'up';
+            // Right Triangle
+            if (dims.subtype === 'right') {
+                const orient = dims.orientation || 'up';
+                let p1, p2, p3; 
+                let lPos = {};
 
-                    if (orient === 'up') { // Standard: Right angle Bottom-Left
-                        p1 = {x: L, y: T}; p2 = {x: L, y: B}; p3 = {x: R, y: B}; // Vertical, Corner, Horizontal
-                        labelPos = { h: {x: L-15, y: cy}, b: {x: cx, y: B+25}, hyp: {x: cx+10, y: cy-10} };
-                    } 
-                    else if (orient === 'down') { // Right angle Top-Right
-                        p1 = {x: R, y: B}; p2 = {x: R, y: T}; p3 = {x: L, y: T};
-                        labelPos = { h: {x: R+15, y: cy}, b: {x: cx, y: T-25}, hyp: {x: cx-10, y: cy+10} };
-                    }
-                    else if (orient === 'left') { // Right angle Bottom-Right
-                        p1 = {x: L, y: B}; p2 = {x: R, y: B}; p3 = {x: R, y: T};
-                        labelPos = { h: {x: R+15, y: cy}, b: {x: cx, y: B+25}, hyp: {x: cx-10, y: cy-10} };
-                    }
-                    else { // 'right' -> Right angle Top-Left
-                        p1 = {x: R, y: T}; p2 = {x: L, y: T}; p3 = {x: L, y: B};
-                        labelPos = { h: {x: L-15, y: cy}, b: {x: cx, y: T-25}, hyp: {x: cx+10, y: cy+10} };
-                    }
-
-                    const path = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
-                    
-                    // Small square for right angle
-                    // Calculate corner offset direction based on p2
-                    const dx = (p1.x === p2.x ? 1 : -1) * (p3.x > p2.x ? 1 : -1) * 15;
-                    // Simplified: just draw it? Hard with rotation. Let's skip the square for rotated ones for now or implement robust logic later.
-                    
-                    return (<>
-                        <polygon points={path} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {labels && labels.height && mkTxt(labelPos.h.x, labelPos.h.y, labels.height)}
-                        {labels && labels.base && mkTxt(labelPos.b.x, labelPos.b.y, labels.base)}
-                        {labels && labels.hypotenuse && mkTxt(labelPos.hyp.x, labelPos.hyp.y, labels.hypotenuse)}
-                    </>);
+                // Basic logic for orientation (simplified for stability)
+                if (orient === 'up') {
+                    p1 = {x: L, y: T}; p2 = {x: L, y: B}; p3 = {x: R, y: B};
+                    lPos = { h: {x: L-15, y: cy}, b: {x: cx, y: B+25}, hyp: {x: cx+10, y: cy-10} };
+                } else if (orient === 'down') {
+                    p1 = {x: R, y: B}; p2 = {x: R, y: T}; p3 = {x: L, y: T};
+                    lPos = { h: {x: R+15, y: cy}, b: {x: cx, y: T-25}, hyp: {x: cx-10, y: cy+10} };
+                } else if (orient === 'left') {
+                    p1 = {x: L, y: B}; p2 = {x: R, y: B}; p3 = {x: R, y: T};
+                    lPos = { h: {x: R+15, y: cy}, b: {x: cx, y: B+25}, hyp: {x: cx-10, y: cy-10} };
                 } else {
-                    // Standard Isosceles/Scalene
-                    const points = `${L},${B} ${R},${B} ${cx},${T}`;
-                    const hLine = <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
-                    
-                    return (<>
+                    p1 = {x: R, y: T}; p2 = {x: L, y: T}; p3 = {x: L, y: B};
+                    lPos = { h: {x: L-15, y: cy}, b: {x: cx, y: T-25}, hyp: {x: cx+10, y: cy+10} };
+                }
+
+                const path = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
+                return (
+                    <g>
+                        <polygon points={path} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
+                        {labels.height && mkTxt(lPos.h.x, lPos.h.y, labels.height)}
+                        {labels.base && mkTxt(lPos.b.x, lPos.b.y, labels.base)}
+                        {labels.hypotenuse && mkTxt(lPos.hyp.x, lPos.hyp.y, labels.hypotenuse)}
+                    </g>
+                );
+            } 
+            // Standard Triangle (Isosceles-ish)
+            else {
+                const points = `${L},${B} ${R},${B} ${cx},${T}`;
+                const hLine = <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />;
+                
+                return (
+                    <g>
                         {!dims.angles && hLine}
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
                         
-                        {/* Angle Visualization */}
+                        {/* Angles */}
                         {dims.angles && (
                             <>
-                                {/* Left Angle */}
-                                {dims.angles[0] && (
-                                    <g>
+                                {dims.angles[0] && ( // Left
+                                    <>
                                         <path d={`M ${L} ${B} L ${L+25} ${B} A 25 25 0 0 0 ${L+15} ${B-20}`} fill="none" stroke="#ef4444" strokeWidth="2" />
-                                        <text x={L+5} y={B-30} fontSize="14" fill="#dc2626" fontWeight="bold">{labels.a1}</text>
-                                    </g>
+                                        <text x={L+10} y={B-8} fontSize="14" fill="#dc2626" fontWeight="bold">{labels.a1}</text>
+                                    </>
                                 )}
-                                {/* Right Angle */}
-                                {dims.angles[1] && (
-                                    <g>
+                                {dims.angles[1] && ( // Right
+                                    <>
                                         <path d={`M ${R} ${B} L ${R-25} ${B} A 25 25 0 0 1 ${R-15} ${B-20}`} fill="none" stroke="#ef4444" strokeWidth="2" />
-                                        <text x={R-15} y={B-30} fontSize="14" fill="#dc2626" fontWeight="bold">{labels.a2}</text>
-                                    </g>
-                                )}
-                                {/* Top Angle */}
-                                {dims.angles[2] && (
-                                    <g>
-                                        <text x={cx} y={T-15} fontSize="14" fill="#dc2626" textAnchor="middle" fontWeight="bold">{labels.a3}</text>
-                                    </g>
+                                        <text x={R-10} y={B-8} fontSize="14" fill="#dc2626" fontWeight="bold">{labels.a2}</text>
+                                    </>
                                 )}
                             </>
                         )}
                         
-                        {labels && !dims.angles && <>{mkTxt(cx, B + 25, dims.width)}<text x={cx + 5} y={cy} textAnchor="start" dominantBaseline="middle" fontWeight="bold" fill="#374151" fontSize="22">h={dims.height}</text></>}
-                    </>);
-                }
+                        {/* Sides Labels */}
+                        {labels.s1 && mkTxt(cx - sw/4 - 10, cy, labels.s1)}
+                        {labels.s2 && mkTxt(cx + sw/4 + 10, cy, labels.s2)}
+                        
+                        {/* Base/Height Labels (if not side comparison) */}
+                        {labels.base && mkTxt(cx, B + 25, labels.base)}
+                        {labels.height && !dims.angles && mkTxt(cx + 5, cy, labels.height, "start")}
+                    </g>
+                );
             }
-            if (type === 'circle') {
-                const isDiameter = dims.show === 'diameter';
-                return (<>
+        }
+
+        // --- CIRCLE ---
+        if (type === 'circle') {
+            const isDiameter = dims.show === 'diameter';
+            return (
+                <g>
                     <circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
                     {labels && (
                         isDiameter ? (
                             <>
                                 <line x1={cx - sr} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" strokeDasharray="4" />
-                                <text x={cx} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{dims.val || `d=${dims.diameter}`}</text>
+                                <text x={cx} y={cy - 15} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labels.val || `d=${dims.diameter}`}</text>
                             </>
                         ) : (
                             <>
-                                <circle cx={cx} cy={cy} r={2} fill="#374151" />
+                                <circle cx={cx} cy={cy} r={3} fill="#374151" />
                                 <line x1={cx} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" />
-                                <text x={cx + sr / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{dims.val || `r=${dims.radius}`}</text>
+                                <text x={cx + sr / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labels.val || `r=${dims.radius}`}</text>
                             </>
                         )
                     )}
-                </>);
-            }
-            return null;
-        };
-        return (<svg width="300" height="200" viewBox="0 0 300 200" className="border border-gray-100 rounded-lg bg-white shadow-sm w-full max-w-[300px]">{content()}{areaText && <text x="150" y="180" textAnchor="middle" dominantBaseline="middle" fontSize="20" fontWeight="bold" fill="#064e3b">{areaText} cm²</text>}</svg>);
+                </g>
+            );
+        }
+        return null;
     };
 
+    // --- CASE 1: SCALE ICONS ---
     if (data.type === 'scale_single' || data.type === 'scale_compare') { 
         const shapeEmojis = { 
             square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', cube: '🧊', cylinder: '🛢️', 
@@ -162,11 +159,57 @@ export const GeometryVisual = ({ data }) => {
         ); 
     }
 
+    // --- CASE 2: SIMILARITY COMPARISON (TWO SHAPES) ---
+    if (data.type === 'similarity_compare') {
+        const leftDims = { ...data.left, width: 40, height: 40, radius: 20, subtype: data.shapeType === 'triangle' ? 'isosceles' : undefined };
+        const rightDims = { ...data.right, width: 60, height: 60, radius: 30, subtype: data.shapeType === 'triangle' ? 'isosceles' : undefined };
+
+        return (
+            <SvgContainer viewBox="0 0 300 200">
+                <RenderShape type={data.shapeType} dims={leftDims} labels={data.left.labels} offsetX={-80} scale={0.8} />
+                <text x="150" y="100" textAnchor="middle" fontSize="30" fill="#cbd5e1">→</text>
+                <RenderShape type={data.shapeType} dims={rightDims} labels={data.right.labels} offsetX={80} scale={1.2} />
+            </SvgContainer>
+        );
+    }
+
+    // --- CASE 3: TRANSVERSAL (TOP TRIANGLE) ---
+    if (data.type === 'transversal') {
+        const labels = data.labels;
+        return (
+            <SvgContainer>
+                {/* Big Triangle */}
+                <polygon points="150,20 50,180 250,180" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.3" />
+                {/* Transversal Line */}
+                <line x1="100" y1="100" x2="200" y2="100" stroke="#059669" strokeWidth="3" />
+                
+                {/* Labels */}
+                {/* Top Side (Left) */}
+                <text x="85" y="60" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_top}</text>
+                {/* Full Side (Left) */}
+                <text x="40" y="100" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_tot}</text>
+                
+                {/* Top Base */}
+                <text x="150" y="90" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_top}</text>
+                {/* Bottom Base */}
+                <text x="150" y="200" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_bot}</text>
+                
+                {/* Arrows indicating parallel */}
+                <path d="M 150 100 l -5 -5 m 5 5 l -5 5" stroke="#059669" strokeWidth="2" fill="none"/>
+                <path d="M 150 180 l -5 -5 m 5 5 l -5 5" stroke="#10b981" strokeWidth="2" fill="none"/>
+            </SvgContainer>
+        );
+    }
+
+    // --- CASE 4: STANDARD SINGLE SHAPE ---
     if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle'].includes(data.type)) {
-        return (<div className="flex justify-center my-4"><RenderShape type={data.type} dims={data} labels={true} areaText={null} /></div>);
+        return (<div className="flex justify-center my-4"><RenderShape type={data.type} dims={data} labels={data.labels} /></div>);
     }
     
+    // --- CASE 5: COMPOSITE SHAPES ---
     if (data.type === 'composite') {
+        const w = data.labels.w || 50;
+        const h = data.labels.h || 50;
         return (
             <div className="flex justify-center my-4">
                 <svg width="200" height="200" viewBox="0 0 200 200" className="border border-gray-100 rounded-lg bg-white shadow-sm">
@@ -193,7 +236,7 @@ export const GeometryVisual = ({ data }) => {
 
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
-GeometryVisual.requiresCanvas = true;
+
 // ----------------------------------------------------------------------
 // 3D VOLUME VISUALIZATION (Canvas)
 // ----------------------------------------------------------------------
@@ -264,7 +307,8 @@ export const VolumeVisualization = ({ data }) => {
             const len = (parseInt(data.labels.l) || 20) * scale * 0.7;
             const startX = cx - b/2 - len/2;
             const startY = cy + hTri/2;
-            ctx.beginPath(); ctx.moveTo(startX, startY); ctx.lineTo(startX + b, startY); ctx.lineTo(startX + b/2, startY - hTri); ctx.closePath(); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(startX, startY); ctx.lineTo(startX + b, startY); ctx.lineTo(startX + b/2, startY - hTri); ctx.closePath(); ctx.stroke();
             const offX = len; const offY = -len * 0.3;
             ctx.beginPath(); ctx.moveTo(startX + b/2, startY - hTri); ctx.lineTo(startX + b/2 + offX, startY - hTri + offY); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(startX + b, startY); ctx.lineTo(startX + b + offX, startY + offY); ctx.lineTo(startX + b/2 + offX, startY - hTri + offY); ctx.stroke();
@@ -275,10 +319,10 @@ export const VolumeVisualization = ({ data }) => {
         }
         else if (data.type === 'pyramid') {
             const w = (parseInt(data.labels.w || data.labels.s || 10) * scale);
-            const d = (parseInt(data.labels.d || data.labels.s || 10) * scale * 0.6);
+            const d = (parseInt(data.labels.d || data.labels.s || 10) * scale * 0.6); 
             const hPyr = (parseInt(data.labels.h) || 10) * scale;
             const x0 = cx - w/2 - d/2;
-            const y0 = cy + hPyr/3;
+            const y0 = cy + hPyr/3; 
             const FL = {x: x0, y: y0}; const FR = {x: x0+w, y: y0};
             const BR = {x: x0+w+d, y: y0-d}; const BL = {x: x0+d, y: y0-d};
             const Apex = {x: x0 + w/2 + d/2, y: y0 - d/2 - hPyr};
@@ -359,8 +403,6 @@ export const VolumeVisualization = ({ data }) => {
     return <div className="flex justify-center my-2 w-full"><canvas ref={canvasRef} width={320} height={240} className="w-full max-w-[320px] h-auto bg-white rounded-lg" /></div>;
 };
 
-VolumeVisualization.requiresCanvas = true;
-
 // Graph Canvas Component
 export const GraphCanvas = ({ data }) => {
     const canvasRef = useRef(null);
@@ -407,8 +449,6 @@ export const GraphCanvas = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
-
-GraphCanvas.requiresCanvas = true;
 
 export const StaticGeometryVisual = ({ description }) => { 
     if (!description) return null; 
