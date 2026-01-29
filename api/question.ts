@@ -1,52 +1,59 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-// Static imports with .js extension for TS resolution
-import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
-import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen.js';
 import { TenPowersGen } from '../src/core/generators/TenPowersGen.js';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen.js';
+import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
+import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
+import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
 import { ScaleGen } from '../src/core/generators/ScaleGen.js';
 import { VolumeGen } from '../src/core/generators/VolumeGen.js';
 import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
-import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
+import { PercentGen } from '../src/core/generators/PercentGen.js';
+import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js'; // New Import
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-    const { topic, level, lang } = req.query;
+    const { topic, level, lang = 'sv', force } = req.query;
 
     if (!topic || !level) {
-        return res.status(400).json({ error: "Missing topic or level" });
+        return res.status(400).json({ error: 'Missing topic or level' });
     }
 
-    const levelNum = parseInt(level as string);
-    const language = (lang as string) || 'sv';
-
     try {
-        let generator;
-
-        switch (topic) {
-            case 'equation': generator = new LinearEquationGen(); break;
-            case 'simplify': generator = new ExpressionSimplificationGen(); break;
-            case 'geometry': generator = new GeometryGenerator(); break;
-            case 'scale': generator = new ScaleGen(); break;
-            case 'volume': generator = new VolumeGen(); break;
-            case 'similarity': generator = new SimilarityGen(); break;
-            case 'arithmetic': generator = new BasicArithmeticGen(); break;
-            case 'negative': generator = new NegativeNumbersGen(); break;
-            case 'ten_powers': generator = new TenPowersGen(); break;
-            case 'graph': generator = new LinearGraphGenerator(); break;
-            default:
-                return res.status(404).json({ error: `Generator for topic '${topic}' not found.` });
+        const lvl = parseInt(level as string);
+        const generator = getGenerator(topic as string);
+        
+        if (!generator) {
+            return res.status(400).json({ error: `Unknown topic: ${topic}` });
         }
 
-        if (generator) {
-            const questionData = generator.generate(levelNum, language);
-            const response = { ...questionData, topic, level: levelNum };
-            return res.status(200).json(response);
+        const question = generator.generate(lvl, lang as string);
+        
+        if (question.renderData && !question.renderData.geometry) {
+            question.renderData.geometry = null;
         }
 
+        res.status(200).json(question);
     } catch (error) {
-        console.error("Generator Load Error:", error);
-        return res.status(500).json({ error: "Failed to load generator.", details: String(error) });
+        console.error("Generator error:", error);
+        res.status(500).json({ error: 'Failed to generate question' });
+    }
+}
+
+function getGenerator(topic: string) {
+    switch (topic) {
+        case 'arithmetic': return new BasicArithmeticGen();
+        case 'negative': return new NegativeNumbersGen();
+        case 'ten_powers': return new TenPowersGen();
+        case 'simplify': return new ExpressionSimplificationGen();
+        case 'equation': return new LinearEquationGen();
+        case 'linear_graph': return new LinearGraphGenerator();
+        case 'geometry': return new GeometryGenerator();
+        case 'scale': return new ScaleGen();
+        case 'volume': return new VolumeGen();
+        case 'similarity': return new SimilarityGen();
+        case 'percent': return new PercentGen();
+        case 'probability': return new ProbabilityGen(); // New Case
+        default: return null;
     }
 }

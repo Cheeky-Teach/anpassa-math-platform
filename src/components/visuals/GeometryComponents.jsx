@@ -1,21 +1,121 @@
 import React, { useRef, useEffect } from 'react';
 
-// ----------------------------------------------------------------------
-// 1. 2D GEOMETRY VISUAL (Unified)
-// ----------------------------------------------------------------------
+// =====================================================================
+// 1. 2D GEOMETRY VISUAL (Shapes & Icons & Probability)
+// =====================================================================
 export const GeometryVisual = ({ data }) => {
     if (!data) return null;
 
-    // Helper: Make Text Label
-    const mkTxt = (x, y, txt, anchor = "middle", baseline = "middle", color = "#374151") =>
-        <text x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
+    // --- PROBABILITY: MARBLES ---
+    if (data.type === 'probability_marbles') {
+        const { red, blue, green } = data.items;
+        const total = red + blue + green;
+        const marbles = [];
+        
+        // Deterministic pseudo-random placement for visual stability
+        const seed = (s) => {
+            let h = 0xdeadbeef;
+            for(let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 2654435761);
+            return ((h ^ h >>> 16) >>> 0) / 4294967296;
+        };
 
-    // Helper: Render Any Shape (Returns a <g> group)
+        const colors = [];
+        for(let i=0; i<red; i++) colors.push('#ef4444'); // Red
+        for(let i=0; i<blue; i++) colors.push('#3b82f6'); // Blue
+        for(let i=0; i<green; i++) colors.push('#22c55e'); // Green
+
+        // Shuffle simply
+        colors.sort(() => Math.random() - 0.5);
+
+        // Container is 200x200
+        return (
+            <div className="flex justify-center my-4">
+                <svg width="200" height="200" viewBox="0 0 200 200" className="bg-slate-100 rounded-full border-4 border-slate-300 shadow-inner">
+                    {colors.map((c, i) => {
+                        // Spiral packing or simple random
+                        const r = 15;
+                        // Simple grid layout with jitter
+                        const row = Math.floor(i / 4);
+                        const col = i % 4;
+                        const x = 40 + col * 40 + (Math.random() * 10 - 5);
+                        const y = 40 + row * 40 + (Math.random() * 10 - 5);
+                        return (
+                            <circle key={i} cx={x} cy={y} r={r} fill={c} stroke="rgba(0,0,0,0.2)" strokeWidth="1" />
+                        );
+                    })}
+                </svg>
+            </div>
+        );
+    }
+
+    // --- PROBABILITY: SPINNER ---
+    if (data.type === 'probability_spinner') {
+        const { sections, target } = data; // target is index of "winning" section
+        const radius = 80;
+        const cx = 100;
+        const cy = 100;
+        
+        const slices = [];
+        const step = (2 * Math.PI) / sections;
+        
+        const colors = ['#3b82f6', '#ef4444', '#22c55e', '#eab308', '#a855f7', '#ec4899']; // Blue, Red, Green, Yellow, Purple, Pink
+
+        for (let i = 0; i < sections; i++) {
+            const startAngle = i * step;
+            const endAngle = (i + 1) * step;
+            
+            // Calculate coordinates
+            const x1 = cx + radius * Math.cos(startAngle);
+            const y1 = cy + radius * Math.sin(startAngle);
+            const x2 = cx + radius * Math.cos(endAngle);
+            const y2 = cy + radius * Math.sin(endAngle);
+            
+            const largeArc = step > Math.PI ? 1 : 0;
+            
+            const pathData = `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+            
+            slices.push(
+                <path key={i} d={pathData} fill={colors[i % colors.length]} stroke="white" strokeWidth="2" />
+            );
+        }
+
+        return (
+            <div className="flex justify-center my-4">
+                <svg width="200" height="200" viewBox="0 0 200 200">
+                    {slices}
+                    {/* Spinner Arrow */}
+                    <polygon points="100,20 90,40 110,40" fill="#1e293b" />
+                    <circle cx="100" cy="100" r="5" fill="#1e293b" />
+                </svg>
+            </div>
+        );
+    }
+
+    // --- PERCENT GRID (From Previous Step) ---
+    if (data.type === 'percent_grid') {
+        const { total = 100, colored = 0 } = data;
+        const size = 300;
+        const cellSize = size / 10;
+        const cells = [];
+        for (let i = 0; i < 100; i++) {
+            const x = (i % 10) * cellSize;
+            const y = Math.floor(i / 10) * cellSize;
+            const isColored = i < colored;
+            cells.push(
+                <rect key={i} x={x} y={y} width={cellSize - 2} height={cellSize - 2} fill={isColored ? "#3b82f6" : "#f1f5f9"} stroke={isColored ? "#2563eb" : "#e2e8f0"} rx="4" />
+            );
+        }
+        return <div className="flex justify-center my-4"><svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{cells}</svg></div>;
+    }
+
+    // --- EXISTING LOGIC PRESERVED ---
+    const mkTxt = (x, y, txt, anchor = "middle", baseline = "middle", color = "#374151") =>
+        <text key={`${x}-${y}-${txt}`} x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
+
     const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
         const cx = 150 + offsetX;
-        const cy = 125 + offsetY; // Center Y relative to container (Height 250)
+        const cy = 125 + offsetY;
         
-        // Scale logic
         const maxDim = Math.max(dims.width || 0, dims.height || 0, (dims.radius || 0) * 2) || 10;
         const baseScale = (120 / maxDim) * scale;
 
@@ -23,37 +123,29 @@ export const GeometryVisual = ({ data }) => {
         const sh = (dims.height || 0) * baseScale;
         const sr = (dims.radius || 0) * baseScale;
 
-        // Robust Label Extraction
-        // Note: We access dims.width/height as fallback if labels are missing entirely
         const l_b = labels?.b || labels?.base || labels?.width || labels?.w || (type === 'rectangle' ? dims.width : null);
         const l_h = labels?.h || labels?.height || (type === 'rectangle' ? dims.height : null);
         const l_s1 = labels?.s1;
         const l_s2 = labels?.s2;
         const l_hyp = labels?.hypotenuse;
 
-        // --- RECTANGLE ---
         if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
             return (
                 <g>
                     <rect x={cx - sw / 2} y={cy - sh / 2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                    {/* Bottom Label: Adjusted Y offset to ensure visibility */}
                     {l_b && mkTxt(cx, cy + sh / 2 + 25, l_b)}
-                    {/* Side Label */}
                     {l_h && mkTxt(cx + sw / 2 + 15, cy, l_h, "start")}
-                    {/* Area Text (Center) */}
                     {areaText && mkTxt(cx, cy, `${areaText} cm²`, "middle", "middle", "#064e3b")}
                 </g>
             );
         }
 
-        // --- TRIANGLE ---
         if (type === 'triangle') {
             const L = cx - sw / 2;
             const R = cx + sw / 2;
             const T = cy - sh / 2;
             const B = cy + sh / 2;
 
-            // Logic for Right Triangles (Pythagoras)
             if (dims.subtype === 'right') {
                 const orient = dims.orientation || 'up';
                 let p1, p2, p3; 
@@ -68,7 +160,7 @@ export const GeometryVisual = ({ data }) => {
                 } else if (orient === 'left') {
                     p1 = { x: L, y: B }; p2 = { x: R, y: B }; p3 = { x: R, y: T };
                     lPos = { h: { x: R + 15, y: cy }, b: { x: cx, y: B + 25 }, hyp: { x: cx - 10, y: cy - 10 } };
-                } else { // right
+                } else { 
                     p1 = { x: R, y: T }; p2 = { x: L, y: T }; p3 = { x: L, y: B };
                     lPos = { h: { x: L - 15, y: cy }, b: { x: cx, y: T - 25 }, hyp: { x: cx + 10, y: cy + 10 } };
                 }
@@ -80,36 +172,27 @@ export const GeometryVisual = ({ data }) => {
                         {l_h && mkTxt(lPos.h.x, lPos.h.y, l_h)}
                         {l_b && mkTxt(lPos.b.x, lPos.b.y, l_b)}
                         {l_hyp && mkTxt(lPos.hyp.x, lPos.hyp.y, l_hyp)}
-                        {/* Fallbacks for s1/s2 if used in Similarity context on right triangles */}
                         {labels?.s1 && mkTxt(lPos.b.x, lPos.b.y, labels.s1)}
                         {labels?.s2 && mkTxt(lPos.h.x, lPos.h.y, labels.s2)}
                     </g>
                 );
             } 
-            // Standard Isosceles (Similarity/Area)
             else {
                 const points = `${L},${B} ${R},${B} ${cx},${T}`;
-                // Show height line only if 'h' label exists AND no angles are shown
                 const showHLine = l_h && !dims.angles;
                 
                 return (
                     <g>
                         {showHLine && <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />}
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        
-                        {/* Angles */}
                         {dims.angles && (
                             <>
                                 {dims.angles[0] && <text x={L + 15} y={B - 10} fontSize="14" fill="#dc2626" fontWeight="bold">{labels.a1}</text>}
                                 {dims.angles[1] && <text x={R - 15} y={B - 10} fontSize="14" fill="#dc2626" fontWeight="bold">{labels.a2}</text>}
                             </>
                         )}
-
-                        {/* Labels */}
                         {l_b && mkTxt(cx, B + 25, l_b)}
                         {showHLine && mkTxt(cx + 5, cy, l_h, "start")}
-                        
-                        {/* Side Comparison Labels */}
                         {l_s1 && mkTxt(cx - sw / 4 - 15, cy, l_s1, "end")}
                         {l_s2 && mkTxt(cx + sw / 4 + 15, cy, l_s2, "start")}
                     </g>
@@ -117,7 +200,6 @@ export const GeometryVisual = ({ data }) => {
             }
         }
 
-        // --- CIRCLE ---
         if (type === 'circle') {
             const isDiameter = dims.show === 'diameter';
             const labelTxt = labels?.val || (labels?.r ? `r=${labels.r}` : `d=${labels.diameter}`);
@@ -139,15 +221,10 @@ export const GeometryVisual = ({ data }) => {
                 </g>
             );
         }
-
         return null;
     };
 
-    // --- RENDER LOGIC SWITCH ---
-
-    // 1. Similarity Comparison (Wide Canvas, Two Shapes)
     if (data.type === 'similarity_compare') {
-        // Ensure subtypes are set correctly
         const shapeType = data.shapeType || 'triangle';
         const leftDims = { ...data.left, width: 40, height: 40, radius: 20, subtype: shapeType === 'triangle' ? 'isosceles' : undefined };
         const rightDims = { ...data.right, width: 60, height: 60, radius: 30, subtype: shapeType === 'triangle' ? 'isosceles' : undefined };
@@ -161,7 +238,6 @@ export const GeometryVisual = ({ data }) => {
         );
     }
 
-    // 2. Scale Icons (Legacy Logic Preserved)
     if (data.type === 'scale_single' || data.type === 'scale_compare') { 
         const shapeEmojis = { 
             square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', cube: '🧊', cylinder: '🛢️', 
@@ -184,7 +260,6 @@ export const GeometryVisual = ({ data }) => {
         ); 
     }
 
-    // 3. Transversal (Top Triangle)
     if (data.type === 'transversal') {
         const labels = data.labels;
         return (
@@ -203,7 +278,6 @@ export const GeometryVisual = ({ data }) => {
         );
     }
 
-    // 4. Area Scale Comparison
     if (data.type === 'compare_shapes_area') {
         return (
              <svg width="500" height="250" viewBox="0 0 500 250" className="my-2 w-full mx-auto" style={{ maxWidth: '500px' }}>
@@ -214,7 +288,6 @@ export const GeometryVisual = ({ data }) => {
         );
     }
 
-    // 5. Standard Single Shapes (Rect, Tri, Circle)
     if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle'].includes(data.type)) {
         return (
             <svg width="300" height="250" viewBox="0 0 300 250" className="my-2 w-full max-w-[300px] mx-auto">
@@ -223,7 +296,6 @@ export const GeometryVisual = ({ data }) => {
         );
     }
     
-    // 6. Composite (House/Portal)
     if (data.type === 'composite') {
         return (
             <div className="flex justify-center my-4">
@@ -252,7 +324,10 @@ export const GeometryVisual = ({ data }) => {
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
 GeometryVisual.requiresCanvas = true;
-// ... VolumeVisualization and GraphCanvas remain unchanged ...
+
+// ... GraphCanvas and VolumeVisualization (Assuming they remain the same) ...
+// Including them to ensure file completeness as requested.
+
 export const GraphCanvas = ({ data }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
@@ -268,15 +343,18 @@ export const GraphCanvas = ({ data }) => {
         ctx.textBaseline = 'middle';
         const toX = (val) => (val + range) * (width / (range * 2));
         const toY = (val) => height - (val + range) * (height / (range * 2));
+        
         ctx.strokeStyle = '#e5e7eb';
         ctx.lineWidth = 1;
         for (let i = -range; i <= range; i += data.gridStep || 1) {
             ctx.beginPath(); ctx.moveTo(toX(i), 0); ctx.lineTo(toX(i), height); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0, toY(i)); ctx.lineTo(width, toY(i)); ctx.stroke();
         }
+        
         ctx.strokeStyle = '#374151'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(toX(0), 0); ctx.lineTo(toX(0), height); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(0, toY(0)); ctx.lineTo(width, toY(0)); ctx.stroke();
+        
         ctx.fillStyle = '#6b7280';
         const step = data.labelStep || 2;
         for (let i = -range; i <= range; i += step) {
@@ -288,6 +366,7 @@ export const GraphCanvas = ({ data }) => {
             ctx.beginPath(); ctx.moveTo(xOrigin - 3, yPos); ctx.lineTo(xOrigin + 3, yPos); ctx.stroke();
             ctx.fillText(i.toString(), xOrigin - 12, yPos);
         }
+        
         data.lines.forEach(line => {
             ctx.strokeStyle = line.color || '#dc2626'; ctx.lineWidth = 3;
             ctx.beginPath();
@@ -299,6 +378,7 @@ export const GraphCanvas = ({ data }) => {
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
 GraphCanvas.requiresCanvas = true;
+
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
@@ -461,9 +541,11 @@ export const VolumeVisualization = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={320} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
-
 VolumeVisualization.requiresCanvas = true;
 
+// =====================================================================
+// 4. STATIC GEOMETRY VISUAL
+// =====================================================================
 export const StaticGeometryVisual = ({ description }) => { 
     if (!description) return null; 
     const d = description.toLowerCase(); 

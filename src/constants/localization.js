@@ -1,20 +1,21 @@
 export const CATEGORIES = {
     arithmetic: {
-        id: 'arithmetic', // Ensure ID matches key for robust iteration
+        id: 'arithmetic', 
         label: { sv: "Taluppfattning", en: "Number Theory" },
         color: "pink",
         levels: 9,
         topics: [
             { id: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
             { id: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
-            { id: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } }
+            { id: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } },
+            { id: 'percent', label: { sv: "Procent", en: "Percentage" } }
         ]
     },
     algebra: {
         id: 'algebra',
         label: { sv: "Algebra", en: "Algebra" },
         color: "indigo",
-        levels: 6, // Approximate max
+        levels: 6,
         topics: [
             { id: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
             { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
@@ -33,19 +34,17 @@ export const CATEGORIES = {
             { id: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } }
         ]
     },
-    samband: { // New/Legacy Category
-        id: 'samband',
-        label: { sv: "Samband", en: "Relationships" },
+    statistics: { // NEW CATEGORY
+        id: 'statistics',
+        label: { sv: "Sannolikhet", en: "Probability" },
         color: "purple",
-        levels: 5,
+        levels: 6,
         topics: [
-             { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
+             { id: 'probability', label: { sv: "Sannolikhet", en: "Probability" } }
         ]
     }
 };
 
-// Re-map for flat iteration if needed, but the structure above handles it well.
-// We preserve the array structure used in the dashboard.
 export const CATEGORIES_ARRAY = Object.values(CATEGORIES);
 
 export const UI_TEXT = {
@@ -71,12 +70,13 @@ export const UI_TEXT = {
         donow_btn: "Do Now", donow_title: "Do Now Aktivitet", donow_desc: "Välj upp till 3 nivåer för att generera ett startkort.",
         donow_generate: "Generera", backBtn: "Tillbaka",
         donow_show_all: "Visa Alla Svar", donow_hide_all: "Dölj Alla Svar",
-        donow_regenerate: "Nytt Set", // New Key
+        donow_regenerate: "Nytt Set", 
         levels: "Nivåer",
         clickToSelect: "Klicka för att välja nivå",
         selectLevel: "Välj Nivå",
         btnCheck: "Svara", btnHint: "Ledtråd", btnSolution: "Lösning", btnSkip: "Hoppa över",
-        error: "Något gick fel. Försök igen."
+        error: "Något gick fel. Försök igen.",
+        levelUpTitle: "Nivå upp?", levelUpDesc: "Du verkar ha koll på detta! Vill du hoppa till nästa nivå?", levelUpYes: "Ja, kör!", levelUpNo: "Nej, stanna här"
     },
     en: {
         hero_title: "Math Support",
@@ -100,12 +100,13 @@ export const UI_TEXT = {
         donow_btn: "Do Now", donow_title: "Do Now Activity", donow_desc: "Select up to 3 levels to generate a startup card.",
         donow_generate: "Generate", backBtn: "Back",
         donow_show_all: "Show All Answers", donow_hide_all: "Hide All Answers",
-        donow_regenerate: "New Set", // New Key
+        donow_regenerate: "New Set", 
         levels: "Levels",
         clickToSelect: "Click to select level",
         selectLevel: "Select Level",
         btnCheck: "Submit", btnHint: "Hint", btnSolution: "Solution", btnSkip: "Skip",
-        error: "Something went wrong. Please retry."
+        error: "Something went wrong. Please retry.",
+        levelUpTitle: "Level Up?", levelUpDesc: "You seem to know this! Do you want to skip to the next level?", levelUpYes: "Yes, let's go!", levelUpNo: "No, stay here"
     }
 };
 
@@ -132,6 +133,22 @@ export const LEVEL_DESCRIPTIONS = {
         1: { sv: "Mult/Div med 10, 100, 1000", en: "Mult/Div by 10, 100, 1000" },
         2: { sv: "Begreppsförståelse", en: "Conceptual Understanding" },
         3: { sv: "Blandade Faktorer (0.1, 100...)", en: "Mixed Factors" }
+    },
+    percent: { 
+        1: { sv: "Grundläggande (Rutnät)", en: "Basic Concepts (Grid)" },
+        2: { sv: "Huvudräkning (10%, 50%)", en: "Mental Math" },
+        3: { sv: "Multiplar av 10%", en: "Multiples of 10%" },
+        4: { sv: "Beräkna andelen (Decimal)", en: "Calculate Part (Decimal)" },
+        5: { sv: "Hitta helheten (100%)", en: "Find Whole" },
+        6: { sv: "Verklig Förändring", en: "Real World Change" }
+    },
+    probability: { // NEW DESCRIPTIONS
+        1: { sv: "Visuell Sannolikhet", en: "Visual Probability" },
+        2: { sv: "Tärning & Slump", en: "Dice & Chance" },
+        3: { sv: "Sannolikhet som Procent", en: "Probability as Percent" },
+        4: { sv: "Komplementhändelse (Inte)", en: "Complementary Events" },
+        5: { sv: "Oberoende Händelser", en: "Independent Events" },
+        6: { sv: "Kombinatorik", en: "Combinatorics" }
     },
     simplify: {
         1: { sv: "Förenkla Uttryck (Enkel)", en: "Simplify Expressions (Easy)" },
@@ -167,7 +184,7 @@ export const LEVEL_DESCRIPTIONS = {
     scale: {
         1: { sv: "Förstå Skala", en: "Understand Scale" },
         2: { sv: "Beräkna Längd (Enkel)", en: "Calculate Length (Simple)" },
-        3: { sv: "Blandade Scenarier", en: "Mixed Scenarios" }, // Updated Name
+        3: { sv: "Blandade Scenarier", en: "Mixed Scenarios" }, 
         4: { sv: "Bestäm Skalan", en: "Determine Scale" },
         5: { sv: "Problemlösning", en: "Word Problems" },
         6: { sv: "Areaskala", en: "Area Scale" },
@@ -180,7 +197,7 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Pyramid & Kon", en: "Pyramid & Cone" },
         5: { sv: "Klot & Sammansatta", en: "Sphere & Composite" },
         6: { sv: "Blandade Volymer", en: "Mixed Volumes" },
-        7: { sv: "Enhetsomvandling", en: "Unit Conversion" } // Updated Name
+        7: { sv: "Enhetsomvandling", en: "Unit Conversion" } 
     },
     similarity: {
         1: { sv: "Är de likformiga?", en: "Are they similar?" },
