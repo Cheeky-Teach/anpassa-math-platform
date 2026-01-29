@@ -19,6 +19,9 @@ export class ScaleGen {
 
     // Level 1: Basic Concepts (Understanding 1:X vs X:1)
     private level1_Concepts(lang: string): any {
+        // Fallback for shuffle if MathUtils is missing it
+        const shuffle = (arr: any[]) => arr.sort(() => Math.random() - 0.5);
+
         const isReduction = MathUtils.randomInt(0, 1) === 1;
         const ratio = MathUtils.randomChoice([2, 5, 10, 50, 100]);
         const scaleStr = isReduction ? `1:${ratio}` : `${ratio}:1`;
@@ -39,11 +42,14 @@ export class ScaleGen {
             wrong = lang === 'sv' ? `Verkligheten är ${ratio} ggr större än bilden.` : `Reality is ${ratio}x larger than image.`;
         }
 
+        // Ensure options array is valid
+        const options = shuffle([correct, wrong, same]);
+
         return {
             renderData: {
                 description: desc,
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([correct, wrong, same]),
+                options: options,
                 geometry: { 
                     type: 'scale_compare', 
                     leftLabel: lang === 'sv' ? 'Bild' : 'Image', 
@@ -89,9 +95,7 @@ export class ScaleGen {
         };
     }
 
-    // ========================================================================
-    // LEVEL 3: REAL WORLD SCENARIOS (Patched for Shape Safety)
-    // ========================================================================
+    // Level 3: Mixed Scenarios
     private level3_MixedScenarios(lang: string): any {
         const scenarioType = MathUtils.randomChoice([0, 1, 2, 3]);
 
@@ -101,7 +105,7 @@ export class ScaleGen {
         let visualData: any = {};
         let clues: any[] = [];
 
-        // --- Scenario 0: The Geographer (Map) ---
+        // Scenario 0: Map
         if (scenarioType === 0) {
             const scaleBase = MathUtils.randomChoice([10000, 20000, 50000]); 
             const mapCm = MathUtils.randomInt(2, 8); 
@@ -122,7 +126,7 @@ export class ScaleGen {
                 rightLabel: lang === 'sv' ? 'Verklighet' : 'Reality',
                 leftValue: 1,
                 rightValue: scaleBase,
-                shape: 'map' // Ensure 'map' emoji exists in GeometryComponents or fallback
+                shape: 'map' 
             };
 
             clues = [
@@ -137,7 +141,7 @@ export class ScaleGen {
             ];
         }
 
-        // --- Scenario 1: The Architect (Blueprint) ---
+        // Scenario 1: Blueprint
         else if (scenarioType === 1) {
             const scale = MathUtils.randomChoice([20, 40, 50, 100]);
             const realM = MathUtils.randomInt(30, 80) / 10; 
@@ -172,10 +176,9 @@ export class ScaleGen {
             ];
         }
 
-        // --- Scenario 2: The Model Maker (Hobby) ---
+        // Scenario 2: Model
         else if (scenarioType === 2) {
             const scale = MathUtils.randomChoice([18, 24, 87]); 
-            
             let realM = 4.5;
             if (scale === 18) realM = MathUtils.randomChoice([3.6, 4.5, 5.4]);
             if (scale === 24) realM = MathUtils.randomChoice([4.8, 7.2, 9.6]);
@@ -210,7 +213,7 @@ export class ScaleGen {
             ];
         }
 
-        // --- Scenario 3: The Microscopist (Magnification X:1) ---
+        // Scenario 3: Magnification
         else {
             const scale = MathUtils.randomChoice([10, 20, 50, 100]);
             const realMm = MathUtils.randomChoice([0.5, 1, 2, 4, 5]); 
@@ -255,7 +258,7 @@ export class ScaleGen {
         };
     }
 
-    // Level 4: Determine Scale (Given two values, find Ratio)
+    // Level 4: Determine Scale
     private level4_DetermineScale(lang: string): any {
         const scale = MathUtils.randomChoice([10, 20, 50, 100]);
         const drawCm = MathUtils.randomInt(2, 8);
@@ -282,13 +285,12 @@ export class ScaleGen {
 
     // Level 5: Word Problems
     private level5_NoPictures(lang: string): any {
-        // Reuse L3 logic but remove visuals
         const data = this.level3_MixedScenarios(lang);
         data.renderData.geometry = null;
         return data;
     }
 
-    // Level 6: Area Scale (FIXED VISUALS)
+    // Level 6: Area Scale (Fixed Dimensions)
     private level6_AreaScale(lang: string): any {
         const shape = MathUtils.randomChoice(['rectangle', 'triangle']);
         const L = MathUtils.randomInt(2, 5); 
@@ -310,8 +312,6 @@ export class ScaleGen {
         }
 
         const bigArea = baseArea * A;
-        
-        // SCALED DIMENSIONS FOR REALITY
         const scaledWidth = width * L;
         const scaledHeight = height * L;
 
@@ -326,13 +326,11 @@ export class ScaleGen {
                 geometry: { 
                     type: 'compare_shapes_area', 
                     shapeType: shape, 
-                    // Left (Image)
                     left: { 
                         width: width, height: height, subtype: subtype,
                         label: lang === 'sv'?'Bild':'Image', area: baseArea,
                         labels: { b: width, h: height } 
                     }, 
-                    // Right (Reality - Scaled)
                     right: { 
                         width: scaledWidth, height: scaledHeight, subtype: subtype,
                         label: lang === 'sv'?'Verklighet':'Reality', area: '?',
