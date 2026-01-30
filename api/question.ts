@@ -11,7 +11,9 @@ import { VolumeGen } from '../src/core/generators/VolumeGen.js';
 import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
 import { PercentGen } from '../src/core/generators/PercentGen.js';
 import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
-import { StatisticsGen } from '../src/core/generators/StatisticsGen.js'; // New Import
+import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
+import { PythagorasGen } from '../src/core/generators/PythagorasGen.js';
+import { ExponentsGen } from '../src/core/generators/ExponentsGen.js'; // NEW
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
     const { topic, level, lang = 'sv', force } = req.query;
@@ -55,7 +57,9 @@ function getGenerator(topic: string) {
         case 'similarity': return new SimilarityGen();
         case 'percent': return new PercentGen();
         case 'probability': return new ProbabilityGen();
-        case 'statistics': return new StatisticsGen(); // New Case
+        case 'statistics': return new StatisticsGen();
+        case 'pythagoras': return new PythagorasGen();
+        case 'exponents': return new ExponentsGen(); // NEW
         default: return null;
     }
 }

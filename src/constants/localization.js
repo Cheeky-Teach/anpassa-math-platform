@@ -8,9 +8,11 @@ export const CATEGORIES = {
             { id: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
             { id: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
             { id: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } },
+            { id: 'exponents', label: { sv: "Potenser & Rötter", en: "Exponents & Roots" } }, // NEW
             { id: 'percent', label: { sv: "Procent", en: "Percentage" } }
         ]
     },
+    // ... [Other categories remain unchanged] ...
     algebra: {
         id: 'algebra',
         label: { sv: "Algebra", en: "Algebra" },
@@ -30,7 +32,8 @@ export const CATEGORIES = {
             { id: 'geometry', label: { sv: "Area & Omkrets", en: "Area & Perimeter" } },
             { id: 'scale', label: { sv: "Skala", en: "Scale" } },
             { id: 'volume', label: { sv: "Volym", en: "Volume" } },
-            { id: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } }
+            { id: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } },
+            { id: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } }
         ]
     },
     samband: { 
@@ -122,6 +125,16 @@ export const UI_TEXT = {
 };
 
 export const LEVEL_DESCRIPTIONS = {
+    // ... [Previous descriptions] ...
+    exponents: { // NEW
+        1: { sv: "Grunder & x^0", en: "Foundations & x^0" },
+        2: { sv: "Tiopotenser", en: "Powers of 10" },
+        3: { sv: "Grundpotensform", en: "Scientific Notation" },
+        4: { sv: "Kvadratrötter", en: "Square Roots" },
+        5: { sv: "Potenslagar (Enkel)", en: "Exponent Laws (Basic)" },
+        6: { sv: "Potenslagar (Avancerad)", en: "Exponent Laws (Adv)" }
+    },
+    // ... [Rest of descriptions] ...
     arithmetic: {
         1: { sv: "Addition (Uppställning)", en: "Addition (Vertical)" },
         2: { sv: "Subtraktion (Uppställning)", en: "Subtraction (Vertical)" },
@@ -223,5 +236,13 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Beräkna sida (Enkel)", en: "Calc Side (Simple)" },
         3: { sv: "Topptriangelsatsen", en: "Top Triangle Theorem" },
         4: { sv: "Pythagoras & Likformighet", en: "Pythagoras & Similarity" }
+    },
+    pythagoras: {
+        1: { sv: "Kvadrater & Rötter", en: "Squares & Roots" },
+        2: { sv: "Hitta Hypotenusan", en: "Find Hypotenuse" },
+        3: { sv: "Hitta Kateten", en: "Find Leg" },
+        4: { sv: "Problemlösning", en: "Word Problems" },
+        5: { sv: "Avstånd (Koordinater)", en: "Distance (Coordinates)" },
+        6: { sv: "Är den rätvinklig?", en: "Is it Right-Angled?" }
     }
 };

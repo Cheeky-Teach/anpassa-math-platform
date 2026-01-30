@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-// Static imports ensure code is bundled into the function
 import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
@@ -10,12 +9,12 @@ import { ScaleGen } from '../src/core/generators/ScaleGen.js';
 import { VolumeGen } from '../src/core/generators/VolumeGen.js';
 import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
-import { PercentGen } from '../src/core/generators/PercentGen.js'; // New Import
-import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js'; // New Import
-import { StatisticsGen } from '../src/core/generators/StatisticsGen.js'; // New Import
-import { PythagorasGen } from '../src/core/generators/PythagorasGen.js'; // New Import
+import { PercentGen } from '../src/core/generators/PercentGen.js';
+import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
+import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
+import { PythagorasGen } from '../src/core/generators/PythagorasGen.js';
+import { ExponentsGen } from '../src/core/generators/ExponentsGen.js'; // NEW
 
-// Helper to instantiate
 const getGenerator = (topic: string) => {
     switch (topic) {
         case 'equation': return new LinearEquationGen();
@@ -28,17 +27,17 @@ const getGenerator = (topic: string) => {
         case 'negative': return new NegativeNumbersGen();
         case 'ten_powers': return new TenPowersGen();
         case 'graph': return new LinearGraphGenerator();
-        case 'linear_graph': return new LinearGraphGenerator(); // Alias for safety
-        case 'percent': return new PercentGen(); // New Case
-        case 'probability': return new ProbabilityGen(); // New Case
-        case 'statistics': return new StatisticsGen(); // New Case
-        case 'pythagoras': return new PythagorasGen(); // New Case
+        case 'linear_graph': return new LinearGraphGenerator();
+        case 'percent': return new PercentGen();
+        case 'probability': return new ProbabilityGen();
+        case 'statistics': return new StatisticsGen();
+        case 'pythagoras': return new PythagorasGen();
+        case 'exponents': return new ExponentsGen(); // NEW
         default: return null;
     }
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS Headers
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
@@ -69,14 +68,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
             if (generator) {
                 try {
                     const questionData = generator.generate(parseInt(level), lang);
-                    
                     let displayAnswer = "";
                     try {
                         const rawAnswer = Buffer.from(questionData.token, 'base64').toString('utf-8');
                         displayAnswer = rawAnswer;
                     } catch (e) { displayAnswer = "Error"; }
 
-                    // Ensure geometry field is safe for frontend
                     if (questionData.renderData && !questionData.renderData.geometry) {
                         questionData.renderData.geometry = null;
                     }

@@ -10,17 +10,11 @@ import { LEVEL_DESCRIPTIONS } from '../../constants/localization';
 // --- SECURITY HELPERS ---
 
 const isValidInput = (val, type) => {
-    // Allow empty string to enable deletion
     if (val === '') return true;
-    
-    // Strict Numeric Check (allows negative, decimal, ratio colon)
     const numericRegex = /^-?[\d\s]*([.,:]\d*)?$/;
-
     if (type === 'numeric' || type === 'scale') {
         return numericRegex.test(val);
     }
-    
-    // Text Sanitization (Block HTML/Script tags)
     const dangerousRegex = /[<>{}]/g;
     return !dangerousRegex.test(val);
 };
@@ -62,23 +56,17 @@ const PracticeView = ({
     const [scaleInputRight, setScaleInputRight] = useState('');
     const inputRef = useRef(null);
 
-    // --- AUTO-ADVANCE LOGIC (Fix for Solution Revealed Stuck State) ---
-    // We use a ref for the action to prevent the timer from resetting 
-    // every time App.jsx re-renders (e.g., when the practice timer ticks).
+    // Auto-advance logic
     const retryRef = useRef(actions.retry);
     useEffect(() => { retryRef.current = actions.retry; }, [actions.retry]);
-
     useEffect(() => {
-        // If correct AND solution was used, App.jsx skips the auto-fetch.
-        // We handle it here to ensure the user isn't stuck.
         if (feedback === 'correct' && isSolutionRevealed) {
             const timer = setTimeout(() => {
-                retryRef.current(); // Fetch next question
+                retryRef.current(); 
             }, 1500);
             return () => clearTimeout(timer);
         }
     }, [feedback, isSolutionRevealed]);
-    // -----------------------------------------------------------------
 
     const descriptionText = typeof question?.renderData?.description === 'object' ? question.renderData.description[lang] : question?.renderData?.description;
     
@@ -88,7 +76,7 @@ const PracticeView = ({
         handleSubmit({ preventDefault: () => { } }, choice); 
     };
     
-    // --- SECURE SUBMIT HANDLER ---
+    // --- SUBMIT HANDLER ---
     const handleFormSubmit = (e) => {
         e.preventDefault();
         
@@ -96,30 +84,25 @@ const PracticeView = ({
         const answerType = question.renderData.answerType;
 
         if (answerType === 'scale') {
-            // Validate both parts of scale (Must be non-empty for submission)
             if (scaleInputLeft === '' || scaleInputRight === '' || 
                 !isValidInput(scaleInputLeft, 'numeric') || !isValidInput(scaleInputRight, 'numeric')) {
                 return; 
             }
             finalInput = `${scaleInputLeft}:${scaleInputRight}`;
         } else {
-            // Validate standard input
             if (!isValidInput(input, answerType === 'numeric' ? 'numeric' : 'text')) {
                 return;
             }
-            // Sanitize text inputs
             if (answerType !== 'numeric') {
                 finalInput = sanitize(input);
             }
         }
 
-        // Prevent empty submissions
         if (!finalInput || finalInput.trim() === '') return;
 
         handleSubmit(e, finalInput);
     };
 
-    // --- SECURE INPUT CHANGE HANDLER ---
     const handleInputChange = (e, setter, type) => {
         const val = e.target.value;
         if (isValidInput(val, type)) {
@@ -127,7 +110,6 @@ const PracticeView = ({
         }
     };
 
-    // Mobile-safe focus logic
     useEffect(() => {
         if (question && !loading) {
             setScaleInputLeft('');
@@ -142,7 +124,6 @@ const PracticeView = ({
 
     const maxLevels = Object.keys(LEVEL_DESCRIPTIONS[uiState.topic] || {}).length;
 
-    // Helper to determine visual component
     const renderVisual = () => {
         if (!question?.renderData) return null;
 
@@ -238,7 +219,6 @@ const PracticeView = ({
                                             {choice}
                                         </button>
                                     ))}
-                                    {/* Fallback for 'choices' key */}
                                     {question.renderData.choices && question.renderData.choices.map((choice, idx) => (
                                         <button 
                                             key={idx} 
@@ -265,7 +245,7 @@ const PracticeView = ({
                                     )}
                                     <button 
                                         type="submit" 
-                                        className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-green-500 shadow-green-200 cursor-default' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 hover:shadow-lg'}`}
+                                        className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-primary-500 shadow-green-200 cursor-default' : 'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}
                                     >
                                         {feedback === 'correct' ? (ui.tagCorrect || "Correct") : feedback === 'incorrect' ? (ui.tagWrong || "Incorrect") : (ui.btnCheck || (lang === 'sv' ? "Svara" : "Submit"))}
                                     </button>
@@ -285,8 +265,22 @@ const PracticeView = ({
                         </div>
                     )}
                 </main>
+
+                {/* --- MOBILE CLUES FIX: Visible only on small screens when needed --- */}
+                <div className="lg:hidden mt-6 w-full">
+                    {(revealedClues.length > 0 || isSolutionRevealed) && (
+                        <CluePanel 
+                            revealedClues={revealedClues} 
+                            question={question} 
+                            ui={ui} 
+                            isSolutionRevealed={isSolutionRevealed} 
+                        />
+                    )}
+                </div>
+
             </div>
             
+            {/* Desktop Sidebar (unchanged) */}
             <div className="lg:w-80 w-full shrink-0 flex flex-col gap-4 hidden lg:flex">
                 <CluePanel revealedClues={revealedClues} question={question} ui={ui} isSolutionRevealed={isSolutionRevealed} />
                 <div className="flex-1 min-h-0"><HistoryList history={uiState.history} ui={ui} /></div>
