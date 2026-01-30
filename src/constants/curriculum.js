@@ -6,7 +6,8 @@ export const CATEGORIES = {
         generators: [
             { id: 'BasicArithmeticGen', api: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
             { id: 'NegativeNumbersGen', api: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
-            { id: 'TenPowersGen', api: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } }
+            { id: 'TenPowersGen', api: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } },
+            { id: 'PercentGen', api: 'percent', label: { sv: "Procent", en: "Percentage" } } // Added Percent
         ]
     },
     ALGEBRA: {
@@ -36,6 +37,15 @@ export const CATEGORIES = {
         generators: [
             { id: 'LinearGraphGenerator', api: 'graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
         ]
+    },
+    STATISTICS: { // NEW CATEGORY
+        id: 'STATISTICS',
+        label: { en: 'Statistics', sv: 'Sannolikhet & Statistik' },
+        color: 'yellow',
+        generators: [
+            { id: 'ProbabilityGen', api: 'probability', label: { sv: "Sannolikhet", en: "Probability" } },
+            { id: 'StatisticsGen', api: 'statistics', label: { sv: "Statistik", en: "Statistics" } }
+        ]
     }
 };
 
@@ -62,6 +72,14 @@ export const LEVEL_DESCRIPTIONS = {
         1: { sv: "Multiplikation & Division (10, 100...)", en: "Mult & Div (10, 100...)" },
         2: { sv: "Begreppsförståelse (MC)", en: "Conceptual (MC)" },
         3: { sv: "Decimala faktorer (0.1, 0.01...)", en: "Decimal factors (0.1, 0.01...)" }
+    },
+    PercentGen: { // NEW
+        1: { sv: "Grundläggande (Rutnät)", en: "Basic Concepts (Grid)" },
+        2: { sv: "Huvudräkning (10%, 50%)", en: "Mental Math" },
+        3: { sv: "Multiplar av 10%", en: "Multiples of 10%" },
+        4: { sv: "Beräkna andelen (Decimal)", en: "Calculate Part (Decimal)" },
+        5: { sv: "Hitta helheten (100%)", en: "Find Whole" },
+        6: { sv: "Verklig Förändring", en: "Real World Change" }
     },
     EquationGenerator: {
         1: { sv: "Enstegsekvationer", en: "One-step equations" },
@@ -117,6 +135,22 @@ export const LEVEL_DESCRIPTIONS = {
         3: { sv: "Hitta k (negativ)", en: "Find slope (Negative)" },
         4: { sv: "Hitta funktion (y=kx+m)", en: "Find equation (y=kx+m)" },
         5: { sv: "Blandat", en: "Mixed graphs" }
+    },
+    ProbabilityGen: { // NEW
+        1: { sv: "Visuell Sannolikhet", en: "Visual Probability" },
+        2: { sv: "Tärning & Slump", en: "Dice & Chance" },
+        3: { sv: "Sannolikhet som Procent", en: "Probability as Percent" },
+        4: { sv: "Komplementhändelse", en: "Complementary Events" },
+        5: { sv: "Oberoende Händelser", en: "Independent Events" },
+        6: { sv: "Kombinatorik", en: "Combinatorics" }
+    },
+    StatisticsGen: { // NEW
+        1: { sv: "Typvärde & Variationsbredd", en: "Mode & Range" },
+        2: { sv: "Medelvärde", en: "Mean" },
+        3: { sv: "Median", en: "Median" },
+        4: { sv: "Baklänges medelvärde", en: "Reverse Mean" },
+        5: { sv: "Frekvenstabell", en: "Frequency Table" },
+        6: { sv: "Blandade begrepp", en: "Mixed Concepts" }
     }
 };
 

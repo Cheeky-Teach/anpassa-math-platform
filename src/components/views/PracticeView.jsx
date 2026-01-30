@@ -10,7 +10,7 @@ import { LEVEL_DESCRIPTIONS } from '../../constants/localization';
 // --- SECURITY HELPERS ---
 
 const isValidInput = (val, type) => {
-    // CRITICAL FIX: Allow empty string to enable deletion of the last character
+    // Allow empty string to enable deletion
     if (val === '') return true;
     
     // Strict Numeric Check (allows negative, decimal, ratio colon)
@@ -62,6 +62,24 @@ const PracticeView = ({
     const [scaleInputRight, setScaleInputRight] = useState('');
     const inputRef = useRef(null);
 
+    // --- AUTO-ADVANCE LOGIC (Fix for Solution Revealed Stuck State) ---
+    // We use a ref for the action to prevent the timer from resetting 
+    // every time App.jsx re-renders (e.g., when the practice timer ticks).
+    const retryRef = useRef(actions.retry);
+    useEffect(() => { retryRef.current = actions.retry; }, [actions.retry]);
+
+    useEffect(() => {
+        // If correct AND solution was used, App.jsx skips the auto-fetch.
+        // We handle it here to ensure the user isn't stuck.
+        if (feedback === 'correct' && isSolutionRevealed) {
+            const timer = setTimeout(() => {
+                retryRef.current(); // Fetch next question
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [feedback, isSolutionRevealed]);
+    // -----------------------------------------------------------------
+
     const descriptionText = typeof question?.renderData?.description === 'object' ? question.renderData.description[lang] : question?.renderData?.description;
     
     const handleChoiceClick = (choice) => { 
@@ -95,7 +113,7 @@ const PracticeView = ({
             }
         }
 
-        // Prevent empty submissions (Check after sanitization)
+        // Prevent empty submissions
         if (!finalInput || finalInput.trim() === '') return;
 
         handleSubmit(e, finalInput);
@@ -104,7 +122,6 @@ const PracticeView = ({
     // --- SECURE INPUT CHANGE HANDLER ---
     const handleInputChange = (e, setter, type) => {
         const val = e.target.value;
-        // Logic: Always allow empty string (deletion), otherwise check regex
         if (isValidInput(val, type)) {
             setter(val);
         }
@@ -237,35 +254,13 @@ const PracticeView = ({
                                 <form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
                                     {question.renderData.answerType === 'scale' ? (
                                         <div className="flex items-center justify-center gap-2">
-                                            <input 
-                                                type="text" 
-                                                value={scaleInputLeft} 
-                                                onChange={(e) => handleInputChange(e, setScaleInputLeft, 'numeric')} 
-                                                className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} 
-                                                placeholder="X" 
-                                                disabled={feedback === 'correct'} 
-                                            />
+                                            <input type="text" value={scaleInputLeft} onChange={(e) => handleInputChange(e, setScaleInputLeft, 'numeric')} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder="X" disabled={feedback === 'correct'} />
                                             <span className="text-2xl font-bold text-gray-400">:</span>
-                                            <input 
-                                                type="text" 
-                                                value={scaleInputRight} 
-                                                onChange={(e) => handleInputChange(e, setScaleInputRight, 'numeric')} 
-                                                className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} 
-                                                placeholder="X" 
-                                                disabled={feedback === 'correct'} 
-                                            />
+                                            <input type="text" value={scaleInputRight} onChange={(e) => handleInputChange(e, setScaleInputRight, 'numeric')} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder="X" disabled={feedback === 'correct'} />
                                         </div>
                                     ) : (
                                         <div className="relative">
-                                            <input 
-                                                ref={inputRef} 
-                                                type="text" 
-                                                value={input} 
-                                                onChange={(e) => handleInputChange(e, setInput, question.renderData.answerType)} 
-                                                className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} 
-                                                placeholder={ui.placeholder || "..."} 
-                                                disabled={feedback === 'correct'} 
-                                            />
+                                            <input ref={inputRef} type="text" value={input} onChange={(e) => handleInputChange(e, setInput, question.renderData.answerType)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder={ui.placeholder || "..."} disabled={feedback === 'correct'} />
                                         </div>
                                     )}
                                     <button 

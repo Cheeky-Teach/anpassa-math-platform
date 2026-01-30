@@ -1,45 +1,21 @@
 import React from 'react';
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
 
-// ARCHITECTURAL FIX: 
-// We explicitly define all color classes here.
-// This allows Tailwind's JIT compiler to see them and include them in the CSS.
 const COLOR_VARIANTS = {
     pink: {
-        bgLight: 'bg-pink-50',
-        bgDark: 'bg-pink-500',
-        border: 'border-pink-100',
-        text: 'text-pink-700',
-        ring: 'ring-pink-500',
-        borderSolid: 'border-pink-500',
-        selectFocus: 'focus:ring-pink-500'
+        bgLight: 'bg-pink-50', bgDark: 'bg-pink-500', border: 'border-pink-100', text: 'text-pink-700', ring: 'ring-pink-500', borderSolid: 'border-pink-500', selectFocus: 'focus:ring-pink-500'
     },
     indigo: {
-        bgLight: 'bg-indigo-50',
-        bgDark: 'bg-indigo-500',
-        border: 'border-indigo-100',
-        text: 'text-indigo-700',
-        ring: 'ring-indigo-500',
-        borderSolid: 'border-indigo-500',
-        selectFocus: 'focus:ring-indigo-500'
+        bgLight: 'bg-indigo-50', bgDark: 'bg-indigo-500', border: 'border-indigo-100', text: 'text-indigo-700', ring: 'ring-indigo-500', borderSolid: 'border-indigo-500', selectFocus: 'focus:ring-indigo-500'
     },
     emerald: {
-        bgLight: 'bg-emerald-50',
-        bgDark: 'bg-emerald-500',
-        border: 'border-emerald-100',
-        text: 'text-emerald-700',
-        ring: 'ring-emerald-500',
-        borderSolid: 'border-emerald-500',
-        selectFocus: 'focus:ring-emerald-500'
+        bgLight: 'bg-emerald-50', bgDark: 'bg-emerald-500', border: 'border-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-500', borderSolid: 'border-emerald-500', selectFocus: 'focus:ring-emerald-500'
     },
     purple: {
-        bgLight: 'bg-purple-50',
-        bgDark: 'bg-purple-500',
-        border: 'border-purple-100',
-        text: 'text-purple-700',
-        ring: 'ring-purple-500',
-        borderSolid: 'border-purple-500',
-        selectFocus: 'focus:ring-purple-500'
+        bgLight: 'bg-purple-50', bgDark: 'bg-purple-500', border: 'border-purple-100', text: 'text-purple-700', ring: 'ring-purple-500', borderSolid: 'border-purple-500', selectFocus: 'focus:ring-purple-500'
+    },
+    yellow: {
+        bgLight: 'bg-yellow-50', bgDark: 'bg-yellow-500', border: 'border-yellow-100', text: 'text-yellow-700', ring: 'ring-yellow-500', borderSolid: 'border-yellow-500', selectFocus: 'focus:ring-yellow-500'
     }
 };
 
@@ -54,11 +30,11 @@ const Dashboard = ({
     resetTimer, 
     ui, 
     onLgrOpen, 
+    onContentOpen, // New Prop
     onDoNowOpen, 
     toggleLang 
 }) => {
     
-    // Helper to get the correct style object
     const getStyles = (category) => {
         const color = category.color || 'emerald';
         return COLOR_VARIANTS[color] || COLOR_VARIANTS.emerald;
@@ -67,12 +43,10 @@ const Dashboard = ({
     return (
         <div className="max-w-6xl mx-auto w-full p-4 fade-in flex flex-col min-h-[calc(100vh-80px)]">
             
-            {/* Hero / Header Section (Preserved from Stable Version) */}
             <div className="text-center py-10 md:py-16 border-b border-gray-200 mb-12 bg-emerald-50/50 rounded-3xl mx-4 relative overflow-hidden">
                 <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-4 tracking-tight relative z-10">Anpassa</h1>
                 <p className="text-xl md:text-2xl text-gray-500 font-medium tracking-wide relative z-10">{ui.tagline}</p>
 
-                {/* Timer Control */}
                 <div className="mt-8 flex justify-center relative z-10">
                     <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 px-4 shadow-sm border border-gray-100 flex items-center gap-3">
                         <span className="font-bold text-gray-700 text-xs uppercase tracking-wider">{ui.timer_title}</span>
@@ -100,14 +74,12 @@ const Dashboard = ({
                 <p className="text-gray-500 text-lg leading-relaxed max-w-2xl mx-auto">{ui.progressionInfo}</p>
             </div>
 
-            {/* Category Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">
                 {Object.entries(CATEGORIES).map(([catKey, category]) => {
                     const styles = getStyles(category);
                     
                     return (
                         <div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}>
-                            {/* Card Header with Static Color Classes */}
                             <div className={`${styles.bgLight} p-4 border-b ${styles.border}`}>
                                 <h3 className={`text-lg font-bold ${styles.text} uppercase tracking-wide flex items-center gap-2`}>
                                     <span className={`w-3 h-3 rounded-full ${styles.bgDark}`}></span>
@@ -115,7 +87,6 @@ const Dashboard = ({
                                 </h3>
                             </div>
                             
-                            {/* Topics List */}
                             <div className="p-4 space-y-4 flex-1">
                                 {category.topics.map(topic => {
                                     return (
@@ -153,7 +124,6 @@ const Dashboard = ({
                 })}
             </div>
 
-            {/* Start Button Overlay */}
             <div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20">
                 <button 
                     onClick={onStart} 
@@ -168,13 +138,16 @@ const Dashboard = ({
                 </button>
             </div>
 
-            {/* Footer */}
             <footer className="mt-auto py-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center px-4 gap-4">
                 <button onClick={onDoNowOpen} className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-full text-sm transition-colors shadow-sm order-2 md:order-1">
                     {ui.donow_btn}
                 </button>
 
                 <div className="flex items-center gap-3 order-1 md:order-2 w-full md:w-auto justify-center md:justify-end">
+                    {/* NEW CONTENT BUTTON */}
+                    <button onClick={onContentOpen} className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-emerald-200 shadow-sm">
+                        Innehåll
+                    </button>
                     <button onClick={onLgrOpen} className="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-sky-200 shadow-sm">
                         {ui.lgr_btn}
                     </button>

@@ -6,7 +6,8 @@ import DoNowGrid from './components/views/DoNowGrid';
 import AboutModal from './components/modals/AboutModal';
 import LgrModal from './components/modals/LgrModal';
 import StatsModal from './components/modals/StatsModal';
-import StreakModal from './components/modals/StreakModal'; // Ensure this exists
+import StreakModal from './components/modals/StreakModal'; 
+import ContentModal from './components/modals/ContentModal'; // NEW IMPORT
 import MobileDrawer from './components/practice/MobileDrawer';
 import { UI_TEXT, CATEGORIES, LEVEL_DESCRIPTIONS } from './constants/localization';
 
@@ -37,19 +38,20 @@ function App() {
     const [history, setHistory] = useState([]);
     const [revealedClues, setRevealedClues] = useState([]);
     const [levelUpAvailable, setLevelUpAvailable] = useState(false);
+    
+    // Modals State
     const [aboutOpen, setAboutOpen] = useState(false);
     const [statsOpen, setStatsOpen] = useState(false);
     const [timeUpOpen, setTimeUpOpen] = useState(false);
     const [lgrOpen, setLgrOpen] = useState(false);
+    const [contentOpen, setContentOpen] = useState(false); // NEW STATE FOR CONTENT MODAL
+    const [showStreakModal, setShowStreakModal] = useState(false);
+    const [showTotalModal, setShowTotalModal] = useState(false);
+    const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
     // Do Now State
     const [doNowQuestions, setDoNowQuestions] = useState([]);
     const [doNowConfig, setDoNowConfig] = useState([]); // Stores the selected topics for regeneration
-
-    // Modals State
-    const [showStreakModal, setShowStreakModal] = useState(false);
-    const [showTotalModal, setShowTotalModal] = useState(false);
-    const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
     const [usedHelp, setUsedHelp] = useState(false);
     const [isSolutionRevealed, setIsSolutionRevealed] = useState(false);
@@ -109,7 +111,8 @@ function App() {
         setIsSolutionRevealed(false);
         setLevelUpAvailable(false);
         try {
-            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}${force ? '&force=true' : ''}`);
+            const timestamp = new Date().getTime();
+            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}${force ? `&force=true&t=${timestamp}` : ''}`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             setQuestion(data);
@@ -179,7 +182,8 @@ function App() {
 
     const handleRefreshOne = async (index, topic, level) => {
         try {
-            const res = await fetch(`/api/question?topic=${topic}&level=${level}&lang=${lang}&force=true`);
+            const timestamp = new Date().getTime();
+            const res = await fetch(`/api/question?topic=${topic}&level=${level}&lang=${lang}&force=true&t=${timestamp}`);
             const newQuestion = await res.json();
             
             if (newQuestion.error) throw new Error(newQuestion.error);
@@ -252,7 +256,6 @@ function App() {
         fetchQuestion(topic, level, lang);
     };
 
-    // FIX: Removed setStreak(0) to preserve streak on level change
     const handleChangeLevel = (delta) => { 
         const newLevel = level + delta; 
         const max = Object.keys(LEVEL_DESCRIPTIONS[topic] || {}).length; 
@@ -361,6 +364,7 @@ function App() {
         <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
             <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
             <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
+            <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> {/* NEW MODAL COMPONENT */}
             <MobileDrawer open={mobileHistoryOpen} onClose={() => setMobileHistoryOpen(false)} history={history} ui={ui} />
             <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
             <StatsModal visible={timeUpOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setTimeUpOpen(false)} title={ui.stats_times_up} />
@@ -393,7 +397,11 @@ function App() {
             <div className="flex-1 flex flex-col">
                 {view === 'dashboard' ? (
                     <Dashboard
-                        lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice} timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} onLgrOpen={() => setLgrOpen(true)} onDoNowOpen={() => setView('donow_config')} toggleLang={toggleLang}
+                        lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice} timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} 
+                        onLgrOpen={() => setLgrOpen(true)} 
+                        onContentOpen={() => setContentOpen(true)} // PASSING THE HANDLER
+                        onDoNowOpen={() => setView('donow_config')} 
+                        toggleLang={toggleLang}
                     />
                 ) : (
                     <PracticeView
