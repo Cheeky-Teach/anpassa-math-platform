@@ -10,7 +10,8 @@ import { ScaleGen } from '../src/core/generators/ScaleGen.js';
 import { VolumeGen } from '../src/core/generators/VolumeGen.js';
 import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
 import { PercentGen } from '../src/core/generators/PercentGen.js';
-import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js'; // New Import
+import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
+import { StatisticsGen } from '../src/core/generators/StatisticsGen.js'; // New Import
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
     const { topic, level, lang = 'sv', force } = req.query;
@@ -53,7 +54,8 @@ function getGenerator(topic: string) {
         case 'volume': return new VolumeGen();
         case 'similarity': return new SimilarityGen();
         case 'percent': return new PercentGen();
-        case 'probability': return new ProbabilityGen(); // New Case
+        case 'probability': return new ProbabilityGen();
+        case 'statistics': return new StatisticsGen(); // New Case
         default: return null;
     }
 }

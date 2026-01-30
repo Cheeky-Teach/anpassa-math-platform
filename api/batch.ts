@@ -12,7 +12,7 @@ import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
 import { PercentGen } from '../src/core/generators/PercentGen.js'; // New Import
 import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js'; // New Import
-
+import { StatisticsGen } from '../src/core/generators/StatisticsGen.js'; // New Import
 
 // Helper to instantiate
 const getGenerator = (topic: string) => {
@@ -30,6 +30,7 @@ const getGenerator = (topic: string) => {
         case 'linear_graph': return new LinearGraphGenerator(); // Alias for safety
         case 'percent': return new PercentGen(); // New Case
         case 'probability': return new ProbabilityGen(); // New Case
+        case 'statistics': return new StatisticsGen(); // New Case
         default: return null;
     }
 };
