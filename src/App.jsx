@@ -180,7 +180,7 @@ function App() {
         }
     };
 
-    const handleRefreshOne = async (index, topic, level) => {
+        const handleRefreshOne = async (index, topic, level) => {
         try {
             const timestamp = new Date().getTime();
             const res = await fetch(`/api/question?topic=${topic}&level=${level}&lang=${lang}&force=true&t=${timestamp}`);
