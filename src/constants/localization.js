@@ -44,11 +44,12 @@ export const CATEGORIES = {
     },
     statistics: { 
         id: 'statistics',
-        label: { sv: "Sannolikhet", en: "Probability" },
-        color: "yellow", // Changed to Yellow
+        label: { sv: "Sannolikhet & Statistik", en: "Prob & Stats" },
+        color: "yellow", 
         levels: 6,
         topics: [
-             { id: 'probability', label: { sv: "Sannolikhet", en: "Probability" } }
+             { id: 'probability', label: { sv: "Sannolikhet", en: "Probability" } },
+             { id: 'statistics', label: { sv: "Statistik", en: "Statistics" } }
         ]
     }
 };
@@ -83,6 +84,7 @@ export const UI_TEXT = {
         clickToSelect: "Klicka för att välja nivå",
         selectLevel: "Välj Nivå",
         btnCheck: "Svara", btnHint: "Ledtråd", btnSolution: "Lösning", btnSkip: "Hoppa över",
+        btnNext: "Nästa ➡",
         error: "Något gick fel. Försök igen.",
         levelUpTitle: "Nivå upp?", levelUpDesc: "Du verkar ha koll på detta! Vill du hoppa till nästa nivå?", levelUpYes: "Ja, kör!", levelUpNo: "Nej, stanna här"
     },
@@ -113,6 +115,7 @@ export const UI_TEXT = {
         clickToSelect: "Click to select level",
         selectLevel: "Select Level",
         btnCheck: "Submit", btnHint: "Hint", btnSolution: "Solution", btnSkip: "Skip",
+        btnNext: "Next ➡",
         error: "Something went wrong. Please retry.",
         levelUpTitle: "Level Up?", levelUpDesc: "You seem to know this! Do you want to skip to the next level?", levelUpYes: "Yes, let's go!", levelUpNo: "No, stay here"
     }
@@ -157,6 +160,14 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Komplementhändelse (Inte)", en: "Complementary Events" },
         5: { sv: "Oberoende Händelser", en: "Independent Events" },
         6: { sv: "Kombinatorik", en: "Combinatorics" }
+    },
+    statistics: { 
+        1: { sv: "Typvärde & Variationsbredd", en: "Mode & Range" },
+        2: { sv: "Medelvärde", en: "Mean" },
+        3: { sv: "Median", en: "Median" },
+        4: { sv: "Baklänges medelvärde", en: "Reverse Mean" },
+        5: { sv: "Frekvenstabell", en: "Frequency Table" },
+        6: { sv: "Blandade begrepp", en: "Mixed Concepts" }
     },
     simplify: {
         1: { sv: "Förenkla Uttryck (Enkel)", en: "Simplify Expressions (Easy)" },
