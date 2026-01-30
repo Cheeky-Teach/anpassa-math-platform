@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MathText from '../ui/MathText';
 import { GraphCanvas, VolumeVisualization, GeometryVisual } from '../visuals/GeometryComponents';
 
@@ -49,11 +49,24 @@ const DoNowCard = ({ q, index, showAnswer, onToggle, lang, onRefresh }) => {
 
     // Calculate rotation for refresh icon interaction
     const [isSpinning, setIsSpinning] = useState(false);
+    
+    // Auto-stop spinning if the question data actually changes (detected by token or description change)
+    useEffect(() => {
+        if (isSpinning) {
+            const timer = setTimeout(() => setIsSpinning(false), 500); // Minimum spin time
+            return () => clearTimeout(timer);
+        }
+    }, [q.token, q.renderData.description]); // Dependency ensures spin stops when new data arrives
+
     const handleRefreshClick = (e) => {
         e.stopPropagation();
+        if (isSpinning) return; // Prevent double-clicks
+        
         setIsSpinning(true);
-        onRefresh();
-        setTimeout(() => setIsSpinning(false), 1000);
+        if (onRefresh) onRefresh();
+        
+        // Safety timeout in case props don't change (e.g. same question generated)
+        setTimeout(() => setIsSpinning(false), 2000); 
     };
 
     return (
@@ -71,7 +84,11 @@ const DoNowCard = ({ q, index, showAnswer, onToggle, lang, onRefresh }) => {
                 {/* Refresh Button (New) */}
                 <button
                     onClick={handleRefreshClick}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-50 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 flex items-center justify-center transition-colors z-20 border border-slate-200"
+                    disabled={isSpinning}
+                    className={`
+                        absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-colors z-20 border 
+                        ${isSpinning ? 'bg-indigo-50 border-indigo-200 cursor-wait' : 'bg-slate-50 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 border-slate-200'}
+                    `}
                     title={lang === 'sv' ? "Ny fråga" : "New question"}
                 >
                     <span className={`text-sm ${isSpinning ? 'animate-spin' : ''}`}>🔄</span>
@@ -145,11 +162,9 @@ const DoNowGrid = ({ questions, ui, lang, onBack, onRefreshAll, onRefreshOne }) 
 
     const handleRegenerateAll = () => {
         setIsRegenerating(true);
-        // Reset reveals when regenerating
         setRevealed({});
         setShowAll(false);
         
-        // Call parent handler
         if (onRefreshAll) {
             onRefreshAll().finally(() => setIsRegenerating(false));
         } else {
@@ -200,7 +215,8 @@ const DoNowGrid = ({ questions, ui, lang, onBack, onRefreshAll, onRefreshOne }) 
 
             {/* Scrollable Grid Area */}
             <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-8xl mx-auto pb-10">
+                {/* STRICT 3 COLUMN GRID */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 max-w-8xl mx-auto pb-10">
                     {questions.map((q, i) => (
                         <DoNowCard
                             key={i}
