@@ -16,7 +16,8 @@ export const CATEGORIES = {
         color: 'indigo',
         generators: [
             { id: 'ExpressionSimplificationGen', api: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
-            { id: 'EquationGenerator', api: 'equation', label: { sv: "Ekvationer", en: "Equations" } }
+            { id: 'EquationGenerator', api: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
+            { id: 'LinearGraphGenerator', api: 'graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } } // Moved here
         ]
     },
     GEOMETRY: {
@@ -31,15 +32,8 @@ export const CATEGORIES = {
             { id: 'PythagorasGen', api: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } }
         ]
     },
-    FUNCTIONS: {
-        id: 'FUNCTIONS',
-        label: { en: 'Functions', sv: 'Samband' },
-        color: 'purple',
-        generators: [
-            { id: 'LinearGraphGenerator', api: 'graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
-        ]
-    },
-    STATISTICS: { // NEW CATEGORY
+    // FUNCTIONS Category removed (merged into Algebra)
+    STATISTICS: {
         id: 'STATISTICS',
         label: { en: 'Statistics', sv: 'Sannolikhet & Statistik' },
         color: 'yellow',
@@ -79,7 +73,7 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Huvudräkning (10%, 50%)", en: "Mental Math" },
         3: { sv: "Multiplar av 10%", en: "Multiples of 10%" },
         4: { sv: "Beräkna andelen (Decimal)", en: "Calculate Part (Decimal)" },
-        5: { sv: "Det Hela (100%)", en: "Find Whole" },
+        5: { sv: "Hitta helheten (100%)", en: "Find Whole" },
         6: { sv: "Verklig Förändring", en: "Real World Change" }
     },
     EquationGenerator: {
@@ -109,9 +103,9 @@ export const LEVEL_DESCRIPTIONS = {
     ScaleGenerator: {
         1: { sv: "Begreppsförståelse", en: "Concepts" },
         2: { sv: "Beräkna längd (Enkel)", en: "Calc Length (Simple)" },
-        3: { sv: "Blandade Scenarier", en: "Mixed Scenarios" }, 
-        4: { sv: "Bestäm Skalan", en: "Determine Scale" },
-        5: { sv: "Problemlösning", en: "Word Problems" },
+        3: { sv: "Beräkna längd (Svår)", en: "Calc Length (Hard)" },
+        4: { sv: "Ange skala", en: "Determine Scale" },
+        5: { sv: "Utan bilder", en: "No Pictures" },
         6: { sv: "Areaskala", en: "Area Scale" },
         7: { sv: "Blandat", en: "Mixed" }
     },
@@ -130,7 +124,7 @@ export const LEVEL_DESCRIPTIONS = {
         3: { sv: "Topptriangelsatsen", en: "Top Triangle Theorem" },
         4: { sv: "Pythagoras sats", en: "Pythagorean Theorem" }
     },
-    PythagorasGen: { // NEW
+    PythagorasGen: { 
         1: { sv: "Kvadrater & Rötter", en: "Squares & Roots" },
         2: { sv: "Hitta Hypotenusan", en: "Find Hypotenuse" },
         3: { sv: "Hitta Kateten", en: "Find Leg" },
@@ -153,7 +147,7 @@ export const LEVEL_DESCRIPTIONS = {
         5: { sv: "Oberoende Händelser", en: "Independent Events" },
         6: { sv: "Kombinatorik", en: "Combinatorics" }
     },
-    StatisticsGen: { // NEW
+    StatisticsGen: { 
         1: { sv: "Typvärde & Variationsbredd", en: "Mode & Range" },
         2: { sv: "Medelvärde", en: "Mean" },
         3: { sv: "Median", en: "Median" },
