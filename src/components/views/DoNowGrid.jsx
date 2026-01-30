@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MathText from '../ui/MathText';
-import { GraphCanvas, VolumeVisualization, GeometryVisual, StaticGeometryVisual } from '../visuals/GeometryComponents';
+import { GraphCanvas, VolumeVisualization, GeometryVisual } from '../visuals/GeometryComponents';
 
 const DoNowCard = ({ q, index, showAnswer, onToggle, lang, onRefresh }) => {
     const desc = typeof q.renderData.description === 'object' ? q.renderData.description[lang] : q.renderData.description;
@@ -50,19 +50,23 @@ const DoNowCard = ({ q, index, showAnswer, onToggle, lang, onRefresh }) => {
     // Calculate rotation for refresh icon interaction
     const [isSpinning, setIsSpinning] = useState(false);
     
-    // Watch for question changes to stop spinning (Smart Loading)
+    // Auto-stop spinning if the question data actually changes (detected by token or description change)
     useEffect(() => {
         if (isSpinning) {
-            const timer = setTimeout(() => setIsSpinning(false), 500); // Min spin time
+            const timer = setTimeout(() => setIsSpinning(false), 500); // Minimum spin time
             return () => clearTimeout(timer);
         }
-    }, [q]); // Reset spin when question updates
+    }, [q.token, q.renderData.description]); // Dependency ensures spin stops when new data arrives
 
     const handleRefreshClick = (e) => {
         e.stopPropagation();
         if (isSpinning) return; // Prevent double-clicks
+        
         setIsSpinning(true);
         if (onRefresh) onRefresh();
+        
+        // Safety timeout in case props don't change (e.g. same question generated)
+        setTimeout(() => setIsSpinning(false), 2000); 
     };
 
     return (
@@ -80,7 +84,11 @@ const DoNowCard = ({ q, index, showAnswer, onToggle, lang, onRefresh }) => {
                 {/* Refresh Button (New) */}
                 <button
                     onClick={handleRefreshClick}
-                    className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-50 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 flex items-center justify-center transition-colors z-20 border border-slate-200"
+                    disabled={isSpinning}
+                    className={`
+                        absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-colors z-20 border 
+                        ${isSpinning ? 'bg-indigo-50 border-indigo-200 cursor-wait' : 'bg-slate-50 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 border-slate-200'}
+                    `}
                     title={lang === 'sv' ? "Ny fråga" : "New question"}
                 >
                     <span className={`text-sm ${isSpinning ? 'animate-spin' : ''}`}>🔄</span>
@@ -179,6 +187,7 @@ const DoNowGrid = ({ questions, ui, lang, onBack, onRefreshAll, onRefreshOne }) 
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {/* Regenerate All Button (New) */}
                     <button 
                         onClick={handleRegenerateAll}
                         disabled={isRegenerating}
@@ -206,8 +215,8 @@ const DoNowGrid = ({ questions, ui, lang, onBack, onRefreshAll, onRefreshOne }) 
 
             {/* Scrollable Grid Area */}
             <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-                {/* STRICT 3 COLUMN GRID AS REQUESTED */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-8xl mx-auto pb-10">
+                {/* STRICT 3 COLUMN GRID */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 max-w-8xl mx-auto pb-10">
                     {questions.map((q, i) => (
                         <DoNowCard
                             key={i}
