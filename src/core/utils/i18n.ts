@@ -20,6 +20,7 @@ export const UI_STRINGS = {
         btnHint: "Ledtråd",
         btnSolution: "Visa lösning",
         btnSkip: "Hoppa över",
+        btnNext: "Nästa ➡",
         placeholder: "Skriv ditt svar...",
         hintsTitle: "Ledtrådar",
         clueUsed: "Hjälp",
@@ -29,7 +30,12 @@ export const UI_STRINGS = {
         donow_gen: "Generera",
         donow_show_all: "Visa alla",
         donow_hide_all: "Dölj alla",
+        donow_regenerate: "Nytt Set",
         aboutBtn: "Om skaparen",
+        levelUpTitle: "Nivå upp?", 
+        levelUpDesc: "Du verkar ha koll på detta! Vill du hoppa till nästa nivå?", 
+        levelUpYes: "Ja, kör!", 
+        levelUpNo: "Nej, stanna här",
 
         // --- Dashboard Topics ---
         topics: {
@@ -43,7 +49,12 @@ export const UI_STRINGS = {
             similarity: "Likformighet",
             scale: "Skala",
             linear_graph: "Räta Linjen",
-            ten_powers: "Tiopotenser"
+            ten_powers: "Tiopotenser",
+            percent: "Procent",           // NEW
+            exponents: "Potenser",        // NEW
+            probability: "Sannolikhet",   // NEW
+            statistics: "Statistik",      // NEW
+            pythagoras: "Pythagoras Sats" // NEW
         },
 
         // --- Math Vocabulary (Common) ---
@@ -199,6 +210,42 @@ export const UI_STRINGS = {
             prefix: "Prefix"
         },
 
+        // --- Percent & Statistics (NEW) ---
+        percent: {
+            find_part: "Beräkna delen",
+            find_whole: "Hitta det hela",
+            change: "Förändring",
+            visual: "Andel (Bild)"
+        },
+        statistics: {
+            mean: "Medelvärde",
+            median: "Median",
+            mode: "Typvärde",
+            range: "Variationsbredd",
+            table: "Frekvenstabell"
+        },
+        probability: {
+            chance: "Sannolikhet",
+            complement: "Komplementhändelse",
+            compound: "Sammansatt händelse",
+            marbles: "Kulor",
+            spinner: "Snurrhjul"
+        },
+        pythagoras: {
+            theorem: "Pythagoras sats",
+            hypotenuse: "Hypotenusa",
+            leg: "Katet",
+            distance: "Avstånd"
+        },
+        exponents: {
+            power: "Potens",
+            base: "Bas",
+            exponent: "Exponent",
+            root: "Kvadratrot",
+            sci_not: "Grundpotensform",
+            zero_rule: "Nollregeln"
+        },
+
         // --- Shapes ---
         shapes: {
             square: "kvadrat",
@@ -265,6 +312,7 @@ export const UI_STRINGS = {
         btnHint: "Hint",
         btnSolution: "Show Solution",
         btnSkip: "Skip",
+        btnNext: "Next ➡",
         placeholder: "Enter your answer...",
         hintsTitle: "Hints",
         clueUsed: "Clue",
@@ -274,7 +322,12 @@ export const UI_STRINGS = {
         donow_gen: "Generate",
         donow_show_all: "Show All",
         donow_hide_all: "Hide All",
+        donow_regenerate: "New Set",
         aboutBtn: "About",
+        levelUpTitle: "Level Up?", 
+        levelUpDesc: "You seem to know this! Do you want to skip to the next level?", 
+        levelUpYes: "Yes, let's go!", 
+        levelUpNo: "No, stay here",
 
         // --- Dashboard Topics ---
         topics: {
@@ -288,7 +341,12 @@ export const UI_STRINGS = {
             similarity: "Similarity",
             scale: "Scale & Maps",
             linear_graph: "Linear Graphs",
-            ten_powers: "Powers of 10"
+            ten_powers: "Powers of 10",
+            percent: "Percentage",
+            exponents: "Exponents & Roots",
+            probability: "Probability",
+            statistics: "Statistics",
+            pythagoras: "Pythagoras"
         },
 
         // --- Math Vocabulary ---
@@ -444,6 +502,42 @@ export const UI_STRINGS = {
             prefix: "Unit Prefixes"
         },
 
+        // --- Percent & Statistics (NEW) ---
+        percent: {
+            find_part: "Calculate Part",
+            find_whole: "Find Whole",
+            change: "Change",
+            visual: "Proportion (Visual)"
+        },
+        statistics: {
+            mean: "Mean",
+            median: "Median",
+            mode: "Mode",
+            range: "Range",
+            table: "Frequency Table"
+        },
+        probability: {
+            chance: "Probability",
+            complement: "Complementary Event",
+            compound: "Compound Event",
+            marbles: "Marbles",
+            spinner: "Spinner"
+        },
+        pythagoras: {
+            theorem: "Pythagorean Theorem",
+            hypotenuse: "Hypotenuse",
+            leg: "Leg",
+            distance: "Distance"
+        },
+        exponents: {
+            power: "Power",
+            base: "Base",
+            exponent: "Exponent",
+            root: "Square Root",
+            sci_not: "Scientific Notation",
+            zero_rule: "Zero Rule"
+        },
+
         // --- Shapes ---
         shapes: {
             square: "square",
@@ -451,7 +545,7 @@ export const UI_STRINGS = {
             circle: "circle",
             triangle: "triangle",
             rhombus: "rhombus",
-            parallelogram: "parallellogram",
+            parallelogram: "parallelogram",
             pentagon: "pentagon",
             hexagon: "hexagon",
             octagon: "octagon",

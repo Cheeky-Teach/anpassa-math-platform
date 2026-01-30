@@ -7,7 +7,7 @@ export const CATEGORIES = {
             { id: 'BasicArithmeticGen', api: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
             { id: 'NegativeNumbersGen', api: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
             { id: 'TenPowersGen', api: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } },
-            { id: 'PercentGen', api: 'percent', label: { sv: "Procent", en: "Percentage" } } // Added Percent
+            { id: 'PercentGen', api: 'percent', label: { sv: "Procent", en: "Percentage" } }
         ]
     },
     ALGEBRA: {
@@ -27,7 +27,8 @@ export const CATEGORIES = {
             { id: 'GeometryGenerator', api: 'geometry', label: { sv: "Area & Omkrets", en: "Area & Perimeter" } },
             { id: 'ScaleGenerator', api: 'scale', label: { sv: "Skala", en: "Scale" } },
             { id: 'VolumeGenerator', api: 'volume', label: { sv: "Volym", en: "Volume" } },
-            { id: 'SimilarityGenerator', api: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } }
+            { id: 'SimilarityGenerator', api: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } },
+            { id: 'PythagorasGen', api: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } }
         ]
     },
     FUNCTIONS: {
@@ -73,12 +74,12 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Begreppsförståelse (MC)", en: "Conceptual (MC)" },
         3: { sv: "Decimala faktorer (0.1, 0.01...)", en: "Decimal factors (0.1, 0.01...)" }
     },
-    PercentGen: { // NEW
+    PercentGen: {
         1: { sv: "Grundläggande (Rutnät)", en: "Basic Concepts (Grid)" },
         2: { sv: "Huvudräkning (10%, 50%)", en: "Mental Math" },
         3: { sv: "Multiplar av 10%", en: "Multiples of 10%" },
         4: { sv: "Beräkna andelen (Decimal)", en: "Calculate Part (Decimal)" },
-        5: { sv: "Hitta helheten (100%)", en: "Find Whole" },
+        5: { sv: "Det Hela (100%)", en: "Find Whole" },
         6: { sv: "Verklig Förändring", en: "Real World Change" }
     },
     EquationGenerator: {
@@ -108,9 +109,9 @@ export const LEVEL_DESCRIPTIONS = {
     ScaleGenerator: {
         1: { sv: "Begreppsförståelse", en: "Concepts" },
         2: { sv: "Beräkna längd (Enkel)", en: "Calc Length (Simple)" },
-        3: { sv: "Beräkna längd (Svår)", en: "Calc Length (Hard)" },
-        4: { sv: "Ange skala", en: "Determine Scale" },
-        5: { sv: "Utan bilder", en: "No Pictures" },
+        3: { sv: "Blandade Scenarier", en: "Mixed Scenarios" }, 
+        4: { sv: "Bestäm Skalan", en: "Determine Scale" },
+        5: { sv: "Problemlösning", en: "Word Problems" },
         6: { sv: "Areaskala", en: "Area Scale" },
         7: { sv: "Blandat", en: "Mixed" }
     },
@@ -129,6 +130,14 @@ export const LEVEL_DESCRIPTIONS = {
         3: { sv: "Topptriangelsatsen", en: "Top Triangle Theorem" },
         4: { sv: "Pythagoras sats", en: "Pythagorean Theorem" }
     },
+    PythagorasGen: { // NEW
+        1: { sv: "Kvadrater & Rötter", en: "Squares & Roots" },
+        2: { sv: "Hitta Hypotenusan", en: "Find Hypotenuse" },
+        3: { sv: "Hitta Kateten", en: "Find Leg" },
+        4: { sv: "Problemlösning", en: "Word Problems" },
+        5: { sv: "Avstånd (Koordinater)", en: "Distance (Coordinates)" },
+        6: { sv: "Är den rätvinklig?", en: "Is it Right-Angled?" }
+    },
     LinearGraphGenerator: {
         1: { sv: "Hitta m (skärning)", en: "Find y-intercept (m)" },
         2: { sv: "Hitta k (positiv)", en: "Find slope (Positive)" },
@@ -136,7 +145,7 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Hitta funktion (y=kx+m)", en: "Find equation (y=kx+m)" },
         5: { sv: "Blandat", en: "Mixed graphs" }
     },
-    ProbabilityGen: { // NEW
+    ProbabilityGen: { 
         1: { sv: "Visuell Sannolikhet", en: "Visual Probability" },
         2: { sv: "Tärning & Slump", en: "Dice & Chance" },
         3: { sv: "Sannolikhet som Procent", en: "Probability as Percent" },

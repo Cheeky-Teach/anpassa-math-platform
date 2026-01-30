@@ -41,12 +41,24 @@ export const CONTENT_MAP = {
                 id: "percent",
                 title: "Procent",
                 levels: [
-                    { lvl: 1, desc: "Grundläggande (Rutnät)", ex: "Hur många % är färgat?" },
-                    { lvl: 2, desc: "Huvudräkning", ex: "50%, 25%, 10% av ett tal" },
-                    { lvl: 3, desc: "Multiplar av 10%", ex: "30% av 60 (3 · 10%)" },
-                    { lvl: 4, desc: "Beräkna andelen (Decimal)", ex: "15% av 40 (0.15 · 40)" },
-                    { lvl: 5, desc: "Hitta helheten", ex: "20% är 10. Vad är 100%?" },
-                    { lvl: 6, desc: "Verklig Förändring", ex: "Prisökning, Rea, Lön" }
+                    { lvl: 1, desc: "Grundläggande & Omvandling", ex: "1/4 = 25% = 0.25" },
+                    { lvl: 2, desc: "Huvudräkning (Benchmarks)", ex: "50%, 25%, 10% av tal" },
+                    { lvl: 3, desc: "Byggstenar (Multiplar)", ex: "30% (3 · 10%)" },
+                    { lvl: 4, desc: "Decimalmetoden", ex: "15% av 40 (0.15 · 40)" },
+                    { lvl: 5, desc: "Det Hela", ex: "20% är 10. Vad är 100%?" },
+                    { lvl: 6, desc: "Verklig Förändring", ex: "Lön, Rea, Skatt" }
+                ]
+            },
+            {
+                id: "exponents",
+                title: "Potenser & Rötter",
+                levels: [
+                    { lvl: 1, desc: "Grunder & Nollregeln", ex: "3^3, x^0 = 1" },
+                    { lvl: 2, desc: "Tiopotenser", ex: "10^5, 10^-2" },
+                    { lvl: 3, desc: "Grundpotensform", ex: "4.5 · 10^4" },
+                    { lvl: 4, desc: "Kvadratrötter & Uppskattning", ex: "sqrt(64), sqrt(50)" },
+                    { lvl: 5, desc: "Potenslagar (Enkel)", ex: "x^2 · x^3" },
+                    { lvl: 6, desc: "Potenslagar (Avancerad)", ex: "(x^2)^3" }
                 ]
             }
         ]
@@ -74,8 +86,8 @@ export const CONTENT_MAP = {
                     { lvl: 2, desc: "Två steg", ex: "2x + 3 = 11" },
                     { lvl: 3, desc: "Med Parenteser", ex: "2(x + 1) = 10" },
                     { lvl: 4, desc: "Variabel på båda sidor", ex: "3x + 2 = x + 10" },
-                    { lvl: 5, desc: "Skriv Ekvation (Problem)", ex: "Tolka text till ekvation" },
-                    { lvl: 6, desc: "Lös Problem (Ekvation)", ex: "Lös textproblem" },
+                    { lvl: 5, desc: "Problemlösning (Skriv)", ex: "Tolka text till ekvation" },
+                    { lvl: 6, desc: "Problemlösning (Lös)", ex: "Lös textproblem" },
                     { lvl: 7, desc: "Blandade Ekvationer", ex: "Mix av alla typer" }
                 ]
             }
@@ -130,6 +142,18 @@ export const CONTENT_MAP = {
                     { lvl: 3, desc: "Topptriangelsatsen", ex: "Triangel inuti triangel" },
                     { lvl: 4, desc: "Pythagoras & Likformighet", ex: "Avancerad problemlösning" }
                 ]
+            },
+            {
+                id: "pythagoras",
+                title: "Pythagoras Sats",
+                levels: [
+                    { lvl: 1, desc: "Kvadrater & Rötter", ex: "3^2, sqrt(25)" },
+                    { lvl: 2, desc: "Hitta Hypotenusan", ex: "3-4-5 triangel" },
+                    { lvl: 3, desc: "Hitta Kateten", ex: "c^2 - b^2 = a^2" },
+                    { lvl: 4, desc: "Problemlösning", ex: "Stege mot vägg" },
+                    { lvl: 5, desc: "Avstånd (Koordinater)", ex: "Mellan (1,1) och (4,5)" },
+                    { lvl: 6, desc: "Är den rätvinklig?", ex: "Testa a^2 + b^2 = c^2" }
+                ]
             }
         ]
     },
@@ -150,7 +174,7 @@ export const CONTENT_MAP = {
         ]
     },
     statistics: {
-        title: "Sannolikhet",
+        title: "Sannolikhet & Statistik",
         topics: [
             {
                 id: "probability",
@@ -162,6 +186,18 @@ export const CONTENT_MAP = {
                     { lvl: 4, desc: "Komplementhändelse", ex: "Sannolikhet för 'Inte'" },
                     { lvl: 5, desc: "Oberoende Händelser", ex: "Två mynt, Tärning + Mynt" },
                     { lvl: 6, desc: "Kombinatorik", ex: "Antal kombinationer (Träd)" }
+                ]
+            },
+            {
+                id: "statistics",
+                title: "Statistik",
+                levels: [
+                    { lvl: 1, desc: "Typvärde & Variationsbredd", ex: "Mode, Range" },
+                    { lvl: 2, desc: "Medelvärde", ex: "Summa / Antal" },
+                    { lvl: 3, desc: "Median", ex: "Mittenvärdet (sorterat)" },
+                    { lvl: 4, desc: "Baklänges medelvärde", ex: "Hitta saknat tal" },
+                    { lvl: 5, desc: "Frekvenstabell", ex: "Analysera tabell" },
+                    { lvl: 6, desc: "Blandade begrepp", ex: "Medel vs Median" }
                 ]
             }
         ]
