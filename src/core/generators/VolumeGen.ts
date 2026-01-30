@@ -116,30 +116,33 @@ export class VolumeGen {
             };
         } else {
             const w = MathUtils.randomInt(3, 8);
+            const d = MathUtils.randomInt(3, 8); // Explicit depth
             const h = MathUtils.randomInt(6, 12);
-            // Square pyramid
-            const volume = Math.round((w * w * h) / 3);
+            // Square/Rect pyramid
+            const volume = Math.round((w * d * h) / 3);
             return {
                 renderData: {
-                    geometry: { type: 'pyramid', labels: { w, h } },
-                    description: lang === 'sv' ? "Beräkna pyramidens volym (kvadratisk bas)." : "Calculate pyramid volume (square base).",
+                    geometry: { type: 'pyramid', labels: { w, d, h } }, // Pass 'd' explicitly
+                    description: lang === 'sv' ? "Beräkna pyramidens volym." : "Calculate pyramid volume.",
                     answerType: 'numeric',
                     suffix: 'cm³'
                 },
                 token: Buffer.from(volume.toString()).toString('base64'),
                 clues: [
                     { text: "Formel:", latex: `V = \\\\frac{B \\\\cdot h}{3}` },
-                    { text: "Basytan:", latex: `B = ${w} \\\\cdot ${w} = ${w * w}` }
+                    { text: "Basytan:", latex: `B = ${w} \\\\cdot ${d} = ${w * d}` }
                 ]
             };
         }
     }
 
-    // ========================================================================
-    // LEVEL 5: SPHERE & COMPOSITE (FIXED SCALING)
-    // Ensures Silo/Ice Cream shapes fit within canvas by checking aspect ratio
-    // ========================================================================
+    // Level 5: Sphere & Composite
     private level5_SphereComposite(lang: string): any {
+        // Here we just delegate to the mixed/diameter logic in Level 6 essentially, 
+        // but Level 5 is usually "intro to sphere".
+        // Let's add Diameter logic here too if desired, but sticking to Level 6 request.
+        // Actually, let's keep Level 5 standard (Radius) and Level 6 Mixed (Radius OR Diameter).
+        
         const type = MathUtils.randomChoice(['sphere', 'silo', 'ice_cream']);
 
         if (type === 'sphere') {
@@ -157,88 +160,132 @@ export class VolumeGen {
             };
         }
         else if (type === 'silo') {
-            // Silo = Cylinder + Hemisphere on top
-            // Fix: Constrain height relative to radius to prevent "tall thin" shapes that clip
             const r = MathUtils.randomInt(3, 6);
-            // Height is 1.5x to 2.5x radius. 
             const h = MathUtils.randomInt(Math.floor(r * 1.5), Math.floor(r * 2.5));
-            
-            const volCyl = Math.PI * r * r * h;
-            const volHemi = (2 * Math.PI * Math.pow(r, 3)) / 3;
-            const total = Math.round(volCyl + volHemi);
+            const total = Math.round((Math.PI * r * r * h) + ((2 * Math.PI * Math.pow(r, 3)) / 3));
 
             return {
                 renderData: {
-                    geometry: { type: 'silo', labels: { r, h } }, // 'h' is cylinder part
-                    description: lang === 'sv' ? "Beräkna silons volym." : "Calculate silo volume.",
+                    geometry: { type: 'silo', labels: { r, h } }, 
+                    description: lang === 'sv' ? "Beräkna silons volym (Cylinder + Halvklot)." : "Calculate silo volume.",
                     answerType: 'numeric',
                     suffix: 'cm³'
                 },
                 token: Buffer.from(total.toString()).toString('base64'),
-                clues: [
-                    { text: "Cylinder:", latex: `V_{cyl} = \\\\pi \\\\cdot ${r}^2 \\\\cdot ${h}` },
-                    { text: "Halvklot:", latex: `V_{halv} = \\\\frac{2 \\\\pi \\\\cdot ${r}^3}{3}` }
-                ]
+                clues: [{ text: "Total:", latex: `V_{cyl} + V_{halv}` }]
             };
         } 
         else {
-            // Ice Cream = Cone + Hemisphere
-            // Fix: Constrain cone height relative to radius
             const r = MathUtils.randomInt(3, 6);
             const h = MathUtils.randomInt(Math.floor(r * 1.5), Math.floor(r * 2.5));
-
-            const volCone = (Math.PI * r * r * h) / 3;
-            const volHemi = (2 * Math.PI * Math.pow(r, 3)) / 3;
-            const total = Math.round(volCone + volHemi);
+            const total = Math.round(((Math.PI * r * r * h) / 3) + ((2 * Math.PI * Math.pow(r, 3)) / 3));
 
             return {
                 renderData: {
                     geometry: { type: 'ice_cream', labels: { r, h } },
-                    description: lang === 'sv' ? "Beräkna volymen." : "Calculate volume.",
+                    description: lang === 'sv' ? "Beräkna volymen (Kon + Halvklot)." : "Calculate volume.",
                     answerType: 'numeric',
                     suffix: 'cm³'
                 },
                 token: Buffer.from(total.toString()).toString('base64'),
-                clues: [
-                    { text: "Kon:", latex: `V_{kon} = \\\\frac{\\\\pi \\\\cdot ${r}^2 \\\\cdot ${h}}{3}` },
-                    { text: "Halvklot:", latex: `V_{halv} = \\\\frac{2 \\\\pi \\\\cdot ${r}^3}{3}` }
-                ]
+                clues: [{ text: "Total:", latex: `V_{kon} + V_{halv}` }]
             };
         }
     }
 
-    // Level 6: Mixed
+    // Level 6: Mixed with DIAMETER Logic
     private level6_Mixed(lang: string): any {
-        const mode = MathUtils.randomInt(3, 5);
-        if (mode === 3) return this.level3_Cylinder(lang);
-        if (mode === 4) return this.level4_PyramidCone(lang);
-        return this.level5_SphereComposite(lang);
+        const type = MathUtils.randomChoice(['sphere', 'silo', 'ice_cream']);
+        const useDiameter = MathUtils.randomInt(0, 1) === 1; // 50% chance of Diameter
+
+        let r = MathUtils.randomInt(3, 8);
+        let dLabel = r * 2;
+        let h = MathUtils.randomInt(Math.floor(r * 1.5), Math.floor(r * 2.5)); // For composites
+
+        let volume = 0;
+        let labels: any = {};
+        
+        // Prepare Labels based on Mode
+        if (useDiameter) labels = { d: dLabel, h };
+        else labels = { r, h };
+
+        // Helper to get R from D description
+        const dimDesc = useDiameter ? `(d = ${dLabel})` : `(r = ${r})`;
+
+        if (type === 'sphere') {
+            volume = Math.round((4 * Math.PI * Math.pow(r, 3)) / 3);
+            if (useDiameter) labels = { d: dLabel }; // No height for sphere
+            else labels = { r };
+
+            return {
+                renderData: {
+                    geometry: { type: 'sphere', labels, show: useDiameter ? 'diameter' : 'radius' },
+                    description: lang === 'sv' 
+                        ? `Beräkna klotets volym ${dimDesc}.` 
+                        : `Calculate sphere volume ${dimDesc}.`,
+                    answerType: 'numeric',
+                    suffix: 'cm³'
+                },
+                token: Buffer.from(volume.toString()).toString('base64'),
+                clues: [
+                    useDiameter ? { text: lang === 'sv' ? "Radien är hälften av diametern." : "Radius is half the diameter.", latex: `r = ${dLabel}/2 = ${r}` } : null,
+                    { text: "Formel:", latex: `V = \\\\frac{4 \\\\pi \\\\cdot ${r}^3}{3}` }
+                ].filter(Boolean)
+            };
+        }
+        else if (type === 'silo') {
+            // Silo = Cylinder + Hemisphere
+            const volCyl = Math.PI * r * r * h;
+            const volHemi = (2 * Math.PI * Math.pow(r, 3)) / 3;
+            volume = Math.round(volCyl + volHemi);
+
+            return {
+                renderData: {
+                    geometry: { type: 'silo', labels, show: useDiameter ? 'diameter' : 'radius' },
+                    description: lang === 'sv' ? "Beräkna silons volym." : "Calculate silo volume.",
+                    answerType: 'numeric',
+                    suffix: 'cm³'
+                },
+                token: Buffer.from(volume.toString()).toString('base64'),
+                clues: [
+                    useDiameter ? { text: "Hitta radien:", latex: `r = ${dLabel}/2 = ${r}` } : null,
+                    { text: "Cylinder:", latex: `\\pi \\cdot ${r}^2 \\cdot ${h}` },
+                    { text: "Halvklot:", latex: `\\frac{2 \\cdot \\pi \\cdot ${r}^3}{3}` }
+                ].filter(Boolean)
+            };
+        }
+        else {
+            // Ice Cream = Cone + Hemisphere
+            const volCone = (Math.PI * r * r * h) / 3;
+            const volHemi = (2 * Math.PI * Math.pow(r, 3)) / 3;
+            volume = Math.round(volCone + volHemi);
+
+            return {
+                renderData: {
+                    geometry: { type: 'ice_cream', labels, show: useDiameter ? 'diameter' : 'radius' },
+                    description: lang === 'sv' ? "Beräkna volymen." : "Calculate volume.",
+                    answerType: 'numeric',
+                    suffix: 'cm³'
+                },
+                token: Buffer.from(volume.toString()).toString('base64'),
+                clues: [
+                    useDiameter ? { text: "Hitta radien:", latex: `r = ${dLabel}/2 = ${r}` } : null,
+                    { text: "Kon:", latex: `\\frac{\\pi \\cdot ${r}^2 \\cdot ${h}}{3}` },
+                    { text: "Halvklot:", latex: `\\frac{2 \\cdot \\pi \\cdot ${r}^3}{3}` }
+                ].filter(Boolean)
+            };
+        }
     }
 
-    // ========================================================================
-    // LEVEL 7: MIXED UNITS CONVERSION
-    // Forces user to convert units (e.g., cm -> dm) BEFORE calculating volume
-    // ========================================================================
+    // Level 7: Mixed Units Conversion
     private level7_Units(lang: string): any {
-        // Scenarios:
-        // 0: Cuboid (cm -> Liters/dm³)
-        // 1: Cylinder (cm -> Liters/dm³)
-        // 2: Cuboid (cm -> m³)
-        // 3: Cuboid (mm -> cm³)
-
         const scenario = MathUtils.randomChoice([0, 1, 2, 3]);
 
         if (scenario === 0 || scenario === 1) {
-            // --- TARGET: LITERS (dm³) ---
-            // Input: cm
-            // Strategy: Convert cm to dm (/10), then calc volume.
-            
             const isCyl = scenario === 1;
-            // Generate dims that are multiples of 10 for clean conversion
-            // e.g., 20cm, 50cm -> 2dm, 5dm
-            const dim1 = MathUtils.randomInt(2, 8) * 10; // 20-80 cm
+            const dim1 = MathUtils.randomInt(2, 8) * 10; 
             const dim2 = MathUtils.randomInt(2, 8) * 10;
-            const dim3 = MathUtils.randomInt(2, 8) * 10; // Only used for cuboid
+            const dim3 = MathUtils.randomInt(2, 8) * 10;
 
             const val1_dm = dim1 / 10;
             const val2_dm = dim2 / 10;
@@ -249,7 +296,6 @@ export class VolumeGen {
             let formula = "";
 
             if (isCyl) {
-                // dim1 = radius, dim2 = height
                 volume = Math.round(Math.PI * val1_dm * val1_dm * val2_dm);
                 visual = { type: 'cylinder', labels: { r: `${dim1} cm`, h: `${dim2} cm` } };
                 formula = `V \\\\approx \\\\pi \\\\cdot ${val1_dm}^2 \\\\cdot ${val2_dm}`;
@@ -283,9 +329,7 @@ export class VolumeGen {
         } 
         
         else if (scenario === 2) {
-            // --- TARGET: m³ ---
-            // Input: cm (e.g. 200 cm)
-            const w = MathUtils.randomInt(1, 5) * 100; // 100, 200... cm
+            const w = MathUtils.randomInt(1, 5) * 100; 
             const d = MathUtils.randomInt(1, 4) * 100;
             const h = MathUtils.randomInt(1, 3) * 100;
             
@@ -311,9 +355,7 @@ export class VolumeGen {
         } 
         
         else {
-            // --- TARGET: cm³ ---
-            // Input: mm
-            const w = MathUtils.randomInt(2, 9) * 10; // 20-90 mm
+            const w = MathUtils.randomInt(2, 9) * 10; 
             const d = MathUtils.randomInt(2, 9) * 10;
             const h = MathUtils.randomInt(2, 9) * 10;
 

@@ -13,7 +13,9 @@ export class ProgressionRules {
         graph: 5,
         similarity: 4,
         percent: 6,
-        probability: 6
+        probability: 6,
+        statistics: 6,
+        pythagoras: 6
     };
 
     public static checkLevelUp(newStreak: number, currentLevel: number, topic: string): boolean {

@@ -13,6 +13,7 @@ import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerato
 import { PercentGen } from '../src/core/generators/PercentGen.js'; // New Import
 import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js'; // New Import
 import { StatisticsGen } from '../src/core/generators/StatisticsGen.js'; // New Import
+import { PythagorasGen } from '../src/core/generators/PythagorasGen.js'; // New Import
 
 // Helper to instantiate
 const getGenerator = (topic: string) => {
@@ -31,6 +32,7 @@ const getGenerator = (topic: string) => {
         case 'percent': return new PercentGen(); // New Case
         case 'probability': return new ProbabilityGen(); // New Case
         case 'statistics': return new StatisticsGen(); // New Case
+        case 'pythagoras': return new PythagorasGen(); // New Case
         default: return null;
     }
 };
