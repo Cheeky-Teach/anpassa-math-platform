@@ -109,7 +109,9 @@ function App() {
         setIsSolutionRevealed(false);
         setLevelUpAvailable(false);
         try {
-            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}${force ? '&force=true' : ''}`);
+            // FIX: Add timestamp to prevent caching on retries
+            const timestamp = new Date().getTime();
+            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}${force ? `&force=true&t=${timestamp}` : ''}`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             setQuestion(data);
@@ -177,9 +179,11 @@ function App() {
         }
     };
 
+    // FIX: Added timestamp to force unique request every time
     const handleRefreshOne = async (index, topic, level) => {
         try {
-            const res = await fetch(`/api/question?topic=${topic}&level=${level}&lang=${lang}&force=true`);
+            const timestamp = new Date().getTime();
+            const res = await fetch(`/api/question?topic=${topic}&level=${level}&lang=${lang}&force=true&t=${timestamp}`);
             const newQuestion = await res.json();
             
             if (newQuestion.error) throw new Error(newQuestion.error);
