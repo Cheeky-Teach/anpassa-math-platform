@@ -12,18 +12,12 @@ import { LEVEL_DESCRIPTIONS } from '../../constants/localization';
 const isValidInput = (val, type) => {
     if (val === '') return true;
     const numericRegex = /^-?[\d\s]*([.,:]\d*)?$/;
-<<<<<<< HEAD
     
     // Add 'range' to allowed types for numeric validation
     if (type === 'numeric' || type === 'scale' || type === 'range') {
         return numericRegex.test(val);
     }
     
-=======
-    if (type === 'numeric' || type === 'scale') {
-        return numericRegex.test(val);
-    }
->>>>>>> e0ce16f203ba013daa6dc32d7931e70440d78f17
     const dangerousRegex = /[<>{}]/g;
     return !dangerousRegex.test(val);
 };
@@ -95,26 +89,17 @@ const PracticeView = ({
         handleSubmit({ preventDefault: () => { } }, choice); 
     };
     
-<<<<<<< HEAD
     // --- SUBMIT HANDLER ---
     const handleFormSubmit = (e) => {
         e.preventDefault();
         
         // UX FIX: If correct, next question
-=======
-    // --- SMART SUBMIT HANDLER ---
-    const handleFormSubmit = (e) => {
-        e.preventDefault();
-        
-        // UX FIX: If already correct, clicking the button moves to Next
->>>>>>> e0ce16f203ba013daa6dc32d7931e70440d78f17
         if (feedback === 'correct') {
             actions.retry(true);
             return;
         }
 
         let finalInput = input;
-<<<<<<< HEAD
         const type = question.renderData.answerType;
 
         if (type === 'scale') {
@@ -136,23 +121,6 @@ const PracticeView = ({
         else {
             if (!isValidInput(input, type === 'numeric' ? 'numeric' : 'text')) return;
             if (type !== 'numeric') finalInput = sanitize(input);
-=======
-        const answerType = question.renderData.answerType;
-
-        if (answerType === 'scale') {
-            if (scaleInputLeft === '' || scaleInputRight === '' || 
-                !isValidInput(scaleInputLeft, 'numeric') || !isValidInput(scaleInputRight, 'numeric')) {
-                return; 
-            }
-            finalInput = `${scaleInputLeft}:${scaleInputRight}`;
-        } else {
-            if (!isValidInput(input, answerType === 'numeric' ? 'numeric' : 'text')) {
-                return;
-            }
-            if (answerType !== 'numeric') {
-                finalInput = sanitize(input);
-            }
->>>>>>> e0ce16f203ba013daa6dc32d7931e70440d78f17
         }
 
         if (!finalInput || finalInput.trim() === '') return;
@@ -167,10 +135,7 @@ const PracticeView = ({
         }
     };
 
-<<<<<<< HEAD
     // Reset specialized inputs on new question
-=======
->>>>>>> e0ce16f203ba013daa6dc32d7931e70440d78f17
     useEffect(() => {
         if (question && !loading) {
             setScaleInputLeft(''); setScaleInputRight('');
@@ -213,21 +178,14 @@ const PracticeView = ({
         return <div className="flex flex-col items-center justify-center w-full min-h-[100px]"></div>;
     };
 
-<<<<<<< HEAD
-=======
-    // Button label logic
->>>>>>> e0ce16f203ba013daa6dc32d7931e70440d78f17
     const getSubmitLabel = () => {
         if (feedback === 'correct') return ui.btnNext || (lang === 'sv' ? "Nästa ➡" : "Next ➡");
         if (feedback === 'incorrect') return ui.tagWrong || "Incorrect";
         return ui.btnCheck || (lang === 'sv' ? "Svara" : "Submit");
     };
 
-<<<<<<< HEAD
     const isDisabled = feedback === 'correct';
 
-=======
->>>>>>> e0ce16f203ba013daa6dc32d7931e70440d78f17
     return (
         <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
             
@@ -235,10 +193,7 @@ const PracticeView = ({
             <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
             
             <div className="flex-1 w-full min-w-0">
-<<<<<<< HEAD
                 {/* HEADER */}
-=======
->>>>>>> e0ce16f203ba013daa6dc32d7931e70440d78f17
                 <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
                     <button onClick={actions.goBack} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm px-4 py-2 rounded-lg shadow-sm border border-gray-300 transition-all active:scale-95"><span>←</span> {ui.backBtn}</button>
 
@@ -273,40 +228,12 @@ const PracticeView = ({
                             <div className="mb-4 text-center"><h2 className="text-lg sm:text-xl font-medium text-gray-700 leading-relaxed"><MathText text={descriptionText} /></h2></div>
                             
                             {question.renderData.answerType === 'multiple_choice' ? (
-<<<<<<< HEAD
                                 <div className="max-w-md mx-auto grid grid-cols-2 gap-4">
                                     {(question.renderData.options || question.renderData.choices || []).map((choice, idx) => (
                                         <button key={idx} onClick={() => handleChoiceClick(choice)} className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback === 'correct' && choice === input ? 'bg-green-500 border-green-500 text-white' : feedback === 'incorrect' && choice === input ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-500 hover:text-indigo-600'}`} disabled={feedback !== null}>{choice}</button>
                                     ))}
                                     {feedback === 'correct' && <div className="col-span-2 mt-4"><button onClick={() => actions.retry(true)} className="w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 bg-primary-500 shadow-green-200 hover:bg-primary-600">{ui.btnNext || (lang === 'sv' ? "Nästa ➡" : "Next ➡")}</button></div>}
                                 </div>
-=======
-                                <>
-                                    <div className="max-w-md mx-auto grid grid-cols-2 gap-4">
-                                        {(question.renderData.options || question.renderData.choices || []).map((choice, idx) => (
-                                            <button 
-                                                key={idx} 
-                                                onClick={() => handleChoiceClick(choice)} 
-                                                className={`py-4 rounded-xl font-bold text-lg shadow-sm transition-all active:scale-95 border-2 ${feedback === 'correct' && choice === input ? 'bg-green-500 border-green-500 text-white' : feedback === 'incorrect' && choice === input ? 'bg-red-500 border-red-500 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-500 hover:text-indigo-600'}`} 
-                                                disabled={feedback !== null}
-                                            >
-                                                {choice}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    {/* UX FIX: Explicit Next button for MC when correct */}
-                                    {feedback === 'correct' && (
-                                        <div className="mt-6 max-w-md mx-auto">
-                                            <button 
-                                                onClick={() => actions.retry(true)}
-                                                className="w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 bg-primary-500 shadow-green-200 hover:bg-primary-600"
-                                            >
-                                                {ui.btnNext || (lang === 'sv' ? "Nästa ➡" : "Next ➡")}
-                                            </button>
-                                        </div>
-                                    )}
-                                </>
->>>>>>> e0ce16f203ba013daa6dc32d7931e70440d78f17
                             ) : (
                                 <form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
                                     
@@ -314,19 +241,9 @@ const PracticeView = ({
                                     
                                     {question.renderData.answerType === 'scale' && (
                                         <div className="flex items-center justify-center gap-2">
-<<<<<<< HEAD
                                             <input type="text" value={scaleInputLeft} onChange={(e) => handleInputChange(e, setScaleInputLeft, 'numeric')} className="w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm focus:border-indigo-500" placeholder="X" disabled={isDisabled} />
                                             <span className="text-2xl font-bold text-gray-400">:</span>
                                             <input type="text" value={scaleInputRight} onChange={(e) => handleInputChange(e, setScaleInputRight, 'numeric')} className="w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm focus:border-indigo-500" placeholder="X" disabled={isDisabled} />
-=======
-                                            <input type="text" value={scaleInputLeft} onChange={(e) => handleInputChange(e, setScaleInputLeft, 'numeric')} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder="X" disabled={feedback === 'correct'} />
-                                            <span className="text-2xl font-bold text-gray-400">:</span>
-                                            <input type="text" value={scaleInputRight} onChange={(e) => handleInputChange(e, setScaleInputRight, 'numeric')} className={`w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder="X" disabled={feedback === 'correct'} />
-                                        </div>
-                                    ) : (
-                                        <div className="relative">
-                                            <input ref={inputRef} type="text" value={input} onChange={(e) => handleInputChange(e, setInput, question.renderData.answerType)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder={ui.placeholder || "..."} disabled={feedback === 'correct'} />
->>>>>>> e0ce16f203ba013daa6dc32d7931e70440d78f17
                                         </div>
                                     )}
 
@@ -369,11 +286,7 @@ const PracticeView = ({
                                     
                                     <button 
                                         type="submit" 
-<<<<<<< HEAD
                                         className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-green-500 shadow-green-200 hover:bg-green-600' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 hover:shadow-lg'}`}
-=======
-                                        className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-primary-500 shadow-green-200 hover:bg-primary-600' : 'bg-accent-500 hover:bg-accent-600 shadow-orange-200 hover:shadow-lg'}`}
->>>>>>> e0ce16f203ba013daa6dc32d7931e70440d78f17
                                     >
                                         {getSubmitLabel()}
                                     </button>
