@@ -29,11 +29,13 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     mapping: {
       taluppfattning: {
         category: "Taluppfattning och tals användning",
-        modules: ["arithmetic", "negative"],
+        // Added: ten_powers, percent, exponents
+        modules: ["arithmetic", "negative", "ten_powers", "percent", "exponents"],
         content: [
           "Reella tal och deras egenskaper samt deras användning i vardagliga och matematiska situationer.",
           "Centrala metoder för beräkningar med tal i bråk- och decimalform vid överslagsräkning, huvudräkning samt vid beräkningar med skriftliga metoder.",
-          "Tal i potensform. Grundpotensform."
+          "Tal i potensform. Grundpotensform.", // TenPowersGen, ExponentsGen
+          "Procent för att uttrycka förändring och förändringsfaktor samt beräkningar med procent i vardagliga situationer." // PercentGen
         ]
       },
       algebra: {
@@ -47,11 +49,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       },
       geometri: {
         category: "Geometri",
-        modules: ["geometry", "scale", "volume"],
+        // Added: similarity, pythagoras
+        modules: ["geometry", "scale", "volume", "similarity", "pythagoras"],
         content: [
           "Geometriska objekt och deras egenskaper.",
-          "Avbildning och konstruktion av geometriska objekt, såväl med som utan digitala verktyg. Skala och dess användning i vardagliga situationer.",
-          "Metoder för beräkning av area, omkrets och volym hos geometriska objekt, samt enhetsbyten i samband med detta."
+          "Avbildning och konstruktion av geometriska objekt. Skala och dess användning i vardagliga situationer.", // ScaleGen
+          "Likformighet och symmetri inom plangeometrin.", // SimilarityGen
+          "Geometriska satser och formler och behovet av argumentation för deras giltighet. Pythagoras sats.", // PythagorasGen
+          "Metoder för beräkning av area, omkrets och volym hos geometriska objekt, samt enhetsbyten i samband med detta." // GeometryGen, VolumeGen
         ]
       },
       samband: {
@@ -60,6 +65,17 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         content: [
           "Proportionalitet och linjära samband samt hur de kan beskrivas med tabeller, grafer, ekvationer och ord.",
           "Räta linjens ekvation."
+        ]
+      },
+      // NEW SECTION: Sannolikhet och statistik
+      statistik: {
+        category: "Sannolikhet och statistik",
+        modules: ["probability", "statistics"],
+        content: [
+          "Likformig sannolikhet och metoder för att beräkna sannolikhet i vardagliga situationer.", // ProbabilityGen
+          "Tabeller och diagram för att beskriva resultat från undersökningar.", // StatisticsGen (Frequency Table)
+          "Lägesmått: medelvärde, median och typvärde.", // StatisticsGen
+          "Spridningsmått: variationsbredd." // StatisticsGen
         ]
       },
       problem: {
