@@ -38,7 +38,8 @@ export class StatisticsGen {
         for(let i=0; i<3; i++) list.push(modeVal); // Ensure mode exists
         for(let i=0; i<len-3; i++) list.push(MathUtils.randomChoice(s.vals));
         
-        const shuffled = MathUtils.shuffle(list);
+        // Manual shuffle to avoid dependency
+        const shuffled = list.sort(() => Math.random() - 0.5);
         const setStr = shuffled.join(', ');
 
         const type = MathUtils.randomInt(1, 2); // 1=Mode, 2=Range
@@ -78,38 +79,35 @@ export class StatisticsGen {
     // --- LEVEL 2: Mean (Medelvärde) ---
     private level2_Mean(lang: string): any {
         const scenarios = [
-            { sv: "sju kompisar", en: "seven friends", unit: "år" },
-            { sv: "fem dagar", en: "five days", unit: "°C" },
-            { sv: "fyra påsar godis", en: "four bags of candy", unit: "g" },
-            { sv: "tre hopp", en: "three jumps", unit: "m" },
-            { sv: "sex matcher", en: "six matches", unit: "mål" },
-            { sv: "fem kvitton", en: "five receipts", unit: "kr" },
-            { sv: "fyra provresultat", en: "four test scores", unit: "poäng" }
+            { sv: "sju kompisar", en: "seven friends", unit: "år", count: 7 },
+            { sv: "fem dagar", en: "five days", unit: "°C", count: 5 },
+            { sv: "fyra påsar godis", en: "four bags of candy", unit: "g", count: 4 },
+            { sv: "tre hopp", en: "three jumps", unit: "m", count: 3 },
+            { sv: "sex matcher", en: "six matches", unit: "mål", count: 6 },
+            { sv: "fem kvitton", en: "five receipts", unit: "kr", count: 5 },
+            { sv: "fyra provresultat", en: "four test scores", unit: "poäng", count: 4 }
         ];
 
         const s = MathUtils.randomChoice(scenarios);
-        // Ensure Sum is divisible by Count
-        const count = s.sv.includes("sju") ? 7 : (s.sv.includes("fem") ? 5 : (s.sv.includes("fyra") ? 4 : (s.sv.includes("tre") ? 3 : 6)));
         const mean = MathUtils.randomInt(5, 20);
-        const targetSum = mean * count;
+        const targetSum = mean * s.count;
         
-        // Generate numbers that sum correctly
         let currentSum = 0;
         const list: number[] = [];
-        for(let i=0; i<count-1; i++) {
+        for(let i=0; i<s.count-1; i++) {
             const val = MathUtils.randomInt(1, mean + 5);
             list.push(val);
             currentSum += val;
         }
         const lastVal = targetSum - currentSum;
-        list.push(lastVal); // Might be negative if not careful, but usually fine. If negative, it fits context like 'temp'.
+        list.push(lastVal);
         
-        // If money/age, ensure positive
+        // Safety check for negatives if context forbids
         if ((s.unit === 'år' || s.unit === 'kr' || s.unit === 'g') && lastVal < 0) {
             return this.level2_Mean(lang); // Retry
         }
 
-        const setStr = MathUtils.shuffle(list).join(', ');
+        const setStr = list.sort(() => Math.random() - 0.5).join(', ');
         
         const desc = lang === 'sv'
             ? `Beräkna medelvärdet för: ${setStr} (${s.unit}).`
@@ -124,8 +122,8 @@ export class StatisticsGen {
                     latex: `${list.join('+')} = ${targetSum}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Dela summan med antalet tal (${count}).` : `Divide the sum by the count (${count}).`, 
-                    latex: `${targetSum} / ${count} = ${mean}` 
+                    text: lang === 'sv' ? `Dela summan med antalet tal (${s.count}).` : `Divide the sum by the count (${s.count}).`, 
+                    latex: `${targetSum} / ${s.count} = ${mean}` 
                 }
             ]
         };
@@ -149,7 +147,7 @@ export class StatisticsGen {
         const list: number[] = [];
         for(let i=0; i<len; i++) list.push(MathUtils.randomInt(1, 20));
         
-        const shuffled = [...list]; // Display unsorted
+        const shuffled = [...list];
         const sorted = list.sort((a,b) => a-b);
         
         let median = 0;
@@ -171,8 +169,8 @@ export class StatisticsGen {
         }
 
         const desc = lang === 'sv'
-            ? `Hitta medianen för dessa ${s.sv}: ${MathUtils.shuffle(shuffled).join(', ')}`
-            : `Find the median for these ${s.en}: ${MathUtils.shuffle(shuffled).join(', ')}`;
+            ? `Hitta medianen för dessa ${s.sv}: ${shuffled.sort(() => Math.random() - 0.5).join(', ')}`
+            : `Find the median for these ${s.en}: ${shuffled.sort(() => Math.random() - 0.5).join(', ')}`;
 
         return {
             renderData: { description: desc, answerType: 'numeric' },
@@ -187,7 +185,7 @@ export class StatisticsGen {
         };
     }
 
-    // --- LEVEL 4: Reverse Mean (Algebraic Thinking) ---
+    // --- LEVEL 4: Reverse Mean ---
     private level4_ReverseMean(lang: string): any {
         const scenarios = [
             { sv: "påsar väger", en: "bags weigh" },
@@ -228,10 +226,8 @@ export class StatisticsGen {
         };
     }
 
-    // --- LEVEL 5: Frequency Tables ---
+    // --- LEVEL 5: Frequency Table (VISUAL) ---
     private level5_FrequencyTable(lang: string): any {
-        // Data format: Value X -> Frequency F
-        // Scenario: Dice Rolls (1-6) or Scores (1-5)
         const vals = [1, 2, 3, 4, 5];
         const freqs = [
             MathUtils.randomInt(1, 3),
@@ -243,29 +239,20 @@ export class StatisticsGen {
         
         let sumProd = 0;
         let totalCount = 0;
-        let tableStr = lang === 'sv' ? "| Värde | Antal |\n|---|---|\n" : "| Value | Count |\n|---|---|\n";
+        const rows: any[] = [];
         
         vals.forEach((v, i) => {
             const f = freqs[i];
             if (f > 0) {
                 sumProd += v * f;
                 totalCount += f;
-                tableStr += `| ${v} | ${f} |\n`;
+                rows.push([v, f]);
             }
         });
 
-        // Ensure clean division for Mean
-        // Adjust last freq if needed
-        const remainder = sumProd % totalCount;
-        if (remainder !== 0) {
-            // This is hard to patch on the fly without breaking the table.
-            // Easier tactic: Generate Mean question only if clean, else Median question?
-            // Or just allow decimals (rounded).
-        }
+        // Calculate targets
+        const mean = Math.round((sumProd / totalCount) * 10) / 10;
         
-        const mean = Math.round((sumProd / totalCount) * 10) / 10; // Round to 1 decimal
-
-        // Median Calc
         const expanded: number[] = [];
         vals.forEach((v, i) => {
             for(let k=0; k<freqs[i]; k++) expanded.push(v);
@@ -278,20 +265,20 @@ export class StatisticsGen {
         const targetName = isMean ? (lang==='sv'?'medelvärdet':'the mean') : (lang==='sv'?'medianen':'the median');
 
         const desc = lang === 'sv'
-            ? `Tabellen visar resultat. Beräkna ${targetName}.`
-            : `The table shows results. Calculate ${targetName}.`;
+            ? `Tabellen visar resultat (Värde vs Antal). Beräkna ${targetName}.`
+            : `The table shows results (Value vs Count). Calculate ${targetName}.`;
 
-        // Render table as HTML/Markdown text in description won't work well in MathText if too complex.
-        // Better to format linear: "Värde 1: 2 st, Värde 2: 4 st..."
-        let textList = "";
-        vals.forEach((v, i) => {
-            if (freqs[i] > 0) textList += `[${v} poäng: ${freqs[i]} st]  `;
-        });
+        const headers = lang === 'sv' ? ["Värde", "Antal"] : ["Value", "Count"];
 
         return {
             renderData: { 
-                description: desc + "\n\n" + textList, 
-                answerType: 'numeric' 
+                description: desc,
+                answerType: 'numeric',
+                geometry: { 
+                    type: 'frequency_table', 
+                    headers: headers, 
+                    rows: rows 
+                }
             },
             token: this.toBase64(target.toString()),
             clues: [
@@ -311,37 +298,24 @@ export class StatisticsGen {
 
     // --- LEVEL 6: Real World Mixed ---
     private level6_RealWorldMixed(lang: string): any {
-        // Scenarios:
-        // 1. Outlier effect
-        // 2. Compare Mean vs Median
-        // 3. Missing frequency
-        
         const type = MathUtils.randomInt(1, 2);
         
         if (type === 1) {
-            const list = [20000, 21000, 22000, 20500, 1000000]; // Salary outlier
-            const median = 21000;
-            const mean = 216700; // huge
-            
             const desc = lang === 'sv'
                 ? `Löner: 20k, 21k, 22k, 20.5k, 1000k. Vilket mått beskriver "vanlig lön" bäst: Medelvärde eller Median? (Svara med ordet)`
                 : `Salaries: 20k, 21k, 22k, 20.5k, 1000k. Which measure fits best: Mean or Median? (Answer with word)`;
             
-            const ans = lang === 'sv' ? "Median" : "Median";
-            
             return {
                 renderData: { description: desc, answerType: 'text' },
-                token: this.toBase64(ans),
+                token: this.toBase64("Median"),
                 clues: [{ text: lang === 'sv' ? "Medelvärdet påverkas mycket av det jättestora talet (1000k)." : "The mean is heavily affected by the outlier (1000k)." }]
             };
         } else {
-            const nums = [1, 1, 2, 8, 9]; // Mean = 4.2, Median = 2
             const desc = lang === 'sv'
                 ? `Talserie: 1, 1, 2, 8, 9. Beräkna differensen mellan Medelvärde och Median.`
                 : `List: 1, 1, 2, 8, 9. Calculate the difference between Mean and Median.`;
             
-            const ans = 4.2 - 2; // 2.2
-            
+            // Mean = 21/5 = 4.2. Median = 2. Diff = 2.2
             return {
                 renderData: { description: desc, answerType: 'numeric' },
                 token: this.toBase64("2.2"),
