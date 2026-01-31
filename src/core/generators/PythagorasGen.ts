@@ -106,7 +106,6 @@ export class PythagorasGen {
                     type: 'triangle', subtype: 'right', 
                     width: width, height: height, 
                     // UPDATED: Explicitly map 'b' and 'h' so GeometryComponents renders them.
-                    // Added 'hyp' for future compatibility, though current component may not render it.
                     labels: { b: width, h: height, hyp: 'x', c: 'x' } 
                 }
             },
@@ -136,7 +135,6 @@ export class PythagorasGen {
         
         if (solveForBase) {
             // We know Height (h) and Hypotenuse (c). We need Base (b).
-            // NOTE: GeometryComponents uses 'h' and 'b' keys.
             labels = { h: t.a, b: 'x', hyp: t.c, c: t.c };
             missingVar = 'b';
         } else {
@@ -145,8 +143,7 @@ export class PythagorasGen {
             missingVar = 'a';
         }
 
-        // UPDATED: Added hypotenuse length to description because GeometryComponents 
-        // does not currently render the label on the hypotenuse.
+        // UPDATED: Added hypotenuse length to description
         const desc = lang === 'sv' 
             ? `Hypotenusan är ${t.c}. Beräkna den okända sidan (x).` 
             : `The hypotenuse is ${t.c}. Calculate the unknown side (x).`;
@@ -203,11 +200,17 @@ export class PythagorasGen {
         let hintFormula = "";
 
         if (s.type === 'find_c') {
-            desc = lang === 'sv' ? s.txtSv.replace('{a}', a).replace('{b}', b) : s.txtEn.replace('{a}', a).replace('{b}', b);
+            // FIX: Added .toString() to inputs for replace
+            desc = lang === 'sv' 
+                ? s.txtSv.replace('{a}', a.toString()).replace('{b}', b.toString()) 
+                : s.txtEn.replace('{a}', a.toString()).replace('{b}', b.toString());
             ans = c;
             hintFormula = `\\sqrt{${a}^2 + ${b}^2}`;
         } else {
-            desc = lang === 'sv' ? s.txtSv.replace('{c}', c).replace('{b}', b) : s.txtEn.replace('{c}', c).replace('{b}', b);
+            // FIX: Added .toString() to inputs for replace
+            desc = lang === 'sv' 
+                ? s.txtSv.replace('{c}', c.toString()).replace('{b}', b.toString()) 
+                : s.txtEn.replace('{c}', c.toString()).replace('{b}', b.toString());
             ans = a;
             hintFormula = `\\sqrt{${c}^2 - ${b}^2}`;
         }
@@ -285,13 +288,15 @@ export class PythagorasGen {
         const correct = lang === 'sv' ? (isRight ? "Ja" : "Nej") : (isRight ? "Yes" : "No");
         const wrong = lang === 'sv' ? (isRight ? "Nej" : "Ja") : (isRight ? "No" : "Yes");
 
-        // UPDATED: Added explicit geometry: null to avoid crash if frontend tries to render undefined geometry.
-        // Also ensuring shuffle logic is safe.
+        // FIX: Removed dependency on MathUtils.shuffle to avoid missing method errors.
+        // Used local random swap instead.
+        const options = Math.random() > 0.5 ? [correct, wrong] : [wrong, correct];
+
         return {
             renderData: {
                 description: desc,
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([correct, wrong]),
+                options: options,
                 geometry: null
             },
             token: this.toBase64(correct),

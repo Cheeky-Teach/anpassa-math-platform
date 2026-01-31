@@ -32,7 +32,7 @@ export class LinearEquationGen {
     private level1_OneStep(lang: string): any {
         const type = MathUtils.randomInt(1, 4);
         let latex = '', answer = '';
-        // FIX: Explicitly type the array to avoid 'never[]' inference
+        // FIX: Explicitly type 'clues' to allow pushing objects later
         let clues: any[] = [];
         
         if (type === 1) { // x / k = res
@@ -100,12 +100,13 @@ export class LinearEquationGen {
         };
     }
 
-    // --- LEVEL 2: Two-Step Equations ---
+    // --- LEVEL 2: Two-Step Equations (ax + b = c) ---
     private level2_TwoStep(lang: string): any {
         const a = MathUtils.randomInt(2, 9);
         const x = MathUtils.randomInt(1, 10);
         const b = MathUtils.randomInt(1, 15);
         
+        // Randomize between adding and subtracting constant
         const type = MathUtils.randomInt(0, 1);
         let latex = '', clues: any[] = [];
 
@@ -127,7 +128,7 @@ export class LinearEquationGen {
             latex = `${a}x - ${b} = ${c}`;
             clues = [
                 { 
-                    text: lang === 'sv' ? `Börja med att addera ${b} till båda sidor.` : `Start by adding ${b} to both sides.`, 
+                    text: lang === 'sv' ? `Börja med att addera ${b}.` : `Start by adding ${b}.`, 
                     latex: `${a}x = ${c} + ${b} \\implies ${a}x = ${c + b}` 
                 },
                 { 
@@ -164,7 +165,7 @@ export class LinearEquationGen {
             latex = `${a}(x + ${b}) = ${c}`;
             clues = [
                 { 
-                    text: lang === 'sv' ? `Dividera med ${a} (eller multiplicera in).` : `Divide by ${a} (or expand).`, 
+                    text: lang === 'sv' ? `Dividera båda sidor med ${a} (eller multiplicera in).` : `Divide both sides by ${a} (or expand).`, 
                     latex: `x + ${b} = \\frac{${c}}{${a}} \\implies x + ${b} = ${inside}` 
                 },
                 { 
@@ -174,11 +175,11 @@ export class LinearEquationGen {
             ];
         } else { // a(x - b) = c
             const inside = x - b;
-            const c = a * inside; // Note: c might be negative if inside < 0, but inputs usually keep it simple
+            const c = a * inside;
             latex = `${a}(x - ${b}) = ${c}`;
             clues = [
-                 { 
-                    text: lang === 'sv' ? `Dividera med ${a}.` : `Divide by ${a}.`, 
+                { 
+                    text: lang === 'sv' ? `Dividera båda sidor med ${a}.` : `Divide both sides by ${a}.`, 
                     latex: `x - ${b} = \\frac{${c}}{${a}} \\implies x - ${b} = ${inside}` 
                 },
                 { 
@@ -205,33 +206,34 @@ export class LinearEquationGen {
         const x = MathUtils.randomInt(2, 9);
         let a = MathUtils.randomInt(3, 8); // Coeff left
         let c = MathUtils.randomInt(2, a - 1); // Coeff right (ensure smaller than a)
-        // Swap occasionally to ensure we don't always have larger coeff on left
-        if (Math.random() < 0.5 && c > 1) { 
-            // If we swap, we must ensure result is handled, but here we enforce a>c logic 
-            // inside the generation to avoid negative coefficient on X step
-        }
         
-        const type = MathUtils.randomInt(0, 3);
-        let latex = '', clues: any[] = []; 
+        let latex = '', clues: any[] = [];
 
-        // Shared Logic: We construct so that a > c, meaning (a-c)x is positive.
+        const type = MathUtils.randomInt(0, 2); // 0: ax+b=cx+d, 1: ax-b=cx-d, 2: ax-b=cx+d
+        
+        // Ensure x coeff stays positive
         if (a < c) { const t = a; a = c; c = t; }
 
         if (type === 0) { // ax + b = cx + d
             const b = MathUtils.randomInt(2, 15);
             const d = (a * x + b) - (c * x);
-            // If d is invalid/negative, it turns into Type 2 logic, but let's just retry or clamp
+            
+            // Retry if numbers get weird (negative constant on right)
             if (d <= 0) return this.level2_TwoStep(lang); 
 
             latex = `${a}x + ${b} = ${c}x + ${d}`;
             clues = [
                 { 
                     text: lang === 'sv' ? `Subtrahera ${c}x från båda sidor.` : `Subtract ${c}x from both sides.`, 
-                    latex: `${a-c}x + ${b} = ${d}` 
+                    latex: `${a}x - ${c}x + ${b} = ${d} \\implies ${a-c}x + ${b} = ${d}` 
                 },
                 { 
                     text: lang === 'sv' ? `Subtrahera ${b} från båda sidor.` : `Subtract ${b} from both sides.`, 
-                    latex: `${a-c}x = ${d-b} \\implies x = ${x}` 
+                    latex: `${a-c}x = ${d} - ${b} \\implies ${a-c}x = ${d-b}` 
+                },
+                {
+                    text: lang === 'sv' ? `Dividera med ${a-c}.` : `Divide by ${a-c}.`,
+                    latex: `x = ${x}`
                 }
             ];
         }
@@ -244,40 +246,31 @@ export class LinearEquationGen {
             clues = [
                 { 
                     text: lang === 'sv' ? `Subtrahera ${c}x från båda sidor.` : `Subtract ${c}x from both sides.`, 
-                    latex: `${a-c}x - ${b} = -${d}` 
+                    latex: `${a}x - ${c}x - ${b} = -${d} \\implies ${a-c}x - ${b} = -${d}` 
                 },
                 { 
                     text: lang === 'sv' ? `Addera ${b} till båda sidor.` : `Add ${b} to both sides.`, 
-                    latex: `${a-c}x = ${b-d} \\implies x = ${x}` 
+                    latex: `${a-c}x = -${d} + ${b} \\implies x = ${x}` 
                 }
             ];
         }
-        else if (type === 2) { // ax + b = cx - d
-             const b = MathUtils.randomInt(2, 10);
-             const d = (a*x + b) - (c*x); // Wait, this makes RHS (cx-d). 
-             // ax+b = cx - d  => ax-cx = -d - b => (a-c)x = -(d+b). 
-             // Since a>c, (a-c) is pos. RHS is neg. X would be neg. We want positive integer X.
-             // So this case (PlusLeft, MinusRight) is impossible for positive integer X if a>c.
-             // We fallback to Type 0.
-             return this.level4_BothSides(lang);
-        }
         else { // ax - b = cx + d
-            // ax - cx = d + b => (a-c)x = d+b
-            const d = MathUtils.randomInt(2, 15);
-            const val = (a - c) * x; // This is d + b
-            const b = val - d;
+            const d = MathUtils.randomInt(2, 10);
+            // (a-c)x = d + b
+            const total = (a - c) * x;
+            const b = total - d;
             
             if (b <= 0) return this.level2_TwoStep(lang);
 
             latex = `${a}x - ${b} = ${c}x + ${d}`;
             clues = [
-                 { 
+                { 
                     text: lang === 'sv' ? `Subtrahera ${c}x från båda sidor.` : `Subtract ${c}x from both sides.`, 
                     latex: `${a-c}x - ${b} = ${d}` 
                 },
-                 { 
+                { 
                     text: lang === 'sv' ? `Addera ${b} till båda sidor.` : `Add ${b} to both sides.`, 
-                    latex: `${a-c}x = ${d+b} \\implies x = ${x}` 
+                    latex: `${a-c}x = ${d} + ${b} \\implies x = ${x}` 
                 }
             ];
         }

@@ -15,4 +15,13 @@ export class MathUtils {
     static gcd(a: number, b: number): number {
         return b === 0 ? a : MathUtils.gcd(b, a % b);
     }
+
+    // FIX: Added the missing shuffle method
+    static shuffle<T>(array: T[]): T[] {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
 }
