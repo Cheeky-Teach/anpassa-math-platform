@@ -13,7 +13,9 @@ import { PercentGen } from '../src/core/generators/PercentGen.js';
 import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
 import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
 import { PythagorasGen } from '../src/core/generators/PythagorasGen.js';
-import { ExponentsGen } from '../src/core/generators/ExponentsGen.js'; // NEW
+import { ExponentsGen } from '../src/core/generators/ExponentsGen.js';
+import { FractionBasicsGen } from '../src/core/generators/FractionBasicsGen.js';
+import { FractionArithGen } from '../src/core/generators/FractionArithGen.js';
 
 const getGenerator = (topic: string) => {
     switch (topic) {
@@ -32,7 +34,9 @@ const getGenerator = (topic: string) => {
         case 'probability': return new ProbabilityGen();
         case 'statistics': return new StatisticsGen();
         case 'pythagoras': return new PythagorasGen();
-        case 'exponents': return new ExponentsGen(); // NEW
+        case 'exponents': return new ExponentsGen();
+        case 'fraction_basics': return new FractionBasicsGen();
+        case 'fraction_arith': return new FractionArithGen();
         default: return null;
     }
 };

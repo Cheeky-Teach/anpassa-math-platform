@@ -6,9 +6,11 @@ export const CATEGORIES = {
         levels: 9,
         topics: [
             { id: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
+            { id: 'fraction_basics', label: { sv: "Bråk: Grunder", en: "Fractions: Basics" } }, // NEW
+            { id: 'fraction_arith', label: { sv: "Bråk: Räkna", en: "Fractions: Arithmetic" } }, // NEW
             { id: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
             { id: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } },
-            { id: 'exponents', label: { sv: "Potenser & Rötter", en: "Exponents & Roots" } }, // NEW
+            { id: 'exponents', label: { sv: "Potenser & Rötter", en: "Exponents & Roots" } },
             { id: 'percent', label: { sv: "Procent", en: "Percentage" } }
         ]
     },
@@ -22,7 +24,6 @@ export const CATEGORIES = {
             { id: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
             { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
             { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
-
         ]
     },
     geometry: {
@@ -119,8 +120,23 @@ export const UI_TEXT = {
 };
 
 export const LEVEL_DESCRIPTIONS = {
-    // ... [Previous descriptions] ...
-    exponents: { // NEW
+    // --- NEW FRACTION GENERATORS ---
+    fraction_basics: {
+        1: { sv: "Visuella Bråk", en: "Visual Fractions" },
+        2: { sv: "Beräkna delen", en: "Parts of a Quantity" },
+        3: { sv: "Blandad & Bråkform", en: "Mixed & Improper" },
+        4: { sv: "Förlänga & Förkorta", en: "Simplify & Extend" },
+        5: { sv: "Bråk & Decimaltal", en: "Fractions & Decimals" }
+    },
+    fraction_arith: {
+        1: { sv: "Addition & Subtraktion (Lika)", en: "Add & Sub (Same Denom)" },
+        2: { sv: "Addition & Subtraktion (Olika)", en: "Add & Sub (Diff Denom)" },
+        3: { sv: "Blandad form (+)", en: "Mixed Numbers (+)" },
+        4: { sv: "Multiplikation", en: "Multiplication" },
+        5: { sv: "Division", en: "Division" }
+    },
+    // --- EXISTING GENERATORS ---
+    exponents: { 
         1: { sv: "Grunder & x^0", en: "Foundations & x^0" },
         2: { sv: "Tiopotenser", en: "Powers of 10" },
         3: { sv: "Grundpotensform", en: "Scientific Notation" },
@@ -128,7 +144,6 @@ export const LEVEL_DESCRIPTIONS = {
         5: { sv: "Potenslagar (Enkel)", en: "Exponent Laws (Basic)" },
         6: { sv: "Potenslagar (Avancerad)", en: "Exponent Laws (Adv)" }
     },
-    // ... [Rest of descriptions] ...
     arithmetic: {
         1: { sv: "Addition (Uppställning)", en: "Addition (Vertical)" },
         2: { sv: "Subtraktion (Uppställning)", en: "Subtraction (Vertical)" },

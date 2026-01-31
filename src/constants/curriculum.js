@@ -5,6 +5,8 @@ export const CATEGORIES = {
         color: 'pink',
         generators: [
             { id: 'BasicArithmeticGen', api: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
+            { id: 'FractionBasicsGen', api: 'fraction_basics', label: { sv: "Bråk: Grunder", en: "Fractions: Basics" } }, // Added
+            { id: 'FractionArithGen', api: 'fraction_arith', label: { sv: "Bråk: Räkna", en: "Fractions: Arithmetic" } }, // Added
             { id: 'NegativeNumbersGen', api: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
             { id: 'TenPowersGen', api: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } },
             { id: 'PercentGen', api: 'percent', label: { sv: "Procent", en: "Percentage" } }
@@ -17,7 +19,7 @@ export const CATEGORIES = {
         generators: [
             { id: 'ExpressionSimplificationGen', api: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
             { id: 'EquationGenerator', api: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
-            { id: 'LinearGraphGenerator', api: 'graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } } // Moved here
+            { id: 'LinearGraphGenerator', api: 'graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
         ]
     },
     GEOMETRY: {
@@ -32,7 +34,6 @@ export const CATEGORIES = {
             { id: 'PythagorasGen', api: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } }
         ]
     },
-    // FUNCTIONS Category removed (merged into Algebra)
     STATISTICS: {
         id: 'STATISTICS',
         label: { en: 'Statistics', sv: 'Sannolikhet & Statistik' },
@@ -56,6 +57,20 @@ export const LEVEL_DESCRIPTIONS = {
         8: { sv: "Alla räknesätt (heltal)", en: "Mixed Integers" },
         9: { sv: "Alla räknesätt (med decimal)", en: "Mixed (incl. Decimals)" }
     },
+    FractionBasicsGen: { // New
+        1: { sv: "Visuella Bråk", en: "Visual Fractions" },
+        2: { sv: "Del av antal", en: "Parts of a Quantity" },
+        3: { sv: "Blandad & Bråkform", en: "Mixed & Improper" },
+        4: { sv: "Förlänga & Förkorta", en: "Simplify & Extend" },
+        5: { sv: "Bråk & Decimaltal", en: "Fractions & Decimals" }
+    },
+    FractionArithGen: { // New
+        1: { sv: "Addition & Subtraktion (Lika)", en: "Add & Sub (Same Denom)" },
+        2: { sv: "Addition & Subtraktion (Olika)", en: "Add & Sub (Diff Denom)" },
+        3: { sv: "Blandad form (+)", en: "Mixed Numbers (+)" },
+        4: { sv: "Multiplikation", en: "Multiplication" },
+        5: { sv: "Division", en: "Division" }
+    },
     NegativeNumbersGen: {
         1: { sv: "Addition & Subtraktion", en: "Addition & Subtraction" },
         2: { sv: "Addition & Subtraktion (Svår)", en: "Addition & Subtraction (Hard)" },
@@ -73,7 +88,7 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Huvudräkning (10%, 50%)", en: "Mental Math" },
         3: { sv: "Multiplar av 10%", en: "Multiples of 10%" },
         4: { sv: "Beräkna andelen (Decimal)", en: "Calculate Part (Decimal)" },
-        5: { sv: "Hitta helheten (100%)", en: "Find Whole" },
+        5: { sv: "Beräkna det hela", en: "Find Whole" },
         6: { sv: "Verklig Förändring", en: "Real World Change" }
     },
     EquationGenerator: {
@@ -155,6 +170,7 @@ export const LEVEL_DESCRIPTIONS = {
         5: { sv: "Frekvenstabell", en: "Frequency Table" },
         6: { sv: "Blandade begrepp", en: "Mixed Concepts" }
     }
+    
 };
 
 export const getColorClasses = (color, type) => {
