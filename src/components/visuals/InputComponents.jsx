@@ -3,6 +3,10 @@ import React, { useRef, useEffect } from 'react';
 // =====================================================================
 // FRACTION INPUT COMPONENT
 // Handles standard fractions (n/d) and mixed numbers (w n/d)
+// Features: 
+// - Visual separator line
+// - Slash ('/') navigation
+// - Tab navigation
 // =====================================================================
 
 interface FractionInputProps {
@@ -20,41 +24,43 @@ export const FractionInput: React.FC<FractionInputProps> = ({ value, onChange, a
     // Parse the current string value into parts
     let w = "", n = "", d = "";
     
-    // Handle "1 1/2" or "1/2" or "3"
-    const strVal = value || "";
-    if (strVal.includes(' ')) {
-        const parts = strVal.split(' ');
+    if (value.includes(' ')) {
+        const parts = value.split(' ');
         w = parts[0];
-        if (parts[1] && parts[1].includes('/')) {
+        if (parts[1].includes('/')) {
             [n, d] = parts[1].split('/');
-        } else {
-            n = parts[1] || "";
         }
-    } else if (strVal.includes('/')) {
-        [n, d] = strVal.split('/');
+    } else if (value.includes('/')) {
+        [n, d] = value.split('/');
     } else {
-        // If we allow mixed, assume single input is Whole number? 
-        // Or numerator? Usually for fractions, single number is numerator (e.g. 5/1) 
-        // or just a whole integer. Let's assume numerator if no mixed allowed, 
-        // or whole if mixed allowed?
-        // Let's stick to standard behavior: if no slash, it's just the 'n' or 'w' depending on focus.
-        // But for parsing existing data:
-        n = strVal;
+        n = value;
     }
 
     const update = (newW: string, newN: string, newD: string) => {
         let res = "";
-        if (newW) {
-            res += newW;
-            if (newN || newD) res += " ";
-        }
-        if (newN || newD) {
-            res += `${newN}/${newD}`;
-        }
-        onChange(res);
+        if (newW) res += `${newW} `;
+        if (newN || newD) res += `${newN}/${newD}`;
+        onChange(res.trim());
     };
 
-    // Auto-focus logic
+    const handleKeyDown = (e: React.KeyboardEvent, field: 'w' | 'n' | 'd') => {
+        if (e.key === '/' || e.key === 'Divide') {
+            e.preventDefault();
+            if (field === 'w') numRef.current?.focus();
+            if (field === 'n') denRef.current?.focus();
+        }
+        if (e.key === 'Backspace') {
+            if (field === 'd' && d === '') {
+                e.preventDefault();
+                numRef.current?.focus();
+            }
+            if (field === 'n' && n === '' && allowMixed) {
+                e.preventDefault();
+                wholeRef.current?.focus();
+            }
+        }
+    };
+
     useEffect(() => {
         if (autoFocus) {
             if (allowMixed) wholeRef.current?.focus();
@@ -62,81 +68,45 @@ export const FractionInput: React.FC<FractionInputProps> = ({ value, onChange, a
         }
     }, [autoFocus, allowMixed]);
 
-    // Navigation Handlers
-    const handleWholeKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === ' ' || e.key === 'ArrowRight') {
-            e.preventDefault();
-            numRef.current?.focus();
-        }
-    };
-
-    const handleNumKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === '/') {
-            e.preventDefault();
-            denRef.current?.focus();
-        }
-        if (e.key === 'Backspace' && n === '') {
-            if (allowMixed) {
-                e.preventDefault();
-                wholeRef.current?.focus();
-            }
-        }
-        if (e.key === 'ArrowLeft' && allowMixed) {
-            e.preventDefault();
-            wholeRef.current?.focus();
-        }
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-            e.preventDefault();
-            denRef.current?.focus();
-        }
-    };
-
-    const handleDenKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Backspace' && d === '') {
-            e.preventDefault();
-            numRef.current?.focus();
-        }
-        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-            e.preventDefault();
-            numRef.current?.focus();
-        }
-    };
-
     return (
         <div className="inline-flex items-center gap-2 font-mono text-xl text-slate-800">
+            {/* Mixed Number (Whole) Part */}
             {allowMixed && (
                 <input
                     ref={wholeRef}
                     type="text"
                     inputMode="numeric"
-                    className="w-12 h-14 text-center border-2 border-slate-300 rounded focus:border-blue-500 focus:outline-none bg-white text-2xl"
+                    className="w-12 h-12 text-center border-2 border-slate-300 rounded focus:border-blue-500 focus:outline-none bg-white"
                     value={w}
                     onChange={(e) => update(e.target.value, n, d)}
-                    onKeyDown={handleWholeKeyDown}
-                    placeholder="0"
+                    onKeyDown={(e) => handleKeyDown(e, 'w')}
+                    placeholder="#"
                 />
             )}
-            
-            <div className="flex flex-col items-center gap-1">
+
+            {/* Fraction Part (Stack) */}
+            <div className="flex flex-col items-center justify-center">
                 <input
                     ref={numRef}
                     type="text"
                     inputMode="numeric"
-                    className="w-12 h-10 text-center border-2 border-slate-300 rounded focus:border-blue-500 focus:outline-none bg-white"
+                    className="w-12 h-10 text-center border-2 border-slate-300 rounded-t focus:border-blue-500 focus:outline-none focus:z-10 bg-white"
                     value={n}
                     onChange={(e) => update(w, e.target.value, d)}
-                    onKeyDown={handleNumKeyDown}
+                    onKeyDown={(e) => handleKeyDown(e, 'n')}
                     placeholder="n"
                 />
-                <div className="w-full h-0.5 bg-slate-800 rounded-full"></div>
+                
+                <div className="w-full h-0.5 bg-slate-800 my-0.5"></div>
+                
                 <input
                     ref={denRef}
                     type="text"
                     inputMode="numeric"
-                    className="w-12 h-10 text-center border-2 border-slate-300 rounded focus:border-blue-500 focus:outline-none bg-white"
+                    className="w-12 h-10 text-center border-2 border-slate-300 rounded-b focus:border-blue-500 focus:outline-none focus:z-10 bg-white"
                     value={d}
                     onChange={(e) => update(w, n, e.target.value)}
-                    onKeyDown={handleDenKeyDown}
+                    onKeyDown={(e) => handleKeyDown(e, 'd')}
                     placeholder="d"
                 />
             </div>
@@ -146,11 +116,15 @@ export const FractionInput: React.FC<FractionInputProps> = ({ value, onChange, a
 
 // =====================================================================
 // EXPONENT INPUT COMPONENT
-// Handles base^power
+// Handles powers (base^exponent)
+// Features: 
+// - Base number input
+// - Superscript exponent input
+// - Caret ('^') navigation
 // =====================================================================
 
 interface ExponentInputProps {
-    value: string; 
+    value: string; // Expected format: "base^exponent" e.g. "10^2"
     onChange: (val: string) => void;
     autoFocus?: boolean;
 }
@@ -159,34 +133,36 @@ export const ExponentInput: React.FC<ExponentInputProps> = ({ value, onChange, a
     const baseRef = useRef<HTMLInputElement>(null);
     const expRef = useRef<HTMLInputElement>(null);
 
-    // Parse "base^exp"
-    let base = "", exp = "";
-    const strVal = value || "";
-    if (strVal.includes('^')) {
-        [base, exp] = strVal.split('^');
+    // Parse value: "base^exp"
+    let base = "";
+    let exp = "";
+
+    if (value.includes('^')) {
+        [base, exp] = value.split('^');
     } else {
-        base = strVal;
+        base = value;
     }
 
     const update = (newBase: string, newExp: string) => {
-        if (newExp) onChange(`${newBase}^${newExp}`);
-        else onChange(newBase);
+        // If exponent exists, join with caret, otherwise just base
+        if (newExp) {
+            onChange(`${newBase}^${newExp}`);
+        } else {
+            onChange(newBase);
+        }
     };
 
-    // Navigation
     const handleBaseKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === '^' || e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+        // Allow user to jump to exponent by typing '^'
+        if (e.key === '^' || (e.shiftKey && e.key === '6')) {
             e.preventDefault();
             expRef.current?.focus();
         }
     };
 
     const handleExpKeyDown = (e: React.KeyboardEvent) => {
+        // Backspace on empty exponent jumps back to base
         if (e.key === 'Backspace' && exp === '') {
-            e.preventDefault();
-            baseRef.current?.focus();
-        }
-        if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
             e.preventDefault();
             baseRef.current?.focus();
         }
@@ -199,7 +175,7 @@ export const ExponentInput: React.FC<ExponentInputProps> = ({ value, onChange, a
     }, [autoFocus]);
 
     return (
-        <div className="inline-flex items-start font-mono text-xl text-slate-800 pt-4">
+        <div className="inline-flex items-start font-mono text-xl text-slate-800">
             {/* Base Number */}
             <input
                 ref={baseRef}
@@ -221,7 +197,7 @@ export const ExponentInput: React.FC<ExponentInputProps> = ({ value, onChange, a
                 value={exp}
                 onChange={(e) => update(base, e.target.value)}
                 onKeyDown={handleExpKeyDown}
-                placeholder="n"
+                placeholder="y"
             />
         </div>
     );
