@@ -31,6 +31,8 @@ type VercelResponse = ServerResponse & {
 };
 
 // Instantiate generators
+const graphGen = new LinearGraphGenerator();
+
 const generators: any = {
     arithmetic: new BasicArithmeticGen(),
     negative: new NegativeNumbersGen(),
@@ -41,7 +43,11 @@ const generators: any = {
     fraction_arith: new FractionArithGen(),
     simplify: new ExpressionSimplificationGen(),
     equation: new LinearEquationGen(),
-    graph: new LinearGraphGenerator(),
+    
+    // FIX: Map both 'graph' and 'linear_graph' to the same generator
+    graph: graphGen,
+    linear_graph: graphGen, 
+
     geometry: new GeometryGenerator(),
     scale: new ScaleGen(),
     volume: new VolumeGen(),
@@ -63,7 +69,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         return;
     }
 
-    // FIX: Handle both GET (query) and POST (body)
+    // Handle both GET (query) and POST (body)
     const body = req.body || {};
     const query = req.query || {};
 
