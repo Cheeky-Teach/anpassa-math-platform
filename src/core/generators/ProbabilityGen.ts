@@ -147,50 +147,40 @@ export class ProbabilityGen {
         // Scenarios where percentage makes sense
         const scenarios = [
             { 
-                sv: (t, f) => `Du kastar pil ${t} gånger och träffar tavlan ${f} gånger. Vad är din träffsäkerhet i procent?`,
-                en: (t, f) => `You throw a dart ${t} times and hit the board ${f} times. What is your accuracy in percent?`, 
-                context: 'darts' 
+                sv: (t:number, f:number) => `Du kastar pil ${t} gånger och träffar tavlan ${f} gånger. Vad är din träffsäkerhet i procent?`,
+                en: (t:number, f:number) => `You throw a dart ${t} times and hit the board ${f} times. What is your accuracy in percent?`
             },
             { 
-                sv: (t, f) => `En klass har ${t} elever. ${f} elever har glasögon. Hur stor andel har glasögon?`,
-                en: (t, f) => `A class has ${t} students. ${f} students wear glasses. What percent wear glasses?`, 
-                context: 'class' 
+                sv: (t:number, f:number) => `En klass har ${t} elever. ${f} elever har glasögon. Hur stor andel har glasögon?`,
+                en: (t:number, f:number) => `A class has ${t} students. ${f} students wear glasses. What percent wear glasses?`
             },
             { 
-                sv: (t, f) => `Du drar en lott ur en låda med ${t} lotter. ${f} st är vinstlotter. Vad är vinstchansen?`,
-                en: (t, f) => `You pick a ticket from a box of ${t}. ${f} are winning tickets. What is the chance to win?`, 
-                context: 'lottery' 
-            },
-            // NEW SCENARIOS ---
-            {
-                sv: (t, f) => `Det har regnat ${f} av de senaste ${t} dagarna. Hur stor andel är det?`,
-                en: (t, f) => `It rained on ${f} of the last ${t} days. What percentage is that?`,
-                context: 'weather'
+                sv: (t:number, f:number) => `Du drar en lott ur en låda med ${t} lotter. ${f} st är vinstlotter. Vad är vinstchansen?`,
+                en: (t:number, f:number) => `You pick a ticket from a box of ${t}. ${f} are winning tickets. What is the chance to win?`
             },
             {
-                sv: (t, f) => `I en låda med ${t} glödlampor är ${f} trasiga. Hur många procent är trasiga?`,
-                en: (t, f) => `In a box of ${t} light bulbs, ${f} are broken. What percent are broken?`,
-                context: 'quality'
+                sv: (t:number, f:number) => `Det har regnat ${f} av de senaste ${t} dagarna. Hur stor andel är det?`,
+                en: (t:number, f:number) => `It rained on ${f} of the last ${t} days. What percentage is that?`
             },
             {
-                sv: (t, f) => `En fotbollsspelare skjuter ${t} skott och gör mål ${f} gånger. Vad är målchansen?`,
-                en: (t, f) => `A soccer player takes ${t} shots and scores ${f} goals. What is the goal percentage?`,
-                context: 'sports'
+                sv: (t:number, f:number) => `I en låda med ${t} glödlampor är ${f} trasiga. Hur många procent är trasiga?`,
+                en: (t:number, f:number) => `In a box of ${t} light bulbs, ${f} are broken. What percent are broken?`
             },
             {
-                sv: (t, f) => `Du passerar ${t} trafikljus. ${f} visade grönt. Hur stor andel var gröna?`,
-                en: (t, f) => `You pass ${t} traffic lights. ${f} were green. What percentage were green?`,
-                context: 'traffic'
+                sv: (t:number, f:number) => `En fotbollsspelare skjuter ${t} skott och gör mål ${f} gånger. Vad är målchansen?`,
+                en: (t:number, f:number) => `A soccer player takes ${t} shots and scores ${f} goals. What is the goal percentage?`
             },
             {
-                sv: (t, f) => `I en undersökning med ${t} personer svarade ${f} "Ja". Hur många procent sa Ja?`,
-                en: (t, f) => `In a survey of ${t} people, ${f} said "Yes". What percent said Yes?`,
-                context: 'survey'
+                sv: (t:number, f:number) => `Du passerar ${t} trafikljus. ${f} visade grönt. Hur stor andel var gröna?`,
+                en: (t:number, f:number) => `You pass ${t} traffic lights. ${f} were green. What percentage were green?`
             },
             {
-                sv: (t, f) => `Du planterade ${t} frön. ${f} av dem växte upp. Vad är grobarheten?`,
-                en: (t, f) => `You planted ${t} seeds. ${f} of them sprouted. What is the germination rate?`,
-                context: 'seeds'
+                sv: (t:number, f:number) => `I en undersökning med ${t} personer svarade ${f} "Ja". Hur många procent sa Ja?`,
+                en: (t:number, f:number) => `In a survey of ${t} people, ${f} said "Yes". What percent said Yes?`
+            },
+            {
+                sv: (t:number, f:number) => `Du planterade ${t} frön. ${f} av dem växte upp. Vad är grobarheten?`,
+                en: (t:number, f:number) => `You planted ${t} seeds. ${f} of them sprouted. What is the germination rate?`
             }
         ];
 
@@ -281,8 +271,8 @@ export class ProbabilityGen {
                 renderData: { description: desc, answerType: 'text' },
                 token: this.toBase64("1/4"),
                 clues: [
-                    { text: lang === 'sv' ? "Händelserna sker oberoende av varandra. Sannolikheten för ETT mynt är 1/2." : "Events happen independently. Probability for ONE coin is 1/2." },
-                    { text: lang === 'sv' ? "När det står 'och'/'båda', ska vi multiplicera sannolikheterna." : "When it says 'and'/'both', multiply the probabilities.", latex: "\\frac{1}{2} \\cdot \\frac{1}{2}" }
+                    { text: lang === 'sv' ? "Sannolikheten för ETT mynt är 1/2." : "Probability for ONE coin is 1/2." },
+                    { text: lang === 'sv' ? "För att BÅDA ska hända måste vi multiplicera." : "For BOTH to happen, we multiply.", latex: "\\frac{1}{2} \\cdot \\frac{1}{2}" }
                 ]
             };
         } else {
@@ -294,46 +284,107 @@ export class ProbabilityGen {
                 renderData: { description: desc, answerType: 'text' },
                 token: this.toBase64("1/12"),
                 clues: [
-                    { latex: `P(\\text{Krona}) = \\frac{1}{2}, \\quad P(6) = \\frac{1}{6}` },
-                    { latex: `\\frac{1}{2} \\cdot \\frac{1}{6}` }
+                    { text: lang === 'sv' ? "Sannolikhet för Krona = 1/2. Sannolikhet för 6:a = 1/6." : "Prob for Heads = 1/2. Prob for 6 = 1/6." },
+                    { text: lang === 'sv' ? "Multiplicera dem:" : "Multiply them:", latex: `\\frac{1}{2} \\cdot \\frac{1}{6}` }
                 ]
             };
         }
     }
 
-    // Level 6: Combinations (Simple Tree Diagrams logic)
+    // Level 6: Combinatorics (Scaffolded Difficulty)
     private level6_Combinatorics(lang: string): any {
-        const A = MathUtils.randomInt(2, 5);
-        const B = MathUtils.randomInt(2, 6);
-        const total = A * B;
-
-        const scenarios = [
-            { 
-                sv: `Du har ${A} tröjor och ${B} byxor. Hur många olika outfits kan du välja?`, 
-                en: `You have ${A} shirts and ${B} pants. How many different outfits can you choose?`
-            },
-            {
-                sv: `En meny har ${A} förrätter och ${B} varmrätter. Hur många olika måltider finns det?`,
-                en: `A menu has ${A} starters and ${B} main courses. How many different meals are there?`
-            }
-        ];
-
-        const s = MathUtils.randomChoice(scenarios);
+        // Scenarios:
+        // 1. Basic Multiplication Principle (A * B) - e.g. Outfits, Meals
+        // 2. Multi-Step Multiplication (A * B * C) - e.g. Code Lock, Paths
+        // 3. Permutations (Arrangements) - e.g. Books on shelf, Runners podium
+        // 4. Combinations Logic (Selections) - e.g. Handshakes
         
+        const type = MathUtils.randomChoice(['basic', 'multi', 'perm', 'select']);
+        
+        // --- 1. Basic Multiplication (Outfits/Menu) ---
+        if (type === 'basic') {
+            const A = MathUtils.randomInt(3, 6);
+            const B = MathUtils.randomInt(3, 8);
+            const total = A * B;
+            const isOutfits = Math.random() > 0.5;
+
+            const desc = isOutfits
+                ? (lang === 'sv' ? `Du har ${A} tröjor och ${B} byxor. Hur många olika outfits kan du välja?` : `You have ${A} shirts and ${B} pants. How many different outfits can you choose?`)
+                : (lang === 'sv' ? `En meny har ${A} förrätter och ${B} varmrätter. Hur många olika måltider kan man beställa?` : `A menu has ${A} starters and ${B} main courses. How many different meals can you order?`);
+
+            return {
+                renderData: { description: desc, answerType: 'numeric' },
+                token: this.toBase64(total.toString()),
+                clues: [
+                    { text: lang === 'sv' ? `Steg 1: Du har ${A} val i första gruppen.` : `Step 1: You have ${A} choices in the first group.` },
+                    { text: lang === 'sv' ? `Steg 2: För VARJE val i första gruppen, har du ${B} val i andra.` : `Step 2: For EACH choice in the first group, you have ${B} choices in the second.` },
+                    { text: lang === 'sv' ? "Steg 3: Multiplicera antalen." : "Step 3: Multiply the numbers.", latex: `${A} \\cdot ${B}` }
+                ]
+            };
+        }
+
+        // --- 2. Multi-Step (Code Lock / Paths) ---
+        if (type === 'multi') {
+            const digits = MathUtils.randomInt(3, 4);
+            const total = Math.pow(10, digits); // 10 * 10 * 10...
+            
+            const desc = lang === 'sv'
+                ? `Ett kodlås har ${digits} siffror (0-9). Hur många olika kombinationer finns det?`
+                : `A code lock has ${digits} digits (0-9). How many different combinations are there?`;
+
+            return {
+                renderData: { description: desc, answerType: 'numeric' },
+                token: this.toBase64(total.toString()),
+                clues: [
+                    { text: lang === 'sv' ? "Position 1: Du kan välja mellan 10 siffror (0-9)." : "Position 1: You can choose from 10 digits (0-9)." },
+                    { text: lang === 'sv' ? "Position 2: Du har fortfarande 10 val (siffrorna kan upprepas)." : "Position 2: You still have 10 choices (digits can repeat)." },
+                    { text: lang === 'sv' ? "Multiplicera antalet möjligheter för alla positioner." : "Multiply the possibilities for all positions.", latex: digits === 3 ? "10 \\cdot 10 \\cdot 10" : "10 \\cdot 10 \\cdot 10 \\cdot 10" }
+                ]
+            };
+        }
+
+        // --- 3. Permutations (Arrangements / Podium) ---
+        if (type === 'perm') {
+            const n = MathUtils.randomInt(3, 5);
+            // Factorial logic: n!
+            let total = 1;
+            let latexStr = "";
+            for(let i=n; i>=1; i--) { 
+                total *= i; 
+                latexStr += (i === 1 ? "1" : `${i} \\cdot `);
+            }
+
+            const desc = lang === 'sv'
+                ? `${n} böcker ska ställas på en hylla. På hur många olika sätt kan de ordnas?`
+                : `${n} books are to be placed on a shelf. In how many different ways can they be arranged?`;
+
+            return {
+                renderData: { description: desc, answerType: 'numeric' },
+                token: this.toBase64(total.toString()),
+                clues: [
+                    { text: lang === 'sv' ? `Plats 1: Du kan välja vilken som helst av de ${n} böckerna.` : `Spot 1: You can choose any of the ${n} books.` },
+                    { text: lang === 'sv' ? `Plats 2: Nu finns det ${n-1} böcker kvar att välja på.` : `Spot 2: Now there are ${n-1} books left to choose from.` },
+                    { text: lang === 'sv' ? "Fortsätt så för alla platser och multiplicera talen." : "Continue for all spots and multiply the numbers.", latex: latexStr }
+                ]
+            };
+        }
+
+        // --- 4. Selection (Handshakes / Pairs) ---
+        // Logic: n * (n-1) / 2
+        const n = MathUtils.randomInt(4, 8);
+        const total = (n * (n - 1)) / 2;
+        
+        const desc = lang === 'sv'
+            ? `Alla ${n} personer i ett rum skakar hand med varandra en gång. Hur många handskakningar blir det totalt?`
+            : `All ${n} people in a room shake hands with each other once. How many handshakes occur in total?`;
+
         return {
-            renderData: {
-                description: lang === 'sv' ? s.sv : s.en,
-                answerType: 'numeric'
-            },
+            renderData: { description: desc, answerType: 'numeric' },
             token: this.toBase64(total.toString()),
             clues: [
-                { 
-                    text: lang === 'sv' ? "För varje val du gör i första gruppen, har du alla val i andra gruppen." : "For every choice in the first group, you have all choices in the second.",
-                },
-                { 
-                    text: lang === 'sv' ? "Vi använder multiplikationsprincipen: Ta antal i grupp 1 gånger antal i grupp 2." : "Use multiplication principle: Count 1 times Count 2.",
-                    latex: `${A} \\cdot ${B}` 
-                }
+                { text: lang === 'sv' ? "Tänk dig att person 1 skakar hand med alla andra (n-1)." : "Imagine person 1 shakes hands with everyone else (n-1)." },
+                { text: lang === 'sv' ? "Om alla n personer gör det får vi n * (n-1) handskakningar." : "If all n people do this, we get n * (n-1) handshakes." },
+                { text: lang === 'sv' ? "Men då har vi räknat varje handskakning två gånger (A med B, och B med A). Dela med 2." : "But we counted every handshake twice (A with B, and B with A). Divide by 2.", latex: `\\frac{${n} \\cdot ${n-1}}{2}` }
             ]
         };
     }
