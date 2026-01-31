@@ -55,12 +55,16 @@ export class ProbabilityGen {
                 token: this.toBase64(ans),
                 clues: [
                     { 
-                        text: lang === 'sv' ? `Antal ${targetName}a kulor: ${targetVal}` : `Number of ${targetName} marbles: ${targetVal}`,
-                        latex: `\\frac{\\text{Delen}}{\\text{Det hela}}`
+                        text: lang === 'sv' ? "Först, räkna hur många kulor som har färgen vi letar efter (Gynsamma utfall)." : "First, count how many marbles have the color we are looking for (Favorable outcomes).",
+                        latex: `\\text{${targetName}} = ${targetVal}`
                     },
                     { 
-                        text: lang === 'sv' ? `Totalt antal kulor: ${total}` : `Total marbles: ${total}`,
+                        text: lang === 'sv' ? "Sedan, räkna hur många kulor det finns totalt (Möjliga utfall)." : "Then, count the total number of marbles (Possible outcomes).",
                         latex: `${red} + ${blue} + ${green} = ${total}`
+                    },
+                    { 
+                        text: lang === 'sv' ? "Sannolikheten är delen genom det hela." : "The probability is the part divided by the whole.",
+                        latex: `P = \\frac{${targetVal}}{${total}}`
                     }
                 ]
             };
@@ -79,8 +83,9 @@ export class ProbabilityGen {
                 },
                 token: this.toBase64(`1/${sections}`),
                 clues: [
-                    { text: lang === 'sv' ? "Hur många blåa fält finns det?" : "How many blue sections are there?" },
-                    { text: lang === 'sv' ? "Hur många fält finns det totalt?" : "How many sections total?" }
+                    { text: lang === 'sv' ? "Räkna antalet blåa fält." : "Count the number of blue sections.", latex: "1" },
+                    { text: lang === 'sv' ? "Räkna det totala antalet fält på hjulet." : "Count the total number of sections on the wheel.", latex: `${sections}` },
+                    { text: lang === 'sv' ? "Sannolikheten är antalet blåa delat med totalen." : "The probability is the number of blue ones divided by the total.", latex: `\\frac{1}{${sections}}` }
                 ]
             };
         }
@@ -94,23 +99,30 @@ export class ProbabilityGen {
             const mode = MathUtils.randomChoice(['gt', 'lt', 'even', 'odd', 'exact']);
             let favorable = 0;
             let labelSv = "", labelEn = "";
+            let favList = "";
 
             if (mode === 'gt') {
                 const n = MathUtils.randomInt(1, 4);
                 favorable = 6 - n;
                 labelSv = `större än ${n}`; labelEn = `greater than ${n}`;
+                // Generate list like "5, 6"
+                favList = Array.from({length: favorable}, (_, i) => n + 1 + i).join(", ");
             } else if (mode === 'lt') {
                 const n = MathUtils.randomInt(3, 6);
                 favorable = n - 1;
                 labelSv = `mindre än ${n}`; labelEn = `less than ${n}`;
+                favList = Array.from({length: favorable}, (_, i) => i + 1).join(", ");
             } else if (mode === 'even') {
                 favorable = 3; labelSv = "jämnt tal"; labelEn = "an even number";
+                favList = "2, 4, 6";
             } else if (mode === 'odd') {
                 favorable = 3; labelSv = "udda tal"; labelEn = "an odd number";
+                favList = "1, 3, 5";
             } else {
                 favorable = 1; 
                 const n = MathUtils.randomInt(1, 6);
                 labelSv = `en ${n}:a`; labelEn = `a ${n}`;
+                favList = `${n}`;
             }
 
             return {
@@ -122,7 +134,20 @@ export class ProbabilityGen {
                     geometry: { type: 'scale_single', shape: 'cube', label: '1-6' } 
                 },
                 token: this.toBase64(this.simplifyFraction(favorable, 6)),
-                clues: [{ text: "Gynsamma utfall / Möjliga utfall", latex: `\\frac{${favorable}}{6}` }]
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Vilka tal på tärningen stämmer in?" : "Which numbers on the die match?", 
+                        latex: favList 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Hur många är de? (Gynsamma utfall)" : "How many are they? (Favorable outcomes)", 
+                        latex: `${favorable}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "En tärning har totalt 6 sidor. Sannolikheten blir:" : "A die has 6 sides in total. The probability is:", 
+                        latex: `\\frac{${favorable}}{6}` 
+                    }
+                ]
             };
         } 
         else {
@@ -135,8 +160,8 @@ export class ProbabilityGen {
                 },
                 token: this.toBase64("1/4"),
                 clues: [
-                    { text: lang === 'sv' ? "Det finns 4 färger: Hjärter, Spader, Ruter, Klöver." : "There are 4 suits: Hearts, Spades, Diamonds, Clubs." },
-                    { text: lang === 'sv' ? "Varje färg är lika sannolik." : "Each suit is equally likely." }
+                    { text: lang === 'sv' ? "Kortleken har 4 färger: Hjärter, Spader, Ruter, Klöver." : "The deck has 4 suits: Hearts, Spades, Diamonds, Clubs." },
+                    { text: lang === 'sv' ? "Eftersom alla färger har lika många kort, är chansen 1 av 4." : "Since all suits have the same number of cards, the chance is 1 out of 4.", latex: "\\frac{1}{4}" }
                 ]
             };
         }
@@ -206,8 +231,8 @@ export class ProbabilityGen {
                     latex: `\\frac{${favorable}}{${total}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "För att få procent, multiplicera bråket med 100." : "To get percent, multiply the fraction by 100.", 
-                    latex: `\\frac{${favorable}}{${total}} \\cdot 100 = ${percent}` 
+                    text: lang === 'sv' ? "För att omvandla till procent, multiplicera bråket med 100." : "To convert to percent, multiply the fraction by 100.", 
+                    latex: `\\frac{${favorable}}{${total}} \\cdot 100 = ${percent}\\%` 
                 }
             ]
         };
@@ -231,8 +256,8 @@ export class ProbabilityGen {
                 },
                 token: this.toBase64((100 - rainChance).toString()),
                 clues: [
-                    { text: lang === 'sv' ? "Hela sannolikheten (regn + inte regn) måste bli 100%." : "The total probability (rain + not rain) must be 100%." },
-                    { text: lang === 'sv' ? "Ta bort regnchansen från 100%." : "Subtract rain chance from 100%.", latex: `100\\% - ${rainChance}\\%` }
+                    { text: lang === 'sv' ? "Summan av alla sannolikheter är alltid 100%." : "The sum of all probabilities is always 100%." },
+                    { text: lang === 'sv' ? "Antingen regnar det, eller så gör det inte det. Ta 100% minus regnrisken." : "Either it rains, or it doesn't. Take 100% minus the rain risk.", latex: `100\\% - ${rainChance}\\%` }
                 ]
             };
         } else { // Fraction
@@ -250,9 +275,9 @@ export class ProbabilityGen {
                 },
                 token: this.toBase64(this.simplifyFraction(total - red, total)),
                 clues: [
-                    { text: lang === 'sv' ? "Om vi inte vill ha röda, vilka kulor räknas då? Jo, alla andra." : "If we don't want red, which marbles count? All the others." },
-                    { text: lang === 'sv' ? "Subtrahera de röda från totalen." : "Subtract the red ones from the total.", latex: `${total} - ${red} = ${total - red}` },
-                    { latex: `\\frac{${total - red}}{${total}}` }
+                    { text: lang === 'sv' ? "Om vi INTE vill ha en röd kula, måste vi dra någon av de andra färgerna." : "If we do NOT want a red marble, we must pick any of the other colors." },
+                    { text: lang === 'sv' ? "Hur många kulor är inte röda? (Totalen minus de röda)." : "How many marbles are not red? (Total minus red).", latex: `${total} - ${red} = ${total - red}` },
+                    { text: lang === 'sv' ? "Sannolikheten är antalet 'inte röda' delat med totalen." : "The probability is the number of 'not red' divided by the total.", latex: `\\frac{${total - red}}{${total}}` }
                 ]
             };
         }
@@ -271,8 +296,9 @@ export class ProbabilityGen {
                 renderData: { description: desc, answerType: 'text' },
                 token: this.toBase64("1/4"),
                 clues: [
-                    { text: lang === 'sv' ? "Sannolikheten för ETT mynt är 1/2." : "Probability for ONE coin is 1/2." },
-                    { text: lang === 'sv' ? "För att BÅDA ska hända måste vi multiplicera." : "For BOTH to happen, we multiply.", latex: "\\frac{1}{2} \\cdot \\frac{1}{2}" }
+                    { text: lang === 'sv' ? "Sannolikheten att få Krona på det första myntet är 1/2." : "Probability of Heads on the first coin is 1/2." },
+                    { text: lang === 'sv' ? "Sannolikheten att få Krona på det andra myntet är också 1/2." : "Probability of Heads on the second coin is also 1/2." },
+                    { text: lang === 'sv' ? "När båda sakerna måste hända (Krona OCH Krona), multiplicerar man sannolikheterna." : "When both things must happen (Heads AND Heads), multiply the probabilities.", latex: "\\frac{1}{2} \\cdot \\frac{1}{2}" }
                 ]
             };
         } else {
@@ -284,8 +310,9 @@ export class ProbabilityGen {
                 renderData: { description: desc, answerType: 'text' },
                 token: this.toBase64("1/12"),
                 clues: [
-                    { text: lang === 'sv' ? "Sannolikhet för Krona = 1/2. Sannolikhet för 6:a = 1/6." : "Prob for Heads = 1/2. Prob for 6 = 1/6." },
-                    { text: lang === 'sv' ? "Multiplicera dem:" : "Multiply them:", latex: `\\frac{1}{2} \\cdot \\frac{1}{6}` }
+                    { text: lang === 'sv' ? "Sannolikheten för Krona är 1/2." : "Prob for Heads is 1/2." },
+                    { text: lang === 'sv' ? "Sannolikheten att slå en 6:a är 1/6." : "Prob for rolling a 6 is 1/6." },
+                    { text: lang === 'sv' ? "Multiplicera dem för att få sannolikheten för båda samtidigt." : "Multiply them to get the probability for both happening.", latex: `\\frac{1}{2} \\cdot \\frac{1}{6}` }
                 ]
             };
         }
@@ -294,10 +321,10 @@ export class ProbabilityGen {
     // Level 6: Combinatorics (Scaffolded Difficulty)
     private level6_Combinatorics(lang: string): any {
         // Scenarios:
-        // 1. Basic Multiplication Principle (A * B) - e.g. Outfits, Meals
-        // 2. Multi-Step Multiplication (A * B * C) - e.g. Code Lock, Paths
-        // 3. Permutations (Arrangements) - e.g. Books on shelf, Runners podium
-        // 4. Combinations Logic (Selections) - e.g. Handshakes
+        // 1. Basic Multiplication Principle (A * B)
+        // 2. Multi-Step Multiplication (A * B * C)
+        // 3. Permutations (Arrangements)
+        // 4. Combinations Logic (Selections)
         
         const type = MathUtils.randomChoice(['basic', 'multi', 'perm', 'select']);
         
@@ -316,9 +343,9 @@ export class ProbabilityGen {
                 renderData: { description: desc, answerType: 'numeric' },
                 token: this.toBase64(total.toString()),
                 clues: [
-                    { text: lang === 'sv' ? `Steg 1: Du har ${A} val i första gruppen.` : `Step 1: You have ${A} choices in the first group.` },
-                    { text: lang === 'sv' ? `Steg 2: För VARJE val i första gruppen, har du ${B} val i andra.` : `Step 2: For EACH choice in the first group, you have ${B} choices in the second.` },
-                    { text: lang === 'sv' ? "Steg 3: Multiplicera antalen." : "Step 3: Multiply the numbers.", latex: `${A} \\cdot ${B}` }
+                    { text: lang === 'sv' ? `Du kan välja vilken som helst av de ${A} alternativen i första gruppen.` : `You can pick any of the ${A} options in the first group.` },
+                    { text: lang === 'sv' ? `För varje sådant val, kan du välja något av de ${B} alternativen i den andra.` : `For each of those choices, you can pick any of the ${B} options in the second.` },
+                    { text: lang === 'sv' ? "Multiplicera antalen för att få totala kombinationer." : "Multiply the numbers to get total combinations.", latex: `${A} \\cdot ${B}` }
                 ]
             };
         }
@@ -332,13 +359,15 @@ export class ProbabilityGen {
                 ? `Ett kodlås har ${digits} siffror (0-9). Hur många olika kombinationer finns det?`
                 : `A code lock has ${digits} digits (0-9). How many different combinations are there?`;
 
+            const latexSteps = Array(digits).fill(10).join(" \\cdot ");
+
             return {
                 renderData: { description: desc, answerType: 'numeric' },
                 token: this.toBase64(total.toString()),
                 clues: [
-                    { text: lang === 'sv' ? "Position 1: Du kan välja mellan 10 siffror (0-9)." : "Position 1: You can choose from 10 digits (0-9)." },
-                    { text: lang === 'sv' ? "Position 2: Du har fortfarande 10 val (siffrorna kan upprepas)." : "Position 2: You still have 10 choices (digits can repeat)." },
-                    { text: lang === 'sv' ? "Multiplicera antalet möjligheter för alla positioner." : "Multiply the possibilities for all positions.", latex: digits === 3 ? "10 \\cdot 10 \\cdot 10" : "10 \\cdot 10 \\cdot 10 \\cdot 10" }
+                    { text: lang === 'sv' ? "Första siffran kan vara vilken som helst av 0-9. Det är 10 val." : "The first digit can be any of 0-9. That is 10 choices." },
+                    { text: lang === 'sv' ? "Andra siffran har också 10 val (siffrorna får upprepas)." : "The second digit also has 10 choices (digits can repeat)." },
+                    { text: lang === 'sv' ? "Gör detta för alla siffror och multiplicera." : "Do this for all digits and multiply.", latex: latexSteps }
                 ]
             };
         }
@@ -355,16 +384,16 @@ export class ProbabilityGen {
             }
 
             const desc = lang === 'sv'
-                ? `${n} böcker ska ställas på en hylla. På hur många olika sätt kan de ordnas?`
-                : `${n} books are to be placed on a shelf. In how many different ways can they be arranged?`;
+                ? `${n} böcker ska ställas på en hylla bredvid varandra. På hur många olika sätt kan de ordnas?`
+                : `${n} books are to be placed on a shelf next to each other. In how many different ways can they be arranged?`;
 
             return {
                 renderData: { description: desc, answerType: 'numeric' },
                 token: this.toBase64(total.toString()),
                 clues: [
-                    { text: lang === 'sv' ? `Plats 1: Du kan välja vilken som helst av de ${n} böckerna.` : `Spot 1: You can choose any of the ${n} books.` },
-                    { text: lang === 'sv' ? `Plats 2: Nu finns det ${n-1} böcker kvar att välja på.` : `Spot 2: Now there are ${n-1} books left to choose from.` },
-                    { text: lang === 'sv' ? "Fortsätt så för alla platser och multiplicera talen." : "Continue for all spots and multiply the numbers.", latex: latexStr }
+                    { text: lang === 'sv' ? `På den första platsen kan du ställa vilken som helst av de ${n} böckerna.` : `For the first spot, you can place any of the ${n} books.` },
+                    { text: lang === 'sv' ? `På den andra platsen finns det bara ${n-1} böcker kvar att välja på.` : `For the second spot, there are only ${n-1} books left to choose from.` },
+                    { text: lang === 'sv' ? "Fortsätt minska antalet val för varje plats och multiplicera dem." : "Keep decreasing the choices for each spot and multiply them.", latex: latexStr }
                 ]
             };
         }
@@ -382,9 +411,9 @@ export class ProbabilityGen {
             renderData: { description: desc, answerType: 'numeric' },
             token: this.toBase64(total.toString()),
             clues: [
-                { text: lang === 'sv' ? "Tänk dig att person 1 skakar hand med alla andra (n-1)." : "Imagine person 1 shakes hands with everyone else (n-1)." },
-                { text: lang === 'sv' ? "Om alla n personer gör det får vi n * (n-1) handskakningar." : "If all n people do this, we get n * (n-1) handshakes." },
-                { text: lang === 'sv' ? "Men då har vi räknat varje handskakning två gånger (A med B, och B med A). Dela med 2." : "But we counted every handshake twice (A with B, and B with A). Divide by 2.", latex: `\\frac{${n} \\cdot ${n-1}}{2}` }
+                { text: lang === 'sv' ? `Om varje person (${n} st) skakade hand med alla andra (${n-1} st)...` : `If every person (${n}) shook hands with everyone else (${n-1})...` },
+                { text: lang === 'sv' ? "...skulle vi få n * (n-1) handskakningar." : "...we would get n * (n-1) handshakes.", latex: `${n} \\cdot ${n-1} = ${n*(n-1)}` },
+                { text: lang === 'sv' ? "Men då har vi räknat varje handskakning två gånger (A skakar med B, och B med A). Därför måste vi dela med 2." : "But we counted each handshake twice (A shakes with B, and B with A). So we divide by 2.", latex: `\\frac{${n*(n-1)}}{2}` }
             ]
         };
     }
