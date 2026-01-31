@@ -12,7 +12,7 @@ export const CATEGORIES = {
             { id: 'percent', label: { sv: "Procent", en: "Percentage" } }
         ]
     },
-    // ... [Other categories remain unchanged] ...
+    
     algebra: {
         id: 'algebra',
         label: { sv: "Algebra", en: "Algebra" },
@@ -20,7 +20,9 @@ export const CATEGORIES = {
         levels: 6,
         topics: [
             { id: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
-            { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } }
+            { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
+            { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
+
         ]
     },
     geometry: {
@@ -36,15 +38,7 @@ export const CATEGORIES = {
             { id: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } }
         ]
     },
-    samband: { 
-        id: 'samband',
-        label: { sv: "Samband", en: "Relationships" },
-        color: "purple",
-        levels: 5,
-        topics: [
-             { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
-        ]
-    },
+
     statistics: { 
         id: 'statistics',
         label: { sv: "Sannolikhet & Statistik", en: "Prob & Stats" },
