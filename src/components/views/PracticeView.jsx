@@ -112,7 +112,7 @@ const PracticeView = ({
         return null;
     };
 
-    // FIX: Specialized Input Renderer with Defensive Checks
+    // FIX: Specialized Input Renderer (Integrated into original layout logic)
     const renderInput = () => {
         const type = question?.renderData?.answerType || 'text';
 
@@ -143,7 +143,7 @@ const PracticeView = ({
             );
         }
 
-        // Case 3: Standard Text/Numeric Input
+        // Case 3: Standard Text/Numeric Input (Original Style)
         return (
             <div className="relative">
                 <input
