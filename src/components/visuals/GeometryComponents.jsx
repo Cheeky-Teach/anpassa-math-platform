@@ -120,7 +120,7 @@ export const GeometryVisual = ({ data }) => {
         return <div className="flex justify-center my-4"><svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{cells}</svg></div>;
     }
 
-    // --- SHAPES RENDERER (Original Logic) ---
+    // --- SHAPES RENDERER ---
     const mkTxt = (x, y, txt, anchor = "middle", baseline = "middle", color = "#374151") =>
         <text key={`${x}-${y}-${txt}`} x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
 
@@ -136,10 +136,11 @@ export const GeometryVisual = ({ data }) => {
         const sr = (dims.radius || 0) * baseScale;
 
         // Resolve aliases for Base and Height
-        const l_b = labels?.b || labels?.base || labels?.width || labels?.w || (type === 'rectangle' ? dims.width : null);
-        const l_h = labels?.h || labels?.height || (type === 'rectangle' ? dims.height : null);
-        // Added: Resolve aliases for Hypotenuse/Diagonal
+        const l_b = labels?.b || labels?.base || labels?.width || labels?.w || labels?.s2 || (type === 'rectangle' ? dims.width : null);
+        const l_h = labels?.h || labels?.height || labels?.s1 || (type === 'rectangle' ? dims.height : null);
         const l_hyp = labels?.hyp || labels?.hypotenuse || labels?.c || labels?.diagonal;
+        const l_a1 = labels?.a1;
+        const l_a2 = labels?.a2;
         
         if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
             return (
@@ -164,10 +165,8 @@ export const GeometryVisual = ({ data }) => {
                 return (
                     <g>
                         <polygon points={path} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {/* Use l_h and l_b aliases instead of raw labels.h/b to support 'height'/'base' keys */}
                         {l_h && mkTxt(L - 15, cy, l_h)}
                         {l_b && mkTxt(cx, B + 25, l_b)}
-                        {/* New: Hypotenuse Label (offset slightly up and right from center) */}
                         {l_hyp && mkTxt(cx + 10, cy - 10, l_hyp, "start")}
                     </g>
                 );
@@ -178,9 +177,25 @@ export const GeometryVisual = ({ data }) => {
                     <g>
                         <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {/* Use l_b and l_h aliases here too */}
                         {l_b && mkTxt(cx, B + 25, l_b)}
                         {l_h && mkTxt(cx + 5, cy, l_h, "start")}
+
+                        {/* FIXED: Repositioned Angle Labels to the left and right of the shape to prevent overlap */}
+                        {dims.angles && (
+                            <>
+                                {/* Angle 1 arc and label (bottom left) - Moved to the left of the corner */}
+                                <path d={`M ${L+15} ${B} A 15 15 0 0 0 ${L+10.6} ${B-10.6}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />
+                                {l_a1 && mkTxt(L - 10, B - 5, l_a1, "end")}
+                                
+                                {/* Angle 2 arc and label (bottom right) - Moved to the right of the corner */}
+                                <path d={`M ${R-15} ${B} A 15 15 0 0 1 ${R-10.6} ${B-10.6}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />
+                                {l_a2 && mkTxt(R + 10, B - 5, l_a2, "start")}
+                            </>
+                        )}
+
+                        {/* Generic Side labels if they aren't base/height */}
+                        {!l_b && labels?.s2 && mkTxt(cx, B + 25, labels.s2)}
+                        {!l_h && labels?.s1 && mkTxt(L - 10, cy, labels.s1, "end")}
                     </g>
                 );
             }
@@ -305,11 +320,9 @@ export const GeometryVisual = ({ data }) => {
         );
     }
 
-    return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
+    return null;
 };
-GeometryVisual.requiresCanvas = true;
 
-// ... GraphCanvas and VolumeVisualization are unchanged, implicitly included ...
 export const GraphCanvas = ({ data }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
@@ -356,7 +369,6 @@ export const GraphCanvas = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
-GraphCanvas.requiresCanvas = true;
 
 export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
@@ -516,11 +528,7 @@ export const VolumeVisualization = ({ data }) => {
     }, [data]);
     return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={320} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
-VolumeVisualization.requiresCanvas = true;
 
-// =====================================================================
-// 4. STATIC GEOMETRY VISUAL
-// =====================================================================
 export const StaticGeometryVisual = ({ description }) => { 
     if (!description) return null; 
     const d = description.toLowerCase(); 
