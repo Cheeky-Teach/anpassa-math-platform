@@ -5,8 +5,7 @@ import CluePanel from '../practice/CluePanel';
 import HistoryList from '../practice/HistoryList';
 import LevelUpModal from '../modals/LevelUpModal';
 import StreakModal from '../modals/StreakModal'; 
-import { LEVEL_DESCRIPTIONS } from '../../constants/localization'; 
-// FIX: Import the specialized input components
+import { LEVEL_DESCRIPTIONS, CATEGORIES } from '../../constants/localization'; 
 import { FractionInput, ExponentInput } from '../ui/InputComponents';
 
 // --- SECURITY HELPERS ---
@@ -118,7 +117,6 @@ const PracticeView = ({
         const type = question?.renderData?.answerType || 'text';
 
         // Case 1: Fraction Input (Numerator/Denominator)
-        // Guard clause: Ensure FractionInput is loaded before rendering
         if (type === 'fraction' && FractionInput) {
             return (
                 <div className="flex justify-center my-6">
@@ -133,7 +131,6 @@ const PracticeView = ({
         }
 
         // Case 2: Exponent Input (Base^Power)
-        // Guard clause: Ensure ExponentInput is loaded before rendering
         if (type === 'structured_power' && ExponentInput) {
             return (
                 <div className="flex justify-center my-6">
@@ -146,7 +143,7 @@ const PracticeView = ({
             );
         }
 
-        // Case 3: Standard Text/Numeric Input (Fallback)
+        // Case 3: Standard Text/Numeric Input
         return (
             <div className="relative">
                 <input
@@ -217,7 +214,8 @@ const PracticeView = ({
                         
                         <div className="hidden md:flex flex-col">
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                {CATEGORIES[uiState.topic.toUpperCase()]?.label[lang] || uiState.topic}
+                                {/* FIX: Safe access to label with fallback */}
+                                {CATEGORIES && (CATEGORIES[uiState.topic] || CATEGORIES[uiState.topic.toUpperCase()])?.label[lang] || uiState.topic}
                             </span>
                             <div className="flex items-center gap-2">
                                 <span className="font-bold text-slate-800">
