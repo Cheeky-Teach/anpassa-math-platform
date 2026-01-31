@@ -16,12 +16,13 @@ export class MathUtils {
         return b === 0 ? a : MathUtils.gcd(b, a % b);
     }
 
-    // FIX: Added the missing shuffle method
+    // FIX: This method is required by PythagorasGen and others
     static shuffle<T>(array: T[]): T[] {
-        for (let i = array.length - 1; i > 0; i--) {
+        const arr = [...array]; // Create a copy to avoid mutating original
+        for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
+            [arr[i], arr[j]] = [arr[j], arr[i]];
         }
-        return array;
+        return arr;
     }
 }
