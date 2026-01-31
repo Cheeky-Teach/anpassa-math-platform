@@ -30,8 +30,10 @@ const Dashboard = ({
     resetTimer, 
     ui, 
     onLgrOpen, 
-    onContentOpen, // New Prop
-    onDoNowOpen, 
+    onContentOpen, 
+    onDoNowOpen,
+    onWorksheetOpen, // New prop to trigger Worksheet generation
+    onAboutOpen,
     toggleLang 
 }) => {
     
@@ -88,36 +90,34 @@ const Dashboard = ({
                             </div>
                             
                             <div className="p-4 space-y-4 flex-1">
-                                {category.topics.map(topic => {
-                                    return (
-                                        <div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                                            <div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div>
-                                            <div className="relative">
-                                                <select 
-                                                    value={selectedTopic === topic.id ? selectedLevel : 0} 
-                                                    onChange={(e) => onSelect(topic.id, Number(e.target.value))} 
-                                                    className={`
-                                                        w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none appearance-none cursor-pointer
-                                                        ${selectedTopic === topic.id ? `ring-2 ${styles.ring} ${styles.borderSolid}` : styles.selectFocus}
-                                                    `}
-                                                >
-                                                    <option value={0} disabled>{ui.selectLevel}</option>
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lvl => {
-                                                        if (!LEVEL_DESCRIPTIONS[topic.id]?.[lvl]) return null;
-                                                        return (
-                                                            <option key={lvl} value={lvl}>
-                                                                {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
-                                                            </option>
-                                                        );
-                                                    })}
-                                                </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                                    <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
-                                                </div>
+                                {category.topics.map(topic => (
+                                    <div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                        <div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div>
+                                        <div className="relative">
+                                            <select 
+                                                value={selectedTopic === topic.id ? selectedLevel : 0} 
+                                                onChange={(e) => onSelect(topic.id, Number(e.target.value))} 
+                                                className={`
+                                                    w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none appearance-none cursor-pointer
+                                                    ${selectedTopic === topic.id ? `ring-2 ${styles.ring} ${styles.borderSolid}` : styles.selectFocus}
+                                                `}
+                                            >
+                                                <option value={0} disabled>{ui.selectLevel}</option>
+                                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lvl => {
+                                                    if (!LEVEL_DESCRIPTIONS[topic.id]?.[lvl]) return null;
+                                                    return (
+                                                        <option key={lvl} value={lvl}>
+                                                            {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} - {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
+                                                        </option>
+                                                    );
+                                                })}
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                                <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     );
@@ -139,19 +139,21 @@ const Dashboard = ({
             </div>
 
             <footer className="mt-auto py-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center px-4 gap-4">
-                <button onClick={onDoNowOpen} className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-full text-sm transition-colors shadow-sm order-2 md:order-1">
-                    {ui.donow_btn}
-                </button>
-                <button onClick={onWorksheetOpen} 
-                        className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-full text-sm transition-all shadow-sm">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto justify-center md:justify-start order-2 md:order-1">
+                    <button onClick={onDoNowOpen} className="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-6 rounded-full text-sm transition-all shadow-sm">
+                        {ui.donow_btn}
+                    </button>
+                    {/* NEW WORKSHEET BUTTON */}
+                    <button onClick={onWorksheetOpen} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-full text-sm transition-all shadow-sm">
                         Skapa Arbetsblad
-                </button>
+                    </button>
+                </div>
+                
                 <div className="flex items-center gap-3 order-1 md:order-2 w-full md:w-auto justify-center md:justify-end">
-                    {/* NEW CONTENT BUTTON */}
-                    <button onClick={onContentOpen} className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-emerald-200 shadow-sm">
+                    <button onClick={onContentOpen} className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-2.5 px-6 rounded-full text-sm transition-all border border-emerald-200 shadow-sm">
                         Innehåll
                     </button>
-                    <button onClick={onLgrOpen} className="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-sky-200 shadow-sm">
+                    <button onClick={onLgrOpen} className="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2.5 px-6 rounded-full text-sm transition-all border border-sky-200 shadow-sm">
                         {ui.lgr_btn}
                     </button>
                 </div>
