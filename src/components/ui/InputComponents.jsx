@@ -5,17 +5,10 @@ import React, { useRef, useEffect } from 'react';
 // Handles standard fractions (n/d) and mixed numbers (w n/d)
 // =====================================================================
 
-interface FractionInputProps {
-    value: string; // Expected format: "n/d" or "w n/d" or just "n"
-    onChange: (val: string) => void;
-    allowMixed?: boolean;
-    autoFocus?: boolean;
-}
-
-export const FractionInput: React.FC<FractionInputProps> = ({ value, onChange, allowMixed = false, autoFocus = false }) => {
-    const wholeRef = useRef<HTMLInputElement>(null);
-    const numRef = useRef<HTMLInputElement>(null);
-    const denRef = useRef<HTMLInputElement>(null);
+export const FractionInput = ({ value, onChange, allowMixed = false, autoFocus = false }) => {
+    const wholeRef = useRef(null);
+    const numRef = useRef(null);
+    const denRef = useRef(null);
 
     // Parse the current string value into parts
     let w = "", n = "", d = "";
@@ -33,16 +26,11 @@ export const FractionInput: React.FC<FractionInputProps> = ({ value, onChange, a
     } else if (strVal.includes('/')) {
         [n, d] = strVal.split('/');
     } else {
-        // If we allow mixed, assume single input is Whole number? 
-        // Or numerator? Usually for fractions, single number is numerator (e.g. 5/1) 
-        // or just a whole integer. Let's assume numerator if no mixed allowed, 
-        // or whole if mixed allowed?
-        // Let's stick to standard behavior: if no slash, it's just the 'n' or 'w' depending on focus.
-        // But for parsing existing data:
+        // Default behavior: treating single number as numerator
         n = strVal;
     }
 
-    const update = (newW: string, newN: string, newD: string) => {
+    const update = (newW, newN, newD) => {
         let res = "";
         if (newW) {
             res += newW;
@@ -63,14 +51,14 @@ export const FractionInput: React.FC<FractionInputProps> = ({ value, onChange, a
     }, [autoFocus, allowMixed]);
 
     // Navigation Handlers
-    const handleWholeKeyDown = (e: React.KeyboardEvent) => {
+    const handleWholeKeyDown = (e) => {
         if (e.key === ' ' || e.key === 'ArrowRight') {
             e.preventDefault();
             numRef.current?.focus();
         }
     };
 
-    const handleNumKeyDown = (e: React.KeyboardEvent) => {
+    const handleNumKeyDown = (e) => {
         if (e.key === '/') {
             e.preventDefault();
             denRef.current?.focus();
@@ -91,7 +79,7 @@ export const FractionInput: React.FC<FractionInputProps> = ({ value, onChange, a
         }
     };
 
-    const handleDenKeyDown = (e: React.KeyboardEvent) => {
+    const handleDenKeyDown = (e) => {
         if (e.key === 'Backspace' && d === '') {
             e.preventDefault();
             numRef.current?.focus();
@@ -149,15 +137,9 @@ export const FractionInput: React.FC<FractionInputProps> = ({ value, onChange, a
 // Handles base^power
 // =====================================================================
 
-interface ExponentInputProps {
-    value: string; 
-    onChange: (val: string) => void;
-    autoFocus?: boolean;
-}
-
-export const ExponentInput: React.FC<ExponentInputProps> = ({ value, onChange, autoFocus = false }) => {
-    const baseRef = useRef<HTMLInputElement>(null);
-    const expRef = useRef<HTMLInputElement>(null);
+export const ExponentInput = ({ value, onChange, autoFocus = false }) => {
+    const baseRef = useRef(null);
+    const expRef = useRef(null);
 
     // Parse "base^exp"
     let base = "", exp = "";
@@ -168,20 +150,20 @@ export const ExponentInput: React.FC<ExponentInputProps> = ({ value, onChange, a
         base = strVal;
     }
 
-    const update = (newBase: string, newExp: string) => {
+    const update = (newBase, newExp) => {
         if (newExp) onChange(`${newBase}^${newExp}`);
         else onChange(newBase);
     };
 
     // Navigation
-    const handleBaseKeyDown = (e: React.KeyboardEvent) => {
+    const handleBaseKeyDown = (e) => {
         if (e.key === '^' || e.key === 'ArrowUp' || e.key === 'ArrowRight') {
             e.preventDefault();
             expRef.current?.focus();
         }
     };
 
-    const handleExpKeyDown = (e: React.KeyboardEvent) => {
+    const handleExpKeyDown = (e) => {
         if (e.key === 'Backspace' && exp === '') {
             e.preventDefault();
             baseRef.current?.focus();
