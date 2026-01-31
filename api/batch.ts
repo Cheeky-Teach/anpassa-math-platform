@@ -1,104 +1,66 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
-import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
-import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
-import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen.js';
-import { TenPowersGen } from '../src/core/generators/TenPowersGen.js';
-import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen.js';
-import { ScaleGen } from '../src/core/generators/ScaleGen.js';
-import { VolumeGen } from '../src/core/generators/VolumeGen.js';
-import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
-import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
-import { PercentGen } from '../src/core/generators/PercentGen.js';
-import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
-import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
-import { PythagorasGen } from '../src/core/generators/PythagorasGen.js';
-import { ExponentsGen } from '../src/core/generators/ExponentsGen.js';
-import { FractionBasicsGen } from '../src/core/generators/FractionBasicsGen.js';
-import { FractionArithGen } from '../src/core/generators/FractionArithGen.js';
+import { IncomingMessage, ServerResponse } from 'http';
+import { BasicArithmeticGen } from '../src/generators/BasicArithmeticGen';
+import { NegativeNumbersGen } from '../src/generators/NegativeNumbersGen';
+import { TenPowersGen } from '../src/generators/TenPowersGen';
+import { ExponentsGen } from '../src/generators/ExponentsGen';
+import { PercentGen } from '../src/generators/PercentGen';
+import { ExpressionSimplificationGen } from '../src/generators/ExpressionSimplificationGen';
+import { EquationGenerator } from '../src/generators/EquationGenerator';
+import { LinearGraphGenerator } from '../src/generators/LinearGraphGenerator';
+import { GeometryGenerator } from '../src/generators/GeometryGenerator';
+import { ScaleGenerator } from '../src/generators/ScaleGenerator';
+import { VolumeGenerator } from '../src/generators/VolumeGenerator';
+import { SimilarityGen } from '../src/generators/SimilarityGen';
+import { PythagorasGen } from '../src/generators/PythagorasGen';
+import { ProbabilityGen } from '../src/generators/ProbabilityGen';
+import { StatisticsGen } from '../src/generators/StatisticsGen';
+import { FractionBasicsGen } from '../src/generators/FractionBasicsGen';
+import { FractionArithGen } from '../src/generators/FractionArithGen';
 
-const getGenerator = (topic: string) => {
-    switch (topic) {
-        case 'equation': return new LinearEquationGen();
-        case 'simplify': return new ExpressionSimplificationGen();
-        case 'geometry': return new GeometryGenerator();
-        case 'scale': return new ScaleGen();
-        case 'volume': return new VolumeGen();
-        case 'similarity': return new SimilarityGen();
-        case 'arithmetic': return new BasicArithmeticGen();
-        case 'negative': return new NegativeNumbersGen();
-        case 'ten_powers': return new TenPowersGen();
-        case 'graph': return new LinearGraphGenerator();
-        case 'linear_graph': return new LinearGraphGenerator();
-        case 'percent': return new PercentGen();
-        case 'probability': return new ProbabilityGen();
-        case 'statistics': return new StatisticsGen();
-        case 'pythagoras': return new PythagorasGen();
-        case 'exponents': return new ExponentsGen();
-        case 'fraction_basics': return new FractionBasicsGen();
-        case 'fraction_arith': return new FractionArithGen();
-        default: return null;
-    }
+interface VercelRequest extends IncomingMessage {
+    body: any;
+}
+
+type VercelResponse = ServerResponse & {
+    status: (statusCode: number) => VercelResponse;
+    json: (data: any) => VercelResponse;
+};
+
+const generators: any = {
+    arithmetic: new BasicArithmeticGen(),
+    negative: new NegativeNumbersGen(),
+    ten_powers: new TenPowersGen(),
+    exponents: new ExponentsGen(),
+    percent: new PercentGen(),
+    fraction_basics: new FractionBasicsGen(),
+    fraction_arith: new FractionArithGen(),
+    simplify: new ExpressionSimplificationGen(),
+    equation: new EquationGenerator(),
+    graph: new LinearGraphGenerator(),
+    geometry: new GeometryGenerator(),
+    scale: new ScaleGenerator(),
+    volume: new VolumeGenerator(),
+    similarity: new SimilarityGen(),
+    pythagoras: new PythagorasGen(),
+    probability: new ProbabilityGen(),
+    statistics: new StatisticsGen()
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    const { requests } = req.body;
 
-    if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: "Method not allowed" });
+    if (!Array.isArray(requests)) {
+        return res.status(400).json({ error: 'Invalid request format' });
+    }
 
     try {
-        let body = req.body;
-        if (typeof body === 'string') {
-            try { body = JSON.parse(body); } catch (e) {}
-        }
-
-        const config = body?.config; 
-        const lang = body?.lang || 'sv';
-
-        if (!config || !Array.isArray(config)) {
-            return res.status(400).json({ error: "Invalid config format." });
-        }
-
-        const results = [];
-
-        for (const item of config) {
-            const { topic, level } = item;
-            const generator = getGenerator(topic);
-
-            if (generator) {
-                try {
-                    const questionData = generator.generate(parseInt(level), lang);
-                    let displayAnswer = "";
-                    try {
-                        const rawAnswer = Buffer.from(questionData.token, 'base64').toString('utf-8');
-                        displayAnswer = rawAnswer;
-                    } catch (e) { displayAnswer = "Error"; }
-
-                    if (questionData.renderData && !questionData.renderData.geometry) {
-                        questionData.renderData.geometry = null;
-                    }
-
-                    results.push({ ...questionData, topic, level, displayAnswer });
-                } catch (genError) {
-                    console.error(`Error generating ${topic}:`, genError);
-                    results.push({ renderData: { description: "Error generating question" }, displayAnswer: "Err", topic, level });
-                }
-            } else {
-                results.push({
-                    renderData: { description: `Generator not found: ${topic}`, latex: topic, answerType: 'text' },
-                    displayAnswer: "-", topic, level
-                });
-            }
-        }
-
-        return res.status(200).json({ questions: results });
-
+        const results = requests.map((req: any) => {
+            if (!generators[req.category]) return null;
+            return generators[req.category].generate(Number(req.level), req.lang);
+        });
+        res.status(200).json({ results });
     } catch (error) {
-        console.error("Batch Fatal Error:", error);
-        return res.status(500).json({ error: "Batch process failed", details: String(error) });
+        console.error("Batch error:", error);
+        res.status(500).json({ error: 'Batch generation failed' });
     }
 }
