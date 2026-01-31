@@ -1,17 +1,17 @@
 import { IncomingMessage, ServerResponse } from 'http';
 
-// FIX: Added .js extensions to all imports for Vercel/ESM compatibility
+// FIX: Imports match exact filenames
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen.js';
 import { TenPowersGen } from '../src/core/generators/TenPowersGen.js';
 import { ExponentsGen } from '../src/core/generators/ExponentsGen.js';
 import { PercentGen } from '../src/core/generators/PercentGen.js';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen.js';
-import { EquationGenerator } from '../src/core/generators/EquationGenerator.js';
+import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js'; // Fixed
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
-import { ScaleGenerator } from '../src/core/generators/ScaleGenerator.js';
-import { VolumeGenerator } from '../src/core/generators/VolumeGenerator.js';
+import { ScaleGen } from '../src/core/generators/ScaleGen.js'; // Fixed
+import { VolumeGen } from '../src/core/generators/VolumeGen.js'; // Fixed
 import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
 import { PythagorasGen } from '../src/core/generators/PythagorasGen.js';
 import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
@@ -37,11 +37,11 @@ const generators: any = {
     fraction_basics: new FractionBasicsGen(),
     fraction_arith: new FractionArithGen(),
     simplify: new ExpressionSimplificationGen(),
-    equation: new EquationGenerator(),
+    equation: new LinearEquationGen(), // Fixed
     graph: new LinearGraphGenerator(),
     geometry: new GeometryGenerator(),
-    scale: new ScaleGenerator(),
-    volume: new VolumeGenerator(),
+    scale: new ScaleGen(), // Fixed
+    volume: new VolumeGen(), // Fixed
     similarity: new SimilarityGen(),
     pythagoras: new PythagorasGen(),
     probability: new ProbabilityGen(),

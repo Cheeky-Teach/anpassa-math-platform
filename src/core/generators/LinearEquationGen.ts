@@ -31,375 +31,271 @@ export class LinearEquationGen {
     // --- LEVEL 1: One-Step Equations ---
     private level1_OneStep(lang: string): any {
         const type = MathUtils.randomInt(1, 4);
-        let latex = '', answer = '', clues = [];
+        let latex = '', answer = '';
+        // FIX: Explicitly type the array to avoid 'never[]' inference
+        let clues: any[] = [];
         
         if (type === 1) { // x / k = res
             const k = MathUtils.randomInt(2, 9);
-            const res = MathUtils.randomInt(2, 10);
-            const val = res * k;
+            const res = MathUtils.randomInt(2, 9);
+            const x = k * res;
             latex = `\\frac{x}{${k}} = ${res}`;
-            answer = val.toString();
-            clues = [{ 
-                text: lang === 'sv' 
-                    ? `Vi vill ha x ensamt. Eftersom x är delat med ${k}, gör vi det motsatta: vi multiplicerar med ${k}.` 
-                    : `We want x alone. Since x is divided by ${k}, we do the opposite: multiply by ${k}.`, 
-                latex: `x = ${res} \\cdot ${k} \\\\ x = ${val}` 
-            }];
+            answer = x.toString();
+            clues = [
+                { 
+                    text: lang === 'sv' ? `Multiplicera med ${k} på båda sidor.` : `Multiply by ${k} on both sides.`, 
+                    latex: `x = ${res} \\cdot ${k}` 
+                }
+            ];
         } 
         else if (type === 2) { // k * x = res
             const k = MathUtils.randomInt(2, 9);
-            const val = MathUtils.randomInt(2, 10);
-            const res = k * val;
+            const x = MathUtils.randomInt(2, 9);
+            const res = k * x;
             latex = `${k}x = ${res}`;
-            answer = val.toString();
-            clues = [{ 
-                text: lang === 'sv' 
-                    ? `Vi vill ha x ensamt. Eftersom x är multiplicerat med ${k}, gör vi det motsatta: vi dividerar med ${k}.` 
-                    : `We want x alone. Since x is multiplied by ${k}, we do the opposite: divide by ${k}.`, 
-                latex: `x = \\frac{${res}}{${k}} \\\\ x = ${val}` 
-            }];
-        } 
+            answer = x.toString();
+            clues = [
+                { 
+                    text: lang === 'sv' ? `Dela med ${k} på båda sidor.` : `Divide by ${k} on both sides.`, 
+                    latex: `x = \\frac{${res}}{${k}}` 
+                }
+            ];
+        }
         else if (type === 3) { // x + k = res
-            const k = MathUtils.randomInt(1, 20);
-            const val = MathUtils.randomInt(1, 20);
-            const res = val + k;
+            const k = MathUtils.randomInt(1, 15);
+            const x = MathUtils.randomInt(1, 15);
+            const res = x + k;
             latex = `x + ${k} = ${res}`;
-            answer = val.toString();
-            clues = [{ 
-                text: lang === 'sv' 
-                    ? `Vi vill ha x ensamt. Här står plus ${k}, så vi gör det motsatta: vi subtraherar ${k}.` 
-                    : `We want x alone. It says plus ${k}, so we do the opposite: subtract ${k}.`, 
-                latex: `x = ${res} - ${k} \\\\ x = ${val}` 
-            }];
-        } 
+            answer = x.toString();
+            clues = [
+                { 
+                    text: lang === 'sv' ? `Subtrahera ${k} från båda sidor.` : `Subtract ${k} from both sides.`, 
+                    latex: `x = ${res} - ${k}` 
+                }
+            ];
+        }
         else { // x - k = res
-            const k = MathUtils.randomInt(1, 20);
-            const val = MathUtils.randomInt(1, 20);
-            const res = val - k;
+            const k = MathUtils.randomInt(1, 15);
+            const x = MathUtils.randomInt(2, 15);
+            const res = x - k;
             latex = `x - ${k} = ${res}`;
-            answer = val.toString();
-            clues = [{ 
-                text: lang === 'sv' 
-                    ? `Vi vill ha x ensamt. Här står minus ${k}, så vi gör det motsatta: vi adderar ${k}.` 
-                    : `We want x alone. It says minus ${k}, so we do the opposite: add ${k}.`, 
-                latex: `x = ${res} + ${k} \\\\ x = ${val}` 
-            }];
+            answer = x.toString();
+            clues = [
+                { 
+                    text: lang === 'sv' ? `Addera ${k} till båda sidor.` : `Add ${k} to both sides.`, 
+                    latex: `x = ${res} + ${k}` 
+                }
+            ];
         }
 
         return {
-            renderData: { 
-                latex, 
-                description: lang === 'sv' ? "Lös ekvationen" : "Solve the equation", 
-                answerType: 'text' 
+            renderData: {
+                latex: latex,
+                description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.",
+                answerType: 'numeric',
+                prefix: 'x ='
             },
             token: Buffer.from(answer).toString('base64'),
-            clues
+            serverData: { answer, solutionSteps: clues }
         };
     }
 
     // --- LEVEL 2: Two-Step Equations ---
     private level2_TwoStep(lang: string): any {
-        const type = MathUtils.randomInt(1, 4);
-        const x = MathUtils.randomInt(2, 12);
-        let latex = '', answer = x.toString(), clues = [];
+        const a = MathUtils.randomInt(2, 9);
+        const x = MathUtils.randomInt(1, 10);
+        const b = MathUtils.randomInt(1, 15);
+        
+        const type = MathUtils.randomInt(0, 1);
+        let latex = '', clues: any[] = [];
 
-        if (type === 1) { // ax + b = c
-            const a = MathUtils.randomInt(2, 9);
-            const b = MathUtils.randomInt(1, 15);
+        if (type === 0) { // ax + b = c
             const c = a * x + b;
             latex = `${a}x + ${b} = ${c}`;
             clues = [
                 { 
-                    text: lang === 'sv' 
-                        ? `Först måste vi få termen med x ensam. Vi tar bort ${b} genom att subtrahera det.` 
-                        : `First isolate the x-term. Remove ${b} by subtracting it.`, 
-                    latex: `${a}x = ${c} - ${b} \\\\ ${a}x = ${c-b}` 
+                    text: lang === 'sv' ? `Börja med att subtrahera ${b}.` : `Start by subtracting ${b}.`, 
+                    latex: `${a}x = ${c} - ${b} \\implies ${a}x = ${c - b}` 
                 },
                 { 
-                    text: lang === 'sv' 
-                        ? `Nu sitter ${a} ihop med x (gånger). Vi dividerar med ${a} för att få svaret.` 
-                        : `Now ${a} is multiplied by x. Divide by ${a} to get the answer.`, 
-                    latex: `x = \\frac{${c-b}}{${a}} \\\\ x = ${x}` 
+                    text: lang === 'sv' ? `Dela nu med ${a}.` : `Now divide by ${a}.`, 
+                    latex: `x = \\frac{${c - b}}{${a}} = ${x}` 
                 }
             ];
-        }
-        else if (type === 2) { // ax - b = c
-            const a = MathUtils.randomInt(2, 9);
-            const b = MathUtils.randomInt(1, 15);
+        } else { // ax - b = c
             const c = a * x - b;
             latex = `${a}x - ${b} = ${c}`;
             clues = [
                 { 
-                    text: lang === 'sv' 
-                        ? `Först måste vi få termen med x ensam. Vi tar bort minus ${b} genom att addera ${b}.` 
-                        : `First isolate the x-term. Remove minus ${b} by adding ${b}.`, 
-                    latex: `${a}x = ${c} + ${b} \\\\ ${a}x = ${c+b}` 
+                    text: lang === 'sv' ? `Börja med att addera ${b} till båda sidor.` : `Start by adding ${b} to both sides.`, 
+                    latex: `${a}x = ${c} + ${b} \\implies ${a}x = ${c + b}` 
                 },
                 { 
-                    text: lang === 'sv' 
-                        ? `Nu dividerar vi med ${a} för att få fram x.` 
-                        : `Now divide by ${a} to find x.`, 
-                    latex: `x = \\frac{${c+b}}{${a}} \\\\ x = ${x}` 
-                }
-            ];
-        }
-        else if (type === 3) { // x/a + b = c
-            const a = MathUtils.randomInt(2, 8);
-            const b = MathUtils.randomInt(1, 10);
-            const realX = x * a; 
-            const c = x + b; 
-            latex = `\\frac{x}{${a}} + ${b} = ${c}`;
-            answer = realX.toString();
-            clues = [
-                { 
-                    text: lang === 'sv' 
-                        ? `Vi börjar med att isolera x-termen. Subtrahera ${b} från båda sidor.` 
-                        : `Start by isolating the x-term. Subtract ${b} from both sides.`, 
-                    latex: `\\frac{x}{${a}} = ${c} - ${b} \\\\ \\frac{x}{${a}} = ${c-b}` 
-                },
-                { 
-                    text: lang === 'sv' 
-                        ? `För att bli av med divisionen multiplicerar vi med ${a}.` 
-                        : `To remove the division, multiply by ${a}.`, 
-                    latex: `x = ${c-b} \\cdot ${a} \\\\ x = ${realX}` 
-                }
-            ];
-        }
-        else { // x/a - b = c
-            const a = MathUtils.randomInt(2, 8);
-            const b = MathUtils.randomInt(1, 10);
-            const realX = x * a;
-            const c = x - b; 
-            latex = `\\frac{x}{${a}} - ${b} = ${c}`;
-            answer = realX.toString();
-            clues = [
-                { 
-                    text: lang === 'sv' 
-                        ? `Isolera x-termen genom att addera ${b} på båda sidor.` 
-                        : `Isolate the x-term by adding ${b} to both sides.`, 
-                    latex: `\\frac{x}{${a}} = ${c} + ${b} \\\\ \\frac{x}{${a}} = ${c+b}` 
-                },
-                { 
-                    text: lang === 'sv' 
-                        ? `Multiplicera med ${a} för att få x ensamt.` 
-                        : `Multiply by ${a} to get x alone.`, 
-                    latex: `x = ${c+b} \\cdot ${a} \\\\ x = ${realX}` 
+                    text: lang === 'sv' ? `Dela nu med ${a}.` : `Now divide by ${a}.`, 
+                    latex: `x = \\frac{${c + b}}{${a}} = ${x}` 
                 }
             ];
         }
 
         return {
-            renderData: { latex, description: lang === 'sv' ? "Lös ekvationen" : "Solve the equation", answerType: 'text' },
-            token: Buffer.from(answer).toString('base64'),
-            clues
+            renderData: {
+                latex: latex,
+                description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.",
+                answerType: 'numeric',
+                prefix: 'x ='
+            },
+            token: Buffer.from(x.toString()).toString('base64'),
+            serverData: { answer: x.toString(), solutionSteps: clues }
         };
     }
 
-    // --- LEVEL 3: Parentheses ---
+    // --- LEVEL 3: With Parentheses ---
     private level3_Parentheses(lang: string): any {
-        const type = MathUtils.randomInt(1, 4);
         const a = MathUtils.randomInt(2, 6);
-        let latex = '', answer = '', clues = [];
+        const x = MathUtils.randomInt(1, 8);
+        const b = MathUtils.randomInt(1, 5);
+        
+        const type = MathUtils.randomInt(0, 1);
+        let latex = '', clues: any[] = [];
 
-        if (type === 1) { // a(x + b) = c
-            const x = MathUtils.randomInt(1, 10);
-            const b = MathUtils.randomInt(1, 9);
-            const c = a * (x + b);
-            answer = x.toString();
+        if (type === 0) { // a(x + b) = c
+            const inside = x + b;
+            const c = a * inside;
             latex = `${a}(x + ${b}) = ${c}`;
             clues = [
                 { 
-                    text: lang === 'sv' 
-                        ? `Vi börjar med att multiplicera in ${a} i parentesen (distribuera).` 
-                        : `Start by multiplying ${a} into the parentheses (distribute).`, 
-                    latex: `${a} \\cdot x + ${a} \\cdot ${b} = ${c} \\\\ ${a}x + ${a*b} = ${c}` 
+                    text: lang === 'sv' ? `Dividera med ${a} (eller multiplicera in).` : `Divide by ${a} (or expand).`, 
+                    latex: `x + ${b} = \\frac{${c}}{${a}} \\implies x + ${b} = ${inside}` 
                 },
                 { 
-                    text: lang === 'sv' 
-                        ? "Nu löser vi ekvationen som vanligt. Subtrahera konstanten och dela sedan." 
-                        : "Now solve as usual. Subtract the constant then divide.", 
-                    latex: `${a}x = ${c - a*b} \\\\ x = ${x}` 
+                    text: lang === 'sv' ? `Subtrahera ${b}.` : `Subtract ${b}.`, 
+                    latex: `x = ${inside} - ${b} = ${x}` 
                 }
             ];
-        }
-        else if (type === 2) { // a(x - b) = c
-            const x = MathUtils.randomInt(5, 15);
-            const b = MathUtils.randomInt(1, x - 1);
-            const c = a * (x - b);
-            answer = x.toString();
+        } else { // a(x - b) = c
+            const inside = x - b;
+            const c = a * inside; // Note: c might be negative if inside < 0, but inputs usually keep it simple
             latex = `${a}(x - ${b}) = ${c}`;
             clues = [
-                { 
-                    text: lang === 'sv' 
-                        ? `Multiplicera in ${a} i parentesen. Kom ihåg minustecknet.` 
-                        : `Multiply ${a} into the parentheses. Remember the minus sign.`, 
-                    latex: `${a} \\cdot x - ${a} \\cdot ${b} = ${c} \\\\ ${a}x - ${a*b} = ${c}` 
+                 { 
+                    text: lang === 'sv' ? `Dividera med ${a}.` : `Divide by ${a}.`, 
+                    latex: `x - ${b} = \\frac{${c}}{${a}} \\implies x - ${b} = ${inside}` 
                 },
                 { 
-                    text: lang === 'sv' 
-                        ? `Addera ${a*b} till båda sidor och dela sedan.` 
-                        : `Add ${a*b} to both sides and then divide.`, 
-                    latex: `${a}x = ${c + a*b} \\\\ x = ${x}` 
-                }
-            ];
-        }
-        else if (type === 3) { // a(bx - c) = d (Inner coefficient)
-            const bVar = MathUtils.randomInt(2, 5);
-            const x = MathUtils.randomInt(2, 8);
-            const cVar = MathUtils.randomInt(1, bVar * x - 1);
-            const d = a * (bVar * x - cVar);
-            answer = x.toString();
-            latex = `${a}(${bVar}x - ${cVar}) = ${d}`;
-            clues = [
-                { 
-                    text: lang === 'sv' 
-                        ? `Multiplicera in ${a} med båda termerna i parentesen.` 
-                        : `Multiply ${a} with both terms in the parentheses.`, 
-                    latex: `${a} \\cdot ${bVar}x - ${a} \\cdot ${cVar} = ${d} \\\\ ${a*bVar}x - ${a*cVar} = ${d}` 
-                },
-                { 
-                    text: lang === 'sv' 
-                        ? "Addera konstanten och dela med koefficienten." 
-                        : "Add the constant and divide by the coefficient.", 
-                    latex: `${a*bVar}x = ${d + a*cVar} \\\\ x = ${x}` 
-                }
-            ];
-        }
-        else { // a(bx + c) = d
-            const bVar = MathUtils.randomInt(2, 5);
-            const x = MathUtils.randomInt(1, 8);
-            const cVar = MathUtils.randomInt(1, 9);
-            const d = a * (bVar * x + cVar);
-            answer = x.toString();
-            latex = `${a}(${bVar}x + ${cVar}) = ${d}`;
-            clues = [
-                { 
-                    text: lang === 'sv' 
-                        ? `Multiplicera in ${a} i parentesen.` 
-                        : `Distribute ${a} into the parentheses.`, 
-                    latex: `${a} \\cdot ${bVar}x + ${a} \\cdot ${cVar} = ${d} \\\\ ${a*bVar}x + ${a*cVar} = ${d}` 
-                },
-                { 
-                    text: lang === 'sv' 
-                        ? "Subtrahera konstanten och dela med koefficienten." 
-                        : "Subtract the constant and divide by the coefficient.", 
-                    latex: `${a*bVar}x = ${d - a*cVar} \\\\ x = ${x}` 
+                    text: lang === 'sv' ? `Addera ${b}.` : `Add ${b}.`, 
+                    latex: `x = ${inside} + ${b} = ${x}` 
                 }
             ];
         }
 
         return {
-            renderData: { latex, description: lang === 'sv' ? "Lös ekvationen" : "Solve the equation", answerType: 'text' },
-            token: Buffer.from(answer).toString('base64'),
-            clues
+            renderData: {
+                latex: latex,
+                description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.",
+                answerType: 'numeric',
+                prefix: 'x ='
+            },
+            token: Buffer.from(x.toString()).toString('base64'),
+            serverData: { answer: x.toString(), solutionSteps: clues }
         };
     }
 
     // --- LEVEL 4: Variables on Both Sides ---
     private level4_BothSides(lang: string): any {
-        const type = MathUtils.randomInt(1, 4);
-        const x = MathUtils.randomInt(1, 10);
-        let a = MathUtils.randomInt(3, 9);
-        let c = MathUtils.randomInt(2, a - 1); 
-        if (a === c) a++;
+        const x = MathUtils.randomInt(2, 9);
+        let a = MathUtils.randomInt(3, 8); // Coeff left
+        let c = MathUtils.randomInt(2, a - 1); // Coeff right (ensure smaller than a)
+        // Swap occasionally to ensure we don't always have larger coeff on left
+        if (Math.random() < 0.5 && c > 1) { 
+            // If we swap, we must ensure result is handled, but here we enforce a>c logic 
+            // inside the generation to avoid negative coefficient on X step
+        }
+        
+        const type = MathUtils.randomInt(0, 3);
+        let latex = '', clues: any[] = []; 
 
-        let latex = '', answer = x.toString(), clues = [];
+        // Shared Logic: We construct so that a > c, meaning (a-c)x is positive.
+        if (a < c) { const t = a; a = c; c = t; }
 
-        if (type === 1) { // ax + b = cx + d
-            const b = MathUtils.randomInt(1, 15);
-            const d = a*x + b - c*x;
-            if (d <= 0) return this.level4_BothSides(lang); 
+        if (type === 0) { // ax + b = cx + d
+            const b = MathUtils.randomInt(2, 15);
+            const d = (a * x + b) - (c * x);
+            // If d is invalid/negative, it turns into Type 2 logic, but let's just retry or clamp
+            if (d <= 0) return this.level2_TwoStep(lang); 
 
             latex = `${a}x + ${b} = ${c}x + ${d}`;
             clues = [
                 { 
-                    text: lang === 'sv' 
-                        ? `Vi vill samla alla x på ena sidan. Vi subtraherar ${c}x från båda sidor.` 
-                        : `Gather all x on one side. Subtract ${c}x from both sides.`, 
-                    latex: `${a}x - ${c}x + ${b} = ${d} \\\\ ${a-c}x + ${b} = ${d}` 
+                    text: lang === 'sv' ? `Subtrahera ${c}x från båda sidor.` : `Subtract ${c}x from both sides.`, 
+                    latex: `${a-c}x + ${b} = ${d}` 
                 },
                 { 
-                    text: lang === 'sv' 
-                        ? "Nu är det en vanlig ekvation. Flytta över konstanten och lös ut x." 
-                        : "Now solve as usual. Move the constant and solve for x.", 
-                    latex: `${a-c}x = ${d} - ${b} \\\\ x = ${x}` 
+                    text: lang === 'sv' ? `Subtrahera ${b} från båda sidor.` : `Subtract ${b} from both sides.`, 
+                    latex: `${a-c}x = ${d-b} \\implies x = ${x}` 
                 }
             ];
         }
-        else if (type === 2) { // ax - b = cx + d
-            const b = MathUtils.randomInt(1, 15);
-            const d = a*x - b - c*x;
-            if (d <= 0) return this.level4_BothSides(lang);
-
-            latex = `${a}x - ${b} = ${c}x + ${d}`;
-            clues = [
-                { 
-                    text: lang === 'sv' 
-                        ? `Subtrahera ${c}x från båda sidor för att samla x.` 
-                        : `Subtract ${c}x from both sides to gather x.`, 
-                    latex: `${a}x - ${c}x - ${b} = ${d} \\\\ ${a-c}x - ${b} = ${d}` 
-                },
-                { 
-                    text: lang === 'sv' 
-                        ? `Addera ${b} till båda sidor och lös ut x.` 
-                        : `Add ${b} to both sides and solve for x.`, 
-                    latex: `${a-c}x = ${d} + ${b} \\\\ x = ${x}` 
-                }
-            ];
-        }
-        else if (type === 3) { // ax + b = cx - d
-            const temp = a; a = c; c = temp; 
-            const b = MathUtils.randomInt(1, 15);
-            const d = c*x - a*x - b; 
-            if (d <= 0) return this.level4_BothSides(lang); 
-
-            latex = `${a}x + ${b} = ${c}x - ${d}`;
-            clues = [
-                { 
-                    text: lang === 'sv' 
-                        ? `Subtrahera ${a}x från båda sidor (för att hålla x positivt).` 
-                        : `Subtract ${a}x from both sides (to keep x positive).`, 
-                    latex: `${b} = ${c}x - ${a}x - ${d} \\\\ ${b} = ${c-a}x - ${d}` 
-                },
-                { 
-                    text: lang === 'sv' 
-                        ? `Addera ${d} till båda sidor.` 
-                        : `Add ${d} to both sides.`, 
-                    latex: `${b} + ${d} = ${c-a}x \\\\ x = ${x}` 
-                }
-            ];
-        }
-        else { // ax - b = cx - d
-            if (a < c) { const t = a; a = c; c = t; }
+        else if (type === 1) { // ax - b = cx - d
             const b = MathUtils.randomInt(5, 20);
             const d = b - (a*x - c*x);
-            if (d <= 0) return this.level4_BothSides(lang);
+            if (d <= 0) return this.level2_TwoStep(lang);
 
             latex = `${a}x - ${b} = ${c}x - ${d}`;
             clues = [
                 { 
-                    text: lang === 'sv' 
-                        ? `Subtrahera ${c}x från båda sidor.` 
-                        : `Subtract ${c}x from both sides.`, 
-                    latex: `${a}x - ${c}x - ${b} = -${d} \\\\ ${a-c}x - ${b} = -${d}` 
+                    text: lang === 'sv' ? `Subtrahera ${c}x från båda sidor.` : `Subtract ${c}x from both sides.`, 
+                    latex: `${a-c}x - ${b} = -${d}` 
                 },
                 { 
-                    text: lang === 'sv' 
-                        ? `Addera ${b} till båda sidor.` 
-                        : `Add ${b} to both sides.`, 
-                    latex: `${a-c}x = -${d} + ${b} \\\\ x = ${x}` 
+                    text: lang === 'sv' ? `Addera ${b} till båda sidor.` : `Add ${b} to both sides.`, 
+                    latex: `${a-c}x = ${b-d} \\implies x = ${x}` 
+                }
+            ];
+        }
+        else if (type === 2) { // ax + b = cx - d
+             const b = MathUtils.randomInt(2, 10);
+             const d = (a*x + b) - (c*x); // Wait, this makes RHS (cx-d). 
+             // ax+b = cx - d  => ax-cx = -d - b => (a-c)x = -(d+b). 
+             // Since a>c, (a-c) is pos. RHS is neg. X would be neg. We want positive integer X.
+             // So this case (PlusLeft, MinusRight) is impossible for positive integer X if a>c.
+             // We fallback to Type 0.
+             return this.level4_BothSides(lang);
+        }
+        else { // ax - b = cx + d
+            // ax - cx = d + b => (a-c)x = d+b
+            const d = MathUtils.randomInt(2, 15);
+            const val = (a - c) * x; // This is d + b
+            const b = val - d;
+            
+            if (b <= 0) return this.level2_TwoStep(lang);
+
+            latex = `${a}x - ${b} = ${c}x + ${d}`;
+            clues = [
+                 { 
+                    text: lang === 'sv' ? `Subtrahera ${c}x från båda sidor.` : `Subtract ${c}x from both sides.`, 
+                    latex: `${a-c}x - ${b} = ${d}` 
+                },
+                 { 
+                    text: lang === 'sv' ? `Addera ${b} till båda sidor.` : `Add ${b} to both sides.`, 
+                    latex: `${a-c}x = ${d+b} \\implies x = ${x}` 
                 }
             ];
         }
 
         return {
-            renderData: { latex, description: lang === 'sv' ? "Lös ekvationen" : "Solve the equation", answerType: 'text' },
-            token: Buffer.from(answer).toString('base64'),
-            clues
+            renderData: {
+                latex: latex,
+                description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.",
+                answerType: 'numeric',
+                prefix: 'x ='
+            },
+            token: Buffer.from(x.toString()).toString('base64'),
+            serverData: { answer: x.toString(), solutionSteps: clues }
         };
     }
 
     private level7_Mixed(lang: string): any {
-        return this.generate(MathUtils.randomInt(1, 4), lang);
+        const subLevel = MathUtils.randomInt(1, 6);
+        return this.generate(subLevel, lang);
     }
 }
