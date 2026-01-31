@@ -18,6 +18,28 @@ export const CONTENT_MAP = {
                 ]
             },
             {
+                id: "fraction_basics",
+                title: "Bråk: Grunder",
+                levels: [
+                    { lvl: 1, desc: "Visuella Bråk", ex: "Del av helhet (Bild)" },
+                    { lvl: 2, desc: "Del av antal", ex: "1/4 av 20" },
+                    { lvl: 3, desc: "Blandad form & Bråkform", ex: "1 1/2 = 3/2" },
+                    { lvl: 4, desc: "Förkorta & Förlänga", ex: "2/4 = 1/2" },
+                    { lvl: 5, desc: "Bråk & Decimaltal", ex: "1/4 = 0.25" }
+                ]
+            },
+            {
+                id: "fraction_arith",
+                title: "Bråk: Räknesätt",
+                levels: [
+                    { lvl: 1, desc: "Addition (Samma nämnare)", ex: "1/4 + 2/4" },
+                    { lvl: 2, desc: "Addition (Olika nämnare)", ex: "1/2 + 1/4" },
+                    { lvl: 3, desc: "Subtraktion & Blandat", ex: "1 1/2 - 3/4" },
+                    { lvl: 4, desc: "Multiplikation", ex: "1/2 · 3/4" },
+                    { lvl: 5, desc: "Division", ex: "(1/2) / (1/4)" }
+                ]
+            },
+            {
                 id: "negative",
                 title: "Negativa Tal",
                 levels: [
