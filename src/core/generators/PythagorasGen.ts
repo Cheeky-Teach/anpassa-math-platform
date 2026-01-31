@@ -39,7 +39,8 @@ export class PythagorasGen {
                 renderData: {
                     description: lang === 'sv' ? "Beräkna roten ur:" : "Calculate the square root:",
                     latex: `\\sqrt{${square}}`,
-                    answerType: 'numeric'
+                    answerType: 'numeric',
+                    geometry: null
                 },
                 token: this.toBase64(base.toString()),
                 clues: [
@@ -54,7 +55,8 @@ export class PythagorasGen {
                 renderData: {
                     description: lang === 'sv' ? "Beräkna kvadraten:" : "Calculate the square:",
                     latex: `${base}^2`,
-                    answerType: 'numeric'
+                    answerType: 'numeric',
+                    geometry: null
                 },
                 token: this.toBase64(square.toString()),
                 clues: [
@@ -70,9 +72,10 @@ export class PythagorasGen {
     // Level 2: Find Hypotenuse (Simple Algebra Logic)
     private level2_Hypotenuse(lang: string): any {
         const t = this.getTriple();
+        // Randomize which leg is base vs height for visual variety
         const swap = MathUtils.randomInt(0, 1) === 1;
-        const w = swap ? t.b : t.a;
-        const h = swap ? t.a : t.b;
+        const width = swap ? t.b : t.a;
+        const height = swap ? t.a : t.b;
 
         const desc = lang === 'sv' 
             ? "Triangeln är rätvinklig. Beräkna den längsta sidan (hypotenusan x)." 
@@ -84,15 +87,17 @@ export class PythagorasGen {
                 answerType: 'numeric',
                 geometry: { 
                     type: 'triangle', subtype: 'right', 
-                    width: w, height: h, 
-                    labels: { a: w, b: h, c: 'x' } 
+                    width: width, height: height, 
+                    // UPDATED: Explicitly map 'b' and 'h' so GeometryComponents renders them.
+                    // Added 'hyp' for future compatibility, though current component may not render it.
+                    labels: { b: width, h: height, hyp: 'x', c: 'x' } 
                 }
             },
             token: this.toBase64(t.c.toString()),
             clues: [
                 { 
                     text: lang === 'sv' ? "Använd Pythagoras sats: a² + b² = c²." : "Use Pythagoras theorem: a² + b² = c².", 
-                    latex: `${w}^2 + ${h}^2 = x^2` 
+                    latex: `${width}^2 + ${height}^2 = x^2` 
                 },
                 { 
                     text: lang === 'sv' ? "Räkna ut summan och ta sedan roten ur." : "Calculate the sum, then take the square root.",
@@ -106,9 +111,30 @@ export class PythagorasGen {
     private level3_Leg(lang: string): any {
         const t = this.getTriple();
         
+        // Decide if we are solving for the base (b) or the height (h)
+        const solveForBase = MathUtils.randomInt(0, 1) === 1;
+
+        let labels: any = {};
+        let missingVar = 'x';
+        
+        if (solveForBase) {
+            // We know Height (h) and Hypotenuse (c). We need Base (b).
+            // NOTE: GeometryComponents uses 'h' and 'b' keys.
+            labels = { h: t.a, b: 'x', hyp: t.c, c: t.c };
+            missingVar = 'b';
+        } else {
+            // We know Base (b) and Hypotenuse (c). We need Height (h).
+            labels = { b: t.b, h: 'x', hyp: t.c, c: t.c };
+            missingVar = 'a';
+        }
+
+        // UPDATED: Added hypotenuse length to description because GeometryComponents 
+        // does not currently render the label on the hypotenuse.
         const desc = lang === 'sv' 
-            ? "Beräkna den okända sidan (x)." 
-            : "Calculate the unknown side (x).";
+            ? `Hypotenusan är ${t.c}. Beräkna den okända sidan (x).` 
+            : `The hypotenuse is ${t.c}. Calculate the unknown side (x).`;
+
+        const knownLeg = solveForBase ? t.a : t.b;
 
         return {
             renderData: {
@@ -116,19 +142,20 @@ export class PythagorasGen {
                 answerType: 'numeric',
                 geometry: { 
                     type: 'triangle', subtype: 'right', 
-                    width: t.a, height: t.b, 
-                    labels: { a: 'x', b: t.b, c: t.c } 
+                    width: solveForBase ? t.b : t.b, // keep visual width proportional-ish
+                    height: solveForBase ? t.a : t.a,
+                    labels: labels 
                 }
             },
-            token: this.toBase64(t.a.toString()),
+            token: this.toBase64((solveForBase ? t.b : t.a).toString()),
             clues: [
                 { 
                     text: lang === 'sv' ? "Du vet den längsta sidan. Då ska du subtrahera (ta minus)." : "You know the longest side. So you must subtract.", 
-                    latex: `c^2 - b^2 = a^2` 
+                    latex: `c^2 - ${missingVar === 'a' ? 'b' : 'a'}^2 = ${missingVar}^2` 
                 },
                 { 
                     text: lang === 'sv' ? "Ta stora kvadraten minus lilla kvadraten." : "Take the big square minus the small square.",
-                    latex: `${t.c}^2 - ${t.b}^2 = x^2` 
+                    latex: `${t.c}^2 - ${knownLeg}^2 = x^2` 
                 }
             ]
         };
@@ -201,7 +228,8 @@ export class PythagorasGen {
         return {
             renderData: {
                 description: desc,
-                answerType: 'numeric'
+                answerType: 'numeric',
+                geometry: null
             },
             token: this.toBase64(dist.toString()),
             clues: [
@@ -240,11 +268,14 @@ export class PythagorasGen {
         const correct = lang === 'sv' ? (isRight ? "Ja" : "Nej") : (isRight ? "Yes" : "No");
         const wrong = lang === 'sv' ? (isRight ? "Nej" : "Ja") : (isRight ? "No" : "Yes");
 
+        // UPDATED: Added explicit geometry: null to avoid crash if frontend tries to render undefined geometry.
+        // Also ensuring shuffle logic is safe.
         return {
             renderData: {
                 description: desc,
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([correct, wrong])
+                options: MathUtils.shuffle([correct, wrong]),
+                geometry: null
             },
             token: this.toBase64(correct),
             clues: [

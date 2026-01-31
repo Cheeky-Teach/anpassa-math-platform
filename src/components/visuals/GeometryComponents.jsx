@@ -135,8 +135,11 @@ export const GeometryVisual = ({ data }) => {
         const sh = (dims.height || 0) * baseScale;
         const sr = (dims.radius || 0) * baseScale;
 
+        // Resolve aliases for Base and Height
         const l_b = labels?.b || labels?.base || labels?.width || labels?.w || (type === 'rectangle' ? dims.width : null);
         const l_h = labels?.h || labels?.height || (type === 'rectangle' ? dims.height : null);
+        // Added: Resolve aliases for Hypotenuse/Diagonal
+        const l_hyp = labels?.hyp || labels?.hypotenuse || labels?.c || labels?.diagonal;
         
         if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
             return (
@@ -161,8 +164,11 @@ export const GeometryVisual = ({ data }) => {
                 return (
                     <g>
                         <polygon points={path} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {labels?.h && mkTxt(L - 15, cy, labels.h)}
-                        {labels?.b && mkTxt(cx, B + 25, labels.b)}
+                        {/* Use l_h and l_b aliases instead of raw labels.h/b to support 'height'/'base' keys */}
+                        {l_h && mkTxt(L - 15, cy, l_h)}
+                        {l_b && mkTxt(cx, B + 25, l_b)}
+                        {/* New: Hypotenuse Label (offset slightly up and right from center) */}
+                        {l_hyp && mkTxt(cx + 10, cy - 10, l_hyp, "start")}
                     </g>
                 );
             } 
@@ -172,8 +178,9 @@ export const GeometryVisual = ({ data }) => {
                     <g>
                         <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {labels?.b && mkTxt(cx, B + 25, labels.b)}
-                        {labels?.h && mkTxt(cx + 5, cy, labels.h, "start")}
+                        {/* Use l_b and l_h aliases here too */}
+                        {l_b && mkTxt(cx, B + 25, l_b)}
+                        {l_h && mkTxt(cx + 5, cy, l_h, "start")}
                     </g>
                 );
             }
