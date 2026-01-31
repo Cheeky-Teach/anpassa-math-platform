@@ -1,23 +1,35 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import { IncomingMessage, ServerResponse } from 'http';
 
-// IMPORTANT: The .js extension is REQUIRED for local resolution with NodeNext
-import { BasicArithmeticGen } from '../src/generators/BasicArithmeticGen.js';
-import { NegativeNumbersGen } from '../src/generators/NegativeNumbersGen.js';
-import { TenPowersGen } from '../src/generators/TenPowersGen.js';
-import { ExponentsGen } from '../src/generators/ExponentsGen.js';
-import { PercentGen } from '../src/generators/PercentGen.js';
-import { ExpressionSimplificationGen } from '../src/generators/ExpressionSimplificationGen.js';
-import { EquationGenerator } from '../src/generators/EquationGenerator.js';
-import { LinearGraphGenerator } from '../src/generators/LinearGraphGenerator.js';
-import { GeometryGenerator } from '../src/generators/GeometryGenerator.js';
-import { ScaleGenerator } from '../src/generators/ScaleGenerator.js';
-import { VolumeGenerator } from '../src/generators/VolumeGenerator.js';
-import { SimilarityGen } from '../src/generators/SimilarityGen.js';
-import { PythagorasGen } from '../src/generators/PythagorasGen.js';
-import { ProbabilityGen } from '../src/generators/ProbabilityGen.js';
-import { StatisticsGen } from '../src/generators/StatisticsGen.js';
-import { FractionBasicsGen } from '../src/generators/FractionBasicsGen.js';
-import { FractionArithGen } from '../src/generators/FractionArithGen.js';
+// Define types compatible with Vercel Serverless Functions
+interface VercelRequest extends IncomingMessage {
+    query: Partial<{ [key: string]: string | string[] }>;
+    body: any;
+}
+
+type VercelResponse = ServerResponse & {
+    status: (statusCode: number) => VercelResponse;
+    json: (data: any) => VercelResponse;
+    send: (data: any) => VercelResponse;
+};
+
+// Remove .js extensions to fix build resolution errors
+import { BasicArithmeticGen } from '../src/generators/BasicArithmeticGen';
+import { NegativeNumbersGen } from '../src/generators/NegativeNumbersGen';
+import { TenPowersGen } from '../src/generators/TenPowersGen';
+import { ExponentsGen } from '../src/generators/ExponentsGen';
+import { PercentGen } from '../src/generators/PercentGen';
+import { ExpressionSimplificationGen } from '../src/generators/ExpressionSimplificationGen';
+import { EquationGenerator } from '../src/generators/EquationGenerator';
+import { LinearGraphGenerator } from '../src/generators/LinearGraphGenerator';
+import { GeometryGenerator } from '../src/generators/GeometryGenerator';
+import { ScaleGenerator } from '../src/generators/ScaleGenerator';
+import { VolumeGenerator } from '../src/generators/VolumeGenerator';
+import { SimilarityGen } from '../src/generators/SimilarityGen';
+import { PythagorasGen } from '../src/generators/PythagorasGen';
+import { ProbabilityGen } from '../src/generators/ProbabilityGen';
+import { StatisticsGen } from '../src/generators/StatisticsGen';
+import { FractionBasicsGen } from '../src/generators/FractionBasicsGen';
+import { FractionArithGen } from '../src/generators/FractionArithGen';
 
 // Map the 'api' ID from localization.js to the class instance
 const generators: any = {
@@ -47,7 +59,7 @@ const generators: any = {
     statistics: new StatisticsGen()
 };
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default function handler(req: VercelRequest, res: VercelResponse) {
     const { category, level, lang } = req.body;
     
     // 1. Check if generator exists
