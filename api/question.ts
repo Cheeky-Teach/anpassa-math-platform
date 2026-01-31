@@ -1,23 +1,24 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { BasicArithmeticGen } from '../src/generators/BasicArithmeticGen';
-import { NegativeNumbersGen } from '../src/generators/NegativeNumbersGen';
-import { TenPowersGen } from '../src/generators/TenPowersGen';
-import { ExponentsGen } from '../src/generators/ExponentsGen';
-import { PercentGen } from '../src/generators/PercentGen';
-import { ExpressionSimplificationGen } from '../src/generators/ExpressionSimplificationGen';
-import { EquationGenerator } from '../src/generators/EquationGenerator';
-import { LinearGraphGenerator } from '../src/generators/LinearGraphGenerator';
-import { GeometryGenerator } from '../src/generators/GeometryGenerator';
-import { ScaleGenerator } from '../src/generators/ScaleGenerator';
-import { VolumeGenerator } from '../src/generators/VolumeGenerator';
-import { SimilarityGen } from '../src/generators/SimilarityGen';
-import { PythagorasGen } from '../src/generators/PythagorasGen';
-import { ProbabilityGen } from '../src/generators/ProbabilityGen';
-import { StatisticsGen } from '../src/generators/StatisticsGen';
-import { FractionBasicsGen } from '../src/generators/FractionBasicsGen';
-import { FractionArithGen } from '../src/generators/FractionArithGen';
 
-// Define Vercel Request/Response types since 'next' is not installed
+// UPDATED IMPORTS: Pointing to ../src/core/generators/
+import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen';
+import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen';
+import { TenPowersGen } from '../src/core/generators/TenPowersGen';
+import { ExponentsGen } from '../src/core/generators/ExponentsGen';
+import { PercentGen } from '../src/core/generators/PercentGen';
+import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen';
+import { EquationGenerator } from '../src/core/generators/EquationGenerator';
+import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator';
+import { GeometryGenerator } from '../src/core/generators/GeometryGenerator';
+import { ScaleGenerator } from '../src/core/generators/ScaleGenerator';
+import { VolumeGenerator } from '../src/core/generators/VolumeGenerator';
+import { SimilarityGen } from '../src/core/generators/SimilarityGen';
+import { PythagorasGen } from '../src/core/generators/PythagorasGen';
+import { ProbabilityGen } from '../src/core/generators/ProbabilityGen';
+import { StatisticsGen } from '../src/core/generators/StatisticsGen';
+import { FractionBasicsGen } from '../src/core/generators/FractionBasicsGen';
+import { FractionArithGen } from '../src/core/generators/FractionArithGen';
+
 interface VercelRequest extends IncomingMessage {
     body: any;
     query: Partial<{ [key: string]: string | string[] }>;
