@@ -113,12 +113,13 @@ const PracticeView = ({
         return null;
     };
 
-    // FIX: Specialized Input Renderer
+    // FIX: Specialized Input Renderer with Defensive Checks
     const renderInput = () => {
         const type = question?.renderData?.answerType || 'text';
 
         // Case 1: Fraction Input (Numerator/Denominator)
-        if (type === 'fraction') {
+        // Guard clause: Ensure FractionInput is loaded before rendering
+        if (type === 'fraction' && FractionInput) {
             return (
                 <div className="flex justify-center my-6">
                     <FractionInput 
@@ -132,7 +133,8 @@ const PracticeView = ({
         }
 
         // Case 2: Exponent Input (Base^Power)
-        if (type === 'structured_power') {
+        // Guard clause: Ensure ExponentInput is loaded before rendering
+        if (type === 'structured_power' && ExponentInput) {
             return (
                 <div className="flex justify-center my-6">
                     <ExponentInput 
@@ -144,7 +146,7 @@ const PracticeView = ({
             );
         }
 
-        // Case 3: Standard Text/Numeric Input
+        // Case 3: Standard Text/Numeric Input (Fallback)
         return (
             <div className="relative">
                 <input
