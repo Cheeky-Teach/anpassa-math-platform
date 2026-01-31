@@ -142,7 +142,10 @@ const Dashboard = ({
                 <button onClick={onDoNowOpen} className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-full text-sm transition-colors shadow-sm order-2 md:order-1">
                     {ui.donow_btn}
                 </button>
-
+                <button onClick={onWorksheetOpen} 
+                        className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-full text-sm transition-all shadow-sm">
+                        Skapa Arbetsblad
+                </button>
                 <div className="flex items-center gap-3 order-1 md:order-2 w-full md:w-auto justify-center md:justify-end">
                     {/* NEW CONTENT BUTTON */}
                     <button onClick={onContentOpen} className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-emerald-200 shadow-sm">

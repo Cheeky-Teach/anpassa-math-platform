@@ -3,26 +3,32 @@ import Dashboard from './components/views/Dashboard';
 import PracticeView from './components/views/PracticeView';
 import DoNowConfig from './components/views/DoNowConfig';
 import DoNowGrid from './components/views/DoNowGrid';
+import WorksheetView from './components/views/WorksheetView'; // New View Component
 import AboutModal from './components/modals/AboutModal';
 import LgrModal from './components/modals/LgrModal';
 import StatsModal from './components/modals/StatsModal';
 import StreakModal from './components/modals/StreakModal'; 
 import ContentModal from './components/modals/ContentModal'; 
 import MobileDrawer from './components/practice/MobileDrawer';
-import { UI_TEXT, CATEGORIES, LEVEL_DESCRIPTIONS } from './constants/localization';
+import { UI_TEXT, CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
+
+/**
+ * @file App.jsx
+ * @description Central logic for question generation and session management.
+ */
 
 function App() {
-    const [view, setView] = useState('dashboard'); // 'dashboard', 'practice', 'donow_config', 'donow_grid'
+    const [view, setView] = useState('dashboard');
     const [lang, setLang] = useState('sv');
     const [topic, setTopic] = useState('');
     const [level, setLevel] = useState(0);
+    const [darkMode, setDarkMode] = useState(false); 
 
     const [question, setQuestion] = useState(null);
     const [input, setInput] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    // Session Stats
     const [streak, setStreak] = useState(0);
     const [totalCorrect, setTotalCorrect] = useState(0);
     const [sessionStats, setSessionStats] = useState({
@@ -39,7 +45,6 @@ function App() {
     const [revealedClues, setRevealedClues] = useState([]);
     const [levelUpAvailable, setLevelUpAvailable] = useState(false);
     
-    // Modals State
     const [aboutOpen, setAboutOpen] = useState(false);
     const [statsOpen, setStatsOpen] = useState(false);
     const [timeUpOpen, setTimeUpOpen] = useState(false);
@@ -49,19 +54,25 @@ function App() {
     const [showTotalModal, setShowTotalModal] = useState(false);
     const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
-    // Do Now State
     const [doNowQuestions, setDoNowQuestions] = useState([]);
     const [doNowConfig, setDoNowConfig] = useState([]); 
+    
+    // Worksheet specific states
+    const [worksheetQuestions, setWorksheetQuestions] = useState([]);
+    const [worksheetConfig, setWorksheetConfig] = useState([]);
 
     const [usedHelp, setUsedHelp] = useState(false);
     const [isSolutionRevealed, setIsSolutionRevealed] = useState(false);
 
-    // Timer State
     const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
 
     const ui = UI_TEXT[lang];
 
-    // Timer Logic
+    useEffect(() => {
+        if (darkMode) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+    }, [darkMode]);
+
     useEffect(() => {
         let interval = null;
         if (timerSettings.isActive && timerSettings.remaining > 0 && view === 'practice') {
@@ -141,27 +152,24 @@ function App() {
         setQuestion(null);
     };
 
-    // --- DO NOW LOGIC (FIXED) ---
-
+    /**
+     * @name handleDoNowGenerate
+     * @description Orchestrates batch question generation for the grid view.
+     */
     const handleDoNowGenerate = async (selected) => {
-        if (selected.length === 0) return;
-        
-        // Save config for regeneration
+        if (selected.length === 0 || loading) return;
         setDoNowConfig(selected);
-        
         setLoading(true);
-        
-        // Construct the payload exactly as api/batch.ts expects it:
-        // { requests: [ { category, level, lang }, ... ] }
+
         const requests = [];
-        const targetCount = Math.max(selected.length, 6);
+        const targetCount = 6; 
         
         for (let i = 0; i < targetCount; i++) {
             const selection = selected[i % selected.length];
             requests.push({
-                category: selection.topic, // Map 'topic' to 'category' for backend
+                topic: selection.topic, 
                 level: selection.level,
-                lang: lang // Pass current language
+                lang: lang 
             });
         }
 
@@ -169,21 +177,64 @@ function App() {
             const res = await fetch('/api/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requests }) // Send 'requests' key
+                body: JSON.stringify({ requests }) 
             });
+
             const data = await res.json();
             
-            // Check for 'results' key (standard for batch APIs)
-            if (data.results && Array.isArray(data.results)) {
-                // Filter out any nulls if a generator failed
-                const validQuestions = data.results.filter(q => q !== null);
-                setDoNowQuestions(validQuestions);
-                setView('donow_grid'); // Activate the view
+            if (data && data.questions && Array.isArray(data.questions)) {
+                const validQuestions = data.questions.filter(q => q && !q.error);
+                
+                if (validQuestions.length > 0) {
+                    setDoNowQuestions(validQuestions);
+                    setView('donow_grid'); 
+                } else {
+                    throw new Error("No questions could be generated.");
+                }
             } else {
-                console.error("Invalid batch response:", data);
+                throw new Error("Invalid response format.");
             }
         } catch (e) {
             console.error("Do Now Generation Error:", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /**
+     * @name handleWorksheetGenerate
+     * @description Orchestrates batch question generation for a printable worksheet.
+     */
+    const handleWorksheetGenerate = async (selected) => {
+        if (selected.length === 0 || loading) return;
+        setWorksheetConfig(selected);
+        setLoading(true);
+
+        const requests = [];
+        const targetCount = 12; // Standard size for a single-page worksheet
+        
+        for (let i = 0; i < targetCount; i++) {
+            const selection = selected[i % selected.length];
+            requests.push({
+                topic: selection.topic, 
+                level: selection.level,
+                lang: lang 
+            });
+        }
+
+        try {
+            const res = await fetch('/api/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requests }) 
+            });
+            const data = await res.json();
+            if (data && data.questions) {
+                setWorksheetQuestions(data.questions.filter(q => q && !q.error));
+                setView('worksheet_view');
+            }
+        } catch (e) {
+            console.error("Worksheet generation failed", e);
         } finally {
             setLoading(false);
         }
@@ -198,10 +249,8 @@ function App() {
     const handleRefreshOne = async (index, topic, level) => {
         try {
             const timestamp = new Date().getTime();
-            // Use 'category' parameter to match API expectations, though api/question.ts handles 'topic' alias now too
-            const res = await fetch(`/api/question?category=${topic}&level=${level}&lang=${lang}&force=true&t=${timestamp}`);
+            const res = await fetch(`/api/question?topic=${topic}&level=${level}&lang=${lang}&force=true&t=${timestamp}`);
             const newQuestion = await res.json();
-            
             if (newQuestion.error) throw new Error(newQuestion.error);
 
             setDoNowQuestions(prev => {
@@ -213,8 +262,6 @@ function App() {
             console.error("Single refresh failed", e);
         }
     };
-
-    // -------------------
 
     const handleSelection = (t, l) => { setTopic(t); setLevel(l); };
 
@@ -276,14 +323,13 @@ function App() {
         const newLevel = level + delta; 
         const max = Object.keys(LEVEL_DESCRIPTIONS[topic] || {}).length; 
         if (newLevel >= 1 && newLevel <= max) { 
-            // setStreak(0); // REMOVED: Preserve streak when manually changing or leveling up
             setLevel(newLevel); 
             fetchQuestion(topic, newLevel, lang, true); 
         } 
     };
 
     const handleSubmit = async (e, directInput) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (showStreakModal || showTotalModal || timeUpOpen) return;
         if (feedback === 'correct') return;
         let finalInput = directInput !== undefined ? directInput : input;
@@ -359,25 +405,8 @@ function App() {
 
     const toggleLang = () => setLang(prev => prev === 'sv' ? 'en' : 'sv');
 
-    // RENDER LOGIC
-    if (view === 'donow_config') {
-        return <div className="min-h-screen bg-gray-50 font-sans"><DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
-    }
-    if (view === 'donow_grid') {
-        return (
-            <DoNowGrid 
-                questions={doNowQuestions} 
-                ui={ui} 
-                onBack={() => setView('donow_config')} 
-                lang={lang} 
-                onRefreshAll={handleRefreshAll}
-                onRefreshOne={handleRefreshOne}
-            />
-        );
-    }
-
     return (
-        <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
+        <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-slate-950 font-sans transition-colors duration-300">
             <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
             <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
             <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
@@ -385,43 +414,54 @@ function App() {
             <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
             <StatsModal visible={timeUpOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setTimeUpOpen(false)} title={ui.stats_times_up} />
 
-            <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm">
+            <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 px-4 py-3 shadow-sm transition-colors">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                        <h1 className="text-xl font-bold text-primary-700 tracking-tight cursor-pointer" onClick={quitPractice}>Anpassa</h1>
+                        <h1 className="text-xl font-bold text-indigo-700 dark:text-indigo-400 tracking-tight cursor-pointer" onClick={quitPractice}>Anpassa</h1>
                         {view === 'dashboard' && timerSettings.remaining > 0 && (
-                            <div className="hidden sm:flex bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold items-center gap-2 border border-orange-200">
+                            <div className="hidden sm:flex bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-3 py-1 rounded-full text-xs font-bold items-center gap-2 border border-orange-200 dark:border-orange-800">
                                 <span>⏸ {ui.timer_paused}</span>
                                 <span className="font-mono text-sm">{formatTime(timerSettings.remaining)}</span>
                             </div>
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-primary-200">✅ {totalCorrect}</div>
-                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-yellow-200">🔥 {streak}</div>
-                        <button onClick={toggleLang} className="px-3 py-1 rounded-md text-xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-1.5" title={lang === 'sv' ? "Byt språk" : "Switch Language"}>
+                        <button onClick={() => setDarkMode(!darkMode)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" title="Toggle Dark Mode">
+                            {darkMode ? '☀️' : '🌙'}
+                        </button>
+                        <div className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-emerald-200 dark:border-emerald-800">✅ {totalCorrect}</div>
+                        <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-yellow-200 dark:border-orange-800">🔥 {streak}</div>
+                        <button onClick={toggleLang} className="px-3 py-1 rounded-md text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm flex items-center gap-1.5" title={lang === 'sv' ? "Byt språk" : "Switch Language"}>
                             <span className="text-sm">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</span><span>{lang === 'sv' ? 'SE' : 'ENG'}</span>
                         </button>
-                        <button onClick={() => setStatsOpen(true)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title={ui.stats_title}>
+                        <button onClick={() => setStatsOpen(true)} className="p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" title={ui.stats_title}>
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                         </button>
-                        <button onClick={() => setAboutOpen(true)} className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-1 px-4 text-xs rounded-full shadow-sm transition-transform transform active:scale-95">{ui.aboutBtn}</button>
                     </div>
                 </div>
             </header>
 
-            <div className="flex-1 flex flex-col">
-                {view === 'dashboard' ? (
+            <div className="flex-1 flex flex-col overflow-hidden">
+                {view === 'donow_config' ? (
+                    <DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} loading={loading} />
+                ) : view === 'donow_grid' ? (
+                    <DoNowGrid questions={doNowQuestions} ui={ui} onBack={() => setView('donow_config')} lang={lang} onRefreshAll={handleRefreshAll} onRefreshOne={handleRefreshOne} />
+                ) : view === 'worksheet_config' ? (
+                    <DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleWorksheetGenerate} loading={loading} isWorksheet={true} />
+                ) : view === 'worksheet_view' ? (
+                    <WorksheetView questions={worksheetQuestions} ui={ui} onBack={() => setView('dashboard')} lang={lang} />
+                ) : view === 'dashboard' ? (
                     <Dashboard
                         lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice} timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} 
                         onLgrOpen={() => setLgrOpen(true)} 
                         onContentOpen={() => setContentOpen(true)} 
                         onDoNowOpen={() => setView('donow_config')} 
-                        toggleLang={toggleLang}
+                        onWorksheetOpen={() => setView('worksheet_config')}
+                        onAboutOpen={() => setAboutOpen(true)} 
                     />
                 ) : (
                     <PracticeView
-                        lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip} handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{ history, topic, level }} actions={{ retry: (force) => fetchQuestion(topic, level, lang, force), goBack: quitPractice }} levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable} isSolutionRevealed={isSolutionRevealed} showStreakModal={showStreakModal} setShowStreakModal={setShowStreakModal} showTotalModal={showTotalModal} setShowTotalModal={setShowTotalModal} totalCorrect={totalCorrect} timerSettings={timerSettings} formatTime={formatTime} setMobileHistoryOpen={setMobileHistoryOpen}
+                        lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip} handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{ history, topic, level }} actions={{ retry: (force) => fetchQuestion(topic, level, lang, force), goBack: quitPractice }} levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable} isSolutionRevealed={isSolutionRevealed} showStreakModal={showStreakModal} setShowStreakModal={setShowStreakModal} totalCorrect={totalCorrect} timerSettings={timerSettings} formatTime={formatTime} setMobileHistoryOpen={setMobileHistoryOpen}
                     />
                 )}
             </div>
