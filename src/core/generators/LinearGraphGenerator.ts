@@ -67,12 +67,6 @@ export class LinearGraphGenerator {
         if (m > 0) eq += `+${m}`;
         else if (m < 0) eq += `${m}`; // m includes '-'
         
-        // If m is 0, we leave it as y=kx, unless we want to be explicit? 
-        // Standard math notation usually omits +0. 
-        // But let's check if the answer validator expects strict matching.
-        // The validator normalizes, but if user types y=2x+0 and correct is y=2x, it might fail?
-        // Let's stick to standard y=kx+m form if m!=0.
-
         return {
             renderData: { 
                 graph: { range: 10, lines: [{ slope: k, intercept: m, color: '#7c3aed' }] }, 
