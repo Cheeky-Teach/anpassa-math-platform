@@ -7,7 +7,7 @@ import AboutModal from './components/modals/AboutModal';
 import LgrModal from './components/modals/LgrModal';
 import StatsModal from './components/modals/StatsModal';
 import StreakModal from './components/modals/StreakModal'; 
-import ContentModal from './components/modals/ContentModal'; // NEW IMPORT
+import ContentModal from './components/modals/ContentModal'; 
 import MobileDrawer from './components/practice/MobileDrawer';
 import { UI_TEXT, CATEGORIES, LEVEL_DESCRIPTIONS } from './constants/localization';
 
@@ -44,14 +44,14 @@ function App() {
     const [statsOpen, setStatsOpen] = useState(false);
     const [timeUpOpen, setTimeUpOpen] = useState(false);
     const [lgrOpen, setLgrOpen] = useState(false);
-    const [contentOpen, setContentOpen] = useState(false); // NEW STATE FOR CONTENT MODAL
+    const [contentOpen, setContentOpen] = useState(false); 
     const [showStreakModal, setShowStreakModal] = useState(false);
     const [showTotalModal, setShowTotalModal] = useState(false);
     const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
     // Do Now State
     const [doNowQuestions, setDoNowQuestions] = useState([]);
-    const [doNowConfig, setDoNowConfig] = useState([]); // Stores the selected topics for regeneration
+    const [doNowConfig, setDoNowConfig] = useState([]); 
 
     const [usedHelp, setUsedHelp] = useState(false);
     const [isSolutionRevealed, setIsSolutionRevealed] = useState(false);
@@ -141,7 +141,7 @@ function App() {
         setQuestion(null);
     };
 
-    // --- DO NOW LOGIC ---
+    // --- DO NOW LOGIC (FIXED) ---
 
     const handleDoNowGenerate = async (selected) => {
         if (selected.length === 0) return;
@@ -150,25 +150,40 @@ function App() {
         setDoNowConfig(selected);
         
         setLoading(true);
-        const fullConfig = [];
+        
+        // Construct the payload exactly as api/batch.ts expects it:
+        // { requests: [ { category, level, lang }, ... ] }
+        const requests = [];
         const targetCount = Math.max(selected.length, 6);
+        
         for (let i = 0; i < targetCount; i++) {
-            fullConfig.push(selected[i % selected.length]);
+            const selection = selected[i % selected.length];
+            requests.push({
+                category: selection.topic, // Map 'topic' to 'category' for backend
+                level: selection.level,
+                lang: lang // Pass current language
+            });
         }
 
         try {
             const res = await fetch('/api/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ config: fullConfig, lang })
+                body: JSON.stringify({ requests }) // Send 'requests' key
             });
             const data = await res.json();
-            if (data.questions) {
-                setDoNowQuestions(data.questions);
-                setView('donow_grid');
+            
+            // Check for 'results' key (standard for batch APIs)
+            if (data.results && Array.isArray(data.results)) {
+                // Filter out any nulls if a generator failed
+                const validQuestions = data.results.filter(q => q !== null);
+                setDoNowQuestions(validQuestions);
+                setView('donow_grid'); // Activate the view
+            } else {
+                console.error("Invalid batch response:", data);
             }
         } catch (e) {
-            console.error(e);
+            console.error("Do Now Generation Error:", e);
         } finally {
             setLoading(false);
         }
@@ -183,7 +198,8 @@ function App() {
     const handleRefreshOne = async (index, topic, level) => {
         try {
             const timestamp = new Date().getTime();
-            const res = await fetch(`/api/question?topic=${topic}&level=${level}&lang=${lang}&force=true&t=${timestamp}`);
+            // Use 'category' parameter to match API expectations, though api/question.ts handles 'topic' alias now too
+            const res = await fetch(`/api/question?category=${topic}&level=${level}&lang=${lang}&force=true&t=${timestamp}`);
             const newQuestion = await res.json();
             
             if (newQuestion.error) throw new Error(newQuestion.error);
@@ -364,7 +380,7 @@ function App() {
         <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
             <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
             <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
-            <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> {/* NEW MODAL COMPONENT */}
+            <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
             <MobileDrawer open={mobileHistoryOpen} onClose={() => setMobileHistoryOpen(false)} history={history} ui={ui} />
             <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
             <StatsModal visible={timeUpOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setTimeUpOpen(false)} title={ui.stats_times_up} />
@@ -399,7 +415,7 @@ function App() {
                     <Dashboard
                         lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice} timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} 
                         onLgrOpen={() => setLgrOpen(true)} 
-                        onContentOpen={() => setContentOpen(true)} // PASSING THE HANDLER
+                        onContentOpen={() => setContentOpen(true)} 
                         onDoNowOpen={() => setView('donow_config')} 
                         toggleLang={toggleLang}
                     />
