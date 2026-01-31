@@ -26,9 +26,11 @@ export class LinearEquationProblemGen {
             renderData: {
                 latex: "",
                 description: `${data.text} ${taskText}`,
-                answerType: isWriteMode ? 'text' : 'text'
+                answerType: 'text' // Both modes expect text input (equation or number)
             },
             token: Buffer.from(answer.toString()).toString('base64'),
+            // FIX: Added 'clues' at the top level so the frontend App.jsx can find them
+            clues: steps,
             serverData: { answer: answer, solutionSteps: steps }
         };
     }
