@@ -187,40 +187,66 @@ export class StatisticsGen {
 
     // --- LEVEL 4: Reverse Mean ---
     private level4_ReverseMean(lang: string): any {
-        const scenarios = [
-            { sv: "påsar väger", en: "bags weigh" },
-            { sv: "personer är", en: "people are" },
-            { sv: "prov gav", en: "tests gave" },
-            { sv: "dagar var", en: "days were" },
-            { sv: "varor kostade", en: "items cost" },
-            { sv: "hopp mätte", en: "jumps measured" },
-            { sv: "matchers mål", en: "match goals" }
-        ];
-        const s = MathUtils.randomChoice(scenarios);
+        // Scaffolding: 3, 5, or 7 items
+        const count = MathUtils.randomChoice([3, 5, 7]);
         
-        const count = 3; 
         const mean = MathUtils.randomInt(5, 15);
         const total = mean * count;
         
-        const val1 = MathUtils.randomInt(mean - 4, mean + 4);
-        const val2 = MathUtils.randomInt(mean - 4, mean + 4);
-        const missing = total - (val1 + val2);
+        // Generate n-1 known numbers
+        const knownValues: number[] = [];
+        let currentSum = 0;
+        
+        for (let i = 0; i < count - 1; i++) {
+            // Generate numbers relatively close to the mean to stay realistic
+            const val = MathUtils.randomInt(Math.max(1, mean - 6), mean + 6);
+            knownValues.push(val);
+            currentSum += val;
+        }
+        
+        let missing = total - currentSum;
+
+        // Ensure missing value is non-negative. If negative, adjust the last known value.
+        if (missing < 0) {
+            const adjustment = Math.abs(missing) + MathUtils.randomInt(1, 5);
+            // Decrease last value to increase missing value
+            knownValues[knownValues.length - 1] -= adjustment;
+            // Prevent that value from going negative too?
+            if (knownValues[knownValues.length - 1] < 0) {
+                 knownValues[knownValues.length - 1] = 1; // Fallback
+            }
+            // Recalculate sum and missing
+            currentSum = knownValues.reduce((a, b) => a + b, 0);
+            missing = total - currentSum;
+        }
+        
+        // Just in case it's still weird, simple retry logic is robust here, 
+        // but the math above should handle 99% of cases.
+        if (missing < 0) return this.level4_ReverseMean(lang);
+
+        const knownStr = knownValues.join(', ');
+        
+        // Ordinal words for the question
+        let ordinalSv = "tredje";
+        let ordinalEn = "third";
+        if (count === 5) { ordinalSv = "femte"; ordinalEn = "fifth"; }
+        if (count === 7) { ordinalSv = "sjunde"; ordinalEn = "seventh"; }
 
         const desc = lang === 'sv'
-            ? `Medelvärdet av tre tal är ${mean}. Två av talen är ${val1} och ${val2}. Vilket är det tredje talet?`
-            : `The mean of three numbers is ${mean}. Two numbers are ${val1} and ${val2}. What is the third number?`;
+            ? `Medelvärdet av ${count} tal är ${mean}. ${count-1} av talen är ${knownStr}. Vilket är det ${ordinalSv} talet?`
+            : `The mean of ${count} numbers is ${mean}. ${count-1} of the numbers are ${knownStr}. What is the ${ordinalEn} number?`;
 
         return {
             renderData: { description: desc, answerType: 'numeric' },
             token: this.toBase64(missing.toString()),
             clues: [
                 { 
-                    text: lang === 'sv' ? "Räkna ut vad summan av alla tre måste vara." : "Calculate what the sum of all three must be.",
-                    latex: `Summa = ${mean} \\cdot 3 = ${total}`
+                    text: lang === 'sv' ? `Räkna ut vad summan av alla ${count} måste vara.` : `Calculate what the sum of all ${count} must be.`,
+                    latex: `\\text{Sum} = ${mean} \\cdot ${count} = ${total}`
                 },
                 { 
                     text: lang === 'sv' ? "Dra bort de tal du vet från summan." : "Subtract the known numbers from the sum.",
-                    latex: `${total} - ${val1} - ${val2} = ${missing}` 
+                    latex: `${total} - (${knownValues.join(' + ')}) = ${missing}` 
                 }
             ]
         };
@@ -272,7 +298,7 @@ export class StatisticsGen {
 
         return {
             renderData: { 
-                description: desc,
+                description: desc, 
                 answerType: 'numeric',
                 geometry: { 
                     type: 'frequency_table', 
