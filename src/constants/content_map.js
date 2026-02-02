@@ -21,66 +21,66 @@ export const CONTENT_MAP = {
                 id: "fraction_basics",
                 title: "Bråk: Grunder",
                 levels: [
-                    { lvl: 1, desc: "Visuella Bråk", ex: "Del av helhet (Bild)" },
-                    { lvl: 2, desc: "Del av antal", ex: "1/4 av 20" },
-                    { lvl: 3, desc: "Blandad form & Bråkform", ex: "1 1/2 = 3/2" },
-                    { lvl: 4, desc: "Förkorta & Förlänga", ex: "2/4 = 1/2" },
-                    { lvl: 5, desc: "Bråk & Decimaltal", ex: "1/4 = 0.25" }
+                    { lvl: 1, desc: "Visuella Bråk", ex: "Del av helhet" },
+                    { lvl: 2, desc: "Beräkna delen", ex: "1/4 av 20" },
+                    { lvl: 3, desc: "Blandad & Bråkform", ex: "1 1/2 <-> 3/2" },
+                    { lvl: 4, desc: "Förlänga & Förkorta", ex: "2/4 -> 1/2" },
+                    { lvl: 5, desc: "Bråk & Decimaltal", ex: "1/5 = 0.2" }
                 ]
             },
             {
                 id: "fraction_arith",
-                title: "Bråk: Räknesätt",
+                title: "Bråk: Räkna",
                 levels: [
-                    { lvl: 1, desc: "Addition (Samma nämnare)", ex: "1/4 + 2/4" },
-                    { lvl: 2, desc: "Addition (Olika nämnare)", ex: "1/2 + 1/4" },
-                    { lvl: 3, desc: "Subtraktion & Blandat", ex: "1 1/2 - 3/4" },
-                    { lvl: 4, desc: "Multiplikation", ex: "1/2 · 3/4" },
-                    { lvl: 5, desc: "Division", ex: "(1/2) / (1/4)" }
+                    { lvl: 1, desc: "Addition & Subtraktion (Lika)", ex: "1/5 + 2/5" },
+                    { lvl: 2, desc: "Addition & Subtraktion (Olika)", ex: "1/2 + 1/4" },
+                    { lvl: 3, desc: "Blandad form (+)", ex: "1 1/2 + 3/4" },
+                    { lvl: 4, desc: "Multiplikation", ex: "2/3 · 4/5" },
+                    { lvl: 5, desc: "Division", ex: "1/2 / 1/4" }
                 ]
             },
             {
                 id: "negative",
                 title: "Negativa Tal",
                 levels: [
-                    { lvl: 1, desc: "Enkel Addition/Subtraktion", ex: "-5 + 3, 2 - 8" },
-                    { lvl: 2, desc: "Svårare Addition/Subtraktion", ex: "-5 - (-3)" },
-                    { lvl: 3, desc: "Multiplikation", ex: "-4 · 3" },
-                    { lvl: 4, desc: "Division", ex: "-20 / -5" },
-                    { lvl: 5, desc: "Blandade Uppgifter", ex: "Mix av alla" }
+                    { lvl: 1, desc: "Enkel Addition/Subtraktion", ex: "5 - 8" },
+                    { lvl: 2, desc: "Svårare Addition/Subtraktion", ex: "-5 - (-8)" },
+                    { lvl: 3, desc: "Multiplikation", ex: "-3 · 4" },
+                    { lvl: 4, desc: "Division", ex: "-12 / -3" },
+                    { lvl: 5, desc: "Blandade Uppgifter", ex: "Mix av räknesätt" }
                 ]
             },
             {
                 id: "ten_powers",
                 title: "10, 100, 1000",
                 levels: [
-                    { lvl: 1, desc: "Mult/Div med 10, 100, 1000", ex: "4.5 · 100" },
-                    { lvl: 2, desc: "Begreppsförståelse", ex: "Vilket tal är 100 gånger större?" },
+                    { lvl: 1, desc: "Mult/Div med 10, 100, 1000", ex: "3.5 · 100" },
+                    { lvl: 2, desc: "Begreppsförståelse", ex: "Vilket är störst?" },
                     { lvl: 3, desc: "Blandade Faktorer", ex: "0.1, 0.01, 1000" }
-                ]
-            },
-            {
-                id: "percent",
-                title: "Procent",
-                levels: [
-                    { lvl: 1, desc: "Grundläggande & Omvandling", ex: "1/4 = 25% = 0.25" },
-                    { lvl: 2, desc: "Huvudräkning (Benchmarks)", ex: "50%, 25%, 10% av tal" },
-                    { lvl: 3, desc: "Byggstenar (Multiplar)", ex: "30% (3 · 10%)" },
-                    { lvl: 4, desc: "Decimalmetoden", ex: "15% av 40 (0.15 · 40)" },
-                    { lvl: 5, desc: "Det Hela", ex: "20% är 10. Vad är 100%?" },
-                    { lvl: 6, desc: "Verklig Förändring", ex: "Lön, Rea, Skatt" }
                 ]
             },
             {
                 id: "exponents",
                 title: "Potenser & Rötter",
                 levels: [
-                    { lvl: 1, desc: "Grunder & Nollregeln", ex: "3^3, x^0 = 1" },
-                    { lvl: 2, desc: "Tiopotenser", ex: "10^5, 10^-2" },
-                    { lvl: 3, desc: "Grundpotensform", ex: "4.5 · 10^4" },
-                    { lvl: 4, desc: "Kvadratrötter & Uppskattning", ex: "sqrt(64), sqrt(50)" },
+                    { lvl: 1, desc: "Grunder & x^0", ex: "3^2, 5^0" },
+                    { lvl: 2, desc: "Tiopotenser", ex: "10^3, 10^-2" },
+                    { lvl: 3, desc: "Grundpotensform", ex: "4.5 · 10^3" },
+                    { lvl: 4, desc: "Kvadratrötter", ex: "sqrt(25)" },
                     { lvl: 5, desc: "Potenslagar (Enkel)", ex: "x^2 · x^3" },
                     { lvl: 6, desc: "Potenslagar (Avancerad)", ex: "(x^2)^3" }
+                ]
+            },
+            {
+                id: "percent",
+                title: "Procent",
+                levels: [
+                    { lvl: 1, desc: "Grundläggande (Rutnät)", ex: "Bildstöd" },
+                    { lvl: 2, desc: "Huvudräkning (10%, 50%)", ex: "10% av 500" },
+                    { lvl: 3, desc: "Multiplar av 10%", ex: "30% av 200" },
+                    { lvl: 4, desc: "Beräkna andelen (Decimal)", ex: "0.15 · 400" },
+                    { lvl: 5, desc: "Hitta helheten (100%)", ex: "Delen är 20, andel 50%" },
+                    { lvl: 6, desc: "Verklig Förändring", ex: "Prisökning" }
                 ]
             }
         ]
@@ -92,103 +92,34 @@ export const CONTENT_MAP = {
                 id: "simplify",
                 title: "Uttryck",
                 levels: [
-                    { lvl: 1, desc: "Förenkla Uttryck", ex: "3x + 2x + 5" },
-                    { lvl: 2, desc: "Parenteser (Addition)", ex: "4 + (x + 2)" },
+                    { lvl: 1, desc: "Förenkla Uttryck", ex: "2x + 3x" },
+                    { lvl: 2, desc: "Parenteser (Addition)", ex: "2 + (x - 3)" },
                     { lvl: 3, desc: "Parenteser (Multiplikation)", ex: "3(x + 2)" },
-                    { lvl: 4, desc: "Parenteser (Subtraktion)", ex: "5x - (2x + 3)" },
+                    { lvl: 4, desc: "Parenteser (Subtraktion)", ex: "5 - (x - 2)" },
                     { lvl: 5, desc: "Problemlösning", ex: "Skriv uttryck för omkrets" },
-                    { lvl: 6, desc: "Blandade Nivåer", ex: "Mix av förenkling" }
+                    { lvl: 6, desc: "Blandade Nivåer", ex: "Mix av algebra" }
                 ]
             },
             {
                 id: "equation",
                 title: "Ekvationer",
                 levels: [
-                    { lvl: 1, desc: "Enkels steg", ex: "x + 5 = 12" },
-                    { lvl: 2, desc: "Två steg", ex: "2x + 3 = 11" },
+                    { lvl: 1, desc: "Enstegsekvationer", ex: "x + 5 = 12" },
+                    { lvl: 2, desc: "Tvåstegsekvationer", ex: "2x + 3 = 11" },
                     { lvl: 3, desc: "Med Parenteser", ex: "2(x + 1) = 10" },
-                    { lvl: 4, desc: "Variabel på båda sidor", ex: "3x + 2 = x + 10" },
-                    { lvl: 5, desc: "Problemlösning (Skriv)", ex: "Tolka text till ekvation" },
-                    { lvl: 6, desc: "Problemlösning (Lös)", ex: "Lös textproblem" },
-                    { lvl: 7, desc: "Blandade Ekvationer", ex: "Mix av alla typer" }
-                ]
-            }
-        ]
-    },
-    geometry: {
-        title: "Geometri",
-        topics: [
-            {
-                id: "geometry",
-                title: "Area & Omkrets",
-                levels: [
-                    { lvl: 1, desc: "Omkrets (Rektangel)", ex: "O = 2b + 2h" },
-                    { lvl: 2, desc: "Area (Rektangel)", ex: "A = b · h" },
-                    { lvl: 3, desc: "Area (Triangel)", ex: "A = (b · h) / 2" },
-                    { lvl: 4, desc: "Cirkelns Area & Omkrets", ex: "Använd pi (3.14)" },
-                    { lvl: 5, desc: "Sammansatta Figurer", ex: "Hus, Portaler" }
+                    { lvl: 4, desc: "Variabel på båda sidor", ex: "3x + 2 = x + 8" },
+                    { lvl: 5, desc: "Skriv Ekvation", ex: "Från text till ekvation" },
+                    { lvl: 6, desc: "Lös Problem", ex: "Textuppgifter" },
+                    { lvl: 7, desc: "Blandade Ekvationer", ex: "Mix av problem" }
                 ]
             },
-            {
-                id: "scale",
-                title: "Skala",
-                levels: [
-                    { lvl: 1, desc: "Förstå Skala", ex: "Vad betyder 1:100?" },
-                    { lvl: 2, desc: "Beräkna Längd (Enkel)", ex: "Bild -> Verklighet" },
-                    { lvl: 3, desc: "Blandade Scenarier", ex: "Karta, Ritning, Mikroskop" },
-                    { lvl: 4, desc: "Bestäm Skalan", ex: "Hitta skalan givet två mått" },
-                    { lvl: 5, desc: "Problemlösning", ex: "Textuppgifter utan bild" },
-                    { lvl: 6, desc: "Areaskala", ex: "Längdskala²" },
-                    { lvl: 7, desc: "Blandat", ex: "Mix av alla" }
-                ]
-            },
-            {
-                id: "volume",
-                title: "Volym",
-                levels: [
-                    { lvl: 1, desc: "Rätblock & Kub", ex: "V = b · d · h" },
-                    { lvl: 2, desc: "Prisma", ex: "V = Bas · höjd" },
-                    { lvl: 3, desc: "Cylinder", ex: "V = pi · r² · h" },
-                    { lvl: 4, desc: "Pyramid & Kon", ex: "Spetsiga kroppar (/3)" },
-                    { lvl: 5, desc: "Klot & Sammansatta", ex: "Silo, Glass, Klot" },
-                    { lvl: 6, desc: "Blandade Volymer", ex: "Mix av kroppar" },
-                    { lvl: 7, desc: "Enhetsomvandling", ex: "cm³ <-> liter <-> m³" }
-                ]
-            },
-            {
-                id: "similarity",
-                title: "Likformighet",
-                levels: [
-                    { lvl: 1, desc: "Är de likformiga?", ex: "Jämför former" },
-                    { lvl: 2, desc: "Beräkna sida (Enkel)", ex: "Använd skalfaktor" },
-                    { lvl: 3, desc: "Topptriangelsatsen", ex: "Triangel inuti triangel" },
-                    { lvl: 4, desc: "Pythagoras & Likformighet", ex: "Avancerad problemlösning" }
-                ]
-            },
-            {
-                id: "pythagoras",
-                title: "Pythagoras Sats",
-                levels: [
-                    { lvl: 1, desc: "Kvadrater & Rötter", ex: "3^2, sqrt(25)" },
-                    { lvl: 2, desc: "Hitta Hypotenusan", ex: "3-4-5 triangel" },
-                    { lvl: 3, desc: "Hitta Kateten", ex: "c^2 - b^2 = a^2" },
-                    { lvl: 4, desc: "Problemlösning", ex: "Stege mot vägg" },
-                    { lvl: 5, desc: "Avstånd (Koordinater)", ex: "Mellan (1,1) och (4,5)" },
-                    { lvl: 6, desc: "Är den rätvinklig?", ex: "Testa a^2 + b^2 = c^2" }
-                ]
-            }
-        ]
-    },
-    samband: {
-        title: "Samband",
-        topics: [
             {
                 id: "linear_graph",
                 title: "Räta Linjen",
                 levels: [
-                    { lvl: 1, desc: "Hitta m-värdet", ex: "Var skär linjen y-axeln?" },
-                    { lvl: 2, desc: "Hitta k-värdet (Positiv)", ex: "Lutning uppåt" },
-                    { lvl: 3, desc: "Hitta k-värdet (Negativ)", ex: "Lutning nedåt" },
+                    { lvl: 1, desc: "Hitta m-värdet", ex: "Skärning y-axel" },
+                    { lvl: 2, desc: "Hitta k-värdet (Pos)", ex: "Lutning uppåt" },
+                    { lvl: 3, desc: "Hitta k-värdet (Neg)", ex: "Lutning nedåt" },
                     { lvl: 4, desc: "Bestäm funktionen", ex: "y = kx + m" },
                     { lvl: 5, desc: "Blandat", ex: "Mix av grafer" }
                 ]
@@ -218,8 +149,83 @@ export const CONTENT_MAP = {
                     { lvl: 2, desc: "Medelvärde", ex: "Summa / Antal" },
                     { lvl: 3, desc: "Median", ex: "Mittenvärdet (sorterat)" },
                     { lvl: 4, desc: "Baklänges medelvärde", ex: "Hitta saknat tal" },
-                    { lvl: 5, desc: "Frekvenstabell", ex: "Analysera tabell" },
-                    { lvl: 6, desc: "Blandade begrepp", ex: "Medel vs Median" }
+                    { lvl: 5, desc: "Frekvenstabell", ex: "Medel/Median ur tabell" },
+                    { lvl: 6, desc: "Blandade begrepp", ex: "Jämför mått" }
+                ]
+            },
+            {
+                id: "change_factor",
+                title: "Förändringsfaktor",
+                levels: [
+                    { lvl: 1, desc: "Begrepp & Definition", ex: "Ökning 20% -> 1.20" },
+                    { lvl: 2, desc: "Beräkna nya värdet", ex: "500 * 1.20" },
+                    { lvl: 3, desc: "Beräkna gamla värdet", ex: "Nytt / Faktor" },
+                    { lvl: 4, desc: "Total förändring", ex: "1.10 * 0.90" },
+                    { lvl: 5, desc: "Textuppgifter", ex: "Befolkning, Ränta" }
+                ]
+            }
+        ]
+    },
+    geometry: {
+        title: "Geometri",
+        topics: [
+            {
+                id: "geometry",
+                title: "Area & Omkrets",
+                levels: [
+                    { lvl: 1, desc: "Omkrets (Rektangel)", ex: "2(b+h)" },
+                    { lvl: 2, desc: "Area (Rektangel)", ex: "b*h" },
+                    { lvl: 3, desc: "Area (Triangel)", ex: "b*h/2" },
+                    { lvl: 4, desc: "Cirklar", ex: "pi*r^2" },
+                    { lvl: 5, desc: "Sammansatta", ex: "Hus, Portal" }
+                ]
+            },
+            {
+                id: "scale",
+                title: "Skala",
+                levels: [
+                    { lvl: 1, desc: "Begreppsförståelse", ex: "1:100 vs 100:1" },
+                    { lvl: 2, desc: "Beräkna längd (Enkel)", ex: "Bild -> Verklighet" },
+                    { lvl: 3, desc: "Blandade Scenarier", ex: "Karta, Ritning" },
+                    { lvl: 4, desc: "Bestäm Skalan", ex: "Bild / Verklighet" },
+                    { lvl: 5, desc: "Problemlösning", ex: "Textuppgifter" },
+                    { lvl: 6, desc: "Areaskala", ex: "Längdskala^2" },
+                    { lvl: 7, desc: "Blandat", ex: "Mix av uppgifter" }
+                ]
+            },
+            {
+                id: "volume",
+                title: "Volym",
+                levels: [
+                    { lvl: 1, desc: "Rätblock & Kub", ex: "b*d*h" },
+                    { lvl: 2, desc: "Prisma", ex: "B*h" },
+                    { lvl: 3, desc: "Cylinder", ex: "pi*r^2*h" },
+                    { lvl: 4, desc: "Pyramid & Kon", ex: "B*h/3" },
+                    { lvl: 5, desc: "Klot", ex: "4*pi*r^3/3" },
+                    { lvl: 6, desc: "Blandade Volymer", ex: "Mix av kroppar" },
+                    { lvl: 7, desc: "Enhetsomvandling", ex: "dm3 <-> liter" }
+                ]
+            },
+            {
+                id: "similarity",
+                title: "Likformighet",
+                levels: [
+                    { lvl: 1, desc: "Likformig eller inte?", ex: "Jämför former" },
+                    { lvl: 2, desc: "Beräkna sida", ex: "Skala * sida" },
+                    { lvl: 3, desc: "Topptriangelsatsen", ex: "Liten/Stor triangel" },
+                    { lvl: 4, desc: "Pythagoras", ex: "Rätvinklig triangel" }
+                ]
+            },
+            {
+                id: "pythagoras",
+                title: "Pythagoras Sats",
+                levels: [
+                    { lvl: 1, desc: "Kvadrater & Rötter", ex: "3^2, sqrt(9)" },
+                    { lvl: 2, desc: "Hitta Hypotenusan", ex: "a^2 + b^2 = c^2" },
+                    { lvl: 3, desc: "Hitta Kateten", ex: "c^2 - b^2 = a^2" },
+                    { lvl: 4, desc: "Problemlösning", ex: "Stege mot vägg" },
+                    { lvl: 5, desc: "Avstånd", ex: "Koordinatsystem" },
+                    { lvl: 6, desc: "Rätvinklig?", ex: "Omvänd sats" }
                 ]
             }
         ]

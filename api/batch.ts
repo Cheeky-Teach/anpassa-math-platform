@@ -18,6 +18,7 @@ import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
 import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
 import { FractionBasicsGen } from '../src/core/generators/FractionBasicsGen.js';
 import { FractionArithGen } from '../src/core/generators/FractionArithGen.js';
+import { ChangeFactorGen } from '../src/core/generators/ChangeFactorGen.js';
 
 interface VercelRequest extends IncomingMessage {
     body: any;

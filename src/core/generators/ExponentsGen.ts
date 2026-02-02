@@ -30,176 +30,180 @@ export class ExponentsGen {
                     answerType: 'numeric'
                 },
                 token: this.toBase64("1"),
-                clues: [{ text: lang === 'sv' ? "Alla tal (utom 0) upphöjt till 0 blir 1." : "Any number (except 0) to the power of 0 is 1." }]
-            };
-        } 
-        else if (type === 2) { // Write as power
-            const base = MathUtils.randomInt(2, 9);
-            const exp = MathUtils.randomInt(3, 6);
-            const expanded = Array(exp).fill(base).join(' \\cdot ');
-            
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Skriv som en potens:" : "Write as a power:",
-                    latex: expanded,
-                    answerType: 'structured_power' // UI: [ ] ^ [ ]
-                },
-                token: this.toBase64(`${base}^${exp}`),
                 clues: [
-                    { text: lang === 'sv' ? "Basen är talet som multipliceras." : "The base is the number being multiplied." },
-                    { text: lang === 'sv' ? "Exponenten är antalet gånger det upprepas." : "The exponent is how many times it repeats." }
+                    { 
+                        text: lang === 'sv' 
+                            ? "Tänk på division. Ett tal delat med sig självt är alltid 1." 
+                            : "Think about division. A number divided by itself is always 1.",
+                        latex: `\\frac{${base}^2}{${base}^2} = 1 \\quad \\text{and} \\quad ${base}^{2-2} = ${base}^0`
+                    },
+                    {
+                        text: lang === 'sv' ? "Därför är alla tal upphöjt till 0 lika med 1." : "Therefore, any number to the power of 0 is just 1."
+                    }
                 ]
             };
-        }
-        else { // Calculate simple power
-            const base = MathUtils.randomInt(2, 5);
-            const exp = MathUtils.randomInt(2, 4);
-            const ans = Math.pow(base, exp);
-            
+        } else if (type === 2) { // Power of 1
+            const base = MathUtils.randomInt(2, 20);
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Beräkna värdet:" : "Calculate the value:",
-                    latex: `${base}^${exp}`,
+                    description: lang === 'sv' ? "Beräkna:" : "Calculate:",
+                    latex: `${base}^1`,
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(base.toString()),
+                clues: [{ text: lang === 'sv' ? "Ett tal upphöjt till 1 är bara talet självt." : "A number to the power of 1 is just the number itself." }]
+            };
+        } else { // Simple Square
+            const base = MathUtils.randomInt(2, 12);
+            const ans = base * base;
+            return {
+                renderData: {
+                    description: lang === 'sv' ? "Beräkna kvadraten:" : "Calculate the square:",
+                    latex: `${base}^2`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()),
-                clues: [{ latex: `${Array(exp).fill(base).join('\\cdot')} = ${ans}` }]
+                clues: [
+                    { 
+                        text: lang === 'sv' 
+                            ? "Exponenten är 2, så vi multiplicerar basen med sig själv en gång." 
+                            : "The exponent is 2, so we multiply the base by itself one time.",
+                        latex: `${base} \\cdot ${base}` 
+                    }
+                ]
             };
         }
     }
 
-    // Level 2: Powers of 10
+    // Level 2: Powers of 10 (Updated with Negative Exponents)
     private level2_PowersOfTen(lang: string): any {
-        const type = MathUtils.randomChoice(['pos', 'neg', 'calc']);
-        
-        if (type === 'pos') {
-            const exp = MathUtils.randomInt(3, 6);
-            const num = Math.pow(10, exp);
+        const isNegative = MathUtils.randomInt(0, 1) === 1;
+
+        if (isNegative) {
+            const power = MathUtils.randomInt(1, 8); // represents -1 to -8
+            // Calculate decimal string manually to avoid scientific notation issues with very small numbers in JS
+            // 10^-1 = 0.1, 10^-2 = 0.01
+            let ansStr = "0.";
+            for(let i=0; i<power-1; i++) ansStr += "0";
+            ansStr += "1";
+
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Skriv som en tiopotens:" : "Write as a power of 10:",
-                    latex: `${num}`, // e.g. 10000
-                    answerType: 'structured_power',
-                    prefillBase: "10" // Optional hint for UI to prefill base
+                    description: lang === 'sv' ? "Skriv som ett decimaltal:" : "Write as a decimal number:",
+                    latex: `10^{-${power}}`,
+                    answerType: 'numeric'
                 },
-                token: this.toBase64(`10^${exp}`),
-                clues: [{ text: lang === 'sv' ? "Räkna nollorna." : "Count the zeros." }]
+                token: this.toBase64(ansStr),
+                clues: [
+                    { 
+                        text: lang === 'sv' 
+                            ? "En negativ exponent betyder att vi dividerar med 10." 
+                            : "A negative exponent means we divide by 10.",
+                        latex: `10^{-${power}} = \\frac{1}{10^{${power}}}`
+                    },
+                    {
+                        text: lang === 'sv' 
+                            ? `Exponenten (-${power}) berättar hur många decimaler talet ska ha.` 
+                            : `The exponent (-${power}) tells you how many decimal places the number has.`,
+                        latex: `10^{-${power}} \\rightarrow ${ansStr} \\quad (${power} \\text{ decimaler})`
+                    }
+                ]
             };
-        }
-        else if (type === 'neg') {
-            const exp = MathUtils.randomInt(2, 4); // 0.01, 0.001
-            let decimal = "0.";
-            for(let i=0; i<exp-1; i++) decimal += "0";
-            decimal += "1";
+        } else {
+            const power = MathUtils.randomInt(2, 6);
+            const ans = Math.pow(10, power);
             
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Skriv som en tiopotens:" : "Write as a power of 10:",
-                    latex: decimal,
-                    answerType: 'structured_power',
-                    prefillBase: "10"
-                },
-                token: this.toBase64(`10^-${exp}`),
-                clues: [{ text: lang === 'sv' ? "För decimaltal är exponenten negativ. Räkna decimalerna." : "For decimals, the exponent is negative. Count the decimal places." }]
-            };
-        }
-        else {
-            const exp = MathUtils.randomInt(2, 5);
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Beräkna:" : "Calculate:",
-                    latex: `10^${exp}`,
+                    description: lang === 'sv' ? "Skriv som ett vanligt tal:" : "Write as a standard number:",
+                    latex: `10^${power}`,
                     answerType: 'numeric'
                 },
-                token: this.toBase64(Math.pow(10, exp).toString()),
-                clues: [{ text: lang === 'sv' ? `En etta följt av ${exp} nollor.` : `A one followed by ${exp} zeros.` }]
+                token: this.toBase64(ans.toString()),
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Räkna antalet nollor." : "Count the number of zeros.",
+                        latex: `10^${power} \\rightarrow \\text{1 med ${power} nollor som följer}`
+                    },
+                    {
+                        text: lang === 'sv' ? "Exponenten visar hur många gånger vi multiplicerar 10." : "The exponent shows how many times we multiply 10.",
+                        latex: `10^${power} = \\underbrace{10 \\cdot ... \\cdot 10}_{${power} \\text{ gånger}}`
+                    }
+                ]
             };
         }
     }
 
     // Level 3: Scientific Notation
     private level3_ScientificNotation(lang: string): any {
-        const isBig = MathUtils.randomInt(0, 1) === 1;
+        const base = MathUtils.randomInt(1, 9);
+        const decimal = MathUtils.randomInt(1, 9);
+        const power = MathUtils.randomInt(3, 6);
+        const number = (base + decimal/10) * Math.pow(10, power); // e.g. 4.5 * 1000 = 4500
         
-        if (isBig) {
-            const mantissa = MathUtils.randomInt(1, 9) + (MathUtils.randomInt(1, 9) / 10); // e.g. 4.5
-            const exp = MathUtils.randomInt(3, 6);
-            const num = Math.round(mantissa * Math.pow(10, exp));
-            
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Skriv i grundpotensform (vetenskaplig form):" : "Write in scientific notation:",
-                    latex: `${num}`, // e.g. 45000
-                    answerType: 'structured_scientific' // UI: [ ] * 10 ^ [ ]
+        const correct = `${base}.${decimal} \\cdot 10^${power}`; // "4.5 * 10^3"
+        const wrong = `${base * 10 + decimal} \\cdot 10^${power-1}`; // "45 * 10^2"
+
+        return {
+            renderData: {
+                description: lang === 'sv' 
+                    ? `Skriv talet ${number} i grundpotensform.` 
+                    : `Write the number ${number} in scientific notation.`,
+                answerType: 'structured_scientific',
+                options: MathUtils.shuffle([correct, wrong])
+            },
+            token: this.toBase64(correct),
+            clues: [
+                { 
+                    text: lang === 'sv' 
+                        ? "Först, hitta ett tal mellan 1 och 10." 
+                        : "First, find a number between 1 and 10.",
+                    latex: `${base}.${decimal}`
                 },
-                token: this.toBase64(`${mantissa}*10^${exp}`),
-                clues: [
-                    { text: lang === 'sv' ? "Flytta kommatecknet så att bara en siffra (1-9) är till vänster." : "Move decimal so only one digit (1-9) is to the left." },
-                    { latex: `${mantissa} \\cdot 10^${exp}` }
-                ]
-            };
-        } else {
-            const mantissa = MathUtils.randomInt(1, 9);
-            const exp = MathUtils.randomInt(3, 5); // -3 to -5
-            let numStr = (mantissa * Math.pow(10, -exp)).toFixed(exp);
-            
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Skriv i grundpotensform:" : "Write in scientific notation:",
-                    latex: numStr,
-                    answerType: 'structured_scientific'
-                },
-                token: this.toBase64(`${mantissa}*10^-${exp}`),
-                clues: [{ latex: `${mantissa} \\cdot 10^{-${exp}}` }]
-            };
-        }
+                { 
+                    text: lang === 'sv' 
+                        ? "Räkna nu hur många steg decimalkommat flyttades." 
+                        : "Now count how many steps the decimal point moved.",
+                    latex: `${base}.${decimal} \\cdot 10 \\cdot ... \\rightarrow 10^${power}` 
+                }
+            ]
+        };
     }
 
-    // Level 4: Square Roots & Estimation
+    // Level 4: Square Roots
     private level4_SquareRoots(lang: string): any {
-        const type = MathUtils.randomChoice(['calc', 'est']);
-
-        if (type === 'calc') {
-            const base = MathUtils.randomInt(1, 15);
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Beräkna:" : "Calculate:",
-                    latex: `\\sqrt{${base*base}}`,
-                    answerType: 'numeric'
+        const base = MathUtils.randomInt(3, 15);
+        const square = base * base;
+        
+        return {
+            renderData: {
+                description: lang === 'sv' ? "Beräkna:" : "Calculate:",
+                latex: `\\sqrt{${square}}`,
+                answerType: 'numeric'
+            },
+            token: this.toBase64(base.toString()),
+            clues: [
+                { 
+                    text: lang === 'sv' 
+                        ? `Vi söker ett tal som gånger sig självt blir ${square}.` 
+                        : `We are looking for a number that, when squared, equals ${square}.`,
+                    latex: `? \\cdot ? = ${square}`
                 },
-                token: this.toBase64(base.toString()),
-                clues: [{ text: lang === 'sv' ? "Vilket tal gånger sig självt?" : "Which number times itself?" }]
-            };
-        } else {
-            // Estimation
-            const low = MathUtils.randomInt(3, 9);
-            const high = low + 1;
-            const target = MathUtils.randomInt((low*low)+1, (high*high)-1);
-            
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Mellan vilka två heltal ligger:" : "Between which two integers does this lie:",
-                    latex: `\\sqrt{${target}}`,
-                    answerType: 'structured_range' // UI: [ ] < sqrt < [ ]
-                },
-                token: this.toBase64(`${low}:${high}`),
-                clues: [
-                    { latex: `\\sqrt{${low*low}} = ${low}` },
-                    { latex: `\\sqrt{${high*high}} = ${high}` },
-                    { text: lang === 'sv' ? `${target} ligger mellan ${low*low} och ${high*high}.` : `${target} is between ${low*low} and ${high*high}.` }
-                ]
-            };
-        }
+                {
+                    text: lang === 'sv' ? "Testa dig fram..." : "Try testing numbers...",
+                    latex: `${base-1} \\cdot ${base-1} = ${(base-1)**2} \\quad (\\text{Too Low})`
+                }
+            ]
+        };
     }
 
-    // Level 5: Laws Basic
+    // Level 5: Basic Laws (Mult/Div)
     private level5_LawsBasic(lang: string): any {
-        const mode = MathUtils.randomChoice(['mult', 'div']);
-        const baseVar = 'x';
-        const a = MathUtils.randomInt(2, 6);
-        const b = MathUtils.randomInt(2, 6);
+        const isMult = MathUtils.randomInt(0, 1) === 1;
+        const a = MathUtils.randomInt(2, 5);
+        const b = MathUtils.randomInt(2, 5);
         
-        if (mode === 'mult') {
+        if (isMult) {
             const ans = a + b;
             return {
                 renderData: {
@@ -209,7 +213,16 @@ export class ExponentsGen {
                     prefillBase: 'x'
                 },
                 token: this.toBase64(`x^${ans}`),
-                clues: [{ text: lang === 'sv' ? "Addera exponenterna vid multiplikation." : "Add exponents when multiplying.", latex: `${a} + ${b} = ${ans}` }]
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Skriv ut vad potenserna betyder." : "Write out what the powers mean.",
+                        latex: `(\\underbrace{x \\cdot ...}_{${a}}) \\cdot (\\underbrace{x \\cdot ...}_{${b}})` 
+                    },
+                    {
+                        text: lang === 'sv' ? "Räkna hur många x du har totalt." : "Count how many x's you have in total.",
+                        latex: `${a} + ${b} = ${ans}`
+                    }
+                ]
             };
         } else {
             // Division (ensure a > b)
@@ -224,7 +237,16 @@ export class ExponentsGen {
                     prefillBase: 'x'
                 },
                 token: this.toBase64(`x^${ans}`),
-                clues: [{ text: lang === 'sv' ? "Subtrahera exponenterna vid division." : "Subtract exponents when dividing.", latex: `${big} - ${small} = ${ans}` }]
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Skriv ut x:en på toppen och botten." : "Write out the x's on top and bottom.",
+                        latex: `\\frac{\\overbrace{x \\cdot ... \\cdot x}^{${big}}}{\\underbrace{x \\cdot ...}_{${small}}}`
+                    },
+                    {
+                        text: lang === 'sv' ? "Stryk de som tar ut varandra. Hur många är kvar?" : "Cancel out the matching pairs. How many are left?",
+                        latex: `${big} - ${small} = ${ans}`
+                    }
+                ]
             };
         }
     }
@@ -243,7 +265,16 @@ export class ExponentsGen {
                 prefillBase: 'x'
             },
             token: this.toBase64(`x^${ans}`),
-            clues: [{ text: lang === 'sv' ? "Multiplicera exponenterna (potens av potens)." : "Multiply the exponents (power of power).", latex: `${a} \\cdot ${b} = ${ans}` }]
+            clues: [
+                { 
+                    text: lang === 'sv' ? `Den yttre exponenten (${b}) betyder att vi har ${b} grupper av innehållet.` : `The outer exponent (${b}) means we have ${b} groups of the inside part.`,
+                    latex: `\\underbrace{x^${a} \\cdot ... \\cdot x^${a}}_{${b} \\text{ times}}`
+                },
+                {
+                    text: lang === 'sv' ? "Räkna ihop alla x totalt." : "Now just add the total x's like before.",
+                    latex: `${a} \\cdot ${b} = ${ans}`
+                }
+            ]
         };
     }
 }

@@ -6,8 +6,8 @@ export const CATEGORIES = {
         levels: 9,
         topics: [
             { id: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
-            { id: 'fraction_basics', label: { sv: "Bråk: Grunder", en: "Fractions: Basics" } }, // NEW
-            { id: 'fraction_arith', label: { sv: "Bråk: Räkna", en: "Fractions: Arithmetic" } }, // NEW
+            { id: 'fraction_basics', label: { sv: "Bråk: Grunder", en: "Fractions: Basics" } }, 
+            { id: 'fraction_arith', label: { sv: "Bråk: Räkna", en: "Fractions: Arithmetic" } }, 
             { id: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
             { id: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } },
             { id: 'exponents', label: { sv: "Potenser & Rötter", en: "Exponents & Roots" } },
@@ -47,7 +47,8 @@ export const CATEGORIES = {
         levels: 6,
         topics: [
              { id: 'probability', label: { sv: "Sannolikhet", en: "Probability" } },
-             { id: 'statistics', label: { sv: "Statistik", en: "Statistics" } }
+             { id: 'statistics', label: { sv: "Statistik", en: "Statistics" } },
+             { id: 'change_factor', label: { sv: "Förändringsfaktor", en: "Change Factor" } } // NEW
         ]
     }
 };
@@ -120,7 +121,14 @@ export const UI_TEXT = {
 };
 
 export const LEVEL_DESCRIPTIONS = {
-    // --- NEW FRACTION GENERATORS ---
+    // --- NEW: Change Factor ---
+    change_factor: {
+        1: { sv: "Begrepp & Definition", en: "Concepts & Definitions" },
+        2: { sv: "Beräkna nya värdet", en: "Calculate New Value" },
+        3: { sv: "Beräkna gamla värdet", en: "Find Original Value" },
+        4: { sv: "Total förändring", en: "Total Change" },
+        5: { sv: "Textuppgifter", en: "Word Problems" }
+    },
     fraction_basics: {
         1: { sv: "Visuella Bråk", en: "Visual Fractions" },
         2: { sv: "Beräkna delen", en: "Parts of a Quantity" },
@@ -135,7 +143,6 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Multiplikation", en: "Multiplication" },
         5: { sv: "Division", en: "Division" }
     },
-    // --- EXISTING GENERATORS ---
     exponents: { 
         1: { sv: "Grunder & x^0", en: "Foundations & x^0" },
         2: { sv: "Tiopotenser", en: "Powers of 10" },

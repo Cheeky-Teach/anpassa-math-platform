@@ -22,65 +22,68 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       "Förmåga att använda och analysera matematiska begrepp och samband mellan begrepp.",
       "Förmåga att välja och använda lämpliga matematiska metoder för att göra beräkningar och lösa rutinuppgifter.",
       "Förmåga att formulera och lösa problem med hjälp av matematik samt värdera valda strategier och metoder.",
-      "Förmåga att föra och följa matematiska resonemang."
+      "Förmåga att föra och följa matematiska resonemang.",
+      "Förmåga att använda matematikens uttrycksformer för att samtala om, argumentera och redogöra för frågeställningar, beräkningar och slutsatser."
     ],
 
-    // Mapping modules to "Centralt Innehåll" (Core Content)
-    mapping: {
+    // Centralt Innehåll (Core Content)
+    // Mapped to specific modules in the app
+    centralt_innehall: {
       taluppfattning: {
         category: "Taluppfattning och tals användning",
-        // Added: ten_powers, percent, exponents
-        modules: ["arithmetic", "negative", "ten_powers", "percent", "exponents"],
+        modules: ["arithmetic", "negative", "ten_powers", "exponents", "percent", "fraction_basics", "fraction_arith"],
         content: [
-          "Reella tal och deras egenskaper samt deras användning i vardagliga och matematiska situationer.",
-          "Centrala metoder för beräkningar med tal i bråk- och decimalform vid överslagsräkning, huvudräkning samt vid beräkningar med skriftliga metoder.",
-          "Tal i potensform. Grundpotensform.", // TenPowersGen, ExponentsGen
-          "Procent för att uttrycka förändring och förändringsfaktor samt beräkningar med procent i vardagliga situationer." // PercentGen
+          "Reella tal och deras egenskaper samt deras användning i vardagliga och matematiska situationer.", // arithmetic
+          "Talsystemets utveckling från naturliga tal till reella tal.", // negative
+          "Tal i bråk- och decimalform samt deras användning i vardagliga och matematiska situationer.", // fraction_basics
+          "Centrala metoder för beräkningar med tal i bråk- och decimalform.", // fraction_arith
+          "Procent för att uttrycka förändring och förändringsfaktor samt beräkningar med procent i vardagliga situationer och i situationer inom olika ämnesområden.", // percent, change_factor
+          "Potensform för att uttrycka små och stora tal samt användning av prefix." // ten_powers, exponents
         ]
       },
       algebra: {
         category: "Algebra",
-        modules: ["equation", "simplify"],
+        modules: ["simplify", "equation", "linear_graph"],
         content: [
-          "Innebörden av variabelbegreppet och dess användning i algebraiska uttryck, formler och ekvationer.",
+          "Innebörden av variabelbegreppet och dess användning i algebraiska uttryck, formler och ekvationer.", // simplify
           "Algebraiska uttryck, formler och ekvationer i situationer som är relevanta för eleven.",
-          "Metoder för ekvationslösning."
+          "Metoder för ekvationslösning.", // equation
+          "Funktioner och räta linjens ekvation." // linear_graph
         ]
       },
       geometri: {
         category: "Geometri",
-        // Added: similarity, pythagoras
         modules: ["geometry", "scale", "volume", "similarity", "pythagoras"],
         content: [
           "Geometriska objekt och deras egenskaper.",
-          "Avbildning och konstruktion av geometriska objekt. Skala och dess användning i vardagliga situationer.", // ScaleGen
-          "Likformighet och symmetri inom plangeometrin.", // SimilarityGen
-          "Geometriska satser och formler och behovet av argumentation för deras giltighet. Pythagoras sats.", // PythagorasGen
-          "Metoder för beräkning av area, omkrets och volym hos geometriska objekt, samt enhetsbyten i samband med detta." // GeometryGen, VolumeGen
+          "Avbildning och konstruktion av geometriska objekt. Skala vid förminskning och förstoring av en- och tvådimensionella objekt.", // scale
+          "Likformighet och symmetri i planet.", // similarity
+          "Geometriska satser och formler och behovet av argumentation för deras giltighet. Pythagoras sats.", // pythagoras
+          "Metoder för beräkning av area, omkrets och volym hos geometriska objekt, samt enhetsbyten i samband med detta." // geometry, volume
         ]
       },
       samband: {
         category: "Samband och förändring",
-        modules: ["graph"],
+        modules: ["graph"], // change_factor fits here too conceptually, but mapped to statistics in app structure
         content: [
           "Proportionalitet och linjära samband samt hur de kan beskrivas med tabeller, grafer, ekvationer och ord.",
           "Räta linjens ekvation."
         ]
       },
-      // NEW SECTION: Sannolikhet och statistik
       statistik: {
         category: "Sannolikhet och statistik",
-        modules: ["probability", "statistics"],
+        modules: ["probability", "statistics", "change_factor"], // Added change_factor here as requested
         content: [
-          "Likformig sannolikhet och metoder för att beräkna sannolikhet i vardagliga situationer.", // ProbabilityGen
-          "Tabeller och diagram för att beskriva resultat från undersökningar.", // StatisticsGen (Frequency Table)
-          "Lägesmått: medelvärde, median och typvärde.", // StatisticsGen
-          "Spridningsmått: variationsbredd." // StatisticsGen
+          "Likformig sannolikhet och metoder för att beräkna sannolikhet i vardagliga situationer.", // probability
+          "Tabeller och diagram för att beskriva resultat från undersökningar.", // statistics
+          "Lägesmått: medelvärde, median och typvärde.", // statistics
+          "Spridningsmått: variationsbredd.", // statistics
+          "Förändringsfaktor och procentuella förändringar." // change_factor
         ]
       },
       problem: {
         category: "Problemlösning",
-        modules: ["equation"], // Specifically word problems in equations
+        modules: ["equation"],
         content: [
           "Strategier för problemlösning i vardagliga situationer och inom olika ämnesområden.",
           "Värdering av valda strategier och metoder."
@@ -89,5 +92,5 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     }
   };
 
-  return res.status(200).json(curriculumData);
+  res.status(200).json(curriculumData);
 }
