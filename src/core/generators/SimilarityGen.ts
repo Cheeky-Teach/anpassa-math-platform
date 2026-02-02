@@ -15,7 +15,6 @@ export class SimilarityGen {
         return Buffer.from(str).toString('base64');
     }
 
-    // Level 1: Concept (Similar or Not?)
     private level1_Concept(lang: string): any {
         const isSimilar = MathUtils.randomInt(0, 1) === 1;
         const type = MathUtils.randomChoice(['rect_sides', 'tri_sides', 'tri_angles']);
@@ -38,7 +37,7 @@ export class SimilarityGen {
             
             desc = lang === 'sv' ? "Är rektanglarna likformiga?" : "Are the rectangles similar?";
             steps.push({ 
-                text: lang === 'sv' ? "För att de ska vara likformiga måste förhållandet mellan sidorna vara samma. Jämför baserna och höjderna." : "For similarity, side ratios must be equal. Compare bases and heights.", 
+                text: lang === 'sv' ? "Jämför baserna och höjderna." : "Compare bases and heights.", 
                 latex: `\\frac{${w2}}{${w1}} \\text{ vs } \\frac{${h2}}{${h1}}` 
             });
         } 
@@ -50,17 +49,16 @@ export class SimilarityGen {
             const b1 = isSimilar ? a1 : a1 + MathUtils.randomChoice([-15, 15]);
             const b2 = isSimilar ? a2 : a2;
 
-            // Pass angles for visual arcs
             geom.left = { angles: [a1, a2, null], labels: { a1: `${a1}°`, a2: `${a2}°` } };
             geom.right = { angles: [b1, b2, null], labels: { a1: `${b1}°`, a2: `${b2}°` } };
 
             desc = lang === 'sv' ? "Är trianglarna likformiga?" : "Are the triangles similar?";
             steps.push({ 
-                text: lang === 'sv' ? "Likformiga trianglar måste ha exakt samma vinklar. Jämför vinklarna." : "Similar triangles must have exactly the same angles. Compare them.", 
+                text: lang === 'sv' ? "Likformiga trianglar måste ha exakt samma vinklar." : "Similar triangles must have exactly the same angles.", 
                 latex: "" 
             });
         }
-        else { // tri_sides
+        else { 
             geom.shapeType = 'triangle';
             const s1 = MathUtils.randomInt(4, 9);
             const s2 = MathUtils.randomInt(4, 9);
@@ -74,7 +72,7 @@ export class SimilarityGen {
             
             desc = lang === 'sv' ? "Är trianglarna likformiga?" : "Are the triangles similar?";
             steps.push({ 
-                text: lang === 'sv' ? "Kolla om båda sidorna har växt lika mycket (samma skalning)." : "Check if both sides scaled by the same factor.", 
+                text: lang === 'sv' ? "Kolla om båda sidorna har växt lika mycket." : "Check if both sides scaled by the same factor.", 
                 latex: `\\frac{${r1}}{${s1}} \\text{ vs } \\frac{${r2}}{${s2}}` 
             });
         }
@@ -86,7 +84,7 @@ export class SimilarityGen {
             renderData: {
                 description: desc,
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([correct, wrong]), // Assuming options expects shuffled array
+                options: MathUtils.shuffle([correct, wrong]),
                 geometry: geom,
                 latex: ""
             },
@@ -95,18 +93,14 @@ export class SimilarityGen {
         };
     }
 
-    // Level 2: Calc Side (Updated with more variety and division)
     private level2_CalcSide(lang: string): any {
-        // Expanded scale factors: decimals and larger integers
         const k = MathUtils.randomChoice([1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]);
-        
         const s1 = MathUtils.randomInt(3, 12);
         const s2 = MathUtils.randomInt(3, 12);
         
         const bigS1 = Math.round(s1 * k * 10) / 10;
         const bigS2 = Math.round(s2 * k * 10) / 10;
         
-        // Randomly find small side (division) or big side (multiplication)
         const findBig = MathUtils.randomInt(0, 1) === 1;
         let ans = 0, clues = [];
 
@@ -114,33 +108,29 @@ export class SimilarityGen {
         let rLabels: any = {};
 
         if (findBig) {
-            // Finding a side on the larger triangle
             ans = bigS1;
-            // Left (Small) has s1, s2. Right (Big) has x, bigS2.
             lLabels = { s1: s1, s2: s2 };
             rLabels = { s1: 'x', s2: bigS2 };
             
             clues.push({ 
-                text: lang === 'sv' ? "1. Hitta skalan genom att jämföra de kända sidorna." : "1. Find scale by comparing the known sides.", 
+                text: lang === 'sv' ? "1. Hitta skalan." : "1. Find the scale.", 
                 latex: `k = \\frac{${bigS2}}{${s2}} = ${k}` 
             });
             clues.push({ 
-                text: lang === 'sv' ? "2. Den okända sidan är i den stora figuren. Multiplicera." : "2. The unknown side is in the large shape. Multiply.", 
+                text: lang === 'sv' ? "2. Multiplicera den kända sidan med skalan." : "2. Multiply the known side by the scale.", 
                 latex: `x = ${s1} \\cdot ${k} = \\mathbf{${ans}}` 
             });
         } else {
-            // Finding a side on the smaller triangle
             ans = s1;
-            // Left (Small) has x, s2. Right (Big) has bigS1, bigS2.
             lLabels = { s1: 'x', s2: s2 };
             rLabels = { s1: bigS1, s2: bigS2 };
             
             clues.push({ 
-                text: lang === 'sv' ? "1. Hitta skalan genom att jämföra de kända sidorna." : "1. Find scale by comparing the known sides.", 
+                text: lang === 'sv' ? "1. Hitta skalan." : "1. Find the scale.", 
                 latex: `k = \\frac{${bigS2}}{${s2}} = ${k}` 
             });
             clues.push({ 
-                text: lang === 'sv' ? "2. Den okända sidan är i den lilla figuren. Dividera." : "2. The unknown side is in the small shape. Divide.", 
+                text: lang === 'sv' ? "2. Dividera den kända sidan med skalan." : "2. Divide the known side by the scale.", 
                 latex: `x = \\frac{${bigS1}}{${k}} = \\mathbf{${ans}}` 
             });
         }
@@ -157,37 +147,54 @@ export class SimilarityGen {
         };
     }
 
-    // Level 3: Top Triangle
     private level3_TopTriangle(lang: string): any {
         const top = MathUtils.randomInt(4, 10);
         const add = MathUtils.randomInt(2, 6);
         const tot = top + add;
         
         const smallBase = MathUtils.randomInt(5, 12);
-        // Calculation: Scale = tot/top. LargeBase = Scale * smallBase.
         const scale = tot / top;
         const largeBase = scale * smallBase;
         
-        // Reroll if scale logic produces ugly decimal not easily explainable, or if bases are not integers for simplicity in this level
-        // We want the scale factor to be relatively clean or the answer to be an integer.
-        // Let's force integer answer:
         if (!Number.isInteger(largeBase)) return this.level3_TopTriangle(lang);
 
-        // Clue logic setup
-        // 1. Identify scale factor (Big Side / Small Side)
-        // 2. Multiply base by scale factor
-        
         const scaleStr = Number.isInteger(scale) ? scale.toString() : scale.toFixed(1); 
+        const showExtension = MathUtils.randomInt(0, 1) === 1;
 
-        return {
-            renderData: { 
-                geometry: { type: 'transversal', labels: { left_top: top, left_tot: tot, base_top: smallBase, base_bot: 'x' } }, 
-                description: lang === 'sv' ? "Beräkna basen x." : "Calculate base x.", 
-                answerType: 'text',
-                latex: ""
-            },
-            token: this.toBase64(largeBase.toString()),
-            clues: [
+        let visualLabels = {};
+        let clueSteps = [];
+
+        if (showExtension) {
+            // Variation: Give Top and Extension (bottom part). User must sum them.
+            // Note: GeometryComponents handles 'left_bot' by drawing it on the segment
+            visualLabels = { left_top: top, left_bot: add, base_top: smallBase, base_bot: 'x' };
+            
+            clueSteps = [
+                {
+                    text: lang === 'sv' 
+                        ? "1. Addera toppens längd och den nedre delens längd för att få hela sidans längd." 
+                        : "1. Add the top length and the extension length to get the total side length.",
+                    latex: `\\text{Stor Sida} = ${top} + ${add} = ${tot}`
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? "2. Räkna ut skalan (Stor Sida / Liten Sida)." 
+                        : "2. Calculate the scale (Big Side / Small Side).", 
+                    latex: `\\text{Skala} = \\frac{${tot}}{${top}} = ${scaleStr}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `3. Multiplicera den lilla basen med skalan.` 
+                        : `3. Multiply the small base by the scale.`, 
+                    latex: `x = ${smallBase} \\cdot ${scaleStr} = \\mathbf{${largeBase}}` 
+                }
+            ];
+
+        } else {
+            // Standard: Give Top and Total Length
+            visualLabels = { left_top: top, left_tot: tot, base_top: smallBase, base_bot: 'x' };
+            
+            clueSteps = [
                 { 
                     text: lang === 'sv' 
                         ? "1. Räkna ut hur många gånger större den stora triangeln är (Skala)." 
@@ -200,11 +207,21 @@ export class SimilarityGen {
                         : `2. Multiply the small base by the scale to get x.`, 
                     latex: `x = ${smallBase} \\cdot ${scaleStr} = \\mathbf{${largeBase}}` 
                 }
-            ]
+            ];
+        }
+
+        return {
+            renderData: { 
+                geometry: { type: 'transversal', labels: visualLabels }, 
+                description: lang === 'sv' ? "Beräkna basen x." : "Calculate base x.", 
+                answerType: 'text',
+                latex: ""
+            },
+            token: this.toBase64(largeBase.toString()),
+            clues: clueSteps
         };
     }
 
-    // Level 4: Pythagoras
     private level4_Pythagoras(lang: string): any {
         const [a, b, c] = MathUtils.randomChoice([[3,4,5], [5,12,13], [6,8,10], [8,15,17]]);
         const findHyp = MathUtils.randomInt(0, 1) === 1;

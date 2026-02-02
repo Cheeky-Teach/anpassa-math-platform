@@ -1,12 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 
-// =====================================================================
-// 1. 2D GEOMETRY VISUAL (Shapes & Icons & Probability & Statistics)
-// =====================================================================
 export const GeometryVisual = ({ data }) => {
     if (!data) return null;
 
-    // --- STATISTICS: FREQUENCY TABLE ---
+    // --- FREQUENCY TABLE ---
     if (data.type === 'frequency_table') {
         const { headers, rows } = data;
         return (
@@ -14,18 +11,12 @@ export const GeometryVisual = ({ data }) => {
                 <div className="border border-slate-300 rounded-lg overflow-hidden shadow-sm bg-white min-w-[200px]">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-xs">
-                            <tr>
-                                {headers.map((h, i) => (
-                                    <th key={i} className="px-4 py-2 border-b border-slate-200 text-center">{h}</th>
-                                ))}
-                            </tr>
+                            <tr>{headers.map((h, i) => <th key={i} className="px-4 py-2 border-b text-center">{h}</th>)}</tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {rows.map((row, rI) => (
                                 <tr key={rI} className="hover:bg-slate-50">
-                                    {row.map((cell, cI) => (
-                                        <td key={cI} className="px-4 py-2 text-center font-mono text-slate-600">{cell}</td>
-                                    ))}
+                                    {row.map((cell, cI) => <td key={cI} className="px-4 py-2 text-center font-mono text-slate-600">{cell}</td>)}
                                 </tr>
                             ))}
                         </tbody>
@@ -35,7 +26,7 @@ export const GeometryVisual = ({ data }) => {
         );
     }
 
-    // --- PROBABILITY: MARBLES ---
+    // --- PROBABILITY MARBLES ---
     if (data.type === 'probability_marbles') {
         const { red, blue, green } = data.items;
         const colors = [];
@@ -64,28 +55,22 @@ export const GeometryVisual = ({ data }) => {
         );
     }
 
-    // --- PROBABILITY: SPINNER ---
+    // --- PROBABILITY SPINNER ---
     if (data.type === 'probability_spinner') {
         const { sections } = data; 
-        const radius = 80;
-        const cx = 100;
-        const cy = 100;
+        const radius = 80; const cx = 100; const cy = 100;
         const step = (2 * Math.PI) / sections;
         const colors = ['#3b82f6', '#ef4444', '#22c55e', '#eab308', '#a855f7', '#ec4899']; 
-
         const slices = [];
         for (let i = 0; i < sections; i++) {
             const startAngle = i * step - Math.PI/2; 
             const endAngle = (i + 1) * step - Math.PI/2;
-            const x1 = cx + radius * Math.cos(startAngle);
-            const y1 = cy + radius * Math.sin(startAngle);
-            const x2 = cx + radius * Math.cos(endAngle);
-            const y2 = cy + radius * Math.sin(endAngle);
+            const x1 = cx + radius * Math.cos(startAngle); const y1 = cy + radius * Math.sin(startAngle);
+            const x2 = cx + radius * Math.cos(endAngle); const y2 = cy + radius * Math.sin(endAngle);
             const largeArc = step > Math.PI ? 1 : 0;
             const pathData = `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
             slices.push(<path key={i} d={pathData} fill={colors[i % colors.length]} stroke="white" strokeWidth="2" />);
         }
-
         return (
             <div className="flex justify-center my-4">
                 <svg width="200" height="200" viewBox="0 0 200 200">
@@ -107,32 +92,25 @@ export const GeometryVisual = ({ data }) => {
             const x = (i % 10) * cellSize;
             const y = Math.floor(i / 10) * cellSize;
             const isColored = i < colored;
-            cells.push(
-                <rect key={i} x={x} y={y} width={cellSize - 2} height={cellSize - 2} fill={isColored ? "#3b82f6" : "#f1f5f9"} stroke={isColored ? "#2563eb" : "#e2e8f0"} rx="4" />
-            );
+            cells.push(<rect key={i} x={x} y={y} width={cellSize - 2} height={cellSize - 2} fill={isColored ? "#3b82f6" : "#f1f5f9"} stroke={isColored ? "#2563eb" : "#e2e8f0"} rx="4" />);
         }
         return <div className="flex justify-center my-4"><svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{cells}</svg></div>;
     }
 
-    // --- SHAPES RENDERER HELPERS ---
+    // --- SHAPES RENDERER ---
     const mkTxt = (x, y, txt, anchor = "middle", baseline = "middle", color = "#374151") =>
         <text key={`${x}-${y}-${txt}`} x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
 
     const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
         const cx = 150 + offsetX;
         const cy = 125 + offsetY;
-        
-        // Ensure dims is an object to prevent crashes
         const safeDims = dims || {};
-        
         const maxDim = Math.max(safeDims.width || 0, safeDims.height || 0, (safeDims.radius || 0) * 2) || 10;
         const baseScale = (120 / maxDim) * scale;
-
         const sw = (safeDims.width || 0) * baseScale;
         const sh = (safeDims.height || 0) * baseScale;
         const sr = (safeDims.radius || 0) * baseScale;
 
-        // Resolve aliases for labels (robust fallback)
         const l_b = labels?.b || labels?.base || labels?.width || labels?.w || (type === 'rectangle' ? safeDims.width : null);
         const l_h = labels?.h || labels?.height || (type === 'rectangle' ? safeDims.height : null);
         const l_hyp = labels?.hyp || labels?.hypotenuse || labels?.c || labels?.diagonal;
@@ -147,13 +125,9 @@ export const GeometryVisual = ({ data }) => {
                 </g>
             );
         }
-
         if (type === 'triangle') {
-            const L = cx - sw / 2;
-            const R = cx + sw / 2;
-            const T = cy - sh / 2;
-            const B = cy + sh / 2;
-
+            const L = cx - sw / 2; const R = cx + sw / 2;
+            const T = cy - sh / 2; const B = cy + sh / 2;
             if (safeDims.subtype === 'right') {
                 const p1 = { x: L, y: T }; const p2 = { x: L, y: B }; const p3 = { x: R, y: B };
                 const path = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
@@ -165,24 +139,18 @@ export const GeometryVisual = ({ data }) => {
                         {l_hyp && mkTxt(cx + 10, cy - 10, l_hyp, "start")}
                     </g>
                 );
-            } 
-            else {
-                // Isosceles/General Triangle
+            } else {
                 const points = `${L},${B} ${R},${B} ${cx},${T}`;
                 return (
                     <g>
-                        {/* Height Line */}
                         <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
-                        {/* Triangle Body */}
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                        {/* Labels */}
                         {l_b && mkTxt(cx, B + 25, l_b)}
                         {l_h && mkTxt(cx + 5, cy, l_h, "start")}
                     </g>
                 );
             }
         }
-
         if (type === 'circle') {
             const isDiameter = safeDims.show === 'diameter';
             const labelTxt = labels?.val || (labels?.r ? `r=${labels.r}` : (labels?.diameter ? `d=${labels.diameter}` : null));
@@ -207,13 +175,10 @@ export const GeometryVisual = ({ data }) => {
         return null;
     };
 
-    // --- COMPOSITE VISUALS ---
-
     if (data.type === 'similarity_compare') {
         const shapeType = data.shapeType || 'triangle';
         const leftDims = { ...data.left, width: 40, height: 40, radius: 20, subtype: shapeType === 'triangle' ? 'isosceles' : undefined };
         const rightDims = { ...data.right, width: 60, height: 60, radius: 30, subtype: shapeType === 'triangle' ? 'isosceles' : undefined };
-
         return (
             <svg width="500" height="250" viewBox="0 0 500 250" className="my-2 w-full mx-auto" style={{ maxWidth: '500px' }}>
                 <RenderShape type={shapeType} dims={leftDims} labels={data.left.labels} offsetX={-25} scale={0.8} />
@@ -224,18 +189,10 @@ export const GeometryVisual = ({ data }) => {
     }
 
     if (data.type === 'scale_single' || data.type === 'scale_compare') { 
-        const shapeEmojis = { 
-            square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', cube: '🧊', cylinder: '🛢️', 
-            pyramid: '⛰️', cone: '🍦', sphere: '🔮', arrow: '➡', star: '⭐', lightning: '⚡', 
-            key: '🔑', heart: '❤️', cloud: '☁️', moon: '🌙', sun: '☀️', magnifying_glass: '🔍', map: '🗺️',
-            car: '🚗', ladybug: '🐞', house: '🏠'
-        }; 
+        const shapeEmojis = { square: '⬛', rectangle: '▭', circle: '⚫', triangle: '🔺', cube: '🧊', cylinder: '🛢️', pyramid: '⛰️', cone: '🍦', sphere: '🔮', arrow: '➡', star: '⭐', lightning: '⚡', key: '🔑', heart: '❤️', cloud: '☁️', moon: '🌙', sun: '☀️', magnifying_glass: '🔍', map: '🗺️', car: '🚗', ladybug: '🐞', house: '🏠' }; 
         const emoji = shapeEmojis[data.shape] || '📦'; 
         const ShapeIcon = ({ size }) => <div className="flex items-center justify-center text-6xl select-none" style={{ fontSize: size }}>{emoji}</div>; 
-        
-        if (data.type === 'scale_single') 
-            return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="80px" /><span className="bg-white px-4 py-2 rounded shadow text-3xl font-bold font-mono border border-gray-200">{data.label}</span></div>; 
-        
+        if (data.type === 'scale_single') return <div className="flex flex-col items-center gap-2 my-4"><ShapeIcon size="80px" /><span className="bg-white px-4 py-2 rounded shadow text-3xl font-bold font-mono border border-gray-200">{data.label}</span></div>; 
         return (
             <div className="flex items-center justify-center gap-4 sm:gap-8 my-6">
                 <div className="flex flex-col items-center gap-2"><span className="text-base font-bold uppercase text-gray-400 mb-1">{data.leftLabel}</span><ShapeIcon size="60px" /><span className="text-2xl font-bold font-mono bg-white px-3 rounded border mt-2">{data.leftValue}</span></div>
@@ -245,6 +202,7 @@ export const GeometryVisual = ({ data }) => {
         ); 
     }
 
+    // TOP TRIANGLE THEOREM (Transversal)
     if (data.type === 'transversal') {
         const labels = data.labels;
         return (
@@ -254,18 +212,23 @@ export const GeometryVisual = ({ data }) => {
                 <path d="M 150 125 l -5 -5 m 5 5 l -5 5" stroke="#059669" strokeWidth="2" fill="none"/>
                 <path d="M 150 220 l -5 -5 m 5 5 l -5 5" stroke="#10b981" strokeWidth="2" fill="none"/>
 
+                {/* Standard Labels */}
                 <text x="85" y="80" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_top}</text>
                 <text x="150" y="115" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_top}</text>
                 <text x="150" y="240" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_bot}</text>
 
-                <g transform="translate(-10, 0)"> 
-                    <line x1="110" y1="20" x2="10" y2="210" stroke="#64748b" strokeWidth="2" />
-                    <line x1="110" y1="20" x2="120" y2="25" stroke="#64748b" strokeWidth="2" />
-                    <line x1="10" y1="210" x2="20" y2="215" stroke="#64748b" strokeWidth="2" />
-                    <text x="50" y="115" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end" dominantBaseline="middle">
-                        {labels.left_tot}
-                    </text>
-                </g>
+                {/* Conditional Labels: Total Bracket OR Bottom Extension */}
+                {labels.left_tot && (
+                    <g transform="translate(-10, 0)"> 
+                        <line x1="110" y1="20" x2="10" y2="210" stroke="#64748b" strokeWidth="2" />
+                        <line x1="110" y1="20" x2="120" y2="25" stroke="#64748b" strokeWidth="2" />
+                        <line x1="10" y1="210" x2="20" y2="215" stroke="#64748b" strokeWidth="2" />
+                        <text x="50" y="115" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end" dominantBaseline="middle">{labels.left_tot}</text>
+                    </g>
+                )}
+                {labels.left_bot && (
+                    <text x="65" y="170" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_bot}</text>
+                )}
             </svg>
         );
     }
@@ -315,7 +278,6 @@ export const GeometryVisual = ({ data }) => {
 
     return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
-GeometryVisual.requiresCanvas = true;
 
 export const GraphCanvas = ({ data }) => {
     const canvasRef = useRef(null);
