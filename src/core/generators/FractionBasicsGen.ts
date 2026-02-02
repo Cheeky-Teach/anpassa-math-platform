@@ -102,13 +102,14 @@ export class FractionBasicsGen {
         const multiplier = MathUtils.randomInt(2, 12);
         const total = denom * multiplier; 
         
-        const desc = lang === 'sv'
-            ? `Beräkna $\\frac{1}{${denom}}$ av ${total} kr.`
-            : `Calculate $\\frac{1}{${denom}}$ of ${total} kr.`;
+        const desc = lang === 'sv' ? "Beräkna:" : "Calculate:";
+        // Use separate latex field for consistent rendering
+        const latexStr = `\\frac{1}{${denom}} \\text{ ${lang === 'sv' ? 'av' : 'of'} } ${total} \\text{ kr}`;
 
         return {
             renderData: {
                 description: desc,
+                latex: latexStr,
                 answerType: 'numeric',
                 geometry: null
             },
@@ -139,9 +140,9 @@ export class FractionBasicsGen {
             return {
                 renderData: {
                     description: lang === 'sv' 
-                        ? `Skriv ${whole} $\\frac{${num}}{${den}}$ i bråkform (utan heltal).` 
-                        : `Write ${whole} $\\frac{${num}}{${den}}$ as an improper fraction.`,
-                    // UPDATED: 'fraction' triggers the vertical stack input
+                        ? "Skriv i bråkform (utan heltal):" 
+                        : "Write as an improper fraction:",
+                    latex: `${whole} \\frac{${num}}{${den}}`,
                     answerType: 'fraction',
                     geometry: null
                 },
@@ -160,10 +161,10 @@ export class FractionBasicsGen {
             return {
                 renderData: {
                     description: lang === 'sv'
-                        ? `Skriv $\\frac{${improperNum}}{${den}}$ i blandad form (heltal och bråk).`
-                        : `Write $\\frac{${improperNum}}{${den}}$ as a mixed number.`,
-                    // UPDATED: 'mixed_fraction' triggers the 3-box input
-                    answerType: 'fraction', 
+                        ? "Skriv i blandad form (heltal och bråk):"
+                        : "Write as a mixed number:",
+                    latex: `\\frac{${improperNum}}{${den}}`,
+                    answerType: 'mixed_fraction', 
                     geometry: null
                 },
                 token: this.toBase64(`${whole} ${num}/${den}`),
@@ -197,7 +198,8 @@ export class FractionBasicsGen {
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Förkorta $\\frac{${n}}{${d}}$ så långt det går.` : `Simplify $\\frac{${n}}{${d}}$ to its lowest terms.`,
+                    description: lang === 'sv' ? "Förkorta så långt det går:" : "Simplify to its lowest terms:",
+                    latex: `\\frac{${n}}{${d}}`,
                     answerType: 'fraction',
                     geometry: null
                 },
@@ -222,8 +224,9 @@ export class FractionBasicsGen {
             return {
                 renderData: {
                     description: lang === 'sv' 
-                        ? `Förläng $\\frac{${n}}{${d}}$ så att nämnaren blir ${targetD}.` 
-                        : `Extend $\\frac{${n}}{${d}}$ so the denominator becomes ${targetD}.`,
+                        ? `Förläng bråket så att nämnaren blir ${targetD}:` 
+                        : `Extend the fraction so the denominator becomes ${targetD}:`,
+                    latex: `\\frac{${n}}{${d}}`,
                     answerType: 'fraction',
                     geometry: null
                 },
@@ -289,9 +292,8 @@ export class FractionBasicsGen {
 
             return {
                 renderData: {
-                    description: lang === 'sv' 
-                        ? `Skriv $\\frac{${item.n}}{${item.d}}$ som decimaltal.` 
-                        : `Write $\\frac{${item.n}}{${item.d}}$ as a decimal.`,
+                    description: lang === 'sv' ? "Skriv som decimaltal:" : "Write as a decimal:",
+                    latex: `\\frac{${item.n}}{${item.d}}`,
                     answerType: 'numeric',
                     geometry: null
                 },
@@ -305,12 +307,12 @@ export class FractionBasicsGen {
             };
         } else {
             // Decimal -> Fraction
-            // Use reverse logic: 0.2 -> 1/5
             return {
                 renderData: {
                     description: lang === 'sv' 
-                        ? `Skriv ${item.dec} som ett bråk (enklaste form).` 
-                        : `Write ${item.dec} as a fraction (simplest form).`,
+                        ? "Skriv som ett bråk (enklaste form):"
+                        : "Write as a fraction (simplest form):",
+                    latex: `${item.dec}`,
                     answerType: 'fraction',
                     geometry: null
                 },
