@@ -22,43 +22,81 @@ export class FractionBasicsGen {
 
     // Level 1: Visual Fractions (Marbles & Shapes)
     private level1_Visuals(lang: string): any {
-        // Reuse Probability Marbles Logic
-        const red = MathUtils.randomInt(1, 5);
-        const blue = MathUtils.randomInt(1, 5);
-        const green = MathUtils.randomInt(1, 5);
-        const total = red + blue + green;
-        
-        const targetColor = MathUtils.randomChoice(['red', 'blue', 'green']);
-        const count = targetColor === 'red' ? red : (targetColor === 'blue' ? blue : green);
-        
-        const colorNameSv = targetColor === 'red' ? 'röda' : (targetColor === 'blue' ? 'blåa' : 'gröna');
-        const colorNameEn = targetColor;
+        const type = MathUtils.randomChoice(['marbles', 'grid']);
 
-        const desc = lang === 'sv' 
-            ? `Hur stor andel av kulorna är ${colorNameSv}? Svara i bråkform.` 
-            : `What fraction of the marbles are ${colorNameEn}? Answer as a fraction.`;
+        if (type === 'marbles') {
+            // Reuse Probability Marbles Logic
+            const red = MathUtils.randomInt(1, 5);
+            const blue = MathUtils.randomInt(1, 5);
+            const green = MathUtils.randomInt(1, 5);
+            const total = red + blue + green;
+            
+            const targetColor = MathUtils.randomChoice(['red', 'blue', 'green']);
+            const count = targetColor === 'red' ? red : (targetColor === 'blue' ? blue : green);
+            
+            const colorNameSv = targetColor === 'red' ? 'röda' : (targetColor === 'blue' ? 'blåa' : 'gröna');
+            const colorNameEn = targetColor;
 
-        return {
-            renderData: {
-                description: desc,
-                answerType: 'fraction', // Triggers the new InputComponent
-                geometry: {
-                    type: 'probability_marbles',
-                    items: { red, blue, green }
-                }
-            },
-            token: this.toBase64(`${count}/${total}`),
-            clues: [
-                { 
-                    text: lang === 'sv' ? "Räkna först hur många kulor det finns totalt (nämnaren)." : "First count how many marbles there are in total (the denominator).",
-                    latex: `\\text{Total} = ${total}`
+            const desc = lang === 'sv' 
+                ? `Hur stor andel av kulorna är ${colorNameSv}? Svara i bråkform.` 
+                : `What fraction of the marbles are ${colorNameEn}? Answer as a fraction.`;
+
+            return {
+                renderData: {
+                    description: desc,
+                    answerType: 'fraction', // Triggers the new InputComponent
+                    geometry: {
+                        type: 'probability_marbles',
+                        items: { red, blue, green }
+                    }
                 },
-                { 
-                    text: lang === 'sv' ? `Räkna sedan hur många som är ${colorNameSv} (täljaren).` : `Then count how many are ${colorNameEn} (the numerator).`,
-                    latex: `\\text{${colorNameEn}} = ${count}`
-                }
-            ]
-        };
+                token: this.toBase64(`${count}/${total}`),
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Räkna först hur många kulor det finns totalt (nämnaren)." : "First count how many marbles there are in total (the denominator).",
+                        latex: `\\text{Total} = ${total}`
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna sedan hur många som är ${colorNameSv} (täljaren).` : `Then count how many are ${colorNameEn} (the numerator).`,
+                        latex: `\\text{${colorNameEn}} = ${count}`
+                    }
+                ]
+            };
+        } else {
+            // Percent Grid Logic
+            // Generate a number, biased towards nice numbers but allowing others
+            const niceNumbers = [10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90];
+            const colored = MathUtils.randomInt(0, 1) === 1 
+                ? MathUtils.randomChoice(niceNumbers)
+                : MathUtils.randomInt(1, 99);
+            
+            const desc = lang === 'sv'
+                ? "Hur stor andel av rutan är färgad? Svara i bråkform."
+                : "What fraction of the grid is colored? Answer as a fraction.";
+
+            return {
+                renderData: {
+                    description: desc,
+                    answerType: 'fraction',
+                    geometry: {
+                        type: 'percent_grid',
+                        total: 100,
+                        colored: colored
+                    }
+                },
+                token: this.toBase64(`${colored}/100`),
+                clues: [
+                    {
+                        text: lang === 'sv' ? "Hela rutan består av 100 små rutor (nämnaren)." : "The grid consists of 100 small squares (the denominator).",
+                        latex: `\\text{Total} = 100`
+                    },
+                    {
+                        text: lang === 'sv' ? "Räkna de färgade rutorna (täljaren)." : "Count the colored squares (the numerator).",
+                        latex: `\\text{Del} = ${colored}`
+                    }
+                ]
+            };
+        }
     }
 
     // Level 2: Parts of Quantity (1/n of X)

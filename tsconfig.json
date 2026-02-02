@@ -6,7 +6,6 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
-    /* Bundler mode for Vite + Vercel */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
@@ -14,11 +13,10 @@
     "noEmit": true,
     "jsx": "react-jsx",
     
-    /* RELAXED STRICTNESS SETTINGS */
-    "strict": false,               // Disables strict mode (fixes 'never' array inference)
-    "noImplicitAny": false,        // Allows 'any' types implicitly
-    "strictNullChecks": false,     // More forgiving with null/undefined
-    "suppressImplicitAnyIndexErrors": true, // Fixes potential indexing errors
+    "strict": false,               
+    "noImplicitAny": false,        
+    "strictNullChecks": false,     
+    "suppressImplicitAnyIndexErrors": true, 
     
     "baseUrl": ".",
     "paths": {

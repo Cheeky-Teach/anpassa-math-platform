@@ -120,7 +120,7 @@ export const GeometryVisual = ({ data }) => {
         return <div className="flex justify-center my-4"><svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{cells}</svg></div>;
     }
 
-    // --- SHAPES RENDERER ---
+        // --- SHAPES RENDERER ---
     const mkTxt = (x, y, txt, anchor = "middle", baseline = "middle", color = "#374151") =>
         <text key={`${x}-${y}-${txt}`} x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
 
@@ -135,12 +135,9 @@ export const GeometryVisual = ({ data }) => {
         const sh = (dims.height || 0) * baseScale;
         const sr = (dims.radius || 0) * baseScale;
 
-        // Resolve aliases for Base and Height
-        const l_b = labels?.b || labels?.base || labels?.width || labels?.w || labels?.s2 || (type === 'rectangle' ? dims.width : null);
-        const l_h = labels?.h || labels?.height || labels?.s1 || (type === 'rectangle' ? dims.height : null);
+        const l_b = labels?.b || labels?.base || labels?.width || labels?.w || (type === 'rectangle' ? dims.width : null);
+        const l_h = labels?.h || labels?.height || (type === 'rectangle' ? dims.height : null);
         const l_hyp = labels?.hyp || labels?.hypotenuse || labels?.c || labels?.diagonal;
-        const l_a1 = labels?.a1;
-        const l_a2 = labels?.a2;
         
         if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
             return (
@@ -179,23 +176,6 @@ export const GeometryVisual = ({ data }) => {
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
                         {l_b && mkTxt(cx, B + 25, l_b)}
                         {l_h && mkTxt(cx + 5, cy, l_h, "start")}
-
-                        {/* FIXED: Repositioned Angle Labels to the left and right of the shape to prevent overlap */}
-                        {dims.angles && (
-                            <>
-                                {/* Angle 1 arc and label (bottom left) - Moved to the left of the corner */}
-                                <path d={`M ${L+15} ${B} A 15 15 0 0 0 ${L+10.6} ${B-10.6}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />
-                                {l_a1 && mkTxt(L - 10, B - 5, l_a1, "end")}
-                                
-                                {/* Angle 2 arc and label (bottom right) - Moved to the right of the corner */}
-                                <path d={`M ${R-15} ${B} A 15 15 0 0 1 ${R-10.6} ${B-10.6}`} fill="none" stroke="#6b7280" strokeWidth="1.5" />
-                                {l_a2 && mkTxt(R + 10, B - 5, l_a2, "start")}
-                            </>
-                        )}
-
-                        {/* Generic Side labels if they aren't base/height */}
-                        {!l_b && labels?.s2 && mkTxt(cx, B + 25, labels.s2)}
-                        {!l_h && labels?.s1 && mkTxt(L - 10, cy, labels.s1, "end")}
                     </g>
                 );
             }
@@ -261,62 +241,33 @@ export const GeometryVisual = ({ data }) => {
         ); 
     }
 
+    // UPDATED: Transversal (Top Triangle Theorem) Visualization
     if (data.type === 'transversal') {
         const labels = data.labels;
         return (
             <svg width="300" height="250" viewBox="0 0 300 250" className="my-2 w-full max-w-[300px] mx-auto">
                 <polygon points="150,30 50,220 250,220" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.3" />
                 <line x1="100" y1="125" x2="200" y2="125" stroke="#059669" strokeWidth="3" />
-                <text x="85" y="80" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_top}</text>
-                <text x="40" y="150" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_tot}</text>
-                <text x="150" y="115" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_top}</text>
-                <text x="150" y="240" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_bot}</text>
                 <path d="M 150 125 l -5 -5 m 5 5 l -5 5" stroke="#059669" strokeWidth="2" fill="none"/>
                 <path d="M 150 220 l -5 -5 m 5 5 l -5 5" stroke="#10b981" strokeWidth="2" fill="none"/>
-            </svg>
-        );
-    }
 
-    if (data.type === 'compare_shapes_area') {
-        return (
-             <svg width="500" height="250" viewBox="0 0 500 250" className="my-2 w-full mx-auto" style={{ maxWidth: '500px' }}>
-                <RenderShape type={data.shapeType} dims={data.left} areaText={data.left.area} offsetX={-25} scale={0.8} />
-                <text x="250" y="125" textAnchor="middle" fontSize="30" fill="#cbd5e1">→</text>
-                <RenderShape type={data.shapeType} dims={data.right} areaText={data.right.area} offsetX={225} scale={1.2} />
-            </svg>
-        );
-    }
+                {/* Top Segment Label */}
+                <text x="85" y="80" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_top}</text>
 
-    if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle'].includes(data.type)) {
-        return (
-            <svg width="300" height="250" viewBox="0 0 300 250" className="my-2 w-full max-w-[300px] mx-auto">
-                <RenderShape type={data.type} dims={data} labels={data.labels} />
+                {/* Base Labels */}
+                <text x="150" y="115" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_top}</text>
+                <text x="150" y="240" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_bot}</text>
+
+                {/* NEW: Dimension Line for Total Left Side (Shifted Left) */}
+                <g transform="translate(-10, 0)"> 
+                    <line x1="110" y1="20" x2="10" y2="210" stroke="#64748b" strokeWidth="2" />
+                    <line x1="110" y1="20" x2="120" y2="25" stroke="#64748b" strokeWidth="2" />
+                    <line x1="10" y1="210" x2="20" y2="215" stroke="#64748b" strokeWidth="2" />
+                    <text x="50" y="115" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end" dominantBaseline="middle">
+                        {labels.left_tot}
+                    </text>
+                </g>
             </svg>
-        );
-    }
-    
-    if (data.type === 'composite') {
-        return (
-            <div className="flex justify-center my-4">
-                <svg width="200" height="200" viewBox="0 0 200 200" className="border border-gray-100 rounded-lg bg-white shadow-sm">
-                    {data.subtype === 'house' ? (
-                        <>
-                            <rect x="50" y="80" width="100" height="80" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            <polygon points="50,80 150,80 100,20" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            <text x="160" y="120" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.h}</text>
-                            <text x="100" y="180" textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.w}</text>
-                            <text x="130" y="60" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.h_roof}</text>
-                        </>
-                    ) : (
-                        <>
-                            <rect x="50" y="70" width="100" height="100" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            <path d="M 50 70 A 50 50 0 0 1 150 70" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            <text x="100" y="190" textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.w}</text>
-                            <text x="160" y="120" textAnchor="start" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.h}</text>
-                        </>
-                    )}
-                </svg>
-            </div>
         );
     }
 
