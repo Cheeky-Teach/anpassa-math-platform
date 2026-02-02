@@ -11,6 +11,10 @@ export class SimilarityGen {
         }
     }
 
+    private toBase64(str: string): string {
+        return Buffer.from(str).toString('base64');
+    }
+
     // Level 1: Concept (Similar or Not?)
     private level1_Concept(lang: string): any {
         const isSimilar = MathUtils.randomInt(0, 1) === 1;
@@ -82,11 +86,11 @@ export class SimilarityGen {
             renderData: {
                 description: desc,
                 answerType: 'multiple_choice',
-                choices: [correct, wrong],
+                options: MathUtils.shuffle([correct, wrong]), // Assuming options expects shuffled array
                 geometry: geom,
                 latex: ""
             },
-            token: Buffer.from(correct).toString('base64'),
+            token: this.toBase64(correct),
             clues: steps
         };
     }
@@ -148,7 +152,7 @@ export class SimilarityGen {
                 answerType: 'text',
                 latex: ""
             },
-            token: Buffer.from(ans.toString()).toString('base64'),
+            token: this.toBase64(ans.toString()),
             clues: clues
         };
     }
@@ -160,11 +164,20 @@ export class SimilarityGen {
         const tot = top + add;
         
         const smallBase = MathUtils.randomInt(5, 12);
-        const largeBase = (tot / top) * smallBase;
+        // Calculation: Scale = tot/top. LargeBase = Scale * smallBase.
+        const scale = tot / top;
+        const largeBase = scale * smallBase;
         
-        // Ensure integer answer or simple decimal
-        // Reroll if ugly
-        if (!Number.isInteger(largeBase) && (largeBase * 10) % 5 !== 0) return this.level3_TopTriangle(lang);
+        // Reroll if scale logic produces ugly decimal not easily explainable, or if bases are not integers for simplicity in this level
+        // We want the scale factor to be relatively clean or the answer to be an integer.
+        // Let's force integer answer:
+        if (!Number.isInteger(largeBase)) return this.level3_TopTriangle(lang);
+
+        // Clue logic setup
+        // 1. Identify scale factor (Big Side / Small Side)
+        // 2. Multiply base by scale factor
+        
+        const scaleStr = Number.isInteger(scale) ? scale.toString() : scale.toFixed(1); 
 
         return {
             renderData: { 
@@ -173,10 +186,20 @@ export class SimilarityGen {
                 answerType: 'text',
                 latex: ""
             },
-            token: Buffer.from(largeBase.toString()).toString('base64'),
+            token: this.toBase64(largeBase.toString()),
             clues: [
-                { text: lang === 'sv' ? "Topptriangelsatsen: Liten/Stor = Liten/Stor" : "Top Triangle Theorem: Small side / Big side = Small base / Big base", latex: `\\frac{${top}}{${tot}} = \\frac{${smallBase}}{x}` },
-                { text: lang === 'sv' ? "Lös ut x." : "Solve for x.", latex: `x = \\frac{${tot} \\cdot ${smallBase}}{${top}} = \\mathbf{${largeBase}}` }
+                { 
+                    text: lang === 'sv' 
+                        ? "1. Räkna ut hur många gånger större den stora triangeln är (Skala)." 
+                        : "1. Calculate how many times bigger the large triangle is (Scale Factor).", 
+                    latex: `\\text{Skala} = \\frac{\\text{Stor Sida}}{\\text{Liten Sida}} = \\frac{${tot}}{${top}} = ${scaleStr}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `2. Multiplicera den lilla basen med skalan för att få x.` 
+                        : `2. Multiply the small base by the scale to get x.`, 
+                    latex: `x = ${smallBase} \\cdot ${scaleStr} = \\mathbf{${largeBase}}` 
+                }
             ]
         };
     }
@@ -211,7 +234,7 @@ export class SimilarityGen {
                 answerType: 'text',
                 latex: ""
             },
-            token: Buffer.from(ans.toString()).toString('base64'),
+            token: this.toBase64(ans.toString()),
             clues: [
                 { text: lang === 'sv' ? "Pythagoras sats:" : "Pythagoras theorem:", latex: "a^2 + b^2 = c^2" },
                 { text: lang === 'sv' ? (findHyp ? "För hypotenusan, addera kvadraterna." : "För en katet, subtrahera.") : (findHyp ? "Add squares." : "Subtract squares."), latex: clue }
