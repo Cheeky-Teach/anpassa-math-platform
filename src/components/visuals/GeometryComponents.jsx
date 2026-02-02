@@ -8,8 +8,7 @@ export const GeometryVisual = ({ data }) => {
 
     // --- STATISTICS: FREQUENCY TABLE ---
     if (data.type === 'frequency_table') {
-        const { headers, rows } = data; // headers: ["Value", "Freq"], rows: [[1, 5], [2, 3]...]
-        
+        const { headers, rows } = data;
         return (
             <div className="flex justify-center my-4 w-full">
                 <div className="border border-slate-300 rounded-lg overflow-hidden shadow-sm bg-white min-w-[200px]">
@@ -39,15 +38,11 @@ export const GeometryVisual = ({ data }) => {
     // --- PROBABILITY: MARBLES ---
     if (data.type === 'probability_marbles') {
         const { red, blue, green } = data.items;
-        const total = red + blue + green;
-        
         const colors = [];
         for(let i=0; i<red; i++) colors.push('#ef4444');
         for(let i=0; i<blue; i++) colors.push('#3b82f6');
         for(let i=0; i<green; i++) colors.push('#22c55e');
         
-        // Pseudo-shuffle for visual stability based on counts
-        // Just interleave them simply for deterministic render
         const mixed = [];
         while(colors.length) {
             if (colors.length % 3 === 0) mixed.push(colors.pop()); 
@@ -58,7 +53,6 @@ export const GeometryVisual = ({ data }) => {
             <div className="flex justify-center my-4">
                 <svg width="200" height="200" viewBox="0 0 200 200" className="bg-slate-100 rounded-full border-4 border-slate-300 shadow-inner">
                     {mixed.map((c, i) => {
-                        // Spiral packing approximation
                         const angle = i * 2.4; 
                         const dist = 15 + i * 4; 
                         const x = 100 + dist * Math.cos(angle);
@@ -72,7 +66,7 @@ export const GeometryVisual = ({ data }) => {
 
     // --- PROBABILITY: SPINNER ---
     if (data.type === 'probability_spinner') {
-        const { sections, target } = data; 
+        const { sections } = data; 
         const radius = 80;
         const cx = 100;
         const cy = 100;
@@ -120,7 +114,7 @@ export const GeometryVisual = ({ data }) => {
         return <div className="flex justify-center my-4"><svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{cells}</svg></div>;
     }
 
-        // --- SHAPES RENDERER ---
+    // --- SHAPES RENDERER HELPERS ---
     const mkTxt = (x, y, txt, anchor = "middle", baseline = "middle", color = "#374151") =>
         <text key={`${x}-${y}-${txt}`} x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
 
@@ -128,15 +122,19 @@ export const GeometryVisual = ({ data }) => {
         const cx = 150 + offsetX;
         const cy = 125 + offsetY;
         
-        const maxDim = Math.max(dims.width || 0, dims.height || 0, (dims.radius || 0) * 2) || 10;
+        // Ensure dims is an object to prevent crashes
+        const safeDims = dims || {};
+        
+        const maxDim = Math.max(safeDims.width || 0, safeDims.height || 0, (safeDims.radius || 0) * 2) || 10;
         const baseScale = (120 / maxDim) * scale;
 
-        const sw = (dims.width || 0) * baseScale;
-        const sh = (dims.height || 0) * baseScale;
-        const sr = (dims.radius || 0) * baseScale;
+        const sw = (safeDims.width || 0) * baseScale;
+        const sh = (safeDims.height || 0) * baseScale;
+        const sr = (safeDims.radius || 0) * baseScale;
 
-        const l_b = labels?.b || labels?.base || labels?.width || labels?.w || (type === 'rectangle' ? dims.width : null);
-        const l_h = labels?.h || labels?.height || (type === 'rectangle' ? dims.height : null);
+        // Resolve aliases for labels (robust fallback)
+        const l_b = labels?.b || labels?.base || labels?.width || labels?.w || (type === 'rectangle' ? safeDims.width : null);
+        const l_h = labels?.h || labels?.height || (type === 'rectangle' ? safeDims.height : null);
         const l_hyp = labels?.hyp || labels?.hypotenuse || labels?.c || labels?.diagonal;
         
         if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
@@ -156,7 +154,7 @@ export const GeometryVisual = ({ data }) => {
             const T = cy - sh / 2;
             const B = cy + sh / 2;
 
-            if (dims.subtype === 'right') {
+            if (safeDims.subtype === 'right') {
                 const p1 = { x: L, y: T }; const p2 = { x: L, y: B }; const p3 = { x: R, y: B };
                 const path = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
                 return (
@@ -169,11 +167,15 @@ export const GeometryVisual = ({ data }) => {
                 );
             } 
             else {
+                // Isosceles/General Triangle
                 const points = `${L},${B} ${R},${B} ${cx},${T}`;
                 return (
                     <g>
+                        {/* Height Line */}
                         <line x1={cx} y1={T} x2={cx} y2={B} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
+                        {/* Triangle Body */}
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
+                        {/* Labels */}
                         {l_b && mkTxt(cx, B + 25, l_b)}
                         {l_h && mkTxt(cx + 5, cy, l_h, "start")}
                     </g>
@@ -182,21 +184,21 @@ export const GeometryVisual = ({ data }) => {
         }
 
         if (type === 'circle') {
-            const isDiameter = dims.show === 'diameter';
-            const labelTxt = labels?.val || (labels?.r ? `r=${labels.r}` : `d=${labels.diameter}`);
+            const isDiameter = safeDims.show === 'diameter';
+            const labelTxt = labels?.val || (labels?.r ? `r=${labels.r}` : (labels?.diameter ? `d=${labels.diameter}` : null));
             return (
                 <g>
                     <circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
                     {isDiameter ? (
                         <>
                             <line x1={cx - sr} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" strokeDasharray="4" />
-                            <text x={cx} y={cy - 15} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labelTxt}</text>
+                            {labelTxt && <text x={cx} y={cy - 15} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labelTxt}</text>}
                         </>
                     ) : (
                         <>
                             <circle cx={cx} cy={cy} r={3} fill="#374151" />
                             <line x1={cx} y1={cy} x2={cx + sr} y2={cy} stroke="#374151" strokeWidth="2" />
-                            <text x={cx + sr / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labelTxt}</text>
+                            {labelTxt && <text x={cx + sr / 2} y={cy - 10} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="22">{labelTxt}</text>}
                         </>
                     )}
                 </g>
@@ -204,6 +206,8 @@ export const GeometryVisual = ({ data }) => {
         }
         return null;
     };
+
+    // --- COMPOSITE VISUALS ---
 
     if (data.type === 'similarity_compare') {
         const shapeType = data.shapeType || 'triangle';
@@ -241,7 +245,6 @@ export const GeometryVisual = ({ data }) => {
         ); 
     }
 
-    // UPDATED: Transversal (Top Triangle Theorem) Visualization
     if (data.type === 'transversal') {
         const labels = data.labels;
         return (
@@ -251,14 +254,10 @@ export const GeometryVisual = ({ data }) => {
                 <path d="M 150 125 l -5 -5 m 5 5 l -5 5" stroke="#059669" strokeWidth="2" fill="none"/>
                 <path d="M 150 220 l -5 -5 m 5 5 l -5 5" stroke="#10b981" strokeWidth="2" fill="none"/>
 
-                {/* Top Segment Label */}
                 <text x="85" y="80" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="end">{labels.left_top}</text>
-
-                {/* Base Labels */}
                 <text x="150" y="115" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_top}</text>
                 <text x="150" y="240" fontSize="18" fontWeight="bold" fill="#374151" textAnchor="middle">{labels.base_bot}</text>
 
-                {/* NEW: Dimension Line for Total Left Side (Shifted Left) */}
                 <g transform="translate(-10, 0)"> 
                     <line x1="110" y1="20" x2="10" y2="210" stroke="#64748b" strokeWidth="2" />
                     <line x1="110" y1="20" x2="120" y2="25" stroke="#64748b" strokeWidth="2" />
@@ -271,8 +270,52 @@ export const GeometryVisual = ({ data }) => {
         );
     }
 
-    return null;
+    if (data.type === 'compare_shapes_area') {
+        return (
+             <svg width="500" height="250" viewBox="0 0 500 250" className="my-2 w-full mx-auto" style={{ maxWidth: '500px' }}>
+                <RenderShape type={data.shapeType} dims={data.left} areaText={data.left.area} offsetX={-25} scale={0.8} />
+                <text x="250" y="125" textAnchor="middle" fontSize="30" fill="#cbd5e1">→</text>
+                <RenderShape type={data.shapeType} dims={data.right} areaText={data.right.area} offsetX={225} scale={1.2} />
+            </svg>
+        );
+    }
+
+    if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle'].includes(data.type)) {
+        return (
+            <svg width="300" height="250" viewBox="0 0 300 250" className="my-2 w-full max-w-[300px] mx-auto">
+                <RenderShape type={data.type} dims={data} labels={data.labels} />
+            </svg>
+        );
+    }
+    
+    if (data.type === 'composite') {
+        return (
+            <div className="flex justify-center my-4">
+                <svg width="200" height="200" viewBox="0 0 200 200" className="border border-gray-100 rounded-lg bg-white shadow-sm">
+                    {data.subtype === 'house' ? (
+                        <>
+                            <rect x="50" y="80" width="100" height="80" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            <polygon points="50,80 150,80 100,20" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            <text x="160" y="120" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.h}</text>
+                            <text x="100" y="180" textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.w}</text>
+                            <text x="130" y="60" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.h_roof}</text>
+                        </>
+                    ) : (
+                        <>
+                            <rect x="50" y="70" width="100" height="100" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            <path d="M 50 70 A 50 50 0 0 1 150 70" fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            <text x="100" y="190" textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.w}</text>
+                            <text x="160" y="120" textAnchor="start" fontWeight="bold" fill="#374151" fontSize="18">{data.labels.h}</text>
+                        </>
+                    )}
+                </svg>
+            </div>
+        );
+    }
+
+    return <div className="flex justify-center my-4"><div className="text-gray-400 text-sm">Visual</div></div>;
 };
+GeometryVisual.requiresCanvas = true;
 
 export const GraphCanvas = ({ data }) => {
     const canvasRef = useRef(null);
