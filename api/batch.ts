@@ -18,7 +18,7 @@ import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
 import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
 import { FractionBasicsGen } from '../src/core/generators/FractionBasicsGen.js';
 import { FractionArithGen } from '../src/core/generators/FractionArithGen.js';
-import { ChangeFactorGen } from '../src/core/generators/ChangeFactorGen.js';
+import { ChangeFactorGen } from '../src/core/generators/ChangeFactorGen.js'; // NEW
 
 interface VercelRequest extends IncomingMessage {
     body: any;
@@ -29,9 +29,6 @@ type VercelResponse = ServerResponse & {
     json: (data: any) => VercelResponse;
 };
 
-// Instantiate generators
-const graphGen = new LinearGraphGenerator();
-
 const generators: any = {
     arithmetic: new BasicArithmeticGen(),
     negative: new NegativeNumbersGen(),
@@ -41,33 +38,19 @@ const generators: any = {
     fraction_basics: new FractionBasicsGen(),
     fraction_arith: new FractionArithGen(),
     simplify: new ExpressionSimplificationGen(),
-    equation: new LinearEquationGen(),
-    
-    // FIX: Map both 'graph' and 'linear_graph'
-    graph: graphGen,
-    linear_graph: graphGen,
-
+    equation: new LinearEquationGen(), // Fixed import name
+    graph: new LinearGraphGenerator(),
     geometry: new GeometryGenerator(),
     scale: new ScaleGen(),
     volume: new VolumeGen(),
     similarity: new SimilarityGen(),
     pythagoras: new PythagorasGen(),
     probability: new ProbabilityGen(),
-    statistics: new StatisticsGen()
+    statistics: new StatisticsGen(),
+    change_factor: new ChangeFactorGen() // NEW
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS Handling
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
-
     const { requests } = req.body;
 
     if (!Array.isArray(requests)) {
@@ -76,14 +59,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         const results = requests.map((req: any) => {
-            // Check for alias mapping (e.g. if frontend sends 'topic' instead of 'category')
-            const cat = req.category || req.topic;
-            
-            if (!generators[cat]) {
-                console.warn(`Batch: Generator not found for ${cat}`);
-                return null;
-            }
-            return generators[cat].generate(Number(req.level), req.lang);
+            if (!generators[req.category]) return null;
+            return generators[req.category].generate(Number(req.level), req.lang);
         });
         res.status(200).json({ results });
     } catch (error) {
