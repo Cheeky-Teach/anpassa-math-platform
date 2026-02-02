@@ -25,7 +25,6 @@ export class FractionBasicsGen {
         const type = MathUtils.randomChoice(['marbles', 'grid']);
 
         if (type === 'marbles') {
-            // Reuse Probability Marbles Logic
             const red = MathUtils.randomInt(1, 5);
             const blue = MathUtils.randomInt(1, 5);
             const green = MathUtils.randomInt(1, 5);
@@ -44,7 +43,7 @@ export class FractionBasicsGen {
             return {
                 renderData: {
                     description: desc,
-                    answerType: 'fraction', // Triggers the new InputComponent
+                    answerType: 'fraction',
                     geometry: {
                         type: 'probability_marbles',
                         items: { red, blue, green }
@@ -63,16 +62,14 @@ export class FractionBasicsGen {
                 ]
             };
         } else {
-            // Percent Grid Logic
-            // Generate a number, biased towards nice numbers but allowing others
             const niceNumbers = [10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90];
             const colored = MathUtils.randomInt(0, 1) === 1 
-                ? MathUtils.randomChoice(niceNumbers)
+                ? MathUtils.randomChoice(niceNumbers) 
                 : MathUtils.randomInt(1, 99);
             
             const desc = lang === 'sv'
-                ? "Hur stor andel av rutan är färgad? Svara i bråkform."
-                : "What fraction of the grid is colored? Answer as a fraction.";
+                ? "Hur stor andel av rutan är färgad? Svara i bråkform (gärna enklaste form)."
+                : "What fraction of the grid is colored? Answer as a fraction (simplest form preferred).";
 
             return {
                 renderData: {
@@ -84,15 +81,15 @@ export class FractionBasicsGen {
                         colored: colored
                     }
                 },
-                token: this.toBase64(`${colored}/100`),
+                token: this.toBase64(`${colored}/100`), 
                 clues: [
                     {
-                        text: lang === 'sv' ? "Hela rutan består av 100 små rutor (nämnaren)." : "The grid consists of 100 small squares (the denominator).",
-                        latex: `\\text{Total} = 100`
+                        text: lang === 'sv' ? "Hela rutan består av 100 små rutor." : "The grid consists of 100 small squares.",
+                        latex: `\\text{Nämnare} = 100`
                     },
                     {
-                        text: lang === 'sv' ? "Räkna de färgade rutorna (täljaren)." : "Count the colored squares (the numerator).",
-                        latex: `\\text{Del} = ${colored}`
+                        text: lang === 'sv' ? `Det är ${colored} färgade rutor.` : `There are ${colored} colored squares.`,
+                        latex: `\\text{Täljare} = ${colored}`
                     }
                 ]
             };
@@ -103,7 +100,7 @@ export class FractionBasicsGen {
     private level2_PartsOfQuantity(lang: string): any {
         const denom = MathUtils.randomChoice([2, 3, 4, 5, 10, 100]);
         const multiplier = MathUtils.randomInt(2, 12);
-        const total = denom * multiplier; // Ensures clean division
+        const total = denom * multiplier; 
         
         const desc = lang === 'sv'
             ? `Beräkna $\\frac{1}{${denom}}$ av ${total} kr.`
@@ -134,7 +131,7 @@ export class FractionBasicsGen {
         const isMixedToImproper = MathUtils.randomInt(0, 1) === 1;
         const whole = MathUtils.randomInt(1, 5);
         const den = MathUtils.randomChoice([3, 4, 5, 6, 8]);
-        const num = MathUtils.randomInt(1, den - 1); // Proper fraction part
+        const num = MathUtils.randomInt(1, den - 1); 
         
         const improperNum = whole * den + num;
 
@@ -144,6 +141,7 @@ export class FractionBasicsGen {
                     description: lang === 'sv' 
                         ? `Skriv ${whole} $\\frac{${num}}{${den}}$ i bråkform (utan heltal).` 
                         : `Write ${whole} $\\frac{${num}}{${den}}$ as an improper fraction.`,
+                    // UPDATED: 'fraction' triggers the vertical stack input
                     answerType: 'fraction',
                     geometry: null
                 },
@@ -164,7 +162,8 @@ export class FractionBasicsGen {
                     description: lang === 'sv'
                         ? `Skriv $\\frac{${improperNum}}{${den}}$ i blandad form (heltal och bråk).`
                         : `Write $\\frac{${improperNum}}{${den}}$ as a mixed number.`,
-                    answerType: 'mixed_fraction', // Triggers Mixed Input
+                    // UPDATED: 'mixed_fraction' triggers the 3-box input
+                    answerType: 'fraction', 
                     geometry: null
                 },
                 token: this.toBase64(`${whole} ${num}/${den}`),
@@ -186,16 +185,12 @@ export class FractionBasicsGen {
         const isSimplify = MathUtils.randomInt(0, 1) === 1;
 
         if (isSimplify) {
-            // Create a fraction that can be simplified
             const baseN = MathUtils.randomInt(1, 9);
             const baseD = MathUtils.randomInt(baseN + 1, 12);
-            // Ensure base is irreducible? Not strictly necessary if we multiply by large factor, but good for uniqueness.
-            // Let's just pick a factor and multiply.
             const factor = MathUtils.randomChoice([2, 3, 4, 5]);
             const n = baseN * factor;
             const d = baseD * factor;
             
-            // Simplest form calculation for token
             const divisor = this.gcd(n, d);
             const simpleN = n / divisor;
             const simpleD = d / divisor;
@@ -218,7 +213,6 @@ export class FractionBasicsGen {
                 ]
             };
         } else {
-            // Extend
             const n = MathUtils.randomInt(1, 5);
             const d = MathUtils.randomChoice([2, 3, 4, 5]);
             const factor = MathUtils.randomInt(2, 5);
@@ -250,30 +244,49 @@ export class FractionBasicsGen {
 
     // Level 5: Benchmark Translations
     private level5_Decimals(lang: string): any {
-        const type = MathUtils.randomInt(1, 2); // 1: Frac->Dec, 2: Dec->Frac
+        const type = MathUtils.randomInt(1, 2); 
         
-        // The Benchmarks
+        // Benchmark data with "Base Unit" for clue generation
         const benchmarks = [
-            { n: 1, d: 2, dec: 0.5 },
-            { n: 1, d: 4, dec: 0.25 },
-            { n: 3, d: 4, dec: 0.75 },
-            { n: 1, d: 5, dec: 0.2 },
-            { n: 2, d: 5, dec: 0.4 },
-            { n: 3, d: 5, dec: 0.6 },
-            { n: 4, d: 5, dec: 0.8 },
-            { n: 1, d: 10, dec: 0.1 },
-            { n: 3, d: 10, dec: 0.3 },
-            { n: 1, d: 100, dec: 0.01 },
-            { n: 5, d: 100, dec: 0.05 }
+            { n: 1, d: 2, dec: 0.5, baseN: 1, baseD: 2, baseDec: 0.5 },
+            { n: 1, d: 4, dec: 0.25, baseN: 1, baseD: 4, baseDec: 0.25 },
+            { n: 3, d: 4, dec: 0.75, baseN: 1, baseD: 4, baseDec: 0.25 },
+            { n: 1, d: 5, dec: 0.2, baseN: 1, baseD: 5, baseDec: 0.2 },
+            { n: 2, d: 5, dec: 0.4, baseN: 1, baseD: 5, baseDec: 0.2 },
+            { n: 3, d: 5, dec: 0.6, baseN: 1, baseD: 5, baseDec: 0.2 },
+            { n: 4, d: 5, dec: 0.8, baseN: 1, baseD: 5, baseDec: 0.2 },
+            { n: 1, d: 10, dec: 0.1, baseN: 1, baseD: 10, baseDec: 0.1 },
+            { n: 3, d: 10, dec: 0.3, baseN: 1, baseD: 10, baseDec: 0.1 },
+            { n: 1, d: 100, dec: 0.01, baseN: 1, baseD: 100, baseDec: 0.01 },
+            { n: 5, d: 100, dec: 0.05, baseN: 1, baseD: 100, baseDec: 0.01 }
         ];
 
-        // 10% chance for 1/8
-        if (Math.random() < 0.1) benchmarks.push({ n: 1, d: 8, dec: 0.125 });
+        if (Math.random() < 0.1) benchmarks.push({ n: 1, d: 8, dec: 0.125, baseN: 1, baseD: 8, baseDec: 0.125 });
 
         const item = MathUtils.randomChoice(benchmarks);
 
         if (type === 1) {
             // Fraction -> Decimal
+            const isBase = item.n === item.baseN;
+            const multiplier = item.n;
+            
+            let clueText1 = "";
+            let latex1 = "";
+
+            if (isBase) {
+                // Direct mapping
+                clueText1 = lang === 'sv' 
+                    ? `Minns att 1/${item.d} är samma sak som ${item.dec}.`
+                    : `Remember that 1/${item.d} is equal to ${item.dec}.`;
+                latex1 = `\\frac{1}{${item.d}} = ${item.dec}`;
+            } else {
+                // Multiplier logic
+                clueText1 = lang === 'sv'
+                    ? `Kom ihåg att 1/${item.d} är ${item.baseDec}. Om du har ${item.n} stycken sådana, blir det:`
+                    : `Remember that 1/${item.d} is ${item.baseDec}. If you have ${item.n} of them, it becomes:`;
+                latex1 = `${item.n} \\cdot ${item.baseDec} = ${item.dec}`;
+            }
+
             return {
                 renderData: {
                     description: lang === 'sv' 
@@ -285,13 +298,14 @@ export class FractionBasicsGen {
                 token: this.toBase64(item.dec.toString()),
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Bråkstrecket betyder division." : "The fraction bar means division.",
-                        latex: `${item.n} \\div ${item.d} = ${item.dec}`
+                        text: clueText1,
+                        latex: latex1
                     }
                 ]
             };
         } else {
             // Decimal -> Fraction
+            // Use reverse logic: 0.2 -> 1/5
             return {
                 renderData: {
                     description: lang === 'sv' 
@@ -303,11 +317,13 @@ export class FractionBasicsGen {
                 token: this.toBase64(`${item.n}/${item.d}`),
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Tänk på positionssystemet (tiondelar, hundradelar)." : "Think about place value (tenths, hundredths).",
-                        latex: `${item.dec} = \\frac{${item.n * (1/this.gcd(item.n, item.d)) * (item.d/this.gcd(item.n, item.d))}}{...}` // Simplified hint logic
+                        text: lang === 'sv' 
+                            ? `Kom ihåg att ${item.baseDec} kan skrivas som 1/${item.baseD}.`
+                            : `Remember that ${item.baseDec} can be written as 1/${item.baseD}.`,
+                        latex: `${item.dec} = ${item.n} \\cdot \\frac{1}{${item.baseD}}` 
                     },
                     {
-                        text: lang === 'sv' ? "Förkorta bråket om det går." : "Simplify the fraction if possible.",
+                        text: lang === 'sv' ? "Multiplicera och svara:" : "Multiply and answer:",
                         latex: `\\frac{${item.n}}{${item.d}}`
                     }
                 ]

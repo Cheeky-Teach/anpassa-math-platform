@@ -5,7 +5,7 @@ export class FractionArithGen {
         switch (level) {
             case 1: return this.level1_SameDenom(lang);
             case 2: return this.level2_DiffDenom(lang);
-            case 3: return this.level3_AdvancedAdd(lang);
+            case 3: return this.level3_MixedNumbers(lang);
             case 4: return this.level4_Multiplication(lang);
             case 5: return this.level5_Division(lang);
             default: return this.level1_SameDenom(lang);
@@ -32,12 +32,16 @@ export class FractionArithGen {
     // Level 1: Same Denominators (+/-)
     private level1_SameDenom(lang: string): any {
         const op = MathUtils.randomChoice(['+', '-']);
-        const den = MathUtils.randomInt(3, 12);
+        const den = MathUtils.randomInt(3, 20); // Expanded range
         
         let n1 = MathUtils.randomInt(1, den - 1);
         let n2 = MathUtils.randomInt(1, den - 1);
         
-        if (op === '-' && n1 < n2) [n1, n2] = [n2, n1]; // Ensure positive result
+        // Prevent zero result and negatives
+        if (op === '-') {
+            if (n1 === n2) n2 = Math.max(1, n1 - 1); // Force diff
+            if (n1 < n2) [n1, n2] = [n2, n1];
+        }
 
         const resN = op === '+' ? n1 + n2 : n1 - n2;
         const resD = den;
@@ -49,7 +53,7 @@ export class FractionArithGen {
             renderData: {
                 description: desc,
                 latex: `\\frac{${n1}}{${den}} ${op} \\frac{${n2}}{${den}}`,
-                answerType: 'fraction',
+                answerType: 'fraction', // Triggers n/d input
                 geometry: null
             },
             token: this.toBase64(`${simp.n}/${simp.d}`),
@@ -69,52 +73,51 @@ export class FractionArithGen {
     // Level 2: Different Denominators (+/-)
     private level2_DiffDenom(lang: string): any {
         const op = MathUtils.randomChoice(['+', '-']);
-        
-        // Scenario A: One fits into other (2 and 4, 3 and 6)
-        // Scenario B: Co-prime (2 and 3, 3 and 4)
-        const scenario = MathUtils.randomChoice(['fit', 'coprime']);
+        const scenario = MathUtils.randomChoice(['fit', 'coprime', 'general']);
         
         let d1=0, d2=0;
         if (scenario === 'fit') {
-            d1 = MathUtils.randomInt(2, 5);
-            d2 = d1 * MathUtils.randomInt(2, 3);
+            d1 = MathUtils.randomInt(2, 8);
+            d2 = d1 * MathUtils.randomInt(2, 4);
+        } else if (scenario === 'coprime') {
+            d1 = MathUtils.randomInt(2, 7);
+            d2 = d1 + 1; 
         } else {
-            d1 = MathUtils.randomInt(2, 5);
-            d2 = d1 + 1; // 2&3, 3&4, 4&5
+            d1 = MathUtils.randomInt(3, 10);
+            d2 = MathUtils.randomInt(3, 10);
+            if (d1 === d2) d2++;
         }
         
-        let n1 = 1, n2 = 1;
-        // Make numerators small to keep arithmetic simple
-        n1 = MathUtils.randomInt(1, d1-1);
-        n2 = MathUtils.randomInt(1, d2-1);
+        let n1 = MathUtils.randomInt(1, d1-1);
+        let n2 = MathUtils.randomInt(1, d2-1);
 
         const commonD = this.lcm(d1, d2);
-        const adjN1 = n1 * (commonD / d1);
-        const adjN2 = n2 * (commonD / d2);
-        
-        // Ensure valid subtraction
-        if (op === '-' && adjN1 < adjN2) {
-             // Swap fractions logic roughly
-             const tempN = n1; const tempD = d1;
-             n1 = n2; d1 = d2;
-             n2 = tempN; d2 = tempD;
-        }
-
-        const finalN = op === '+' ? adjN1 + adjN2 : adjN1 - adjN2; // Note: Re-calc after swap might be needed if exact values matter, but logic holds.
-        // Actually, let's just calc proper result:
-        const term1 = n1 * d2; 
-        const term2 = n2 * d1;
-        const rawNum = op === '+' ? term1 + term2 : term1 - term2;
-        const rawDen = d1 * d2;
-        
-        // Better logic with LCM
         const extN1 = n1 * (commonD/d1);
         const extN2 = n2 * (commonD/d2);
-        const resN = op === '+' ? extN1 + extN2 : extN1 - extN2;
-        // Check negative again
-        if (resN < 0) return this.level2_DiffDenom(lang); // Retry
+        
+        // Prevent zero and negative
+        if (op === '-') {
+            if (extN1 === extN2) {
+                // Adjust n1 to be larger
+                n1 = Math.min(d1-1, n1+1); 
+                // Recalc extension
+            }
+            // Swap if needed
+            if (n1/d1 < n2/d2) {
+                [n1, n2] = [n2, n1];
+                [d1, d2] = [d2, d1];
+            }
+        }
 
-        const simp = this.simplify(resN, commonD);
+        // Recalculate finals after potential swap/adjust
+        const finalCommonD = this.lcm(d1, d2);
+        const fExtN1 = n1 * (finalCommonD/d1);
+        const fExtN2 = n2 * (finalCommonD/d2);
+        
+        const resN = op === '+' ? fExtN1 + fExtN2 : fExtN1 - fExtN2;
+        if (resN === 0) return this.level2_DiffDenom(lang); // Reroll if still zero
+
+        const simp = this.simplify(resN, finalCommonD);
 
         return {
             renderData: {
@@ -127,54 +130,87 @@ export class FractionArithGen {
             clues: [
                 { 
                     text: lang === 'sv' ? `Hitta gemensam nämnare (MGN) för ${d1} och ${d2}.` : `Find common denominator (LCD) for ${d1} and ${d2}.`,
-                    latex: `\\text{MGN} = ${commonD}`
+                    latex: `\\text{MGN} = ${finalCommonD}`
                 },
                 { 
                     text: lang === 'sv' ? "Förläng bråken." : "Extend the fractions.",
-                    latex: `\\frac{${extN1}}{${commonD}} ${op} \\frac{${extN2}}{${commonD}}`
+                    latex: `\\frac{${fExtN1}}{${finalCommonD}} ${op} \\frac{${fExtN2}}{${finalCommonD}}`
                 },
                 {
-                    latex: `\\frac{${resN}}{${commonD}} = \\frac{${simp.n}}{${simp.d}}`
+                    latex: `\\frac{${resN}}{${finalCommonD}} = \\frac{${simp.n}}{${simp.d}}`
                 }
             ]
         };
     }
 
-    // Level 3: Advanced Addition (Mixed Numbers / Improper)
-    private level3_AdvancedAdd(lang: string): any {
-        // 1 1/2 + 3/4
-        const w1 = 1;
-        const n1 = 1, d1 = 2;
-        const n2 = 3, d2 = 4;
+    // Level 3: Mixed Numbers (+/-)
+    private level3_MixedNumbers(lang: string): any {
+        const op = MathUtils.randomChoice(['+', '-']);
         
-        // Convert mixed to improper: 3/2
-        const impN1 = 3; 
-        // LCD is 4. -> 6/4
-        const extN1 = 6;
-        const extN2 = 3; 
-        // Sum = 9/4
-        const resN = 9;
-        const resD = 4;
+        // Generate two mixed numbers: A b/c
+        const w1 = MathUtils.randomInt(1, 3);
+        const d1 = MathUtils.randomInt(2, 6);
+        const n1 = MathUtils.randomInt(1, d1 - 1);
         
-        // Simplified Logic for variety
-        // Let's just generate one static type of problem structure for stability in this first version, or simple randomization
-        const problem = MathUtils.randomChoice([
-            { l: '1 \\frac{1}{2} + \\frac{1}{2}', ans: '2/1' },
-            { l: '1 \\frac{1}{4} + \\frac{3}{4}', ans: '2/1' },
-            { l: '1 \\frac{1}{3} + \\frac{1}{3}', ans: '5/3' },
-            { l: '\\frac{3}{5} + 1 \\frac{1}{5}', ans: '9/5' }
-        ]);
+        const w2 = MathUtils.randomInt(1, 2);
+        const d2 = MathUtils.randomInt(2, 6);
+        const n2 = MathUtils.randomInt(1, d2 - 1);
+
+        // Convert to improper for calculation
+        const impN1 = w1 * d1 + n1;
+        const impN2 = w2 * d2 + n2; // d2 stays d2
+        
+        // Find LCM
+        const commonD = this.lcm(d1, d2);
+        const extN1 = impN1 * (commonD / d1);
+        const extN2 = impN2 * (commonD / d2);
+        
+        // Handle Subtraction Constraints
+        let finalN1 = extN1, finalN2 = extN2;
+        let dispW1 = w1, dispN1 = n1, dispD1 = d1;
+        let dispW2 = w2, dispN2 = n2, dispD2 = d2;
+
+        if (op === '-') {
+            if (extN1 <= extN2) {
+                // Swap purely for the display variables and calculation
+                // It's easier to just swap the whole objects
+                [dispW1, dispW2] = [w2, w1];
+                [dispN1, dispN2] = [n2, n1];
+                [dispD1, dispD2] = [d2, d1];
+                [finalN1, finalN2] = [extN2, extN1];
+            }
+        }
+
+        const resNum = op === '+' ? finalN1 + finalN2 : finalN1 - finalN2;
+        
+        // Calculate result in mixed form
+        const simp = this.simplify(resNum, commonD);
+        const resWhole = Math.floor(simp.n / simp.d);
+        const resRem = simp.n % simp.d;
+        
+        // Answer string logic: "1 1/2" or just "3/2" depending on preference.
+        // Prompt asked for mixed form input.
+        const tokenStr = resRem === 0 
+            ? `${resWhole}` 
+            : (resWhole > 0 ? `${resWhole} ${resRem}/${simp.d}` : `${resRem}/${simp.d}`);
 
         return {
             renderData: {
-                description: lang === 'sv' ? "Beräkna. Svara i bråkform (eller heltal)." : "Calculate. Answer as a fraction (or whole number).",
-                latex: problem.l,
-                answerType: 'fraction',
+                description: lang === 'sv' ? "Beräkna. Svara i blandad form." : "Calculate. Answer as a mixed number.",
+                latex: `${dispW1} \\frac{${dispN1}}{${dispD1}} ${op} ${dispW2} \\frac{${dispN2}}{${dispD2}}`,
+                answerType: 'mixed_fraction', // Fix: Triggers the 3-box input
                 geometry: null
             },
-            token: this.toBase64(problem.ans),
+            token: this.toBase64(tokenStr),
             clues: [
-                { text: lang === 'sv' ? "Gör om blandad form till bråkform först." : "Convert mixed numbers to improper fractions first." }
+                { 
+                    text: lang === 'sv' ? "Gör om till bråkform (improper) först." : "Convert to improper fractions first.",
+                    latex: `\\frac{${finalN1}}{${commonD}} ${op} \\frac{${finalN2}}{${commonD}}`
+                },
+                {
+                    text: lang === 'sv' ? "Beräkna och gör om till blandad form." : "Calculate and convert back to mixed number.",
+                    latex: `${resWhole} \\frac{${resRem}}{${simp.d}}`
+                }
             ]
         };
     }
@@ -184,9 +220,10 @@ export class FractionArithGen {
         const isInteger = MathUtils.randomInt(0, 1) === 1;
         
         if (isInteger) {
-            const int = MathUtils.randomInt(2, 6);
-            const n = 1;
-            const d = MathUtils.randomInt(3, 8);
+            const int = MathUtils.randomInt(2, 8);
+            const n = MathUtils.randomInt(1, 4);
+            const d = MathUtils.randomInt(n + 1, 10);
+            
             const resN = int * n;
             const simp = this.simplify(resN, d);
             
@@ -199,16 +236,16 @@ export class FractionArithGen {
                 token: this.toBase64(`${simp.n}/${simp.d}`),
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Helatlet multipliceras bara med täljaren." : "The whole number multiplies only with the numerator.",
+                        text: lang === 'sv' ? "Heltalet multipliceras bara med täljaren." : "The whole number multiplies only with the numerator.",
                         latex: `\\frac{${int} \\cdot ${n}}{${d}} = \\frac{${resN}}{${d}}`
                     }
                 ]
             };
         } else {
-            const n1 = MathUtils.randomInt(1, 4);
-            const d1 = MathUtils.randomInt(2, 6);
-            const n2 = MathUtils.randomInt(1, 4);
-            const d2 = MathUtils.randomInt(2, 6);
+            const n1 = MathUtils.randomInt(1, 6);
+            const d1 = MathUtils.randomInt(n1 + 1, 10);
+            const n2 = MathUtils.randomInt(1, 6);
+            const d2 = MathUtils.randomInt(n2 + 1, 10);
             
             const resN = n1 * n2;
             const resD = d1 * d2;
@@ -233,10 +270,10 @@ export class FractionArithGen {
 
     // Level 5: Division
     private level5_Division(lang: string): any {
-        const n1 = 1;
-        const d1 = MathUtils.randomChoice([2, 3, 4]);
-        const n2 = 1;
-        const d2 = MathUtils.randomChoice([2, 3, 4]);
+        const n1 = MathUtils.randomInt(1, 5);
+        const d1 = MathUtils.randomInt(n1 + 1, 8);
+        const n2 = MathUtils.randomInt(1, 5);
+        const d2 = MathUtils.randomInt(n2 + 1, 8);
         
         // n1/d1 divided by n2/d2 -> n1/d1 * d2/n2
         const resN = n1 * d2;
