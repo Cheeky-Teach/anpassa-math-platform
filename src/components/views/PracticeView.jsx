@@ -4,10 +4,7 @@ import { GraphCanvas, VolumeVisualization, GeometryVisual, StaticGeometryVisual 
 import CluePanel from '../practice/CluePanel';
 import HistoryList from '../practice/HistoryList';
 import LevelUpModal from '../modals/LevelUpModal';
-import StreakModal from '../modals/StreakModal'; 
-// FIX: Added CATEGORIES to import
 import { LEVEL_DESCRIPTIONS, CATEGORIES } from '../../constants/localization'; 
-// FIX: Import the fraction component
 import { FractionInput } from '../ui/InputComponents';
 
 // --- SECURITY HELPERS ---
@@ -16,8 +13,6 @@ const isValidInput = (val, type) => {
     if (val === '') return true;
     const numericRegex = /^-?[\d\s]*([.,:]\d*)?$/;
     
-    // Add 'range' and 'fraction' to allowed types for numeric validation
-    // FIX: Added 'fraction' here so it passes validation (FractionInput handles internal validation, but this allows the state to update)
     if (type === 'numeric' || type === 'scale' || type === 'range' || type === 'fraction') {
         return numericRegex.test(val) || (type === 'fraction' && val.includes('/'));
     }
@@ -36,7 +31,6 @@ const PracticeView = ({
     question, 
     loading, 
     feedback, 
-    streak, 
     input, 
     setInput, 
     handleSubmit, 
@@ -50,11 +44,6 @@ const PracticeView = ({
     levelUpAvailable, 
     setLevelUpAvailable, 
     isSolutionRevealed, 
-    showStreakModal, 
-    setShowStreakModal, 
-    showTotalModal, 
-    setShowTotalModal, 
-    totalCorrect, 
     timerSettings, 
     formatTime, 
     setMobileHistoryOpen 
@@ -63,7 +52,6 @@ const PracticeView = ({
     const [scaleInputLeft, setScaleInputLeft] = useState('');
     const [scaleInputRight, setScaleInputRight] = useState('');
     
-    // New States for Exponents Unit
     const [powerBase, setPowerBase] = useState('');
     const [powerExp, setPowerExp] = useState('');
     const [sciMantissa, setSciMantissa] = useState('');
@@ -72,10 +60,12 @@ const PracticeView = ({
     const [rangeUpper, setRangeUpper] = useState('');
 
     const inputRef = useRef(null);
+    const [shake, setShake] = useState(false);
 
     // Auto-advance logic
     const retryRef = useRef(actions.retry);
     useEffect(() => { retryRef.current = actions.retry; }, [actions.retry]);
+    
     useEffect(() => {
         if (feedback === 'correct' && isSolutionRevealed) {
             const timer = setTimeout(() => {
@@ -84,6 +74,13 @@ const PracticeView = ({
             return () => clearTimeout(timer);
         }
     }, [feedback, isSolutionRevealed]);
+
+    // Auto-focus logic
+    useEffect(() => {
+        if (!loading && !feedback && !levelUpAvailable && inputRef.current) {
+            setTimeout(() => inputRef.current?.focus(), 50);
+        }
+    }, [question, loading, feedback, levelUpAvailable]);
 
     const descriptionText = typeof question?.renderData?.description === 'object' ? question.renderData.description[lang] : question?.renderData?.description;
     
@@ -97,7 +94,6 @@ const PracticeView = ({
     const handleFormSubmit = (e) => {
         e.preventDefault();
         
-        // UX FIX: If correct, next question
         if (feedback === 'correct') {
             actions.retry(true);
             return;
@@ -122,13 +118,16 @@ const PracticeView = ({
             if (rangeLower === '' || rangeUpper === '') return;
             finalInput = `${rangeLower}:${rangeUpper}`;
         }
-        // FIX: Ensure fraction inputs bypass the standard validation check which might reject '/'
         else if (type === 'fraction') {
              if (!input) return;
-             finalInput = input; // FractionInput updates 'input' state directly
+             finalInput = input; 
         }
         else {
-            if (!isValidInput(input, type === 'numeric' ? 'numeric' : 'text')) return;
+            if (!isValidInput(input, type === 'numeric' ? 'numeric' : 'text')) {
+                setShake(true);
+                setTimeout(() => setShake(false), 500);
+                return;
+            }
             if (type !== 'numeric') finalInput = sanitize(input);
         }
 
@@ -181,7 +180,7 @@ const PracticeView = ({
         if (uiState.topic === 'geometry') return <StaticGeometryVisual description={descriptionText} />;
 
         if (question.renderData.latex) {
-             return <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center"><MathText text={`$${question.renderData.latex}$`} large={true} /></div>;
+             return <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center overflow-x-auto py-2"><MathText text={`$$${question.renderData.latex}$$`} large={true} /></div>;
         }
 
         return <div className="flex flex-col items-center justify-center w-full min-h-[100px]"></div>;
@@ -195,19 +194,29 @@ const PracticeView = ({
 
     const isDisabled = feedback === 'correct';
 
+    if (!question && !loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh]">
+                <p className="text-red-400 mb-4">{ui.error || "Error loading question"}</p>
+                <button onClick={() => actions.retry(true)} className="bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition">
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in">
+        <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 flex flex-col lg:flex-row gap-8 items-start fade-in relative">
             
             <LevelUpModal visible={levelUpAvailable} ui={ui} onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }} onStay={() => { setLevelUpAvailable(false); actions.retry(true); }} lang={lang} />
-            <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
             
             <div className="flex-1 w-full min-w-0">
                 {/* HEADER */}
-                <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex justify-between items-center mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-100 sticky top-0 z-20">
                     <button onClick={actions.goBack} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm px-4 py-2 rounded-lg shadow-sm border border-gray-300 transition-all active:scale-95"><span>←</span> {ui.backBtn}</button>
 
                     <div className="flex items-center gap-3">
-                        {timerSettings.duration > 0 && (
+                        {timerSettings.isActive && (
                             <div className={`font-mono text-sm font-bold px-3 py-1.5 rounded-lg border hidden sm:block ${timerSettings.remaining < 60 ? 'bg-red-50 text-red-600 border-red-200 animate-pulse' : 'bg-white text-gray-700 border-gray-200'}`}>
                                 {formatTime(timerSettings.remaining)}
                             </div>
@@ -215,11 +224,11 @@ const PracticeView = ({
                         <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border border-gray-200">
                             <button onClick={() => handleChangeLevel(-1)} disabled={uiState.level <= 1} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.prevLevel || "<"}>&lt;</button>
                             <span className="text-xs font-bold uppercase tracking-wider text-gray-500 min-w-[80px] text-center">
-                                {/* FIX: Safe access to CATEGORIES */}
                                 {(CATEGORIES && CATEGORIES[uiState.topic.toUpperCase()]?.label[lang]) || uiState.topic} • Lvl {uiState.level}
                             </span>
                             <button onClick={() => handleChangeLevel(1)} disabled={uiState.level >= maxLevels} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:cursor-not-allowed transition-all text-gray-600 font-bold" title={ui.nextLevel || ">"}>&gt;</button>
                         </div>
+                        
                         <button onClick={() => setMobileHistoryOpen(true)} className="lg:hidden p-2 bg-gray-100 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </button>
@@ -248,69 +257,71 @@ const PracticeView = ({
                                 </div>
                             ) : (
                                 <form onSubmit={handleFormSubmit} className="max-w-md mx-auto space-y-4">
-                                    
-                                    {/* --- INPUT TYPE SWITCH --- */}
-                                    
-                                    {question.renderData.answerType === 'scale' && (
-                                        <div className="flex items-center justify-center gap-2">
-                                            <input type="text" value={scaleInputLeft} onChange={(e) => handleInputChange(e, setScaleInputLeft, 'numeric')} className="w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm focus:border-indigo-500" placeholder="X" disabled={isDisabled} />
-                                            <span className="text-2xl font-bold text-gray-400">:</span>
-                                            <input type="text" value={scaleInputRight} onChange={(e) => handleInputChange(e, setScaleInputRight, 'numeric')} className="w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm focus:border-indigo-500" placeholder="X" disabled={isDisabled} />
-                                        </div>
-                                    )}
-
-                                    {question.renderData.answerType === 'structured_power' && (
-                                        <div className="flex items-end justify-center gap-1">
-                                            <input type="text" value={powerBase} onChange={(e) => handleInputChange(e, setPowerBase, 'text')} className="w-24 p-4 text-center text-2xl font-bold border-2 rounded-xl outline-none focus:border-indigo-500" placeholder="Base" disabled={isDisabled} />
-                                            <div className="mb-8">
-                                                <input type="text" value={powerExp} onChange={(e) => handleInputChange(e, setPowerExp, 'numeric')} className="w-16 p-2 text-center text-lg font-bold border-2 rounded-lg outline-none focus:border-indigo-500 bg-gray-50" placeholder="exp" disabled={isDisabled} />
+                                    <div className={`relative transition-transform ${shake ? 'animate-shake' : ''}`}>
+                                        
+                                        {question.renderData.answerType === 'fraction' && (
+                                            <div className="flex justify-center py-2">
+                                                <FractionInput 
+                                                    value={input} 
+                                                    onChange={setInput} 
+                                                    allowMixed={true}
+                                                    autoFocus={!loading && !feedback} 
+                                                />
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {question.renderData.answerType === 'structured_scientific' && (
-                                        <div className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-600">
-                                            <input type="text" value={sciMantissa} onChange={(e) => handleInputChange(e, setSciMantissa, 'numeric')} className="w-28 p-3 text-center border-2 rounded-xl outline-none focus:border-indigo-500" placeholder="a" disabled={isDisabled} />
-                                            <span>· 10</span>
-                                            <div className="mb-8">
-                                                <input type="text" value={sciExp} onChange={(e) => handleInputChange(e, setSciExp, 'numeric')} className="w-16 p-2 text-center text-lg border-2 rounded-lg outline-none focus:border-indigo-500 bg-gray-50" placeholder="n" disabled={isDisabled} />
+                                        {question.renderData.answerType === 'scale' && (
+                                            <div className="flex items-center justify-center gap-2">
+                                                <input type="text" value={scaleInputLeft} onChange={(e) => handleInputChange(e, setScaleInputLeft, 'numeric')} className="w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm focus:border-indigo-500" placeholder="X" disabled={isDisabled} />
+                                                <span className="text-2xl font-bold text-gray-400">:</span>
+                                                <input type="text" value={scaleInputRight} onChange={(e) => handleInputChange(e, setScaleInputRight, 'numeric')} className="w-24 p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm focus:border-indigo-500" placeholder="X" disabled={isDisabled} />
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {question.renderData.answerType === 'structured_range' && (
-                                        <div className="flex items-center justify-center gap-3 text-xl font-bold text-gray-500">
-                                            <input type="text" value={rangeLower} onChange={(e) => handleInputChange(e, setRangeLower, 'numeric')} className="w-20 p-3 text-center border-2 rounded-xl" placeholder="min" disabled={isDisabled} />
-                                            <span>&lt;</span>
-                                            <span className="text-black"><MathText text={question.renderData.latex} /></span>
-                                            <span>&lt;</span>
-                                            <input type="text" value={rangeUpper} onChange={(e) => handleInputChange(e, setRangeUpper, 'numeric')} className="w-20 p-3 text-center border-2 rounded-xl" placeholder="max" disabled={isDisabled} />
-                                        </div>
-                                    )}
+                                        {question.renderData.answerType === 'structured_power' && (
+                                            <div className="flex items-end justify-center gap-1">
+                                                <input type="text" value={powerBase} onChange={(e) => handleInputChange(e, setPowerBase, 'text')} className="w-24 p-4 text-center text-2xl font-bold border-2 rounded-xl outline-none focus:border-indigo-500" placeholder="Base" disabled={isDisabled} />
+                                                <div className="mb-8">
+                                                    <input type="text" value={powerExp} onChange={(e) => handleInputChange(e, setPowerExp, 'numeric')} className="w-16 p-2 text-center text-lg font-bold border-2 rounded-lg outline-none focus:border-indigo-500 bg-gray-50" placeholder="exp" disabled={isDisabled} />
+                                                </div>
+                                            </div>
+                                        )}
 
-                                    {/* FIX: INJECT FRACTION INPUT */}
-                                    {question.renderData.answerType === 'fraction' && (
-                                        <div className="flex justify-center my-6">
-                                            <FractionInput 
-                                                value={input} 
-                                                onChange={setInput} 
-                                                autoFocus={!isDisabled}
-                                                allowMixed={true}
-                                            />
-                                        </div>
-                                    )}
+                                        {question.renderData.answerType === 'structured_scientific' && (
+                                            <div className="flex items-center justify-center gap-2 text-2xl font-bold text-gray-600">
+                                                <input type="text" value={sciMantissa} onChange={(e) => handleInputChange(e, setSciMantissa, 'numeric')} className="w-28 p-3 text-center border-2 rounded-xl outline-none focus:border-indigo-500" placeholder="a" disabled={isDisabled} />
+                                                <span>· 10</span>
+                                                <div className="mb-8">
+                                                    <input type="text" value={sciExp} onChange={(e) => handleInputChange(e, setSciExp, 'numeric')} className="w-16 p-2 text-center text-lg border-2 rounded-lg outline-none focus:border-indigo-500 bg-gray-50" placeholder="n" disabled={isDisabled} />
+                                                </div>
+                                            </div>
+                                        )}
 
-                                    {/* Default Text Input */}
-                                    {!['scale', 'structured_power', 'structured_scientific', 'structured_range', 'fraction'].includes(question.renderData.answerType) && (
-                                        <div className="relative">
-                                            <input ref={inputRef} type="text" value={input} onChange={(e) => handleInputChange(e, setInput, question.renderData.answerType)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder={ui.placeholder || "..."} disabled={isDisabled} />
-                                            {question.renderData.suffix && <span className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg pointer-events-none">{question.renderData.suffix}</span>}
-                                        </div>
-                                    )}
+                                        {question.renderData.answerType === 'structured_range' && (
+                                            <div className="flex items-center justify-center gap-3 text-xl font-bold text-gray-500">
+                                                <input type="text" value={rangeLower} onChange={(e) => handleInputChange(e, setRangeLower, 'numeric')} className="w-20 p-3 text-center border-2 rounded-xl" placeholder="min" disabled={isDisabled} />
+                                                <span>&lt;</span>
+                                                <span className="text-black"><MathText text={question.renderData.latex} /></span>
+                                                <span>&lt;</span>
+                                                <input type="text" value={rangeUpper} onChange={(e) => handleInputChange(e, setRangeUpper, 'numeric')} className="w-20 p-3 text-center border-2 rounded-xl" placeholder="max" disabled={isDisabled} />
+                                            </div>
+                                        )}
+
+                                        {!['scale', 'structured_power', 'structured_scientific', 'structured_range', 'fraction'].includes(question.renderData.answerType) && (
+                                            <div className="relative">
+                                                <input ref={inputRef} type="text" value={input} onChange={(e) => handleInputChange(e, setInput, question.renderData.answerType)} className={`w-full p-4 text-center text-xl font-medium border-2 rounded-xl outline-none transition-all shadow-sm ${feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-700' : feedback === 'incorrect' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50'}`} placeholder={ui.placeholder || "..."} disabled={isDisabled} />
+                                                {question.renderData.suffix && <span className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg pointer-events-none">{question.renderData.suffix}</span>}
+                                            </div>
+                                        )}
+
+                                        {feedback === 'correct' && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl animate-bounce-in">✅</div>}
+                                        {feedback === 'incorrect' && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl animate-shake">❌</div>}
+                                    </div>
                                     
                                     <button 
                                         type="submit" 
                                         className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-md transition-all active:scale-95 ${feedback === 'correct' ? 'bg-green-500 shadow-green-200 hover:bg-green-600' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 hover:shadow-lg'}`}
+                                        disabled={loading}
                                     >
                                         {getSubmitLabel()}
                                     </button>

@@ -12,7 +12,7 @@ import MobileDrawer from './components/practice/MobileDrawer';
 import { UI_TEXT, CATEGORIES, LEVEL_DESCRIPTIONS } from './constants/localization';
 
 function App() {
-    const [view, setView] = useState('dashboard'); // 'dashboard', 'practice', 'donow_config', 'donow_grid'
+    const [view, setView] = useState('dashboard');
     const [lang, setLang] = useState('sv');
     const [topic, setTopic] = useState('');
     const [level, setLevel] = useState(0);
@@ -46,7 +46,7 @@ function App() {
     const [lgrOpen, setLgrOpen] = useState(false);
     const [contentOpen, setContentOpen] = useState(false); 
     const [showStreakModal, setShowStreakModal] = useState(false);
-    const [showTotalModal, setShowTotalModal] = useState(false);
+    // REMOVED: showTotalModal state
     const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
     // Do Now State
@@ -101,8 +101,10 @@ function App() {
     }, [streak]);
 
     const fetchQuestion = async (t = topic, l = level, lg = lang, force = false) => {
-        if (!force && (showStreakModal || showTotalModal || levelUpAvailable || timeUpOpen)) return;
+        // Guard: Don't fetch if a blocking modal is open
+        if (!force && (showStreakModal || levelUpAvailable || timeUpOpen)) return;
         if (!t || !l) return;
+        
         setLoading(true);
         setFeedback(null);
         setInput('');
@@ -110,6 +112,7 @@ function App() {
         setUsedHelp(false);
         setIsSolutionRevealed(false);
         setLevelUpAvailable(false);
+        
         try {
             const timestamp = new Date().getTime();
             const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}${force ? `&force=true&t=${timestamp}` : ''}`);
@@ -141,27 +144,21 @@ function App() {
         setQuestion(null);
     };
 
-    // --- DO NOW LOGIC (FIXED) ---
-
+    // --- DO NOW LOGIC ---
     const handleDoNowGenerate = async (selected) => {
         if (selected.length === 0) return;
-        
-        // Save config for regeneration
         setDoNowConfig(selected);
-        
         setLoading(true);
         
-        // Construct the payload exactly as api/batch.ts expects it:
-        // { requests: [ { category, level, lang }, ... ] }
         const requests = [];
         const targetCount = Math.max(selected.length, 6);
         
         for (let i = 0; i < targetCount; i++) {
             const selection = selected[i % selected.length];
             requests.push({
-                category: selection.topic, // Map 'topic' to 'category' for backend
+                category: selection.topic,
                 level: selection.level,
-                lang: lang // Pass current language
+                lang: lang
             });
         }
 
@@ -169,18 +166,14 @@ function App() {
             const res = await fetch('/api/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requests }) // Send 'requests' key
+                body: JSON.stringify({ requests })
             });
             const data = await res.json();
             
-            // Check for 'results' key (standard for batch APIs)
             if (data.results && Array.isArray(data.results)) {
-                // Filter out any nulls if a generator failed
                 const validQuestions = data.results.filter(q => q !== null);
                 setDoNowQuestions(validQuestions);
-                setView('donow_grid'); // Activate the view
-            } else {
-                console.error("Invalid batch response:", data);
+                setView('donow_grid');
             }
         } catch (e) {
             console.error("Do Now Generation Error:", e);
@@ -198,10 +191,8 @@ function App() {
     const handleRefreshOne = async (index, topic, level) => {
         try {
             const timestamp = new Date().getTime();
-            // Use 'category' parameter to match API expectations, though api/question.ts handles 'topic' alias now too
             const res = await fetch(`/api/question?category=${topic}&level=${level}&lang=${lang}&force=true&t=${timestamp}`);
             const newQuestion = await res.json();
-            
             if (newQuestion.error) throw new Error(newQuestion.error);
 
             setDoNowQuestions(prev => {
@@ -214,8 +205,7 @@ function App() {
         }
     };
 
-    // -------------------
-
+    // --- GAMEPLAY HANDLERS ---
     const handleSelection = (t, l) => { setTopic(t); setLevel(l); };
 
     const handleHint = () => {
@@ -228,10 +218,18 @@ function App() {
         }
     };
 
+    // UPDATED: Now registers as incorrect answer when clicked
     const handleSolution = () => {
         if (question?.clues) {
             setUsedHelp(true);
             setRevealedClues(question.clues);
+            
+            // STATS CHANGE: Register as incorrect if not already revealed/locked
+            if (!isSolutionRevealed) {
+                updateStats('incorrect');
+                updateGranularStats(topic, level, 'incorrect');
+            }
+
             setIsSolutionRevealed(true);
             setStreak(0);
         }
@@ -276,7 +274,6 @@ function App() {
         const newLevel = level + delta; 
         const max = Object.keys(LEVEL_DESCRIPTIONS[topic] || {}).length; 
         if (newLevel >= 1 && newLevel <= max) { 
-            // setStreak(0); // REMOVED: Preserve streak when manually changing or leveling up
             setLevel(newLevel); 
             fetchQuestion(topic, newLevel, lang, true); 
         } 
@@ -284,11 +281,14 @@ function App() {
 
     const handleSubmit = async (e, directInput) => {
         e.preventDefault();
-        if (showStreakModal || showTotalModal || timeUpOpen) return;
+        // Global Guard: If any blocking modal is open, ignore submission
+        if (showStreakModal || timeUpOpen) return;
         if (feedback === 'correct') return;
+        
         let finalInput = directInput !== undefined ? directInput : input;
         if (!question || !finalInput) return;
 
+        // Capture lock state at moment of submission
         const isStatsLocked = isSolutionRevealed;
         const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
 
@@ -312,9 +312,11 @@ function App() {
             const historyText = question.renderData.latex || descText;
 
             if (result.correct) {
+                // LOCK CHECK: Only update stats if solution was NOT revealed
                 if (!isStatsLocked) {
                     setHistory(prev => [{ topic, level, correct: true, text: historyText, clueUsed: helpUsed, time: Date.now() }, ...prev]);
                     setStreak(result.newStreak);
+                    
                     if (!helpUsed) {
                         updateStats('correctNoHelp');
                         updateGranularStats(topic, level, 'correctNoHelp');
@@ -325,29 +327,40 @@ function App() {
 
                     const newTotal = totalCorrect + 1;
                     setTotalCorrect(newTotal);
-                    if ([10, 20, 30, 40, 50].includes(newTotal)) setShowTotalModal(true);
-                    if ([15, 20, 30, 40, 50].includes(result.newStreak)) setShowStreakModal(true);
-                    else {
-                        if (result.levelUp) setLevelUpAvailable(true);
+
+                    // --- MILESTONE LOGIC (No Total Modal) ---
+                    const isStreakMilestone = [15, 20, 30, 40, 50].includes(result.newStreak);
+
+                    if (isStreakMilestone) {
+                        setShowStreakModal(true);
+                        // Waiting for modal close.
+                    } else if (result.levelUp) {
+                        setLevelUpAvailable(true);
+                        // Waiting for user choice in LevelUpModal.
+                    } else {
+                        // Standard flow: Auto-advance
                         setTimeout(() => {
-                            if (!showTotalModal && !showStreakModal) {
-                                if (!result.levelUp) fetchQuestion(topic, level, lang);
-                            }
+                            // Using a boolean flag logic here is safer than checking state in timeout
+                            fetchQuestion(topic, level, lang);
                         }, 1500);
                     }
                 }
                 setFeedback('correct');
             } else {
+                // Incorrect Logic
                 question.attempts = (question.attempts || 0) + 1;
                 if (question.attempts >= 2) {
-                    handleSolution();
+                    
+                    // Add to history BEFORE calling handleSolution (which locks stats)
                     if (!isStatsLocked) {
-                        updateStats('incorrect');
-                        updateGranularStats(topic, level, 'incorrect');
                         setHistory(prev => [{
                             topic, level, correct: false, text: historyText, clueUsed: true, correctAnswer: result.correctAnswer || "See Solution", time: Date.now()
                         }, ...prev]);
                     }
+
+                    // This will now trigger the stats update ('incorrect') and reveal the solution UI
+                    handleSolution(); 
+                    
                 } else {
                     handleHint();
                 }
@@ -381,9 +394,11 @@ function App() {
             <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
             <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
             <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
+            
             <MobileDrawer open={mobileHistoryOpen} onClose={() => setMobileHistoryOpen(false)} history={history} ui={ui} />
             <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
             <StatsModal visible={timeUpOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setTimeUpOpen(false)} title={ui.stats_times_up} />
+            <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
 
             <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -421,7 +436,28 @@ function App() {
                     />
                 ) : (
                     <PracticeView
-                        lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip} handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{ history, topic, level }} actions={{ retry: (force) => fetchQuestion(topic, level, lang, force), goBack: quitPractice }} levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable} isSolutionRevealed={isSolutionRevealed} showStreakModal={showStreakModal} setShowStreakModal={setShowStreakModal} showTotalModal={showTotalModal} setShowTotalModal={setShowTotalModal} totalCorrect={totalCorrect} timerSettings={timerSettings} formatTime={formatTime} setMobileHistoryOpen={setMobileHistoryOpen}
+                        lang={lang} 
+                        ui={ui} 
+                        question={question} 
+                        loading={loading} 
+                        feedback={feedback} 
+                        streak={streak} 
+                        input={input} 
+                        setInput={setInput} 
+                        handleSubmit={handleSubmit} 
+                        handleHint={handleHint} 
+                        handleSolution={handleSolution} 
+                        handleSkip={handleSkip} 
+                        handleChangeLevel={handleChangeLevel} 
+                        revealedClues={revealedClues} 
+                        uiState={{ history, topic, level }} 
+                        actions={{ retry: (force) => fetchQuestion(topic, level, lang, force), goBack: quitPractice }} 
+                        levelUpAvailable={levelUpAvailable} 
+                        setLevelUpAvailable={setLevelUpAvailable} 
+                        isSolutionRevealed={isSolutionRevealed} 
+                        timerSettings={timerSettings} 
+                        formatTime={formatTime} 
+                        setMobileHistoryOpen={setMobileHistoryOpen}
                     />
                 )}
             </div>
