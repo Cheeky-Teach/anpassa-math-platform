@@ -227,6 +227,18 @@ export const CONTENT_MAP = {
                     { lvl: 5, desc: "Avstånd", ex: "Koordinatsystem" },
                     { lvl: 6, desc: "Rätvinklig?", ex: "Omvänd sats" }
                 ]
+            },
+            {
+                id: "angles",
+                title: "Vinklar", // NEW
+                levels: [
+                    { lvl: 1, desc: "Vinkeltyper", ex: "Spetsig, Rät, Trubbig" },
+                    { lvl: 2, desc: "Komplement & Supplement", ex: "Summa 90/180" },
+                    { lvl: 3, desc: "Vertikal- & Sidovinklar", ex: "Korsande linjer" },
+                    { lvl: 4, desc: "Vinkelsumma (Triangel)", ex: "x + y + z = 180" },
+                    { lvl: 5, desc: "Likbelägna & Alternatvinklar", ex: "Parallella linjer" },
+                    { lvl: 6, desc: "Vinkelsumma (Polygoner)", ex: "(n-2)*180" }
+                ]
             }
         ]
     }

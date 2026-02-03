@@ -31,7 +31,8 @@ export const CATEGORIES = {
             { id: 'ScaleGenerator', api: 'scale', label: { sv: "Skala", en: "Scale" } },
             { id: 'VolumeGenerator', api: 'volume', label: { sv: "Volym", en: "Volume" } },
             { id: 'SimilarityGenerator', api: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } },
-            { id: 'PythagorasGen', api: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } }
+            { id: 'PythagorasGen', api: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } },
+            { id: 'AnglesGen', api: 'angles', label: { sv: "Vinklar", en: "Angles" } }
         ]
     },
     STATISTICS: {
@@ -169,6 +170,14 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Baklänges medelvärde", en: "Reverse Mean" },
         5: { sv: "Frekvenstabell", en: "Frequency Table" },
         6: { sv: "Blandade begrepp", en: "Mixed Concepts" }
+    },
+    AnglesGen: { 
+        1: { sv: "Begrepp", en: "Concepts" },
+        2: { sv: "Komplement/Supplementvinklar ", en: "Complementary/Supplementary angles" },
+        3: { sv: "Vertikala vinklar", en: "Vertical Angles" },
+        4: { sv: "Vinkelsumma (triangel)", en: "Angle sums (Triangle)" },
+        5: { sv: "Vinkelsumma (månghörning)", en: "Angle sums (Polygons)" },
+        6: { sv: "Parallella linjer", en: "Parallel lines" }
     }
     
 };

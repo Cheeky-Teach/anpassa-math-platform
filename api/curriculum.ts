@@ -53,13 +53,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       },
       geometri: {
         category: "Geometri",
-        modules: ["geometry", "scale", "volume", "similarity", "pythagoras"],
+        modules: ["geometry", "scale", "volume", "similarity", "pythagoras","angles"],
         content: [
           "Geometriska objekt och deras egenskaper.",
           "Avbildning och konstruktion av geometriska objekt. Skala vid förminskning och förstoring av en- och tvådimensionella objekt.", // scale
           "Likformighet och symmetri i planet.", // similarity
           "Geometriska satser och formler och behovet av argumentation för deras giltighet. Pythagoras sats.", // pythagoras
-          "Metoder för beräkning av area, omkrets och volym hos geometriska objekt, samt enhetsbyten i samband med detta." // geometry, volume
+          "Metoder för beräkning av area, omkrets och volym hos geometriska objekt, samt enhetsbyten i samband med detta.", // geometry, volume
+          "Vinkelbegreppet och vinkelmätning. Vinkelsumman i månghörningar." // Vinklar
         ]
       },
       samband: {

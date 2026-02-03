@@ -5,9 +5,9 @@ export class ProgressionRules {
         arithmetic: 9,
         negative: 5,
         ten_powers: 3,
-        exponents: 6,       // Added
-        fraction_basics: 5, // Added
-        fraction_arith: 5,  // Added
+        exponents: 6,
+        fraction_basics: 5,
+        fraction_arith: 5,
         scale: 7,
         equation: 7,
         simplify: 6,
@@ -19,7 +19,8 @@ export class ProgressionRules {
         probability: 6,
         statistics: 6,
         pythagoras: 6,
-        change_factor: 5, // NEW
+        change_factor: 5,
+        angles: 6, // NEW
     };
 
     public static checkLevelUp(newStreak: number, currentLevel: number, topic: string): boolean {

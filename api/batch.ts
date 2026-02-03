@@ -18,7 +18,8 @@ import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
 import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
 import { FractionBasicsGen } from '../src/core/generators/FractionBasicsGen.js';
 import { FractionArithGen } from '../src/core/generators/FractionArithGen.js';
-import { ChangeFactorGen } from '../src/core/generators/ChangeFactorGen.js'; // NEW
+import { ChangeFactorGen } from '../src/core/generators/ChangeFactorGen.js';
+import { AnglesGen } from '../src/core/generators/AnglesGen.js'; // NEW
 
 interface VercelRequest extends IncomingMessage {
     body: any;
@@ -38,7 +39,7 @@ const generators: any = {
     fraction_basics: new FractionBasicsGen(),
     fraction_arith: new FractionArithGen(),
     simplify: new ExpressionSimplificationGen(),
-    equation: new LinearEquationGen(), // Fixed import name
+    equation: new LinearEquationGen(),
     graph: new LinearGraphGenerator(),
     geometry: new GeometryGenerator(),
     scale: new ScaleGen(),
@@ -47,7 +48,8 @@ const generators: any = {
     pythagoras: new PythagorasGen(),
     probability: new ProbabilityGen(),
     statistics: new StatisticsGen(),
-    change_factor: new ChangeFactorGen() // NEW
+    change_factor: new ChangeFactorGen(),
+    angles: new AnglesGen() // NEW
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {

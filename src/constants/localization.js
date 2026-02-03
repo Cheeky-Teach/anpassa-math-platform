@@ -36,7 +36,8 @@ export const CATEGORIES = {
             { id: 'scale', label: { sv: "Skala", en: "Scale" } },
             { id: 'volume', label: { sv: "Volym", en: "Volume" } },
             { id: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } },
-            { id: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } }
+            { id: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } },
+            { id: 'angles', label: { sv: "Vinklar", en: "Angles" } } // NEW
         ]
     },
 
@@ -121,7 +122,15 @@ export const UI_TEXT = {
 };
 
 export const LEVEL_DESCRIPTIONS = {
-    // --- NEW: Change Factor ---
+    
+    angles: {
+        1: { sv: "Vinkeltyper", en: "Types of Angles" },
+        2: { sv: "Komplement & Supplement", en: "Complementary & Supplementary" },
+        3: { sv: "Vertikal- & Sidovinklar", en: "Vertical & Adjacent Angles" },
+        4: { sv: "Vinkelsumma (Triangel)", en: "Triangle Angle Sum" },
+        5: { sv: "Likbelägna & Alternatvinklar", en: "Parallel Lines" },
+        6: { sv: "Vinkelsumma (Polygoner)", en: "Polygon Angle Sum" }
+    },
     change_factor: {
         1: { sv: "Begrepp & Definition", en: "Concepts & Definitions" },
         2: { sv: "Beräkna nya värdet", en: "Calculate New Value" },

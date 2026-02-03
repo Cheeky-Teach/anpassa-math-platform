@@ -1,7 +1,13 @@
 import React, { useRef, useEffect } from 'react';
+import AngleVisual from './AngleComponents'; // NEW IMPORT
 
 export const GeometryVisual = ({ data }) => {
     if (!data) return null;
+
+    // --- NEW: ANGLE VISUAL ---
+    if (data.type === 'angle') {
+        return <AngleVisual data={data} />;
+    }
 
     // --- FREQUENCY TABLE ---
     if (data.type === 'frequency_table') {
