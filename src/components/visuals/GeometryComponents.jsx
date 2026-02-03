@@ -115,6 +115,14 @@ export const GeometryVisual = ({ data }) => {
         const l_h = labels?.h || labels?.height || (type === 'rectangle' ? safeDims.height : null);
         const l_hyp = labels?.hyp || labels?.hypotenuse || labels?.c || labels?.diagonal;
         
+        // Angle Labels
+        const l_a1 = labels?.a1;
+        const l_a2 = labels?.a2;
+
+        // Side Labels for Similarity (s1, s2)
+        const l_s1 = labels?.s1;
+        const l_s2 = labels?.s2;
+
         if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
             return (
                 <g>
@@ -140,6 +148,7 @@ export const GeometryVisual = ({ data }) => {
                     </g>
                 );
             } else {
+                // Isosceles / Generic Triangle
                 const points = `${L},${B} ${R},${B} ${cx},${T}`;
                 return (
                     <g>
@@ -147,6 +156,26 @@ export const GeometryVisual = ({ data }) => {
                         <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
                         {l_b && mkTxt(cx, B + 25, l_b)}
                         {l_h && mkTxt(cx + 5, cy, l_h, "start")}
+                        
+                        {/* Similarity Side Labels */}
+                        {l_s1 && mkTxt(L - 10, cy, l_s1, "end")}
+                        {l_s2 && mkTxt(R + 10, cy, l_s2, "start")}
+
+                        {/* Angle 1: Bottom Left */}
+                        {l_a1 && (
+                            <>
+                                <path d={`M ${L + 15} ${B} A 15 15 0 0 0 ${L + 8} ${B - 13}`} fill="none" stroke="#374151" strokeWidth="2" />
+                                <text x={L - 10} y={B - 5} fontSize="16" fontWeight="bold" fill="#374151">{l_a1}</text>
+                            </>
+                        )}
+                        
+                        {/* Angle 2: Bottom Right */}
+                        {l_a2 && (
+                            <>
+                                <path d={`M ${R - 15} ${B} A 15 15 0 0 1 ${R - 8} ${B - 13}`} fill="none" stroke="#374151" strokeWidth="2" />
+                                <text x={R + 10} y={B - 5} fontSize="16" fontWeight="bold" fill="#374151">{l_a2}</text>
+                            </>
+                        )}
                     </g>
                 );
             }
