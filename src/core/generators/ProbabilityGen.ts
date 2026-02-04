@@ -4,10 +4,10 @@ export class ProbabilityGen {
     public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
             case 1: return this.level1_Visuals(lang);
-            case 2: return this.level2_StandardRandomness(lang);
-            case 3: return this.level3_PercentConversion(lang);
+            case 2: return this.level2_Groups(lang);
+            case 3: return this.level3_Percentages(lang); 
             case 4: return this.level4_Complementary(lang);
-            case 5: return this.level5_CompoundIndependent(lang);
+            case 5: return this.level5_EventChains(lang); 
             case 6: return this.level6_Combinatorics(lang);
             default: return this.level1_Visuals(lang);
         }
@@ -23,279 +23,268 @@ export class ProbabilityGen {
         return `${n / divisor}/${d / divisor}`;
     }
 
-    // Level 1: Visual Probability (Now with "OR" logic)
+    // Helper for "nice" percentage-friendly numbers
+    private getNiceRatio() {
+        const d = MathUtils.randomChoice([2, 4, 5, 10, 20, 25, 50]);
+        const n = MathUtils.randomInt(1, d - 1);
+        const pct = (n / d) * 100;
+        return { n, d, pct };
+    }
+
+    // --- LEVEL 1: Visual Foundations (Answer as Fraction) ---
     private level1_Visuals(lang: string): any {
-        const type = MathUtils.randomChoice(['marbles', 'spinner', 'or_logic']);
-        
-        const red = MathUtils.randomInt(1, 4);
-        const blue = MathUtils.randomInt(1, 4);
-        const green = MathUtils.randomInt(1, 4);
+        const red = MathUtils.randomInt(2, 6);
+        const blue = MathUtils.randomInt(2, 6);
+        const green = MathUtils.randomInt(1, 5);
         const total = red + blue + green;
-
-        if (type === 'or_logic') {
-            const targets = MathUtils.shuffle(['röd', 'blå', 'grön']);
-            const t1 = targets[0];
-            const t2 = targets[1];
-            const t1Val = t1 === 'röd' ? red : (t1 === 'blå' ? blue : green);
-            const t2Val = t2 === 'röd' ? red : (t2 === 'blå' ? blue : green);
-            
-            const desc = lang === 'sv' 
-                ? `Vad är sannolikheten att dra en ${t1} ELLER en ${t2} kula? (Bråkform)`
-                : `What is the probability of picking a ${t1 === 'röd' ? 'red' : t1 === 'blå' ? 'blue' : 'green'} OR a ${t2 === 'röd' ? 'red' : t2 === 'blå' ? 'blue' : 'green'} marble? (Fraction)`;
-
-            return {
-                renderData: {
-                    description: desc,
-                    answerType: 'fraction',
-                    geometry: { type: 'probability_marbles', items: { red, blue, green } }
-                },
-                token: this.toBase64(this.simplifyFraction(t1Val + t2Val, total)),
-                clues: [
-                    { text: lang === 'sv' ? "När vi säger ELLER menar vi att båda färgerna är bra utfall. Lägg ihop dem." : "When we say OR, we mean both colors are favorable outcomes. Add them together.", latex: `${t1Val} + ${t2Val} = ${t1Val + t2Val}` },
-                    { text: lang === 'sv' ? "Dela sedan antalet gynnsamma utfall med det totala antalet kulor." : "Then divide the number of favorable outcomes by the total number of marbles.", latex: `P = \\frac{${t1Val + t2Val}}{${total}}` }
-                ]
-            };
-        }
-
-        if (type === 'marbles') {
-            const target = MathUtils.randomChoice(['red', 'blue', 'green']);
-            const targetVal = target === 'red' ? red : (target === 'blue' ? blue : green);
-            const targetName = lang === 'sv' ? (target === 'red' ? 'röd' : (target === 'blue' ? 'blå' : 'grön')) : target;
-
-            return {
-                renderData: {
-                    description: lang === 'sv' ? `Vad är sannolikheten att dra en ${targetName} kula? (Bråkform)` : `Prob of ${target} marble?`,
-                    answerType: 'fraction',
-                    geometry: { type: 'probability_marbles', items: { red, blue, green } }
-                },
-                token: this.toBase64(this.simplifyFraction(targetVal, total)),
-                clues: [
-                    { text: lang === 'sv' ? `Räkna först de ${targetName} kulorna.` : `Count the ${target} marbles.`, latex: `${targetVal}` },
-                    { text: lang === 'sv' ? "Dela med totala antalet." : "Divide by the total count.", latex: `\\frac{${targetVal}}{${total}}` }
-                ]
-            };
-        } else {
-            const sections = MathUtils.randomChoice([4, 5, 8, 10]);
-            const targetSections = MathUtils.randomInt(1, Math.floor(sections/2));
-            return {
-                renderData: {
-                    description: lang === 'sv' ? `Om ${targetSections} av ${sections} fält är blåa, vad är sannolikheten att pilen stannar på blått? (Svara i bråkform)` : `If ${targetSections} of ${sections} sections are blue, what is the probability? (Answer as fraction)`,
-                    answerType: 'fraction',
-                    geometry: { type: 'probability_spinner', sections: sections, target: targetSections }
-                },
-                token: this.toBase64(this.simplifyFraction(targetSections, sections)),
-                clues: [
-                    { text: lang === 'sv' ? "Sannolikhet = Gynnsamma utfall / Möjliga utfall." : "Probability = Favorable / Possible.", latex: `\\frac{${targetSections}}{${sections}}` }
-                ]
-            };
-        }
-    }
-
-    // Level 2: Dice & Decks (Added Prime numbers and Face cards)
-    private level2_StandardRandomness(lang: string): any {
-        const scenario = MathUtils.randomChoice(['die_prime', 'card_face', 'die_not']);
-
-        if (scenario === 'die_prime') {
-            const primes = [2, 3, 5];
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Du kastar en tärning. Vad är sannolikheten att få ett primtal? (Svara i bråkform)" : "Probability of rolling a prime number? (Fraction)",
-                    answerType: 'fraction',
-                    geometry: { type: 'scale_single', shape: 'cube', label: '1-6' }
-                },
-                token: this.toBase64("1/2"),
-                clues: [
-                    { text: lang === 'sv' ? "Primtalen på en tärning är 2, 3 och 5." : "The prime numbers on a die are 2, 3, and 5.", latex: "\\text{Antal} = 3" },
-                    { text: lang === 'sv' ? "Det finns 6 sidor totalt. 3 av 6 är hälften." : "There are 6 sides total. 3 out of 6 is half.", latex: "\\frac{3}{6} = \\frac{1}{2}" }
-                ]
-            };
-        } else if (scenario === 'die_not') {
-            const n = MathUtils.randomInt(1, 6);
-            return {
-                renderData: {
-                    description: lang === 'sv' ? `Du kastar en tärning. Vad är sannolikheten att du INTE får en ${n}:a? (Svara i bråkform)` : `Prob of NOT rolling a ${n}? (Answer as fraction)`,
-                    answerType: 'fraction'
-                },
-                token: this.toBase64("5/6"),
-                clues: [
-                    { text: lang === 'sv' ? "Det finns 5 siffror som inte är målet." : "There are 5 numbers that are not the target.", latex: "6 - 1 = 5" },
-                    { text: lang === 'sv' ? "Dela med totala antalet sidor." : "Divide by total sides.", latex: "\\frac{5}{6}" }
-                ]
-            };
-        } else {
-            const type = MathUtils.randomChoice(['face', 'ace', 'black']);
-            let favorable = type === 'face' ? 12 : (type === 'ace' ? 4 : 26);
-            let desc = type === 'face' 
-                ? (lang === 'sv' ? "Sannolikhet för klädda kort (K, Q, J)?" : "Prob of a face card?")
-                : (type === 'ace' ? (lang === 'sv' ? "Sannolikhet för ett Ess?" : "Prob of an Ace?") : (lang === 'sv' ? "Sannolikhet för ett svart kort?" : "Prob of a black card?"));
-
-            return {
-                renderData: { description: `${desc} (Bråkform)`, answerType: 'fraction' },
-                token: this.toBase64(this.simplifyFraction(favorable, 52)),
-                clues: [
-                    { text: lang === 'sv' ? `Det finns ${favorable} sådana kort i en lek på 52 kort.` : `There are ${favorable} such cards in a 52-card deck.` },
-                    { text: lang === 'sv' ? "Ställ upp som bråk och förkorta om det går." : "Set up as fraction and simplify if possible.", latex: `\\frac{${favorable}}{52}` }
-                ]
-            };
-        }
-    }
-
-    // Level 3: Percent Conversion (Added "Inverse" logic)
-    private level3_PercentConversion(lang: string): any {
-        const type = MathUtils.randomChoice(['standard', 'inverse']);
-        const total = MathUtils.randomChoice([10, 20, 25, 50, 100]);
-        const fav = MathUtils.randomInt(1, total / 2);
-        const prob = (fav / total) * 100;
-
-        if (type === 'inverse') {
-            return {
-                renderData: {
-                    description: lang === 'sv' 
-                        ? `Sannolikheten att vinna på en lott är ${prob}%. Om det finns ${total} lotter totalt, hur många är vinstlotter?` 
-                        : `The win probability is ${prob}%. If there are ${total} tickets, how many are winners?`,
-                    answerType: 'numeric'
-                },
-                token: this.toBase64(fav.toString()),
-                clues: [
-                    { text: lang === 'sv' ? "Här ska vi räkna ut delen." : "Here we calculate the part.", latex: `${prob}\\% \\text{ av } ${total}` },
-                    { text: lang === 'sv' ? "Gör om procent till decimaltal och multiplicera med totalen." : "Convert percent to decimal and multiply by total.", latex: `${prob / 100} \\cdot ${total} = ${fav}` }
-                ]
-            };
-        } else {
-            return {
-                renderData: {
-                    description: lang === 'sv' ? `I en grupp på ${total} personer är ${fav} vänsterhänta. Hur många procent är det?` : `In a group of ${total}, ${fav} are left-handed. What percent is that?`,
-                    answerType: 'numeric',
-                    suffix: '%'
-                },
-                token: this.toBase64(prob.toString()),
-                clues: [
-                    { text: lang === 'sv' ? "Dela delen med det hela för att få ett decimaltal." : "Divide part by whole to get a decimal.", latex: `${fav} / ${total} = ${fav / total}` },
-                    { text: lang === 'sv' ? "Multiplicera med 100 för att få procent." : "Multiply by 100 to get percent.", latex: `${fav / total} \\cdot 100 = ${prob}\\%` }
-                ]
-            };
-        }
-    }
-
-    // Level 4: Complementary Events (Sum of 1)
-    private level4_Complementary(lang: string): any {
-        const mode = MathUtils.randomChoice(['triple', 'standard']);
-        if (mode === 'triple') {
-            const p1 = MathUtils.randomInt(1, 4) / 10;
-            const p2 = MathUtils.randomInt(1, 4) / 10;
-            const p3 = Math.round((1 - p1 - p2) * 10) / 10;
-            const targets = lang === 'sv' ? ['Vinst', 'Förlust', 'Oavgjort'] : ['Win', 'Loss', 'Draw'];
-
-            return {
-                renderData: {
-                    description: lang === 'sv' 
-                        ? `I ett spel är chansen för ${targets[0]} ${p1*100}% och chansen för ${targets[1]} ${p2*100}%. Vad är chansen för ${targets[2]}?` 
-                        : `Chance for ${targets[0]} is ${p1*100}%, ${targets[1]} is ${p2*100}%. Prob of ${targets[2]}?`,
-                    answerType: 'numeric', suffix: '%'
-                },
-                token: this.toBase64((p3 * 100).toString()),
-                clues: [
-                    { text: lang === 'sv' ? "Summan av alla möjliga händelser måste vara 100%." : "Sum of all outcomes must be 100%." },
-                    { text: lang === 'sv' ? "Addera de kända chanserna och dra bort från 100%." : "Add known chances and subtract from 100%.", latex: `100\\% - (${p1*100}\\% + ${p2*100}\\%)` }
-                ]
-            };
-        } else {
-            const days = lang === 'sv' ? 7 : 7;
-            const weekend = 2;
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Vad är sannolikheten att en slumpmässigt vald veckodag INTE är en helgdag (lör/sön)? (Svara i bråkform)" : "Prob that a random day is NOT a weekend? (Answer as fraction)",
-                    answerType: 'fraction'
-                },
-                token: this.toBase64("5/7"),
-                clues: [
-                    { text: lang === 'sv' ? "Det finns 7 dagar totalt. 2 är helgdagar." : "7 days total, 2 are weekends.", latex: "7 - 2 = 5" },
-                    { text: lang === 'sv' ? "5 dagar är vardagar." : "5 days are weekdays.", latex: "\\frac{5}{7}" }
-                ]
-            };
-        }
-    }
-
-    // Level 5: Compound Independent (Added "At least one")
-    private level5_CompoundIndependent(lang: string): any {
-        const mode = MathUtils.randomChoice(['standard', 'at_least_one']);
         
-        if (mode === 'at_least_one') {
-            return {
-                renderData: {
-                    description: lang === 'sv' 
-                        ? "Du singlar slant två gånger. Vad är sannolikheten att få MINST en Krona? (Svara i bråkform)" 
-                        : "Flip a coin twice. Prob of at least one Heads? (Fraction)",
-                    answerType: 'fraction'
-                },
-                token: this.toBase64("3/4"),
-                clues: [
-                    { text: lang === 'sv' ? "De möjliga utfallen är: (K,K), (K,G), (G,K), (G,G)." : "Possible outcomes: (H,H), (H,T), (T,H), (T,T)." },
-                    { text: lang === 'sv' ? "Endast (G,G) har ingen Krona. 3 av 4 utfall har minst en Krona." : "Only (T,T) has no heads. 3 out of 4 have at least one.", latex: "\\frac{3}{4}" }
-                ]
-            };
+        const subType = MathUtils.randomChoice(['single', 'or', 'not']);
+        let fav = 0;
+        let desc = "";
+
+        if (subType === 'or') {
+            fav = red + blue;
+            desc = lang === 'sv' 
+                ? `I en påse finns det ${red} röda, ${blue} blåa och ${green} gröna kulor. Vad är sannolikheten att du drar en röd eller en blå kula?`
+                : `A bag contains ${red} red, ${blue} blue, and ${green} green marbles. What is the probability that you pick a red or a blue marble?`;
+        } else if (subType === 'not') {
+            fav = total - red; 
+            desc = lang === 'sv'
+                ? `I en påse finns det ${red} röda, ${blue} blåa och ${green} gröna kulor. Vad är sannolikheten att du INTE drar en röd kula?`
+                : `A bag contains ${red} red, ${blue} blue, and ${green} green marbles. What is the probability that you do NOT pick a red marble?`;
         } else {
-            const p1 = 1 / 6;
-            const n = MathUtils.randomInt(2, 6);
-            return {
-                renderData: {
-                    description: lang === 'sv' ? `Vad är sannolikheten att slå en ${n}:a två gånger i rad med en tärning? (Svara i bråkform)` : `Prob of rolling a ${n} twice in a row? (Answer as fraction)`,
-                    answerType: 'fraction'
-                },
-                token: this.toBase64("1/36"),
-                clues: [
-                    { text: lang === 'sv' ? "Händelserna är oberoende. Multiplicera chanserna." : "Independent events. Multiply the chances.", latex: "\\frac{1}{6} \\cdot \\frac{1}{6}" }
-                ]
-            };
+            fav = red;
+            desc = lang === 'sv'
+                ? `I en påse finns det ${red} röda, ${blue} blåa och ${green} gröna kulor. Vad är sannolikheten att du drar en röd kula?`
+                : `A bag contains ${red} red, ${blue} blue, and ${green} green marbles. What is the probability that you pick a red marble?`;
         }
+
+        return {
+            renderData: {
+                description: desc,
+                answerType: 'fraction',
+                geometry: { type: 'probability_marbles', items: { red, blue, green } }
+            },
+            token: this.toBase64(this.simplifyFraction(fav, total)),
+            clues: [
+                { 
+                    text: lang === 'sv' ? "Räkna antalet gynsamma utfall som matchar frågan." : "Count the number of favorable outcomes that match the question.",
+                    latex: `\\text{${lang === 'sv' ? 'Gynsamma' : 'Favorable'}} = ${fav}`
+                },
+                { 
+                    text: lang === 'sv' ? "Dela antalet gynsamma utfall med det totala antalet kulor." : "Divide the number of favorable outcomes by the total number of marbles.",
+                    latex: `P = \\frac{${fav}}{${total}}`
+                }
+            ]
+        };
     }
 
-    // Level 6: Combinatorics (Added restricted digits)
-    private level6_Combinatorics(lang: string): any {
-        const mode = MathUtils.randomChoice(['basic', 'restricted_pin', 'handshakes']);
+    // --- LEVEL 2: Randomized Groups (Answer as Fraction) ---
+    private level2_Groups(lang: string): any {
+        const scenarios = [
+            { itemSv: "personer", aSv: "vuxna", bSv: "barn", itemEn: "people", aEn: "adults", bEn: "children" },
+            { itemSv: "bilar", aSv: "elbilar", bSv: "bensinbilar", itemEn: "cars", aEn: "electric cars", bEn: "petrol cars" },
+            { itemSv: "pendlare", aSv: "tågresenärer", bSv: "bussresenärer", itemEn: "commuters", aEn: "train riders", bEn: "bus riders" },
+            { itemSv: "användare", aSv: "iPhone-användare", bSv: "Android-användare", itemEn: "users", aEn: "iPhone users", bEn: "Android users" }
+        ];
 
-        if (mode === 'restricted_pin') {
-            const len = 3;
+        const s = MathUtils.randomChoice(scenarios);
+        const aCount = MathUtils.randomInt(5, 15);
+        const bCount = MathUtils.randomInt(5, 15);
+        const total = aCount + bCount;
+        const targetA = MathUtils.randomInt(0, 1) === 1;
+        const fav = targetA ? aCount : bCount;
+        const targetName = targetA ? (lang === 'sv' ? s.aSv : s.aEn) : (lang === 'sv' ? s.bSv : s.bEn);
+
+        const desc = lang === 'sv'
+            ? `I en grupp om ${total} ${s.itemSv} finns det ${aCount} ${s.aSv} och ${bCount} ${s.bSv}. Vad är sannolikheten att en slumpmässigt vald person är ${targetName}?`
+            : `In a group of ${total} ${s.itemEn}, there are ${aCount} ${s.aEn} and ${bCount} ${s.bEn}. What is the probability that a randomly chosen person is ${targetName}?`;
+
+        return {
+            renderData: { description: desc, answerType: 'fraction' },
+            token: this.toBase64(this.simplifyFraction(fav, total)),
+            clues: [
+                { text: lang === 'sv' ? "Först beräknar vi det totala antalet i gruppen." : "First, we calculate the total number in the group.", latex: `${aCount} + ${bCount} = ${total}` },
+                { text: lang === 'sv' ? "Sannolikheten skrivs som andelen av det hela." : "Probability is written as the part of the whole.", latex: `\\frac{${fav}}{${total}}` }
+            ]
+        };
+    }
+
+    // --- LEVEL 3: Percentages (L1/L2 logic + 3 New scenarios) ---
+    private level3_Percentages(lang: string): any {
+        const ratio = this.getNiceRatio();
+        const type = MathUtils.randomChoice(['visual', 'group', 'factor', 'exam', 'sports', 'factory']);
+
+        let desc = "";
+        let steps = [];
+
+        if (type === 'visual') {
+            desc = lang === 'sv'
+                ? `I en samling med ${ratio.d} kulor är ${ratio.n} stycken röda. Vad är sannolikheten i procent att du drar en röd kula?`
+                : `In a collection of ${ratio.d} marbles, ${ratio.n} are red. What is the probability in percent that you pick a red marble?`;
+            steps.push({ text: lang === 'sv' ? "Skriv först sannolikheten som ett bråk." : "First write the probability as a fraction.", latex: `\\frac{${ratio.n}}{${ratio.d}}` });
+        } 
+        else if (type === 'group') {
+            desc = lang === 'sv'
+                ? `I en klass med ${ratio.d} elever har ${ratio.n} elever glasögon. Hur många procent av eleverna har glasögon?`
+                : `In a class of ${ratio.d} students, ${ratio.n} students wear glasses. What percentage of the students wear glasses?`;
+            steps.push({ text: lang === 'sv' ? "Dela antalet med glasögon med totala antalet." : "Divide the number with glasses by the total number.", latex: `\\frac{${ratio.n}}{${ratio.d}}` });
+        }
+        else if (type === 'factor') {
+            const limit = MathUtils.randomChoice([10, 20, 25, 50]);
+            const step = MathUtils.randomChoice([2, 5, 10]);
+            const count = Math.floor(limit / step);
+            const ans = (count / limit) * 100;
+            desc = lang === 'sv'
+                ? `Du drar en siffra mellan 1 och ${limit}. Vad är sannolikheten i procent att siffran är en faktor av ${step}?`
+                : `You pick a number between 1 and ${limit}. What is the probability in percent that the number is a multiple of ${step}?`;
+            
             return {
-                renderData: {
-                    description: lang === 'sv' 
-                        ? `Hur många 3-siffriga koder kan man skapa om den första siffran inte får vara 0?` 
-                        : `How many 3-digit PINs can be made if the first digit cannot be 0?`,
-                    answerType: 'numeric'
-                },
-                token: this.toBase64("900"),
-                clues: [
-                    { text: lang === 'sv' ? "Första siffran har 9 val (1-9)." : "First digit has 9 choices (1-9).", latex: "9" },
-                    { text: lang === 'sv' ? "De andra två siffrorna har 10 val var (0-9)." : "The other two have 10 choices each (0-9).", latex: "10 \\cdot 10" },
-                    { text: lang === 'sv' ? "Multiplicera alla steg." : "Multiply all steps.", latex: "9 \\cdot 10 \\cdot 10 = 900" }
-                ]
+                renderData: { description: desc, answerType: 'numeric', suffix: '%' },
+                token: this.toBase64(ans.toString()),
+                clues: [{ text: lang === 'sv' ? "Hitta andelen som ett bråk först." : "Find the share as a fraction first.", latex: `\\frac{${count}}{${limit}} = ${ans}\\%` }]
             };
-        } else if (mode === 'handshakes') {
-            const n = MathUtils.randomInt(5, 10);
-            const ans = (n * (n - 1)) / 2;
+        }
+        else if (type === 'exam') {
+            desc = lang === 'sv'
+                ? `På ett prov deltog ${ratio.d} elever. ${ratio.n} av dem fick högsta betyg. Vad är sannolikheten i procent att en slumpmässigt vald elev fick högsta betyg?`
+                : `In an exam with ${ratio.d} students, ${ratio.n} received the highest grade. What is the probability in percent that a randomly chosen student received the highest grade?`;
+            steps.push({ text: lang === 'sv' ? "Beräkna andelen framgångsrika prov." : "Calculate the share of successful exams.", latex: `\\frac{${ratio.n}}{${ratio.d}}` });
+        }
+        else if (type === 'sports') {
+            desc = lang === 'sv'
+                ? `En basketspelare kastar ${ratio.d} straffkast och sätter ${ratio.n} av dem. Vad är sannolikheten i procent att nästa kast går i mål?`
+                : `A basketball player takes ${ratio.d} free throws and makes ${ratio.n} of them. What is the probability in percent that the next throw scores?`;
+            steps.push({ text: lang === 'sv' ? "Andelen lyckade kast ger oss sannolikheten." : "The share of successful throws gives us the probability.", latex: `\\frac{${ratio.n}}{${ratio.d}}` });
+        }
+        else { // factory
+            desc = lang === 'sv'
+                ? `I en kontroll av ${ratio.d} glödlampor upptäcktes det att ${ratio.n} var defekta. Vad är sannolikheten i procent att en slumpmässigt vald lampa är defekt?`
+                : `In a quality check of ${ratio.d} lightbulbs, ${ratio.n} were found to be defective. What is the probability in percent that a randomly chosen bulb is defective?`;
+            steps.push({ text: lang === 'sv' ? "Dela antalet defekta med det totala antalet kontrollerade." : "Divide the number of defective items by the total number checked.", latex: `\\frac{${ratio.n}}{${ratio.d}}` });
+        }
+
+        steps.push({ text: lang === 'sv' ? "Multiplicera med 100 för att få svaret i procent." : "Multiply by 100 to get the answer in percent.", latex: `\\frac{${ratio.n}}{${ratio.d}} \\cdot 100 = ${ratio.pct}\\%` });
+
+        return {
+            renderData: { description: desc, answerType: 'numeric', suffix: '%' },
+            token: this.toBase64(ratio.pct.toString()),
+            clues: steps
+        };
+    }
+
+    // --- LEVEL 4: Complementary Logic (10 Scenarios) ---
+    private level4_Complementary(lang: string): any {
+        const scenarios = [
+            { sv: "risken för regn är {x}%", en: "the risk of rain is {x}%", max: 95 },
+            { sv: "chansen att vinna är {x}%", en: "the chance of winning is {x}%", max: 50 },
+            { sv: "sannolikheten att bussen är försenad är {x}%", en: "the probability that the bus is late is {x}%", max: 40 },
+            { sv: "andelen defekta varor är {x}%", en: "the share of defective goods is {x}%", max: 10 },
+            { sv: "risken att förlora matchen är {x}%", en: "the risk of losing the match is {x}%", max: 60 },
+            { sv: "chansen för solsken imorgon är {x}%", en: "the chance of sunshine tomorrow is {x}%", max: 90 },
+            { sv: "sannolikheten för rött ljus är {x}%", en: "the probability of a red light is {x}%", max: 70 },
+            { sv: "risken att batteriet tar slut är {x}%", en: "the risk of the battery running out is {x}%", max: 30 },
+            { sv: "sannolikheten för en nitlott är {x}%", en: "the probability of a losing ticket is {x}%", max: 95 },
+            { sv: "risken att missa tåget är {x}%", en: "the risk of missing the train is {x}%", max: 20 }
+        ];
+
+        const s = MathUtils.randomChoice(scenarios);
+        const x = MathUtils.randomInt(5, s.max);
+        const ans = 100 - x;
+
+        const desc = lang === 'sv'
+            ? `Om ${s.sv.replace('{x}', x.toString())}, vad är sannolikheten för komplementhändelsen (motsatsen)?`
+            : `If ${s.en.replace('{x}', x.toString())}, what is the probability of the complementary event (the opposite)?`;
+
+        return {
+            renderData: { description: desc, answerType: 'numeric', suffix: '%' },
+            token: this.toBase64(ans.toString()),
+            clues: [
+                { text: lang === 'sv' ? "Hela sannolikheten är 100%. Dra bort den kända chansen för att hitta motsatsen." : "The total probability is 100%. Subtract the known chance to find the opposite.", latex: `100\\% - ${x}\\% = ${ans}\\%` }
+            ]
+        };
+    }
+
+    // --- LEVEL 5: Event Chains (10 Scenarios - Without Replacement) ---
+    private level5_EventChains(lang: string): any {
+        const scenarios = [
+            { itemSv: "godisbitar", itemEn: "candies", aNameSv: "sura", bNameSv: "söta", aNameEn: "sour", bNameEn: "sweet" },
+            { itemSv: "frukter", itemEn: "fruits", aNameSv: "äpplen", bNameSv: "päron", aNameEn: "apples", bNameEn: "pears" },
+            { itemSv: "strumpor", itemEn: "socks", aNameSv: "vita", bNameSv: "svarta", aNameEn: "white", bNameEn: "black" },
+            { itemSv: "tennisbollar", itemEn: "tennis balls", aNameSv: "nya", bNameSv: "gamla", aNameEn: "new", bNameEn: "old" },
+            { itemSv: "kort", itemEn: "cards", aNameSv: "spader", bNameSv: "hjärter", aNameEn: "spades", bNameEn: "hearts" },
+            { itemSv: "cupcakes", itemEn: "cupcakes", aNameSv: "vanilj", bNameSv: "choklad", aNameEn: "vanilla", bNameEn: "chocolate" },
+            { itemSv: "spelmarker", itemEn: "game tokens", aNameSv: "guld", bNameSv: "silver", aNameEn: "gold", bNameEn: "silver" },
+            { itemSv: "skruvar", itemEn: "screws", aNameSv: "långa", bNameSv: "korta", aNameEn: "long", bNameEn: "short" },
+            { itemSv: "namnlappar", itemEn: "name tags", aNameSv: "tjejer", bNameSv: "killar", aNameEn: "girls", bNameEn: "boys" },
+            { itemSv: "pennor", itemEn: "pens", aNameSv: "blåa", bNameSv: "svarta", aNameEn: "blue", bNameEn: "black" }
+        ];
+
+        const s = MathUtils.randomChoice(scenarios);
+        const aCount = MathUtils.randomInt(4, 6);
+        const bCount = MathUtils.randomInt(4, 6);
+        const total = aCount + bCount;
+
+        const p1N = aCount;
+        const p1D = total;
+        const p2N = aCount - 1; 
+        const p2D = total - 1; 
+
+        const desc = lang === 'sv'
+            ? `I en behållare finns det ${aCount} ${s.aNameSv} och ${bCount} ${s.bNameSv} ${s.itemSv}. Du tar ut en slumpmässigt och lägger den åt sidan. Sedan tar du en till. Vad är sannolikheten att båda är ${s.aNameSv}?`
+            : `In a container, there are ${aCount} ${s.aNameEn} and ${bCount} ${s.bNameEn} ${s.itemEn}. You pick one at random and set it aside. Then you pick another one. What is the probability that both are ${s.aNameEn}?`;
+
+        return {
+            renderData: { description: desc, answerType: 'fraction' },
+            token: this.toBase64(this.simplifyFraction(p1N * p2N, p1D * p2D)),
+            clues: [
+                { text: lang === 'sv' ? "Första draget:" : "First draw:", latex: `P(\\text{1}) = \\frac{${p1N}}{${p1D}}` },
+                { text: lang === 'sv' ? "Andra draget (en är borta, så både täljare och nämnare minskar!):" : "Second draw (one is gone, so both numerator and denominator decrease!):", latex: `P(\\text{2}) = \\frac{${p2N}}{${p2D}}` },
+                { text: lang === 'sv' ? "Multiplicera stegen för att få den totala sannolikheten." : "Multiply the steps to get the total probability.", latex: `\\frac{${p1N}}{${p1D}} \\cdot \\frac{${p2N}}{${p2D}}` }
+            ]
+        };
+    }
+
+    // --- LEVEL 6: Combinatorics (Multiplication Principle) ---
+    private level6_Combinatorics(lang: string): any {
+        const type = MathUtils.randomChoice(['pin', 'menu', 'handshake']);
+
+        if (type === 'pin') {
+            const digits = MathUtils.randomChoice([3, 4]);
+            const ans = Math.pow(10, digits);
             return {
                 renderData: {
-                    description: lang === 'sv' ? `${n} personer träffas och alla skakar hand med varandra en gång. Hur många handskakningar sker?` : `${n} people meet and everyone shakes hands once. How many handshakes?`,
+                    description: lang === 'sv' ? `Hur många olika ${digits}-siffriga koder kan skapas om siffrorna 0-9 får upprepas?` : `How many different ${digits}-digit codes can be created if the digits 0-9 can repeat?`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()),
-                clues: [
-                    { text: lang === 'sv' ? `Varje person (${n}) hälsar på ${n-1} andra.` : `Each person (${n}) greets ${n-1} others.` },
-                    { text: lang === 'sv' ? "Eftersom A-B är samma handskakning som B-A måste vi dela med 2." : "Since A-B is the same as B-A, we divide by 2.", latex: `\\frac{${n} \\cdot ${n-1}}{2}` }
-                ]
-            };
-        } else {
-            const A = MathUtils.randomInt(3, 5);
-            const B = MathUtils.randomInt(3, 5);
-            const C = MathUtils.randomInt(2, 4);
-            return {
-                renderData: {
-                    description: lang === 'sv' ? `Du har ${A} tröjor, ${B} byxor och ${C} par skor. Hur många outfits?` : `You have ${A} shirts, ${B} pants, and ${C} shoes. How many outfits?`,
-                    answerType: 'numeric'
-                },
-                token: this.toBase64((A * B * C).toString()),
-                clues: [{ text: lang === 'sv' ? "Multiplikationsprincipen: multiplicera antalet val i varje kategori." : "Multiplication principle: multiply the number of choices.", latex: `${A} \\cdot ${B} \\cdot ${C}` }]
+                clues: [{ text: lang === 'sv' ? "Det finns 10 val för varje siffra i koden." : "There are 10 choices for each digit in the code.", latex: `10^${digits}` }]
             };
         }
+
+        if (type === 'handshake') {
+            const n = MathUtils.randomInt(5, 12);
+            const ans = (n * (n - 1)) / 2;
+            return {
+                renderData: {
+                    description: lang === 'sv' ? `I ett rum träffas ${n} personer och alla skakar hand med varandra exakt en gång. Hur många handskakningar sker totalt?` : `In a room, ${n} people meet and everyone shakes hands with each other exactly once. How many handshakes occur in total?`,
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(ans.toString()),
+                clues: [{ text: lang === 'sv' ? "Varje person hälsar på n-1 andra, men vi delar på två eftersom person A till B är samma som B till A." : "Each person greets n-1 others, but we divide by two because person A to B is the same as B to A.", latex: `\\frac{${n} \\cdot ${n-1}}{2}` }]
+            };
+        }
+
+        const s = MathUtils.randomInt(2, 4);
+        const m = MathUtils.randomInt(3, 5);
+        const d = MathUtils.randomInt(2, 3);
+        return {
+            renderData: {
+                description: lang === 'sv' ? `En meny har ${s} förrätter, ${m} varmrätter och ${d} efterrätter. Hur många olika 3-rätters menyer kan man kombinera?` : `A menu has ${s} starters, ${m} mains, and ${d} desserts. How many different 3-course combinations are possible?`,
+                answerType: 'numeric'
+            },
+            token: this.toBase64((s * m * d).toString()),
+            clues: [{ text: lang === 'sv' ? "Multiplicera antalet val i varje kategori med varandra." : "Multiply the number of choices in each category with each other.", latex: `${s} \\cdot ${m} \\cdot ${d}` }]
+        };
     }
 }
