@@ -159,9 +159,9 @@ export class ProbabilityGen {
         }
         else { // factory
             desc = lang === 'sv'
-                ? `I en kontroll av ${ratio.d} glödlampor upptäcktes det att ${ratio.n} var defekta. Vad är sannolikheten i procent att en slumpmässigt vald lampa är defekt?`
+                ? `I en kontroll av ${ratio.d} glödlampor upptäcktes det att ${ratio.n} var trasiga. Vad är sannolikheten i procent att en slumpmässigt vald lampa är defekt?`
                 : `In a quality check of ${ratio.d} lightbulbs, ${ratio.n} were found to be defective. What is the probability in percent that a randomly chosen bulb is defective?`;
-            steps.push({ text: lang === 'sv' ? "Dela antalet defekta med det totala antalet kontrollerade." : "Divide the number of defective items by the total number checked.", latex: `\\frac{${ratio.n}}{${ratio.d}}` });
+            steps.push({ text: lang === 'sv' ? "Dela antalet trasiga med det totala antalet kontrollerade." : "Divide the number of defective items by the total number checked.", latex: `\\frac{${ratio.n}}{${ratio.d}}` });
         }
 
         steps.push({ text: lang === 'sv' ? "Multiplicera med 100 för att få svaret i procent." : "Multiply by 100 to get the answer in percent.", latex: `\\frac{${ratio.n}}{${ratio.d}} \\cdot 100 = ${ratio.pct}\\%` });
@@ -179,7 +179,7 @@ export class ProbabilityGen {
             { sv: "risken för regn är {x}%", en: "the risk of rain is {x}%", max: 95 },
             { sv: "chansen att vinna är {x}%", en: "the chance of winning is {x}%", max: 50 },
             { sv: "sannolikheten att bussen är försenad är {x}%", en: "the probability that the bus is late is {x}%", max: 40 },
-            { sv: "andelen defekta varor är {x}%", en: "the share of defective goods is {x}%", max: 10 },
+            { sv: "andelen trasiga varor är {x}%", en: "the share of defective goods is {x}%", max: 10 },
             { sv: "risken att förlora matchen är {x}%", en: "the risk of losing the match is {x}%", max: 60 },
             { sv: "chansen för solsken imorgon är {x}%", en: "the chance of sunshine tomorrow is {x}%", max: 90 },
             { sv: "sannolikheten för rött ljus är {x}%", en: "the probability of a red light is {x}%", max: 70 },
