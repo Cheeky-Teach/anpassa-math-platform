@@ -20,7 +20,8 @@ export class ProgressionRules {
         statistics: 6,
         pythagoras: 6,
         change_factor: 5,
-        angles: 6, // NEW
+        angles: 6,
+        patterns: 5
     };
 
     public static checkLevelUp(newStreak: number, currentLevel: number, topic: string): boolean {

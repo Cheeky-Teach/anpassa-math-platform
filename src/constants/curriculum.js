@@ -18,6 +18,7 @@ export const CATEGORIES = {
         color: 'indigo',
         generators: [
             { id: 'ExpressionSimplificationGen', api: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
+            { id: 'PatternsGen', api: 'patterns', label: { sv: "Algebraiska mönster", en: "Algebraic Patterns" } },
             { id: 'EquationGenerator', api: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
             { id: 'LinearGraphGenerator', api: 'graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
         ]
@@ -83,6 +84,13 @@ export const LEVEL_DESCRIPTIONS = {
         1: { sv: "Multiplikation & Division (10, 100...)", en: "Mult & Div (10, 100...)" },
         2: { sv: "Begreppsförståelse (MC)", en: "Conceptual (MC)" },
         3: { sv: "Decimala faktorer (0.1, 0.01...)", en: "Decimal factors (0.1, 0.01...)" }
+    },
+    PatternsGen: { 
+        1: { sv: "Hitta nästa tal & Skillnad", en: "Next Number & Difference" },
+        2: { sv: "Beräkna höga figurer", en: "Calculate High Terms" },
+        3: { sv: "Från bild till uttryck", en: "From Visual to Expression" },
+        4: { sv: "Från tabell till formel", en: "Table to Formula" },
+        5: { sv: "Lös ut n (baklänges)", en: "Solve for n" }
     },
     PercentGen: {
         1: { sv: "Grundläggande (Rutnät)", en: "Basic Concepts (Grid)" },

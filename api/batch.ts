@@ -19,7 +19,8 @@ import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
 import { FractionBasicsGen } from '../src/core/generators/FractionBasicsGen.js';
 import { FractionArithGen } from '../src/core/generators/FractionArithGen.js';
 import { ChangeFactorGen } from '../src/core/generators/ChangeFactorGen.js';
-import { AnglesGen } from '../src/core/generators/AnglesGen.js'; // NEW
+import { AnglesGen } from '../src/core/generators/AnglesGen.js';
+import { PatternsGen } from '../src/core/generators/PatternsGen.js';
 
 interface VercelRequest extends IncomingMessage {
     body: any;
@@ -49,7 +50,8 @@ const generators: any = {
     probability: new ProbabilityGen(),
     statistics: new StatisticsGen(),
     change_factor: new ChangeFactorGen(),
-    angles: new AnglesGen() // NEW
+    angles: new AnglesGen(),
+    patterns: new PatternsGen() // NY
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {

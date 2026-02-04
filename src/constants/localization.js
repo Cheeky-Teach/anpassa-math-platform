@@ -23,6 +23,7 @@ export const CATEGORIES = {
         topics: [
             { id: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
             { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
+            { id: 'patterns', label: { sv: "Algebraiska möster", en: "Algebraic patterns" } },
             { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
         ]
     },
@@ -269,5 +270,12 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Problemlösning", en: "Word Problems" },
         5: { sv: "Avstånd (Koordinater)", en: "Distance (Coordinates)" },
         6: { sv: "Är den rätvinklig?", en: "Is it Right-Angled?" }
+    },
+    patterns: { 
+        1: { sv: "Hitta nästa tal & Skillnad", en: "Next Number & Difference" },
+        2: { sv: "Beräkna höga figurer", en: "Calculate High Terms" },
+        3: { sv: "Från bild till uttryck", en: "From Visual to Expression" },
+        4: { sv: "Från tabell till formel", en: "Table to Formula" },
+        5: { sv: "Lös ut n (baklänges)", en: "Solve for n" }
     }
 };

@@ -47,6 +47,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         content: [
           "Innebörden av variabelbegreppet och dess användning i algebraiska uttryck, formler och ekvationer.", // simplify
           "Algebraiska uttryck, formler och ekvationer i situationer som är relevanta för eleven.",
+          "Algebraiska mönster och hur de kan beskrivas med uttryck.",
           "Metoder för ekvationslösning.", // equation
           "Funktioner och räta linjens ekvation." // linear_graph
         ]

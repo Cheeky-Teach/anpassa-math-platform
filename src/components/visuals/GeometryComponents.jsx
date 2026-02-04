@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import AngleVisual from './AngleComponents'; // NEW IMPORT
+import PatternVisual from './PatternComponents';
 
 export const GeometryVisual = ({ data }) => {
     if (!data) return null;
@@ -8,7 +9,10 @@ export const GeometryVisual = ({ data }) => {
     if (data.type === 'angle') {
         return <AngleVisual data={data} />;
     }
-
+    //PATTERNS
+    if (data.type === 'pattern') {
+        return <PatternVisual data={data} />;
+    }
     // --- FREQUENCY TABLE ---
     if (data.type === 'frequency_table') {
         const { headers, rows } = data;
