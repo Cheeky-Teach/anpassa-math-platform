@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import AngleVisual from './AngleComponents'; // NEW IMPORT
+import AngleVisual from './AngleComponents';
 import PatternVisual from './PatternComponents';
+import ProbabilityTree from './ProbabilityTree';
 
 export const GeometryVisual = ({ data }) => {
     if (!data) return null;
@@ -13,6 +14,10 @@ export const GeometryVisual = ({ data }) => {
     if (data.type === 'pattern') {
         return <PatternVisual data={data} />;
     }
+    if (data.type === 'probability_tree') {
+        return <ProbabilityTree data={data} />;
+    }
+
     // --- FREQUENCY TABLE ---
     if (data.type === 'frequency_table') {
         const { headers, rows } = data;

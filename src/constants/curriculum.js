@@ -168,8 +168,10 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Tärning & Slump", en: "Dice & Chance" },
         3: { sv: "Sannolikhet som Procent", en: "Probability as Percent" },
         4: { sv: "Komplementhändelse", en: "Complementary Events" },
-        5: { sv: "Oberoende Händelser", en: "Independent Events" },
-        6: { sv: "Kombinatorik", en: "Combinatorics" }
+        5: { sv: "Träddiagram", en: "Probability tree" },
+        6: { sv: "Oberoende Händelser", en: "Independent Events" },
+        7: { sv: "Kombinatorik", en: "Combinatorics" },
+        8: { sv: "Kombinatorik (Svår)", en: "Combinatorics (Hard)" }
     },
     StatisticsGen: { 
         1: { sv: "Typvärde & Variationsbredd", en: "Mode & Range" },

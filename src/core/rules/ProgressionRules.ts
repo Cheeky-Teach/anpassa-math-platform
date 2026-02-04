@@ -16,7 +16,7 @@ export class ProgressionRules {
         graph: 5,
         similarity: 4,
         percent: 6,
-        probability: 6,
+        probability: 8,
         statistics: 6,
         pythagoras: 6,
         change_factor: 5,
