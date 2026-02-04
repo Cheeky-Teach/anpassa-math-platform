@@ -23,8 +23,7 @@ export const CATEGORIES = {
         topics: [
             { id: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
             { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
-            { id: 'patterns', label: { sv: "Algebraiska möster", en: "Algebraic patterns" } },
-            { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } }
+            { id: 'patterns', label: { sv: "Algebraiska möster", en: "Algebraic patterns" } }
         ]
     },
     geometry: {
@@ -50,6 +49,7 @@ export const CATEGORIES = {
         topics: [
              { id: 'probability', label: { sv: "Sannolikhet", en: "Probability" } },
              { id: 'statistics', label: { sv: "Statistik", en: "Statistics" } },
+             { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } },
              { id: 'change_factor', label: { sv: "Förändringsfaktor", en: "Change Factor" } } // NEW
         ]
     }
