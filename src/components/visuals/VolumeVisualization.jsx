@@ -79,19 +79,39 @@ export const VolumeVisualization = ({ data }) => {
             const hPyr = (parseInt(data.labels.h) || 10) * scale;
             const x0 = cx - w/2 - d/2;
             const y0 = cy + hPyr/3; 
-            const FL = {x: x0, y: y0}; const FR = {x: x0+w, y: y0};
-            const BR = {x: x0+w+d, y: y0-d}; const BL = {x: x0+d, y: y0-d};
+            
+            // Define points
+            const FL = {x: x0, y: y0}; 
+            const FR = {x: x0+w, y: y0};
+            const BR = {x: x0+w+d, y: y0-d}; 
+            const BL = {x: x0+d, y: y0-d};
             const Apex = {x: x0 + w/2 + d/2, y: y0 - d/2 - hPyr};
+
+            // Draw base and sides
             ctx.beginPath(); ctx.moveTo(FL.x, FL.y); ctx.lineTo(FR.x, FR.y); ctx.lineTo(BR.x, BR.y); ctx.stroke();
             ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(BR.x, BR.y); ctx.lineTo(BL.x, BL.y); ctx.lineTo(FL.x, FL.y); ctx.stroke(); ctx.restore();
+            
+            // Draw edges to apex
             ctx.beginPath(); ctx.moveTo(FL.x, FL.y); ctx.lineTo(Apex.x, Apex.y); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(FR.x, FR.y); ctx.lineTo(Apex.x, Apex.y); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(BR.x, BR.y); ctx.lineTo(Apex.x, Apex.y); ctx.stroke();
             ctx.save(); ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(BL.x, BL.y); ctx.lineTo(Apex.x, Apex.y); ctx.stroke(); ctx.restore();
+            
+            // Draw height line
             const centerBase = {x: x0 + w/2 + d/2, y: y0 - d/2};
             drawDashed(centerBase.x, centerBase.y, Apex.x, Apex.y);
+            
+            // Draw Labels
             drawLabel("h=" + data.labels.h, Apex.x + 20, centerBase.y - hPyr/2);
-            drawLabel(data.labels.w || data.labels.s, x0 + w/2, y0 + 15);
+            drawLabel(data.labels.w || data.labels.s, x0 + w/2, y0 + 15); // Width label
+            
+            // --- NEW: Draw Depth Label ---
+            // Position it along the right edge (FR to BR)
+            if (data.labels.d) {
+                const depthLabelX = (FR.x + BR.x) / 2 + 10; // Midpoint + offset
+                const depthLabelY = (FR.y + BR.y) / 2;
+                drawLabel(data.labels.d, depthLabelX, depthLabelY);
+            }
         }
         else {
             let r = 50; 
