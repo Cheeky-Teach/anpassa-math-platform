@@ -140,7 +140,8 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Pyramid & Kon", en: "Pyramid & Cone" },
         5: { sv: "Klot", en: "Sphere" },
         6: { sv: "Blandat", en: "Mixed" },
-        7: { sv: "Blandat med olika enheter", en: "Mixed with units" }
+        7: { sv: "Blandat med olika enheter", en: "Mixed with units" },
+        7: { sv: "Begränsningsyta", en: "Surface Area" } 
     },
     SimilarityGenerator: {
         1: { sv: "Likformig eller inte?", en: "Similar or not?" },

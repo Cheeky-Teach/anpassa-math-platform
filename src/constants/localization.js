@@ -257,7 +257,8 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Pyramid & Kon", en: "Pyramid & Cone" },
         5: { sv: "Klot & Sammansatta", en: "Sphere & Composite" },
         6: { sv: "Blandade Volymer", en: "Mixed Volumes" },
-        7: { sv: "Enhetsomvandling", en: "Unit Conversion" } 
+        7: { sv: "Enhetsomvandling", en: "Unit Conversion" },
+        8: { sv: "Begrängsningsyta", en: "Surface Area" } 
     },
     similarity: {
         1: { sv: "Är de likformiga?", en: "Are they similar?" },

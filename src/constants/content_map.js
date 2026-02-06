@@ -203,7 +203,8 @@ export const CONTENT_MAP = {
                     { lvl: 4, desc: "Pyramid & Kon", ex: "B*h/3" },
                     { lvl: 5, desc: "Klot", ex: "4*pi*r^3/3" },
                     { lvl: 6, desc: "Blandade Volymer", ex: "Mix av kroppar" },
-                    { lvl: 7, desc: "Enhetsomvandling", ex: "dm3 <-> liter" }
+                    { lvl: 7, desc: "Enhetsomvandling", ex: "dm3 <-> liter" },
+                    { lvl: 8, desc: "Begränsningsyta", ex: "Area till 3D former" }
                 ]
             },
             {

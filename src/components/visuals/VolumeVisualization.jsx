@@ -108,7 +108,7 @@ export const VolumeVisualization = ({ data }) => {
             // --- NEW: Draw Depth Label ---
             // Position it along the right edge (FR to BR)
             if (data.labels.d) {
-                const depthLabelX = (FR.x + BR.x) / 2 + 10; // Midpoint + offset
+                const depthLabelX = (FR.x + BR.x) / 2 + 15; // Midpoint + offset
                 const depthLabelY = (FR.y + BR.y) / 2;
                 drawLabel(data.labels.d, depthLabelX, depthLabelY);
             }
@@ -165,6 +165,13 @@ export const VolumeVisualization = ({ data }) => {
                      drawDashed(cx, botY, cx, topY);
                      drawLabel("h=" + data.labels.h, cx + 5, cy);
                      drawCircleData(botY, true);
+                     
+                     // Draw Slant Height if provided
+                     if (data.labels.s) {
+                         const sX = (cx + r + cx) / 2 + 15;
+                         const sY = (botY + topY) / 2;
+                         drawLabel("s=" + data.labels.s, sX, sY);
+                     }
                  } else {
                      const seamY = cy - 20; const tipY = seamY + hCone;
                      ctx.beginPath(); ctx.moveTo(cx-r, seamY); ctx.lineTo(cx, tipY); ctx.lineTo(cx+r, seamY); ctx.stroke();
