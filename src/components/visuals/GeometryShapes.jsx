@@ -8,25 +8,34 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
     const cx = 150 + offsetX;
     const cy = 125 + offsetY;
     const safeDims = dims || {};
-    const maxDim = Math.max(safeDims.width || 0, safeDims.height || 0, (safeDims.radius || 0) * 2) || 10;
-    const baseScale = (120 / maxDim) * scale;
-    const sw = (safeDims.width || 0) * baseScale;
-    const sh = (safeDims.height || 0) * baseScale;
-    const sr = (safeDims.radius || 0) * baseScale;
+    // Ensure width and height have fallbacks to prevent NaN
+    const rawW = safeDims.width || safeDims.w || 10;
+    const rawH = safeDims.height || safeDims.h || 10;
+    const rawR = safeDims.radius || safeDims.r || 5;
 
-    const l_b = labels?.b || labels?.base || labels?.width || labels?.w || (type === 'rectangle' ? safeDims.width : null);
-    const l_h = labels?.h || labels?.height || (type === 'rectangle' ? safeDims.height : null);
-    const l_hyp = labels?.hyp || labels?.hypotenuse || labels?.c || labels?.diagonal;
+    const maxDim = Math.max(rawW, rawH, rawR * 2) || 10;
+    const baseScale = (120 / maxDim) * scale;
+    
+    const sw = rawW * baseScale;
+    const sh = rawH * baseScale;
+    const sr = rawR * baseScale;
+
+    // Use passed labels or fallback to dimension values if no label object exists
+    const safeLabels = labels || {};
+    const l_b = safeLabels.b || safeLabels.base || safeLabels.width || safeLabels.w;
+    const l_h = safeLabels.h || safeLabels.height;
+    const l_hyp = safeLabels.hyp || safeLabels.hypotenuse || safeLabels.c || safeLabels.diagonal;
+    const l_slant = safeLabels.slant || safeLabels.s; // For parallelogram slant side
     
     // Angle Labels
-    const l_a1 = labels?.a1;
-    const l_a2 = labels?.a2;
+    const l_a1 = safeLabels.a1;
+    const l_a2 = safeLabels.a2;
 
     // Side Labels for Similarity (s1, s2)
-    const l_s1 = labels?.s1;
-    const l_s2 = labels?.s2;
+    const l_s1 = safeLabels.s1;
+    const l_s2 = safeLabels.s2;
 
-    if (type === 'rectangle' || type === 'square' || type === 'parallelogram') {
+    if (type === 'rectangle' || type === 'square') {
         return (
             <g>
                 <rect x={cx - sw / 2} y={cy - sh / 2} width={sw} height={sh} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
@@ -36,9 +45,52 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
             </g>
         );
     }
+
+    if (type === 'parallelogram') {
+        const skew = sw * 0.25; // fixed skew amount for visual
+        // Points: BottomLeft, BottomRight, TopRight, TopLeft
+        // Center is (cx, cy).
+        // Top Y = cy - sh/2, Bottom Y = cy + sh/2
+        // Top Left X = cx - sw/2 + skew
+        // Bottom Left X = cx - sw/2 - skew
+        // Actually, let's keep width 'sw' consistent visually
+        const xBL = cx - sw / 2 - skew/2;
+        const xBR = cx + sw / 2 - skew/2;
+        const xTR = cx + sw / 2 + skew/2;
+        const xTL = cx - sw / 2 + skew/2;
+        
+        const yTop = cy - sh / 2;
+        const yBot = cy + sh / 2;
+
+        const path = `${xBL},${yBot} ${xBR},${yBot} ${xTR},${yTop} ${xTL},${yTop}`;
+
+        return (
+            <g>
+                {/* Dotted Height Line */}
+                <line x1={xTL} y1={yTop} x2={xTL} y2={yBot} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
+                {/* Main Shape */}
+                <polygon points={path} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
+                
+                {/* Base Label */}
+                {l_b && mkTxt((xBL + xBR)/2, yBot + 25, l_b)}
+                
+                {/* Height Label (Internal) */}
+                {l_h && mkTxt(xTL + 10, (yTop+yBot)/2, l_h, "start")}
+                
+                {/* Slant Side Label (Right Side) */}
+                {l_slant && mkTxt((xBR+xTR)/2 + 10, (yBot+yTop)/2, l_slant, "start")}
+
+                {areaText && mkTxt(cx, cy, `${areaText} cm²`, "middle", "middle", "#064e3b")}
+            </g>
+        );
+    }
+
     if (type === 'triangle') {
-        const L = cx - sw / 2; const R = cx + sw / 2;
-        const T = cy - sh / 2; const B = cy + sh / 2;
+        const L = cx - sw / 2; 
+        const R = cx + sw / 2;
+        const T = cy - sh / 2; 
+        const B = cy + sh / 2;
+        
         if (safeDims.subtype === 'right') {
             const p1 = { x: L, y: T }; const p2 = { x: L, y: B }; const p3 = { x: R, y: B };
             const path = `${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
@@ -60,11 +112,9 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
                     {l_b && mkTxt(cx, B + 25, l_b)}
                     {l_h && mkTxt(cx + 5, cy, l_h, "start")}
                     
-                    {/* Similarity Side Labels */}
                     {l_s1 && mkTxt(L - 10, cy, l_s1, "end")}
                     {l_s2 && mkTxt(R + 10, cy, l_s2, "start")}
 
-                    {/* Angle 1: Bottom Left */}
                     {l_a1 && (
                         <>
                             <path d={`M ${L + 15} ${B} A 15 15 0 0 0 ${L + 8} ${B - 13}`} fill="none" stroke="#374151" strokeWidth="2" />
@@ -72,7 +122,6 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
                         </>
                     )}
                     
-                    {/* Angle 2: Bottom Right */}
                     {l_a2 && (
                         <>
                             <path d={`M ${R - 15} ${B} A 15 15 0 0 1 ${R - 8} ${B - 13}`} fill="none" stroke="#374151" strokeWidth="2" />
@@ -85,7 +134,7 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
     }
     if (type === 'circle') {
         const isDiameter = safeDims.show === 'diameter';
-        const labelTxt = labels?.val || (labels?.r ? `r=${labels.r}` : (labels?.diameter ? `d=${labels.diameter}` : null));
+        const labelTxt = safeLabels.val || (safeLabels.r ? `r=${safeLabels.r}` : (safeLabels.diameter ? `d=${safeLabels.diameter}` : null));
         return (
             <g>
                 <circle cx={cx} cy={cy} r={sr} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
