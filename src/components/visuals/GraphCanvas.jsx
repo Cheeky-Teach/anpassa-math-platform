@@ -1,106 +1,48 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 
-/**
- * GraphCanvas
- * Renders a coordinate system and linear functions (y = kx + m).
- * Supports drawing two lines for system of equations if needed.
- */
-export const GraphCanvas = ({ visual }) => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !visual) return;
-
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width;
-    const h = canvas.height;
-    
-    // Config
-    const scale = 20; // pixels per unit
-    const centerX = w / 2;
-    const centerY = h / 2;
-
-    // Reset
-    ctx.clearRect(0, 0, w, h);
-    
-    // Draw Grid
-    ctx.strokeStyle = '#e5e7eb'; // light gray
-    ctx.lineWidth = 1;
-    
-    // Vertical grid lines
-    for (let x = 0; x <= w; x += scale) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
-    }
-    // Horizontal grid lines
-    for (let y = 0; y <= h; y += scale) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-    }
-
-    // Draw Axes
-    ctx.strokeStyle = '#374151'; // dark gray
-    ctx.lineWidth = 2;
-    
-    // X-Axis
-    ctx.beginPath();
-    ctx.moveTo(0, centerY);
-    ctx.lineTo(w, centerY);
-    ctx.stroke();
-
-    // Y-Axis
-    ctx.beginPath();
-    ctx.moveTo(centerX, 0);
-    ctx.lineTo(centerX, h);
-    ctx.stroke();
-
-    // Helper: Plot a line given slope (k) and intercept (m)
-    const drawLine = (k, m, color = '#2563eb') => {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
+export const GraphCanvas = ({ data }) => {
+    const canvasRef = useRef(null);
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas || !data) return;
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const range = data.range || 10;
+        ctx.clearRect(0, 0, width, height);
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const toX = (val) => (val + range) * (width / (range * 2));
+        const toY = (val) => height - (val + range) * (height / (range * 2));
         
-        // Calculate start and end points
-        // x = -10 (far left in units), x = 10 (far right)
-        // Canvas coords: cx = centerX + x*scale, cy = centerY - y*scale
-        
-        const x1 = -15;
-        const y1 = k * x1 + m;
-        
-        const x2 = 15;
-        const y2 = k * x2 + m;
-
-        ctx.moveTo(centerX + x1 * scale, centerY - y1 * scale);
-        ctx.lineTo(centerX + x2 * scale, centerY - y2 * scale);
-        ctx.stroke();
-    };
-
-    // Draw Lines from visual data
-    if (visual.lines) {
-        visual.lines.forEach((line, index) => {
-            // Alternate colors for systems
-            const color = index === 0 ? '#3b82f6' : '#ef4444'; 
-            drawLine(line.k, line.m, color);
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = 1;
+        for (let i = -range; i <= range; i += data.gridStep || 1) {
+            ctx.beginPath(); ctx.moveTo(toX(i), 0); ctx.lineTo(toX(i), height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, toY(i)); ctx.lineTo(width, toY(i)); ctx.stroke();
+        }
+        ctx.strokeStyle = '#374151'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(toX(0), 0); ctx.lineTo(toX(0), height); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, toY(0)); ctx.lineTo(width, toY(0)); ctx.stroke();
+        ctx.fillStyle = '#6b7280';
+        const step = data.labelStep || 2;
+        for (let i = -range; i <= range; i += step) {
+            if (i === 0) continue;
+            const xPos = toX(i); const yOrigin = toY(0);
+            ctx.beginPath(); ctx.moveTo(xPos, yOrigin - 3); ctx.lineTo(xPos, yOrigin + 3); ctx.stroke();
+            ctx.fillText(i.toString(), xPos, yOrigin + 12);
+            const yPos = toY(i); const xOrigin = toX(0);
+            ctx.beginPath(); ctx.moveTo(xOrigin - 3, yPos); ctx.lineTo(xOrigin + 3, yPos); ctx.stroke();
+            ctx.fillText(i.toString(), xOrigin - 12, yPos);
+        }
+        data.lines.forEach(line => {
+            ctx.strokeStyle = line.color || '#dc2626'; ctx.lineWidth = 3;
+            ctx.beginPath();
+            const x1 = -range; const y1 = line.slope * x1 + line.intercept;
+            const x2 = range; const y2 = line.slope * x2 + line.intercept;
+            ctx.moveTo(toX(x1), toY(y1)); ctx.lineTo(toX(x2), toY(y2)); ctx.stroke();
         });
-    }
-
-  }, [visual]);
-
-  return (
-    <div className="flex justify-center my-4 overflow-hidden rounded-lg border border-gray-200">
-      <canvas 
-        ref={canvasRef} 
-        width={300} 
-        height={300} 
-        className="bg-white"
-      />
-    </div>
-  );
+    }, [data]);
+    return <div className="flex justify-center my-4"><canvas ref={canvasRef} width={240} height={240} className="bg-white rounded border border-gray-300 shadow-sm" /></div>;
 };
-
-GraphCanvas.requiresCanvas = true;

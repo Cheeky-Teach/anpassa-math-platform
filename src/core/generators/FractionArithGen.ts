@@ -12,12 +12,13 @@ export class FractionArithGen {
         }
     }
 
+    // --- INTERNAL HELPERS ---
     private toBase64(str: string): string {
         return Buffer.from(str).toString('base64');
     }
 
     private gcd(a: number, b: number): number {
-        return b === 0 ? a : this.gcd(b, a % b);
+        return MathUtils.gcd(a, b);
     }
 
     private lcm(a: number, b: number): number {
@@ -29,273 +30,320 @@ export class FractionArithGen {
         return { n: n / div, d: d / div };
     }
 
-    // Level 1: Same Denominators (+/-)
+    // --- LEVEL 1: SAME DENOMINATORS ---
     private level1_SameDenom(lang: string): any {
-        const op = MathUtils.randomChoice(['+', '-']);
-        const den = MathUtils.randomInt(3, 20); // Expanded range
-        
-        let n1 = MathUtils.randomInt(1, den - 1);
-        let n2 = MathUtils.randomInt(1, den - 1);
-        
-        // Prevent zero result and negatives
-        if (op === '-') {
-            if (n1 === n2) n2 = Math.max(1, n1 - 1); // Force diff
-            if (n1 < n2) [n1, n2] = [n2, n1];
-        }
+        const variation = Math.random();
 
-        const resN = op === '+' ? n1 + n2 : n1 - n2;
-        const resD = den;
-        const simp = this.simplify(resN, resD);
-
-        const desc = lang === 'sv' ? "Beräkna:" : "Calculate:";
-
-        return {
-            renderData: {
-                description: desc,
-                latex: `\\frac{${n1}}{${den}} ${op} \\frac{${n2}}{${den}}`,
-                answerType: 'fraction', // Triggers n/d input
-                geometry: null
-            },
-            token: this.toBase64(`${simp.n}/${simp.d}`),
-            clues: [
-                { 
-                    text: lang === 'sv' ? "Nämnarna (botten) är lika. Addera/subtrahera bara täljarna." : "Denominators are the same. Just add/subtract the numerators.",
-                    latex: `\\frac{${n1} ${op} ${n2}}{${den}} = \\frac{${resN}}{${resD}}`
-                },
-                {
-                    text: lang === 'sv' ? "Svara i enklaste form." : "Answer in simplest form.",
-                    latex: `\\frac{${simp.n}}{${simp.d}}`
-                }
-            ]
-        };
-    }
-
-    // Level 2: Different Denominators (+/-)
-    private level2_DiffDenom(lang: string): any {
-        const op = MathUtils.randomChoice(['+', '-']);
-        const scenario = MathUtils.randomChoice(['fit', 'coprime', 'general']);
-        
-        let d1=0, d2=0;
-        if (scenario === 'fit') {
-            d1 = MathUtils.randomInt(2, 8);
-            d2 = d1 * MathUtils.randomInt(2, 4);
-        } else if (scenario === 'coprime') {
-            d1 = MathUtils.randomInt(2, 7);
-            d2 = d1 + 1; 
-        } else {
-            d1 = MathUtils.randomInt(3, 10);
-            d2 = MathUtils.randomInt(3, 10);
-            if (d1 === d2) d2++;
-        }
-        
-        let n1 = MathUtils.randomInt(1, d1-1);
-        let n2 = MathUtils.randomInt(1, d2-1);
-
-        const commonD = this.lcm(d1, d2);
-        const extN1 = n1 * (commonD/d1);
-        const extN2 = n2 * (commonD/d2);
-        
-        // Prevent zero and negative
-        if (op === '-') {
-            if (extN1 === extN2) {
-                // Adjust n1 to be larger
-                n1 = Math.min(d1-1, n1+1); 
-                // Recalc extension
-            }
-            // Swap if needed
-            if (n1/d1 < n2/d2) {
-                [n1, n2] = [n2, n1];
-                [d1, d2] = [d2, d1];
-            }
-        }
-
-        // Recalculate finals after potential swap/adjust
-        const finalCommonD = this.lcm(d1, d2);
-        const fExtN1 = n1 * (finalCommonD/d1);
-        const fExtN2 = n2 * (finalCommonD/d2);
-        
-        const resN = op === '+' ? fExtN1 + fExtN2 : fExtN1 - fExtN2;
-        if (resN === 0) return this.level2_DiffDenom(lang); // Reroll if still zero
-
-        const simp = this.simplify(resN, finalCommonD);
-
-        return {
-            renderData: {
-                description: lang === 'sv' ? "Beräkna (Minsta gemensamma nämnare):" : "Calculate (Lowest Common Denominator):",
-                latex: `\\frac{${n1}}{${d1}} ${op} \\frac{${n2}}{${d2}}`,
-                answerType: 'fraction',
-                geometry: null
-            },
-            token: this.toBase64(`${simp.n}/${simp.d}`),
-            clues: [
-                { 
-                    text: lang === 'sv' ? `Hitta gemensam nämnare (MGN) för ${d1} och ${d2}.` : `Find common denominator (LCD) for ${d1} and ${d2}.`,
-                    latex: `\\text{MGN} = ${finalCommonD}`
-                },
-                { 
-                    text: lang === 'sv' ? "Förläng bråken." : "Extend the fractions.",
-                    latex: `\\frac{${fExtN1}}{${finalCommonD}} ${op} \\frac{${fExtN2}}{${finalCommonD}}`
-                },
-                {
-                    latex: `\\frac{${resN}}{${finalCommonD}} = \\frac{${simp.n}}{${simp.d}}`
-                }
-            ]
-        };
-    }
-
-    // Level 3: Mixed Numbers (+/-)
-    private level3_MixedNumbers(lang: string): any {
-        const op = MathUtils.randomChoice(['+', '-']);
-        
-        // Generate two mixed numbers: A b/c
-        const w1 = MathUtils.randomInt(1, 3);
-        const d1 = MathUtils.randomInt(2, 6);
-        const n1 = MathUtils.randomInt(1, d1 - 1);
-        
-        const w2 = MathUtils.randomInt(1, 2);
-        const d2 = MathUtils.randomInt(2, 6);
-        const n2 = MathUtils.randomInt(1, d2 - 1);
-
-        // Convert to improper for calculation
-        const impN1 = w1 * d1 + n1;
-        const impN2 = w2 * d2 + n2; // d2 stays d2
-        
-        // Find LCM
-        const commonD = this.lcm(d1, d2);
-        const extN1 = impN1 * (commonD / d1);
-        const extN2 = impN2 * (commonD / d2);
-        
-        // Handle Subtraction Constraints
-        let finalN1 = extN1, finalN2 = extN2;
-        let dispW1 = w1, dispN1 = n1, dispD1 = d1;
-        let dispW2 = w2, dispN2 = n2, dispD2 = d2;
-
-        if (op === '-') {
-            if (extN1 <= extN2) {
-                // Swap purely for the display variables and calculation
-                // It's easier to just swap the whole objects
-                [dispW1, dispW2] = [w2, w1];
-                [dispN1, dispN2] = [n2, n1];
-                [dispD1, dispD2] = [d2, d1];
-                [finalN1, finalN2] = [extN2, extN1];
-            }
-        }
-
-        const resNum = op === '+' ? finalN1 + finalN2 : finalN1 - finalN2;
-        
-        // Calculate result in mixed form
-        const simp = this.simplify(resNum, commonD);
-        const resWhole = Math.floor(simp.n / simp.d);
-        const resRem = simp.n % simp.d;
-        
-        // Answer string logic: "1 1/2" or just "3/2" depending on preference.
-        // Prompt asked for mixed form input.
-        const tokenStr = resRem === 0 
-            ? `${resWhole}` 
-            : (resWhole > 0 ? `${resWhole} ${resRem}/${simp.d}` : `${resRem}/${simp.d}`);
-
-        return {
-            renderData: {
-                description: lang === 'sv' ? "Beräkna. Svara i blandad form." : "Calculate. Answer as a mixed number.",
-                latex: `${dispW1} \\frac{${dispN1}}{${dispD1}} ${op} ${dispW2} \\frac{${dispN2}}{${dispD2}}`,
-                answerType: 'mixed_fraction', // Fix: Triggers the 3-box input
-                geometry: null
-            },
-            token: this.toBase64(tokenStr),
-            clues: [
-                { 
-                    text: lang === 'sv' ? "Gör om till bråkform (improper) först." : "Convert to improper fractions first.",
-                    latex: `\\frac{${finalN1}}{${commonD}} ${op} \\frac{${finalN2}}{${commonD}}`
-                },
-                {
-                    text: lang === 'sv' ? "Beräkna och gör om till blandad form." : "Calculate and convert back to mixed number.",
-                    latex: `${resWhole} \\frac{${resRem}}{${simp.d}}`
-                }
-            ]
-        };
-    }
-
-    // Level 4: Multiplication
-    private level4_Multiplication(lang: string): any {
-        const isInteger = MathUtils.randomInt(0, 1) === 1;
-        
-        if (isInteger) {
-            const int = MathUtils.randomInt(2, 8);
-            const n = MathUtils.randomInt(1, 4);
-            const d = MathUtils.randomInt(n + 1, 10);
+        // VARIATION A: Concept Check (True/False)
+        if (variation < 0.25) {
+            const d = MathUtils.randomInt(4, 9);
+            const n1 = 1;
+            const n2 = MathUtils.randomInt(1, d - 2);
+            const sum = n1 + n2;
             
-            const resN = int * n;
-            const simp = this.simplify(resN, d);
+            const correctEq = `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d}}`;
+            const wrongEq = `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d*2}}`; // The Lie
             
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Beräkna:" : "Calculate:",
-                    latex: `${int} \\cdot \\frac{${n}}{${d}}`,
-                    answerType: 'fraction'
-                },
-                token: this.toBase64(`${simp.n}/${simp.d}`),
-                clues: [
-                    { 
-                        text: lang === 'sv' ? "Heltalet multipliceras bara med täljaren." : "The whole number multiplies only with the numerator.",
-                        latex: `\\frac{${int} \\cdot ${n}}{${d}} = \\frac{${resN}}{${d}}`
-                    }
-                ]
-            };
-        } else {
-            const n1 = MathUtils.randomInt(1, 6);
-            const d1 = MathUtils.randomInt(n1 + 1, 10);
-            const n2 = MathUtils.randomInt(1, 6);
-            const d2 = MathUtils.randomInt(n2 + 1, 10);
-            
-            const resN = n1 * n2;
-            const resD = d1 * d2;
-            const simp = this.simplify(resN, resD);
+            const q = lang==='sv' ? "Vilken uträkning är rätt?" : "Which calculation is correct?";
+            const optCorrect = lang==='sv' ? "Alternativ A" : "Option A";
+            const optWrong = lang==='sv' ? "Alternativ B" : "Option B";
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Beräkna:" : "Calculate:",
-                    latex: `\\frac{${n1}}{${d1}} \\cdot \\frac{${n2}}{${d2}}`,
-                    answerType: 'fraction'
+                    description: q,
+                    latex: `A: ${correctEq} \\quad B: ${wrongEq}`,
+                    answerType: 'multiple_choice',
+                    options: [optCorrect, optWrong]
                 },
-                token: this.toBase64(`${simp.n}/${simp.d}`),
+                token: this.toBase64(optCorrect),
                 clues: [
-                    { 
-                        text: lang === 'sv' ? "Multiplicera täljare med täljare, nämnare med nämnare." : "Top times top, bottom times bottom.",
-                        latex: `\\frac{${n1} \\cdot ${n2}}{${d1} \\cdot ${d2}} = \\frac{${resN}}{${resD}}`
-                    }
+                    { text: lang==='sv' ? "Nämnaren ändras inte vid addition." : "Denominator does not change in addition.", latex: "" }
                 ]
             };
         }
-    }
 
-    // Level 5: Division
-    private level5_Division(lang: string): any {
-        const n1 = MathUtils.randomInt(1, 5);
-        const d1 = MathUtils.randomInt(n1 + 1, 8);
-        const n2 = MathUtils.randomInt(1, 5);
-        const d2 = MathUtils.randomInt(n2 + 1, 8);
-        
-        // n1/d1 divided by n2/d2 -> n1/d1 * d2/n2
-        const resN = n1 * d2;
-        const resD = d1 * n2;
-        const simp = this.simplify(resN, resD);
+        // VARIATION B: Missing Term (Algebraic)
+        if (variation < 0.5) {
+            const d = MathUtils.randomInt(5, 12);
+            const n1 = MathUtils.randomInt(1, d - 2);
+            const nMissing = MathUtils.randomInt(1, d - n1 - 1);
+            const nTotal = n1 + nMissing;
+
+            return {
+                renderData: {
+                    description: lang==='sv' ? "Vad ska stå i rutan?" : "What goes in the box?",
+                    latex: `\\frac{${n1}}{${d}} + \\frac{?}{${d}} = \\frac{${nTotal}}{${d}}`,
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(nMissing.toString()),
+                clues: [
+                    { text: lang==='sv' ? "Täljarna måste bli summan." : "Numerators must sum up.", latex: `${n1} + ? = ${nTotal}` }
+                ]
+            };
+        }
+
+        // VARIATION C: Standard Calculation
+        const den = MathUtils.randomInt(4, 15);
+        const n1 = MathUtils.randomInt(1, den-2);
+        const n2 = MathUtils.randomInt(1, den - n1 - 1) || 1;
+        const sumN = n1 + n2;
+        const simp = this.simplify(sumN, den);
 
         return {
             renderData: {
-                description: lang === 'sv' ? "Beräkna:" : "Calculate:",
-                latex: `\\frac{${n1}}{${d1}} \\div \\frac{${n2}}{${d2}}`,
+                description: lang==='sv' ? "Beräkna:" : "Calculate:",
+                latex: `\\frac{${n1}}{${den}} + \\frac{${n2}}{${den}}`,
                 answerType: 'fraction'
             },
             token: this.toBase64(`${simp.n}/${simp.d}`),
-            clues: [
-                { 
-                    text: lang === 'sv' ? "Invertera det andra bråket och byt till gånger." : "Invert the second fraction and switch to multiply.",
-                    latex: `\\frac{${n1}}{${d1}} \\cdot \\frac{${d2}}{${n2}}`
+            clues: [{ text: "Add numerators only", latex: `${n1}+${n2}` }]
+        };
+    }
+
+    // --- LEVEL 2: DIFFERENT DENOMINATORS ---
+    private level2_DiffDenom(lang: string): any {
+        const variation = Math.random();
+
+        // VARIATION A: Find LCD Only
+        if (variation < 0.3) {
+            // Generate pairs with interesting LCMs (not just products)
+            const d1 = MathUtils.randomChoice([4, 6, 8, 9, 10]);
+            const d2 = MathUtils.randomChoice([2, 3, 5, 12]);
+            
+            // Ensure distinct
+            if (d1 === d2) return this.level2_DiffDenom(lang);
+
+            const lcd = this.lcm(d1, d2);
+
+            return {
+                renderData: {
+                    description: lang==='sv' 
+                        ? `Vad är minsta gemensamma nämnare (MGN) för 1/${d1} och 1/${d2}?` 
+                        : `What is the Lowest Common Denominator (LCD) for 1/${d1} and 1/${d2}?`,
+                    latex: `\\frac{1}{${d1}} + \\frac{1}{${d2}}`,
+                    answerType: 'numeric'
                 },
-                {
-                    latex: `\\frac{${resN}}{${resD}}`
-                }
-            ]
+                token: this.toBase64(lcd.toString()),
+                clues: [
+                    { text: lang==='sv' ? "Hitta multiplar..." : "Find multiples...", latex: "" }
+                ]
+            };
+        }
+
+        // VARIATION B: Spot the Error
+        if (variation < 0.6) {
+            const stmtCorrect = lang==='sv' ? "Rätt" : "Correct";
+            const stmtWrong = lang==='sv' ? "Fel" : "Wrong";
+            
+            // Generate a random erroneous equation
+            const n1=1, n2=1;
+            const d1 = MathUtils.randomInt(2, 5);
+            const d2 = MathUtils.randomInt(d1+1, 8);
+            
+            return {
+                renderData: {
+                    description: lang==='sv' ? "Är denna uträkning rätt?" : "Is this calculation correct?",
+                    latex: `\\frac{${n1}}{${d1}} + \\frac{${n2}}{${d2}} = \\frac{${n1+n2}}{${d1+d2}}`,
+                    answerType: 'multiple_choice',
+                    options: [stmtCorrect, stmtWrong]
+                },
+                token: this.toBase64(stmtWrong),
+                clues: [
+                    { text: lang==='sv' ? "Man får aldrig addera nämnare." : "You can never add denominators.", latex: "" }
+                ]
+            };
+        }
+
+        // VARIATION C: Standard Calculation
+        const d1 = MathUtils.randomInt(2, 6);
+        const d2 = MathUtils.randomInt(2, 6);
+        // Ensure differents to force LCD logic
+        if (d1 === d2) return this.level2_DiffDenom(lang);
+
+        const n1 = 1;
+        const n2 = 1; 
+
+        // Calc
+        const lcd = this.lcm(d1, d2);
+        const newN1 = n1 * (lcd/d1);
+        const newN2 = n2 * (lcd/d2);
+        const resN = newN1 + newN2;
+        const simp = this.simplify(resN, lcd);
+
+        return {
+            renderData: {
+                description: lang==='sv' ? "Beräkna:" : "Calculate:",
+                latex: `\\frac{${n1}}{${d1}} + \\frac{${n2}}{${d2}}`,
+                answerType: 'fraction'
+            },
+            token: this.toBase64(`${simp.n}/${simp.d}`),
+            clues: [{latex: `\\frac{${newN1}}{${lcd}} + \\frac{${newN2}}{${lcd}}`}]
+        };
+    }
+
+    // --- LEVEL 3: MIXED NUMBERS ---
+    private level3_MixedNumbers(lang: string): any {
+        const variation = Math.random();
+
+        // VARIATION A: Estimation
+        if (variation < 0.3) {
+            const w1 = MathUtils.randomInt(1, 3);
+            const w2 = MathUtils.randomInt(1, 3);
+            const threshold = w1 + w2 + 1;
+            
+            const ansYes = lang==='sv'?'Ja':'Yes';
+            const ansNo = lang==='sv'?'Nej':'No';
+            
+            return {
+                renderData: {
+                    description: lang==='sv' ? `Är summan större än ${threshold}?` : `Is the sum greater than ${threshold}?`,
+                    latex: `${w1}\\frac{3}{4} + ${w2}\\frac{3}{4}`,
+                    answerType: 'multiple_choice',
+                    options: [ansYes, ansNo]
+                },
+                token: this.toBase64(ansYes),
+                clues: [
+                    { text: `${w1} + ${w2} = ${w1+w2}`, latex: "" },
+                    { text: "3/4 + 3/4 = 6/4 > 1", latex: "" }
+                ]
+            };
+        }
+
+        // VARIATION B: Standard Calc
+        const w1 = MathUtils.randomInt(1, 3);
+        const w2 = MathUtils.randomInt(1, 3);
+        const d = MathUtils.randomInt(3, 6);
+        const n = 1;
+        
+        // n/d + n/d = 2n/d. If 2n < d, no carry. If 2n >= d, carry.
+        const resW = w1 + w2;
+        const resN = n + n;
+        
+        return {
+            renderData: {
+                description: lang==='sv' ? "Beräkna:" : "Calculate:",
+                latex: `${w1}\\frac{${n}}{${d}} + ${w2}\\frac{${n}}{${d}}`,
+                answerType: 'mixed_fraction'
+            },
+            token: this.toBase64(`${resW} ${resN}/${d}`),
+            clues: [{latex: `${w1}+${w2} = ${resW}, ${n}/${d}+${n}/${d}=${resN}/${d}`}]
+        };
+    }
+
+    // --- LEVEL 4: MULTIPLICATION ---
+    private level4_Multiplication(lang: string): any {
+        const variation = Math.random();
+
+        // VARIATION A: Scaling Logic
+        if (variation < 0.3) {
+            const int = MathUtils.randomChoice([10, 20, 50, 100]);
+            const fracD = MathUtils.randomChoice([2, 4, 5, 10]);
+            
+            const q = lang==='sv' 
+                ? `Om du multiplicerar ${int} med 1/${fracD}, blir talet större eller mindre än ${int}?` 
+                : `If you multiply ${int} by 1/${fracD}, does the number get bigger or smaller than ${int}?`;
+            const optSmall = lang==='sv' ? "Mindre" : "Smaller";
+            const optBig = lang==='sv' ? "Större" : "Bigger";
+
+            return {
+                renderData: {
+                    description: q,
+                    answerType: 'multiple_choice',
+                    options: [optSmall, optBig]
+                },
+                token: this.toBase64(optSmall),
+                clues: [{ text: `1/${fracD} < 1`, latex: "" }]
+            };
+        }
+
+        // VARIATION B: Area Concept
+        if (variation < 0.6) {
+            const d1 = MathUtils.randomInt(2, 4);
+            const d2 = MathUtils.randomInt(2, 5);
+            
+            const areaD = d1 * d2;
+
+            return {
+                renderData: {
+                    description: lang==='sv' 
+                        ? `En rektangel har sidorna 1/${d1} m och 1/${d2} m. Vad är arean?` 
+                        : `A rectangle has sides 1/${d1} m and 1/${d2} m. What is the area?`,
+                    latex: "",
+                    answerType: 'fraction',
+                    suffix: 'm²'
+                },
+                token: this.toBase64(`1/${areaD}`),
+                clues: [{text: "Area = base · height", latex: `\\frac{1}{${d1}} \\cdot \\frac{1}{${d2}}`}]
+            };
+        }
+
+        // VARIATION C: Standard
+        const n1 = MathUtils.randomInt(1, 4);
+        const d1 = MathUtils.randomInt(n1+1, 6);
+        const n2 = MathUtils.randomInt(1, 4);
+        const d2 = MathUtils.randomInt(n2+1, 6);
+
+        const resN = n1*n2;
+        const resD = d1*d2;
+        const simp = this.simplify(resN, resD);
+
+        return {
+            renderData: { description: "Calculate:", latex: `\\frac{${n1}}{${d1}} \\cdot \\frac{${n2}}{${d2}}`, answerType: 'fraction' },
+            token: this.toBase64(`${simp.n}/${simp.d}`),
+            clues: [{latex: `${n1}\\cdot${n2} / ${d1}\\cdot${d2}`}]
+        };
+    }
+
+    // --- LEVEL 5: DIVISION ---
+    private level5_Division(lang: string): any {
+        const variation = Math.random();
+
+        // VARIATION A: Missing Operator
+        if (variation < 0.3) {
+            const opMult = "×";
+            const opDiv = "÷";
+            const opAdd = "+";
+            
+            const frac = "1/2"; // Keep simple for operator logic
+
+            return {
+                renderData: {
+                    description: lang==='sv' ? "Vilket tecken saknas?" : "Which sign is missing?",
+                    latex: `${frac} \\text{ [ ? ] } ${frac} = 1`,
+                    answerType: 'multiple_choice',
+                    options: MathUtils.shuffle([opMult, opDiv, opAdd])
+                },
+                token: this.toBase64(opDiv),
+                clues: [
+                    { text: lang==='sv' ? "Ett tal delat med sig själv är alltid 1." : "A number divided by itself is always 1.", latex: "" }
+                ]
+            };
+        }
+
+        // VARIATION B: Reciprocal
+        if (variation < 0.6) {
+            const n = MathUtils.randomInt(2, 5);
+            const d = MathUtils.randomInt(n+1, 9);
+            return {
+                renderData: {
+                    description: lang==='sv' ? "Vad är inversen (reciprokalen) till:" : "What is the reciprocal of:",
+                    latex: `\\frac{${n}}{${d}}`,
+                    answerType: 'fraction'
+                },
+                token: this.toBase64(`${d}/${n}`),
+                clues: [{text: lang==='sv'?"Vänd upp och ner på bråket.":"Flip the fraction.", latex:""}]
+            };
+        }
+
+        // VARIATION C: Standard
+        const n = 1;
+        const d1 = MathUtils.randomInt(3, 6);
+        const d2 = 2; // Keep simple 1/2 division usually
+
+        return {
+            renderData: { description: "Calculate:", latex: `\\frac{1}{${d1}} \\div \\frac{1}{${d2}}`, answerType: 'fraction' },
+            token: this.toBase64(`${d2}/${d1}`),
+            clues: [{text: "Flip second and multiply", latex: `\\frac{1}{${d1}} \\cdot \\frac{${d2}}{1}`}]
         };
     }
 }
