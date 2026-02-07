@@ -44,21 +44,35 @@ export class FractionArithGen {
             const correctEq = `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d}}`;
             const wrongEq = `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d*2}}`; // The Lie
             
+            // Randomize position of correct equation
+            const isCorrectA = Math.random() > 0.5;
+            const latexA = isCorrectA ? correctEq : wrongEq;
+            const latexB = isCorrectA ? wrongEq : correctEq;
+            
             const q = lang==='sv' ? "Vilken uträkning är rätt?" : "Which calculation is correct?";
-            const optCorrect = lang==='sv' ? "Alternativ A" : "Option A";
-            const optWrong = lang==='sv' ? "Alternativ B" : "Option B";
+            const optCorrect = isCorrectA 
+                ? (lang==='sv' ? "Alternativ A" : "Option A")
+                : (lang==='sv' ? "Alternativ B" : "Option B");
+            
+            const optWrong = isCorrectA
+                ? (lang==='sv' ? "Alternativ B" : "Option B")
+                : (lang==='sv' ? "Alternativ A" : "Option A");
 
             return {
                 renderData: {
                     description: q,
-                    latex: `A: ${correctEq} \\quad B: ${wrongEq}`,
+                    latex: `A: ${latexA} \\quad B: ${latexB}`,
                     answerType: 'multiple_choice',
-                    options: [optCorrect, optWrong]
+                    options: MathUtils.shuffle([optCorrect, optWrong]) // Shuffle options list too, though logic handles correctness
                 },
                 token: this.toBase64(optCorrect),
                 clues: [
-                    { text: lang==='sv' ? "Nämnaren ändras inte vid addition." : "Denominator does not change in addition.", latex: "" }
-                ]
+                    { 
+                        text: lang==='sv' ? "När man adderar bråk med samma nämnare, ändras INTE nämnaren." : "When adding fractions with the same denominator, the denominator does NOT change.", 
+                        latex: "" 
+                    }
+                ],
+                metadata: { variation: 'add_concept', difficulty: 1 }
             };
         }
 
@@ -77,8 +91,12 @@ export class FractionArithGen {
                 },
                 token: this.toBase64(nMissing.toString()),
                 clues: [
-                    { text: lang==='sv' ? "Täljarna måste bli summan." : "Numerators must sum up.", latex: `${n1} + ? = ${nTotal}` }
-                ]
+                    { 
+                        text: lang==='sv' ? "Täljarna måste bli summan. Vad plus ${n1} blir ${nTotal}?" : "Numerators must sum up. What plus ${n1} equals ${nTotal}?", 
+                        latex: `${n1} + ? = ${nTotal}` 
+                    }
+                ],
+                metadata: { variation: 'add_missing', difficulty: 2 }
             };
         }
 
@@ -96,7 +114,13 @@ export class FractionArithGen {
                 answerType: 'fraction'
             },
             token: this.toBase64(`${simp.n}/${simp.d}`),
-            clues: [{ text: "Add numerators only", latex: `${n1}+${n2}` }]
+            clues: [
+                { 
+                    text: lang === 'sv' ? "Addera bara täljarna. Behåll nämnaren." : "Add only the numerators. Keep the denominator.", 
+                    latex: `${n1}+${n2}` 
+                }
+            ],
+            metadata: { variation: 'add_calc', difficulty: 1 }
         };
     }
 
@@ -106,11 +130,9 @@ export class FractionArithGen {
 
         // VARIATION A: Find LCD Only
         if (variation < 0.3) {
-            // Generate pairs with interesting LCMs (not just products)
             const d1 = MathUtils.randomChoice([4, 6, 8, 9, 10]);
             const d2 = MathUtils.randomChoice([2, 3, 5, 12]);
             
-            // Ensure distinct
             if (d1 === d2) return this.level2_DiffDenom(lang);
 
             const lcd = this.lcm(d1, d2);
@@ -125,8 +147,12 @@ export class FractionArithGen {
                 },
                 token: this.toBase64(lcd.toString()),
                 clues: [
-                    { text: lang==='sv' ? "Hitta multiplar..." : "Find multiples...", latex: "" }
-                ]
+                    { 
+                        text: lang==='sv' ? "Hitta multiplar för båda talen. Vilket är det minsta talet som finns i båda listorna?" : "Find multiples for both numbers. What is the smallest number present in both lists?", 
+                        latex: "" 
+                    }
+                ],
+                metadata: { variation: 'lcd_find', difficulty: 2 }
             };
         }
 
@@ -135,7 +161,6 @@ export class FractionArithGen {
             const stmtCorrect = lang==='sv' ? "Rätt" : "Correct";
             const stmtWrong = lang==='sv' ? "Fel" : "Wrong";
             
-            // Generate a random erroneous equation
             const n1=1, n2=1;
             const d1 = MathUtils.randomInt(2, 5);
             const d2 = MathUtils.randomInt(d1+1, 8);
@@ -149,21 +174,23 @@ export class FractionArithGen {
                 },
                 token: this.toBase64(stmtWrong),
                 clues: [
-                    { text: lang==='sv' ? "Man får aldrig addera nämnare." : "You can never add denominators.", latex: "" }
-                ]
+                    { 
+                        text: lang==='sv' ? "Man får aldrig addera nämnare direkt. Man måste hitta gemensam nämnare först." : "You can never add denominators directly. You must find a common denominator first.", 
+                        latex: "" 
+                    }
+                ],
+                metadata: { variation: 'add_error_spot', difficulty: 2 }
             };
         }
 
         // VARIATION C: Standard Calculation
         const d1 = MathUtils.randomInt(2, 6);
         const d2 = MathUtils.randomInt(2, 6);
-        // Ensure differents to force LCD logic
         if (d1 === d2) return this.level2_DiffDenom(lang);
 
         const n1 = 1;
         const n2 = 1; 
 
-        // Calc
         const lcd = this.lcm(d1, d2);
         const newN1 = n1 * (lcd/d1);
         const newN2 = n2 * (lcd/d2);
@@ -177,7 +204,13 @@ export class FractionArithGen {
                 answerType: 'fraction'
             },
             token: this.toBase64(`${simp.n}/${simp.d}`),
-            clues: [{latex: `\\frac{${newN1}}{${lcd}} + \\frac{${newN2}}{${lcd}}`}]
+            clues: [
+                { 
+                    text: lang === 'sv' ? "Gör om till gemensam nämnare." : "Convert to common denominator.", 
+                    latex: `\\frac{${newN1}}{${lcd}} + \\frac{${newN2}}{${lcd}}` 
+                }
+            ],
+            metadata: { variation: 'add_diff_denom', difficulty: 3 }
         };
     }
 
@@ -205,7 +238,8 @@ export class FractionArithGen {
                 clues: [
                     { text: `${w1} + ${w2} = ${w1+w2}`, latex: "" },
                     { text: "3/4 + 3/4 = 6/4 > 1", latex: "" }
-                ]
+                ],
+                metadata: { variation: 'mixed_est', difficulty: 3 }
             };
         }
 
@@ -215,7 +249,6 @@ export class FractionArithGen {
         const d = MathUtils.randomInt(3, 6);
         const n = 1;
         
-        // n/d + n/d = 2n/d. If 2n < d, no carry. If 2n >= d, carry.
         const resW = w1 + w2;
         const resN = n + n;
         
@@ -226,7 +259,13 @@ export class FractionArithGen {
                 answerType: 'mixed_fraction'
             },
             token: this.toBase64(`${resW} ${resN}/${d}`),
-            clues: [{latex: `${w1}+${w2} = ${resW}, ${n}/${d}+${n}/${d}=${resN}/${d}`}]
+            clues: [
+                { 
+                    text: lang === 'sv' ? "Addera heltalen först, sedan bråken." : "Add the whole numbers first, then the fractions.", 
+                    latex: `${w1}+${w2} = ${resW}, \\quad \\frac{${n}}{${d}}+\\frac{${n}}{${d}}=\\frac{${resN}}{${d}}` 
+                }
+            ],
+            metadata: { variation: 'mixed_calc', difficulty: 3 }
         };
     }
 
@@ -252,7 +291,10 @@ export class FractionArithGen {
                     options: [optSmall, optBig]
                 },
                 token: this.toBase64(optSmall),
-                clues: [{ text: `1/${fracD} < 1`, latex: "" }]
+                clues: [
+                    { text: lang==='sv' ? "Att multiplicera med ett bråk mindre än 1 gör talet mindre." : "Multiplying by a fraction less than 1 makes the number smaller.", latex: `1/${fracD} < 1` }
+                ],
+                metadata: { variation: 'mult_scaling', difficulty: 2 }
             };
         }
 
@@ -273,7 +315,13 @@ export class FractionArithGen {
                     suffix: 'm²'
                 },
                 token: this.toBase64(`1/${areaD}`),
-                clues: [{text: "Area = base · height", latex: `\\frac{1}{${d1}} \\cdot \\frac{1}{${d2}}`}]
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Area är basen gånger höjden." : "Area is base times height.", 
+                        latex: `\\frac{1}{${d1}} \\cdot \\frac{1}{${d2}}` 
+                    }
+                ],
+                metadata: { variation: 'mult_area', difficulty: 3 }
             };
         }
 
@@ -290,7 +338,13 @@ export class FractionArithGen {
         return {
             renderData: { description: "Calculate:", latex: `\\frac{${n1}}{${d1}} \\cdot \\frac{${n2}}{${d2}}`, answerType: 'fraction' },
             token: this.toBase64(`${simp.n}/${simp.d}`),
-            clues: [{latex: `${n1}\\cdot${n2} / ${d1}\\cdot${d2}`}]
+            clues: [
+                { 
+                    text: lang === 'sv' ? "Multiplicera täljare med täljare, nämnare med nämnare." : "Multiply top with top, bottom with bottom.", 
+                    latex: `\\frac{${n1} \\cdot ${n2}}{${d1} \\cdot ${d2}}` 
+                }
+            ],
+            metadata: { variation: 'mult_calc', difficulty: 3 }
         };
     }
 
@@ -304,7 +358,7 @@ export class FractionArithGen {
             const opDiv = "÷";
             const opAdd = "+";
             
-            const frac = "1/2"; // Keep simple for operator logic
+            const frac = "1/2"; 
 
             return {
                 renderData: {
@@ -315,8 +369,12 @@ export class FractionArithGen {
                 },
                 token: this.toBase64(opDiv),
                 clues: [
-                    { text: lang==='sv' ? "Ett tal delat med sig själv är alltid 1." : "A number divided by itself is always 1.", latex: "" }
-                ]
+                    { 
+                        text: lang==='sv' ? "Ett tal delat med sig själv är alltid 1." : "A number divided by itself is always 1.", 
+                        latex: "" 
+                    }
+                ],
+                metadata: { variation: 'div_operator', difficulty: 2 }
             };
         }
 
@@ -331,19 +389,27 @@ export class FractionArithGen {
                     answerType: 'fraction'
                 },
                 token: this.toBase64(`${d}/${n}`),
-                clues: [{text: lang==='sv'?"Vänd upp och ner på bråket.":"Flip the fraction.", latex:""}]
+                clues: [
+                    { text: lang==='sv'?"Vänd upp och ner på bråket.":"Flip the fraction.", latex:"" }
+                ],
+                metadata: { variation: 'div_reciprocal', difficulty: 2 }
             };
         }
 
         // VARIATION C: Standard
-        const n = 1;
         const d1 = MathUtils.randomInt(3, 6);
-        const d2 = 2; // Keep simple 1/2 division usually
+        const d2 = 2;
 
         return {
             renderData: { description: "Calculate:", latex: `\\frac{1}{${d1}} \\div \\frac{1}{${d2}}`, answerType: 'fraction' },
             token: this.toBase64(`${d2}/${d1}`),
-            clues: [{text: "Flip second and multiply", latex: `\\frac{1}{${d1}} \\cdot \\frac{${d2}}{1}`}]
+            clues: [
+                { 
+                    text: lang === 'sv' ? "Vänd på det andra bråket och multiplicera." : "Flip the second fraction and multiply.", 
+                    latex: `\\frac{1}{${d1}} \\cdot \\frac{${d2}}{1}` 
+                }
+            ],
+            metadata: { variation: 'div_calc', difficulty: 3 }
         };
     }
 }

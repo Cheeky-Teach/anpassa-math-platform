@@ -1,14 +1,49 @@
 import { MathUtils } from '../utils/MathUtils.js';
 
 export class ProbabilityGen {
+    // --- CONTEXT LIBRARY ---
+    private static readonly SCENARIOS = {
+        containers: [
+            { sv: "en påse", en: "a bag" },
+            { sv: "en urna", en: "an urn" },
+            { sv: "en glasburk", en: "a glass jar" },
+            { sv: "en låda", en: "a box" },
+            { sv: "en skål", en: "a bowl" }
+        ],
+        items: [
+            { sv: ["röda", "blåa", "gröna"], en: ["red", "blue", "green"], type: "marbles" },
+            { sv: ["sura", "söta", "starka"], en: ["sour", "sweet", "spicy"], type: "candies" },
+            { sv: ["vuxna", "barn", "pensionärer"], en: ["adults", "children", "seniors"], type: "people" },
+            { sv: ["elbilar", "bensinbilar", "hybridbilar"], en: ["electric", "petrol", "hybrid"], type: "cars" },
+            { sv: ["äpplen", "bananer", "päron"], en: ["apples", "bananas", "pears"], type: "fruits" },
+            { sv: ["spader", "hjärter", "klöver"], en: ["spades", "hearts", "clubs"], type: "cards" }
+        ],
+        lotteries: [
+            { sv: "Lotteri Alfa", en: "Lottery Alpha" },
+            { sv: "Lotteri Beta", en: "Lottery Beta" },
+            { sv: "Spelhjul X", en: "Spinner X" },
+            { sv: "Spelhjul Y", en: "Spinner Y" }
+        ],
+        likelihood: [
+            { category: 'impossible', sv: ["slå en 7:a med en vanlig tärning", "att en triangel har 4 hörn", "att det snöar vid +40 grader"], en: ["rolling a 7 on a standard die", "a triangle having 4 corners", "it snowing at +40°C"], val: 0 },
+            { category: 'certain', sv: ["att solen går upp imorgon", "att få krona eller klave vid ett kast", "att slå under 7 med en tärning"], en: ["the sun rising tomorrow", "getting heads or tails on a flip", "rolling under 7 on a die"], val: 1 },
+            { category: 'even', sv: ["att få krona vid slantsingling", "att slå ett jämnt tal med en tärning", "att dra ett rött kort ur en kortlek"], en: ["getting heads when flipping a coin", "rolling an even number on a die", "picking a red card from a deck"], val: 0.5 }
+        ],
+        atLeastOne: [
+            { sv: "ett frö gror", en: "a seed sprouts", denoms: [2, 3, 4, 5] },
+            { sv: "en skytt träffar målet", en: "a shooter hits the target", denoms: [2, 3, 5, 10] },
+            { sv: "en lott ger vinst", en: "a ticket is a winner", denoms: [4, 5, 10, 20] }
+        ]
+    };
+
     public generate(level: number, lang: string = 'sv'): any {
         switch (level) {
             case 1: return this.level1_Visuals(lang);
             case 2: return this.level2_StandardGroups(lang);
-            case 3: return this.level3_Percentages(lang);
+            case 3: return this.level3_ConceptsAndLogic(lang);
             case 4: return this.level4_Complementary(lang);
             case 5: return this.level5_ProbabilityTree(lang);
-            case 6: return this.level6_EventChains(lang); 
+            case 6: return this.level6_EventChains(lang);
             case 7: return this.level7_Combinatorics(lang);
             case 8: return this.level8_CombinatoricsComplex(lang);
             default: return this.level1_Visuals(lang);
@@ -25,605 +60,401 @@ export class ProbabilityGen {
         return `${n / divisor}/${d / divisor}`;
     }
 
-    // --- LEVEL 1: Visual Foundations ---
+    // --- LEVEL 1: Visuals & Linguistic Logic ---
     private level1_Visuals(lang: string): any {
         const variation = Math.random();
+        const counts = [MathUtils.randomInt(2, 5), MathUtils.randomInt(2, 5), MathUtils.randomInt(1, 4)];
+        const total = counts.reduce((a, b) => a + b, 0);
+        const labels = lang === 'sv' ? ["Röd", "Blå", "Grön"] : ["Red", "Blue", "Green"];
+        const container = MathUtils.randomChoice(ProbabilityGen.SCENARIOS.containers);
 
-        // VARIATION A: Inverse Logic (Probability -> Count)
-        if (variation < 0.3) {
-            const red = MathUtils.randomInt(2, 6);
-            const total = red * MathUtils.randomChoice([2, 3, 4]); 
-            const probD = total / red; 
+        if (variation < 0.33) {
+            // Variation: "NOT" Logic
+            const targetIdx = MathUtils.randomInt(0, 2);
+            const ansCount = total - counts[targetIdx];
+            const desc = lang === 'sv' 
+                ? `I ${container.sv} finns det totalt ${total} kulor. Om du drar en kula utan att titta, vad är sannolikheten att du INTE får en ${labels[targetIdx].toLowerCase()} kula?` 
+                : `In ${container.en}, there are ${total} marbles in total. If you pick a marble without looking, what is the probability that you do NOT pick a ${labels[targetIdx].toLowerCase()} marble?`;
             
+            return {
+                renderData: {
+                    description: desc,
+                    answerType: 'fraction',
+                    geometry: { type: 'probability_marbles', items: { red: counts[0], blue: counts[1], green: counts[2] } }
+                },
+                token: this.toBase64(this.simplifyFraction(ansCount, total)),
+                clues: [
+                    { text: lang === 'sv' ? "Sannolikheten för 'inte röd' omfattar alla utfall som inte är just röda." : "The probability of 'not red' covers all outcomes that are anything but red.", latex: "" },
+                    { text: lang === 'sv' ? "Räkna ihop antalet kulor som har andra färger." : "Sum up the number of marbles that have other colors.", latex: `${total} - ${counts[targetIdx]} = ${ansCount}` },
+                    { text: lang === 'sv' ? "Dela sedan det antalet med det totala antalet kulor." : "Then divide that count by the total number of marbles.", latex: `\\frac{${ansCount}}{${total}}` }
+                ],
+                metadata: { variation: 'visual_not', difficulty: 2 }
+            };
+        }
+
+        if (variation < 0.66) {
+            // Variation: "OR" Logic
+            const idx1 = 0, idx2 = 1;
+            const ansCount = counts[idx1] + counts[idx2];
             const desc = lang === 'sv'
-                ? `I en påse med ${total} kulor är sannolikheten att dra en röd kula 1/${probD}. Hur många röda kulor finns det?`
-                : `In a bag of ${total} marbles, the probability of picking a red marble is 1/${probD}. How many red marbles are there?`;
+                ? `Du ska dra en kula ur en burk med färgade kulor. Hur stor är sannolikheten att du får antingen en ${labels[idx1].toLowerCase()} eller en ${labels[idx2].toLowerCase()} kula?`
+                : `You are going to pick a marble from a jar of colored marbles. What is the probability that you get either a ${labels[idx1].toLowerCase()} or a ${labels[idx2].toLowerCase()} marble?`;
 
             return {
                 renderData: {
                     description: desc,
-                    answerType: 'numeric',
-                    geometry: null
+                    answerType: 'fraction',
+                    geometry: { type: 'probability_marbles', items: { red: counts[0], blue: counts[1], green: counts[2] } }
                 },
-                token: this.toBase64(red.toString()),
+                token: this.toBase64(this.simplifyFraction(ansCount, total)),
                 clues: [
-                    { 
-                        text: lang === 'sv' ? "Sannolikheten 1/X betyder att '1 av X' kulor är röd." : "A probability of 1/X means '1 out of X' marbles is red.", 
-                        latex: `P(\\text{Röd}) = \\frac{1}{${probD}}` 
-                    },
-                    {
-                        text: lang === 'sv' ? "Dela det totala antalet kulor i lika stora grupper enligt sannolikheten." : "Divide the total number of marbles into equal groups according to the probability.",
-                        latex: `${total} \\div ${probD} = ${red}`
-                    }
-                ]
+                    { text: lang === 'sv' ? "När vi söker sannolikheten för 'A eller B' lägger vi ihop antalen för båda dessa färger." : "When seeking the probability for 'A or B', we add the counts for both of these colors.", latex: `${counts[idx1]} + ${counts[idx2]} = ${ansCount}` },
+                    { text: lang === 'sv' ? "Sannolikheten beräknas som summan av de önskade kulorna delat med det hela." : "The probability is calculated as the sum of the desired marbles divided by the whole.", latex: `\\frac{${ansCount}}{${total}}` }
+                ],
+                metadata: { variation: 'visual_or', difficulty: 2 }
             };
         }
 
-        // VARIATION B: Spot the Lie (Dynamic Visual Ratios)
-        if (variation < 0.6) {
-            const red = MathUtils.randomInt(2, 6);
-            const blue = MathUtils.randomInt(1, 5); 
-            const total = red + blue;
-            
-            const pBlue = blue/total;
-            
-            // 1. Generate TRUE statements
-            const trueStatements = [];
-            trueStatements.push(lang === 'sv' ? `P(Röd) = ${red}/${total}` : `P(Red) = ${red}/${total}`);
-            
-            if (red > blue) {
-                trueStatements.push(lang === 'sv' ? "Det är störst chans att dra Röd" : "It is most likely to pick Red");
-            } else if (blue > red) {
-                trueStatements.push(lang === 'sv' ? "Det är störst chans att dra Blå" : "It is most likely to pick Blue");
-            } else {
-                trueStatements.push(lang === 'sv' ? "Chansen är lika stor för båda färgerna" : "The chance is equal for both colors");
-            }
-
-            // 2. Generate FALSE statement (The Lie)
-            let lie = "";
-            const lieType = MathUtils.randomInt(0, 2);
-            
-            if (lieType === 0) {
-                // Percentage Lie
-                if (pBlue < 0.5) {
-                    lie = lang === 'sv' ? "Chansen att dra Blå är över 50%" : "The chance to pick Blue is over 50%";
-                } else {
-                    lie = lang === 'sv' ? "Chansen att dra Blå är under 50%" : "The chance to pick Blue is under 50%";
-                }
-            } else if (lieType === 1) {
-                // Impossible Lie
-                lie = lang === 'sv' ? "Det är omöjligt att dra en Röd kula" : "It is impossible to pick a Red marble";
-            } else {
-                // Fraction Lie (Flip numerator/denominator logic)
-                lie = lang === 'sv' ? `P(Blå) = ${total}/${blue}` : `P(Blue) = ${total}/${blue}`;
-            }
-
-            const options = MathUtils.shuffle([trueStatements[0], trueStatements[1], lie]);
-
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Titta på bilden. Vilket påstående är FALSKT?" : "Look at the image. Which statement is FALSE?",
-                    answerType: 'multiple_choice',
-                    options: options,
-                    geometry: { type: 'probability_marbles', items: { red, blue, green: 0 } }
-                },
-                token: this.toBase64(lie),
-                clues: [
-                    { 
-                        text: lang === 'sv' ? `Räkna antalet kulor av varje färg.` : `Count the marbles of each color.`,
-                        latex: `\\text{Red}: ${red}, \\text{Blue}: ${blue}`
-                    }
-                ]
-            };
-        }
-
-        // VARIATION C: Standard Visual Calc
-        const red = MathUtils.randomInt(2, 5);
-        const blue = MathUtils.randomInt(2, 5);
-        const green = MathUtils.randomInt(1, 4);
-        const total = red + blue + green;
+        // Standard Visual Calculation
+        const target = MathUtils.randomInt(0, 2);
+        const desc = lang === 'sv'
+            ? `Titta på kulorna i behållaren. Om du blundar och tar en kula, hur stor är sannolikheten att den är ${labels[target].toLowerCase()}?`
+            : `Look at the marbles in the container. If you close your eyes and pick a marble, what is the probability that it is ${labels[target].toLowerCase()}?`;
         
         return {
             renderData: {
-                description: lang === 'sv' 
-                    ? `Vad är sannolikheten att dra en röd kula?`
-                    : `What is the probability of picking a red marble?`,
+                description: desc,
                 answerType: 'fraction',
-                geometry: { type: 'probability_marbles', items: { red, blue, green } }
+                geometry: { type: 'probability_marbles', items: { red: counts[0], blue: counts[1], green: counts[2] } }
             },
-            token: this.toBase64(this.simplifyFraction(red, total)),
+            token: this.toBase64(this.simplifyFraction(counts[target], total)),
             clues: [
-                { 
-                    text: lang === 'sv' ? "Sannolikhet är delen delat med det hela." : "Probability is the part divided by the whole.", 
-                    latex: `P = \\frac{\\text{Antal röda}}{\\text{Total}}` 
-                },
-                {
-                    latex: `\\frac{${red}}{${total}}`
-                }
-            ]
+                { text: lang === 'sv' ? "Räkna först hur många kulor det finns av den efterfrågade färgen." : "First, count how many marbles there are of the requested color.", latex: "" },
+                { text: lang === 'sv' ? "Dela sedan det antalet med det totala antalet kulor i behållaren." : "Then divide that count by the total number of marbles in the container.", latex: `\\frac{${counts[target]}}{${total}}` }
+            ],
+            metadata: { variation: 'visual_calc', difficulty: 1 }
         };
     }
 
-    // --- LEVEL 2: Randomized Groups ---
+    // --- LEVEL 2: Ratios & Ternary Logic ---
     private level2_StandardGroups(lang: string): any {
-        const scenarios = [
-            { itemSv: "personer", aSv: "vuxna", bSv: "barn", itemEn: "people", aEn: "adults", bEn: "children" },
-            { itemSv: "bilar", aSv: "elbilar", bSv: "bensinbilar", itemEn: "cars", aEn: "electric cars", bEn: "petrol cars" },
-            { itemSv: "pendlare", aSv: "tågresenärer", bSv: "bussresenärer", itemEn: "commuters", aEn: "train riders", bEn: "bus riders" },
-            { itemSv: "användare", aSv: "iPhone-användare", bSv: "Android-användare", itemEn: "users", aEn: "iPhone users", bEn: "Android users" },
-            { itemSv: "djur", aSv: "hundar", bSv: "katter", itemEn: "animals", aEn: "dogs", bEn: "cats" },
-            { itemSv: "frukter", aSv: "äpplen", bSv: "bananer", itemEn: "fruits", aEn: "apples", bEn: "bananas" },
-            { itemSv: "bestick", aSv: "gafflar", bSv: "skedar", itemEn: "cutlery", aEn: "forks", bEn: "spoons" },
-            { itemSv: "träd", aSv: "granar", bSv: "björkar", itemEn: "trees", aEn: "pines", bEn: "birches" },
-            { itemSv: "fordon", aSv: "lastbilar", bSv: "motorcyklar", itemEn: "vehicles", aEn: "trucks", bEn: "motorcycles" },
-            { itemSv: "leksaker", aSv: "klossar", bSv: "bilar", itemEn: "toys", aEn: "blocks", bEn: "cars" },
-            { itemSv: "böcker", aSv: "deckare", bSv: "romaner", itemEn: "books", aEn: "mysteries", bEn: "novels" },
-            { itemSv: "drycker", aSv: "mjölkpaket", bSv: "juicepaket", itemEn: "drinks", aEn: "milk cartons", bEn: "juice cartons" },
-            { itemSv: "bollar", aSv: "fotbollar", bSv: "tennisbollar", itemEn: "balls", aEn: "footballs", bEn: "tennis balls" },
-            { itemSv: "blommor", aSv: "rosor", bSv: "tulpaner", itemEn: "flowers", aEn: "roses", bEn: "tulips" },
-            { itemSv: "fåglar", aSv: "duvor", bSv: "skator", itemEn: "birds", aEn: "pigeons", bEn: "magpies" },
-            { itemSv: "instrument", aSv: "gitarrer", bSv: "trummor", itemEn: "instruments", aEn: "guitars", bEn: "drums" },
-            { itemSv: "möbler", aSv: "stolar", bSv: "bord", itemEn: "furniture", aEn: "chairs", bEn: "tables" },
-            { itemSv: "enheter", aSv: "datorer", bSv: "surfplattor", itemEn: "devices", aEn: "computers", bEn: "tablets" },
-            { itemSv: "bakverk", aSv: "bullar", bSv: "kakor", itemEn: "pastries", aEn: "buns", bEn: "cookies" }
-        ];
+        const variation = Math.random();
+        const ctx = MathUtils.randomChoice(ProbabilityGen.SCENARIOS.items);
+        const labels = lang === 'sv' ? ctx.sv : ctx.en;
 
-        const s = MathUtils.randomChoice(scenarios);
-        const aCount = MathUtils.randomInt(5, 15);
-        const bCount = MathUtils.randomInt(5, 15);
-        const total = aCount + bCount;
-        
-        const targetA = MathUtils.randomInt(0, 1) === 1;
-        const targetCount = targetA ? aCount : bCount;
-        const targetName = targetA ? (lang === 'sv' ? s.aSv : s.aEn) : (lang === 'sv' ? s.bSv : s.bEn);
-        const groupName = lang === 'sv' ? s.itemSv : s.itemEn;
+        if (variation < 0.5) {
+            // Ratio Logic
+            const r1 = MathUtils.randomInt(1, 4), r2 = MathUtils.randomInt(1, 4);
+            const totalParts = r1 + r2;
+            const desc = lang === 'sv' 
+                ? `I en samling är förhållandet mellan ${labels[0]} och ${labels[1]} exakt ${r1}:${r2}. Om du väljer en slumpmässigt, vad är sannolikheten att det är en ${labels[0]}?` 
+                : `In a collection, the ratio of ${labels[0]} to ${labels[1]} is exactly ${r1}:${r2}. If you choose one at random, what is the probability that it is a ${labels[0]}?`;
+            
+            return {
+                renderData: {
+                    description: desc,
+                    answerType: 'fraction'
+                },
+                token: this.toBase64(this.simplifyFraction(r1, totalParts)),
+                clues: [
+                    { text: lang === 'sv' ? "Ett förhållande visar hur delarna fördelar sig. För att få sannolikheten behöver vi först veta det totala antalet delar." : "A ratio shows how the parts are distributed. To get the probability, we first need to know the total number of parts.", latex: `${r1} + ${r2} = ${totalParts}` },
+                    { text: lang === 'sv' ? "Sannolikheten är sedan andelen av den specifika delen i förhållande till helheten." : "The probability is then the share of that specific part in relation to the whole.", latex: `\\frac{${r1}}{${totalParts}}` }
+                ],
+                metadata: { variation: 'group_ratio', difficulty: 3 }
+            };
+        }
 
+        // Ternary Missing Logic
+        const a = MathUtils.randomInt(5, 12), b = MathUtils.randomInt(5, 12);
+        const total = a + b + MathUtils.randomInt(5, 15);
+        const c = total - (a + b);
         const desc = lang === 'sv'
-            ? `I en grupp på ${total} ${groupName} är ${aCount} ${s.aSv} och resten ${s.bSv}. Vad är sannolikheten att en slumpmässigt vald är ${targetName}?`
-            : `In a group of ${total} ${groupName}, ${aCount} are ${s.aEn} and the rest are ${s.bEn}. What is the probability that a randomly chosen one is ${targetName}?`;
+            ? `Det finns totalt ${total} ${ctx.sv[0] === 'äpplen' ? 'frukter' : ctx.type} i en låda. Av dessa är ${a} stycken ${labels[0]} och ${b} stycken ${labels[1]}. De övriga är ${labels[2]}. Hur stor är sannolikheten att en slumpmässigt vald är en ${labels[2]}?`
+            : `There are a total of ${total} ${ctx.en[0] === 'apples' ? 'fruits' : ctx.type} in a box. Of these, ${a} are ${labels[0]} and ${b} are ${labels[1]}. The rest are ${labels[2]}. What is the probability that a randomly chosen one is a ${labels[2]}?`;
 
         return {
-            renderData: { description: desc, answerType: 'fraction' },
-            token: this.toBase64(this.simplifyFraction(targetCount, total)),
+            renderData: {
+                description: desc,
+                answerType: 'fraction'
+            },
+            token: this.toBase64(this.simplifyFraction(c, total)),
             clues: [
-                { 
-                    text: lang === 'sv' ? "För att hitta sannolikheten, dela antalet du söker med det totala antalet i gruppen." : "To find the probability, divide the number you are looking for by the total number in the group.", 
-                    latex: `\\frac{\\text{Antal ${targetName}}}{\\text{Total}} = \\frac{${targetCount}}{${total}}` 
-                }
-            ]
+                { text: lang === 'sv' ? "Räkna först ut hur många det finns i den tredje gruppen genom att dra bort de kända grupperna från totalen." : "First calculate how many are in the third group by subtracting the known groups from the total.", latex: `${total} - (${a} + ${b}) = ${c}` },
+                { text: lang === 'sv' ? "Sannolikheten beräknas sedan genom att dela gruppens antal med det totala antalet." : "The probability is then calculated by dividing the group count by the total count.", latex: `\\frac{${c}}{${total}}` }
+            ],
+            metadata: { variation: 'group_ternary', difficulty: 2 }
         };
     }
 
-    // --- LEVEL 3: Percentages & Comparison ---
-    private level3_Percentages(lang: string): any {
+    // --- LEVEL 3: Concepts & Comparative Logic ---
+    private level3_ConceptsAndLogic(lang: string): any {
         const variation = Math.random();
 
-        // VARIATION A: Concept Check (Bounds)
-        if (variation < 0.3) {
-            const q = lang==='sv' ? "Vilken sannolikhet beskriver en händelse som är OMÖJLIG?" : "Which probability describes an IMPOSSIBLE event?";
-            const optCorrect = "0%";
-            const optPossible = "1%";
-            const optCertain = "100%";
+        if (variation < 0.4) {
+            // System Comparison
+            const l1 = MathUtils.randomChoice(ProbabilityGen.SCENARIOS.lotteries);
+            const l2 = MathUtils.randomChoice(ProbabilityGen.SCENARIOS.lotteries.filter(l => l !== l1));
             
+            const aN = MathUtils.randomInt(1, 3), aD = MathUtils.randomChoice([4, 5]);
+            const bN = aN * 2, bD = aD * 2 + MathUtils.randomChoice([-1, 0, 1]);
+            const p1 = aN / aD, p2 = bN / bD;
+
+            const desc = lang === 'sv' 
+                ? `Vi jämför två system. I ${l1.sv} är chansen för vinst ${aN} av ${aD}. I ${l2.sv} är chansen ${bN} av ${bD}. Vid vilket system är sannolikheten för vinst högst?` 
+                : `We are comparing two systems. In ${l1.en}, the chance of winning is ${aN} out of ${aD}. In ${l2.en}, the chance is ${bN} out of ${bD}. In which system is the probability of winning highest?`;
+            
+            const options = lang === 'sv' ? [l1.sv, l2.sv, "Lika stor"] : [l1.en, l2.en, "Equal chance"];
+            const ans = p1 > p2 ? options[0] : (p2 > p1 ? options[1] : options[2]);
+
             return {
-                renderData: {
-                    description: q,
-                    answerType: 'multiple_choice',
-                    options: MathUtils.shuffle([optCorrect, optPossible, optCertain])
-                },
-                token: this.toBase64(optCorrect),
+                renderData: { description: desc, answerType: 'multiple_choice', options: MathUtils.shuffle(options) },
+                token: this.toBase64(ans),
                 clues: [
-                    { 
-                        text: lang === 'sv' ? "Om något är omöjligt kan det aldrig hända. Det motsvarar 0 av 100 gånger." : "If something is impossible, it can never happen. This corresponds to 0 out of 100 times.", 
-                        latex: "0\\%" 
-                    }
-                ]
+                    { text: lang === 'sv' ? "För att jämföra sannolikheter är det lättast att göra om bråken till decimaltal eller hitta en gemensam nämnare." : "To compare probabilities, it's easiest to convert the fractions to decimals or find a common denominator.", latex: "" },
+                    { text: lang === 'sv' ? "Beräkna värdet för varje system." : "Calculate the value for each system.", latex: `\\frac{${aN}}{${aD}} = ${p1.toFixed(2)} \\quad \\text{vs} \\quad \\frac{${bN}}{${bD}} = ${p2.toFixed(2)}` }
+                ],
+                metadata: { variation: 'concept_compare', difficulty: 3 }
             };
         }
 
-        // VARIATION B: Event Comparison (Die vs Random)
-        if (variation < 0.6) { 
-            const dieLimit = MathUtils.randomInt(2, 5); 
-            const dieType = MathUtils.randomChoice(['>', '<', 'odd', 'even', 'exact']);
-            let probA = 0;
-            let labelA = "";
-
-            if (dieType === '>') {
-                const count = 6 - dieLimit;
-                probA = count / 6;
-                labelA = lang==='sv' ? `Slå mer än ${dieLimit} med en tärning` : `Rolling > ${dieLimit} on a die`;
-            } else if (dieType === '<') {
-                const count = dieLimit - 1;
-                probA = count / 6;
-                labelA = lang==='sv' ? `Slå mindre än ${dieLimit} med en tärning` : `Rolling < ${dieLimit} on a die`;
-            } else if (dieType === 'odd') {
-                probA = 0.5;
-                labelA = lang==='sv' ? "Slå udda med en tärning" : "Rolling an Odd number";
-            } else if (dieType === 'even') {
-                probA = 0.5;
-                labelA = lang==='sv' ? "Slå jämnt med en tärning" : "Rolling an Even number";
-            } else {
-                probA = 1/6;
-                labelA = lang==='sv' ? `Slå exakt en ${dieLimit}:a` : `Rolling exactly a ${dieLimit}`;
-            }
-
-            const probB_Percent = MathUtils.randomInt(10, 90); 
-            const probB = probB_Percent / 100;
-            
-            // Escape % for LaTeX
-            const labelB = lang==='sv' 
-                ? `Det regnar imorgon (${probB_Percent}\\% )` 
-                : `It rains tomorrow (${probB_Percent}\\% )`;
-
-            let answer = "";
-            const A_perc = Math.round(probA * 100);
-            
-            if (Math.abs(probA - probB) < 0.01) {
-                return this.level3_Percentages(lang);
-            }
-
-            if (probA > probB) {
-                answer = lang==='sv' ? "Alternativ A" : "Option A";
-            } else {
-                answer = lang==='sv' ? "Alternativ B" : "Option B";
-            }
-
-            return {
-                renderData: {
-                    description: lang==='sv' ? "Vilken händelse är mest sannolik?" : "Which event is more likely?",
-                    latex: `\\begin{array}{l} A: \\text{${labelA}} \\\\[8pt] B: \\text{${labelB}} \\end{array}`,
-                    answerType: 'multiple_choice',
-                    options: [lang==='sv'?"Alternativ A":"Option A", lang==='sv'?"Alternativ B":"Option B"]
-                },
-                token: this.toBase64(answer),
-                clues: [
-                    { 
-                        text: lang==='sv' ? `Gör om A till procent.` : `Convert A to percent.`,
-                        latex: `P(A) \\approx ${A_perc}\\%`
-                    },
-                    {
-                        text: lang==='sv' ? `Jämför procenten.` : `Compare the percentages.`,
-                        latex: `${A_perc}\\% \\text{ vs } ${probB_Percent}\\%`
-                    }
-                ]
-            };
-        }
-
-        // VARIATION C: Probability Logic (Distributions & Expectation)
-        const subType = MathUtils.randomChoice(['distribution', 'expectation']);
-
-        if (subType === 'distribution') {
-            // SCENARIO: Sum to 100%
-            const scenarios = [
-                { sv: "ett lyckohjul", en: "a wheel of fortune", a: "Röd", b: "Blå", c: "Grön", aEn: "Red", bEn: "Blue", cEn: "Green" },
-                { sv: "en valurnan", en: "a ballot box", a: "Kandidat A", b: "Kandidat B", c: "Kandidat C", aEn: "Candidate A", bEn: "Candidate B", cEn: "Candidate C" },
-                { sv: "en väderprognos", en: "a weather forecast", a: "Sol", b: "Regn", c: "Molnigt", aEn: "Sun", bEn: "Rain", cEn: "Cloudy" }
-            ];
-            const s = MathUtils.randomChoice(scenarios);
-            
-            const p1 = MathUtils.randomChoice([10, 20, 25, 30, 40]);
-            const p2 = MathUtils.randomChoice([10, 15, 20, 25]);
-            const p3 = 100 - p1 - p2; // The missing part
-            
-            const labelA = lang === 'sv' ? s.a : s.aEn;
-            const labelB = lang === 'sv' ? s.b : s.bEn;
-            const labelC = lang === 'sv' ? s.c : s.cEn;
-            const item = lang === 'sv' ? s.sv : s.en;
-
-            const desc = lang === 'sv'
-                ? `För ${item} är sannolikheten för ${labelA} ${p1}% och för ${labelB} ${p2}%. Vad är sannolikheten för ${labelC}?`
-                : `For ${item}, the probability of ${labelA} is ${p1}% and ${labelB} is ${p2}%. What is the probability of ${labelC}?`;
-            
-            return {
-                renderData: {
-                    description: desc,
-                    answerType: 'numeric',
-                    suffix: '%'
-                },
-                token: this.toBase64(p3.toString()),
-                clues: [
-                    {
-                        text: lang === 'sv' ? "Summan av alla sannolikheter är alltid 100%." : "The sum of all probabilities is always 100%.",
-                        latex: `100\\% - (${p1}\\% + ${p2}\\%)`
-                    }
-                ]
-            };
-        } else {
-            // SCENARIO: Expected Value (Percent -> Count)
-            const scenarios = [
-                { sv: "att vinna på lotteriet", en: "winning the lottery" },
-                { sv: "att ett frö gror", en: "a seed sprouting" },
-                { sv: "att en produkt är defekt", en: "a product being defective" },
-                { sv: "att göra mål på straff", en: "scoring a penalty" }
-            ];
-            const s = MathUtils.randomChoice(scenarios);
-            
-            const percent = MathUtils.randomChoice([10, 20, 25, 50]); // Nice numbers
-            const total = MathUtils.randomChoice([10, 20, 40, 50, 100]);
-            const ans = (percent / 100) * total;
-            const action = lang === 'sv' ? s.sv : s.en;
-
-            const desc = lang === 'sv'
-                ? `Sannolikheten för ${action} är ${percent}%. Om du gör ${total} försök, hur många gånger förväntas det hända?`
-                : `The probability of ${action} is ${percent}%. If you make ${total} attempts, how many times is it expected to happen?`;
-
-            return {
-                renderData: {
-                    description: desc,
-                    answerType: 'numeric'
-                },
-                token: this.toBase64(ans.toString()),
-                clues: [
-                    {
-                        text: lang === 'sv' ? "Gör om procenten till decimalform eller bråk." : "Convert the percent to decimal or fraction.",
-                        latex: `${percent}\\% = ${percent/100}`
-                    },
-                    {
-                        text: lang === 'sv' ? "Multiplicera sannolikheten med antalet försök." : "Multiply the probability by the number of attempts.",
-                        latex: `${percent/100} \\cdot ${total}`
-                    }
-                ]
-            };
-        }
+        // Validity Check
+        const valid = MathUtils.randomFloat(0.1, 0.9, 1).toString();
+        const invalid = MathUtils.randomChoice(["1.4", "-0.1", "105%", "-10%"]);
+        return {
+            renderData: {
+                description: lang === 'sv' ? "En matematiker har räknat ut chansen för en händelse. Vilket av dessa värden är ett matematiskt MÖJLIGT resultat för en sannolikhet?" : "A mathematician has calculated the chance of an event. Which of these values is a mathematically POSSIBLE result for a probability?",
+                answerType: 'multiple_choice',
+                options: MathUtils.shuffle([valid, invalid, "3.0"])
+            },
+            token: this.toBase64(valid),
+            clues: [{ text: lang === 'sv' ? "Kom ihåg huvudregeln: Sannolikhet mäts alltid på en skala från 0 (helt omöjligt) till 1 (helt säkert)." : "Remember the main rule: Probability is always measured on a scale from 0 (completely impossible) to 1 (completely certain).", latex: "0 \\le P \\le 1" }],
+            metadata: { variation: 'concept_validity', difficulty: 1 }
+        };
     }
 
-    // --- LEVEL 4: Complementary (Expanded) ---
+    // --- LEVEL 4: Complementary & "At Least One" ---
     private level4_Complementary(lang: string): any {
-        const scenarios = [
-            // Original
-            { sv: "risken för regn är {x}%", en: "the risk of rain is {x}%", max: 95 },
-            { sv: "chansen att vinna är {x}%", en: "the chance of winning is {x}%", max: 50 },
-            { sv: "sannolikheten att bussen är försenad är {x}%", en: "the probability that the bus is late is {x}%", max: 40 },
-            { sv: "andelen trasiga varor är {x}%", en: "the share of defective goods is {x}%", max: 10 },
-            { sv: "risken att förlora matchen är {x}%", en: "the risk of losing the match is {x}%", max: 60 },
-            { sv: "chansen för solsken imorgon är {x}%", en: "the chance of sunshine tomorrow is {x}%", max: 90 },
-            { sv: "sannolikheten för rött ljus är {x}%", en: "the probability of a red light is {x}%", max: 70 },
-            { sv: "risken att batteriet tar slut är {x}%", en: "the risk of the battery running out is {x}%", max: 30 },
-            { sv: "sannolikheten för en nitlott är {x}%", en: "the probability of a losing ticket is {x}%", max: 95 },
-            { sv: "risken att missa tåget är {x}%", en: "the risk of missing the train is {x}%", max: 20 },
-            // Expanded
-            { sv: "chansen för snö är {x}%", en: "the chance of snow is {x}%", max: 80 },
-            { sv: "batteriet är laddat till {x}%", en: "the battery is charged to {x}%", max: 90 },
-            { sv: "nedladdningen är {x}% klar", en: "the download is {x}% complete", max: 99 },
-            { sv: "{x}% av eleverna är närvarande", en: "{x}% of the students are present", max: 95 },
-            { sv: "{x}% av fröna grodde", en: "{x}% of the seeds sprouted", max: 90 },
-            { sv: "målvakten räddar {x}% av skotten", en: "the goalie saves {x}% of the shots", max: 95 },
-            { sv: "{x}% klarade provet", en: "{x}% passed the exam", max: 90 },
-            { sv: "chansen att hitta en sittplats är {x}%", en: "the chance of finding a seat is {x}%", max: 60 },
-            { sv: "du svarade rätt på {x}% av frågorna", en: "you answered {x}% of the questions correctly", max: 95 },
-            { sv: "himlen är täckt av moln till {x}%", en: "the sky is covered by clouds to {x}%", max: 90 },
-            { sv: "du har klarat {x}% av spelet", en: "you have completed {x}% of the game", max: 90 },
-            { sv: "skytten träffar målet {x}% av gångerna", en: "the shooter hits the target {x}% of the time", max: 80 },
-            { sv: "maskinen fungerar {x}% av tiden", en: "the machine works {x}% of the time", max: 95 },
-            { sv: "tåget kommer i tid {x}% av gångerna", en: "the train arrives on time {x}% of the time", max: 90 },
-            { sv: "hotellet är bokat till {x}%", en: "the hotel is booked to {x}%", max: 95 }
-        ];
+        const variation = Math.random();
+        const scenario = MathUtils.randomChoice(ProbabilityGen.SCENARIOS.atLeastOne);
+        const d = MathUtils.randomChoice(scenario.denoms);
 
-        const s = MathUtils.randomChoice(scenarios);
-        const x = MathUtils.randomInt(5, s.max);
-        const ans = 100 - x;
+        if (variation < 0.5) {
+            // General At Least One
+            const trials = MathUtils.randomChoice([2, 3]);
+            const pNoneN = Math.pow(d - 1, trials);
+            const pNoneD = Math.pow(d, trials);
+            const ansN = pNoneD - pNoneN;
 
+            const desc = lang === 'sv' 
+                ? `Anta att sannolikheten för att ${scenario.sv} är 1/${d}. Om experimentet utförs ${trials} gånger efter varandra, vad är sannolikheten att händelsen sker MINST en gång?` 
+                : `Suppose the probability that ${scenario.en} is 1/${d}. If the experiment is performed ${trials} times in a row, what is the probability that the event happens AT LEAST once?`;
+
+            return {
+                renderData: {
+                    description: desc,
+                    answerType: 'fraction'
+                },
+                token: this.toBase64(`${ansN}/${pNoneD}`),
+                clues: [
+                    { text: lang === 'sv' ? "Istället för att räkna alla lyckade vägar är det enklare att räkna ut risken att händelsen ALDRIG sker, och sedan ta 'resten' upp till 1." : "Instead of counting all successful paths, it's simpler to calculate the risk that the event NEVER occurs, and then take 'the rest' up to 1.", latex: "" },
+                    { text: lang === 'sv' ? `Beräkna sannolikheten att misslyckas ${trials} gånger i rad.` : `Calculate the probability of failing ${trials} times in a row.`, latex: "(\\frac{" + (d - 1) + "}{" + d + "})^" + trials + " = \\frac{" + pNoneN + "}{" + pNoneD + "}" },
+                    { text: lang === 'sv' ? "Subtrahera detta från 1 (hela sannolikheten) för att få svaret." : "Subtract this from 1 (the full probability) to get the answer.", latex: "1 - \\frac{" + pNoneN + "}{" + pNoneD + "} = \\frac{" + ansN + "}{" + pNoneD + "}" }
+                ],
+                metadata: { variation: 'comp_at_least', difficulty: 4 }
+            };
+        }
+
+        // Multi-outcome Complement
+        const p1 = MathUtils.randomInt(2, 4) * 10, p2 = MathUtils.randomInt(1, 2) * 10;
+        const p3 = 100 - (p1 + p2);
         const desc = lang === 'sv'
-            ? `Om ${s.sv.replace('{x}', x.toString())}, vad är sannolikheten för komplementhändelsen?`
-            : `If ${s.en.replace('{x}', x.toString())}, what is the probability of the complementary event?`;
+            ? `I en tävling beräknas chansen för att vinna guld vara ${p1}% och chansen för silver vara ${p2}%. Om vi antar att man inte kan vinna både och, vad är sannolikheten att man INTE vinner någon av dessa medaljer?`
+            : `In a competition, the chance of winning gold is estimated at ${p1}% and the chance of silver at ${p2}%. Assuming one cannot win both, what is the probability of NOT winning either of these medals?`;
 
         return {
-            renderData: { description: desc, answerType: 'numeric', suffix: '%' },
-            token: this.toBase64(ans.toString()),
+            renderData: {
+                description: desc,
+                answerType: 'numeric', suffix: '%'
+            },
+            token: this.toBase64(p3.toString()),
             clues: [
-                { 
-                    text: lang === 'sv' ? "Summan av alla utfall är alltid 100%. Komplementhändelsen är 'resten'." : "The sum of all outcomes is always 100%. The complementary event is 'the rest'.", 
-                    latex: `100\\% - ${x}\\% = \\text{?}` 
-                }
-            ]
+                { text: lang === 'sv' ? "Summan av alla möjliga utfall i en situation är alltid 100%. Komplementhändelsen är det som återstår." : "The sum of all possible outcomes in a situation is always 100%. The complementary event is what remains.", latex: "" },
+                { text: lang === 'sv' ? "Addera de gynsamma chanserna och subtrahera summan från 100%." : "Add the favorable chances and subtract the sum from 100%.", latex: `100 - (${p1} + ${p2}) = ${p3}` }
+            ],
+            metadata: { variation: 'comp_multi', difficulty: 2 }
         };
     }
 
     // --- LEVEL 5: Probability Trees ---
     private level5_ProbabilityTree(lang: string): any {
         const variation = Math.random();
+        const d1 = MathUtils.randomInt(2, 4), d2 = MathUtils.randomInt(2, 5);
+        const dRes = d1 * d2;
 
-        // VARIATION A: Concept Check (Dependency)
-        if (variation < 0.3) {
-            const desc = lang==='sv' 
-                ? "I ett träddiagram utan återläggning, varför minskar nämnaren i steg 2?" 
-                : "In a tree diagram without replacement, why does the denominator decrease in step 2?";
-            
-            const optCorrect = lang==='sv' ? "Ett föremål är borta" : "One item is removed";
-            const optWrong = lang==='sv' ? "Sannolikheten ökar alltid" : "Probability always increases";
+        if (variation < 0.5) {
+            // Missing Variable
+            const desc = lang === 'sv'
+                ? `I ett träddiagram slutar en specifik gren i den totala sannolikheten 1/${dRes}. Om det första steget i diagrammet har sannolikheten 1/${d1}, vilken sannolikhet måste då det andra steget ha?`
+                : `In a tree diagram, a specific branch ends with a total probability of 1/${dRes}. If the first step in the diagram has a probability of 1/${d1}, what probability must the second step have?`;
+
+            return {
+                renderData: {
+                    description: desc,
+                    answerType: 'fraction',
+                    latex: `\\frac{1}{${d1}} \\cdot x = \\frac{1}{${dRes}}`
+                },
+                token: this.toBase64(`1/${d2}`),
+                clues: [
+                    { text: lang === 'sv' ? "Eftersom man multiplicerar sannolikheter längs grenarna i ett träd, kan vi använda division för att räkna baklänges." : "Since probabilities are multiplied along branches in a tree, we can use division to calculate backwards.", latex: "" },
+                    { text: lang === 'sv' ? "Dela den totala sannolikheten med det första stegets sannolikhet." : "Divide the total probability by the first step's probability.", latex: `x = \\frac{1}{${dRes}} \\div \\frac{1}{${d1}} = \\frac{1}{${d2}}` }
+                ],
+                metadata: { variation: 'tree_missing', difficulty: 3 }
+            };
+        }
+
+        // Tree Calculation
+        const c1 = MathUtils.randomInt(3, 5), c2 = MathUtils.randomInt(3, 5);
+        const tot = c1 + c2;
+        const desc = lang === 'sv'
+            ? `Du ska dra två kulor ur en påse utan att lägga tillbaka den första kula du tar. Påsen innehåller ${c1} kulor av färg A och ${c2} kulor av färg B. Beräkna sannolikheten att du drar färg A först och sedan färg B.`
+            : `You are going to pick two marbles from a bag without putting the first one back. The bag contains ${c1} marbles of color A and ${c2} marbles of color B. Calculate the probability that you pick color A first and then color B.`;
+
+        return {
+            renderData: {
+                description: desc,
+                answerType: 'fraction',
+                geometry: { type: 'probability_tree', groups: ["A", "B"], initialCounts: [c1, c2], targetBranch: 's2_1' }
+            },
+            token: this.toBase64(this.simplifyFraction(c1 * c2, tot * (tot - 1))),
+            clues: [
+                { text: lang === 'sv' ? "Multiplicera sannolikheten för det första steget med sannolikheten för det andra steget." : "Multiply the probability for the first step by the probability for the second step.", latex: "" },
+                { text: lang === 'sv' ? "Tänk på att det totala antalet kulor minskar med 1 efter det första draget." : "Keep in mind that the total number of marbles decreases by 1 after the first draw.", latex: `\\frac{${c1}}{${tot}} \\cdot \\frac{${c2}}{${tot - 1}}` }
+            ],
+            metadata: { variation: 'tree_calc', difficulty: 3 }
+        };
+    }
+
+    // --- LEVEL 6: Event Chains (Any Order) ---
+    private level6_EventChains(lang: string): any {
+        const variation = Math.random();
+        const a = MathUtils.randomInt(3, 5), b = MathUtils.randomInt(3, 5);
+        const total = a + b;
+        const ctx = MathUtils.randomChoice(ProbabilityGen.SCENARIOS.items);
+        const labels = lang === 'sv' ? ctx.sv : ctx.en;
+
+        if (variation < 0.6) {
+            // Any Order
+            const desc = lang === 'sv'
+                ? `I en ask finns det ${a} ${labels[0]} och ${b} ${labels[1]} ${ctx.sv[0] === 'röda' ? 'kulor' : ctx.sv[0] === 'sura' ? 'godisbitar' : ctx.type}. Du drar två stycken slumpmässigt utan återläggning. Vad är sannolikheten att du får exakt en av varje sort (i valfri ordning)?`
+                : `In a box, there are ${a} ${labels[0]} and ${b} ${labels[1]} ${ctx.en[0] === 'red' ? 'marbles' : ctx.en[0] === 'sour' ? 'candies' : ctx.type}. You pick two at random without replacement. What is the probability that you get exactly one of each kind (in any order)?`;
+
+            const n = (a * b) * 2;
+            const d = total * (total - 1);
+            return {
+                renderData: {
+                    description: desc,
+                    answerType: 'fraction'
+                },
+                token: this.toBase64(this.simplifyFraction(n, d)),
+                clues: [
+                    { text: lang === 'sv' ? "Det finns två olika sätt att lyckas: (Sort 1 sen Sort 2) ELLER (Sort 2 sen Sort 1)." : "There are two different ways to succeed: (Type 1 then Type 2) OR (Type 2 then Type 1).", latex: "" },
+                    { text: lang === 'sv' ? "Räkna ut sannolikheten för båda dessa vägar och addera dem sedan." : "Calculate the probability for both of these paths and then add them together.", latex: `(\\frac{${a}}{${total}} \\cdot \\frac{${b}}{${total - 1}}) + (\\frac{${b}}{${total}} \\cdot \\frac{${a}}{${total - 1}})` }
+                ],
+                metadata: { variation: 'chain_any_order', difficulty: 4 }
+            };
+        }
+
+        // Fixed Order
+        const desc = lang === 'sv'
+            ? `En behållare innehåller ${a} stycken ${labels[0]} och ${b} stycken ${labels[1]}. Om du tar ut två stycken utan att lägga tillbaka den första, vad är sannolikheten att båda är ${labels[1]}?`
+            : `A container contains ${a} pieces of ${labels[0]} and ${b} pieces of ${labels[1]}. If you take out two without putting the first one back, what is the probability that both are ${labels[1]}?`;
+
+        return {
+            renderData: {
+                description: desc,
+                answerType: 'fraction'
+            },
+            token: this.toBase64(this.simplifyFraction(b * (b - 1), total * (total - 1))),
+            clues: [
+                { text: lang === 'sv' ? "Både antalet önskade objekt och det totala antalet i behållaren minskar med 1 inför det andra draget." : "Both the number of desired objects and the total number in the container decrease by 1 for the second draw.", latex: "" },
+                { text: lang === 'sv' ? "Multiplicera sannolikheten för första och andra draget." : "Multiply the probability for the first and second draw.", latex: `\\frac{${b}}{${total}} \\cdot \\frac{${b - 1}}{${total - 1}}` }
+            ],
+            metadata: { variation: 'chain_fixed_order', difficulty: 3 }
+        };
+    }
+
+    // --- LEVEL 7: Combinatorics & Constraints ---
+    private level7_Combinatorics(lang: string): any {
+        const variation = Math.random();
+
+        if (variation < 0.5) {
+            // Constrained Multi-set
+            const c1 = MathUtils.randomInt(2, 4), c2 = MathUtils.randomInt(2, 4);
+            const desc = lang === 'sv'
+                ? `Du ska sätta ihop en outfit. Du kan välja mellan ${c1} olika tröjor och ${c2} olika par byxor, men du har bara ett par skor som fungerar. På hur många olika sätt kan du kombinera dina kläder?`
+                : `You are putting together an outfit. You can choose between ${c1} different shirts and ${c2} different pairs of pants, but you only have one pair of shoes that works. In how many different ways can you combine your clothes?`;
+
+            return {
+                renderData: {
+                    description: desc,
+                    answerType: 'numeric'
+                },
+                token: this.toBase64((c1 * c2).toString()),
+                clues: [{ text: lang === 'sv' ? "Multiplicera antalet valmöjligheter i varje kategori för att få det totala antalet kombinationer." : "Multiply the number of choices in each category to get the total number of combinations.", latex: `${c1} \\cdot ${c2} \\cdot 1` }],
+                metadata: { variation: 'comb_constraint', difficulty: 3 }
+            };
+        }
+
+        // Handshake
+        const n = MathUtils.randomInt(6, 12);
+        const desc = lang === 'sv'
+            ? `I ett rum befinner sig ${n} personer. Om alla hälsar på varandra genom att skaka hand exakt en gång, hur många handskakningar sker det då sammanlagt?`
+            : `In a room there are ${n} people. If everyone greets each other by shaking hands exactly once, how many handshakes occur in total?`;
+
+        return {
+            renderData: {
+                description: desc,
+                answerType: 'numeric'
+            },
+            token: this.toBase64(((n * (n - 1)) / 2).toString()),
+            clues: [
+                { text: lang === 'sv' ? "Använd formeln n(n-1)/2 för att räkna ut unika par, vilket hindrar att samma handskakning räknas två gånger." : "Use the formula n(n-1)/2 to calculate unique pairs, which prevents the same handshake from being counted twice.", latex: `\\frac{${n} \\cdot ${n - 1}}{2}` }
+            ],
+            metadata: { variation: 'comb_handshake', difficulty: 3 }
+        };
+    }
+
+    // --- LEVEL 8: Sophisticated Pathways & Constraints ---
+    private level8_CombinatoricsComplex(lang: string): any {
+        const variation = Math.random();
+
+        if (variation < 0.4) {
+            // VIA POINT Constraint
+            const s1 = MathUtils.randomChoice([2, 3]), s2 = MathUtils.randomChoice([2, 3]);
+            const desc = lang === 'sv' 
+                ? `En vandrare ska ta sig från punkt A till stad B via en rastplats C. Mellan A och C finns det ${s1} olika stigar, och mellan C och B finns det ${s2} olika stigar. På hur många olika sätt kan vandraren gå?` 
+                : `A hiker is going from point A to city B via a rest area C. Between A and C there are ${s1} different paths, and between C and B there are ${s2} different paths. In how many different ways can the hiker go?`;
             
             return {
                 renderData: {
                     description: desc,
-                    answerType: 'multiple_choice',
-                    options: MathUtils.shuffle([optCorrect, optWrong]),
-                    geometry: {
-                        type: 'probability_tree',
-                        groups: ["A", "B"], initialCounts: [3, 2], targetBranch: 's2_0' // Just for visual context
-                    }
+                    answerType: 'numeric',
+                    geometry: { type: 'probability_tree', subtype: 'pathway', layers: [1, s1, 1, s2, 1] }
                 },
-                token: this.toBase64(optCorrect),
-                clues: [
-                    {
-                        text: lang === 'sv' ? "När du tar något ur påsen och inte lägger tillbaka det, finns det färre saker kvar." : "When you take something out of the bag and don't put it back, there are fewer items left.",
-                        latex: "\\text{Ny total} = \\text{Gammal total} - 1"
-                    }
-                ]
+                token: this.toBase64((s1 * s2).toString()),
+                clues: [{ text: lang === 'sv' ? "För att få det totala antalet vägar multiplicerar vi antalet val för varje delsträcka." : "To get the total number of paths, we multiply the number of choices for each segment.", latex: `${s1} \\cdot ${s2}` }],
+                metadata: { variation: 'pathway_via', difficulty: 4 }
             };
         }
 
-        // VARIATION B: Missing Variable
-        if (variation < 0.6) {
-            const n1 = 1, d1 = 2;
-            const n2 = 1, d2 = 3; 
-            const nRes = 1, dRes = 6;
-
-            return {
-                renderData: {
-                    description: lang==='sv' ? "Vad är sannolikheten för den andra grenen om totalen är 1/6?" : "What is the probability of the second branch if the total is 1/6?",
-                    latex: `\\frac{1}{2} \\cdot x = \\frac{1}{6}`,
-                    answerType: 'fraction'
-                },
-                token: this.toBase64("1/3"),
-                clues: [
-                    { 
-                        text: lang==='sv' ? "Vi multiplicerar sannolikheter längs grenarna. Använd division för att gå baklänges." : "We multiply probabilities along branches. Use division to go backwards.", 
-                        latex: `x = \\frac{1}{6} \\div \\frac{1}{2}` 
-                    }
-                ]
-            };
-        }
-
-        // VARIATION C: Standard Calculation
-        const c1 = MathUtils.randomInt(3, 6);
-        const c2 = MathUtils.randomInt(3, 6);
-        const tot = c1+c2;
-        
-        const p1N = c1, p1D = tot;
-        const p2N = c2, p2D = tot - 1;
-        
-        return {
-            renderData: {
-                description: lang==='sv' 
-                    ? `Du drar två kulor utan återläggning (Först A, sen B). Beräkna sannolikheten.` 
-                    : `Pick two marbles without replacement (First A, then B). Calculate probability.`,
-                answerType: 'fraction',
-                geometry: {
-                    type: 'probability_tree',
-                    groups: ["A", "B"], initialCounts: [c1, c2], targetBranch: 's2_1'
-                }
-            },
-            token: this.toBase64(this.simplifyFraction(p1N * p2N, p1D * p2D)),
-            clues: [
-                {
-                    text: lang === 'sv' ? "Följ grenarna i diagrammet. Första draget påverkar det andra (en kula mindre)." : "Follow the branches. The first draw affects the second (one less marble).",
-                    latex: `P(\\text{A}) = \\frac{${p1N}}{${p1D}}, P(\\text{B}) = \\frac{${p2N}}{${p2D}}`
-                },
-                {
-                    text: lang === 'sv' ? "Multiplicera sannolikheterna för att få totalen." : "Multiply the probabilities to get the total.",
-                    latex: `\\frac{${p1N}}{${p1D}} \\cdot \\frac{${p2N}}{${p2D}}`
-                }
-            ]
-        };
-    }
-
-    // --- LEVEL 6: Event Chains (10 Scenarios - Without Replacement) ---
-    private level6_EventChains(lang: string): any {
-        const scenarios = [
-            { itemSv: "godisbitar", itemEn: "candies", aNameSv: "sura", bNameSv: "söta", aNameEn: "sour", bNameEn: "sweet" },
-            { itemSv: "frukter", itemEn: "fruits", aNameSv: "äpplen", bNameSv: "päron", aNameEn: "apples", bNameEn: "pears" },
-            { itemSv: "strumpor", itemEn: "socks", aNameSv: "vita", bNameSv: "svarta", aNameEn: "white", bNameEn: "black" },
-            { itemSv: "tennisbollar", itemEn: "tennis balls", aNameSv: "nya", bNameSv: "gamla", aNameEn: "new", bNameEn: "old" },
-            { itemSv: "kort", itemEn: "cards", aNameSv: "spader", bNameSv: "hjärter", aNameEn: "spades", bNameEn: "hearts" },
-            { itemSv: "cupcakes", itemEn: "cupcakes", aNameSv: "vanilj", bNameSv: "choklad", aNameEn: "vanilla", bNameEn: "chocolate" },
-            { itemSv: "spelmarker", itemEn: "game tokens", aNameSv: "guld", bNameSv: "silver", aNameEn: "gold", bNameEn: "silver" },
-            { itemSv: "skruvar", itemEn: "screws", aNameSv: "långa", bNameSv: "korta", aNameEn: "long", bNameEn: "short" },
-            { itemSv: "namnlappar", itemEn: "name tags", aNameSv: "tjejer", bNameSv: "killar", aNameEn: "girls", bNameEn: "boys" },
-            { itemSv: "pennor", itemEn: "pens", aNameSv: "blåa", bNameSv: "svarta", aNameEn: "blue", bNameEn: "black" }
-        ];
-
-        const s = MathUtils.randomChoice(scenarios);
-        const aCount = MathUtils.randomInt(4, 6);
-        const bCount = MathUtils.randomInt(4, 6);
-        const total = aCount + bCount;
-
-        const p1N = aCount;
-        const p1D = total;
-        const p2N = aCount - 1; 
-        const p2D = total - 1; 
-
-        const desc = lang === 'sv'
-            ? `I en behållare finns det ${aCount} ${s.aNameSv} och ${bCount} ${s.bNameSv} ${s.itemSv}. Du tar ut en slumpmässigt och lägger den åt sidan. Sedan tar du en till. Vad är sannolikheten att båda är ${s.aNameSv}?`
-            : `In a container, there are ${aCount} ${s.aNameEn} and ${bCount} ${s.bNameEn} ${s.itemEn}. You pick one at random and set it aside. Then you pick another one. What is the probability that both are ${s.aNameEn}?`;
-
-        return {
-            renderData: { description: desc, answerType: 'fraction' },
-            token: this.toBase64(this.simplifyFraction(p1N * p2N, p1D * p2D)),
-            clues: [
-                { text: lang === 'sv' ? "Första draget:" : "First draw:", latex: `P(\\text{1}) = \\frac{${p1N}}{${p1D}}` },
-                { text: lang === 'sv' ? "Andra draget (en är borta, så både täljare och nämnare minskar!):" : "Second draw (one is gone, so both numerator and denominator decrease!):", latex: `P(\\text{2}) = \\frac{${p2N}}{${p2D}}` },
-                { text: lang === 'sv' ? "Multiplicera stegen för att få den totala sannolikheten." : "Multiply the steps to get the total probability.", latex: `\\frac{${p1N}}{${p1D}} \\cdot \\frac{${p2N}}{${p2D}}` }
-            ]
-        };
-    }
-   private level7_Combinatorics(lang: string): any {
-        const mode = MathUtils.randomChoice(['multi_set', 'handshakes']);
-
-        if (mode === 'handshakes') {
-            const n = MathUtils.randomInt(5, 12);
-            const ans = (n * (n - 1)) / 2;
-            return {
-                renderData: {
-                    description: lang === 'sv' 
-                        ? `I ett rum träffas ${n} personer och alla skakar hand med varandra exakt en gång. Hur många handskakningar sker totalt?` 
-                        : `In a room, ${n} people meet and everyone shakes hands with each other exactly once. How many handshakes occur in total?`,
-                    answerType: 'numeric'
-                },
-                token: this.toBase64(ans.toString()),
-                clues: [
-                    { text: lang === 'sv' ? `Varje person (${n} st) hälsar på ${n - 1} andra.` : `Each person (${n}) greets ${n - 1} others.` },
-                    { text: lang === 'sv' ? "Dela med 2 eftersom person A till B är samma handskakning som B till A." : "Divide by 2 because person A to B is the same handshake as B to A.", latex: `\\frac{${n} \\cdot ${n - 1}}{2}` }
-                ]
-            };
-        }
-
-        // --- SCENARIO: MULTI-SET COMBINATIONS ---
-        const scenarios = [
-            { sv: ["mössor", "halsdukar", "vantar"], en: ["hats", "scarves", "gloves"] },
-            { sv: ["tröjor", "byxor", "strumpor"], en: ["shirts", "pants", "socks"] },
-            { sv: ["huvudrätter", "drycker", "efterrätter"], en: ["mains", "drinks", "desserts"] },
-            { sv: ["telefoner", "skal", "hörlurar"], en: ["phones", "cases", "headphones"] },
-            { sv: ["flygresor", "hotell", "utflykter"], en: ["flights", "hotels", "tours"] },
-            { sv: ["cyklar", "hjälmar", "lås"], en: ["bikes", "helmets", "locks"] }
-        ];
-
-        const s = MathUtils.randomChoice(scenarios);
-        const v = [MathUtils.randomInt(2, 5), MathUtils.randomInt(2, 5), MathUtils.randomInt(2, 5)];
-        const items = lang === 'sv' ? s.sv : s.en;
-        const ans = v[0] * v[1] * v[2];
-
-        return {
-            renderData: {
-                description: lang === 'sv' 
-                    ? `Du ska välja en kombination av ${v[0]} ${items[0]}, ${v[1]} ${items[1]} och ${v[2]} ${items[2]}. Hur många olika kombinationer är möjliga?`
-                    : `You are choosing a combination of ${v[0]} ${items[0]}, ${v[1]} ${items[1]}, and ${v[2]} ${items[2]}. How many different combinations are possible?`,
-                answerType: 'numeric'
-            },
-            token: this.toBase64(ans.toString()),
-            clues: [
-                { 
-                    text: lang === 'sv' ? "För varje val i första gruppen finns det flera val i nästa. Vi multiplicerar därför antalen." : "For every choice in the first group, there are multiple choices in the next. Therefore, we multiply the counts.",
-                    latex: `${v[0]} \\cdot ${v[1]} \\cdot ${v[2]} = ${ans}` 
-                }
-            ]
-        };
-    }
-
-    private level8_CombinatoricsComplex(lang: string): any {
+        // Original Sophisticated Pathway Logic
         const mode = MathUtils.randomChoice(['pathways_basic', 'pathways_blocked', 'pathways_prob']);
-
-        // --- PATHWAY GENERATION LOGIC ---
-        // Build dynamic layers: [A, Split1, Split2, (Optional Split3), B]
-        const layers = [1];
-        const n1 = MathUtils.randomChoice([2, 3]);
-        const n2 = MathUtils.randomChoice([2, 3]);
-        layers.push(n1, n2);
-        
-        const hasExtraSplit = MathUtils.randomInt(0, 1) === 1;
-        if (hasExtraSplit) layers.push(2);
-        layers.push(1);
-
-        // Calculate total possible paths (without blocks)
+        const layers = [1, MathUtils.randomChoice([2, 3]), MathUtils.randomChoice([2, 3]), 1];
         let totalPaths = 1;
-        for (let i = 1; i < layers.length - 1; i++) {
-            totalPaths *= layers[i];
-        }
+        for (let i = 1; i < layers.length - 1; i++) totalPaths *= layers[i];
 
         const obstacles: any[] = [];
-        const isBlockedMode = mode === 'pathways_blocked' || mode === 'pathways_prob';
-
-        if (isBlockedMode) {
-            // Find all possible edges in the network
+        if (mode !== 'pathways_basic') {
             const allEdges: any[] = [];
             for (let l = 0; l < layers.length - 1; l++) {
                 for (let f = 0; f < layers[l]; f++) {
@@ -632,109 +463,43 @@ export class ProbabilityGen {
                     }
                 }
             }
-
-            // Randomly block 1-3 pathways, ensuring at least one full path remains
-            const numToBlock = MathUtils.randomInt(1, 3);
-            const shuffledEdges = [...allEdges].sort(() => Math.random() - 0.5);
-            
-            for (const edge of shuffledEdges) {
-                if (obstacles.length >= numToBlock) break;
-                
-                // Tentatively block
-                const testObstacles = [...obstacles, edge];
-                if (this.hasValidPath(layers, testObstacles)) {
-                    obstacles.push(edge);
-                }
-            }
+            obstacles.push(MathUtils.randomChoice(allEdges));
         }
 
-        const validPathCount = this.countValidPaths(layers, obstacles);
+        const validCount = this.countValidPaths(layers, obstacles);
+        const ans = mode === 'pathways_prob' ? `${validCount}/${totalPaths}` : validCount.toString();
 
+        let desc = "";
         if (mode === 'pathways_basic') {
-            const desc = lang === 'sv'
-                ? `Figuren visar möjliga vägar från A till B. På hur många olika sätt kan man gå från A till B?`
-                : `The figure shows possible paths from A to B. In how many different ways can you travel from A to B?`;
-            
-            return {
-                renderData: {
-                    description: desc,
-                    answerType: 'numeric',
-                    geometry: { type: 'probability_tree', subtype: 'pathway', layers, obstacles: [] }
-                },
-                token: this.toBase64(totalPaths.toString()),
-                clues: [
-                    { text: lang === 'sv' ? "Multiplicera antalet val i varje steg." : "Multiply the number of choices at each stage.", latex: layers.slice(1, -1).join(' \\cdot ') + ` = ${totalPaths}` }
-                ]
-            };
+            desc = lang === 'sv' ? "Titta på diagrammet som visar möjliga vägar från A till B. Hur många olika sätt finns det att gå hela vägen?" : "Look at the diagram showing possible paths from A to B. How many different ways are there to go all the way?";
+        } else if (mode === 'pathways_blocked') {
+            desc = lang === 'sv' ? "De röda symbolerna i diagrammet markerar blockerade stigar. Hur många fungerande vägar finns kvar från A till B?" : "The red symbols in the diagram mark blocked paths. How many working paths remain from A to B?";
+        } else {
+            desc = lang === 'sv' ? "Om du väljer en väg i nätverket helt slumpmässigt, vad är sannolikheten att vägen du väljer är öppen hela vägen?" : "If you choose a path in the network completely at random, what is the probability that the path you choose is open all the way?";
         }
-
-        if (mode === 'pathways_blocked') {
-            const desc = lang === 'sv'
-                ? `De röda symbolerna markerar vägar som är blockerade. Hur många fungerande vägar finns kvar från A till B?`
-                : `The red symbols mark blocked paths. How many viable paths remain from A to B?`;
-
-            return {
-                renderData: {
-                    description: desc,
-                    answerType: 'numeric',
-                    geometry: { type: 'probability_tree', subtype: 'pathway', layers, obstacles }
-                },
-                token: this.toBase64(validPathCount.toString()),
-                clues: [
-                    { text: lang === 'sv' ? "Räkna hur många kompletta vägar som går att följa utan att passera ett rött kryss." : "Count how many complete paths can be followed without passing a red cross." },
-                    { text: lang === 'sv' ? "Tips: Följ varje startväg och se hur många slutstationer den kan nå." : "Tip: Follow each starting path and see how many endpoints it can reach." }
-                ]
-            };
-        }
-
-        // pathways_prob
-        const desc = lang === 'sv'
-            ? `Om du väljer en väg från A till B helt slumpmässigt, vad är sannolikheten att vägen du väljer är öppen?`
-            : `If you choose a path from A to B completely at random, what is the probability that the path you choose is open?`;
 
         return {
             renderData: {
-                description: desc,
-                answerType: 'fraction',
+                description: desc, 
+                answerType: mode === 'pathways_prob' ? 'fraction' : 'numeric',
                 geometry: { type: 'probability_tree', subtype: 'pathway', layers, obstacles }
             },
-            token: this.toBase64(`${validPathCount}/${totalPaths}`),
-            clues: [
-                { text: lang === 'sv' ? "Sannolikhet = (Öppna vägar) / (Totala vägar)" : "Probability = (Open paths) / (Total paths)" },
-                { text: lang === 'sv' ? `Det finns totalt ${totalPaths} kombinationer av vägar, och ${validPathCount} av dem är öppna.` : `There are ${totalPaths} total combinations of paths, and ${validPathCount} of them are open.`, latex: `\\frac{${validPathCount}}{${totalPaths}}` }
-            ]
+            token: this.toBase64(ans),
+            clues: [{ text: lang === 'sv' ? "Följ de tillgängliga vägarna i diagrammet från start till slut och räkna dem." : "Follow the available paths in the diagram from start to finish and count them.", latex: mode === 'pathways_prob' ? `\\frac{\\text{Öppna vägar}}{\\text{Totala vägar}}` : "" }],
+            metadata: { variation: mode, difficulty: 5 }
         };
-    }
-
-    // --- HELPER METHODS FOR PATHWAYS ---
-
-    private hasValidPath(layers: number[], obstacles: any[]): boolean {
-        return this.countValidPaths(layers, obstacles) > 0;
     }
 
     private countValidPaths(layers: number[], obstacles: any[]): number {
-        const memo = new Map<string, number>();
-
         const find = (layerIdx: number, nodeIdx: number): number => {
             if (layerIdx === layers.length - 1) return 1;
-            const key = `${layerIdx}-${nodeIdx}`;
-            if (memo.has(key)) return memo.get(key)!;
-
             let count = 0;
-            const nextLayerSize = layers[layerIdx + 1];
-            for (let nextNode = 0; nextNode < nextLayerSize; nextNode++) {
-                // Check if the edge to nextNode is blocked
-                const isBlocked = obstacles.some(o => 
-                    o.layer === layerIdx && o.from === nodeIdx && o.to === nextNode
-                );
-                if (!isBlocked) {
-                    count += find(layerIdx + 1, nextNode);
-                }
+            for (let nextNode = 0; nextNode < layers[layerIdx + 1]; nextNode++) {
+                const isBlocked = obstacles.some(o => o.layer === layerIdx && o.from === nodeIdx && o.to === nextNode);
+                if (!isBlocked) count += find(layerIdx + 1, nextNode);
             }
-            memo.set(key, count);
             return count;
         };
-
         return find(0, 0);
     }
 }

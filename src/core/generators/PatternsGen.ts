@@ -53,7 +53,8 @@ export class PatternsGen {
                         text: lang === 'sv' ? `Kolla mönstret själv. Om du plussar på ${diff} till det sista talet (${seq[3]}), vad får du då?` : `Check the pattern yourself. If you add ${diff} to the last number (${seq[3]}), what do you get?`,
                         latex: ""
                     }
-                ]
+                ],
+                metadata: { variation: 'seq_lie', difficulty: 1 }
             };
         }
 
@@ -90,7 +91,8 @@ export class PatternsGen {
                         text: lang === 'sv' ? "Titta på hur talen ändras. Hoppar de lika mycket varje steg (addera), eller fördubblas de (multiplicera)?" : "Look at how numbers change. Do they jump by the same amount (adding) or do they double/triple (multiplying)?",
                         latex: ""
                     }
-                ]
+                ],
+                metadata: { variation: 'seq_type', difficulty: 2 }
             };
         }
 
@@ -112,7 +114,8 @@ export class PatternsGen {
                         text: lang === 'sv' ? "Hur stort är hoppet från det första talet till det andra?" : "How big is the jump from the first number to the second?",
                         latex: `${seq[1]} - ${seq[0]} = ?` 
                     }
-                ]
+                ],
+                metadata: { variation: 'seq_diff', difficulty: 1 }
             };
         }
 
@@ -132,7 +135,8 @@ export class PatternsGen {
                     text: lang === 'sv' ? "Mönstret ökar lika mycket varje gång. Lägg till ökningen på det sista talet." : "The pattern increases by the same amount each time. Add that increase to the last number.",
                     latex: `${s[3]} + ${diff} = ?`
                 }
-            ]
+            ],
+            metadata: { variation: 'seq_next', difficulty: 1 }
         };
     }
 
@@ -159,7 +163,8 @@ export class PatternsGen {
                     text: lang === 'sv' ? `För att komma till nummer ${targetN} behöver du göra ${targetN-1} hopp.` : `To get to number ${targetN}, you need to make ${targetN-1} jumps.`,
                     latex: `${start} + (${targetN}-1) \\cdot ${diff}`
                 }
-            ]
+            ],
+            metadata: { variation: 'high_term', difficulty: 2 }
         };
     }
 
@@ -186,7 +191,8 @@ export class PatternsGen {
                         text: lang==='sv' ? "Talet framför 'n' berättar hur mycket mönstret växer med. Hur mycket större är Figur 1 än den fasta delen?" : "The number before 'n' tells you how much the pattern grows. How much bigger is Figure 1 than the fixed part?", 
                         latex: `${val1} - ${b} = ?` 
                     }
-                ]
+                ],
+                metadata: { variation: 'formula_missing', difficulty: 3 }
             };
         }
 
@@ -208,7 +214,8 @@ export class PatternsGen {
                         text: lang === 'sv' ? `Formeln är som ett recept. Byt ut 'n' mot ${target} och räkna ut.` : `The formula is like a recipe. Swap 'n' for ${target} and calculate.`,
                         latex: `${a} \\cdot ${target} + ${b}`
                     }
-                ]
+                ],
+                metadata: { variation: 'visual_calc', difficulty: 2 }
             };
         }
 
@@ -230,7 +237,8 @@ export class PatternsGen {
                     text: lang === 'sv' ? "Talet som står ensamt är det vi startar med (innan steg 1). Ta första talet minus ökningen." : "The lone number is what we start with (before step 1). Take the first number minus the increase.",
                     latex: `${seq[0]} - ${a} = ${b}`
                 }
-            ]
+            ],
+            metadata: { variation: 'find_formula', difficulty: 3 }
         };
     }
 
@@ -254,7 +262,8 @@ export class PatternsGen {
                 token: this.toBase64(b === 0 ? `${a}n` : `${a}n+${b}`),
                 clues: [
                     { text: lang==='sv' ? "Kolla hur mycket värdet ökar för varje steg n. Det är talet som ska stå före n." : "Check how much the value increases for each step n. That's the number that goes before n.", latex: `+${a}` }
-                ]
+                ],
+                metadata: { variation: 'table_formula', difficulty: 3 }
             };
         }
 
@@ -270,7 +279,8 @@ export class PatternsGen {
             token: this.toBase64(targetVal.toString()),
             clues: [
                 { text: lang==='sv' ? "Du vet att mönstret ökar med samma tal varje gång. Lägg till ökningen på det sista värdet i tabellen." : "You know the pattern increases by the same number each time. Add the increase to the last value in the table.", latex: `${rows[3].v} + ${a} = ?` }
-            ]
+            ],
+            metadata: { variation: 'table_fill', difficulty: 2 }
         };
     }
 
@@ -300,7 +310,8 @@ export class PatternsGen {
                     text: lang === 'sv' ? "Nu delar du resten med ökningen för att se vilket nummer det är." : "Now divide the remainder by the increase to see which number it is.",
                     latex: `${total-b} / ${a} = n`
                 }
-            ]
+            ],
+            metadata: { variation: 'reverse_calc', difficulty: 4 }
         };
     }
 }

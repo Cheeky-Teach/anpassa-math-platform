@@ -61,7 +61,8 @@ export class PercentGen {
                         text: lang === 'sv' ? `Det är ${colored} färgade rutor. Eftersom det är av 100, så är det ${colored} hundradelar.` : `There are ${colored} colored squares. Since it is out of 100, it is ${colored} hundredths.`, 
                         latex: `${colored}/100` 
                     }
-                ]
+                ],
+                metadata: { variation: 'visual_translation', difficulty: 1 }
             };
         }
 
@@ -98,7 +99,8 @@ export class PercentGen {
                         text: lang === 'sv' ? `Eftersom ${colored} rutor är färgade är det ${colored}%. Jämför detta med alternativen.` : `Since ${colored} squares are colored, it is ${colored}%. Compare this with the options.`,
                         latex: ""
                     }
-                ]
+                ],
+                metadata: { variation: 'visual_lie', difficulty: 1 }
             };
         }
 
@@ -124,7 +126,8 @@ export class PercentGen {
                     text: lang === 'sv' ? "För att göra om procent till bråk, sätt talet över 100." : "To convert percent to fraction, put the number over 100.",
                     latex: `\\frac{${p}}{100}`
                 }
-            ]
+            ],
+            metadata: { variation: 'equivalence', difficulty: 1 }
         };
     }
 
@@ -135,11 +138,6 @@ export class PercentGen {
 
         // VARIATION A: Standard Calculation
         if (variation < 0.35) {
-            // Ensure base is a multiple such that (base * benchmark) is an integer
-            // 10% -> base multiple of 10
-            // 20% -> base multiple of 5
-            // 25% -> base multiple of 4
-            // 50% -> base multiple of 2
             let step = 10;
             if (benchmark === 50) step = 2;
             else if (benchmark === 25) step = 4;
@@ -163,7 +161,8 @@ export class PercentGen {
                         text: lang === 'sv' ? "Dela talet med nämnaren." : "Divide the number by the denominator.",
                         latex: benchmark === 50 ? `${base} / 2` : (benchmark === 25 ? `${base} / 4` : `${base} / 10`)
                     }
-                ]
+                ],
+                metadata: { variation: 'benchmark_calc', difficulty: 2 }
             };
         }
 
@@ -193,15 +192,13 @@ export class PercentGen {
                         text: lang === 'sv' ? "Multiplicera upp delen för att få hela kakan (100%)." : "Multiply the part up to get the whole cake (100%).", 
                         latex: benchmark === 50 ? `${ans} \\cdot 2` : (benchmark === 25 ? `${ans} \\cdot 4` : `${ans} \\cdot 10`)
                     }
-                ]
+                ],
+                metadata: { variation: 'benchmark_inverse', difficulty: 2 }
             };
         }
 
         // VARIATION C: Commutative Trick
         const n1 = MathUtils.randomChoice([25, 50]);
-        // Choose n2 such that calculation is clean
-        // If n1=25, n2 must be multiple of 4
-        // If n1=50, n2 must be multiple of 2
         const step = n1 === 25 ? 4 : 2;
         const n2 = MathUtils.randomInt(2, 10) * step; 
         
@@ -226,7 +223,8 @@ export class PercentGen {
                     text: lang === 'sv' ? `Räkna ut ${n1}% av ${n2} istället.` : `Calculate ${n1}% of ${n2} instead.`,
                     latex: n1 === 50 ? `${n2} / 2` : `${n2} / 4`
                 }
-            ]
+            ],
+            metadata: { variation: 'benchmark_commutative', difficulty: 2 }
         };
     }
 
@@ -255,13 +253,14 @@ export class PercentGen {
                         text: lang === 'sv' ? `Du vill ha ${pct}%, vilket är ${pct/10} gånger så mycket.` : `You want ${pct}%, which is ${pct/10} times as much.`, 
                         latex: `${base/10} \\cdot ${pct/10}` 
                     }
-                ]
+                ],
+                metadata: { variation: 'composition', difficulty: 2 }
             };
         }
 
         // VARIATION B: Decomposition (15%)
         if (variation < 0.7) {
-            const base = MathUtils.randomInt(4, 20) * 10; // Even multiple of 10
+            const base = MathUtils.randomInt(4, 20) * 10; 
             const ans = (base * 5) / 100;
 
             return {
@@ -281,7 +280,8 @@ export class PercentGen {
                         text: lang === 'sv' ? "5% är hälften av 10%. Dela ditt svar med 2." : "5% is half of 10%. Divide your answer by 2.", 
                         latex: `${base/10} / 2` 
                     }
-                ]
+                ],
+                metadata: { variation: 'decomposition', difficulty: 2 }
             };
         }
 
@@ -315,7 +315,8 @@ export class PercentGen {
                     text: lang === 'sv' ? "Jämför nu. Verkar det rimligt?" : "Now compare. Does it seem reasonable?", 
                     latex: "" 
                 }
-            ]
+            ],
+            metadata: { variation: 'estimation', difficulty: 3 }
         };
     }
 
@@ -332,12 +333,10 @@ export class PercentGen {
 
         // VARIATION A: Standard Context-Free
         if (variation < 0.25) {
-            // e.g. 5 is what percent of 20?
-            // Fraction: 5/20. Scale to /100.
-            const k = 100 / w; // The scaling factor
+            const k = 100 / w; 
             const opText = k > 1 ? (lang==='sv' ? "Förläng" : "Extend") : (lang==='sv' ? "Förkorta" : "Simplify");
             const opSymbol = k > 1 ? "\\cdot" : "/";
-            const kDisp = k > 1 ? k : (1/k); // Display as integer
+            const kDisp = k > 1 ? k : (1/k); 
 
             return {
                 renderData: {
@@ -360,7 +359,8 @@ export class PercentGen {
                         text: lang === 'sv' ? "Hundradelar är samma sak som procent." : "Hundredths are the same as percent.",
                         latex: `${p}\\%`
                     }
-                ]
+                ],
+                metadata: { variation: 'find_percent_basic', difficulty: 3 }
             };
         }
 
@@ -390,7 +390,8 @@ export class PercentGen {
                         text: lang === 'sv' ? "Gör samma sak med täljaren." : "Do the same to the numerator.", 
                         latex: `${part} ${opSymbol} ${kDisp} = ${p}` 
                     }
-                ]
+                ],
+                metadata: { variation: 'find_percent_test', difficulty: 3 }
             };
         }
 
@@ -400,8 +401,6 @@ export class PercentGen {
                 ? `Priset sänktes med ${part} kr. Det kostade ${w} kr från början. Hur stor var rabatten i procent?`
                 : `The price was lowered by ${part} kr. It originally cost ${w} kr. What was the discount percent?`;
 
-            const k = 100 / w; 
-            // Reuse logic or simplify simply
             return {
                 renderData: { description: desc, answerType: 'numeric', suffix: '%' },
                 token: this.toBase64(p.toString()),
@@ -414,7 +413,8 @@ export class PercentGen {
                         text: lang === 'sv' ? "Omvandla till procent." : "Convert to percent.",
                         latex: `${p}\\%`
                     }
-                ]
+                ],
+                metadata: { variation: 'find_percent_discount', difficulty: 3 }
             };
         }
 
@@ -435,7 +435,8 @@ export class PercentGen {
                     text: lang === 'sv' ? "För att få procent, tänk 'hur många av 100?'" : "To get percent, think 'how many out of 100?'",
                     latex: `${p}\\%`
                 }
-            ]
+            ],
+            metadata: { variation: 'find_percent_group', difficulty: 3 }
         };
     }
 
@@ -458,7 +459,8 @@ export class PercentGen {
                 clues: [
                     { text: lang==='sv' ? "Hitta 1% först." : "Find 1% first.", latex: `${part} / ${p} = ${part/p}` },
                     { text: lang==='sv' ? "Gångra med 100." : "Multiply by 100.", latex: `${part/p} \\cdot 100` }
-                ]
+                ],
+                metadata: { variation: 'reverse_find_whole', difficulty: 3 }
             };
         }
 
@@ -481,7 +483,8 @@ export class PercentGen {
                 clues: [
                     { text: lang==='sv' ? `Hur många gånger större är ${targetP}% än 10%?` : `How many times bigger is ${targetP}% than 10%?`, latex: `${targetP} / 10 = ${factor}` },
                     { text: lang==='sv' ? "Multiplicera värdet med den faktorn." : "Multiply the value by that factor.", latex: `${smallVal} \\cdot ${factor}` }
-                ]
+                ],
+                metadata: { variation: 'reverse_scaling', difficulty: 3 }
             };
         }
 
@@ -497,7 +500,8 @@ export class PercentGen {
                 ])
             },
             token: this.toBase64(lang==='sv' ? "Den dubblas" : "It doubles"),
-            clues: [{text: "20% is 2x 10%", latex: ""}]
+            clues: [{text: "20% is 2x 10%", latex: ""}],
+            metadata: { variation: 'reverse_concept', difficulty: 2 }
         };
     }
 
@@ -524,7 +528,8 @@ export class PercentGen {
                 clues: [
                     { text: lang==='sv' ? "Räkna ut skillnaden." : "Calc difference.", latex: `${newVal} - ${oldVal}` },
                     { text: lang==='sv' ? "Dela skillnaden med ursprungsvärdet." : "Divide difference by original.", latex: `\\frac{\\text{Skillnad}}{${oldVal}}` }
-                ]
+                ],
+                metadata: { variation: 'change_calc', difficulty: 4 }
             };
         }
 
@@ -540,7 +545,8 @@ export class PercentGen {
                 token: this.toBase64(ans.toString()),
                 clues: [
                     { text: lang==='sv' ? "Hela talet (1) + ökningen." : "Whole number (1) + increase.", latex: `1 + ${p/100}` }
-                ]
+                ],
+                metadata: { variation: 'change_multiplier', difficulty: 3 }
             };
         }
 
@@ -562,7 +568,8 @@ export class PercentGen {
             clues: [
                 { text: lang==='sv' ? "Testa med 100 kr." : "Test with 100 kr.", latex: `100 \\cdot 1.1 = 110` },
                 { text: lang==='sv' ? "Sänk nu 110 med 10%." : "Now decrease 110 by 10%.", latex: `110 \\cdot 0.9 = 99` }
-            ]
+            ],
+            metadata: { variation: 'change_trap', difficulty: 4 }
         };
     }
 }

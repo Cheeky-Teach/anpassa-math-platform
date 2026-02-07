@@ -19,147 +19,239 @@ export class GeometryGenerator {
 
     // --- LEVEL 1: PERIMETER ONLY ---
     private level1_PerimeterBasic(lang: string): any {
-        const type = MathUtils.randomChoice(['rectangle', 'square', 'parallelogram']);
+        const variation = Math.random();
         
-        if (type === 'square') {
-            const s = MathUtils.randomInt(3, 15);
-            const ans = 4 * s;
-            return {
-                renderData: {
-                    geometry: { type: 'square', width: s, height: s, labels: { b: s, h: s } },
-                    description: lang === 'sv' 
-                        ? "En kvadrat har sidan " + s + ". Beräkna omkretsen." 
-                        : "A square has side " + s + ". Calculate the perimeter.",
-                    answerType: 'numeric'
-                },
-                token: this.toBase64(ans.toString()),
-                clues: [
-                    { 
-                        text: lang === 'sv' ? "En kvadrat har fyra sidor som alla är lika långa." : "A square has four sides of equal length.", 
-                        latex: "" 
+        // VARIATION A: Standard Perimeter
+        if (variation < 0.4) {
+            const type = MathUtils.randomChoice(['rectangle', 'square', 'parallelogram']);
+            
+            if (type === 'square') {
+                const s = MathUtils.randomInt(3, 15);
+                const ans = 4 * s;
+                return {
+                    renderData: {
+                        geometry: { type: 'square', width: s, height: s, labels: { b: s, h: s } },
+                        description: lang === 'sv' 
+                            ? "En kvadrat har sidan " + s + ". Beräkna omkretsen." 
+                            : "A square has side " + s + ". Calculate the perimeter.",
+                        answerType: 'numeric'
                     },
-                    {
-                        text: lang === 'sv' ? "Addera sidan fyra gånger eller multiplicera med 4." : "Add the side four times or multiply by 4.",
-                        latex: `O = 4 \\cdot ${s}`
-                    }
-                ]
-            };
-        } 
-        else if (type === 'rectangle') {
-            const b = MathUtils.randomInt(4, 15);
-            const h = MathUtils.randomInt(3, 10);
-            const ans = 2 * (b + h);
+                    token: this.toBase64(ans.toString()),
+                    clues: [
+                        { text: lang === 'sv' ? "En kvadrat har fyra sidor som alla är lika långa." : "A square has four sides of equal length.", latex: "" },
+                        { text: lang === 'sv' ? "Addera sidan fyra gånger eller multiplicera med 4." : "Add the side four times or multiply by 4.", latex: `O = 4 \\cdot ${s}` }
+                    ],
+                    metadata: { variation: 'perimeter_square', difficulty: 1 }
+                };
+            } 
+            else if (type === 'rectangle') {
+                const b = MathUtils.randomInt(4, 15);
+                const h = MathUtils.randomInt(3, 10);
+                const ans = 2 * (b + h);
+                
+                return {
+                    renderData: {
+                        geometry: { type: 'rectangle', width: b, height: h, labels: { b: b, h: h } },
+                        description: lang === 'sv' 
+                            ? `En rektangel har basen ${b} och höjden ${h}. Beräkna omkretsen.` 
+                            : `A rectangle has base ${b} and height ${h}. Calculate the perimeter.`,
+                        answerType: 'numeric'
+                    },
+                    token: this.toBase64(ans.toString()),
+                    clues: [
+                        { text: lang === 'sv' ? "Omkretsen är summan av alla sidor. Det finns två baser och två höjder." : "Perimeter is the sum of all sides. There are two bases and two heights.", latex: "" },
+                        { text: lang === 'sv' ? "Addera ihop allt." : "Add everything together.", latex: `O = 2(${b} + ${h})` }
+                    ],
+                    metadata: { variation: 'perimeter_rect', difficulty: 1 }
+                };
+            }
+            else { // Parallelogram
+                const b = MathUtils.randomInt(5, 15);
+                const s = MathUtils.randomInt(4, 12); 
+                const h = MathUtils.randomInt(3, s - 1); 
+                const ans = 2 * (b + s);
+
+                return {
+                    renderData: {
+                        geometry: { type: 'parallelogram', width: b, height: h, labels: { b: b, s: s } }, 
+                        description: lang === 'sv' 
+                            ? `En parallellogram har sidorna ${b} och ${s}. Beräkna omkretsen.` 
+                            : `A parallelogram has sides ${b} and ${s}. Calculate the perimeter.`,
+                        answerType: 'numeric'
+                    },
+                    token: this.toBase64(ans.toString()),
+                    clues: [
+                        { text: lang === 'sv' ? "Precis som en rektangel har den två par av lika långa sidor." : "Just like a rectangle, it has two pairs of equal sides.", latex: "" },
+                        { text: lang === 'sv' ? "Addera alla sidor för att få omkretsen." : "Add all sides to get the perimeter.", latex: `O = 2(${b} + ${s})` }
+                    ],
+                    metadata: { variation: 'perimeter_parallel', difficulty: 1 }
+                };
+            }
+        }
+
+        // VARIATION B: Inverse Perimeter (Find Side)
+        if (variation < 0.7) {
+            // "Perimeter is 20. Width is 6. Find height."
+            const w = MathUtils.randomInt(3, 10);
+            const h = MathUtils.randomInt(2, 8);
+            const perim = 2 * (w + h);
             
             return {
                 renderData: {
-                    geometry: { type: 'rectangle', width: b, height: h, labels: { b: b, h: h } },
-                    description: lang === 'sv' 
-                        ? `En rektangel har basen ${b} och höjden ${h}. Beräkna omkretsen.` 
-                        : `A rectangle has base ${b} and height ${h}. Calculate the perimeter.`,
+                    geometry: { type: 'rectangle', width: w, height: h, labels: { b: w, h: '?' } },
+                    description: lang === 'sv'
+                        ? `En rektangel har omkretsen ${perim}. Basen är ${w}. Vad är höjden?`
+                        : `A rectangle has perimeter ${perim}. The base is ${w}. What is the height?`,
                     answerType: 'numeric'
                 },
-                token: this.toBase64(ans.toString()),
+                token: this.toBase64(h.toString()),
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Omkretsen är summan av alla sidor. Det finns två baser och två höjder." : "Perimeter is the sum of all sides. There are two bases and two heights.", 
-                        latex: "" 
+                        text: lang==='sv' ? "Ta bort de två baserna från totalen." : "Subtract the two bases from the total.", 
+                        latex: `${perim} - 2(${w}) = ${perim - 2*w}` 
                     },
                     {
-                        text: lang === 'sv' ? "Addera ihop allt." : "Add everything together.",
-                        latex: `O = ${b} + ${b} + ${h} + ${h} = 2(${b} + ${h})`
+                        text: lang==='sv' ? "Dela resten med 2 för att få höjden." : "Divide the remainder by 2 to get the height.",
+                        latex: `${perim - 2*w} / 2 = ${h}`
                     }
-                ]
+                ],
+                metadata: { variation: 'perimeter_inverse', difficulty: 2 }
             };
         }
-        else { // Parallelogram
-            const b = MathUtils.randomInt(5, 15);
-            const s = MathUtils.randomInt(4, 12); 
-            const h = MathUtils.randomInt(3, s - 1); 
-            const ans = 2 * (b + s);
 
-            return {
-                renderData: {
-                    geometry: { type: 'parallelogram', width: b, height: h, labels: { b: b, s: s } }, 
-                    description: lang === 'sv' 
-                        ? `En parallellogram har sidorna ${b} och ${s}. Beräkna omkretsen.` 
-                        : `A parallelogram has sides ${b} and ${s}. Calculate the perimeter.`,
-                    answerType: 'numeric'
-                },
-                token: this.toBase64(ans.toString()),
-                clues: [
-                    { 
-                        text: lang === 'sv' ? "Precis som en rektangel har den två par av lika långa sidor." : "Just like a rectangle, it has two pairs of equal sides.", 
-                        latex: "" 
-                    },
-                    {
-                        text: lang === 'sv' ? "Addera alla sidor för att få omkretsen." : "Add all sides to get the perimeter.",
-                        latex: `O = 2 \\cdot ${b} + 2 \\cdot ${s}`
-                    }
-                ]
-            };
-        }
+        // VARIATION C: Spot the Lie (Perimeter)
+        const s = 5;
+        const p = 20;
+        const a = 25;
+        const sTrue1 = lang==='sv' ? "Omkretsen är 20" : "Perimeter is 20";
+        const sTrue2 = lang==='sv' ? "Sidan är 5" : "Side is 5";
+        const sFalse = lang==='sv' ? "Omkretsen är 25" : "Perimeter is 25";
+
+        return {
+            renderData: {
+                geometry: { type: 'square', width: 5, height: 5, labels: { b: 5, h: 5 } },
+                description: lang==='sv' ? "Vilket påstående är FALSKT?" : "Which statement is FALSE?",
+                answerType: 'multiple_choice',
+                options: MathUtils.shuffle([sTrue1, sTrue2, sFalse])
+            },
+            token: this.toBase64(sFalse),
+            clues: [{text: "4 * 5 = 20", latex: ""}],
+            metadata: { variation: 'perimeter_lie', difficulty: 1 }
+        };
     }
 
     // --- LEVEL 2: AREA ---
     private level2_AreaBasic(lang: string): any {
-        const type = MathUtils.randomChoice(['rectangle', 'square', 'parallelogram']);
-        
-        if (type === 'square') {
-            const s = MathUtils.randomInt(3, 12);
-            const ans = s * s;
-            return {
-                renderData: {
-                    geometry: { type: 'square', width: s, height: s, labels: { b: s, h: s } },
-                    description: lang === 'sv' 
-                        ? `En kvadrat har sidan ${s}. Beräkna arean.` 
-                        : `A square has side ${s}. Calculate the area.`,
-                    answerType: 'numeric', suffix: 'cm²'
-                },
-                token: this.toBase64(ans.toString()),
-                clues: [
-                    {
-                        text: lang === 'sv' ? "Area är hur stor ytan är. För en kvadrat tar du sidan gånger sidan." : "Area is the size of the surface. For a square, take side times side.",
-                        latex: `A = s \\cdot s`
-                    },
-                    {
-                        latex: `${s} \\cdot ${s}`
-                    }
-                ]
-            };
-        } else {
-            const b = MathUtils.randomInt(4, 12);
-            const h = MathUtils.randomInt(3, 10);
-            const ans = b * h;
-            
-            const desc = lang === 'sv'
-                ? `Beräkna arean av ${type === 'rectangle' ? 'rektangeln' : 'parallellogrammen'}.`
-                : `Calculate the area of the ${type}.`;
+        const variation = Math.random();
 
+        // VARIATION A: Standard Area
+        if (variation < 0.4) {
+            const type = MathUtils.randomChoice(['rectangle', 'square', 'parallelogram']);
+            
+            if (type === 'square') {
+                const s = MathUtils.randomInt(3, 12);
+                const ans = s * s;
+                return {
+                    renderData: {
+                        geometry: { type: 'square', width: s, height: s, labels: { b: s, h: s } },
+                        description: lang === 'sv' 
+                            ? `En kvadrat har sidan ${s}. Beräkna arean.` 
+                            : `A square has side ${s}. Calculate the area.`,
+                        answerType: 'numeric', suffix: 'cm²'
+                    },
+                    token: this.toBase64(ans.toString()),
+                    clues: [{ text: "Area = s²", latex: `${s} \\cdot ${s}` }],
+                    metadata: { variation: 'area_square', difficulty: 1 }
+                };
+            } else {
+                const b = MathUtils.randomInt(4, 12);
+                const h = MathUtils.randomInt(3, 10);
+                const ans = b * h;
+                
+                const desc = lang === 'sv'
+                    ? `Beräkna arean av ${type === 'rectangle' ? 'rektangeln' : 'parallellogrammen'}.`
+                    : `Calculate the area of the ${type}.`;
+
+                return {
+                    renderData: {
+                        geometry: { type: type, width: b, height: h, labels: { b: b, h: h } },
+                        description: desc,
+                        answerType: 'numeric', suffix: 'cm²'
+                    },
+                    token: this.toBase64(ans.toString()),
+                    clues: [
+                        { 
+                            text: lang === 'sv' ? "För att hitta arean, multiplicera basen med höjden." : "To find the area, multiply the base by the height.", 
+                            latex: `A = \\text{Bas} \\cdot \\text{Höjd}` 
+                        },
+                        {
+                            latex: `${b} \\cdot ${h}`
+                        }
+                    ],
+                    metadata: { variation: type === 'rectangle' ? 'area_rect' : 'area_parallel', difficulty: 1 }
+                };
+            }
+        }
+
+        // VARIATION B: Inverse Area (Find Height)
+        if (variation < 0.7) {
+            const w = MathUtils.randomInt(3, 10);
+            const h = MathUtils.randomInt(3, 10);
+            const area = w * h;
+            
             return {
                 renderData: {
-                    geometry: { type: type, width: b, height: h, labels: { b: b, h: h } },
-                    description: desc,
-                    answerType: 'numeric', suffix: 'cm²'
+                    geometry: { type: 'rectangle', width: w, height: h, labels: { b: w, h: '?' } }, 
+                    description: lang === 'sv' 
+                        ? `Arean är ${area} cm². Basen är ${w} cm. Vad är höjden?` 
+                        : `The area is ${area} cm². The base is ${w} cm. What is the height?`,
+                    answerType: 'numeric',
+                    suffix: 'cm'
                 },
-                token: this.toBase64(ans.toString()),
+                token: this.toBase64(h.toString()),
                 clues: [
-                    { 
-                        text: lang === 'sv' ? "För att hitta arean, multiplicera basen med höjden." : "To find the area, multiply the base by the height.", 
-                        latex: `A = \\text{Bas} \\cdot \\text{Höjd}` 
-                    },
-                    {
-                        latex: `${b} \\cdot ${h}`
-                    }
-                ]
+                    { text: lang === 'sv' ? "Eftersom Area = Bas • Höjd, så är Höjd = Area / Bas." : "Since Area = Base • Height, then Height = Area / Base.", latex: `h = ${area} / ${w}` }
+                ],
+                metadata: { variation: 'area_inverse', difficulty: 2 }
             };
         }
+
+        // VARIATION C: The Slant Trap (Parallelogram)
+        const b = MathUtils.randomInt(5, 12);
+        const h = MathUtils.randomInt(4, 10);
+        const slant = h + MathUtils.randomInt(1, 3);
+        const ans = b * h;
+
+        return {
+            renderData: {
+                geometry: { 
+                    type: 'parallelogram', 
+                    width: b, 
+                    height: h, 
+                    labels: { b: b, h: h, s: slant } 
+                },
+                description: lang === 'sv' 
+                    ? "Beräkna arean. Se upp med vilket mått du använder!" 
+                    : "Calculate the area. Be careful which dimension you use!",
+                answerType: 'numeric'
+            },
+            token: this.toBase64(ans.toString()),
+            clues: [
+                { 
+                    text: lang === 'sv' ? "För area ska du alltid använda den vinkelräta höjden, inte den sneda sidan." : "For area, always use the perpendicular height, not the slanted side.",
+                    latex: `A = ${b} \\cdot ${h}`
+                }
+            ],
+            metadata: { variation: 'area_trap', difficulty: 2 }
+        };
     }
 
     // --- LEVEL 3: TRIANGLES ---
     private level3_Triangles(lang: string): any {
-        const isArea = MathUtils.randomInt(0, 1) === 1;
-        
-        if (isArea) {
+        const variation = Math.random();
+
+        // VARIATION A: Area
+        if (variation < 0.4) {
             const b = MathUtils.randomInt(4, 12);
             const h = MathUtils.randomInt(3, 10);
             const ans = (b * h) / 2;
@@ -182,65 +274,99 @@ export class GeometryGenerator {
                         text: lang === 'sv' ? "Räkna ut basen gånger höjden, och dela sedan med 2." : "Calculate base times height, then divide by 2.",
                         latex: `A = \\frac{${b} \\cdot ${h}}{2}`
                     }
-                ]
+                ],
+                metadata: { variation: 'area_triangle', difficulty: 2 }
+            };
+        } 
+        
+        // VARIATION B: Inverse Area
+        if (variation < 0.7) {
+            const h = MathUtils.randomInt(2, 10);
+            const b = MathUtils.randomInt(2, 10);
+            const area = (b * h) / 2;
+            
+            return {
+                renderData: {
+                    geometry: { type: 'triangle', width: b, height: h, labels: { b: b, h: '?' } },
+                    description: lang === 'sv' 
+                        ? `Triangelns area är ${area} cm². Basen är ${b} cm. Vad är höjden?` 
+                        : `The triangle's area is ${area} cm². The base is ${b} cm. What is the height?`,
+                    answerType: 'numeric',
+                    suffix: 'cm'
+                },
+                token: this.toBase64(h.toString()),
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Formeln är A = (b • h) / 2. Dubbla arean först." : "Formula is A = (b • h) / 2. Double the area first.", 
+                        latex: `2 \\cdot ${area} = ${b} \\cdot h` 
+                    },
+                    {
+                        text: lang === 'sv' ? "Dela sedan med basen." : "Then divide by the base.",
+                        latex: `${b*h} / ${b} = ${h}`
+                    }
+                ],
+                metadata: { variation: 'inverse_triangle', difficulty: 3 }
+            };
+        }
+
+        // VARIATION C: Perimeter
+        const type = MathUtils.randomChoice(['right', 'isosceles', 'scalene']);
+        
+        if (type === 'right') {
+            const triple = MathUtils.randomChoice([{a:3,b:4,c:5}, {a:5,b:12,c:13}, {a:6,b:8,c:10}]);
+            return {
+                renderData: {
+                    geometry: { 
+                        type: 'triangle', width: triple.a, height: triple.b, subtype: 'right',
+                        labels: { b: triple.a, h: triple.b, hyp: triple.c } 
+                    },
+                    description: lang === 'sv' ? "Beräkna triangelns omkrets." : "Calculate the triangle's perimeter.",
+                    answerType: 'numeric'
+                },
+                token: this.toBase64((triple.a+triple.b+triple.c).toString()),
+                clues: [
+                    { text: lang === 'sv' ? "Omkretsen är vägen runt hela figuren. Addera alla tre sidor." : "Perimeter is the path around the shape. Add all three sides.", latex: `${triple.a} + ${triple.b} + ${triple.c}` }
+                ],
+                metadata: { variation: 'perimeter_triangle_right', difficulty: 2 }
+            };
+        } else if (type === 'isosceles') {
+            const b = MathUtils.randomInt(4, 10);
+            const leg = MathUtils.randomInt(b, b+5);
+            return {
+                renderData: {
+                    geometry: { 
+                        type: 'triangle', width: b, height: leg, 
+                        labels: { b: b, s1: leg, s2: leg } 
+                    },
+                    description: lang === 'sv' ? "Beräkna omkretsen av den likbenta triangeln." : "Calculate the perimeter of the isosceles triangle.",
+                    answerType: 'numeric'
+                },
+                token: this.toBase64((b + 2*leg).toString()),
+                clues: [
+                    { text: lang === 'sv' ? "En likbent triangel har två sidor som är lika långa." : "An isosceles triangle has two sides of equal length.", latex: "" },
+                    { text: lang === 'sv' ? "Addera basen och de två benen." : "Add the base and the two legs.", latex: `${b} + ${leg} + ${leg}` }
+                ],
+                metadata: { variation: 'perimeter_triangle_iso', difficulty: 2 }
             };
         } else {
-            // Perimeter
-            const type = MathUtils.randomChoice(['right', 'isosceles', 'scalene']);
-            
-            if (type === 'right') {
-                const triple = MathUtils.randomChoice([{a:3,b:4,c:5}, {a:5,b:12,c:13}, {a:6,b:8,c:10}]);
-                return {
-                    renderData: {
-                        geometry: { 
-                            type: 'triangle', width: triple.a, height: triple.b, subtype: 'right',
-                            labels: { b: triple.a, h: triple.b, hyp: triple.c } 
-                        },
-                        description: lang === 'sv' ? "Beräkna triangelns omkrets." : "Calculate the triangle's perimeter.",
-                        answerType: 'numeric'
+            const s1 = MathUtils.randomInt(3, 8);
+            const s2 = MathUtils.randomInt(4, 9);
+            const s3 = MathUtils.randomInt(5, 10); 
+            return {
+                renderData: {
+                    geometry: { 
+                        type: 'triangle', width: s2, height: s1, 
+                        labels: { s1: s1, b: s2, s2: s3 } 
                     },
-                    token: this.toBase64((triple.a+triple.b+triple.c).toString()),
-                    clues: [
-                        { text: lang === 'sv' ? "Omkretsen är vägen runt hela figuren. Addera alla tre sidor." : "Perimeter is the path around the shape. Add all three sides.", latex: `${triple.a} + ${triple.b} + ${triple.c}` }
-                    ]
-                };
-            } else if (type === 'isosceles') {
-                const b = MathUtils.randomInt(4, 10);
-                const leg = MathUtils.randomInt(b, b+5);
-                return {
-                    renderData: {
-                        geometry: { 
-                            type: 'triangle', width: b, height: leg, 
-                            labels: { b: b, s1: leg, s2: leg } 
-                        },
-                        description: lang === 'sv' ? "Beräkna omkretsen av den likbenta triangeln." : "Calculate the perimeter of the isosceles triangle.",
-                        answerType: 'numeric'
-                    },
-                    token: this.toBase64((b + 2*leg).toString()),
-                    clues: [
-                        { text: lang === 'sv' ? "En likbent triangel har två sidor som är lika långa." : "An isosceles triangle has two sides of equal length.", latex: "" },
-                        { text: lang === 'sv' ? "Addera basen och de två benen." : "Add the base and the two legs.", latex: `${b} + ${leg} + ${leg}` }
-                    ]
-                };
-            } else {
-                const s1 = MathUtils.randomInt(3, 8);
-                const s2 = MathUtils.randomInt(4, 9);
-                const s3 = MathUtils.randomInt(5, 10); 
-                return {
-                    renderData: {
-                        geometry: { 
-                            type: 'triangle', width: s2, height: s1, 
-                            labels: { s1: s1, b: s2, s2: s3 } 
-                        },
-                        description: lang === 'sv' ? "Beräkna omkretsen." : "Calculate the perimeter.",
-                        answerType: 'numeric'
-                    },
-                    token: this.toBase64((s1+s2+s3).toString()),
-                    clues: [
-                        { text: lang === 'sv' ? "Addera längden på alla tre sidorna." : "Add the lengths of all three sides.", latex: `${s1} + ${s2} + ${s3}` }
-                    ]
-                };
-            }
+                    description: lang === 'sv' ? "Beräkna omkretsen." : "Calculate the perimeter.",
+                    answerType: 'numeric'
+                },
+                token: this.toBase64((s1+s2+s3).toString()),
+                clues: [
+                    { text: lang === 'sv' ? "Addera längden på alla tre sidorna." : "Add the lengths of all three sides.", latex: `${s1} + ${s2} + ${s3}` }
+                ],
+                metadata: { variation: 'perimeter_triangle_scalene', difficulty: 2 }
+            };
         }
     }
 
@@ -280,7 +406,8 @@ export class GeometryGenerator {
                         text: lang === 'sv' ? "Addera de två areorna för att få totalen." : "Add the two areas to get the total.",
                         latex: `${rectW*rectH} + ${(triBase*rectH)/2}`
                     }
-                ]
+                ],
+                metadata: { variation: 'combined_rect_tri', difficulty: 3 }
             };
         }
         else if (type === 'l_shape') {
@@ -314,7 +441,8 @@ export class GeometryGenerator {
                         text: lang === 'sv' ? "Räkna nu arean för den stående delen och det liggande utsticket." : "Now calculate area for standing part and lying extension.",
                         latex: `(${vW} \\cdot ${vH}) + (${extensionW} \\cdot ${hH})`
                     }
-                ]
+                ],
+                metadata: { variation: 'combined_l_shape', difficulty: 3 }
             };
         }
         else {
@@ -349,18 +477,20 @@ export class GeometryGenerator {
                         text: lang === 'sv' ? "Totalt:" : "Total:",
                         latex: `${s*s} + ${(s*hTri)/2}`
                     }
-                ]
+                ],
+                metadata: { variation: 'combined_house', difficulty: 3 }
             };
         }
     }
 
     // --- LEVEL 5: CIRCLES ---
     private level5_Circles(lang: string): any {
-        const type = MathUtils.randomChoice(['circle', 'semicircle', 'quarter']);
+        const variation = Math.random();
         const r = MathUtils.randomInt(3, 10);
         const pi = 3.14;
 
-        if (type === 'circle') {
+        if (variation < 0.4) {
+            // Circle
             const isArea = MathUtils.randomInt(0, 1) === 1;
             const ans = isArea ? Math.round(pi * r * r * 10) / 10 : Math.round(2 * pi * r * 10) / 10;
             return {
@@ -386,9 +516,11 @@ export class GeometryGenerator {
                         text: lang === 'sv' ? "Sätt in värdena:" : "Insert values:",
                         latex: isArea ? `${r} \\cdot ${r} \\cdot 3.14` : `${2*r} \\cdot 3.14`
                     }
-                ]
+                ],
+                metadata: { variation: isArea ? 'circle_area' : 'circle_perimeter', difficulty: 2 }
             };
-        } else if (type === 'semicircle') {
+        } else if (variation < 0.7) {
+            // Semicircle
             const isArea = MathUtils.randomInt(0, 1) === 1;
             if (isArea) {
                 const area = (pi * r * r) / 2;
@@ -403,7 +535,8 @@ export class GeometryGenerator {
                     clues: [
                         { text: lang==='sv' ? "Räkna ut hela cirkelns area först." : "Calculate the full circle area first.", latex: `\\pi \\cdot ${r}^2` },
                         { text: lang==='sv' ? "Eftersom det är en halvcirkel, dela med 2." : "Since it's a semicircle, divide by 2.", latex: `/ 2` }
-                    ]
+                    ],
+                    metadata: { variation: 'semicircle_area', difficulty: 3 }
                 };
             } else {
                 const d = 2 * r;
@@ -420,10 +553,12 @@ export class GeometryGenerator {
                     clues: [
                         { text: lang==='sv' ? "Räkna ut bågens längd (halva cirkelns omkrets)." : "Calculate arc length (half circle circumference).", latex: `(\\pi \\cdot ${d}) / 2` },
                         { text: lang==='sv' ? "Glöm inte att addera den raka basen (diametern)!" : "Don't forget to add the straight base (diameter)!", latex: `+ ${d}` }
-                    ]
+                    ],
+                    metadata: { variation: 'semicircle_perimeter', difficulty: 3 }
                 };
             }
         } else {
+            // Quarter
             const isArea = MathUtils.randomInt(0, 1) === 1;
             if (isArea) {
                 const area = (pi * r * r) / 4;
@@ -437,7 +572,8 @@ export class GeometryGenerator {
                     token: this.toBase64(ans.toString()),
                     clues: [
                         { text: lang==='sv' ? "Det är en fjärdedel av en cirkel. Räkna ut hela arean och dela med 4." : "It's a quarter circle. Calculate full area and divide by 4.", latex: `(\\pi \\cdot ${r}^2) / 4` }
-                    ]
+                    ],
+                    metadata: { variation: 'area_quarter', difficulty: 3 }
                 };
             } else {
                 const circ = 2 * pi * r;
@@ -454,7 +590,8 @@ export class GeometryGenerator {
                     clues: [
                         { text: lang==='sv' ? "Bågen är en fjärdedel av cirkelns omkrets." : "The arc is one fourth of the circle's circumference.", latex: `(2 \\cdot \\pi \\cdot ${r}) / 4` },
                         { text: lang==='sv' ? "Lägg till de två raka sidorna (radierna)." : "Add the two straight sides (radii).", latex: `+ ${r} + ${r}` }
-                    ]
+                    ],
+                    metadata: { variation: 'perimeter_quarter', difficulty: 3 }
                 };
             }
         }
@@ -504,7 +641,8 @@ export class GeometryGenerator {
                 answerType: 'numeric' 
             },
             token: this.toBase64(ans.toString()),
-            clues: steps
+            clues: steps,
+            metadata: { variation: isHouse ? 'perimeter_house' : 'perimeter_portal', difficulty: 4 }
         };
     }
 }
