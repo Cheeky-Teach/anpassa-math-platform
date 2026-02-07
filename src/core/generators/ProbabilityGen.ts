@@ -347,65 +347,107 @@ export class ProbabilityGen {
 
     // --- LEVEL 8: Sophisticated Pathways ---
     private level8_CombinatoricsComplex(lang: string): any {
-        const variation = Math.random();
+        const mode = MathUtils.randomChoice(['pathways_basic', 'pathways_blocked', 'pathways_prob']);
+        
+        // Define Network Topology: 
+        // Either [1, start_nodes, 1] or [1, start_nodes, mid_nodes, 1]
+        const layers = [1];
+        const hasMiddle = Math.random() > 0.5;
+        
+        layers.push(MathUtils.randomChoice([2, 3])); // Start Nodes
+        if (hasMiddle) layers.push(MathUtils.randomChoice([2, 3])); // Middle Nodes
+        layers.push(1); // End Node
 
-        if (variation < 0.4) {
-            const s1 = MathUtils.randomChoice([2, 3]), s2 = MathUtils.randomChoice([2, 3]);
-            return {
-                renderData: {
-                    description: lang === 'sv' ? `Vägen A till B går via C. Det finns ${s1} vägar A-C och ${s2} vägar C-B. Hur många vägar totalt?` : `Path A to B goes via C. There are ${s1} paths A-C and ${s2} paths C-B. How many total paths?`,
-                    answerType: 'numeric',
-                    geometry: { type: 'probability_tree', subtype: 'pathway', layers: [1, s1, 1, s2, 1] }
-                },
-                token: this.toBase64((s1 * s2).toString()),
-                clues: [{ text: lang === 'sv' ? "Multiplicera antalet val för varje delsträcka." : "Multiply the number of paths for each segment.", latex: `${s1} \\cdot ${s2}` }],
-                metadata: { variation: 'pathway_via', difficulty: 4 }
-            };
+        // Calculate total possible paths (unblocked)
+        let totalPaths = 1;
+        for (let i = 1; i < layers.length - 1; i++) {
+            totalPaths *= layers[i];
         }
 
-        const mode = MathUtils.randomChoice(['pathways_basic', 'pathways_blocked', 'pathways_prob']);
-        const layers = [1, MathUtils.randomChoice([2, 3]), MathUtils.randomChoice([2, 3]), 1];
-        let totalPaths = 1;
-        for (let i = 1; i < layers.length - 1; i++) totalPaths *= layers[i];
+        // Generate and Block Obstacles (1 to 3 edges)
+        const allEdges: any[] = [];
+        for (let l = 0; l < layers.length - 1; l++) {
+            for (let f = 0; f < layers[l]; f++) {
+                for (let t = 0; t < layers[l + 1]; t++) {
+                    allEdges.push({ layer: l, from: f, to: t });
+                }
+            }
+        }
 
         const obstacles: any[] = [];
         if (mode !== 'pathways_basic') {
-            const allEdges: any[] = [];
-            for (let l = 0; l < layers.length - 1; l++) {
-                for (let f = 0; f < layers[l]; f++) {
-                    for (let t = 0; t < layers[l + 1]; t++) {
-                        allEdges.push({ layer: l, from: f, to: t });
-                    }
+            const numBlocks = MathUtils.randomInt(1, 3);
+            const shuffledEdges = [...allEdges].sort(() => Math.random() - 0.5);
+            
+            for (const edge of shuffledEdges) {
+                if (obstacles.length >= numBlocks) break;
+                
+                // Tentatively block and check if at least one path remains
+                const testObstacles = [...obstacles, edge];
+                if (this.countValidPaths(layers, testObstacles) > 0) {
+                    obstacles.push(edge);
                 }
             }
-            obstacles.push(MathUtils.randomChoice(allEdges));
         }
 
         const validCount = this.countValidPaths(layers, obstacles);
         const ans = mode === 'pathways_prob' ? this.rawFraction(validCount, totalPaths) : validCount.toString();
 
+        let desc = "";
+        if (mode === 'pathways_basic') {
+            desc = lang === 'sv' ? "Diagrammet visar möjliga vägar från A till B. På hur många olika sätt kan man gå hela vägen?" : "The diagram shows possible paths from A to B. In how many different ways can you go all the way?";
+        } else if (mode === 'pathways_blocked') {
+            desc = lang === 'sv' ? "De röda symbolerna markerar blockerade stigar. Hur många fungerande vägar finns kvar från A till B?" : "The red symbols mark blocked paths. How many working paths remain from A to B?";
+        } else {
+            desc = lang === 'sv' ? "Om du väljer en väg helt slumpmässigt, vad är sannolikheten att vägen du väljer är öppen hela vägen?" : "If you choose a path completely at random, what is the probability that the path you choose is open all the way?";
+        }
+
         return {
             renderData: {
-                description: lang === 'sv' ? (mode === 'pathways_prob' ? "Sannolikhet att en slumpad väg är öppen?" : "Hur många fungerande vägar finns kvar?") : (mode === 'pathways_prob' ? "Probability a random path is open?" : "How many working paths remain?"),
+                description: desc,
                 answerType: mode === 'pathways_prob' ? 'fraction' : 'numeric',
                 geometry: { type: 'probability_tree', subtype: 'pathway', layers, obstacles }
             },
             token: this.toBase64(ans),
-            clues: [{ text: lang === 'sv' ? "Följ de tillgängliga linjerna i nätverket från början till slut." : "Follow the available lines in the network from start to finish.", latex: mode === 'pathways_prob' ? `\\frac{\\text{Öppna}}{\\text{Totala}} = \\frac{${validCount}}{${totalPaths}}` : "" }],
+            clues: [
+                { 
+                    text: lang === 'sv' 
+                        ? "En väg är en unik kombination av val i varje steg. Multiplicera antalet val i varje del." 
+                        : "A path is a unique combination of choices at each step. Multiply the number of choices in each part.", 
+                    latex: layers.slice(1, -1).join(' \\cdot ') + ` = ${totalPaths}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? (mode === 'pathways_prob' ? "Sannolikhet = (Öppna vägar) / (Totala vägar)" : "Räkna endast de vägar där ingen länk är rödmarkerad.") 
+                        : (mode === 'pathways_prob' ? "Probability = (Open paths) / (Total paths)" : "Count only paths where no link is marked red."),
+                    latex: mode === 'pathways_prob' ? `\\frac{${validCount}}{${totalPaths}}` : "" 
+                }
+            ],
             metadata: { variation: mode, difficulty: 5 }
         };
     }
 
+    // --- HELPER METHODS FOR PATHWAYS ---
+
     private countValidPaths(layers: number[], obstacles: any[]): number {
+        const memo = new Map<string, number>();
+
         const find = (layerIdx: number, nodeIdx: number): number => {
             if (layerIdx === layers.length - 1) return 1;
+            const key = `${layerIdx}-${nodeIdx}`;
+            if (memo.has(key)) return memo.get(key)!;
+
             let count = 0;
             for (let nextNode = 0; nextNode < layers[layerIdx + 1]; nextNode++) {
                 const isBlocked = obstacles.some(o => o.layer === layerIdx && o.from === nodeIdx && o.to === nextNode);
-                if (!isBlocked) count += find(layerIdx + 1, nextNode);
+                if (!isBlocked) {
+                    count += find(layerIdx + 1, nextNode);
+                }
             }
+            memo.set(key, count);
             return count;
         };
+
         return find(0, 0);
     }
 }
