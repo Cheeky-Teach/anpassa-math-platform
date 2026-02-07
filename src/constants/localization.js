@@ -238,8 +238,9 @@ export const LEVEL_DESCRIPTIONS = {
         1: { sv: "Omkrets (Rektangel)", en: "Perimeter (Rectangle)" },
         2: { sv: "Area (Rektangel)", en: "Area (Rectangle)" },
         3: { sv: "Area (Triangel)", en: "Area (Triangle)" },
-        4: { sv: "Cirkelns Area & Omkrets", en: "Circle Area & Perimeter" },
-        5: { sv: "Sammansatta Figurer", en: "Composite Shapes" }
+        4: { sv: "Sammansatta (Rekt+Tri)", en: "Composite Shapes (Rect+Tri)" },
+        5: { sv: "Cirkelns Area & Omkrets", en: "Circle Area & Perimeter" },
+        6: { sv: "Sammansatta (Alla)", en: "Composite Shapes (All)" }
     },
     scale: {
         1: { sv: "Förstå Skala", en: "Understand Scale" },

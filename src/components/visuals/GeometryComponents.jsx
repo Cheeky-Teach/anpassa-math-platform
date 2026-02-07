@@ -8,6 +8,7 @@ import { VolumeVisualization } from './VolumeVisualization';
 import { FrequencyTable, PercentGrid } from './StatisticsVisuals';
 import { ProbabilityMarbles, ProbabilitySpinner } from './ProbabilityVisuals';
 import ProbabilityTree from './ProbabilityTree';
+
 // 2D Geometry & Utilities
 import { RenderShape } from './GeometryShapes';
 import { ScaleVisual, SimilarityCompare, CompareShapesArea } from './ScaleVisuals';
@@ -71,8 +72,9 @@ export const GeometryVisual = ({ data }) => {
         return <CompareShapesArea data={data} />;
     }
 
-    // --- BASIC SHAPES (Dispatcher) ---
-    if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle'].includes(data.type)) {
+    // --- BASIC & COMPOSITE SHAPES (Dispatcher) ---
+    // UPDATED: 'composite' is now handled by RenderShape which has logic for new and legacy subtypes
+    if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle', 'semicircle', 'quarter_circle', 'composite'].includes(data.type)) {
         return (
             <svg width="300" height="250" viewBox="0 0 300 250" className="my-2 w-full max-w-[300px] mx-auto">
                 <RenderShape type={data.type} dims={data} labels={data.labels} />
@@ -80,8 +82,10 @@ export const GeometryVisual = ({ data }) => {
         );
     }
     
-    // --- COMPOSITE SHAPES ---
-    if (data.type === 'composite') {
+    // Fallback or Legacy Composite (if any types remain that RenderShape doesn't handle)
+    // Since RenderShape handles all 'composite' subtypes now, this might be redundant
+    // but kept just in case of other 'composite' variants from ComplexGeometry.
+    if (data.type === 'composite_legacy') { // Renaming or removing to prevent conflict
         return <CompositeVisual data={data} />;
     }
 

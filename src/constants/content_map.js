@@ -176,8 +176,9 @@ export const CONTENT_MAP = {
                     { lvl: 1, desc: "Omkrets (Rektangel)", ex: "2(b+h)" },
                     { lvl: 2, desc: "Area (Rektangel)", ex: "b*h" },
                     { lvl: 3, desc: "Area (Triangel)", ex: "b*h/2" },
-                    { lvl: 4, desc: "Cirklar", ex: "pi*r^2" },
-                    { lvl: 5, desc: "Sammansatta", ex: "Hus, Portal" }
+                    { lvl: 4, desc: "Sammansatta (Rekt+Tri)", ex: "Rectanglar och trianglar" },
+                    { lvl: 5, desc: "Cirklar", ex: "pi*r^2" },
+                    { lvl: 6, desc: "Sammansatta (Alla)", ex: "Hus, Portal" }
                 ]
             },
             {

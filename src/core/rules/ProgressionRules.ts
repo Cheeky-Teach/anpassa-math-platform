@@ -11,7 +11,7 @@ export class ProgressionRules {
         scale: 7,
         equation: 7,
         simplify: 6,
-        geometry: 5,
+        geometry: 6,
         volume: 8,
         graph: 5,
         similarity: 4,
