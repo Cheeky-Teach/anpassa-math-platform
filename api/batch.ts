@@ -51,10 +51,14 @@ const generators: any = {
     statistics: new StatisticsGen(),
     change_factor: new ChangeFactorGen(),
     angles: new AnglesGen(),
-    patterns: new PatternsGen() // NY
+    patterns: new PatternsGen()
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
     const { requests } = req.body;
 
     if (!Array.isArray(requests)) {
@@ -62,13 +66,33 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const results = requests.map((req: any) => {
-            if (!generators[req.category]) return null;
-            return generators[req.category].generate(Number(req.level), req.lang);
-        });
-        res.status(200).json({ results });
+        const results = requests
+            .map((item: any) => {
+                const topicId = item.topic || item.category;
+                const level = Number(item.level);
+                const lang = item.lang || 'sv';
+                
+                if (!generators[topicId]) {
+                    console.warn(`Generator not found for: ${topicId}`);
+                    return null;
+                }
+
+                const questionData = generators[topicId].generate(level, lang);
+
+                // FIX: Inject topic/level/lang so DoNowGrid logic functions correctly
+                return {
+                    ...questionData,
+                    topic: topicId,
+                    level: level,
+                    lang: lang
+                };
+            })
+            .filter(q => q !== null); // Remove failed generations to prevent UI crashes
+
+        // FIX: Return the array directly to match DoNowGrid's expectation of questions.map()
+        res.status(200).json(results);
     } catch (error) {
-        console.error("Batch error:", error);
+        console.error("Batch generation error:", error);
         res.status(500).json({ error: 'Batch generation failed' });
     }
 }
