@@ -355,6 +355,30 @@ export class PythagorasGen {
     }
 
     // --- LEVEL 5: The Converse (Logic) ---
+    // --- LEVEL 5 COORDINATES ---
+    private level5_Coordinates(lang: string): any {
+        const t = this.getTriple();
+        const x1 = MathUtils.randomInt(1, 5);
+        const y1 = MathUtils.randomInt(1, 5);
+        const x2 = x1 + t.a;
+        const y2 = y1 + t.b;
+
+        return {
+            renderData: {
+                description: lang === 'sv' 
+                    ? `Beräkna avståndet mellan punkterna (${x1}, ${y1}) och (${x2}, ${y2}) i ett koordinatsystem.`
+                    : `Calculate the distance between points (${x1}, ${y1}) and (${x2}, ${y2}) in a coordinate system.`,
+                answerType: 'numeric'
+            },
+            token: this.toBase64(t.c.toString()),
+            clues: [
+                { text: lang === 'sv' ? "Skillnaden i x-led blir ena kateten." : "The difference in x-coordinates is one leg.", latex: `${x2} - ${x1} = ${t.a}` },
+                { text: lang === 'sv' ? "Skillnaden i y-led blir andra kateten." : "The difference in y-coordinates is the other leg.", latex: `${y2} - ${y1} = ${t.b}` },
+                { text: lang === 'sv' ? "Avståndet är hypotenusan i en rätvinklig triangel." : "The distance is the hypotenuse in a right-angled triangle.", latex: `d = \\sqrt{${t.a}^2 + ${t.b}^2} = ${t.c}` }
+            ],
+            metadata: { variation: 'coord_distance', difficulty: 4 }
+        };
+    
     private level5_Converse(lang: string): any {
         const variation = Math.random();
 
