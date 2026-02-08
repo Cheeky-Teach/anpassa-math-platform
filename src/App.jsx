@@ -4,9 +4,10 @@ import { supabase } from './lib/supabaseClient';
 // Views
 import Dashboard from './components/views/Dashboard';
 import PracticeView from './components/views/PracticeView';
-import DoNowConfig from './components/views/DoNowConfig';
+import DoNowConfig from './components/views/DoNowConfig'; 
 import DoNowGrid from './components/views/DoNowGrid';
 import AuthView from './components/views/AuthView';
+import QuestionStudio from './components/views/QuestionStudio'; 
 
 // Modals
 import AboutModal from './components/modals/AboutModal';
@@ -64,7 +65,8 @@ function App() {
     const [showStreakModal, setShowStreakModal] = useState(false);
     const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
-    // --- 6. DO NOW STATE ---
+    // --- 6. ASSIGNMENTS & STUDIO STATE ---
+    const [assignments, setAssignments] = useState([]); 
     const [doNowQuestions, setDoNowQuestions] = useState([]);
     const [doNowConfig, setDoNowConfig] = useState([]); 
 
@@ -78,15 +80,19 @@ function App() {
         // Initial session check
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
-            if (session) fetchProfile(session.user.id);
-            else setLoadingProfile(false);
+            if (session) {
+                fetchProfile(session.user.id);
+            } else {
+                setLoadingProfile(false);
+            }
         });
 
         // Listen for real-time auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
-            if (session) fetchProfile(session.user.id);
-            else {
+            if (session) {
+                fetchProfile(session.user.id);
+            } else {
                 setProfile(null);
                 setLoadingProfile(false);
             }
@@ -96,58 +102,88 @@ function App() {
     }, []);
 
     const fetchProfile = async (userId) => {
-    // 1. Check if profile exists
-    const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-
-        if (error && error.code === 'PGRST116') { // Error code for "not found"
-            // 2. If it doesn't exist (Social User), create it!
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            // Pull metadata we sent during handleSocialLogin
-            const userRole = user.user_metadata?.role || 'student';
-            const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
-
-            const { data: newProfile, error: createError } = await supabase
-                .from('profiles')
-                .insert([{ 
-                    id: userId, 
-                    full_name: fullName, 
-                    role: userRole,
-                    alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
-                }])
-                .select()
-                .single();
-                
-            if (newProfile) setProfile(newProfile);
-        } else if (data) {
-            setProfile(data);
+        if (!userId) {
+            setLoadingProfile(false);
+            return;
         }
-        setLoadingProfile(false);
+
+        try {
+            console.log("Hämtar profil för:", userId);
+            
+            // 1. Försök hämta existerande profil
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (error) {
+                // PGRST116 = Hittades inte. Detta händer vid första inloggningen.
+                if (error.code === 'PGRST116') {
+                    console.log("Profil saknas i DB, skapar ny...");
+                    
+                    const { data: authData } = await supabase.auth.getUser();
+                    const user = authData?.user;
+
+                    // Om vi inte kan hitta auth-användaren avbryter vi för att undvika krasch
+                    if (!user) {
+                        console.error("Ingen auth-användare hittades.");
+                        return;
+                    }
+                    
+                    const userRole = user.user_metadata?.role || 'student';
+                    const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || "Användare";
+
+                    const { data: newProfile, error: insertError } = await supabase
+                        .from('profiles')
+                        .insert([{ 
+                            id: userId, 
+                            full_name: fullName, 
+                            role: userRole,
+                            alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (insertError) {
+                        console.error("Kunde inte skapa profilrad:", insertError.message);
+                    } else if (newProfile) {
+                        console.log("Profil skapad:", newProfile);
+                        setProfile(newProfile);
+                    }
+                } else {
+                    console.error("Fel vid profilhämtning:", error.message);
+                }
+            } else if (data) {
+                console.log("Profil laddad:", data);
+                setProfile(data);
+            }
+        } catch (err) {
+            console.error("Oväntat fel i fetchProfile:", err);
+        } finally {
+            // Detta anropas oavsett om det gick bra eller dåligt, vilket hindrar evig laddning
+            setLoadingProfile(false);
+        }
     };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
         setView('dashboard');
         setStreak(0);
+        setProfile(null);
     };
 
-    // --- DATA PERSISTENCE: RECORD PROGRESS (The Skill Bucket Bridge) ---
+    // --- DATA PERSISTENCE: RECORD PROGRESS ---
     const recordProgress = async (isCorrect, metadata) => {
         if (!session?.user || !metadata) return;
-
         const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
 
         const { error } = await supabase.from('student_progress').insert({
             student_id: session.user.id,
             topic_id: topic,
-            variation_key: metadata.variation || 'unknown',
+            variation_key: metadata.variation_key || 'unknown',
             is_correct: isCorrect,
             help_used: helpUsed,
-            // assignment_id logic can be wired here in future phases
         });
 
         if (error) console.error("Database persistence error:", error.message);
@@ -328,7 +364,6 @@ function App() {
             });
             const result = await res.json();
             
-            // 🔥 DB RECORDING FIRE
             await recordProgress(result.correct, question.metadata);
 
             if (result.correct) {
@@ -364,7 +399,6 @@ function App() {
         } catch (e) { console.error(e); }
     };
 
-    // --- DO NOW LOGIC ---
     const handleDoNowGenerate = async (selected) => {
         if (selected.length === 0) return;
         setDoNowConfig(selected);
@@ -388,25 +422,37 @@ function App() {
         } catch (e) { console.error("Do Now Error:", e); } finally { setLoading(false); }
     };
 
-    // --- RENDER LOGIC: AUTH GUARD ---
+    // --- RENDER LOGIC ---
+
     if (session && loadingProfile) {
         return <div className="h-screen flex items-center justify-center bg-white text-indigo-600 font-black animate-pulse">ANPASSA...</div>;
     }
 
     if (!session) {
-        return <AuthView ui={ui} lang={lang} onGuestMode={() => {}} />; // Add guest mode if desired
+        return <AuthView ui={ui} lang={lang} onGuestMode={() => {}} />;
     }
 
-    // --- RENDER LOGIC: VIEW SWITCHER ---
+    // View Switcher logic for Studio and legacy Do Now
     if (view === 'donow_config') {
         return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
     }
     if (view === 'donow_grid') {
-        return <DoNowGrid questions={doNowQuestions} ui={ui} onBack={() => setView('donow_config')} lang={lang} onRefreshAll={() => handleDoNowGenerate(doNowConfig)} onRefreshOne={(i, t, l) => {}} />;
+        return <DoNowGrid questions={doNowQuestions} ui={ui} onBack={() => setView('dashboard')} lang={lang} onRefreshAll={() => handleDoNowGenerate(doNowConfig)} onRefreshOne={(i, t, l) => {}} />;
+    }
+    if (view === 'question_studio') {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col">
+                <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                    <h1 className="text-xl font-black text-indigo-600 tracking-tighter cursor-pointer" onClick={() => setView('dashboard')}>Anpassa Studio</h1>
+                    <button onClick={() => setView('dashboard')} className="text-sm font-bold text-slate-400 hover:text-slate-600 uppercase">Stäng Studio</button>
+                </header>
+                <QuestionStudio />
+            </div>
+        );
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
+        <div className="min-h-screen flex flex-col bg-gray-50 font-sans text-slate-900">
             <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
             <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
             <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
@@ -427,7 +473,7 @@ function App() {
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold">✅ {totalCorrect}</div>
+                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">✅ {totalCorrect}</div>
                         <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">🔥 {streak}</div>
                         <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2">Logga ut</button>
                     </div>
@@ -437,11 +483,23 @@ function App() {
             <div className="flex-1 flex flex-col">
                 {view === 'dashboard' ? (
                     <Dashboard
-                        lang={lang} selectedTopic={topic} selectedLevel={level} profile={profile}
-                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} onStart={startPractice} 
-                        timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} 
-                        onLgrOpen={() => setLgrOpen(true)} onContentOpen={() => setContentOpen(true)} 
-                        onDoNowOpen={() => setView('donow_config')} toggleLang={() => setLang(l => l === 'sv' ? 'en' : 'sv')}
+                        lang={lang} 
+                        selectedTopic={topic} 
+                        selectedLevel={level} 
+                        userRole={profile?.role} 
+                        assignments={assignments} 
+                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
+                        onStart={startPractice} 
+                        timerSettings={timerSettings} 
+                        toggleTimer={toggleTimer} 
+                        resetTimer={resetTimer} 
+                        ui={ui} 
+                        onLgrOpen={() => setLgrOpen(true)} 
+                        onContentOpen={() => setContentOpen(true)} 
+                        onAboutOpen={() => setAboutOpen(true)}
+                        onStatsOpen={() => setStatsOpen(true)}
+                        onStudioOpen={() => setView('question_studio')}
+                        onDoNowOpen={() => setView('donow_config')} 
                     />
                 ) : (
                     <PracticeView

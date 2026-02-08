@@ -1,21 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { 
+  ChevronDown, 
+  ChevronUp, 
+  Play, 
+  Clock, 
+  Book, 
+  Map, 
+  Info, 
+  Award, 
+  BarChart3, 
+  PenTool, 
+  Calendar,
+  Sparkles
+} from 'lucide-react';
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
 
 const COLOR_VARIANTS = {
     pink: {
-        bgLight: 'bg-pink-50', bgDark: 'bg-pink-500', border: 'border-pink-100', text: 'text-pink-700', ring: 'ring-pink-500', borderSolid: 'border-pink-500', selectFocus: 'focus:ring-pink-500'
+        bgLight: 'bg-pink-50', bgDark: 'bg-pink-500', border: 'border-pink-100', text: 'text-pink-700', ring: 'ring-pink-500', borderSolid: 'border-pink-500', icon: 'text-pink-500'
     },
     indigo: {
-        bgLight: 'bg-indigo-50', bgDark: 'bg-indigo-500', border: 'border-indigo-100', text: 'text-indigo-700', ring: 'ring-indigo-500', borderSolid: 'border-indigo-500', selectFocus: 'focus:ring-indigo-500'
+        bgLight: 'bg-indigo-50', bgDark: 'bg-indigo-500', border: 'border-indigo-100', text: 'text-indigo-700', ring: 'ring-indigo-500', borderSolid: 'border-indigo-500', icon: 'text-indigo-500'
     },
     emerald: {
-        bgLight: 'bg-emerald-50', bgDark: 'bg-emerald-500', border: 'border-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-500', borderSolid: 'border-emerald-500', selectFocus: 'focus:ring-emerald-500'
+        bgLight: 'bg-emerald-50', bgDark: 'bg-emerald-500', border: 'border-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-500', borderSolid: 'border-emerald-500', icon: 'text-emerald-500'
     },
     purple: {
-        bgLight: 'bg-purple-50', bgDark: 'bg-purple-500', border: 'border-purple-100', text: 'text-purple-700', ring: 'ring-purple-500', borderSolid: 'border-purple-500', selectFocus: 'focus:ring-purple-500'
+        bgLight: 'bg-purple-50', bgDark: 'bg-purple-500', border: 'border-purple-100', text: 'text-purple-700', ring: 'ring-purple-500', borderSolid: 'border-purple-500', icon: 'text-purple-500'
     },
     yellow: {
-        bgLight: 'bg-yellow-50', bgDark: 'bg-yellow-500', border: 'border-yellow-100', text: 'text-yellow-700', ring: 'ring-yellow-500', borderSolid: 'border-yellow-500', selectFocus: 'focus:ring-yellow-500'
+        bgLight: 'bg-yellow-50', bgDark: 'bg-yellow-500', border: 'border-yellow-100', text: 'text-yellow-700', ring: 'ring-yellow-500', borderSolid: 'border-yellow-500', icon: 'text-yellow-500'
     }
 };
 
@@ -30,10 +44,16 @@ const Dashboard = ({
     resetTimer, 
     ui, 
     onLgrOpen, 
-    onContentOpen, // New Prop
-    onDoNowOpen, 
-    toggleLang 
+    onContentOpen,
+    onAboutOpen, // New: Linked to "Om skaparen"
+    onStatsOpen, // New: Future Stats view
+    onStudioOpen, // New: Navigation to Question Studio
+    userRole = 'student', // Defaulting to student
+    assignments = [], // Prop for active assignments
+    recommended = []  // Prop for recommended levels
 }) => {
+    console.log("Aktuell roll i Dashboard:", userRole);
+    const [expandedCategory, setExpandedCategory] = useState('algebra');
     
     const getStyles = (category) => {
         const color = category.color || 'emerald';
@@ -41,65 +61,150 @@ const Dashboard = ({
     };
 
     return (
-        <div className="max-w-6xl mx-auto w-full p-4 fade-in flex flex-col min-h-[calc(100vh-80px)]">
+        <div className="max-w-5xl mx-auto w-full p-4 fade-in flex flex-col min-h-screen pb-32">
             
-            <div className="text-center py-10 md:py-16 border-b border-gray-200 mb-12 bg-emerald-50/50 rounded-3xl mx-4 relative overflow-hidden">
-                <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-4 tracking-tight relative z-10">Anpassa</h1>
-                <p className="text-xl md:text-2xl text-gray-500 font-medium tracking-wide relative z-10">{ui.tagline}</p>
+            {/* --- LANDING PANE / HERO SECTION --- */}
+            <header className="mb-12">
+                <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <span className="bg-white/20 backdrop-blur-md px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">
+                                Välkommen till Anpassa
+                            </span>
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight leading-none">
+                            Dags att bemästra <br/>matematiken.
+                        </h1>
+                        
+                        {/* Landing Pane for Assignments */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                            {assignments.length > 0 ? (
+                                <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 hover:bg-white/15 transition-all cursor-pointer group">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="font-bold flex items-center gap-2"><Calendar size={18}/> Aktuella Uppgifter</h3>
+                                        <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform"/>
+                                    </div>
+                                    <p className="text-sm text-indigo-100">Du har {assignments.length} aktiva uppdrag från din lärare.</p>
+                                </div>
+                            ) : (
+                                <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10">
+                                    <h3 className="font-bold flex items-center gap-2 mb-2"><Sparkles size={18}/> Dagens Tips</h3>
+                                    <p className="text-sm text-indigo-100">Repetera "De fyra räknesätten"" för att hålla din streak vid liv!</p>
+                                </div>
+                            )}
 
-                <div className="mt-8 flex justify-center relative z-10">
-                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 px-4 shadow-sm border border-gray-100 flex items-center gap-3">
-                        <span className="font-bold text-gray-700 text-xs uppercase tracking-wider">{ui.timer_title}</span>
-                        <div className="relative group">
-                            <select
-                                value={timerSettings.duration / 60}
-                                onChange={(e) => toggleTimer(Number(e.target.value))}
-                                className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-1 pl-3 pr-8 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                            >
-                                <option value="0">{ui.timer_off}</option>
-                                {[5, 10, 15, 20, 30, 45, 60].map(m => <option key={m} value={m}>{m} {ui.timer_min}</option>)}
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-bold flex items-center gap-2 mb-1"><Clock size={18}/> {ui.timer_title}</h3>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <select
+                                            value={timerSettings.duration / 60}
+                                            onChange={(e) => toggleTimer(Number(e.target.value))}
+                                            className="bg-slate-900/50 border-none text-white py-1 px-3 rounded-lg text-sm font-bold focus:ring-2 focus:ring-white/50"
+                                        >
+                                            <option value="0">{ui.timer_off}</option>
+                                            {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
+                                        </select>
+                                        {timerSettings.duration > 0 && (
+                                            <button onClick={resetTimer} className="text-[10px] uppercase font-black text-red-300 hover:text-white transition-colors">Reset</button>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        {timerSettings.duration > 0 && (
-                            <button onClick={resetTimer} className="text-xs text-red-500 hover:text-red-700 font-medium underline">{ui.timer_reset}</button>
-                        )}
                     </div>
+                    {/* Abstract background shape */}
+                    <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
                 </div>
-            </div>
+            </header>
 
-            <div className="text-center mb-10">
-                <p className="text-gray-500 text-lg leading-relaxed max-w-2xl mx-auto">{ui.progressionInfo}</p>
-            </div>
+            {/* --- TEACHER COMMAND CENTER (Conditional) --- */}
+            {userRole === 'teacher' && (
+                <section className="mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-3 mb-4 px-4">
+                        <PenTool size={18} className="text-slate-400" />
+                        <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">Lärarverktyg</h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mx-4">
+                        <button 
+                            onClick={onStudioOpen}
+                            className="flex items-center justify-between p-6 bg-slate-900 text-white rounded-[2rem] hover:bg-indigo-600 transition-all shadow-xl group"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                                    <Zap size={24} fill="currentColor" />
+                                </div>
+                                <div className="text-left">
+                                    <span className="block font-black text-lg">Question Studio</span>
+                                    <span className="text-xs text-slate-400 group-hover:text-indigo-100">Skapa paket & arbetsblad</span>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} />
+                        </button>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">
+                        <button 
+                            onClick={onStatsOpen}
+                            className="flex items-center justify-between p-6 bg-white border border-slate-200 rounded-[2rem] hover:border-indigo-500 transition-all shadow-sm group"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                                    <BarChart3 size={24} />
+                                </div>
+                                <div className="text-left">
+                                    <span className="block font-black text-lg text-slate-800">Elevstatistik</span>
+                                    <span className="text-xs text-slate-500">Följ klassens utveckling</span>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} className="text-slate-300" />
+                        </button>
+                    </div>
+                </section>
+            )}
+
+            {/* --- CURRICULUM GRID (Collapsible Cards) --- */}
+            <div className="flex flex-col gap-6 mx-4">
+                <div className="flex items-center gap-3 mb-2">
+                    <Book size={18} className="text-slate-400" />
+                    <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">Kursmaterial</h2>
+                </div>
+
                 {Object.entries(CATEGORIES).map(([catKey, category]) => {
                     const styles = getStyles(category);
+                    const isExpanded = expandedCategory === catKey;
                     
                     return (
-                        <div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}>
-                            <div className={`${styles.bgLight} p-4 border-b ${styles.border}`}>
-                                <h3 className={`text-lg font-bold ${styles.text} uppercase tracking-wide flex items-center gap-2`}>
-                                    <span className={`w-3 h-3 rounded-full ${styles.bgDark}`}></span>
-                                    {category.label[lang]}
-                                </h3>
-                            </div>
+                        <div key={catKey} className={`bg-white rounded-[2rem] border-2 transition-all duration-500 overflow-hidden ${isExpanded ? `shadow-2xl ${styles.borderSolid}` : 'border-transparent shadow-sm hover:border-slate-200'}`}>
+                            {/* Category Header */}
+                            <button 
+                                onClick={() => setExpandedCategory(isExpanded ? null : catKey)}
+                                className={`w-full p-6 flex items-center justify-between text-left ${isExpanded ? styles.bgLight : ''}`}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${styles.bgDark} text-white shadow-lg`}>
+                                        <Award size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className={`text-xl font-black text-slate-800 uppercase tracking-tight`}>{category.label[lang]}</h3>
+                                        <p className="text-xs text-slate-500 font-medium">{category.topics.length} delmoment tillgängliga</p>
+                                    </div>
+                                </div>
+                                {isExpanded ? <ChevronUp size={24} className="text-slate-400" /> : <ChevronDown size={24} className="text-slate-400" />}
+                            </button>
                             
-                            <div className="p-4 space-y-4 flex-1">
-                                {category.topics.map(topic => {
-                                    return (
-                                        <div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                                            <div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div>
+                            {/* Expandable Topics Content */}
+                            <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[2000px] opacity-100 p-6' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {category.topics.map(topic => (
+                                        <div key={topic.id} className="bg-slate-50 rounded-3xl p-5 border border-slate-100 hover:bg-white hover:shadow-xl hover:border-indigo-100 transition-all group">
+                                            <div className="font-bold text-slate-800 mb-4 ml-1 flex items-center justify-between">
+                                                {topic.label[lang]}
+                                                <div className={`w-2 h-2 rounded-full ${styles.bgDark} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                                            </div>
                                             <div className="relative">
                                                 <select 
                                                     value={selectedTopic === topic.id ? selectedLevel : 0} 
                                                     onChange={(e) => onSelect(topic.id, Number(e.target.value))} 
-                                                    className={`
-                                                        w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none appearance-none cursor-pointer
-                                                        ${selectedTopic === topic.id ? `ring-2 ${styles.ring} ${styles.borderSolid}` : styles.selectFocus}
-                                                    `}
+                                                    className={`w-full p-3 pl-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:outline-none appearance-none cursor-pointer transition-all ${selectedTopic === topic.id ? `ring-4 ${styles.ring} border-transparent` : ''}`}
                                                 >
                                                     <option value={0} disabled>{ui.selectLevel}</option>
                                                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lvl => {
@@ -111,46 +216,55 @@ const Dashboard = ({
                                                         );
                                                     })}
                                                 </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                                    <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                                                <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
+                                                    <ChevronDown size={16} />
                                                 </div>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            <div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20">
+            {/* --- FIXED START ACTION BAR --- */}
+            <div className={`fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-30 transition-all duration-500 ${selectedTopic ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
                 <button 
                     onClick={onStart} 
-                    className={`
-                        px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 
-                        ${selectedTopic 
-                            ? 'bg-orange-500 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-orange-600 shadow-orange-200' 
-                            : 'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}
-                    `}
+                    className="px-12 py-5 rounded-full font-black text-xl shadow-[0_20px_50px_rgba(249,115,22,0.4)] bg-orange-500 text-white pointer-events-auto flex items-center gap-4 hover:scale-110 hover:bg-orange-600 active:scale-95 transition-all uppercase tracking-tighter"
                 >
-                    {ui.startBtn} <span>🚀</span>
+                    Börja öva <Play fill="currentColor" size={20} />
                 </button>
             </div>
 
-            <footer className="mt-auto py-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center px-4 gap-4">
-                <button onClick={onDoNowOpen} className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-full text-sm transition-colors shadow-sm order-2 md:order-1">
-                    {ui.donow_btn}
-                </button>
+            {/* --- RESOURCE FOOTER HUB --- */}
+            <footer className="mt-20 py-12 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-8 px-4 text-center md:text-left">
+                <div className="space-y-4">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Resurser</h4>
+                    <div className="flex flex-col gap-2">
+                        <button onClick={onContentOpen} className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
+                            <Map size={16} /> Innehållskarta
+                        </button>
+                        <button onClick={onLgrOpen} className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
+                            <Book size={16} /> LGR 22 Koppling
+                        </button>
+                    </div>
+                </div>
 
-                <div className="flex items-center gap-3 order-1 md:order-2 w-full md:w-auto justify-center md:justify-end">
-                    {/* NEW CONTENT BUTTON */}
-                    <button onClick={onContentOpen} className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-emerald-200 shadow-sm">
-                        Innehåll
-                    </button>
-                    <button onClick={onLgrOpen} className="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-sky-200 shadow-sm">
-                        {ui.lgr_btn}
-                    </button>
+                <div className="space-y-4">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Support</h4>
+                    <div className="flex flex-col gap-2">
+                        <button onClick={onAboutOpen} className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
+                            <Info size={16} /> Om skaparen
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-center md:items-end justify-center">
+                    <h2 className="text-3xl font-black text-slate-200 tracking-tighter italic">ANPASSA</h2>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Rätt stöd. Direkt.</p>
                 </div>
             </footer>
         </div>
