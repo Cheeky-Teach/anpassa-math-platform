@@ -1,30 +1,48 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from './lib/supabaseClient';
+
+// Views
 import Dashboard from './components/views/Dashboard';
 import PracticeView from './components/views/PracticeView';
 import DoNowConfig from './components/views/DoNowConfig';
 import DoNowGrid from './components/views/DoNowGrid';
+import AuthView from './components/views/AuthView';
+
+// Modals
 import AboutModal from './components/modals/AboutModal';
 import LgrModal from './components/modals/LgrModal';
 import StatsModal from './components/modals/StatsModal';
 import StreakModal from './components/modals/StreakModal'; 
 import ContentModal from './components/modals/ContentModal'; 
 import MobileDrawer from './components/practice/MobileDrawer';
-import { UI_TEXT, CATEGORIES, LEVEL_DESCRIPTIONS } from './constants/localization';
+
+// Data & Constants
+import { UI_TEXT, LEVEL_DESCRIPTIONS } from './constants/localization';
 
 function App() {
+    // --- 1. AUTH & PROFILE STATE ---
+    const [session, setSession] = useState(null);
+    const [profile, setProfile] = useState(null);
+    const [loadingProfile, setLoadingProfile] = useState(true);
+
+    // --- 2. UI NAVIGATION STATE ---
     const [view, setView] = useState('dashboard');
     const [lang, setLang] = useState('sv');
     const [topic, setTopic] = useState('');
     const [level, setLevel] = useState(0);
 
+    // --- 3. GAMEPLAY STATE ---
     const [question, setQuestion] = useState(null);
     const [input, setInput] = useState('');
     const [feedback, setFeedback] = useState(null);
     const [loading, setLoading] = useState(false);
-
-    // Session Stats
     const [streak, setStreak] = useState(0);
     const [totalCorrect, setTotalCorrect] = useState(0);
+    const [revealedClues, setRevealedClues] = useState([]);
+    const [isSolutionRevealed, setIsSolutionRevealed] = useState(false);
+    const [usedHelp, setUsedHelp] = useState(false);
+
+    // --- 4. SESSION STATS & HISTORY ---
     const [sessionStats, setSessionStats] = useState({
         attempted: 0,
         correctNoHelp: 0,
@@ -33,35 +51,109 @@ function App() {
         skipped: 0,
         maxStreak: 0
     });
-    
     const [granularStats, setGranularStats] = useState({});
     const [history, setHistory] = useState([]);
-    const [revealedClues, setRevealedClues] = useState([]);
     const [levelUpAvailable, setLevelUpAvailable] = useState(false);
     
-    // Modals State
+    // --- 5. MODALS & UI STATE ---
     const [aboutOpen, setAboutOpen] = useState(false);
     const [statsOpen, setStatsOpen] = useState(false);
     const [timeUpOpen, setTimeUpOpen] = useState(false);
     const [lgrOpen, setLgrOpen] = useState(false);
     const [contentOpen, setContentOpen] = useState(false); 
     const [showStreakModal, setShowStreakModal] = useState(false);
-    // REMOVED: showTotalModal state
     const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
-    // Do Now State
+    // --- 6. DO NOW STATE ---
     const [doNowQuestions, setDoNowQuestions] = useState([]);
     const [doNowConfig, setDoNowConfig] = useState([]); 
 
-    const [usedHelp, setUsedHelp] = useState(false);
-    const [isSolutionRevealed, setIsSolutionRevealed] = useState(false);
-
-    // Timer State
+    // --- 7. TIMER STATE ---
     const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
 
     const ui = UI_TEXT[lang];
 
-    // Timer Logic
+    // --- EFFECT: AUTH & PROFILE LISTENER ---
+    useEffect(() => {
+        // Initial session check
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+            if (session) fetchProfile(session.user.id);
+            else setLoadingProfile(false);
+        });
+
+        // Listen for real-time auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            if (session) fetchProfile(session.user.id);
+            else {
+                setProfile(null);
+                setLoadingProfile(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const fetchProfile = async (userId) => {
+    // 1. Check if profile exists
+    const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error && error.code === 'PGRST116') { // Error code for "not found"
+            // 2. If it doesn't exist (Social User), create it!
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            // Pull metadata we sent during handleSocialLogin
+            const userRole = user.user_metadata?.role || 'student';
+            const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
+
+            const { data: newProfile, error: createError } = await supabase
+                .from('profiles')
+                .insert([{ 
+                    id: userId, 
+                    full_name: fullName, 
+                    role: userRole,
+                    alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
+                }])
+                .select()
+                .single();
+                
+            if (newProfile) setProfile(newProfile);
+        } else if (data) {
+            setProfile(data);
+        }
+        setLoadingProfile(false);
+    };
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        setView('dashboard');
+        setStreak(0);
+    };
+
+    // --- DATA PERSISTENCE: RECORD PROGRESS (The Skill Bucket Bridge) ---
+    const recordProgress = async (isCorrect, metadata) => {
+        if (!session?.user || !metadata) return;
+
+        const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
+
+        const { error } = await supabase.from('student_progress').insert({
+            student_id: session.user.id,
+            topic_id: topic,
+            variation_key: metadata.variation || 'unknown',
+            is_correct: isCorrect,
+            help_used: helpUsed,
+            // assignment_id logic can be wired here in future phases
+        });
+
+        if (error) console.error("Database persistence error:", error.message);
+    };
+
+    // --- TIMER LOGIC ---
     useEffect(() => {
         let interval = null;
         if (timerSettings.isActive && timerSettings.remaining > 0 && view === 'practice') {
@@ -100,8 +192,8 @@ function App() {
         }
     }, [streak]);
 
+    // --- GAMEPLAY HANDLERS ---
     const fetchQuestion = async (t = topic, l = level, lg = lang, force = false) => {
-        // Guard: Don't fetch if a blocking modal is open
         if (!force && (showStreakModal || levelUpAvailable || timeUpOpen)) return;
         if (!t || !l) return;
         
@@ -144,70 +236,6 @@ function App() {
         setQuestion(null);
     };
 
-    // --- DO NOW LOGIC ---
-    const handleDoNowGenerate = async (selected) => {
-        if (selected.length === 0) return;
-        setDoNowConfig(selected);
-        setLoading(true);
-        
-        const requests = [];
-        const targetCount = Math.max(selected.length, 6);
-        
-        for (let i = 0; i < targetCount; i++) {
-            const selection = selected[i % selected.length];
-            requests.push({
-                category: selection.topic,
-                level: selection.level,
-                lang: lang
-            });
-        }
-
-        try {
-            const res = await fetch('/api/batch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requests })
-            });
-            const data = await res.json();
-            
-            if (data.results && Array.isArray(data.results)) {
-                const validQuestions = data.results.filter(q => q !== null);
-                setDoNowQuestions(validQuestions);
-                setView('donow_grid');
-            }
-        } catch (e) {
-            console.error("Do Now Generation Error:", e);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleRefreshAll = async () => {
-        if (doNowConfig.length > 0) {
-            await handleDoNowGenerate(doNowConfig);
-        }
-    };
-
-    const handleRefreshOne = async (index, topic, level) => {
-        try {
-            const timestamp = new Date().getTime();
-            const res = await fetch(`/api/question?category=${topic}&level=${level}&lang=${lang}&force=true&t=${timestamp}`);
-            const newQuestion = await res.json();
-            if (newQuestion.error) throw new Error(newQuestion.error);
-
-            setDoNowQuestions(prev => {
-                const copy = [...prev];
-                copy[index] = newQuestion;
-                return copy;
-            });
-        } catch (e) {
-            console.error("Single refresh failed", e);
-        }
-    };
-
-    // --- GAMEPLAY HANDLERS ---
-    const handleSelection = (t, l) => { setTopic(t); setLevel(l); };
-
     const handleHint = () => {
         if (question?.clues) {
             setUsedHelp(true);
@@ -218,18 +246,14 @@ function App() {
         }
     };
 
-    // UPDATED: Now registers as incorrect answer when clicked
     const handleSolution = () => {
         if (question?.clues) {
             setUsedHelp(true);
             setRevealedClues(question.clues);
-            
-            // STATS CHANGE: Register as incorrect if not already revealed/locked
             if (!isSolutionRevealed) {
                 updateStats('incorrect');
                 updateGranularStats(topic, level, 'incorrect');
             }
-
             setIsSolutionRevealed(true);
             setStreak(0);
         }
@@ -261,9 +285,6 @@ function App() {
     };
 
     const handleSkip = () => {
-        const descText = typeof question.renderData.description === 'object' ? question.renderData.description[lang] : question.renderData.description;
-        const historyText = question.renderData.latex || descText;
-        setHistory(prev => [{ topic, level, correct: false, skipped: true, text: historyText, clueUsed: revealedClues.length > 0 || isSolutionRevealed, time: Date.now() }, ...prev]);
         setStreak(0);
         updateStats('skipped');
         updateGranularStats(topic, level, 'skipped');
@@ -281,14 +302,12 @@ function App() {
 
     const handleSubmit = async (e, directInput) => {
         e.preventDefault();
-        // Global Guard: If any blocking modal is open, ignore submission
         if (showStreakModal || timeUpOpen) return;
         if (feedback === 'correct') return;
         
         let finalInput = directInput !== undefined ? directInput : input;
         if (!question || !finalInput) return;
 
-        // Capture lock state at moment of submission
         const isStatsLocked = isSolutionRevealed;
         const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
 
@@ -308,59 +327,34 @@ function App() {
                 }) 
             });
             const result = await res.json();
-            const descText = typeof question.renderData.description === 'object' ? question.renderData.description[lang] : question.renderData.description;
-            const historyText = question.renderData.latex || descText;
+            
+            // 🔥 DB RECORDING FIRE
+            await recordProgress(result.correct, question.metadata);
 
             if (result.correct) {
-                // LOCK CHECK: Only update stats if solution was NOT revealed
                 if (!isStatsLocked) {
-                    setHistory(prev => [{ topic, level, correct: true, text: historyText, clueUsed: helpUsed, time: Date.now() }, ...prev]);
+                    setHistory(prev => [{ topic, level, correct: true, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
                     setStreak(result.newStreak);
-                    
-                    if (!helpUsed) {
-                        updateStats('correctNoHelp');
-                        updateGranularStats(topic, level, 'correctNoHelp');
-                    } else {
-                        updateStats('correctHelp');
-                        updateGranularStats(topic, level, 'correctHelp');
-                    }
+                    updateStats(helpUsed ? 'correctHelp' : 'correctNoHelp');
+                    updateGranularStats(topic, level, helpUsed ? 'correctHelp' : 'correctNoHelp');
+                    setTotalCorrect(prev => prev + 1);
 
-                    const newTotal = totalCorrect + 1;
-                    setTotalCorrect(newTotal);
-
-                    // --- MILESTONE LOGIC (No Total Modal) ---
-                    const isStreakMilestone = [15, 20, 30, 40, 50].includes(result.newStreak);
-
-                    if (isStreakMilestone) {
+                    if ([15, 20, 30, 40, 50].includes(result.newStreak)) {
                         setShowStreakModal(true);
-                        // Waiting for modal close.
                     } else if (result.levelUp) {
                         setLevelUpAvailable(true);
-                        // Waiting for user choice in LevelUpModal.
                     } else {
-                        // Standard flow: Auto-advance
-                        setTimeout(() => {
-                            // Using a boolean flag logic here is safer than checking state in timeout
-                            fetchQuestion(topic, level, lang);
-                        }, 1500);
+                        setTimeout(() => fetchQuestion(topic, level, lang), 1500);
                     }
                 }
                 setFeedback('correct');
             } else {
-                // Incorrect Logic
                 question.attempts = (question.attempts || 0) + 1;
                 if (question.attempts >= 2) {
-                    
-                    // Add to history BEFORE calling handleSolution (which locks stats)
                     if (!isStatsLocked) {
-                        setHistory(prev => [{
-                            topic, level, correct: false, text: historyText, clueUsed: true, correctAnswer: result.correctAnswer || "See Solution", time: Date.now()
-                        }, ...prev]);
+                        setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: true, time: Date.now() }, ...prev]);
                     }
-
-                    // This will now trigger the stats update ('incorrect') and reveal the solution UI
                     handleSolution(); 
-                    
                 } else {
                     handleHint();
                 }
@@ -370,23 +364,45 @@ function App() {
         } catch (e) { console.error(e); }
     };
 
-    const toggleLang = () => setLang(prev => prev === 'sv' ? 'en' : 'sv');
+    // --- DO NOW LOGIC ---
+    const handleDoNowGenerate = async (selected) => {
+        if (selected.length === 0) return;
+        setDoNowConfig(selected);
+        setLoading(true);
+        const requests = [];
+        for (let i = 0; i < 6; i++) {
+            const selection = selected[i % selected.length];
+            requests.push({ topic: selection.topic, level: selection.level, lang });
+        }
+        try {
+            const res = await fetch('/api/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requests })
+            });
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                setDoNowQuestions(data);
+                setView('donow_grid');
+            }
+        } catch (e) { console.error("Do Now Error:", e); } finally { setLoading(false); }
+    };
 
-    // RENDER LOGIC
+    // --- RENDER LOGIC: AUTH GUARD ---
+    if (session && loadingProfile) {
+        return <div className="h-screen flex items-center justify-center bg-white text-indigo-600 font-black animate-pulse">ANPASSA...</div>;
+    }
+
+    if (!session) {
+        return <AuthView ui={ui} lang={lang} onGuestMode={() => {}} />; // Add guest mode if desired
+    }
+
+    // --- RENDER LOGIC: VIEW SWITCHER ---
     if (view === 'donow_config') {
-        return <div className="min-h-screen bg-gray-50 font-sans"><DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
+        return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
     }
     if (view === 'donow_grid') {
-        return (
-            <DoNowGrid 
-                questions={doNowQuestions} 
-                ui={ui} 
-                onBack={() => setView('donow_config')} 
-                lang={lang} 
-                onRefreshAll={handleRefreshAll}
-                onRefreshOne={handleRefreshOne}
-            />
-        );
+        return <DoNowGrid questions={doNowQuestions} ui={ui} onBack={() => setView('donow_config')} lang={lang} onRefreshAll={() => handleDoNowGenerate(doNowConfig)} onRefreshOne={(i, t, l) => {}} />;
     }
 
     return (
@@ -394,16 +410,15 @@ function App() {
             <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
             <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
             <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
-            
-            <MobileDrawer open={mobileHistoryOpen} onClose={() => setMobileHistoryOpen(false)} history={history} ui={ui} />
             <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
             <StatsModal visible={timeUpOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setTimeUpOpen(false)} title={ui.stats_times_up} />
             <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
+            <MobileDrawer open={mobileHistoryOpen} onClose={() => setMobileHistoryOpen(false)} history={history} ui={ui} />
 
             <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                        <h1 className="text-xl font-bold text-primary-700 tracking-tight cursor-pointer" onClick={quitPractice}>Anpassa</h1>
+                        <h1 className="text-xl font-black text-indigo-600 tracking-tighter cursor-pointer" onClick={quitPractice}>Anpassa</h1>
                         {view === 'dashboard' && timerSettings.remaining > 0 && (
                             <div className="hidden sm:flex bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold items-center gap-2 border border-orange-200">
                                 <span>⏸ {ui.timer_paused}</span>
@@ -412,15 +427,9 @@ function App() {
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-primary-200">✅ {totalCorrect}</div>
-                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-yellow-200">🔥 {streak}</div>
-                        <button onClick={toggleLang} className="px-3 py-1 rounded-md text-xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all shadow-sm flex items-center gap-1.5" title={lang === 'sv' ? "Byt språk" : "Switch Language"}>
-                            <span className="text-sm">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</span><span>{lang === 'sv' ? 'SE' : 'ENG'}</span>
-                        </button>
-                        <button onClick={() => setStatsOpen(true)} className="p-2 text-gray-400 hover:text-primary-600 transition-colors" title={ui.stats_title}>
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                        </button>
-                        <button onClick={() => setAboutOpen(true)} className="bg-accent-500 hover:bg-accent-600 text-white font-bold py-1 px-4 text-xs rounded-full shadow-sm transition-transform transform active:scale-95">{ui.aboutBtn}</button>
+                        <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold">✅ {totalCorrect}</div>
+                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">🔥 {streak}</div>
+                        <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2">Logga ut</button>
                     </div>
                 </div>
             </header>
@@ -428,36 +437,20 @@ function App() {
             <div className="flex-1 flex flex-col">
                 {view === 'dashboard' ? (
                     <Dashboard
-                        lang={lang} selectedTopic={topic} selectedLevel={level} onSelect={handleSelection} onStart={startPractice} timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} 
-                        onLgrOpen={() => setLgrOpen(true)} 
-                        onContentOpen={() => setContentOpen(true)} 
-                        onDoNowOpen={() => setView('donow_config')} 
-                        toggleLang={toggleLang}
+                        lang={lang} selectedTopic={topic} selectedLevel={level} profile={profile}
+                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} onStart={startPractice} 
+                        timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} 
+                        onLgrOpen={() => setLgrOpen(true)} onContentOpen={() => setContentOpen(true)} 
+                        onDoNowOpen={() => setView('donow_config')} toggleLang={() => setLang(l => l === 'sv' ? 'en' : 'sv')}
                     />
                 ) : (
                     <PracticeView
-                        lang={lang} 
-                        ui={ui} 
-                        question={question} 
-                        loading={loading} 
-                        feedback={feedback} 
-                        streak={streak} 
-                        input={input} 
-                        setInput={setInput} 
-                        handleSubmit={handleSubmit} 
-                        handleHint={handleHint} 
-                        handleSolution={handleSolution} 
-                        handleSkip={handleSkip} 
-                        handleChangeLevel={handleChangeLevel} 
-                        revealedClues={revealedClues} 
-                        uiState={{ history, topic, level }} 
+                        lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} 
+                        handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip}
+                        handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{ history, topic, level }} 
                         actions={{ retry: (force) => fetchQuestion(topic, level, lang, force), goBack: quitPractice }} 
-                        levelUpAvailable={levelUpAvailable} 
-                        setLevelUpAvailable={setLevelUpAvailable} 
-                        isSolutionRevealed={isSolutionRevealed} 
-                        timerSettings={timerSettings} 
-                        formatTime={formatTime} 
-                        setMobileHistoryOpen={setMobileHistoryOpen}
+                        levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable} isSolutionRevealed={isSolutionRevealed} 
+                        timerSettings={timerSettings} formatTime={formatTime} setMobileHistoryOpen={setMobileHistoryOpen}
                     />
                 )}
             </div>

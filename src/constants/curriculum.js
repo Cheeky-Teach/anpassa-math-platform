@@ -69,7 +69,7 @@ export const LEVEL_DESCRIPTIONS = {
     FractionArithGen: { // New
         1: { sv: "Addition & Subtraktion (Lika)", en: "Add & Sub (Same Denom)" },
         2: { sv: "Addition & Subtraktion (Olika)", en: "Add & Sub (Diff Denom)" },
-        3: { sv: "Blandad form (+)", en: "Mixed Numbers (+)" },
+        3: { sv: "Blandad form (+ och -)", en: "Mixed Numbers (+ and -)" },
         4: { sv: "Multiplikation", en: "Multiplication" },
         5: { sv: "Division", en: "Division" }
     },

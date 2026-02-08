@@ -13,16 +13,40 @@ export class AnglesGen {
         }
     }
 
+    /**
+     * Phase 2: Targeted Generation
+     * Allows the Question Studio to request a specific variation key.
+     */
+    public generateByVariation(key: string, lang: string = 'sv'): any {
+        switch (key) {
+            case 'classification_visual': return this.level1_Terminology(lang, key);
+            case 'classification_inverse_numeric': return this.level1_Terminology(lang, key);
+            case 'classification_lie': return this.level1_Terminology(lang, key);
+            case 'comp_supp_visual': return this.level2_CompSupp(lang, key);
+            case 'comp_supp_inverse': return this.level2_CompSupp(lang, key);
+            case 'vertical_side_visual': return this.level3_Vertical(lang, key);
+            case 'vertical_side_lie': return this.level3_Vertical(lang, key);
+            case 'triangle_sum_visual': return this.level4_TriangleSum(lang, key);
+            case 'triangle_isosceles': return this.level4_TriangleSum(lang, key);
+            case 'polygon_sum': return this.level5_Polygons(lang, key);
+            case 'polygon_inverse': return this.level5_Polygons(lang, key);
+            case 'quad_missing': return this.level5_Polygons(lang, key);
+            case 'parallel_visual': return this.level6_Parallel(lang, key);
+            case 'parallel_lie': return this.level6_Parallel(lang, key);
+            default: return this.generate(1, lang);
+        }
+    }
+
     private toBase64(str: string): string {
         return Buffer.from(str).toString('base64');
     }
 
     // --- LEVEL 1: TERMINOLOGY & CLASSIFICATION ---
-    private level1_Terminology(lang: string): any {
-        const variation = Math.random();
+    private level1_Terminology(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['classification_visual', 'classification_inverse_numeric', 'classification_lie']);
 
         // Variation A: Standard Visual Identification
-        if (variation < 0.4) {
+        if (v === 'classification_visual') {
             const type = MathUtils.randomChoice(['acute', 'right', 'obtuse', 'straight']);
             let angle = 0;
             let labelSv = "";
@@ -51,12 +75,12 @@ export class AnglesGen {
                 },
                 token: this.toBase64(lang === 'sv' ? labelSv : labelEn),
                 clues: [{ text: lang === 'sv' ? "En rät vinkel är exakt $90^\\circ$. Vinklar mindre än det är spetsiga, och vinklar större är trubbiga." : "A right angle is exactly $90^\\circ$. Smaller angles are acute, and larger angles are obtuse." }],
-                metadata: { variation: "classification_visual", difficulty: 1 }
+                metadata: { variation_key: "classification_visual", difficulty: 1 }
             };
         }
 
         // Variation B: Numeric Categorization (Inverse)
-        if (variation < 0.7) {
+        if (v === 'classification_inverse_numeric') {
             const angle = MathUtils.randomChoice([45, 90, 135, 180]);
             let correct = "";
             if (angle < 90) correct = lang === 'sv' ? "Spetsig" : "Acute";
@@ -71,12 +95,12 @@ export class AnglesGen {
                     options: MathUtils.shuffle(lang === 'sv' ? ["Spetsig", "Rät", "Trubbig", "Rak"] : ["Acute", "Right", "Obtuse", "Straight"])
                 },
                 token: this.toBase64(correct),
-                clues: [{ text: lang === 'sv' ? "Titta på gradtalet. Är det mindre än, exakt eller större än $90^\\circ$?" : "Look at the degrees. Is it less than, exactly, or more than $90^\\circ$?" }],
-                metadata: { variation: "classification_inverse_numeric", difficulty: 1 }
+                clues: [{ text: lang === 'sv' ? "Titta på gradtalet. En spetsig vinkel är $< 90^\\circ$, en rät är $90^\\circ$, en trubbig är $> 90^\\circ$ och en rak är $180^\\circ$." : "Look at the degrees. Acute is $< 90^\\circ$, Right is $90^\\circ$, Obtuse is $> 90^\\circ$, and Straight is $180^\\circ$." }],
+                metadata: { variation_key: "classification_inverse_numeric", difficulty: 1 }
             };
         }
 
-        // Variation C: Spot the Lie (Dynamic Randomization)
+        // Variation C: Spot the Lie
         const getAngleTypePair = (isCorrect: boolean) => {
             const type = MathUtils.randomChoice(['acute', 'right', 'obtuse', 'straight']);
             let angle = 0;
@@ -86,7 +110,6 @@ export class AnglesGen {
                 else if (type === 'obtuse') angle = MathUtils.randomInt(91, 179);
                 else angle = 180;
             } else {
-                // Generate a wrong pair
                 if (type === 'acute') angle = MathUtils.randomInt(91, 180);
                 else if (type === 'right') angle = MathUtils.randomChoice([45, 135]);
                 else if (type === 'obtuse') angle = MathUtils.randomInt(10, 89);
@@ -114,17 +137,16 @@ export class AnglesGen {
                 options: MathUtils.shuffle([sTrue1, sTrue2, sFalse])
             },
             token: this.toBase64(sFalse),
-            clues: [{ text: lang === 'sv' ? "Gå igenom varje gradtal och se om det matchar namnet på vinkeltypen." : "Check each degree measure to see if it matches the name of the angle type." }],
-            metadata: { variation: "classification_lie", difficulty: 1 }
+            clues: [{ text: lang === 'sv' ? "Gå igenom varje påstående. Kom ihåg: Spetsig ($<90^\\circ$), Rät ($90^\\circ$), Trubbig ($>90^\\circ$), Rak ($180^\\circ$)." : "Check each statement. Remember: Acute ($<90^\\circ$), Right ($90^\\circ$), Obtuse ($>90^\\circ$), Straight ($180^\\circ$)." }],
+            metadata: { variation_key: "classification_lie", difficulty: 1 }
         };
     }
 
-    // --- LEVEL 2: COMPLEMENTARY & SUPPLEMENTARY (90/180) ---
-    private level2_CompSupp(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 2: COMPLEMENTARY & SUPPLEMENTARY ---
+    private level2_CompSupp(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['comp_supp_visual', 'comp_supp_inverse']);
 
-        // Variation A: Standard Visual
-        if (variation < 0.5) {
+        if (v === 'comp_supp_visual') {
             const isSupp = Math.random() > 0.5;
             const total = isSupp ? 180 : 90;
             const known = MathUtils.randomInt(20, total - 20);
@@ -151,9 +173,9 @@ export class AnglesGen {
                 token: this.toBase64(unknown.toString()),
                 clues: [
                     { text: lang === 'sv' ? (isSupp ? "Vinklarna delar en rak linje ($180^\\circ$)." : "Vinklarna bildar en rät vinkel ($90^\\circ$).") : (isSupp ? "The angles share a straight line ($180^\\circ$)." : "The angles form a right angle ($90^\\circ$).") },
-                    { text: lang === 'sv' ? `Subtrahera den kända vinkeln: ${total} - ${known}.` : `Subtract the known angle: ${total} - ${known}.` }
+                    { text: lang === 'sv' ? `Eftersom de bildar ${total}^\\circ$ kan vi räkna ut x genom: ${total} - ${known}.` : `Since they form ${total}^\\circ$, we can find x by: ${total} - ${known}.` }
                 ],
-                metadata: { variation: "comp_supp_visual", difficulty: 2 }
+                metadata: { variation_key: "comp_supp_visual", difficulty: 2 }
             };
         }
 
@@ -170,18 +192,17 @@ export class AnglesGen {
                 answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()),
-            clues: [{ text: lang === 'sv' ? (isSupp ? "Summan av supplementvinklar är alltid $180^\\circ$." : "Summan av komplementvinklar är alltid $90^\\circ$.") : (isSupp ? "Supplementary angles sum to $180^\\circ$." : "Complementary angles sum to $90^\\circ$.") }],
-            metadata: { variation: "comp_supp_inverse", difficulty: 2 }
+            clues: [{ text: lang === 'sv' ? (isSupp ? "Supplementvinklar bildar tillsammans en rak linje ($180^\\circ$)." : "Komplementvinklar bildar tillsammans en rät vinkel ($90^\\circ$).") : (isSupp ? "Supplementary angles sum to $180^\\circ$." : "Complementary angles sum to $90^\\circ$.") }],
+            metadata: { variation_key: "comp_supp_inverse", difficulty: 2 }
         };
     }
 
     // --- LEVEL 3: VERTICAL & SIDE ---
-    private level3_Vertical(lang: string): any {
-        const variation = Math.random();
+    private level3_Vertical(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['vertical_side_visual', 'vertical_side_lie']);
         const angle = MathUtils.randomInt(40, 140);
 
-        // Variation A: Standard Visual
-        if (variation < 0.6) {
+        if (v === 'vertical_side_visual') {
             const isVertical = Math.random() > 0.5;
             const target = isVertical ? angle : 180 - angle;
             const cx = 150, cy = 125, len = 100, rot = 15;
@@ -202,15 +223,14 @@ export class AnglesGen {
                     geometry: { type: 'angle', lines, arcs }
                 },
                 token: this.toBase64(target.toString()),
-                clues: [{ text: isVertical ? (lang === 'sv' ? "Vertikalvinklar (mitt emot varandra) är alltid lika stora." : "Vertical angles (opposite each other) are always equal.") : (lang === 'sv' ? "Sidovinklar ligger längs en rak linje och blir totalt $180^\\circ$." : "Side angles lie along a straight line and sum to $180^\\circ$.") }],
-                metadata: { variation: "vertical_side_visual", difficulty: 3 }
+                clues: [{ text: isVertical ? (lang === 'sv' ? "Vertikalvinklar sitter mitt emot varandra vid ett linjekryss och är alltid lika stora." : "Vertical angles are opposite each other in a line crossing and are always equal.") : (lang === 'sv' ? "Sidovinklar ligger längs en rak linje, vilket betyder att x + känd vinkel = $180^\\circ$." : "Side angles lie along a straight line, which means x + known angle = $180^\\circ$.") }],
+                metadata: { variation_key: "vertical_side_visual", difficulty: 3 }
             };
         }
 
-        // Variation B: Spot the Lie (Vertical/Side Rules)
         const a = MathUtils.randomInt(40, 140);
         const b = 180 - a;
-        const sTrue1 = lang === 'sv' ? `Vertikalvinklar till ${a}° är ${a}°` : `Vertical angles to ${a}° are ${a}°`;
+        const sTrue1 = lang === 'sv' ? `Vertikalvinkeln till ${a}° är ${a}°` : `The vertical angle to ${a}° is ${a}°`;
         const sTrue2 = lang === 'sv' ? `Sidovinkeln till ${a}° är ${b}°` : `The side angle to ${a}° is ${b}°`;
         const sFalse = lang === 'sv' ? `Sidovinklar till ${a}° blir totalt 90°` : `Side angles to ${a}° sum to 90°`;
 
@@ -221,17 +241,16 @@ export class AnglesGen {
                 options: MathUtils.shuffle([sTrue1, sTrue2, sFalse])
             },
             token: this.toBase64(sFalse),
-            clues: [{ text: lang === 'sv' ? "Sidovinklar bildar en rak linje, vilket betyder att de tillsammans är $180^\\circ$." : "Side angles form a straight line, which means they sum to $180^\\circ$." }],
-            metadata: { variation: "vertical_side_lie", difficulty: 2 }
+            clues: [{ text: lang === 'sv' ? "Sidovinklar bildar en rak linje, vilket betyder att de tillsammans är $180^\\circ$. Komplementvinklar är de som blir $90^\\circ$." : "Side angles form a straight line, which means they sum to $180^\\circ$. Complementary angles are those that sum to $90^\\circ$." }],
+            metadata: { variation_key: "vertical_side_lie", difficulty: 2 }
         };
     }
 
     // --- LEVEL 4: TRIANGLE SUM ---
-    private level4_TriangleSum(lang: string): any {
-        const variation = Math.random();
+    private level4_TriangleSum(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['triangle_sum_visual', 'triangle_isosceles']);
 
-        // Variation A: Standard Triangle
-        if (variation < 0.5) {
+        if (v === 'triangle_sum_visual') {
             const a = MathUtils.randomInt(30, 80);
             const b = MathUtils.randomInt(30, 80);
             const ans = 180 - a - b;
@@ -247,12 +266,11 @@ export class AnglesGen {
                     }
                 },
                 token: this.toBase64(ans.toString()),
-                clues: [{ text: lang === 'sv' ? "Summan av alla vinklar i en triangel är alltid $180^\\circ$." : "The sum of all angles in a triangle is always $180^\\circ$." }],
-                metadata: { variation: "triangle_sum_visual", difficulty: 3 }
+                clues: [{ text: lang === 'sv' ? "Vinkelsumman i en triangel är alltid $180^\\circ$. Räkna ut $180 - vinkel_1 - vinkel_2$." : "The sum of angles in a triangle is always $180^\\circ$. Calculate $180 - angle_1 - angle_2$." }],
+                metadata: { variation_key: "triangle_sum_visual", difficulty: 3 }
             };
         }
 
-        // Variation B: Isosceles Deduction
         const vertex = MathUtils.randomInt(30, 100);
         const base = (180 - vertex) / 2;
         const findVertex = Math.random() > 0.5;
@@ -270,17 +288,16 @@ export class AnglesGen {
                 }
             },
             token: this.toBase64(findVertex ? vertex.toString() : base.toString()),
-            clues: [{ text: lang === 'sv' ? "I en likbent triangel är de två vinklarna vid basen lika stora." : "In an isosceles triangle, the two base angles are equal." }],
-            metadata: { variation: "triangle_isosceles", difficulty: 4 }
+            clues: [{ text: lang === 'sv' ? "I en likbent triangel är de två basvinklarna lika stora. Vinkelsumman är fortfarande $180^\\circ$." : "In an isosceles triangle, the two base angles are equal. The sum is still $180^\\circ$." }],
+            metadata: { variation_key: "triangle_isosceles", difficulty: 4 }
         };
     }
 
     // --- LEVEL 5: POLYGONS ---
-    private level5_Polygons(lang: string): any {
-        const variation = Math.random();
+    private level5_Polygons(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['polygon_sum', 'polygon_inverse', 'quad_missing']);
 
-        // Variation A: Standard sum (n-gon)
-        if (variation < 0.4) {
+        if (v === 'polygon_sum') {
             const n = MathUtils.randomChoice([4, 5, 6]);
             const sum = (n - 2) * 180;
             const names = { 4: {sv:"fyrhörning", en:"quadrilateral"}, 5: {sv:"femhörning", en:"pentagon"}, 6: {sv:"sexhörning", en:"hexagon"} };
@@ -291,13 +308,12 @@ export class AnglesGen {
                     answerType: 'numeric'
                 },
                 token: this.toBase64(sum.toString()),
-                clues: [{ text: lang === 'sv' ? "Formeln är: $(n - 2) \\cdot 180^\\circ$ där n är antalet hörn." : "The formula is: $(n - 2) \\cdot 180^\\circ$ where n is the number of corners." }],
-                metadata: { variation: "polygon_sum", difficulty: 4 }
+                clues: [{ text: lang === 'sv' ? "Använd formeln $(n - 2) \\cdot 180^\\circ$, där n är antalet hörn eller sidor." : "Use the formula $(n - 2) \\cdot 180^\\circ$, where n is the number of corners or sides." }],
+                metadata: { variation_key: "polygon_sum", difficulty: 4 }
             };
         }
 
-        // Variation B: Inverse Sides
-        if (variation < 0.7) {
+        if (v === 'polygon_inverse') {
             const n = MathUtils.randomChoice([3, 4, 5, 8]);
             const sum = (n - 2) * 180;
             return {
@@ -306,12 +322,11 @@ export class AnglesGen {
                     answerType: 'numeric'
                 },
                 token: this.toBase64(n.toString()),
-                clues: [{ text: lang === 'sv' ? "Dela summan med 180 och addera sedan 2." : "Divide the sum by 180 and then add 2." }],
-                metadata: { variation: "polygon_inverse", difficulty: 4 }
+                clues: [{ text: lang === 'sv' ? "Baklänges räknat: $(\\text{summa} / 180) + 2$." : "Calculated backwards: $(\\text{sum} / 180) + 2$." }],
+                metadata: { variation_key: "polygon_inverse", difficulty: 4 }
             };
         }
 
-        // Variation C: Quadrilateral missing angle
         const a = MathUtils.randomInt(70, 110);
         const b = MathUtils.randomInt(70, 110);
         const c = MathUtils.randomInt(70, 110);
@@ -327,18 +342,17 @@ export class AnglesGen {
                 }
             },
             token: this.toBase64(ans.toString()),
-            clues: [{ text: lang === 'sv' ? "Vinkelsumman i en fyrhörning är alltid $360^\\circ$." : "The sum of angles in a quadrilateral is always $360^\\circ$." }],
-            metadata: { variation: "quad_missing", difficulty: 4 }
+            clues: [{ text: lang === 'sv' ? "Vinkelsumman i en fyrhörning (4 hörn) är alltid $360^\\circ$." : "The sum of angles in a quadrilateral (4 corners) is always $360^\\circ$." }],
+            metadata: { variation_key: "quad_missing", difficulty: 4 }
         };
     }
 
     // --- LEVEL 6: PARALLEL LINES ---
-    private level6_Parallel(lang: string): any {
-        const variation = Math.random();
+    private level6_Parallel(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['parallel_visual', 'parallel_lie']);
         const angle = MathUtils.randomInt(50, 130);
 
-        // Variation A: Visual Relationships
-        if (variation < 0.6) {
+        if (v === 'parallel_visual') {
             const type = MathUtils.randomChoice(['corr', 'alt_int', 'alt_ext', 'interior']);
             let target = (type === 'interior') ? 180 - angle : angle;
             const cy = 125;
@@ -362,15 +376,12 @@ export class AnglesGen {
                     geometry: { type: 'angle', lines, labels }
                 },
                 token: this.toBase64(target.toString()),
-                clues: [{ text: lang === 'sv' ? "När linjer är parallella skapas parvis lika stora vinklar (Z, F). Endast U-vinklar blir 180." : "When lines are parallel, Z and F shapes create equal angles. U shapes sum to 180." }],
-                metadata: { variation: "parallel_visual", difficulty: 5 }
+                clues: [{ text: lang === 'sv' ? "När linjer är parallella bildas parvis lika vinklar. Z-vinklar (alternat) och F-vinklar (likbelägna) är lika stora. U-vinklar är supplementära ($180^\\circ$)." : "Parallel lines create pairs of equal angles. Z-shapes (alternate) and F-shapes (corresponding) are equal. U-shapes sum to $180^\\circ$." }],
+                metadata: { variation_key: "parallel_visual", difficulty: 5 }
             };
         }
 
-        // Variation B: Spot the Lie (Dynamic Relationships)
         const a = MathUtils.randomInt(50, 130);
-        const b = 180 - a;
-        
         const sTrue1 = lang === 'sv' ? `Alternatvinklar är lika stora (${a}° = ${a}°)` : `Alternate angles are equal (${a}° = ${a}°)`;
         const sTrue2 = lang === 'sv' ? `Likbelägna vinklar är lika stora (${a}° = ${a}°)` : `Corresponding angles are equal (${a}° = ${a}°)`;
         const sFalse = lang === 'sv' ? `Likbelägna vinklar blir totalt 180° (${a}° + ${a}° = 180°)` : `Corresponding angles sum to 180° (${a}° + ${a}° = 180°)`;
@@ -382,8 +393,8 @@ export class AnglesGen {
                 options: MathUtils.shuffle([sTrue1, sTrue2, sFalse])
             },
             token: this.toBase64(sFalse),
-            clues: [{ text: lang === 'sv' ? "Likbelägna vinklar (F-form) och Alternatvinklar (Z-form) är alltid lika stora. Bara vinklar på samma sida (U-form) blir 180°." : "Corresponding (F-shape) and Alternate (Z-shape) angles are always equal. Only angles on the same side (U-shape) sum to 180°." }],
-            metadata: { variation: "parallel_lie", difficulty: 4 }
+            clues: [{ text: lang === 'sv' ? "Likbelägna vinklar (F-form) och Alternatvinklar (Z-form) är alltid lika stora. Bara vinklar på samma sida (U-form) blir supplementära ($180^\\circ$)." : "Corresponding (F-shape) and Alternate (Z-shape) angles are always equal. Only angles on the same side (U-shape) sum to $180^\\circ$." }],
+            metadata: { variation_key: "parallel_lie", difficulty: 4 }
         };
     }
 }

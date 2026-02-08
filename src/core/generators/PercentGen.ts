@@ -13,563 +13,400 @@ export class PercentGen {
         }
     }
 
+    /**
+     * Phase 2: Targeted Generation
+     * Allows the Question Studio to request a specific skill bucket.
+     */
+    public generateByVariation(key: string, lang: string = 'sv'): any {
+        switch (key) {
+            case 'visual_translation':
+            case 'visual_lie':
+            case 'equivalence':
+                return this.level1_ConceptsAndVisuals(lang, key);
+            
+            case 'benchmark_calc':
+            case 'benchmark_inverse':
+            case 'benchmark_commutative':
+                return this.level2_MentalMath(lang, key);
+            
+            case 'composition':
+            case 'decomposition':
+            case 'estimation':
+                return this.level3_BuildingBlocks(lang, key);
+            
+            case 'find_percent_basic':
+            case 'find_percent_test':
+            case 'find_percent_discount':
+            case 'find_percent_group':
+                return this.level4_PercentEquation(lang, key);
+            
+            case 'reverse_find_whole':
+            case 'reverse_scaling':
+            case 'reverse_concept':
+                return this.level5_ReversePercentage(lang, key);
+            
+            case 'change_calc':
+            case 'change_multiplier':
+            case 'change_trap':
+                return this.level6_PercentageChange(lang, key);
+
+            default:
+                return this.generate(1, lang);
+        }
+    }
+
     private toBase64(str: string): string {
         return Buffer.from(str).toString('base64');
     }
 
-    // --- LEVEL 1: Concepts & Visuals ---
-    private level1_ConceptsAndVisuals(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 1: CONCEPTS & VISUALS ---
+    private level1_ConceptsAndVisuals(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['visual_translation', 'visual_lie', 'equivalence']);
 
-        // VARIATION A: Dynamic Visual Translation
-        if (variation < 0.35) {
+        if (v === 'visual_translation') {
             const colored = MathUtils.randomInt(1, 99);
             const targetType = MathUtils.randomChoice(['fraction', 'decimal', 'percent']);
             
             let answer = "";
             let desc = "";
-            let type = "";
 
             if (targetType === 'fraction') {
-                desc = lang === 'sv' ? "Hur stor andel är färgad? Svara i bråkform." : "What fraction is colored?";
-                type = 'fraction';
+                desc = lang === 'sv' 
+                    ? "Titta på rutnätet nedan. Hur stor andel av rutorna är färgade? Svara i bråkform." 
+                    : "Look at the grid below. What fraction of the squares are colored? Answer as a fraction.";
                 answer = `${colored}/100`;
             } else if (targetType === 'decimal') {
-                desc = lang === 'sv' ? "Hur stor andel är färgad? Svara i decimalform." : "What decimal part is colored?";
-                type = 'numeric';
-                answer = (colored / 100).toString();
+                desc = lang === 'sv' 
+                    ? "Studera figuren och ange hur stor andel som är färgad i decimalform." 
+                    : "Study the figure and state how large a part is colored in decimal form.";
+                answer = (colored / 100).toString().replace('.', ',');
             } else {
-                desc = lang === 'sv' ? "Hur många procent är färgat?" : "What percent is colored?";
-                type = 'numeric';
+                desc = lang === 'sv' 
+                    ? "Hur många procent av hela rutnätet är färgat med blå färg?" 
+                    : "What percentage of the entire grid is colored in blue?";
                 answer = colored.toString();
             }
 
             return {
                 renderData: {
                     description: desc,
-                    answerType: type,
+                    answerType: targetType === 'fraction' ? 'fraction' : 'numeric',
                     suffix: targetType === 'percent' ? '%' : '',
                     geometry: { type: 'percent_grid', total: 100, colored: colored }
                 },
                 token: this.toBase64(answer),
                 clues: [
-                    { 
-                        text: lang === 'sv' ? "Räkna först hur många rutor som finns totalt (det är 100 st)." : "First count how many squares there are in total (there are 100).", 
-                        latex: "" 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Det är ${colored} färgade rutor. Eftersom det är av 100, så är det ${colored} hundradelar.` : `There are ${colored} colored squares. Since it is out of 100, it is ${colored} hundredths.`, 
-                        latex: `${colored}/100` 
-                    }
+                    { text: lang === 'sv' ? "Hela rutnätet består av exakt 100 rutor. Varje färgad ruta motsvarar därför en hundradel eller en procent." : "The whole grid consists of exactly 100 squares. Therefore, each colored square corresponds to one hundredth or one percent.", latex: "" },
+                    { text: lang === 'sv' ? `Vi har ${colored} färgade rutor av totalt 100.` : `We have ${colored} colored squares out of a total of 100.`, latex: `\\frac{${colored}}{100} = ${colored}\\%` }
                 ],
-                metadata: { variation: 'visual_translation', difficulty: 1 }
+                metadata: { variation_key: 'visual_translation', difficulty: 1 }
             };
         }
 
-        // VARIATION B: Spot the Lie (Dynamic)
-        if (variation < 0.7) {
-            const colored = MathUtils.randomInt(10, 90);
-            
+        if (v === 'visual_lie') {
+            const colored = MathUtils.randomInt(15, 85);
             const sTrue1 = `${colored}%`;
             const sTrue2 = (colored > 50) 
-                ? (lang==='sv' ? "Mer än hälften" : "More than half") 
-                : (lang==='sv' ? "Mindre än hälften" : "Less than half");
-            
-            let sFalse = "";
-            if (MathUtils.randomInt(0, 1) === 0) {
-                sFalse = `1/${colored}`; 
-            } else {
-                sFalse = (colored / 10).toString(); 
-            }
+                ? (lang === 'sv' ? "Mer än hälften" : "More than half") 
+                : (lang === 'sv' ? "Mindre än hälften" : "Less than half");
+            const sFalse = (colored / 10).toString().replace('.', ',');
 
             return {
                 renderData: {
-                    description: lang==='sv' ? "Titta på figuren. Vilket påstående är FALSKT?" : "Look at the figure. Which statement is FALSE?",
+                    description: lang === 'sv' ? "Granska figuren och påståendena nedan. Vilket av alternativen är FALSKT?" : "Examine the figure and the statements below. Which of the options is FALSE?",
                     answerType: 'multiple_choice',
                     options: MathUtils.shuffle([sTrue1, sTrue2, sFalse]),
                     geometry: { type: 'percent_grid', total: 100, colored: colored }
                 },
                 token: this.toBase64(sFalse),
-                clues: [
-                    { 
-                        text: lang === 'sv' ? "Procent betyder 'per hundra'. Tänk på hur många hundradelar som är färgade." : "Percent means 'per hundred'. Think about how many hundredths are colored.", 
-                        latex: "" 
-                    },
-                    {
-                        text: lang === 'sv' ? `Eftersom ${colored} rutor är färgade är det ${colored}%. Jämför detta med alternativen.` : `Since ${colored} squares are colored, it is ${colored}%. Compare this with the options.`,
-                        latex: ""
-                    }
-                ],
-                metadata: { variation: 'visual_lie', difficulty: 1 }
+                clues: [{ text: lang === 'sv' ? `Det finns exakt ${colored} blå rutor. Eftersom det är 100 rutor totalt motsvarar det ${colored}%, inte ${sFalse}.` : `There are exactly ${colored} blue squares. Since there are 100 squares total, that corresponds to ${colored}%, not ${sFalse}.` }],
+                metadata: { variation_key: 'visual_lie', difficulty: 1 }
             };
         }
 
-        // VARIATION C: Equivalence Check
-        const p = MathUtils.randomChoice([10, 20, 25, 50, 75]);
-        const dec = p / 100;
-        const frac = `${p}/100`;
-        const wrong = (p / 10).toString(); 
+        const p = MathUtils.randomChoice([10, 20, 25, 40, 50, 75, 80]);
+        const dec = (p / 100).toString().replace('.', ',');
+        const wrong = (p / 10).toString().replace('.', ','); 
 
         return {
             renderData: {
-                description: lang==='sv' ? `Vilket alternativ är INTE lika med ${p}%?` : `Which option is NOT equal to ${p}%?`,
+                description: lang === 'sv' ? `Vilket av följande alternativ representerar INTE samma värde som ${p}%?` : `Which of the following options does NOT represent the same value as ${p}%?`,
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([dec.toString(), frac, wrong, `${p/25}/${100/25}`]) 
+                options: MathUtils.shuffle([dec, `${p}/100`, `${p/MathUtils.gcd(p,100)}/${100/MathUtils.gcd(p,100)}`, wrong]) 
             },
             token: this.toBase64(wrong),
-            clues: [
-                { 
-                    text: lang === 'sv' ? "För att göra om procent till decimaltal, dela med 100 (flytta kommat två steg)." : "To convert percent to decimal, divide by 100 (move the decimal two steps).", 
-                    latex: `${p} / 100 = ${dec}` 
-                },
-                {
-                    text: lang === 'sv' ? "För att göra om procent till bråk, sätt talet över 100." : "To convert percent to fraction, put the number over 100.",
-                    latex: `\\frac{${p}}{100}`
-                }
-            ],
-            metadata: { variation: 'equivalence', difficulty: 1 }
+            clues: [{ text: lang === 'sv' ? "Kom ihåg att procent betyder hundradelar. För att få decimalform flyttar vi kommat två steg." : "Remember that percent means hundredths. To get decimal form, we move the decimal point two places.", latex: `${p}\\% = \\frac{${p}}{100} = ${p/100}` }],
+            metadata: { variation_key: 'equivalence', difficulty: 1 }
         };
     }
 
-    // --- LEVEL 2: Mental Math Benchmarks ---
-    private level2_MentalMath(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 2: MENTAL MATH BENCHMARKS ---
+    private level2_MentalMath(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['benchmark_calc', 'benchmark_inverse', 'benchmark_commutative']);
         const benchmark = MathUtils.randomChoice([10, 20, 25, 50]);
 
-        // VARIATION A: Standard Calculation
-        if (variation < 0.35) {
-            let step = 10;
-            if (benchmark === 50) step = 2;
-            else if (benchmark === 25) step = 4;
-            else if (benchmark === 20) step = 5;
-
-            const base = MathUtils.randomInt(2, 20) * step; 
+        if (v === 'benchmark_calc') {
+            const step = benchmark === 50 ? 2 : (benchmark === 25 ? 4 : (benchmark === 20 ? 5 : 10));
+            const base = MathUtils.randomInt(3, 15) * step;
             const ans = (base * benchmark) / 100;
             
             return {
                 renderData: {
-                    description: lang==='sv' ? `Beräkna ${benchmark}% av ${base}.` : `Calculate ${benchmark}% of ${base}.`,
+                    description: lang === 'sv' ? `Beräkna hur mycket ${benchmark}% av ${base} är utan att använda miniräknare.` : `Calculate how much ${benchmark}% of ${base} is without using a calculator.`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()),
-                clues: [
-                    { 
-                        text: lang === 'sv' ? `Tänk på bråket för ${benchmark}%.` : `Think of the fraction for ${benchmark}%.`, 
-                        latex: benchmark === 50 ? "\\text{Halvan} (1/2)" : (benchmark === 25 ? "\\text{Fjärdedelen} (1/4)" : "\\text{Tiondelen} (1/10)")
-                    },
-                    {
-                        text: lang === 'sv' ? "Dela talet med nämnaren." : "Divide the number by the denominator.",
-                        latex: benchmark === 50 ? `${base} / 2` : (benchmark === 25 ? `${base} / 4` : `${base} / 10`)
-                    }
-                ],
-                metadata: { variation: 'benchmark_calc', difficulty: 2 }
+                clues: [{ text: lang === 'sv' ? `Tänk på ${benchmark}% som bråket $1/${step}$. Du kan alltså helt enkelt dela talet med ${step}.` : `Think of ${benchmark}% as the fraction $1/${step}$. You can simply divide the number by ${step}.`, latex: `\\frac{${base}}{${step}} = ${ans}` }],
+                metadata: { variation_key: 'benchmark_calc', difficulty: 2 }
             };
         }
 
-        // VARIATION B: Inverse Logic
-        if (variation < 0.7) {
-            const ans = MathUtils.randomInt(2, 20); 
-            let whole = 0;
-            if (benchmark === 50) whole = ans * 2;
-            else if (benchmark === 25) whole = ans * 4;
-            else if (benchmark === 10) whole = ans * 10;
-            else whole = ans * 5; 
+        if (v === 'benchmark_inverse') {
+            const part = MathUtils.randomInt(4, 20);
+            const step = benchmark === 50 ? 2 : (benchmark === 25 ? 4 : (benchmark === 20 ? 5 : 10));
+            const total = part * step;
 
             return {
                 renderData: {
-                    description: lang==='sv' 
-                        ? `${benchmark}% av ett tal är ${ans}. Vilket är talet?` 
-                        : `${benchmark}% of a number is ${ans}. What is the number?`,
+                    description: lang === 'sv' ? `Vi vet att ${benchmark}% av ett okänt tal är ${part}. Vilket är då det hela talet (100%)?` : `We know that ${benchmark}% of an unknown number is ${part}. What is the whole number (100%)?`,
                     answerType: 'numeric'
                 },
-                token: this.toBase64(whole.toString()),
-                clues: [
-                    { 
-                        text: lang === 'sv' ? `Vi vet att en liten del (${benchmark}%) är värd ${ans}.` : `We know that a small part (${benchmark}%) is worth ${ans}.`, 
-                        latex: ""
-                    },
-                    { 
-                        text: lang === 'sv' ? "Multiplicera upp delen för att få hela kakan (100%)." : "Multiply the part up to get the whole cake (100%).", 
-                        latex: benchmark === 50 ? `${ans} \\cdot 2` : (benchmark === 25 ? `${ans} \\cdot 4` : `${ans} \\cdot 10`)
-                    }
-                ],
-                metadata: { variation: 'benchmark_inverse', difficulty: 2 }
+                token: this.toBase64(total.toString()),
+                clues: [{ text: lang === 'sv' ? `Eftersom det går ${step} stycken delar av ${benchmark}% på en helhet, multiplicerar vi delens värde med ${step}.` : `Since there are ${step} parts of ${benchmark}% in a whole, we multiply the part's value by ${step}.`, latex: `${part} \\cdot ${step} = ${total}` }],
+                metadata: { variation_key: 'benchmark_inverse', difficulty: 2 }
             };
         }
 
-        // VARIATION C: Commutative Trick
         const n1 = MathUtils.randomChoice([25, 50]);
-        const step = n1 === 25 ? 4 : 2;
-        const n2 = MathUtils.randomInt(2, 10) * step; 
-        
-        const q = MathUtils.randomInt(0, 1) === 0 
-            ? `${n1}% av ${n2}` 
-            : `${n2}% av ${n1}`;
-        
+        const n2 = MathUtils.randomInt(4, 15) * (n1 === 25 ? 4 : 2);
         const ans = (n1 * n2) / 100;
 
         return {
             renderData: {
-                description: lang==='sv' ? `Beräkna: ${q}` : `Calculate: ${q}`,
+                description: lang === 'sv' ? `Använd ett smart knep för att beräkna detta i huvudet: ${n2}% av ${n1}.` : `Use a smart trick to calculate this in your head: ${n2}% of ${n1}.`,
                 answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()),
-            clues: [
-                { 
-                    text: lang === 'sv' ? "Ett smart trick: Du kan byta plats på talen! Det är samma sak som att räkna ut den 'enkla' procenten." : "A smart trick: You can swap the numbers! It is the same as calculating the 'easy' percent.", 
-                    latex: "" 
-                },
-                {
-                    text: lang === 'sv' ? `Räkna ut ${n1}% av ${n2} istället.` : `Calculate ${n1}% of ${n2} instead.`,
-                    latex: n1 === 50 ? `${n2} / 2` : `${n2} / 4`
-                }
-            ],
-            metadata: { variation: 'benchmark_commutative', difficulty: 2 }
+            clues: [{ text: lang === 'sv' ? "Knepet är att $x \\%$ av $y$ är exakt samma sak som $y \\%$ av $x$. Det är enklare att räkna ut den kända procenten av det andra talet." : "The trick is that $x \\%$ of $y$ is exactly the same as $y \\%$ of $x$. It is easier to calculate the known percentage of the other number.", latex: `${n1}\\% \\text{ av } ${n2} = ${ans}` }],
+            metadata: { variation_key: 'benchmark_commutative', difficulty: 2 }
         };
     }
 
-    // --- LEVEL 3: Building Blocks ---
-    private level3_BuildingBlocks(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 3: BUILDING BLOCKS ---
+    private level3_BuildingBlocks(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['composition', 'decomposition', 'estimation']);
 
-        // VARIATION A: Standard Composition
-        if (variation < 0.4) {
-            const base = MathUtils.randomInt(2, 10) * 10;
+        if (v === 'composition') {
+            const base = MathUtils.randomInt(4, 15) * 10;
             const pct = MathUtils.randomChoice([30, 40, 60, 70, 80, 90]);
             const ans = (base * pct) / 100;
 
             return {
                 renderData: {
-                    description: lang==='sv' ? `Beräkna ${pct}% av ${base}.` : `Calculate ${pct}% of ${base}.`,
+                    description: lang === 'sv' ? `Räkna ut vad ${pct}% av ${base} är genom att först ta reda på vad 10% är.` : `Calculate what ${pct}% of ${base} is by first finding out what 10% is.`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()),
                 clues: [
-                    { 
-                        text: lang === 'sv' ? "Börja med att räkna ut vad 10% är (dela med 10)." : "Start by calculating what 10% is (divide by 10).", 
-                        latex: `10\\% = ${base/10}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Du vill ha ${pct}%, vilket är ${pct/10} gånger så mycket.` : `You want ${pct}%, which is ${pct/10} times as much.`, 
-                        latex: `${base/10} \\cdot ${pct/10}` 
-                    }
+                    { text: lang === 'sv' ? "Steg 1: Hitta 10% genom att dela talet med 10." : "Step 1: Find 10% by dividing the number by 10.", latex: `10 \\% = \\frac{${base}}{10} = ${base/10}` },
+                    { text: lang === 'sv' ? `Steg 2: Eftersom du vill ha ${pct}%, multiplicerar du 10-procentsvärdet med ${pct/10}.` : `Step 2: Since you want ${pct}%, multiply the 10-percent value by ${pct/10}.`, latex: `${base/10} \\cdot ${pct/10} = ${ans}` }
                 ],
-                metadata: { variation: 'composition', difficulty: 2 }
+                metadata: { variation_key: 'composition', difficulty: 2 }
             };
         }
 
-        // VARIATION B: Decomposition (15%)
-        if (variation < 0.7) {
-            const base = MathUtils.randomInt(4, 20) * 10; 
+        if (v === 'decomposition') {
+            const base = MathUtils.randomInt(5, 20) * 20;
             const ans = (base * 5) / 100;
 
             return {
                 renderData: {
-                    description: lang==='sv'
-                        ? `För att räkna ut 15% av ${base} kan man ta 10% och addera hälften av det. Vad är 5% av ${base}?`
-                        : `To find 15% of ${base}, you can find 10% and add half of it. What is 5% of ${base}?`,
+                    description: lang === 'sv' ? `Om du vet att 10% av ${base} är ${base/10}, vad är då hälften av det, alltså 5% av talet?` : `If you know that 10% of ${base} is ${base/10}, what is half of that, i.e., 5% of the number?`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()),
-                clues: [
-                    { 
-                        text: lang === 'sv' ? "Först, vad är 10%? (Dela med 10)." : "First, what is 10%? (Divide by 10).", 
-                        latex: `${base} / 10 = ${base/10}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? "5% är hälften av 10%. Dela ditt svar med 2." : "5% is half of 10%. Divide your answer by 2.", 
-                        latex: `${base/10} / 2` 
-                    }
-                ],
-                metadata: { variation: 'decomposition', difficulty: 2 }
+                clues: [{ text: lang === 'sv' ? "Dela helt enkelt värdet för 10% med 2 för att få fram vad 5% motsvarar." : "Simply divide the value for 10% by 2 to find what 5% corresponds to.", latex: `\\frac{${base/10}}{2} = ${ans}` }],
+                metadata: { variation_key: 'decomposition', difficulty: 2 }
             };
         }
 
-        // VARIATION C: Estimation
-        const base = MathUtils.randomInt(10, 50) * 2;
-        const target = 10; 
-        const exactPct = (target / base) * 100;
-        const testPct = MathUtils.randomInt(Math.floor(exactPct) - 5, Math.ceil(exactPct) + 5);
-        
-        if (testPct === exactPct) return this.level3_BuildingBlocks(lang);
-
+        const base = MathUtils.randomInt(10, 60) * 2;
+        const testPct = MathUtils.randomInt(11, 19);
+        const target = base * 0.15; 
         const isGreater = (base * testPct / 100) > target;
-        const ans = isGreater ? (lang==='sv'?"Större":"Greater") : (lang==='sv'?"Mindre":"Smaller");
-        const wrong = isGreater ? (lang==='sv'?"Mindre":"Smaller") : (lang==='sv'?"Större":"Greater");
+        const ans = isGreater ? (lang === 'sv' ? "Större" : "Greater") : (lang === 'sv' ? "Mindre" : "Smaller");
 
         return {
             renderData: {
-                description: lang==='sv' 
-                    ? `Är ${testPct}% av ${base} större eller mindre än ${target}?`
-                    : `Is ${testPct}% of ${base} greater or smaller than ${target}?`,
+                description: lang === 'sv' ? `Gör en snabb uppskattning: är ${testPct}% av ${base} större eller mindre än ${target.toString().replace('.', ',')}?` : `Make a quick estimate: is ${testPct}% of ${base} greater or smaller than ${target}?`,
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([ans, wrong])
+                options: lang === 'sv' ? ["Större", "Mindre"] : ["Greater", "Smaller"]
             },
             token: this.toBase64(ans),
-            clues: [
-                { 
-                    text: lang === 'sv' ? "Använd 10% som riktmärke. Vad är 10% av talet?" : "Use 10% as a benchmark. What is 10% of the number?", 
-                    latex: `10\\% = ${base/10}` 
-                },
-                { 
-                    text: lang === 'sv' ? "Jämför nu. Verkar det rimligt?" : "Now compare. Does it seem reasonable?", 
-                    latex: "" 
-                }
-            ],
-            metadata: { variation: 'estimation', difficulty: 3 }
+            clues: [{ text: lang === 'sv' ? `Använd 10% och 20% som mentala stödjepunkter för att se om ${testPct}% hamnar över eller under målet.` : `Use 10% and 20% as mental benchmarks to see if ${testPct}% falls above or below the target.` }],
+            metadata: { variation_key: 'estimation', difficulty: 3 }
         };
     }
 
-    // --- LEVEL 4: Percent Equation ---
-    private level4_PercentEquation(lang: string): any {
-        const variation = Math.random();
-
-        const wholes = [4, 5, 10, 20, 25, 40, 50, 100, 200];
-        const w = MathUtils.randomChoice(wholes);
-        const p = MathUtils.randomChoice([5, 10, 20, 25, 30, 40, 50, 60, 75, 80, 90]);
-        const part = (p * w) / 100; 
+    // --- LEVEL 4: PERCENT EQUATION (Word Problems) ---
+    private level4_PercentEquation(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['find_percent_basic', 'find_percent_test', 'find_percent_discount', 'find_percent_group']);
         
-        if (!Number.isInteger(part)) return this.level4_PercentEquation(lang);
+        const scenarios = {
+            find_percent_test: [
+                { sv: (p:any, w:any) => `Du svarade rätt på ${p} frågor av totalt ${w} stycken på ett prov. Hur många procent rätt hade du?`, en: (p:any, w:any) => `You answered ${p} questions correctly out of a total of ${w} on a test. What percentage did you get right?` }
+            ],
+            find_percent_discount: [
+                { sv: (p:any, w:any) => `En vara sänktes med ${p} kr från sitt ordinarie pris på ${w} kr. Hur många procent motsvarade sänkningen?`, en: (p:any, w:any) => `An item was reduced by ${p} kr from its original price of ${w} kr. What percentage was the reduction?` }
+            ],
+            find_percent_group: [
+                { sv: (p:any, w:any) => `I en grupp på ${w} personer bär ${p} stycken glasögon. Hur stor andel av gruppen bär glasögon i procent?`, en: (p:any, w:any) => `In a group of ${w} people, ${p} wear glasses. What percentage of the group wears glasses?` }
+            ],
+            find_percent_basic: [
+                { sv: (p:any, w:any) => `Talet ${p} är hur många procent av talet ${w}?`, en: (p:any, w:any) => `The number ${p} is what percentage of the number ${w}?` }
+            ]
+        };
 
-        // VARIATION A: Standard Context-Free
-        if (variation < 0.25) {
-            const k = 100 / w; 
-            const opText = k > 1 ? (lang==='sv' ? "Förläng" : "Extend") : (lang==='sv' ? "Förkorta" : "Simplify");
-            const opSymbol = k > 1 ? "\\cdot" : "/";
-            const kDisp = k > 1 ? k : (1/k); 
+        const wholes = [20, 25, 40, 50, 200];
+        const w = MathUtils.randomChoice(wholes);
+        const p = MathUtils.randomChoice([5, 10, 15, 20, 25, 40, 60, 80]);
+        const part = (p * w) / 100;
 
-            return {
-                renderData: {
-                    description: lang==='sv' 
-                        ? `${part} är hur många procent av ${w}?` 
-                        : `${part} is what percent of ${w}?`,
-                    answerType: 'numeric', suffix: '%'
-                },
-                token: this.toBase64(p.toString()),
-                clues: [
-                    { 
-                        text: lang === 'sv' ? "Ställ upp det som ett bråk: Delen genom Det Hela." : "Set it up as a fraction: Part over Whole.", 
-                        latex: `\\frac{${part}}{${w}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `${opText} bråket med ${kDisp} så att nämnaren blir 100.` : `${opText} the fraction by ${kDisp} so the denominator becomes 100.`, 
-                        latex: `\\frac{${part} ${opSymbol} ${kDisp}}{${w} ${opSymbol} ${kDisp}} = \\frac{${p}}{100}` 
-                    },
-                    {
-                        text: lang === 'sv' ? "Hundradelar är samma sak som procent." : "Hundredths are the same as percent.",
-                        latex: `${p}\\%`
-                    }
-                ],
-                metadata: { variation: 'find_percent_basic', difficulty: 3 }
-            };
-        }
-
-        // VARIATION B: Real World (Score/Test)
-        if (variation < 0.5) {
-            const desc = lang === 'sv'
-                ? `Du fick ${part} poäng av ${w} möjliga på ett prov. Hur många procent är det?`
-                : `You scored ${part} out of ${w} on a test. What percent is that?`;
-            
-            const k = 100 / w;
-            const kDisp = k > 1 ? k : (1/k);
-            const opSymbol = k > 1 ? "\\cdot" : "/";
-
-            return {
-                renderData: { description: desc, answerType: 'numeric', suffix: '%' },
-                token: this.toBase64(p.toString()),
-                clues: [
-                    { 
-                        text: lang === 'sv' ? "Andelen är:" : "The fraction is:", 
-                        latex: `\\frac{${part}}{${w}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? "Vi vill ha 100 i nämnaren. Vad ska vi multiplicera nämnaren med för att få 100?" : "We want 100 in the denominator. What should we multiply the denominator by to get 100?", 
-                        latex: `${w} \\cdot ? = 100 \\implies ${kDisp}`
-                    },
-                    { 
-                        text: lang === 'sv' ? "Gör samma sak med täljaren." : "Do the same to the numerator.", 
-                        latex: `${part} ${opSymbol} ${kDisp} = ${p}` 
-                    }
-                ],
-                metadata: { variation: 'find_percent_test', difficulty: 3 }
-            };
-        }
-
-        // VARIATION C: Real World (Discount/Savings)
-        if (variation < 0.75) {
-            const desc = lang === 'sv'
-                ? `Priset sänktes med ${part} kr. Det kostade ${w} kr från början. Hur stor var rabatten i procent?`
-                : `The price was lowered by ${part} kr. It originally cost ${w} kr. What was the discount percent?`;
-
-            return {
-                renderData: { description: desc, answerType: 'numeric', suffix: '%' },
-                token: this.toBase64(p.toString()),
-                clues: [
-                    { 
-                        text: lang==='sv' ? "Räkna ut andelen: Rabatten delat med ordinarie pris." : "Calculate the share: Discount divided by original price.", 
-                        latex: `\\frac{${part}}{${w}}` 
-                    },
-                    {
-                        text: lang === 'sv' ? "Omvandla till procent." : "Convert to percent.",
-                        latex: `${p}\\%`
-                    }
-                ],
-                metadata: { variation: 'find_percent_discount', difficulty: 3 }
-            };
-        }
-
-        // VARIATION D: Visual Logic (Groups)
-        const desc = lang === 'sv'
-            ? `I en grupp på ${w} personer har ${part} personer keps. Hur många procent har keps?`
-            : `In a group of ${w} people, ${part} have caps. What percent have caps?`;
+        const s: any = MathUtils.randomChoice(scenarios[v as keyof typeof scenarios]);
+        const desc = lang === 'sv' ? s.sv(part, w) : s.en(part, w);
 
         return {
             renderData: { description: desc, answerType: 'numeric', suffix: '%' },
             token: this.toBase64(p.toString()),
             clues: [
-                { 
-                    text: lang === 'sv' ? "Delen genom det hela ger oss andelen." : "Part divided by whole gives us the share.", 
-                    latex: `\\frac{${part}}{${w}}` 
-                },
-                {
-                    text: lang === 'sv' ? "För att få procent, tänk 'hur många av 100?'" : "To get percent, think 'how many out of 100?'",
-                    latex: `${p}\\%`
-                }
+                { text: lang === 'sv' ? "För att hitta andelen i procent tar vi delen och dividerar den med det hela." : "To find the share in percent, we take the part and divide it by the whole.", latex: `\\text{Andel} = \\frac{${part}}{${w}}` },
+                { text: lang === 'sv' ? "Omvandla bråket till procent genom att skriva om det till hundradelar." : "Convert the fraction to a percentage by rewriting it as hundredths.", latex: `\\frac{${part}}{${w}} = \\frac{${p}}{100} = ${p}\\%` }
             ],
-            metadata: { variation: 'find_percent_group', difficulty: 3 }
+            metadata: { variation_key: v, difficulty: 3 }
         };
     }
 
-    // --- LEVEL 5: Reverse Percentage ---
-    private level5_ReversePercentage(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 5: REVERSE PERCENTAGE ---
+    private level5_ReversePercentage(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['reverse_find_whole', 'reverse_scaling', 'reverse_concept']);
 
-        // VARIATION A: Find Whole
-        if (variation < 0.4) {
-            const p = MathUtils.randomChoice([10, 20, 25, 40, 50]);
-            const w = MathUtils.randomInt(2, 10) * 10; 
+        if (v === 'reverse_find_whole') {
+            const p = MathUtils.randomChoice([5, 10, 20, 25, 50]);
+            const w = MathUtils.randomInt(4, 15) * 20;
             const part = (p * w) / 100;
+
+            const scenarios = [
+                { sv: `${p}% av deltagarna i ett lopp är ${part} personer. Hur många deltog totalt?`, en: `${p}% of the participants in a race is ${part} people. How many participated in total?` },
+                { sv: `${p}% av pengarna i en kassa är ${part} kr. Hur mycket finns det totalt?`, en: `${p}% of the money in a cash register is ${part} kr. How much is there in total?` }
+            ];
+            const s = MathUtils.randomChoice(scenarios);
 
             return {
                 renderData: {
-                    description: lang==='sv' ? `${p}% av ett tal är ${part}. Vilket är talet?` : `${p}% of a number is ${part}. What is the number?`,
+                    description: lang === 'sv' ? s.sv : s.en,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(w.toString()),
                 clues: [
-                    { text: lang==='sv' ? "Hitta 1% först." : "Find 1% first.", latex: `${part} / ${p} = ${part/p}` },
-                    { text: lang==='sv' ? "Gångra med 100." : "Multiply by 100.", latex: `${part/p} \\cdot 100` }
+                    { text: lang === 'sv' ? `Ta reda på vad 1% är genom att dela ${part} med ${p}.` : `Find out what 1% is by dividing ${part} by ${p}.`, latex: `1\\% = \\frac{${part}}{${p}} = ${part/p}` },
+                    { text: lang === 'sv' ? "Multiplicera sedan detta värde med 100 för att få fram 100%." : "Then multiply this value by 100 to get 100%.", latex: `${part/p} \\cdot 100 = ${w}` }
                 ],
-                metadata: { variation: 'reverse_find_whole', difficulty: 3 }
+                metadata: { variation_key: 'reverse_find_whole', difficulty: 3 }
             };
         }
 
-        // VARIATION B: Scaling
-        if (variation < 0.8) {
-            const smallP = 10;
-            const smallVal = MathUtils.randomInt(2, 9);
-            const targetP = MathUtils.randomChoice([20, 30, 40, 50, 60]);
-            const factor = targetP / smallP;
-            const ans = smallVal * factor;
+        if (v === 'reverse_scaling') {
+            const val10 = MathUtils.randomInt(8, 60);
+            const targetP = MathUtils.randomChoice([30, 40, 70, 80]);
+            const factor = targetP / 10;
+            const ans = val10 * factor;
 
             return {
                 renderData: {
-                    description: lang==='sv' 
-                        ? `10% av ett pris är ${smallVal} kr. Vad är ${targetP}% av priset?` 
-                        : `10% of a price is ${smallVal} kr. What is ${targetP}% of the price?`,
+                    description: lang === 'sv' ? `Du vet att 10% av ett pris är ${val10} kr. Hur mycket är då ${targetP}% av samma pris?` : `You know that 10% of a price is ${val10} kr. How much is ${targetP}% of the same price?`,
                     answerType: 'numeric', suffix: 'kr'
                 },
                 token: this.toBase64(ans.toString()),
-                clues: [
-                    { text: lang==='sv' ? `Hur många gånger större är ${targetP}% än 10%?` : `How many times bigger is ${targetP}% than 10%?`, latex: `${targetP} / 10 = ${factor}` },
-                    { text: lang==='sv' ? "Multiplicera värdet med den faktorn." : "Multiply the value by that factor.", latex: `${smallVal} \\cdot ${factor}` }
-                ],
-                metadata: { variation: 'reverse_scaling', difficulty: 3 }
+                clues: [{ text: lang === 'sv' ? `Eftersom ${targetP}% är ${factor} gånger så mycket som 10%, multiplicerar vi värdet med ${factor}.` : `Since ${targetP}% is ${factor} times as much as 10%, we multiply the value by ${factor}.`, latex: `${val10} \\cdot ${factor} = ${ans}` }],
+                metadata: { variation_key: 'reverse_scaling', difficulty: 3 }
             };
         }
 
-        // VARIATION C: Concept
+        const q = lang === 'sv' ? "Om vi vet värdet av 25% av ett tal, hur får vi då fram hela talet (100%) på enklaste sätt?" : "If we know the value of 25% of a number, how do we find the whole number (100%) in the simplest way?";
+        const ansLabel = lang === 'sv' ? "Multiplicera med 4" : "Multiply by 4";
+
         return {
             renderData: {
-                description: lang==='sv' ? "Om du dubblerar procenten, vad händer med delen?" : "If you double the percentage, what happens to the part?",
+                description: q,
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([
-                    lang==='sv' ? "Den dubblas" : "It doubles",
-                    lang==='sv' ? "Den halveras" : "It halves",
-                    lang==='sv' ? "Ingen skillnad" : "No change"
-                ])
+                options: MathUtils.shuffle([ansLabel, lang === 'sv' ? "Dividera med 4" : "Divide by 4", lang === 'sv' ? "Multiplicera med 25" : "Multiply by 25"])
             },
-            token: this.toBase64(lang==='sv' ? "Den dubblas" : "It doubles"),
-            clues: [{text: "20% is 2x 10%", latex: ""}],
-            metadata: { variation: 'reverse_concept', difficulty: 2 }
+            token: this.toBase64(ansLabel),
+            clues: [{ text: lang === 'sv' ? "Eftersom $25 \\%$ är en fjärdedel ($1/4$), behövs det fyra sådana delar för att nå 100%." : "Since $25 \\%$ is a quarter ($1/4$), four such parts are needed to reach 100%." }],
+            metadata: { variation_key: 'reverse_concept', difficulty: 2 }
         };
     }
 
-    // --- LEVEL 6: Percentage Change ---
-    private level6_PercentageChange(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 6: PERCENTAGE CHANGE ---
+    private level6_PercentageChange(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['change_calc', 'change_multiplier', 'change_trap']);
 
-        // VARIATION A: Calculate Change
-        if (variation < 0.35) {
-            const oldVal = MathUtils.randomInt(2, 10) * 100;
-            const p = MathUtils.randomInt(1, 5) * 10;
-            const isInc = MathUtils.randomInt(0, 1) === 1;
-            const diff = (oldVal * p) / 100;
-            const newVal = isInc ? oldVal + diff : oldVal - diff;
+        if (v === 'change_calc') {
+            const oldVal = MathUtils.randomInt(3, 12) * 100;
+            const p = MathUtils.randomChoice([10, 20, 25, 40, 50]);
+            const isInc = Math.random() > 0.5;
+            const newVal = isInc ? oldVal * (1 + p/100) : oldVal * (1 - p/100);
+
+            const scenarios = [
+                { sv: `Priset på en aktie ändrades från ${oldVal} kr till ${newVal} kr. Hur stor var förändringen i procent?`, en: `The price of a stock changed from ${oldVal} kr to ${newVal} kr. How large was the change in percent?` },
+                { sv: `Folkmängden i en by ändrades från ${oldVal} till ${newVal} invånare. Ange förändringen i procent.`, en: `The population of a village changed from ${oldVal} to ${newVal} inhabitants. State the change in percent?` }
+            ];
+            const s = MathUtils.randomChoice(scenarios);
 
             return {
                 renderData: {
-                    description: lang==='sv' 
-                        ? `Priset ändras från ${oldVal} till ${newVal}. Hur många procent ${isInc?'ökade':'minskade'} det?`
-                        : `Price changed from ${oldVal} to ${newVal}. What percent did it ${isInc?'increase':'decrease'}?`,
+                    description: lang === 'sv' ? s.sv : s.en,
                     answerType: 'numeric', suffix: '%'
                 },
                 token: this.toBase64(p.toString()),
                 clues: [
-                    { text: lang==='sv' ? "Räkna ut skillnaden." : "Calc difference.", latex: `${newVal} - ${oldVal}` },
-                    { text: lang==='sv' ? "Dela skillnaden med ursprungsvärdet." : "Divide difference by original.", latex: `\\frac{\\text{Skillnad}}{${oldVal}}` }
+                    { text: lang === 'sv' ? "Använd formeln för procentuell förändring: Skillnaden dividerat med det ursprungliga värdet." : "Use the formula for percentage change: The difference divided by the original value.", latex: `\\text{Förändring} = \\frac{\\text{Skillnad}}{\\text{Ursprung}}` },
+                    { text: lang === 'sv' ? `Skillnaden är ${Math.abs(newVal - oldVal)} enheter.` : `The difference is ${Math.abs(newVal - oldVal)} units.`, latex: `\\frac{${Math.abs(newVal - oldVal)}}{${oldVal}} = ${p/100} = ${p}\\%` }
                 ],
-                metadata: { variation: 'change_calc', difficulty: 4 }
+                metadata: { variation_key: 'change_calc', difficulty: 4 }
             };
         }
 
-        // VARIATION B: Multiplier
-        if (variation < 0.7) {
-            const p = MathUtils.randomInt(5, 95);
-            const ans = 1 + (p/100);
+        if (v === 'change_multiplier') {
+            const p = MathUtils.randomInt(5, 50);
+            const isInc = Math.random() > 0.5;
+            const ans = isInc ? (1 + p/100) : (1 - p/100);
+
             return {
                 renderData: {
-                    description: lang==='sv' ? `Vilket tal ska du multiplicera med för att öka något med ${p}%?` : `What number do you multiply by to increase something by ${p}%?`,
+                    description: lang === 'sv' ? `Vilken förändringsfaktor motsvarar en ${isInc ? 'prisökning' : 'prissänkning'} med ${p}%?` : `Which change factor corresponds to a ${isInc ? 'price increase' : 'price decrease'} of ${p}%?`,
                     answerType: 'numeric'
                 },
-                token: this.toBase64(ans.toString()),
-                clues: [
-                    { text: lang==='sv' ? "Hela talet (1) + ökningen." : "Whole number (1) + increase.", latex: `1 + ${p/100}` }
-                ],
-                metadata: { variation: 'change_multiplier', difficulty: 3 }
+                token: this.toBase64(ans.toString().replace('.', ',')),
+                clues: [{ text: lang === 'sv' ? (isInc ? "Vid en ökning lägger vi till procenten till 1,00." : "Vid en sänkning drar vi bort procenten från 1,00.") : (isInc ? "For an increase, we add the percentage to 1.00." : "For a decrease, we subtract the percentage from 1.00."), latex: isInc ? `1 + ${p/100} = ${ans}` : `1 - ${p/100} = ${ans}` }],
+                metadata: { variation_key: 'change_multiplier', difficulty: 3 }
             };
         }
 
-        // VARIATION C: The Trap
-        const p = 10;
-        const ans = lang==='sv' ? "Lägre" : "Lower";
-        const wrong1 = lang==='sv' ? "Högre" : "Higher";
-        const wrong2 = lang==='sv' ? "Samma" : "Same";
-
+        const pVal = 10;
+        const ansLabel = lang === 'sv' ? "Det är lägre än startpriset" : "It is lower than the starting price";
         return {
             renderData: {
-                description: lang==='sv' 
-                    ? `Ett pris höjs med ${p}% och sänks sedan med ${p}%. Är nya priset högre, lägre eller samma som startpriset?` 
-                    : `A price increases by ${p}% and then decreases by ${p}%. Is the new price higher, lower, or same as start?`,
+                description: lang === 'sv' ? `Ett pris höjs först med ${pVal}% och sänks därefter omedelbart med ${pVal}%. Vilket påstående stämmer om det slutgiltiga priset?` : `A price first increases by ${pVal}% and then immediately after decreases by ${pVal}%. Which statement is true about the final price?`,
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([ans, wrong1, wrong2])
+                options: MathUtils.shuffle([ansLabel, lang === 'sv' ? "Det är samma som startpriset" : "It is the same as the starting price", lang === 'sv' ? "Det är högre än startpriset" : "It is higher than the starting price"])
             },
-            token: this.toBase64(ans),
+            token: this.toBase64(ansLabel),
             clues: [
-                { text: lang==='sv' ? "Testa med 100 kr." : "Test with 100 kr.", latex: `100 \\cdot 1.1 = 110` },
-                { text: lang==='sv' ? "Sänk nu 110 med 10%." : "Now decrease 110 by 10%.", latex: `110 \\cdot 0.9 = 99` }
+                { text: lang === 'sv' ? "Detta är en klassisk fälla! Den andra sänkningen beräknas på det nya, högre priset, vilket gör sänkningen större i kronor räknat." : "This is a classic trap! The second decrease is calculated on the new, higher price, which makes the decrease larger in absolute terms.", latex: "" },
+                { text: lang === 'sv' ? "Testa med 100 kr: $100 \\cdot 1,10 = 110$. Sedan $110 \\cdot 0,90 = 99$." : "Test with 100 kr: $100 \\cdot 1.10 = 110$. Then $110 \\cdot 0.90 = 99$.", latex: "" }
             ],
-            metadata: { variation: 'change_trap', difficulty: 4 }
+            metadata: { variation_key: 'change_trap', difficulty: 4 }
         };
     }
 }
