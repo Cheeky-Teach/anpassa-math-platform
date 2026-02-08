@@ -77,22 +77,18 @@ function App() {
 
     // --- EFFECT: AUTH & PROFILE LISTENER ---
     useEffect(() => {
-        // Initial session check
         supabase.auth.getSession().then(({ data: { session } }) => {
+            console.log("Initial Session Check:", session?.user?.email || "No session");
             setSession(session);
-            if (session) {
-                fetchProfile(session.user.id);
-            } else {
-                setLoadingProfile(false);
-            }
+            if (session) fetchProfile(session.user.id);
+            else setLoadingProfile(false);
         });
 
-        // Listen for real-time auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            console.log("Auth Event:", _event, session?.user?.email || "No session");
             setSession(session);
-            if (session) {
-                fetchProfile(session.user.id);
-            } else {
+            if (session) fetchProfile(session.user.id);
+            else {
                 setProfile(null);
                 setLoadingProfile(false);
             }
@@ -102,72 +98,63 @@ function App() {
     }, []);
 
     const fetchProfile = async (userId) => {
-        if (!userId) {
-            setLoadingProfile(false);
-            return;
-        }
+        if (!userId) return;
+        console.log("Fetching profile for:", userId);
+        
+        // 1. Try to get existing profile
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
 
-        try {
-            console.log("Hämtar profil för:", userId);
+        if (error) {
+            console.warn("Profile fetch issue:", error.message);
             
-            // 1. Försök hämta existerande profil
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
+            // PGRST116 means row not found - common for first-time social login
+            if (error.code === 'PGRST116') {
+                console.log("Profile not found in DB, attempting creation...");
+                
+                const { data: authData } = await supabase.auth.getUser();
+                const user = authData?.user;
 
-            if (error) {
-                // PGRST116 = Hittades inte. Detta händer vid första inloggningen.
-                if (error.code === 'PGRST116') {
-                    console.log("Profil saknas i DB, skapar ny...");
-                    
-                    const { data: authData } = await supabase.auth.getUser();
-                    const user = authData?.user;
-
-                    // Om vi inte kan hitta auth-användaren avbryter vi för att undvika krasch
-                    if (!user) {
-                        console.error("Ingen auth-användare hittades.");
-                        return;
-                    }
-                    
-                    const userRole = user.user_metadata?.role || 'student';
-                    const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || "Användare";
-
-                    const { data: newProfile, error: insertError } = await supabase
-                        .from('profiles')
-                        .insert([{ 
-                            id: userId, 
-                            full_name: fullName, 
-                            role: userRole,
-                            alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
-                        }])
-                        .select()
-                        .single();
-                    
-                    if (insertError) {
-                        console.error("Kunde inte skapa profilrad:", insertError.message);
-                    } else if (newProfile) {
-                        console.log("Profil skapad:", newProfile);
-                        setProfile(newProfile);
-                    }
-                } else {
-                    console.error("Fel vid profilhämtning:", error.message);
+                // FIX: Check if user object exists before accessing metadata
+                if (!user) {
+                    console.error("User not found in Auth system during profile creation.");
+                    setLoadingProfile(false);
+                    return;
                 }
-            } else if (data) {
-                console.log("Profil laddad:", data);
-                setProfile(data);
+                
+                const userRole = user.user_metadata?.role || 'student';
+                const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
+
+                const { data: newProfile, error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([{ 
+                        id: userId, 
+                        full_name: fullName, 
+                        role: userRole,
+                        alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
+                    }])
+                    .select()
+                    .single();
+                
+                if (insertError) {
+                    console.error("Error creating profile row:", insertError.message);
+                } else if (newProfile) {
+                    console.log("Profile created successfully:", newProfile);
+                    setProfile(newProfile);
+                }
             }
-        } catch (err) {
-            console.error("Oväntat fel i fetchProfile:", err);
-        } finally {
-            // Detta anropas oavsett om det gick bra eller dåligt, vilket hindrar evig laddning
-            setLoadingProfile(false);
+        } else if (data) {
+            console.log("Profile loaded from DB:", data);
+            setProfile(data);
         }
+        setLoadingProfile(false);
     };
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        await supabase.signOut();
         setView('dashboard');
         setStreak(0);
         setProfile(null);
@@ -422,10 +409,9 @@ function App() {
         } catch (e) { console.error("Do Now Error:", e); } finally { setLoading(false); }
     };
 
-    // --- RENDER LOGIC ---
-
+    // --- RENDER ---
     if (session && loadingProfile) {
-        return <div className="h-screen flex items-center justify-center bg-white text-indigo-600 font-black animate-pulse">ANPASSA...</div>;
+        return <div className="h-screen flex items-center justify-center bg-white text-indigo-600 font-black animate-pulse uppercase tracking-tighter text-2xl">Anpassa...</div>;
     }
 
     if (!session) {
@@ -452,7 +438,7 @@ function App() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-50 font-sans text-slate-900">
+        <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
             <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
             <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
             <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
