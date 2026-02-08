@@ -16,31 +16,70 @@ export class BasicArithmeticGen {
         }
     }
 
+    /**
+     * Phase 2: Targeted Generation
+     * Allows the Question Studio to request a specific skill bucket.
+     */
+    public generateByVariation(key: string, lang: string = 'sv'): any {
+        switch (key) {
+            case 'add_std_vertical':
+            case 'add_std_horizontal':
+            case 'add_missing_variable':
+            case 'add_spot_the_lie':
+                return this.level1_AddSimple(lang, key);
+            
+            case 'sub_std_vertical':
+            case 'sub_std_horizontal':
+            case 'sub_missing_variable':
+                return this.level2_SubSimple(lang, key);
+            
+            case 'dec_add_vertical':
+            case 'dec_sub_vertical':
+                return this.level3_Decimals(lang, key);
+            
+            case 'mult_table_std':
+            case 'mult_commutative':
+                return this.level4_MultEasy(lang, key);
+            
+            case 'mult_2x1_vertical':
+            case 'mult_distributive':
+                return this.level5_MultMedium(lang, key);
+            
+            case 'mult_decimal_std':
+            case 'mult_decimal_placement':
+                return this.level6_MultHard(lang, key);
+            
+            case 'div_basic_std':
+            case 'div_inverse_logic':
+                return this.level7_DivEasy(lang, key);
+            
+            default:
+                return this.generate(1, lang);
+        }
+    }
+
     private toBase64(str: string): string {
         return Buffer.from(str).toString('base64');
     }
 
-    // Helper for vertical layout
     private makeVertical(top: number | string, bottom: number | string, op: string): string {
         return `\\begin{array}{r} ${top} \\\\ ${op} \\; ${bottom} \\\\ \\hline \\end{array}`;
     }
 
     // --- LEVEL 1: ADDITION ---
-    private level1_AddSimple(lang: string): any {
-        const variation = Math.random();
+    private level1_AddSimple(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['add_std_vertical', 'add_std_horizontal', 'add_missing_variable', 'add_spot_the_lie']);
 
-        // Variation A: Standard Sum
-        if (variation < 0.6) {
+        if (v === 'add_std_vertical' || v === 'add_std_horizontal') {
             const a = MathUtils.randomInt(10, 999);
             const b = MathUtils.randomInt(10, 999);
-            const isVertical = Math.random() > 0.5;
+            const isVertical = v === 'add_std_vertical';
             const res = this.createProblem(a, b, '+', lang, isVertical);
-            res.metadata = { variation: isVertical ? 'add_std_vertical' : 'add_std_horizontal', difficulty: 1 };
+            res.metadata = { variation_key: v, difficulty: 1 };
             return res;
         }
 
-        // Variation B: Missing Variable (Algebraic)
-        if (variation < 0.8) {
+        if (v === 'add_missing_variable') {
             const a = MathUtils.randomInt(5, 100);
             const x = MathUtils.randomInt(5, 100);
             const c = a + x;
@@ -52,13 +91,12 @@ export class BasicArithmeticGen {
                 },
                 token: this.toBase64(x.toString()),
                 clues: [
-                    { text: lang === 'sv' ? "Tänk på addition som en balansvåg. För att hitta den saknade delen tar vi hela summan minus den kända delen." : "Think of addition as a balance scale. To find the missing part, take the whole sum minus the known part.", latex: `${c} - ${a} = ?` }
+                    { text: lang === 'sv' ? "Tänk på addition som en balansvåg. För att hitta den saknade delen tar vi hela summan minus den kända delen." : "Think of addition as a balance scale. To find the missing part, take the whole sum minus the known part.", latex: `${c} - ${a} = x` }
                 ],
-                metadata: { variation: 'add_missing_variable', difficulty: 2 }
+                metadata: { variation_key: 'add_missing_variable', difficulty: 2 }
             };
         }
 
-        // Variation C: Spot the Lie (Fully Randomized)
         const generateEquation = (isCorrect: boolean) => {
             const n1 = MathUtils.randomInt(10, 50);
             const n2 = MathUtils.randomInt(10, 50);
@@ -69,35 +107,32 @@ export class BasicArithmeticGen {
         const sTrue1 = generateEquation(true);
         const sTrue2 = generateEquation(true);
         const sFalse = generateEquation(false);
-        const options = [sTrue1, sTrue2, sFalse];
 
         return {
             renderData: {
                 description: lang === 'sv' ? "Vilken av följande uträkningar är FELAKTIG?" : "Which of the following calculations is INCORRECT?",
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle(options)
+                options: MathUtils.shuffle([sTrue1, sTrue2, sFalse])
             },
             token: this.toBase64(sFalse),
-            clues: [{ text: lang === 'sv' ? "Kontrollera entalen och tiotalen för varje alternativ noga." : "Check the ones and tens for each option carefully." }],
-            metadata: { variation: 'add_spot_the_lie', difficulty: 2 }
+            clues: [{ text: lang === 'sv' ? "Kontrollera entalen först, sedan tiotalen. En av dessa summor stämmer inte." : "Check the ones first, then the tens. One of these sums is incorrect." }],
+            metadata: { variation_key: 'add_spot_the_lie', difficulty: 2 }
         };
     }
 
     // --- LEVEL 2: SUBTRACTION ---
-    private level2_SubSimple(lang: string): any {
-        const variation = Math.random();
+    private level2_SubSimple(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['sub_std_vertical', 'sub_std_horizontal', 'sub_missing_variable']);
 
-        // Variation A: Standard
-        if (variation < 0.7) {
+        if (v === 'sub_std_vertical' || v === 'sub_std_horizontal') {
             const a = MathUtils.randomInt(50, 999);
             const b = MathUtils.randomInt(10, a - 1);
-            const isVertical = Math.random() > 0.5;
+            const isVertical = v === 'sub_std_vertical';
             const res = this.createProblem(a, b, '-', lang, isVertical);
-            res.metadata = { variation: isVertical ? 'sub_std_vertical' : 'sub_std_horizontal', difficulty: 2 };
+            res.metadata = { variation_key: v, difficulty: 2 };
             return res;
         }
 
-        // Variation B: Missing Variable
         const a = MathUtils.randomInt(100, 250);
         const x = MathUtils.randomInt(20, 80);
         const c = a - x;
@@ -108,16 +143,15 @@ export class BasicArithmeticGen {
                 answerType: 'numeric'
             },
             token: this.toBase64(x.toString()),
-            clues: [{ text: lang === 'sv' ? `Om vi tar bort x från ${a} får vi ${c}. Beräkna skillnaden.` : `If we remove x from ${a} we get ${c}. Calculate the difference.`, latex: `${a} - ${c} = x` }],
-            metadata: { variation: 'sub_missing_variable', difficulty: 2 }
+            clues: [{ text: lang === 'sv' ? `Vi börjar med ${a} och tar bort något (x) för att få ${c}. Skillnaden mellan dem är x.` : `We start with ${a} and remove something (x) to get ${c}. The difference between them is x.`, latex: `${a} - ${c} = x` }],
+            metadata: { variation_key: 'sub_missing_variable', difficulty: 2 }
         };
     }
 
     // --- LEVEL 3: DECIMALS ---
-    private level3_Decimals(lang: string): any {
-        // Removed Variation B (Digit Alignment Check) as requested.
-        // Level 3 now focuses exclusively on decimal vertical arithmetic variety.
-        const op = MathUtils.randomChoice(['+', '-']);
+    private level3_Decimals(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['dec_add_vertical', 'dec_sub_vertical']);
+        const op = v === 'dec_add_vertical' ? '+' : '-';
         const a = MathUtils.randomInt(100, 4500) / 100;
         const b = MathUtils.randomInt(100, 4500) / 100;
         
@@ -128,78 +162,76 @@ export class BasicArithmeticGen {
         );
 
         res.clues.push({ 
-            text: lang === 'sv' ? "Kom ihåg: Decimaltecknen måste stå på en rak vertikal linje för att du ska plussa/minska rätt talsorter." : "Remember: The decimal points must be aligned in a straight vertical line to add/subtract correct place values." 
+            text: lang === 'sv' ? "Viktigaste regeln: Decimaltecknen måste stå rakt under varandra. Fyll i med nollor om talen har olika många decimaler." : "Most important rule: The decimal points must be aligned vertically. Fill with zeros if the numbers have different numbers of decimal places." 
         });
-        res.metadata = { variation: op === '+' ? 'dec_add_vertical' : 'dec_sub_vertical', difficulty: 3 };
+        res.metadata = { variation_key: v, difficulty: 3 };
         return res;
     }
 
-    // --- LEVEL 4: MULT EASY (Tables 2-9) ---
-    private level4_MultEasy(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 4: MULT EASY ---
+    private level4_MultEasy(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['mult_table_std', 'mult_commutative']);
         const a = MathUtils.randomInt(2, 10);
         const b = MathUtils.randomInt(2, 10);
 
-        if (variation < 0.7) {
+        if (v === 'mult_table_std') {
             const res = this.createProblem(a, b, '*', lang, false);
-            res.metadata = { variation: 'mult_table_std', difficulty: 2 };
+            res.metadata = { variation_key: 'mult_table_std', difficulty: 2 };
             return res;
         }
 
-        // Variation B: Commutative Check
+        const correct = `${b} × ${a}`;
         return {
             renderData: {
-                description: lang === 'sv' ? `Vilket uttryck ger samma resultat som ${a} × ${b}?` : `Which expression gives the same result as ${a} × ${b}?`,
+                description: lang === 'sv' ? `Vilket uttryck ger samma produkt som ${a} × ${b}?` : `Which expression gives the same product as ${a} × ${b}?`,
                 answerType: 'multiple_choice',
-                options: [`${b} × ${a}`, `${a} + ${b}`, `${a} - ${b}`]
+                options: MathUtils.shuffle([correct, `${a} + ${b}`, `${a} - ${b}`])
             },
-            token: this.toBase64(`${b} × ${a}`),
-            clues: [{ text: lang === 'sv' ? "Ordningen på faktorerna spelar ingen roll för produkten." : "The order of the factors does not matter for the product." }],
-            metadata: { variation: 'mult_commutative', difficulty: 2 }
+            token: this.toBase64(correct),
+            clues: [{ text: lang === 'sv' ? "Den kommutativa lagen säger att ordningen på talen inte spelar någon roll vid multiplikation." : "The commutative law states that the order of numbers does not matter in multiplication.", latex: "a \\cdot b = b \\cdot a" }],
+            metadata: { variation_key: 'mult_commutative', difficulty: 2 }
         };
     }
 
-    // --- LEVEL 5: MULT MEDIUM (2x1) ---
-    private level5_MultMedium(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 5: MULT MEDIUM ---
+    private level5_MultMedium(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['mult_2x1_vertical', 'mult_distributive']);
         const a = MathUtils.randomInt(11, 35);
         const b = MathUtils.randomInt(3, 9);
 
-        if (variation < 0.7) {
+        if (v === 'mult_2x1_vertical') {
             const res = this.createProblem(a, b, '*', lang, true);
-            res.metadata = { variation: 'mult_2x1_vertical', difficulty: 3 };
+            res.metadata = { variation_key: 'mult_2x1_vertical', difficulty: 3 };
             return res;
         }
 
-        // Variation B: Distributive Logic
         const part1 = Math.floor(a / 10) * 10;
         const part2 = a % 10;
         return {
             renderData: {
-                description: lang === 'sv' ? `Beräkna genom att dela upp talet: (${part1} × ${b}) + (${part2} × ${b})` : `Calculate by splitting the number: (${part1} × ${b}) + (${part2} × ${b})`,
+                description: lang === 'sv' ? `Beräkna genom att dela upp talet i talsorter: (${part1} × ${b}) + (${part2} × ${b})` : `Calculate by splitting the number into place values: (${part1} × ${b}) + (${part2} × ${b})`,
                 answerType: 'numeric'
             },
             token: this.toBase64((a * b).toString()),
-            clues: [{ text: lang === 'sv' ? "Räkna ut talsorterna var för sig och addera sedan ihop dem." : "Calculate the place values separately and then add them together." }],
-            metadata: { variation: 'mult_distributive', difficulty: 3 }
+            clues: [{ text: lang === 'sv' ? "Detta kallas den distributiva lagen. Det är oftast enklare att räkna tiotalen för sig och entalen för sig." : "This is called the distributive law. It is often easier to calculate the tens and ones separately.", latex: `${part1*b} + ${part2*b}` }],
+            metadata: { variation_key: 'mult_distributive', difficulty: 3 }
         };
     }
 
-    // --- LEVEL 6: MULT HARD (Decimals) ---
-    private level6_MultHard(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 6: MULT HARD ---
+    private level6_MultHard(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['mult_decimal_std', 'mult_decimal_placement']);
         const a = MathUtils.randomInt(1, 9) / 10;
         const b = MathUtils.randomInt(2, 15);
         const ans = Math.round(a * b * 100) / 100;
 
-        if (variation < 0.7) {
+        if (v === 'mult_decimal_std') {
             const res = this.createProblem(a, b, '*', lang, false);
-            res.clues.push({ text: lang === 'sv' ? "Räkna som om det vore heltal först. Flytta sedan kommat baserat på totalt antal decimaler i uppgiften." : "Calculate as integers first. Then move the decimal point based on the total number of decimals in the problem." });
-            res.metadata = { variation: 'mult_decimal_std', difficulty: 4 };
+            res.clues.push({ text: lang === 'sv' ? "Tips: Multiplicera som om det vore heltal först (9 x 12). Räkna sedan hur många decimaler som fanns totalt och flytta kommat lika många steg." : "Hint: Multiply as if they were integers first (9 x 12). Then count the total number of decimals in the original numbers and move the decimal point the same number of steps." });
+            res.metadata = { variation_key: 'mult_decimal_std', difficulty: 4 };
             return res;
         }
 
-        // Variation B: Decimal Placement Spot the Lie
         const options = [
             `${a} × ${b} = ${ans}`,
             `${a} × ${b} = ${Math.round(ans * 10 * 10) / 10}`,
@@ -207,24 +239,24 @@ export class BasicArithmeticGen {
         ];
         return {
             renderData: {
-                description: lang === 'sv' ? "Vilket påstående stämmer?" : "Which statement is correct?",
+                description: lang === 'sv' ? "Vilken av uträkningarna har placerat decimalkommat rätt?" : "Which calculation has placed the decimal point correctly?",
                 answerType: 'multiple_choice',
                 options: MathUtils.shuffle(options)
             },
             token: this.toBase64(`${a} × ${b} = ${ans}`),
-            clues: [{ text: lang === 'sv' ? `Faktorn ${a} har en decimal, så produkten måste också ha en decimal flyttad.` : `The factor ${a} has one decimal place, so the product must also have the decimal moved.` }],
-            metadata: { variation: 'mult_decimal_placement', difficulty: 4 }
+            clues: [{ text: lang === 'sv' ? `Räkna antalet decimaler i faktorerna. Här har ${a} en decimal och ${b} har noll. Produkten måste därför ha exakt en decimal.` : `Count the decimals in the factors. Here ${a} has one decimal and ${b} has zero. The product must therefore have exactly one decimal.` }],
+            metadata: { variation_key: 'mult_decimal_placement', difficulty: 4 }
         };
     }
 
     // --- LEVEL 7: DIVISION ---
-    private level7_DivEasy(lang: string): any {
-        const variation = Math.random();
+    private level7_DivEasy(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['div_basic_std', 'div_inverse_logic']);
         const f1 = MathUtils.randomInt(2, 12);
         const f2 = MathUtils.randomInt(2, 12);
         const prod = f1 * f2;
 
-        if (variation < 0.7) {
+        if (v === 'div_basic_std') {
             return {
                 renderData: {
                     description: lang === 'sv' ? "Beräkna kvoten." : "Calculate the quotient.",
@@ -232,45 +264,37 @@ export class BasicArithmeticGen {
                     answerType: 'numeric'
                 },
                 token: this.toBase64(f2.toString()),
-                clues: [{ text: lang === 'sv' ? `Tänk multiplikation: Vad gånger ${f1} blir ${prod}?` : `Think multiplication: What times ${f1} equals ${prod}?`, latex: `${f1} \\cdot ? = ${prod}` }],
-                metadata: { variation: 'div_basic_std', difficulty: 2 }
+                clues: [{ text: lang === 'sv' ? `Division är motsatsen till multiplikation. Fråga dig själv: Vad multiplicerat med ${f1} blir ${prod}?` : `Division is the opposite of multiplication. Ask yourself: What multiplied by ${f1} equals ${prod}?`, latex: `${f1} \\cdot ? = ${prod}` }],
+                metadata: { variation_key: 'div_basic_std', difficulty: 2 }
             };
         }
 
         return {
             renderData: {
-                description: lang === 'sv' ? `Om ${f1} × ${f2} = ${prod}, vad är då ${prod} / ${f1}?` : `If ${f1} × ${f2} = ${prod}, what is ${prod} / ${f1}?`,
+                description: lang === 'sv' ? `Om vi vet att ${f1} × ${f2} = ${prod}, vad blir då resultatet av ${prod} / ${f1}?` : `If we know that ${f1} × ${f2} = ${prod}, what is the result of ${prod} / ${f1}?`,
                 answerType: 'numeric'
             },
             token: this.toBase64(f2.toString()),
-            clues: [{ text: lang === 'sv' ? "Division och multiplikation är varandras motsatser." : "Division and multiplication are opposites of each other." }],
-            metadata: { variation: 'div_inverse_logic', difficulty: 2 }
+            clues: [{ text: lang === 'sv' ? "Eftersom division och multiplikation hör ihop i samma sifferfamilj kan du se svaret direkt i multiplikationen." : "Since division and multiplication belong to the same fact family, you can see the answer directly in the multiplication." }],
+            metadata: { variation_key: 'div_inverse_logic', difficulty: 2 }
         };
     }
 
-    // --- LEVEL 8: MIXED INTEGERS ---
+    // --- LEVEL 8 & 9: MIXED ---
     private level8_MixedIntegers(lang: string): any {
-        const mode = MathUtils.randomInt(1, 4);
-        let res: any;
-        if (mode === 1) res = this.level1_AddSimple(lang);
-        else if (mode === 2) res = this.level2_SubSimple(lang);
-        else if (mode === 3) res = this.level4_MultEasy(lang);
-        else res = this.level7_DivEasy(lang);
+        const key = MathUtils.randomChoice(['add_std_horizontal', 'sub_std_horizontal', 'mult_table_std', 'div_basic_std']);
+        const res = this.generateByVariation(key, lang);
         res.metadata.mixed = true;
         return res;
     }
 
-    // --- LEVEL 9: MIXED DECIMALS ---
     private level9_MixedDecimals(lang: string): any {
-        const variation = Math.random();
-        let res: any;
-        if (variation < 0.5) res = this.level3_Decimals(lang);
-        else res = this.level6_MultHard(lang);
+        const key = MathUtils.randomChoice(['dec_add_vertical', 'dec_sub_vertical', 'mult_decimal_std']);
+        const res = this.generateByVariation(key, lang);
         res.metadata.mixed = true;
         return res;
     }
 
-    // --- GENERIC HELPER ---
     private createProblem(a: number, b: number, op: string, lang: string, vertical: boolean = false, extraClues: any[] = []) {
         let ans = 0;
         let latex = "";
@@ -288,18 +312,18 @@ export class BasicArithmeticGen {
         }
 
         const description = vertical 
-            ? (lang === 'sv' ? "Ställ upp och beräkna." : "Set up and calculate.")
+            ? (lang === 'sv' ? "Ställ upp och beräkna. Tänk på talsorterna." : "Set up and calculate. Pay attention to place values.")
             : (lang === 'sv' ? "Beräkna." : "Calculate.");
 
         const defaultClues = vertical 
-            ? [{ text: lang === 'sv' ? "Börja från höger och flytta minnessiffror till vänster om summan når 10 eller mer." : "Start from the right and carry over digits to the left if the sum reaches 10 or more." }]
+            ? [{ text: lang === 'sv' ? "Börja alltid från höger (entalen). Om summan blir 10 eller mer, flytta tiotalet som en minnessiffra till nästa kolumn." : "Always start from the right (ones). If the sum is 10 or more, carry the ten over as a small digit to the next column." }]
             : [];
 
         return {
             renderData: { latex, description, answerType: 'numeric' },
             token: this.toBase64(ans.toString()),
             clues: extraClues.length > 0 ? [...defaultClues, ...extraClues] : defaultClues,
-            metadata: { variation: 'generic_arithmetic', difficulty: 1 }
+            metadata: { variation_key: 'generic_arithmetic', difficulty: 1 }
         };
     }
 }

@@ -22,8 +22,7 @@ export class StatisticsGen {
             { sv: "godis", en: "candy", unit: "kr/hg", min: 8, max: 15 },
             { sv: "potatis", en: "potatoes", unit: "kr/kg", min: 10, max: 20 },
             { sv: "oxfilé", en: "beef fillet", unit: "kr/kg", min: 300, max: 600 },
-            { sv: "lax", en: "salmon", unit: "kr/kg", min: 200, max: 400 },
-            { sv: "saffran", en: "saffron", unit: "kr/g", min: 40, max: 80 }
+            { sv: "lax", en: "salmon", unit: "kr/kg", min: 200, max: 400 }
         ]
     };
 
@@ -39,320 +38,370 @@ export class StatisticsGen {
         }
     }
 
+    /**
+     * Phase 2: Targeted Generation
+     * Allows the Question Studio to request a specific skill bucket.
+     */
+    public generateByVariation(key: string, lang: string = 'sv'): any {
+        switch (key) {
+            case 'find_mode':
+            case 'find_range':
+            case 'stats_lie':
+            case 'find_min_max':
+                return this.level1_ModeRange(lang, key);
+            
+            case 'calc_mean':
+            case 'mean_concept_balance':
+            case 'mean_negatives':
+                return this.level2_Mean(lang, key);
+            
+            case 'median_odd':
+            case 'median_even':
+            case 'median_lie':
+                return this.level3_Median(lang, key);
+            
+            case 'reverse_mean_calc':
+            case 'mean_target_score':
+                return this.level4_ReverseMean(lang, key);
+            
+            case 'freq_mean':
+            case 'freq_count':
+            case 'freq_mode':
+            case 'freq_range':
+                return this.level5_FrequencyTable(lang, key);
+            
+            case 'real_outlier_shift':
+            case 'real_measure_choice':
+            case 'real_weighted_avg':
+            case 'real_weighted_missing':
+                return this.level6_RealWorldMixed(lang, key);
+
+            default:
+                return this.generate(1, lang);
+        }
+    }
+
     private toBase64(str: string): string {
         return Buffer.from(str).toString('base64');
     }
 
-    // --- LEVEL 1: Mode & Range ---
-    private level1_ModeRange(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 1: MODE & RANGE ---
+    private level1_ModeRange(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['find_mode', 'find_range', 'stats_lie', 'find_min_max']);
         const s = MathUtils.randomChoice(StatisticsGen.SCENARIOS.lists);
-        const len = MathUtils.randomInt(5, 9);
+        const len = MathUtils.randomInt(6, 9);
         const list: number[] = [];
         
         const modeVal = MathUtils.randomInt(s.min, s.max);
-        for(let i=0; i<3; i++) list.push(modeVal); 
-        for(let i=0; i<len-3; i++) list.push(MathUtils.randomInt(s.min, s.max));
+        if (v !== 'find_min_max') {
+            for(let i=0; i<3; i++) list.push(modeVal); 
+            for(let i=0; i<len-3; i++) list.push(MathUtils.randomInt(s.min, s.max));
+        } else {
+            for(let i=0; i<len; i++) list.push(MathUtils.randomInt(s.min, s.max));
+        }
         
         const shuffled = [...list].sort(() => Math.random() - 0.5);
         const setStr = shuffled.join(', ');
-        
-        // --- MODE ---
-        if (variation < 0.3) {
+
+        if (v === 'find_mode') {
             return {
                 renderData: { 
-                    description: lang==='sv' ? `Här är en lista över ${s.sv}: ${setStr}. Vad är typvärdet?` : `Here is a list of ${s.en}: ${setStr}. What is the mode?`,
+                    description: lang === 'sv' ? `Här är en lista över ${s.sv}: ${setStr}. Vilket är typvärdet för detta datamaterial?` : `Here is a list of ${s.en}: ${setStr}. What is the mode for this data set?`,
                     answerType: 'numeric' 
                 },
                 token: this.toBase64(modeVal.toString()),
-                clues: [
-                    { text: lang==='sv' ? "Typvärdet är det tal som förekommer flest gånger i listan. Tänk på ordet 'typisk'." : "The mode is the number that appears most frequently in the list. Think of what is 'typical'.", latex: "" },
-                    { text: lang==='sv' ? `Räkna hur många av varje tal som finns. Talet ${modeVal} finns med flest gånger.` : `Count how many of each number there are. The number ${modeVal} appears the most times.`, latex: `\text{Flest förekomster} = ${modeVal}` }
-                ],
-                metadata: { variation: 'find_mode', difficulty: 1 }
+                clues: [{ text: lang === 'sv' ? "Typvärdet är det tal som förekommer flest gånger i en samling data. Det är det mest 'typiska' värdet." : "The mode is the value that appears most frequently in a data set. It is the most 'typical' value." }],
+                metadata: { variation_key: 'find_mode', difficulty: 1 }
             };
         }
 
-        // --- RANGE ---
-        if (variation < 0.6) {
+        if (v === 'find_range') {
             const min = Math.min(...list);
             const max = Math.max(...list);
-            const range = max - min;
             return {
                 renderData: { 
-                    description: lang==='sv' ? `Här är en lista över ${s.sv}: ${setStr}. Vad är variationsbredden?` : `Here is a list of ${s.en}: ${setStr}. What is the range?`,
+                    description: lang === 'sv' ? `Studera listan över ${s.sv}: ${setStr}. Vad är variationsbredden för dessa värden?` : `Study the list of ${s.en}: ${setStr}. What is the range for these values?`,
                     answerType: 'numeric' 
                 },
-                token: this.toBase64(range.toString()),
-                clues: [
-                    { text: lang==='sv' ? "Variationsbredden visar hur stort gapet är mellan det minsta och det största talet." : "The range shows the gap between the smallest and the largest number.", latex: "" },
-                    { text: lang==='sv' ? "Hitta det största och det minsta talet och räkna ut skillnaden." : "Find the largest and smallest numbers and calculate the difference.", latex: `${max} - ${min} = ${range}` }
-                ],
-                metadata: { variation: 'find_range', difficulty: 1 }
+                token: this.toBase64((max - min).toString()),
+                clues: [{ text: lang === 'sv' ? "Variationsbredden beräknas genom att ta det största värdet minus det minsta värdet i listan." : "The range is calculated by taking the largest value minus the smallest value in the list.", latex: `${max} - ${min} = ${max - min}` }],
+                metadata: { variation_key: 'find_range', difficulty: 1 }
             };
         }
 
-        // --- SPOT THE LIE ---
+        if (v === 'find_min_max') {
+            const min = Math.min(...list);
+            const max = Math.max(...list);
+            const isMin = Math.random() > 0.5;
+            return {
+                renderData: {
+                    description: lang === 'sv' ? `Vilket är det ${isMin ? 'minsta' : 'största'} värdet i följande lista: ${setStr}?` : `What is the ${isMin ? 'minimum' : 'maximum'} value in the following list: ${setStr}?`,
+                    answerType: 'numeric'
+                },
+                token: this.toBase64((isMin ? min : max).toString()),
+                clues: [{ text: lang === 'sv' ? "Gå igenom listan metodiskt och leta efter det absolut lägsta eller högsta talet." : "Go through the list methodically and look for the absolute lowest or highest number." }],
+                metadata: { variation_key: 'find_min_max', difficulty: 1 }
+            };
+        }
+
+        // Spot the Lie
         const min = Math.min(...list);
         const max = Math.max(...list);
         const range = max - min;
-        const t1 = lang==='sv' ? `Typvärdet är ${modeVal}` : `Mode is ${modeVal}`;
-        const t2 = lang==='sv' ? `Variationsbredden är ${range}` : `Range is ${range}`;
-        const lieVal = min - MathUtils.randomInt(1, 3);
-        const lie = lang==='sv' ? `Minsta värdet är ${lieVal}` : `Min value is ${lieVal}`;
+        const t1 = lang === 'sv' ? `Typvärdet är ${modeVal}` : `Mode is ${modeVal}`;
+        const t2 = lang === 'sv' ? `Variationsbredden är ${range}` : `Range is ${range}`;
+        const sFalse = lang === 'sv' ? `Minsta värdet är ${min - 2}` : `Min value is ${min - 2}`;
 
         return {
             renderData: {
-                description: lang==='sv' ? `Lista: ${setStr}. Vilket påstående är FALSKT?` : `List: ${setStr}. Which statement is FALSE?`,
+                description: lang === 'sv' ? `Granska listan: ${setStr}. Vilket av påståendena nedan är FALSKT?` : `Review the list: ${setStr}. Which of the statements below is FALSE?`,
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([t1, t2, lie])
+                options: MathUtils.shuffle([t1, t2, sFalse])
             },
-            token: this.toBase64(lie),
-            clues: [
-                { text: lang==='sv' ? "Gå igenom listan och kontrollera varje påstående. Hitta det som inte stämmer." : "Go through the list and check each statement. Find the one that is incorrect.", latex: "" },
-                { text: lang==='sv' ? `Det lägsta talet i listan är faktiskt ${min}, inte ${lieVal}.` : `The lowest number in the list is actually ${min}, not ${lieVal}.`, latex: `${min} \neq ${lieVal}` }
-            ],
-            metadata: { variation: 'stats_lie', difficulty: 2 }
+            token: this.toBase64(sFalse),
+            clues: [{ text: lang === 'sv' ? "Gå igenom varje påstående och kontrollera det mot siffrorna i listan." : "Go through each statement and verify it against the numbers in the list." }],
+            metadata: { variation_key: 'stats_lie', difficulty: 2 }
         };
     }
 
-    // --- LEVEL 2: Mean ---
-    private level2_Mean(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 2: MEAN ---
+    private level2_Mean(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['calc_mean', 'mean_concept_balance', 'mean_negatives']);
         const s = MathUtils.randomChoice(StatisticsGen.SCENARIOS.lists);
-        
-        if (variation < 0.7) {
-            const count = MathUtils.randomInt(3, 8);
-            const mean = MathUtils.randomInt(s.min, s.max);
-            const targetSum = mean * count;
-            const list = [];
-            let currentSum = 0;
-            for(let i=0; i<count-1; i++) {
-                const val = MathUtils.randomInt(Math.max(s.min, mean - 5), Math.min(s.max, mean + 5));
-                list.push(val);
-                currentSum += val;
-            }
-            const lastVal = targetSum - currentSum;
-            if (lastVal < 0 || Math.abs(lastVal - mean) > 15) return this.level2_Mean(lang);
-            
-            list.push(lastVal);
-            const setStr = list.sort(() => Math.random() - 0.5).join(', ');
+
+        if (v === 'mean_negatives' || s.id === 'temp') {
+            const list = Array.from({length: 4}, () => MathUtils.randomInt(-5, 5));
+            const sum = list.reduce((a, b) => a + b, 0);
+            const mean = Math.round((sum / 4) * 10) / 10;
             return {
                 renderData: {
-                    description: lang==='sv' ? `Beräkna medelvärdet för dessa ${s.sv}: ${setStr}.` : `Calculate the mean for these ${s.en}: ${setStr}.`,
+                    description: lang === 'sv' ? `Beräkna medeltemperaturen för följande mätvärden: ${list.join('°C, ')}°C.` : `Calculate the mean temperature for the following readings: ${list.join('°C, ')}°C.`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(mean.toString()),
-                clues: [
-                    { text: lang==='sv' ? "Medelvärdet är det tal man får om man delar upp summan jämnt på alla delar." : "The mean is the number you get if you distribute the sum evenly across all parts.", latex: "" },
-                    { text: lang==='sv' ? "Addera alla tal först för att få den totala summan." : "Add all the numbers first to get the total sum.", latex: `${list.join(' + ')} = ${targetSum}` },
-                    { text: lang==='sv' ? `Dela nu summan med antalet tal (${count}).` : `Now divide the sum by the number of values (${count}).`, latex: `\\frac{${targetSum}}{${count}} = ${mean}` }
-                ],
-                metadata: { variation: 'calc_mean', difficulty: 2 }
+                clues: [{ text: lang === 'sv' ? "Addera alla temperaturer (tänk på de negativa talen) och dela summan med 4." : "Add all temperatures (mind the negative numbers) and divide the sum by 4.", latex: `\\frac{${list.join(' + ')}}{4} = ${mean}` }],
+                metadata: { variation_key: 'mean_negatives', difficulty: 3 }
             };
         }
 
-        const q = lang==='sv' ? "Om du lägger till ett tal som är STÖRRE än medelvärdet, vad händer med det nya medelvärdet?" : "If you add a number LARGER than the mean, what happens to the new mean?";
-        const ans = lang==='sv' ? "Det ökar" : "It increases";
-        const w1 = lang==='sv' ? "Det minskar" : "It decreases";
+        if (v === 'mean_concept_balance') {
+            const oldMean = 20;
+            const newVal = MathUtils.randomChoice([10, 30]);
+            const isLower = newVal < oldMean;
+            const ans = isLower ? (lang === 'sv' ? "Det minskar" : "It decreases") : (lang === 'sv' ? "Det ökar" : "It increases");
+            return {
+                renderData: {
+                    description: lang === 'sv' ? `Om medelvärdet för en grupp är ${oldMean} och en ny person med värdet ${newVal} går med i gruppen, vad händer med medelvärdet?` : `If the mean for a group is ${oldMean} and a new person with the value ${newVal} joins the group, what happens to the mean?`,
+                    answerType: 'multiple_choice',
+                    options: lang === 'sv' ? ["Det ökar", "Det minskar", "Det är oförändrat"] : ["It increases", "It decreases", "It stays unchanged"]
+                },
+                token: this.toBase64(ans),
+                clues: [{ text: lang === 'sv' ? "Om det nya värdet är lägre än snittet dras medelvärdet ner, och om det är högre dras det upp." : "If the new value is lower than the average, the mean is pulled down, and if it is higher, it is pulled up." }],
+                metadata: { variation_key: 'mean_concept_balance', difficulty: 2 }
+            };
+        }
+
+        const count = MathUtils.randomInt(4, 6);
+        const list = Array.from({length: count}, () => MathUtils.randomInt(s.min, s.max));
+        const sum = list.reduce((a, b) => a + b, 0);
+        const mean = Math.round((sum / count) * 10) / 10;
+
         return {
-            renderData: { description: q, answerType: 'multiple_choice', options: MathUtils.shuffle([ans, w1]) },
-            token: this.toBase64(ans),
+            renderData: {
+                description: lang === 'sv' ? `Räkna ut medelvärdet för dessa ${s.sv}: ${list.join(', ')}.` : `Calculate the mean for these ${s.en}: ${list.join(', ')}.`,
+                answerType: 'numeric'
+            },
+            token: this.toBase64(mean.toString()),
             clues: [
-                { text: lang==='sv' ? "Tänk på medelvärdet som en balanspunkt. Om du lägger på något tyngre på ena sidan dras punkten åt det hållet." : "Think of the mean as a balance point. If you add something heavier on one side, the point moves that way.", latex: "" },
-                { text: lang==='sv' ? "Eftersom det nya talet är större än det gamla snittet, kommer det dras uppåt." : "Since the new number is larger than the old average, it will be pulled upwards.", latex: "\text{Nytt tal} > \text{Medel} \implies \text{Ökning}" }
+                { text: lang === 'sv' ? "Steg 1: Addera alla tal för att få den totala summan." : "Step 1: Add all numbers to get the total sum.", latex: list.join(' + ') + ` = ${sum}` },
+                { text: lang === 'sv' ? `Steg 2: Dividera summan med antalet tal (${count}).` : `Step 2: Divide the sum by the number of values (${count}).`, latex: `\\frac{${sum}}{${count}} = ${mean}` }
             ],
-            metadata: { variation: 'mean_concept_balance', difficulty: 2 }
+            metadata: { variation_key: 'calc_mean', difficulty: 2 }
         };
     }
 
-    // --- LEVEL 3: Median ---
-    private level3_Median(lang: string): any {
+    // --- LEVEL 3: MEDIAN ---
+    private level3_Median(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['median_odd', 'median_even', 'median_lie']);
         const s = MathUtils.randomChoice(StatisticsGen.SCENARIOS.lists);
-        const count = MathUtils.randomChoice([5, 6, 7]);
-        const list = [];
-        for(let i=0; i<count; i++) list.push(MathUtils.randomInt(s.min, s.max));
-        const sorted = [...list].sort((a,b)=>a-b);
+        const count = v === 'median_even' ? 6 : 5;
+        const list = Array.from({length: count}, () => MathUtils.randomInt(s.min, s.max));
+        const sorted = [...list].sort((a, b) => a - b);
         
         let median = 0;
-        let middleDesc = "";
         if (count % 2 !== 0) {
-            median = sorted[Math.floor(count/2)];
-            middleDesc = `${median}`;
+            median = sorted[Math.floor(count / 2)];
         } else {
-            const m1 = sorted[count/2 - 1];
-            const m2 = sorted[count/2];
-            median = (m1 + m2) / 2;
-            middleDesc = `\\frac{${m1} + ${m2}}{2} = ${median}`;
+            median = (sorted[count/2 - 1] + sorted[count/2]) / 2;
         }
 
-        const shuffled = [...list].sort(()=>Math.random()-0.5).join(', ');
+        if (v === 'median_lie') {
+            const lie = sorted[0]; // Using min as a lie for median
+            const sTrue = lang === 'sv' ? `Medianen är ${median}` : `Median is ${median}`;
+            const sLie = lang === 'sv' ? `Medianen är ${lie}` : `Median is ${lie}`;
+            return {
+                renderData: {
+                    description: lang === 'sv' ? `Lista: ${list.join(', ')}. Vilket påstående om medianen stämmer?` : `List: ${list.join(', ')}. Which statement about the median is true?`,
+                    answerType: 'multiple_choice',
+                    options: [sTrue, sLie]
+                },
+                token: this.toBase64(sTrue),
+                clues: [{ text: lang === 'sv' ? "Sortera alltid listan i storleksordning innan du letar efter det mittersta värdet." : "Always sort the list in size order before looking for the middle value." }],
+                metadata: { variation_key: 'median_lie', difficulty: 2 }
+            };
+        }
+
         return {
             renderData: {
-                description: lang==='sv' ? `Hitta medianen för dessa ${s.sv}: ${shuffled}.` : `Find the median for these ${s.en}: ${shuffled}.`,
+                description: lang === 'sv' ? `Bestäm medianen för följande ${s.sv}: ${list.sort(() => Math.random() - 0.5).join(', ')}.` : `Determine the median for the following ${s.en}: ${list.sort(() => Math.random() - 0.5).join(', ')}.`,
                 answerType: 'numeric'
             },
             token: this.toBase64(median.toString()),
             clues: [
-                { text: lang==='sv' ? "Medianen är det mittersta värdet. För att hitta det måste talen stå i ordning." : "The median is the middle value. To find it, the numbers must be in order.", latex: "" },
-                { text: lang==='sv' ? "Sortera talen från minsta till största." : "Sort the numbers from smallest to largest.", latex: sorted.join(', ') },
-                { text: lang==='sv' ? "Leta upp talet i mitten (eller medelvärdet av de två i mitten)." : "Identify the number in the middle (or the average of the two middle ones).", latex: `\text{Mitten} = ${middleDesc}` }
+                { text: lang === 'sv' ? "Steg 1: Sortera talen från minst till störst." : "Step 1: Sort the numbers from smallest to largest.", latex: sorted.join(', ') },
+                { text: lang === 'sv' ? (count % 2 !== 0 ? "Steg 2: Eftersom det är ett udda antal tal är medianen det tal som står precis i mitten." : "Steg 2: Vid ett jämnt antal tal är medianen medelvärdet av de två talen i mitten.") : (count % 2 !== 0 ? "Step 2: Since there is an odd number of values, the median is the value exactly in the middle." : "Step 2: With an even number of values, the median is the average of the two middle values."), latex: median.toString() }
             ],
-            metadata: { variation: count % 2 === 0 ? 'median_even' : 'median_odd', difficulty: 2 }
+            metadata: { variation_key: v, difficulty: 2 }
         };
     }
 
-    // --- LEVEL 4: Reverse Mean ---
-    private level4_ReverseMean(lang: string): any {
-        const count = MathUtils.randomChoice([3, 4, 5]);
-        const mean = MathUtils.randomInt(10, 20);
-        const total = mean * count;
-        const known: number[] = [];
-        let currentSum = 0;
-        for(let i=0; i<count-1; i++) {
-            const v = MathUtils.randomInt(mean-5, mean+5);
-            known.push(v);
-            currentSum += v;
-        }
-        const missing = total - currentSum;
-        if (missing < 0) return this.level4_ReverseMean(lang);
+    // --- LEVEL 4: REVERSE MEAN ---
+    private level4_ReverseMean(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['reverse_mean_calc', 'mean_target_score']);
         
+        if (v === 'mean_target_score') {
+            const score1 = MathUtils.randomInt(10, 15), score2 = MathUtils.randomInt(12, 18);
+            const targetMean = 16;
+            const required = (targetMean * 3) - score1 - score2;
+            return {
+                renderData: {
+                    description: lang === 'sv' ? `På de två första proven fick du ${score1} och ${score2} poäng. Vad behöver du få på det tredje provet för att ditt medelvärde ska bli exakt ${targetMean}?` : `On the first two tests, you scored ${score1} and ${score2} points. What do you need on the third test for your mean to be exactly ${targetMean}?`,
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(required.toString()),
+                clues: [
+                    { text: lang === 'sv' ? `Steg 1: Räkna ut vad summan av de tre proven måste vara.` : `Step 1: Calculate what the sum of the three tests must be.`, latex: `3 \\cdot ${targetMean} = ${targetMean * 3}` },
+                    { text: lang === 'sv' ? `Steg 2: Dra ifrån de poäng du redan har.` : `Step 2: Subtract the points you already have.`, latex: `${targetMean * 3} - ${score1} - ${score2} = ${required}` }
+                ],
+                metadata: { variation_key: 'mean_target_score', difficulty: 4 }
+            };
+        }
+
+        const count = 4, mean = 15;
+        const total = mean * count; // 60
+        const v1 = 12, v2 = 18, v3 = 14;
+        const missing = total - (v1 + v2 + v3);
+
         return {
             renderData: {
-                description: lang==='sv' ? `Medelvärdet av ${count} tal är ${mean}. ${count-1} av talen är: ${known.join(', ')}. Vilket är det sista talet?` : `The mean of ${count} numbers is ${mean}. ${count-1} of them are: ${known.join(', ')}. What is the last number?`,
+                description: lang === 'sv' ? `Medelvärdet av fyra tal är ${mean}. Tre av talen är ${v1}, ${v2} och ${v3}. Vilket är det fjärde talet?` : `The mean of four numbers is ${mean}. Three of the numbers are ${v1}, ${v2}, and ${v3}. What is the fourth number?`,
                 answerType: 'numeric'
             },
             token: this.toBase64(missing.toString()),
-            clues: [
-                { text: lang==='sv' ? "Om du vet medelvärdet och antalet kan du räkna ut vad alla talen ska bli tillsammans (summan)." : "If you know the mean and the count, you can calculate what all numbers should sum up to.", latex: `${mean} \\cdot ${count} = ${total}` },
-                { text: lang==='sv' ? "Dra nu bort de tal du redan känner till från den totala summan." : "Now subtract the numbers you already know from the total sum.", latex: `${total} - (${known.join(' + ')}) = ${missing}` }
-            ],
-            metadata: { variation: 'reverse_mean_calc', difficulty: 3 }
+            clues: [{ text: lang === 'sv' ? "Om du vet medelvärdet kan du räkna ut den totala summan genom att multiplicera med antalet tal." : "If you know the mean, you can calculate the total sum by multiplying by the count.", latex: `${mean} \\cdot 4 = ${total}` }],
+            metadata: { variation_key: 'reverse_mean_calc', difficulty: 3 }
         };
     }
 
-    // --- LEVEL 5: Frequency Table ---
-    private level5_FrequencyTable(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 5: FREQUENCY TABLES ---
+    private level5_FrequencyTable(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['freq_mean', 'freq_count', 'freq_mode', 'freq_range']);
         const s = MathUtils.randomChoice(StatisticsGen.SCENARIOS.lists);
-        const startVal = MathUtils.randomInt(s.min, Math.max(s.min, s.max - 5));
-        const vals = [startVal, startVal + 1, startVal + 2, startVal + 3, startVal + 4];
-        const freqs = [MathUtils.randomInt(1, 4), MathUtils.randomInt(2, 6), MathUtils.randomInt(1, 5), MathUtils.randomInt(1, 3), MathUtils.randomInt(1, 2)];
-        const rows = [];
-        let totalSum = 0, totalCount = 0;
+        const rows = [[1, 2], [2, 5], [3, 3], [4, 1]]; // Value, Count
+        const totalCount = 11;
+        const totalSum = (1*2) + (2*5) + (3*3) + (4*1); // 2 + 10 + 9 + 4 = 25
         
-        vals.forEach((v, i) => {
-            const f = freqs[i];
-            rows.push([v, f]);
-            totalSum += v * f;
-            totalCount += f;
-        });
+        if (v === 'freq_mode') {
+            return {
+                renderData: {
+                    description: lang === 'sv' ? `Tabellen visar ${s.sv}. Vilket är typvärdet?` : `The table shows ${s.en}. What is the mode?`,
+                    answerType: 'numeric',
+                    geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
+                },
+                token: this.toBase64("2"),
+                clues: [{ text: lang === 'sv' ? "Leta efter det värde som har högst siffra i kolumnen 'Antal'." : "Look for the value that has the highest number in the 'Count' column." }],
+                metadata: { variation_key: 'freq_mode', difficulty: 2 }
+            };
+        }
 
-        const isMean = variation < 0.5;
+        if (v === 'freq_count') {
+            return {
+                renderData: {
+                    description: lang === 'sv' ? "Hur många observationer gjordes totalt enligt tabellen?" : "How many observations were made in total according to the table?",
+                    answerType: 'numeric',
+                    geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
+                },
+                token: this.toBase64(totalCount.toString()),
+                clues: [{ text: lang === 'sv' ? "Summera alla siffror i kolumnen 'Antal'." : "Sum all the numbers in the 'Count' column.", latex: `2 + 5 + 3 + 1 = ${totalCount}` }],
+                metadata: { variation_key: 'freq_count', difficulty: 2 }
+            };
+        }
+
         const mean = Math.round((totalSum / totalCount) * 10) / 10;
-        const target = isMean ? mean : totalCount;
-        
-        const q = isMean 
-            ? (lang==='sv' ? `Tabellen visar ${s.sv} i en grupp. Beräkna medelvärdet.` : `The table shows ${s.en} in a group. Calculate the mean.`)
-            : (lang==='sv' ? `Tabellen visar ${s.sv} i en undersökning. Hur många observationer (totalt antal) gjordes?` : `The table shows ${s.en} in a survey. How many total observations were made?`);
-
-        const clues = isMean ? [
-            { text: lang==='sv' ? "Multiplicera varje värde med dess antal för att få delsummor, och addera dem." : "Multiply each value by its count to get sub-sums, and add them up.", latex: `\text{Summa} = ${totalSum}` },
-            { text: lang==='sv' ? "Dela totalsumman med det totala antalet observationer." : "Divide the total sum by the total number of observations.", latex: `\\frac{${totalSum}}{${totalCount}} = ${mean}` }
-        ] : [
-            { text: lang==='sv' ? "Kolumnen 'Antal' visar hur många gånger varje värde har mätts." : "The 'Count' column shows how many times each value was measured.", latex: "" },
-            { text: lang==='sv' ? "Addera alla siffror i kolumnen 'Antal' för att få totalen." : "Add all the figures in the 'Count' column to get the total.", latex: `${freqs.join(' + ')} = ${totalCount}` }
-        ];
-
         return {
             renderData: {
-                description: q,
+                description: lang === 'sv' ? `Beräkna medelvärdet utifrån frekvenstabellen (avrunda till en decimal).` : `Calculate the mean based on the frequency table (round to one decimal).`,
                 answerType: 'numeric',
-                geometry: { type: 'frequency_table', headers: lang==='sv'?[s.sv.charAt(0).toUpperCase() + s.sv.slice(1),'Antal']:[s.en.charAt(0).toUpperCase() + s.en.slice(1),'Count'], rows }
+                geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
             },
-            token: this.toBase64(target.toString()),
-            clues,
-            metadata: { variation: isMean ? 'freq_mean' : 'freq_count', difficulty: 3 }
+            token: this.toBase64(mean.toString()),
+            clues: [{ text: lang === 'sv' ? "Multiplicera varje värde med dess antal, addera resultaten och dela med totala antalet observationer." : "Multiply each value by its count, add the results, and divide by the total number of observations.", latex: `\\frac{${totalSum}}{${totalCount}} = ${mean}` }],
+            metadata: { variation_key: 'freq_mean', difficulty: 3 }
         };
     }
 
-    // --- LEVEL 6: Real World Mixed ---
-    private level6_RealWorldMixed(lang: string): any {
-        const variation = Math.random();
+    // --- LEVEL 6: REAL WORLD ---
+    private level6_RealWorldMixed(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['real_outlier_shift', 'real_measure_choice', 'real_weighted_avg', 'real_weighted_missing']);
 
-        // --- OUTLIER SENSITIVITY ---
-        if (variation < 0.35) {
-            const ctx = MathUtils.randomChoice(StatisticsGen.SCENARIOS.real_world);
-            const base = MathUtils.randomInt(ctx.min, ctx.max);
-            const outlier = base * MathUtils.randomInt(6, 12);
-            const dataset = [base - 1, base, base + 1, outlier];
-            const sumWith = dataset.reduce((a, b) => a + b, 0);
-            const meanWith = sumWith / dataset.length;
-            const meanWithout = (sumWith - outlier) / (dataset.length - 1);
-            const diff = Math.round(Math.abs(meanWith - meanWithout));
-
-            const desc = lang === 'sv'
-                ? `Värden för ${ctx.sv}: ${dataset.join(ctx.suffix + ', ')}${ctx.suffix}. Om vi tar bort det extrema värdet (${outlier}${ctx.suffix}), hur mycket ändras medelvärdet? (Heltal)`
-                : `Values for ${ctx.en}: ${dataset.join(ctx.suffix + ', ')}${ctx.suffix}. If we remove the outlier (${outlier}${ctx.suffix}), by how much does the mean change? (Integer)`;
+        if (v === 'real_weighted_missing') {
+            const s = MathUtils.randomChoice(StatisticsGen.SCENARIOS.shopping);
+            const w1 = 2, p1 = 20;
+            const w2 = 3;
+            const targetAvg = 26;
+            // (2*20 + 3*x) / 5 = 26 -> 40 + 3x = 130 -> 3x = 90 -> x = 30
+            const ans = 30;
 
             return {
-                renderData: { description: desc, answerType: 'numeric' },
+                renderData: {
+                    description: lang === 'sv' ? `Du köper 2 kg ${s.sv} för 20 kr/kg och 3 kg till av en annan sort. Medelpriset blev 26 kr/kg. Vad kostade den andra sorten per kg?` : `You buy 2 kg of ${s.en} for 20 kr/kg and 3 kg more of another kind. The mean price was 26 kr/kg. What was the price of the other kind per kg?`,
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(ans.toString()),
+                clues: [
+                    { text: lang === 'sv' ? "Steg 1: Räkna ut den totala kostnaden för alla 5 kg." : "Step 1: Calculate the total cost for all 5 kg.", latex: `5 \\cdot 26 = 130` },
+                    { text: lang === 'sv' ? "Steg 2: Ta bort kostnaden för de första 2 kilona." : "Step 2: Subtract the cost of the first 2 kg.", latex: `130 - (2 \\cdot 20) = 90` },
+                    { text: lang === 'sv' ? "Steg 3: Dela resten på de 3 kilona som är kvar." : "Step 3: Divide the remainder by the remaining 3 kg.", latex: `90 / 3 = ${ans}` }
+                ],
+                metadata: { variation_key: 'real_weighted_missing', difficulty: 4 }
+            };
+        }
+
+        if (v === 'real_outlier_shift') {
+            const dataset = [25, 27, 28, 80]; // k salaries
+            const diff = 13; // (160/4 = 40) vs (80/3 = 26.6) approx 13
+            return {
+                renderData: {
+                    description: lang === 'sv' ? "Månadslönerna på ett litet företag är 25k, 27k, 28k och 80k. Hur mycket ändras medelvärdet om vi tar bort chefen som tjänar 80k? (Svara i hela tusentals kronor)" : "The monthly salaries at a small company are 25k, 27k, 28k, and 80k. By how much does the mean change if we remove the boss who earns 80k? (Answer in whole thousands)",
+                    answerType: 'numeric'
+                },
                 token: this.toBase64(diff.toString()),
-                clues: [
-                    { text: lang==='sv' ? "Medelvärdet påverkas mycket av extremt höga eller låga tal." : "The mean is heavily affected by extremely high or low numbers.", latex: "" },
-                    { text: lang==='sv' ? "Räkna ut medelvärdet för alla 4 tal, sedan för de 3 normala talen. Beräkna skillnaden." : "Calculate the mean for all 4 numbers, then for the 3 normal numbers. Calculate the difference.", latex: `|${Math.round(meanWith)} - ${Math.round(meanWithout)}| = ${diff}` }
-                ],
-                metadata: { variation: 'real_outlier_shift', difficulty: 4 }
+                clues: [{ text: lang === 'sv' ? "Räkna ut snittet för alla fyra, sedan snittet för bara de tre anställda, och jämför." : "Calculate the average for all four, then the average for just the three employees, and compare." }],
+                metadata: { variation_key: 'real_outlier_shift', difficulty: 4 }
             };
         }
 
-        // --- MEASURE CHOICE ---
-        if (variation < 0.7) {
-            const ctx = MathUtils.randomChoice(StatisticsGen.SCENARIOS.real_world);
-            const base = MathUtils.randomInt(ctx.min, ctx.max);
-            const hasOutlier = Math.random() > 0.5;
-            const outlier = hasOutlier ? base * 20 : base + MathUtils.randomInt(1, 2);
-            const dataset = [base, base + 1, base - 1, outlier].sort((a,b)=>a-b);
-            
-            const desc = lang === 'sv'
-                ? `Data för ${ctx.sv}: ${dataset.join(ctx.suffix + ', ')}${ctx.suffix}. Vilket mått beskriver bäst ett "typiskt" värde?`
-                : `Data for ${ctx.en}: ${dataset.join(ctx.suffix + ', ')}${ctx.suffix}. Which measure best describes a "typical" value?`;
-            
-            const ans = hasOutlier ? (lang==='sv'?"Median":"Median") : (lang==='sv'?"Båda funkar":"Both work");
-            const options = hasOutlier ? ["Medelvärde", "Median"] : ["Median", "Båda funkar"];
-
-            return {
-                renderData: { description: desc, answerType: 'multiple_choice', options: MathUtils.shuffle(options) },
-                token: this.toBase64(ans),
-                clues: [
-                    { text: lang==='sv' ? "Om det finns ett tal som är extremt mycket större än de andra (en outlier), så blir medelvärdet 'smittat' och för högt." : "If there is a number that is extremely much larger than the others (an outlier), the mean becomes 'tainted' and too high.", latex: "" },
-                    { text: lang==='sv' ? "Medianen bryr sig inte om hur stora talen på kanterna är, bara vilket som är i mitten." : "The median doesn't care how large the numbers on the edges are, only which one is in the middle.", latex: hasOutlier ? "\text{Outlier finns} \implies \text{Median}" : "\text{Ingen outlier} \implies \text{Båda}" }
-                ],
-                metadata: { variation: 'real_measure_choice', difficulty: 3 }
-            };
-        }
-
-        // --- WEIGHTED SHOPPING ---
-        const s = MathUtils.randomChoice(StatisticsGen.SCENARIOS.shopping);
-        const w1 = MathUtils.randomInt(2, 4), p1 = MathUtils.randomInt(s.min, s.max);
-        const w2 = MathUtils.randomInt(2, 4), p2 = MathUtils.randomInt(s.min, s.max);
-        const totalWeight = w1 + w2;
-        const totalCost = (w1 * p1) + (w2 * p2);
-        const avg = Math.round((totalCost / totalWeight) * 10) / 10;
-
-        const item = lang === 'sv' ? s.sv : s.en;
-        const desc = lang === 'sv'
-            ? `Du köper ${w1} kg ${item} för ${p1} kr/kg och ${w2} kg för ${p2} kr/kg. Beräkna medelpriset per kg.`
-            : `You buy ${w1} kg of ${item} for ${p1} kr/kg and ${w2} kg for ${p2} kr/kg. Calculate the average price per kg.`;
-
+        // Default to measure choice
+        const ans = lang === 'sv' ? "Median" : "Median";
         return {
-            renderData: { description: desc, answerType: 'numeric', suffix: 'kr/kg' },
-            token: this.toBase64(avg.toString()),
-            clues: [
-                { text: lang==='sv' ? "Du kan inte bara ta medelvärdet av priserna, eftersom du köpt olika mycket av varje." : "You can't just take the average of the prices, because you bought different amounts of each.", latex: "" },
-                { text: lang==='sv' ? "Räkna ut total kostnad och dela med total vikt." : "Calculate the total cost and divide by the total weight.", latex: `\\frac{(${w1} \\cdot ${p1}) + (${w2} \\cdot ${p2})}{${w1} + ${w2}} = ${avg}` }
-            ],
-            metadata: { variation: 'real_weighted_avg', difficulty: 4 }
+            renderData: {
+                description: lang === 'sv' ? "I en undersökning om huspriser finns det ett extremt dyrt lyxhus som kostar tio gånger mer än de andra. Vilket centralmått bör man använda för att få en rättvis bild av vad ett 'vanligt' hus kostar?" : "In a survey of house prices, there is one extremely expensive luxury house that costs ten times more than the others. Which measure of central tendency should be used to give a fair picture of what a 'typical' house costs?",
+                answerType: 'multiple_choice',
+                options: lang === 'sv' ? ["Medelvärde", "Median", "Variationsbredd"] : ["Mean", "Median", "Range"]
+            },
+            token: this.toBase64(ans),
+            clues: [{ text: lang === 'sv' ? "Medelvärdet påverkas kraftigt av extremvärden (outliers), medan medianen förblir stabil." : "The mean is heavily influenced by outliers, while the median remains stable." }],
+            metadata: { variation_key: 'real_measure_choice', difficulty: 3 }
         };
     }
 }

@@ -12,6 +12,43 @@ export class FractionBasicsGen {
         }
     }
 
+    /**
+     * Phase 2: Targeted Generation
+     * Maps specific mastery buckets to internal randomized generators.
+     */
+    public generateByVariation(key: string, lang: string = 'sv'): any {
+        switch (key) {
+            case 'visual_lie':
+            case 'visual_inverse':
+            case 'visual_calc':
+                return this.level1_Visuals(lang, key);
+            
+            case 'part_inverse':
+            case 'part_compare':
+            case 'part_calc':
+                return this.level2_PartsOfQuantity(lang, key);
+            
+            case 'mixed_bounds':
+            case 'mixed_missing':
+            case 'mixed_convert_imp':
+            case 'mixed_convert_mix':
+                return this.level3_MixedImproper(lang, key);
+            
+            case 'simplify_missing':
+            case 'simplify_concept':
+            case 'simplify_calc':
+                return this.level4_SimplifyExtend(lang, key);
+            
+            case 'decimal_inequality':
+            case 'decimal_to_dec':
+            case 'decimal_to_frac':
+                return this.level5_Decimals(lang, key);
+
+            default:
+                return this.generate(1, lang);
+        }
+    }
+
     private toBase64(str: string): string {
         return Buffer.from(str).toString('base64');
     }
@@ -21,25 +58,19 @@ export class FractionBasicsGen {
     }
 
     // --- LEVEL 1: VISUAL CONCEPTS ---
-    private level1_Visuals(lang: string): any {
-        const variation = Math.random();
+    private level1_Visuals(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['visual_lie', 'visual_inverse', 'visual_calc']);
 
         // VARIATION A: Spot the Lie (Percent Grid)
-        if (variation < 0.3) {
-            // Generate dynamic percentages
+        if (v === 'visual_lie') {
             const p = MathUtils.randomChoice([10, 20, 25, 40, 50, 60, 75, 80, 90]);
-            const fractionN = p;
-            const fractionD = 100;
-            
-            // Generate simplified fraction for the "True" statement
-            const div = this.gcd(fractionN, fractionD);
-            const simpleN = fractionN / div;
-            const simpleD = fractionD / div;
+            const div = this.gcd(p, 100);
+            const simpleN = p / div;
+            const simpleD = 100 / div;
 
             const statementPercent = `${p}%`;
             const statementFraction = `${simpleN}/${simpleD}`;
             
-            // Generate a dynamic "Lie"
             let statementFalse = "";
             if (p < 50) {
                 statementFalse = lang === 'sv' ? "Mer än hälften" : "More than half";
@@ -54,27 +85,23 @@ export class FractionBasicsGen {
             return {
                 renderData: {
                     description: lang === 'sv' 
-                        ? "Titta på figuren. Vilket påstående är FALSKT?" 
-                        : "Look at the figure. Which statement is FALSE?",
+                        ? "Studera figuren nedan noga. Vilket av påståendena om den färgade andelen är FALSKT?" 
+                        : "Study the figure below carefully. Which statement about the colored part is FALSE?",
                     answerType: 'multiple_choice',
                     options: options,
-                    geometry: {
-                        type: 'percent_grid',
-                        total: 100,
-                        colored: p
-                    }
+                    geometry: { type: 'percent_grid', total: 100, colored: p }
                 },
                 token: this.toBase64(statementFalse),
                 clues: [
-                    { text: lang==='sv' ? "Hälften är 50 rutor." : "Half is 50 squares.", latex: "50/100" },
-                    { text: lang==='sv' ? `Det är ${p} färgade rutor. Jämför det med påståendena.` : `There are ${p} colored squares. Compare that with the statements.`, latex: `${p} \\neq ${statementFalse}` }
+                    { text: lang === 'sv' ? "Hela rutnätet består av 100 rutor. Hälften av 100 är 50 rutor." : "The whole grid consists of 100 squares. Half of 100 is 50 squares.", latex: "\\frac{50}{100} = 50\\%" },
+                    { text: lang === 'sv' ? `Räkna antalet färgade rutor. Det är ${p} stycken. Jämför detta antal med de olika påståendena.` : `Count the number of colored squares. There are ${p}. Compare this count with the different statements.`, latex: "" }
                 ],
-                metadata: { variation: 'visual_lie', difficulty: 1 }
+                metadata: { variation_key: 'visual_lie', difficulty: 1 }
             };
         }
 
         // VARIATION B: Inverse Logic (Word Problem)
-        if (variation < 0.6) {
+        if (v === 'visual_inverse') {
             const fractionD = MathUtils.randomInt(3, 8);
             const countPerPart = MathUtils.randomInt(2, 6);
             const total = countPerPart * fractionD;
@@ -82,19 +109,19 @@ export class FractionBasicsGen {
             return {
                 renderData: {
                     description: lang === 'sv'
-                        ? `Du har ${total} kulor. 1/${fractionD} av dem är röda. Hur många är röda?`
-                        : `You have ${total} marbles. 1/${fractionD} of them are red. How many are red?`,
+                        ? `Du har en samling med ${total} kulor. Om exakt 1/${fractionD} av dem är röda, hur många röda kulor har du då?`
+                        : `You have a collection of ${total} marbles. If exactly 1/${fractionD} of them are red, how many red marbles do you have?`,
                     answerType: 'numeric',
-                    geometry: null // No visual, force mental model
+                    geometry: null 
                 },
                 token: this.toBase64(countPerPart.toString()),
                 clues: [
                     { 
-                        text: lang==='sv' ? `Dela totalen i ${fractionD} lika stora högar.` : `Divide the total into ${fractionD} equal piles.`, 
-                        latex: `${total} / ${fractionD}` 
+                        text: lang === 'sv' ? `Att söka 1/${fractionD} innebär att du delar upp hela antalet i ${fractionD} lika stora grupper.` : `Finding 1/${fractionD} means you divide the whole number into ${fractionD} equal groups.`, 
+                        latex: `\\frac{${total}}{${fractionD}} = ${countPerPart}` 
                     }
                 ],
-                metadata: { variation: 'visual_inverse', difficulty: 2 }
+                metadata: { variation_key: 'visual_inverse', difficulty: 2 }
             };
         }
 
@@ -107,57 +134,55 @@ export class FractionBasicsGen {
         
         let count = 0;
         let colorName = "";
-        if (target === 'red') { count = red; colorName = lang==='sv'?'röda':'red'; }
-        else if (target === 'blue') { count = blue; colorName = lang==='sv'?'blåa':'blue'; }
-        else { count = green; colorName = lang==='sv'?'gröna':'green'; }
+        if (target === 'red') { count = red; colorName = lang === 'sv' ? 'röda' : 'red'; }
+        else if (target === 'blue') { count = blue; colorName = lang === 'sv' ? 'blåa' : 'blue'; }
+        else { count = green; colorName = lang === 'sv' ? 'gröna' : 'green'; }
 
         return {
             renderData: {
                 description: lang === 'sv' 
-                    ? `Hur stor andel är ${colorName}?` 
-                    : `What fraction are ${colorName}?`,
+                    ? `Hur stor andel av kulorna i behållaren är ${colorName}? Svara i bråkform.` 
+                    : `What fraction of the marbles in the container are ${colorName}? Answer as a fraction.`,
                 answerType: 'fraction',
                 geometry: { type: 'probability_marbles', items: { red, blue, green } }
             },
             token: this.toBase64(`${count}/${totalItems}`),
             clues: [
-                { text: lang==='sv' ? "Räkna hur många du har av den färgen, och dela med totala antalet." : "Count how many of that color, and divide by the total number.", latex: `\\frac{\\text{${colorName}}}{\\text{Total}}` }
+                { text: lang === 'sv' ? `Räkna antalet ${colorName} kulor (${count}) och dela det med det totala antalet kulor i behållaren (${totalItems}).` : `Count the number of ${colorName} marbles (${count}) and divide it by the total number of marbles in the container (${totalItems}).`, latex: `\\frac{\\text{Andel ${colorName}}}{\\text{Totalt antal}}` }
             ],
-            metadata: { variation: 'visual_calc', difficulty: 1 }
+            metadata: { variation_key: 'visual_calc', difficulty: 1 }
         };
     }
 
     // --- LEVEL 2: PARTS OF QUANTITY ---
-    private level2_PartsOfQuantity(lang: string): any {
-        const variation = Math.random();
+    private level2_PartsOfQuantity(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['part_inverse', 'part_compare', 'part_calc']);
 
-        // VARIATION A: Inverse (Find the Whole)
-        if (variation < 0.3) {
-            const denom = MathUtils.randomChoice([3, 4, 5, 6, 8, 10]);
-            const partValue = MathUtils.randomChoice([5, 10, 15, 20, 25, 50, 100]);
+        if (v === 'part_inverse') {
+            const denom = MathUtils.randomChoice([3, 4, 5, 8, 10]);
+            const partValue = MathUtils.randomChoice([5, 10, 20, 25, 50, 100]);
             const total = partValue * denom;
 
             return {
                 renderData: {
                     description: lang === 'sv'
-                        ? `1/${denom} av ett pris är ${partValue} kr. Hur mycket är hela priset?`
-                        : `1/${denom} of a prize is ${partValue} kr. How much is the total prize?`,
+                        ? `Om 1/${denom} av ett totalt belopp motsvarar ${partValue} kr, hur mycket är då hela beloppet värt?`
+                        : `If 1/${denom} of a total amount corresponds to ${partValue} kr, how much is the entire amount worth?`,
                     answerType: 'numeric',
                     suffix: 'kr'
                 },
                 token: this.toBase64(total.toString()),
                 clues: [
                     { 
-                        text: lang==='sv' ? `Om en del är värd ${partValue}, och det finns ${denom} delar totalt, multiplicera för att få helheten.` : `If one part is worth ${partValue}, and there are ${denom} parts total, multiply to get the whole.`,
-                        latex: `${partValue} \\cdot ${denom}` 
+                        text: lang === 'sv' ? `Eftersom en av ${denom} delar är ${partValue} kr, måste vi multiplicera delens värde med antalet delar för att få helheten.` : `Since one of ${denom} parts is ${partValue} kr, we must multiply the part's value by the number of parts to get the whole.`,
+                        latex: `${partValue} \\cdot ${denom} = ${total}` 
                     }
                 ],
-                metadata: { variation: 'part_inverse', difficulty: 2 }
+                metadata: { variation_key: 'part_inverse', difficulty: 2 }
             };
         }
 
-        // VARIATION B: Comparison Check
-        if (variation < 0.6) {
+        if (v === 'part_compare') {
             const d1 = MathUtils.randomInt(2, 5);
             const mult1 = MathUtils.randomInt(2, 6);
             const t1 = d1 * mult1;
@@ -166,64 +191,57 @@ export class FractionBasicsGen {
             const mult2 = MathUtils.randomInt(2, 6);
             const t2 = d2 * mult2;
 
-            if (mult1 === mult2) return this.level2_PartsOfQuantity(lang);
+            if (mult1 === mult2) return this.level2_PartsOfQuantity(lang, v);
 
             const isFirstLarger = mult1 > mult2;
             const winningOpt = isFirstLarger 
                 ? `1/${d1} ${lang==='sv'?'av':'of'} ${t1}`
                 : `1/${d2} ${lang==='sv'?'av':'of'} ${t2}`;
-            
             const losingOpt = isFirstLarger
                 ? `1/${d2} ${lang==='sv'?'av':'of'} ${t2}`
                 : `1/${d1} ${lang==='sv'?'av':'of'} ${t1}`;
 
-            const q = lang === 'sv' ? `Vilket är störst?` : `Which is largest?`;
-
             return {
                 renderData: {
-                    description: q,
+                    description: lang === 'sv' ? "Vilket av alternativen nedan representerar det största värdet?" : "Which of the options below represents the largest value?",
                     answerType: 'multiple_choice',
                     options: MathUtils.shuffle([winningOpt, losingOpt])
                 },
                 token: this.toBase64(winningOpt),
                 clues: [
-                    { text: lang==='sv' ? "Räkna ut värdet för varje alternativ." : "Calculate the value for each option.", latex: `${t1} / ${d1} \\text{ vs } ${t2} / ${d2}` },
-                    { text: lang==='sv' ? "Jämför svaren." : "Compare the answers.", latex: `${mult1} \\text{ vs } ${mult2}` }
+                    { text: lang === 'sv' ? "Beräkna värdet för varje alternativ genom att dela talet med nämnaren." : "Calculate the value for each option by dividing the number by the denominator.", latex: `${t1} / ${d1} = ${mult1} \\quad \\text{vs} \\quad ${t2} / ${d2} = ${mult2}` }
                 ],
-                metadata: { variation: 'part_compare', difficulty: 2 }
+                metadata: { variation_key: 'part_compare', difficulty: 2 }
             };
         }
 
-        // VARIATION C: Standard Calculation
         const denom = MathUtils.randomChoice([3, 4, 5, 6, 8, 10]);
         const mult = MathUtils.randomInt(2, 12);
         const total = denom * mult;
 
         return {
             renderData: {
-                description: lang === 'sv' ? "Beräkna:" : "Calculate:",
+                description: lang === 'sv' ? "Beräkna hur stor del av talet som andelen motsvarar." : "Calculate how large a part of the number the fraction represents.",
                 latex: `\\frac{1}{${denom}} \\text{ ${lang==='sv'?'av':'of'} } ${total}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(mult.toString()),
             clues: [
-                { text: lang==='sv' ? "Dela helheten med nämnaren." : "Divide the whole by the denominator.", latex: `${total} / ${denom}` }
+                { text: lang === 'sv' ? "Dela helheten med nämnaren för att ta reda på vad en del är värd." : "Divide the whole by the denominator to find out what one part is worth.", latex: `\\frac{${total}}{${denom}} = ${mult}` }
             ],
-            metadata: { variation: 'part_calc', difficulty: 1 }
+            metadata: { variation_key: 'part_calc', difficulty: 1 }
         };
     }
 
     // --- LEVEL 3: MIXED & IMPROPER ---
-    private level3_MixedImproper(lang: string): any {
-        const variation = Math.random();
+    private level3_MixedImproper(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['mixed_bounds', 'mixed_missing', 'mixed_convert_imp', 'mixed_convert_mix']);
 
-        // VARIATION A: Bounds Check (True/False)
-        if (variation < 0.3) {
+        if (v === 'mixed_bounds') {
             const w = MathUtils.randomInt(2, 6);
             const den = MathUtils.randomInt(3, 8);
             const num = MathUtils.randomInt(1, den - 1);
             const improper = w * den + num; 
-
             const isGreater = Math.random() > 0.5;
             const compareVal = isGreater ? w : w + 1; 
             
@@ -232,9 +250,9 @@ export class FractionBasicsGen {
 
             return {
                 renderData: {
-                    description: lang==='sv' 
-                        ? `Är detta bråk större än ${compareVal}?` 
-                        : `Is this fraction greater than ${compareVal}?`,
+                    description: lang === 'sv' 
+                        ? `Är bråket nedan större än heltalet ${compareVal}?` 
+                        : `Is the improper fraction below greater than the integer ${compareVal}?`,
                     latex: `\\frac{${improper}}{${den}}`,
                     answerType: 'multiple_choice',
                     options: [correctAnswer, wrongAnswer]
@@ -242,20 +260,16 @@ export class FractionBasicsGen {
                 token: this.toBase64(correctAnswer),
                 clues: [
                     { 
-                        text: lang==='sv' ? `Gör om heltalet ${compareVal} till bråk med nämnare ${den}.` : `Convert the integer ${compareVal} to a fraction with denominator ${den}.`,
-                        latex: `${compareVal} = \\frac{${compareVal*den}}{${den}}`
+                        text: lang === 'sv' ? `Tänk på heltalet ${compareVal} som ett bråk med nämnaren ${den}.` : `Think of the integer ${compareVal} as a fraction with the denominator ${den}.`,
+                        latex: `${compareVal} = \\frac{${compareVal} \\cdot ${den}}{${den}} = \\frac{${compareVal*den}}{${den}}`
                     },
-                    {
-                        text: lang==='sv' ? "Jämför nu täljarna." : "Now compare the numerators.",
-                        latex: `${improper} \\text{ vs } ${compareVal*den}`
-                    }
+                    { text: lang === 'sv' ? `Jämför täljarna för att se vilket bråk som är störst.` : `Compare the numerators to see which fraction is largest.`, latex: `${improper} \\text{ vs } ${compareVal*den}` }
                 ],
-                metadata: { variation: 'mixed_bounds', difficulty: 2 }
+                metadata: { variation_key: 'mixed_bounds', difficulty: 2 }
             };
         }
 
-        // VARIATION B: Missing Part
-        if (variation < 0.6) {
+        if (v === 'mixed_missing') {
             const w = MathUtils.randomInt(1, 5);
             const d = MathUtils.randomInt(3, 9);
             const n = MathUtils.randomInt(1, d - 1);
@@ -263,21 +277,20 @@ export class FractionBasicsGen {
 
             return {
                 renderData: {
-                    description: lang==='sv' ? "Vilket tal saknas?" : "What number is missing?",
+                    description: lang === 'sv' ? "Vilket tal saknas i täljaren för att likheten ska stämma?" : "What number is missing in the numerator for the equality to be correct?",
                     latex: `${w}\\frac{?}{${d}} = \\frac{${imp}}{${d}}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(n.toString()),
                 clues: [
-                    { text: lang==='sv' ? "Multiplicera heltalet med nämnaren och addera täljaren (det saknade talet)." : "Multiply the whole number by the denominator and add the numerator (the missing number).", latex: `${w} \\cdot ${d} + ? = ${imp}` },
-                    { text: lang==='sv' ? "Räkna ut vad som fattas." : "Calculate what is missing.", latex: `${w*d} + ? = ${imp}` }
+                    { text: lang === 'sv' ? `Ett heltal (${w}) motsvarar ${w} gånger nämnaren (${d}) i delar.` : `A whole number (${w}) corresponds to ${w} times the denominator (${d}) in parts.`, latex: `${w} \\cdot ${d} = ${w*d}` },
+                    { text: lang === 'sv' ? `Räkna ut skillnaden mellan totala antalet delar (${imp}) och heltalets delar.` : `Calculate the difference between the total number of parts (${imp}) and the whole number's parts.`, latex: `${imp} - ${w*d} = ${n}` }
                 ],
-                metadata: { variation: 'mixed_missing', difficulty: 2 }
+                metadata: { variation_key: 'mixed_missing', difficulty: 2 }
             };
         }
 
-        // VARIATION C: Standard Conversion
-        const isToImp = Math.random() > 0.5;
+        const isToImp = v === 'mixed_convert_imp' || (v === undefined && Math.random() > 0.5);
         const w = MathUtils.randomInt(1, 6);
         const d = MathUtils.randomInt(3, 9);
         const n = MathUtils.randomInt(1, d - 1);
@@ -286,148 +299,107 @@ export class FractionBasicsGen {
         if (isToImp) {
             return {
                 renderData: {
-                    description: lang==='sv' ? "Skriv i bråkform (osammansatt form):" : "Write as improper fraction:",
+                    description: lang === 'sv' ? "Skriv om det blandade talet till bråkform (osammansatt form)." : "Rewrite the mixed number as an improper fraction.",
                     latex: `${w}\\frac{${n}}{${d}}`,
                     answerType: 'fraction'
                 },
                 token: this.toBase64(`${imp}/${d}`),
                 clues: [
-                    { text: lang==='sv' ? "Multiplicera heltalet med nämnaren och lägg till täljaren." : "Multiply the whole number by the denominator and add the numerator.", latex: `${w} \\cdot ${d} + ${n}` }
+                    { text: lang === 'sv' ? `Multiplicera heltalet (${w}) med nämnaren (${d}) och lägg sedan till täljaren (${n}).` : `Multiply the whole number (${w}) by the denominator (${d}) and then add the numerator (${n}).`, latex: `(${w} \\cdot ${d}) + ${n} = ${imp}` }
                 ],
-                metadata: { variation: 'mixed_convert_imp', difficulty: 2 }
+                metadata: { variation_key: 'mixed_convert_imp', difficulty: 2 }
             };
         } else {
             return {
                 renderData: {
-                    description: lang==='sv' ? "Skriv i blandad form:" : "Write as mixed number:",
+                    description: lang === 'sv' ? "Skriv om från bråkform till blandad form." : "Rewrite the improper fraction as a mixed number.",
                     latex: `\\frac{${imp}}{${d}}`,
                     answerType: 'mixed_fraction'
                 },
                 token: this.toBase64(`${w} ${n}/${d}`),
                 clues: [
-                    { text: lang==='sv' ? "Hur många hela gånger går nämnaren i täljaren?" : "How many whole times does the denominator fit in the numerator?", latex: `${imp} / ${d} = ${w} \\text{ rest } ${n}` }
+                    { text: lang === 'sv' ? `Se hur många hela gånger nämnaren går i täljaren för att få heltalet, och behåll resten som täljare.` : `See how many whole times the denominator fits into the numerator to get the whole number, and keep the remainder as the numerator.`, latex: `${imp} / ${d} = ${w} \\text{ rest } ${n}` }
                 ],
-                metadata: { variation: 'mixed_convert_mix', difficulty: 2 }
+                metadata: { variation_key: 'mixed_convert_mix', difficulty: 2 }
             };
         }
     }
 
     // --- LEVEL 4: SIMPLIFY & EXTEND ---
-    private level4_SimplifyExtend(lang: string): any {
-        const variation = Math.random();
+    private level4_SimplifyExtend(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['simplify_missing', 'simplify_concept', 'simplify_calc']);
 
-        // VARIATION A: Missing Factor (Equivalent Fractions)
-        if (variation < 0.3) {
+        if (v === 'simplify_missing') {
             const baseN = MathUtils.randomInt(1, 5);
             const baseD = MathUtils.randomInt(baseN + 1, 9);
-            const factor = MathUtils.randomInt(2, 6);
-            
-            const targetD = baseD * factor;
-            const targetN = baseN * factor; 
+            const f = MathUtils.randomInt(2, 6);
+            const targetD = baseD * f;
+            const targetN = baseN * f; 
 
             return {
                 renderData: {
-                    description: lang==='sv' ? "Hitta täljaren:" : "Find the numerator:",
+                    description: lang === 'sv' ? "Vilket tal saknas i täljaren för att de två bråken ska ha samma värde (vara likvärdiga)?" : "What number is missing in the numerator for the two fractions to have the same value (be equivalent)?",
                     latex: `\\frac{${baseN}}{${baseD}} = \\frac{?}{${targetD}}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(targetN.toString()),
                 clues: [
-                    { 
-                        text: lang==='sv' ? `Vad multiplicerades nämnaren ${baseD} med för att få ${targetD}?` : `What was the denominator ${baseD} multiplied by to get ${targetD}?`, 
-                        latex: `${baseD} \\cdot ${factor} = ${targetD}` 
-                    },
-                    { 
-                        text: lang==='sv' ? "Gör samma sak med täljaren." : "Do the same to the numerator.", 
-                        latex: `${baseN} \\cdot ${factor}` 
-                    }
+                    { text: lang === 'sv' ? `Börja med att se vad nämnaren har multiplicerats med för att bli ${targetD}.` : `Start by seeing what the denominator has been multiplied by to become ${targetD}.`, latex: `${baseD} \\cdot ${f} = ${targetD}` },
+                    { text: lang === 'sv' ? "Gör nu exakt samma sak med täljaren." : "Now do exactly the same to the numerator.", latex: `${baseN} \\cdot ${f} = ${targetN}` }
                 ],
-                metadata: { variation: 'simplify_missing', difficulty: 3 }
+                metadata: { variation_key: 'simplify_missing', difficulty: 3 }
             };
         }
 
-        // VARIATION B: Concept Check
-        if (variation < 0.6) {
-            const type = MathUtils.randomInt(1, 3);
-            const k = MathUtils.randomInt(2, 10);
-            
-            let q = "";
-            let stmtTrue = "";
-            let stmtFalse = "";
-            let clue = "";
+        if (v === 'simplify_concept') {
+            const k = MathUtils.randomInt(2, 5);
+            const q = lang === 'sv' 
+                ? `Vad händer med ett bråks totala värde om du multiplicerar både täljaren och nämnaren med ${k}?`
+                : `What happens to a fraction's total value if you multiply both the numerator and the denominator by ${k}?`;
+            const ans = lang === 'sv' ? "Värdet förblir detsamma" : "The value stays the same";
+            const wrong = lang === 'sv' ? `Värdet blir ${k} gånger större` : `The value becomes ${k} times larger`;
 
-            if (type === 1) {
-                q = lang === 'sv' 
-                    ? `Vad händer med värdet om du multiplicerar både täljare och nämnare med ${k}?`
-                    : `What happens to the value if you multiply both numerator and denominator by ${k}?`;
-                stmtTrue = lang === 'sv' ? "Värdet är detsamma" : "Value stays the same";
-                stmtFalse = lang === 'sv' ? "Värdet blir större" : "Value gets larger";
-                clue = "1/2 = 2/4 = 3/6";
-            } else if (type === 2) {
-                q = lang === 'sv' 
-                    ? `Vad händer med värdet om du dividerar både täljare och nämnare med ${k}?`
-                    : `What happens to the value if you divide both numerator and denominator by ${k}?`;
-                stmtTrue = lang === 'sv' ? "Värdet är detsamma" : "Value stays the same";
-                stmtFalse = lang === 'sv' ? "Värdet blir mindre" : "Value gets smaller";
-                clue = "4/8 = 1/2";
-            } else {
-                q = lang === 'sv'
-                    ? `Vad händer med värdet om du ENDAST multiplicerar täljaren med ${k}?`
-                    : `What happens to the value if you ONLY multiply the numerator by ${k}?`;
-                stmtTrue = lang === 'sv' ? "Värdet ändras" : "Value changes";
-                stmtFalse = lang === 'sv' ? "Värdet är detsamma" : "Value stays the same";
-                clue = `1/2 \\neq ${k}/2`;
-            }
-            
             return {
                 renderData: {
                     description: q,
                     answerType: 'multiple_choice',
-                    options: MathUtils.shuffle([stmtFalse, stmtTrue])
+                    options: MathUtils.shuffle([ans, wrong, lang==='sv'?"Värdet minskar":"The value decreases"])
                 },
-                token: this.toBase64(stmtTrue),
+                token: this.toBase64(ans),
                 clues: [
-                    { text: lang==='sv' ? "Tänk på ett enkelt bråk som 1/2 och testa." : "Think of a simple fraction like 1/2 and test it.", latex: clue }
+                    { text: lang === 'sv' ? "Att förlänga eller förkorta ett bråk ändrar bara hur många bitar vi ser, men inte den totala andelen." : "Extending or simplifying a fraction only changes how many pieces we see, but not the total share.", latex: "1/2 = 2/4 = 3/6" }
                 ],
-                metadata: { variation: 'simplify_concept', difficulty: 3 }
+                metadata: { variation_key: 'simplify_concept', difficulty: 3 }
             };
         }
 
-        // VARIATION C: Standard Simplify
-        const factor = MathUtils.randomInt(2, 6);
-        const simpN = MathUtils.randomInt(1, 9);
-        const simpD = MathUtils.randomInt(simpN + 1, 15);
-        
-        if (this.gcd(simpN, simpD) !== 1) return this.level4_SimplifyExtend(lang);
-
-        const bigN = simpN * factor;
-        const bigD = simpD * factor;
+        const factor = MathUtils.randomInt(2, 5);
+        const sn = MathUtils.randomInt(1, 5);
+        const sd = MathUtils.randomInt(sn + 1, 10);
+        if (this.gcd(sn, sd) !== 1) return this.level4_SimplifyExtend(lang, v);
 
         return {
             renderData: {
-                description: lang==='sv' ? "Förkorta bråket så långt det går:" : "Simplify the fraction fully:",
-                latex: `\\frac{${bigN}}{${bigD}}`,
+                description: lang === 'sv' ? "Förkorta bråket så långt det går genom att hitta den största gemensamma delaren." : "Simplify the fraction as much as possible by finding the greatest common divisor.",
+                latex: `\\frac{${sn * factor}}{${sd * factor}}`,
                 answerType: 'fraction'
             },
-            token: this.toBase64(`${simpN}/${simpD}`),
+            token: this.toBase64(`${sn}/${sd}`),
             clues: [
-                { text: lang==='sv' ? `Hitta ett tal som både ${bigN} och ${bigD} kan delas med (största gemensamma delare).` : `Find a number that both ${bigN} and ${bigD} can be divided by (GCD).`, latex: `\\text{GCD} = ${factor}` },
-                { text: lang==='sv' ? "Dela både täljare och nämnare med detta tal." : "Divide both numerator and denominator by this number.", latex: `\\div ${factor}` }
+                { text: lang === 'sv' ? `Hitta ett tal som både ${sn*factor} och ${sd*factor} kan delas med. Här kan båda delas med ${factor}.` : `Find a number that both ${sn*factor} and ${sd*factor} can be divided by. Here, both can be divided by ${factor}.`, latex: `\\frac{${sn*factor} / ${factor}}{${sd*factor} / ${factor}} = \\frac{${sn}}{${sd}}` }
             ],
-            metadata: { variation: 'simplify_calc', difficulty: 3 }
+            metadata: { variation_key: 'simplify_calc', difficulty: 3 }
         };
     }
 
     // --- LEVEL 5: DECIMALS ---
-    private level5_Decimals(lang: string): any {
-        const variation = Math.random();
+    private level5_Decimals(lang: string, variationKey?: string): any {
+        const v = variationKey || MathUtils.randomChoice(['decimal_inequality', 'decimal_to_dec', 'decimal_to_frac']);
 
-        // VARIATION A: Inequality Check
-        if (variation < 0.3) {
+        if (v === 'decimal_inequality') {
             const d = MathUtils.randomChoice([2, 4, 5, 10]);
             const n = MathUtils.randomInt(1, d - 1);
             const fracVal = n / d;
-            
             let compareDec = MathUtils.randomFloat(0.1, 0.9, 1);
             if (compareDec === fracVal) compareDec += 0.1;
 
@@ -435,47 +407,40 @@ export class FractionBasicsGen {
             
             return {
                 renderData: {
-                    description: lang==='sv' ? "Välj rätt tecken:" : "Choose the correct sign:",
-                    latex: `\\frac{${n}}{${d}} \\text{ [ ? ] } ${compareDec}`,
+                    description: lang === 'sv' ? "Välj det tecken som gör att påståendet nedan stämmer." : "Choose the sign that makes the statement below correct.",
+                    latex: `\\frac{${n}}{${d}} \\text{ [ ? ] } ${compareDec.toString().replace('.', ',')}`,
                     answerType: 'multiple_choice',
                     options: [">", "<", "="]
                 },
                 token: this.toBase64(correct),
                 clues: [
-                    { text: lang==='sv' ? `Gör om bråket till decimaltal först.` : `Convert the fraction to a decimal first.`, latex: `${n}/${d} = ${fracVal}` },
-                    { text: lang==='sv' ? "Jämför nu decimaltalen." : "Now compare the decimals.", latex: `${fracVal} \\text{ vs } ${compareDec}` }
+                    { text: lang === 'sv' ? `Gör om bråket till ett decimaltal för att kunna jämföra: ${n} delat med ${d}.` : `Convert the fraction to a decimal to be able to compare: ${n} divided by ${d}.`, latex: `\\frac{${n}}{${d}} = ${fracVal}` }
                 ],
-                metadata: { variation: 'decimal_inequality', difficulty: 3 }
+                metadata: { variation_key: 'decimal_inequality', difficulty: 3 }
             };
         }
 
-        // VARIATION B: Standard Translation
-        const benchmarks = [
+        const pairs = [
             { f: "1/2", d: 0.5 }, { f: "1/4", d: 0.25 }, { f: "3/4", d: 0.75 },
-            { f: "1/5", d: 0.2 }, { f: "2/5", d: 0.4 }, { f: "3/5", d: 0.6 }, { f: "4/5", d: 0.8 },
-            { f: "1/10", d: 0.1 }, { f: "3/10", d: 0.3 }, { f: "7/10", d: 0.7 }, { f: "9/10", d: 0.9 }
+            { f: "1/5", d: 0.2 }, { f: "2/5", d: 0.4 }, { f: "4/5", d: 0.8 },
+            { f: "1/10", d: 0.1 }, { f: "7/10", d: 0.7 }
         ];
-        const item = MathUtils.randomChoice(benchmarks);
-        const toDec = Math.random() > 0.5;
+        const pair = MathUtils.randomChoice(pairs);
+        const isToDec = v === 'decimal_to_dec';
 
-        if (toDec) {
-            return {
-                renderData: { description: lang==='sv' ? "Skriv som decimaltal:" : "Write as decimal:", latex: item.f, answerType: 'numeric' },
-                token: this.toBase64(item.d.toString()),
-                clues: [
-                    { text: lang==='sv' ? "Utför divisionen: Täljare delat med nämnare." : "Perform the division: Numerator divided by denominator.", latex: "" }
-                ],
-                metadata: { variation: 'decimal_to_dec', difficulty: 3 }
-            };
-        } else {
-            return {
-                renderData: { description: lang==='sv' ? "Skriv som bråk (enklaste form):" : "Write as fraction (simplest form):", latex: item.d.toString(), answerType: 'fraction' },
-                token: this.toBase64(item.f),
-                clues: [
-                    { text: lang==='sv' ? "Tänk på siffrornas position. Första decimalen är tiondelar, andra är hundradelar." : "Think about place value. First decimal is tenths, second is hundredths.", latex: "" }
-                ],
-                metadata: { variation: 'decimal_to_frac', difficulty: 3 }
-            };
-        }
+        return {
+            renderData: {
+                description: lang === 'sv' 
+                    ? (isToDec ? "Skriv bråket som ett decimaltal." : "Skriv decimaltalet som ett bråk i dess enklaste form.") 
+                    : (isToDec ? "Write the fraction as a decimal number." : "Write the decimal number as a fraction in its simplest form."),
+                latex: isToDec ? pair.f : pair.d.toString().replace('.', ','),
+                answerType: isToDec ? 'numeric' : 'fraction'
+            },
+            token: this.toBase64(isToDec ? pair.d.toString() : pair.f),
+            clues: [
+                { text: lang === 'sv' ? "Kom ihåg positionssystemet. Första decimalen är tiondelar, andra är hundradelar." : "Remember the place value system. The first decimal is tenths, the second is hundredths.", latex: "" }
+            ],
+            metadata: { variation_key: v, difficulty: 3 }
+        };
     }
 }
