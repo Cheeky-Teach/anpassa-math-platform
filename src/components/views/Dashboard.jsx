@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { 
   ChevronDown, 
   ChevronUp, 
+  ChevronRight,
+  Zap,
   Play, 
   Clock, 
   Book, 
@@ -13,7 +15,9 @@ import {
   Calendar,
   Sparkles
 } from 'lucide-react';
-import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
+
+// Using the @ alias to ensure the path is resolved correctly in your Vite environment
+import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
 
 const COLOR_VARIANTS = {
     pink: {
@@ -45,16 +49,16 @@ const Dashboard = ({
     ui, 
     onLgrOpen, 
     onContentOpen,
-    onAboutOpen, // New: Linked to "Om skaparen"
-    onStatsOpen, // New: Future Stats view
-    onStudioOpen, // New: Navigation to Question Studio
-    userRole = 'student', // Defaulting to student
-    assignments = [], // Prop for active assignments
-    recommended = []  // Prop for recommended levels
+    onAboutOpen,
+    onStatsOpen,
+    onStudioOpen,
+    userRole = 'student',
+    assignments = [],
+    recommended = []
 }) => {
-    console.log("Aktuell roll i Dashboard:", userRole);
+    // Defaulting to algebra being expanded for a smooth landing
     const [expandedCategory, setExpandedCategory] = useState('algebra');
-    
+
     const getStyles = (category) => {
         const color = category.color || 'emerald';
         return COLOR_VARIANTS[color] || COLOR_VARIANTS.emerald;
@@ -76,7 +80,6 @@ const Dashboard = ({
                             Dags att bemästra <br/>matematiken.
                         </h1>
                         
-                        {/* Landing Pane for Assignments */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
                             {assignments.length > 0 ? (
                                 <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 hover:bg-white/15 transition-all cursor-pointer group">
@@ -89,7 +92,7 @@ const Dashboard = ({
                             ) : (
                                 <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10">
                                     <h3 className="font-bold flex items-center gap-2 mb-2"><Sparkles size={18}/> Dagens Tips</h3>
-                                    <p className="text-sm text-indigo-100">Repetera "De fyra räknesätten"" för att hålla din streak vid liv!</p>
+                                    <p className="text-sm text-indigo-100">Repetera "Linjära ekvationer" för att hålla din streak vid liv!</p>
                                 </div>
                             )}
 
@@ -113,12 +116,11 @@ const Dashboard = ({
                             </div>
                         </div>
                     </div>
-                    {/* Abstract background shape */}
                     <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
                 </div>
             </header>
 
-            {/* --- TEACHER COMMAND CENTER (Conditional) --- */}
+            {/* --- TEACHER COMMAND CENTER --- */}
             {userRole === 'teacher' && (
                 <section className="mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex items-center gap-3 mb-4 px-4">
@@ -128,7 +130,7 @@ const Dashboard = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mx-4">
                         <button 
                             onClick={onStudioOpen}
-                            className="flex items-center justify-between p-6 bg-slate-900 text-white rounded-[2rem] hover:bg-indigo-600 transition-all shadow-xl group"
+                            className="flex items-center justify-between p-6 bg-slate-900 text-white rounded-[2rem] hover:bg-indigo-600 transition-all shadow-xl group text-left"
                         >
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
@@ -144,7 +146,7 @@ const Dashboard = ({
 
                         <button 
                             onClick={onStatsOpen}
-                            className="flex items-center justify-between p-6 bg-white border border-slate-200 rounded-[2rem] hover:border-indigo-500 transition-all shadow-sm group"
+                            className="flex items-center justify-between p-6 bg-white border border-slate-200 rounded-[2rem] hover:border-indigo-500 transition-all shadow-sm group text-left"
                         >
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
@@ -161,7 +163,7 @@ const Dashboard = ({
                 </section>
             )}
 
-            {/* --- CURRICULUM GRID (Collapsible Cards) --- */}
+            {/* --- CURRICULUM GRID --- */}
             <div className="flex flex-col gap-6 mx-4">
                 <div className="flex items-center gap-3 mb-2">
                     <Book size={18} className="text-slate-400" />
@@ -174,7 +176,6 @@ const Dashboard = ({
                     
                     return (
                         <div key={catKey} className={`bg-white rounded-[2rem] border-2 transition-all duration-500 overflow-hidden ${isExpanded ? `shadow-2xl ${styles.borderSolid}` : 'border-transparent shadow-sm hover:border-slate-200'}`}>
-                            {/* Category Header */}
                             <button 
                                 onClick={() => setExpandedCategory(isExpanded ? null : catKey)}
                                 className={`w-full p-6 flex items-center justify-between text-left ${isExpanded ? styles.bgLight : ''}`}
@@ -191,7 +192,6 @@ const Dashboard = ({
                                 {isExpanded ? <ChevronUp size={24} className="text-slate-400" /> : <ChevronDown size={24} className="text-slate-400" />}
                             </button>
                             
-                            {/* Expandable Topics Content */}
                             <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[2000px] opacity-100 p-6' : 'max-h-0 opacity-0 pointer-events-none'}`}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {category.topics.map(topic => (
@@ -235,7 +235,7 @@ const Dashboard = ({
                     onClick={onStart} 
                     className="px-12 py-5 rounded-full font-black text-xl shadow-[0_20px_50px_rgba(249,115,22,0.4)] bg-orange-500 text-white pointer-events-auto flex items-center gap-4 hover:scale-110 hover:bg-orange-600 active:scale-95 transition-all uppercase tracking-tighter"
                 >
-                    Börja öva <Play fill="currentColor" size={20} />
+                    Starta Träning <Play fill="currentColor" size={20} />
                 </button>
             </div>
 
@@ -244,10 +244,10 @@ const Dashboard = ({
                 <div className="space-y-4">
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Resurser</h4>
                     <div className="flex flex-col gap-2">
-                        <button onClick={onContentOpen} className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
+                        <button onClick={onContentOpen} className="flex items-center justify-center md:justify-start gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
                             <Map size={16} /> Innehållskarta
                         </button>
-                        <button onClick={onLgrOpen} className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
+                        <button onClick={onLgrOpen} className="flex items-center justify-center md:justify-start gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
                             <Book size={16} /> LGR 22 Koppling
                         </button>
                     </div>
@@ -256,15 +256,15 @@ const Dashboard = ({
                 <div className="space-y-4">
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Support</h4>
                     <div className="flex flex-col gap-2">
-                        <button onClick={onAboutOpen} className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
+                        <button onClick={onAboutOpen} className="flex items-center justify-center md:justify-start gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
                             <Info size={16} /> Om skaparen
                         </button>
                     </div>
                 </div>
 
                 <div className="flex flex-col items-center md:items-end justify-center">
-                    <h2 className="text-3xl font-black text-slate-200 tracking-tighter italic">ANPASSA</h2>
-                    <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Rätt stöd. Direkt.</p>
+                    <h2 className="text-3xl font-black text-slate-200 tracking-tighter italic">ANPASSA.io</h2>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Utvecklad för den moderna skolan</p>
                 </div>
             </footer>
         </div>

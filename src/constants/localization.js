@@ -272,8 +272,8 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Hitta Hypotenusan", en: "Find Hypotenuse" },
         3: { sv: "Hitta Kateten", en: "Find Leg" },
         4: { sv: "Problemlösning", en: "Word Problems" },
-        5: { sv: "Avstånd (Koordinater)", en: "Distance (Coordinates)" },
-        6: { sv: "Är den rätvinklig?", en: "Is it Right-Angled?" }
+        5: { sv: "Är den rätvinklig?", en: "Is it Right-Angled?" },
+        6: { sv: "Avstånd (Koordinater)", en: "Distance (Coordinates)" }
     },
     patterns: { 
         1: { sv: "Hitta nästa tal & Skillnad", en: "Next Number & Difference" },

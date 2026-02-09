@@ -20,6 +20,10 @@ import MobileDrawer from './components/practice/MobileDrawer';
 // Data & Constants
 import { UI_TEXT, LEVEL_DESCRIPTIONS } from './constants/localization';
 
+// --- DEBUG TOGGLE ---
+// Change to false when you want to use database-defined roles only
+const DEVELOPER_MODE = true; 
+
 function App() {
     // --- 1. AUTH & PROFILE STATE ---
     const [session, setSession] = useState(null);
@@ -27,6 +31,7 @@ function App() {
     const [loadingProfile, setLoadingProfile] = useState(true);
 
     // --- 2. UI NAVIGATION STATE ---
+    // Explicitly set to dashboard to prevent skipping the landing page
     const [view, setView] = useState('dashboard');
     const [lang, setLang] = useState('sv');
     const [topic, setTopic] = useState('');
@@ -77,6 +82,7 @@ function App() {
 
     // --- EFFECT: AUTH & PROFILE LISTENER ---
     useEffect(() => {
+        // Initial session check
         supabase.auth.getSession().then(({ data: { session } }) => {
             console.log("Initial Session Check:", session?.user?.email || "No session");
             setSession(session);
@@ -84,13 +90,16 @@ function App() {
             else setLoadingProfile(false);
         });
 
+        // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             console.log("Auth Event:", _event, session?.user?.email || "No session");
             setSession(session);
-            if (session) fetchProfile(session.user.id);
-            else {
+            if (session) {
+                fetchProfile(session.user.id);
+            } else {
                 setProfile(null);
                 setLoadingProfile(false);
+                setView('dashboard'); // Reset view on logout
             }
         });
 
@@ -98,63 +107,65 @@ function App() {
     }, []);
 
     const fetchProfile = async (userId) => {
-        if (!userId) return;
+        if (!userId) {
+            setLoadingProfile(false);
+            return;
+        }
         console.log("Fetching profile for:", userId);
         
-        // 1. Try to get existing profile
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
 
-        if (error) {
-            console.warn("Profile fetch issue:", error.message);
-            
-            // PGRST116 means row not found - common for first-time social login
-            if (error.code === 'PGRST116') {
-                console.log("Profile not found in DB, attempting creation...");
+            if (error) {
+                console.warn("Profile fetch issue:", error.message);
                 
-                const { data: authData } = await supabase.auth.getUser();
-                const user = authData?.user;
+                if (error.code === 'PGRST116') {
+                    console.log("Profile not found in DB, attempting creation...");
+                    const { data: authData } = await supabase.auth.getUser();
+                    const user = authData?.user;
 
-                // FIX: Check if user object exists before accessing metadata
-                if (!user) {
-                    console.error("User not found in Auth system during profile creation.");
-                    setLoadingProfile(false);
-                    return;
+                    if (!user) {
+                        console.error("User not found in Auth system.");
+                        return;
+                    }
+                    
+                    const userRole = user.user_metadata?.role || 'student';
+                    const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
+
+                    const { data: newProfile, error: insertError } = await supabase
+                        .from('profiles')
+                        .insert([{ 
+                            id: userId, 
+                            full_name: fullName, 
+                            role: userRole,
+                            alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (insertError) {
+                        console.error("Error creating profile row:", insertError.message);
+                    } else if (newProfile) {
+                        setProfile(newProfile);
+                    }
                 }
-                
-                const userRole = user.user_metadata?.role || 'student';
-                const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
-
-                const { data: newProfile, error: insertError } = await supabase
-                    .from('profiles')
-                    .insert([{ 
-                        id: userId, 
-                        full_name: fullName, 
-                        role: userRole,
-                        alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
-                    }])
-                    .select()
-                    .single();
-                
-                if (insertError) {
-                    console.error("Error creating profile row:", insertError.message);
-                } else if (newProfile) {
-                    console.log("Profile created successfully:", newProfile);
-                    setProfile(newProfile);
-                }
+            } else if (data) {
+                console.log("Profile loaded from DB:", data);
+                setProfile(data);
             }
-        } else if (data) {
-            console.log("Profile loaded from DB:", data);
-            setProfile(data);
+        } catch (err) {
+            console.error("Unexpected error in fetchProfile:", err);
+        } finally {
+            setLoadingProfile(false);
         }
-        setLoadingProfile(false);
     };
 
     const handleLogout = async () => {
-        await supabase.signOut();
+        await supabase.auth.signOut();
         setView('dashboard');
         setStreak(0);
         setProfile(null);
@@ -428,7 +439,7 @@ function App() {
     if (view === 'question_studio') {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col">
-                <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
                     <h1 className="text-xl font-black text-indigo-600 tracking-tighter cursor-pointer" onClick={() => setView('dashboard')}>Anpassa Studio</h1>
                     <button onClick={() => setView('dashboard')} className="text-sm font-bold text-slate-400 hover:text-slate-600 uppercase">Stäng Studio</button>
                 </header>
@@ -459,9 +470,9 @@ function App() {
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">✅ {totalCorrect}</div>
-                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">🔥 {streak}</div>
-                        <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2">Logga ut</button>
+                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-emerald-200">✅ {totalCorrect}</div>
+                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-yellow-200">🔥 {streak}</div>
+                        <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2 transition-colors">Logga ut</button>
                     </div>
                 </div>
             </header>
@@ -472,7 +483,7 @@ function App() {
                         lang={lang} 
                         selectedTopic={topic} 
                         selectedLevel={level} 
-                        userRole={profile?.role} 
+                        userRole={DEVELOPER_MODE ? 'teacher' : (profile?.role || 'student')} 
                         assignments={assignments} 
                         onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
                         onStart={startPractice} 
@@ -502,4 +513,4 @@ function App() {
     );
 }
 
-export default App;
+export default App; 
