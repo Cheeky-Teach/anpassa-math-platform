@@ -80,40 +80,54 @@ function App() {
 
     // --- EFFECT: REFINED AUTH & PROFILE LISTENER ---
     useEffect(() => {
-        // Step 1: Real-time auth listener
-        // This is the most reliable way to handle OAuth redirects in production
+        let mounted = true;
+
+        const initializeAuth = async () => {
+            // Check for current session (cookie)
+            const { data: { session: initialSession } } = await supabase.auth.getSession();
+            
+            if (!mounted) return;
+
+            if (initialSession) {
+                console.log("Cookie session found.");
+                setSession(initialSession);
+                await fetchProfile(initialSession.user.id);
+            } else {
+                // If there is an access_token in the URL hash, we are in the middle of a redirect.
+                // Do NOT set loadingProfile to false yet, wait for the listener event.
+                if (!window.location.hash.includes('access_token')) {
+                    console.log("No session and no OAuth hash found.");
+                    setLoadingProfile(false);
+                }
+            }
+        };
+
+        initializeAuth();
+
+        // Listen for real-time auth events (SIGNED_IN, SIGNED_OUT, etc)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-            console.log("Supabase Auth Event:", event);
+            if (!mounted) return;
+            console.log(`Auth Event: ${event}`);
             
             setSession(currentSession);
             
             if (currentSession) {
-                // Fetch profile only if we don't already have it or if it's a sign-in event
                 await fetchProfile(currentSession.user.id);
             } else {
                 setProfile(null);
                 setLoadingProfile(false);
-                setView('dashboard'); 
+                setView('dashboard');
             }
         });
 
-        // Step 2: Initial check for existing session
-        supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-            if (!initialSession) {
-                setLoadingProfile(false);
-            }
-            // If session exists, onAuthStateChange will usually trigger immediately
-            // or the initialize step inside fetchProfile will handle it.
-        });
-
-        return () => subscription.unsubscribe();
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
     const fetchProfile = async (userId) => {
-        if (!userId) {
-            setLoadingProfile(false);
-            return;
-        }
+        if (!userId) return;
         
         try {
             const { data, error } = await supabase
@@ -124,14 +138,9 @@ function App() {
 
             if (error) {
                 if (error.code === 'PGRST116') {
-                    // Profile missing in DB -> Attempt creation from Auth metadata
-                    const { data: authData } = await supabase.auth.getUser();
-                    const user = authData?.user;
-
-                    if (!user) {
-                        setLoadingProfile(false);
-                        return;
-                    }
+                    // Profile row doesn't exist, create it from auth metadata
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) throw new Error("No user metadata available");
                     
                     const userRole = user.user_metadata?.role || 'student';
                     const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
@@ -147,15 +156,18 @@ function App() {
                         .select()
                         .single();
                     
+                    if (insertError) throw insertError;
                     if (newProfile) setProfile(newProfile);
+                } else {
+                    throw error;
                 }
             } else if (data) {
                 setProfile(data);
             }
         } catch (err) {
-            console.error("Profile sync error:", err);
+            console.error("fetchProfile logic error:", err.message);
         } finally {
-            // CRITICAL: Ensure loading is stopped regardless of path
+            // ALWAYS release the loading screen
             setLoadingProfile(false);
         }
     };
@@ -424,7 +436,6 @@ function App() {
         return <AuthView ui={ui} lang={lang} onGuestMode={() => {}} />;
     }
 
-    // Main View Routing
     if (view === 'donow_config') {
         return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
     }
@@ -439,7 +450,7 @@ function App() {
                     <button onClick={() => setView('dashboard')} className="text-sm font-bold text-slate-400 hover:text-slate-600 uppercase">Stäng Studio</button>
                 </header>
                 <QuestionStudio 
-                    onDoNowGenerate={handleDoNowGenerate} // FIXED: Prop was missing
+                    onDoNowGenerate={handleDoNowGenerate} 
                     ui={ui}
                     lang={lang}
                 />
