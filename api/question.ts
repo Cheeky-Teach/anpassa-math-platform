@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
 
-// IMPORTS: Pointing to ../src/core/generators/ with .js extension for Vercel/ESM
+// IMPORTS: Pointing to ../src/core/generators/ with .js extension for Vercel/ESM compatibility
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen.js';
 import { TenPowersGen } from '../src/core/generators/TenPowersGen.js';
@@ -8,6 +8,7 @@ import { ExponentsGen } from '../src/core/generators/ExponentsGen.js';
 import { PercentGen } from '../src/core/generators/PercentGen.js';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen.js';
 import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
+import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen.js';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
 import { ScaleGen } from '../src/core/generators/ScaleGen.js';
@@ -30,37 +31,55 @@ interface VercelRequest extends IncomingMessage {
 type VercelResponse = ServerResponse & {
     status: (statusCode: number) => VercelResponse;
     json: (data: any) => VercelResponse;
-    send: (data: any) => VercelResponse;
 };
 
-// Instantiate generators
+// Instantiate reusable generators
 const graphGen = new LinearGraphGenerator();
+const basicArithmeticGen = new BasicArithmeticGen();
+const negativeGen = new NegativeNumbersGen();
+const percentGen = new PercentGen();
+const fractionBasicsGen = new FractionBasicsGen();
+const expressionGen = new ExpressionSimplificationGen();
+const equationGen = new LinearEquationGen();
 
+// Generator Registry with ID Aliasing
 const generators: any = {
-    arithmetic: new BasicArithmeticGen(),
-    negative: new NegativeNumbersGen(),
+    // Algebra
+    equation: equationGen,
+    equations: equationGen,
+    simplify: expressionGen,
+    expressions: expressionGen,
+    equations_word: new LinearEquationProblemGen(),
+    patterns: new PatternsGen(),
+    graph: graphGen,
+    linear_graph: graphGen,
+    graphs: graphGen,
+
+    // Arithmetic
+    arithmetic: basicArithmeticGen,
+    basic_arithmetic: basicArithmeticGen,
+    negative: negativeGen,
+    negatives: negativeGen,
     ten_powers: new TenPowersGen(),
     exponents: new ExponentsGen(),
-    percent: new PercentGen(),
-    fraction_basics: new FractionBasicsGen(),
+    percent: percentGen,
+    percents: percentGen,
+    fraction_basics: fractionBasicsGen,
+    fractions_basics: fractionBasicsGen,
     fraction_arith: new FractionArithGen(),
-    simplify: new ExpressionSimplificationGen(),
-    equation: new LinearEquationGen(),
-    
-    // FIX: Map both 'graph' and 'linear_graph' to the same generator
-    graph: graphGen,
-    linear_graph: graphGen, 
 
+    // Geometry
     geometry: new GeometryGenerator(),
-    scale: new ScaleGen(),
-    volume: new VolumeGen(),
-    similarity: new SimilarityGen(),
     pythagoras: new PythagorasGen(),
-    probability: new ProbabilityGen(),
-    statistics: new StatisticsGen(),
-    change_factor: new ChangeFactorGen(),
+    volume: new VolumeGen(),
+    scale: new ScaleGen(),
+    similarity: new SimilarityGen(),
     angles: new AnglesGen(),
-    patterns: new PatternsGen()
+
+    // Data
+    statistics: new StatisticsGen(),
+    probability: new ProbabilityGen(),
+    change_factor: new ChangeFactorGen()
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
@@ -75,31 +94,40 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         return;
     }
 
-    // Handle both GET (query) and POST (body)
     const body = req.body || {};
     const query = req.query || {};
 
-    // Normalize parameters (Frontend uses 'topic', API uses 'category')
+    // Normalize parameters (Supports both body and query string)
     const category = body.category || body.topic || query.category || query.topic;
     const level = body.level || query.level;
+    const variation = query.variation || body.variation; // Crucial for Studio Preview
     const lang = body.lang || query.lang || 'sv';
-
-    // Debug log
-    console.log(`[API] Generating: ${category} Level ${level} (${lang})`);
 
     if (!category) {
         return res.status(400).json({ error: "Missing 'topic' or 'category' parameter" });
     }
 
-    if (!generators[category]) {
+    const generator = generators[category];
+
+    if (!generator) {
         return res.status(400).json({ error: `Generator not found: ${category}` });
     }
 
     try {
-        const question = generators[category].generate(Number(level), String(lang));
+        let question;
+
+        // PREVIEW MODE: If a specific variation is requested
+        if (variation && typeof generator.generateByVariation === 'function') {
+            question = generator.generateByVariation(String(variation), String(lang));
+        } 
+        // STANDARD MODE: Randomly pick based on level
+        else {
+            question = generator.generate(Number(level || 1), String(lang));
+        }
+
         res.status(200).json(question);
     } catch (error) {
-        console.error(`[API] Generation error for ${category}:`, error);
+        console.error(`[API] Question generation error for ${category}:`, error);
         res.status(500).json({ error: 'Generation failed', details: String(error) });
     }
 }
