@@ -235,7 +235,7 @@ const Dashboard = ({
                     onClick={onStart} 
                     className="px-12 py-5 rounded-full font-black text-xl shadow-[0_20px_50px_rgba(249,115,22,0.4)] bg-orange-500 text-white pointer-events-auto flex items-center gap-4 hover:scale-110 hover:bg-orange-600 active:scale-95 transition-all uppercase tracking-tighter"
                 >
-                    Starta Träning <Play fill="currentColor" size={20} />
+                    Börja öva <Play fill="currentColor" size={20} />
                 </button>
             </div>
 
