@@ -21,7 +21,6 @@ import MobileDrawer from './components/practice/MobileDrawer';
 import { UI_TEXT, LEVEL_DESCRIPTIONS } from './constants/localization';
 
 // --- DEBUG TOGGLE ---
-// Change to false when you want to use database-defined roles only
 const DEVELOPER_MODE = true; 
 
 function App() {
@@ -31,7 +30,6 @@ function App() {
     const [loadingProfile, setLoadingProfile] = useState(true);
 
     // --- 2. UI NAVIGATION STATE ---
-    // Explicitly set to dashboard to prevent skipping the landing page
     const [view, setView] = useState('dashboard');
     const [lang, setLang] = useState('sv');
     const [topic, setTopic] = useState('');
@@ -80,27 +78,32 @@ function App() {
 
     const ui = UI_TEXT[lang];
 
-    // --- EFFECT: AUTH & PROFILE LISTENER ---
+    // --- EFFECT: REFINED AUTH & PROFILE LISTENER ---
     useEffect(() => {
-        // Initial session check
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            console.log("Initial Session Check:", session?.user?.email || "No session");
-            setSession(session);
-            if (session) fetchProfile(session.user.id);
-            else setLoadingProfile(false);
-        });
-
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            console.log("Auth Event:", _event, session?.user?.email || "No session");
-            setSession(session);
-            if (session) {
-                fetchProfile(session.user.id);
+        // Step 1: Real-time auth listener
+        // This is the most reliable way to handle OAuth redirects in production
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+            console.log("Supabase Auth Event:", event);
+            
+            setSession(currentSession);
+            
+            if (currentSession) {
+                // Fetch profile only if we don't already have it or if it's a sign-in event
+                await fetchProfile(currentSession.user.id);
             } else {
                 setProfile(null);
                 setLoadingProfile(false);
-                setView('dashboard'); // Reset view on logout
+                setView('dashboard'); 
             }
+        });
+
+        // Step 2: Initial check for existing session
+        supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+            if (!initialSession) {
+                setLoadingProfile(false);
+            }
+            // If session exists, onAuthStateChange will usually trigger immediately
+            // or the initialize step inside fetchProfile will handle it.
         });
 
         return () => subscription.unsubscribe();
@@ -111,7 +114,6 @@ function App() {
             setLoadingProfile(false);
             return;
         }
-        console.log("Fetching profile for:", userId);
         
         try {
             const { data, error } = await supabase
@@ -121,15 +123,13 @@ function App() {
                 .single();
 
             if (error) {
-                console.warn("Profile fetch issue:", error.message);
-                
                 if (error.code === 'PGRST116') {
-                    console.log("Profile not found in DB, attempting creation...");
+                    // Profile missing in DB -> Attempt creation from Auth metadata
                     const { data: authData } = await supabase.auth.getUser();
                     const user = authData?.user;
 
                     if (!user) {
-                        console.error("User not found in Auth system.");
+                        setLoadingProfile(false);
                         return;
                     }
                     
@@ -147,28 +147,21 @@ function App() {
                         .select()
                         .single();
                     
-                    if (insertError) {
-                        console.error("Error creating profile row:", insertError.message);
-                    } else if (newProfile) {
-                        setProfile(newProfile);
-                    }
+                    if (newProfile) setProfile(newProfile);
                 }
             } else if (data) {
-                console.log("Profile loaded from DB:", data);
                 setProfile(data);
             }
         } catch (err) {
-            console.error("Unexpected error in fetchProfile:", err);
+            console.error("Profile sync error:", err);
         } finally {
+            // CRITICAL: Ensure loading is stopped regardless of path
             setLoadingProfile(false);
         }
     };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        setView('dashboard');
-        setStreak(0);
-        setProfile(null);
     };
 
     // --- DATA PERSISTENCE: RECORD PROGRESS ---
@@ -335,7 +328,7 @@ function App() {
     };
 
     const handleSubmit = async (e, directInput) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (showStreakModal || timeUpOpen) return;
         if (feedback === 'correct') return;
         
@@ -382,8 +375,10 @@ function App() {
                 }
                 setFeedback('correct');
             } else {
-                question.attempts = (question.attempts || 0) + 1;
-                if (question.attempts >= 2) {
+                const newAttempts = (question.attempts || 0) + 1;
+                setQuestion({...question, attempts: newAttempts});
+                
+                if (newAttempts >= 2) {
                     if (!isStatsLocked) {
                         setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: true, time: Date.now() }, ...prev]);
                     }
@@ -398,7 +393,7 @@ function App() {
     };
 
     const handleDoNowGenerate = async (selected) => {
-        if (selected.length === 0) return;
+        if (!selected || selected.length === 0) return;
         setDoNowConfig(selected);
         setLoading(true);
         const requests = [];
@@ -429,7 +424,7 @@ function App() {
         return <AuthView ui={ui} lang={lang} onGuestMode={() => {}} />;
     }
 
-    // View Switcher logic for Studio and legacy Do Now
+    // Main View Routing
     if (view === 'donow_config') {
         return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
     }
@@ -443,7 +438,11 @@ function App() {
                     <h1 className="text-xl font-black text-indigo-600 tracking-tighter cursor-pointer" onClick={() => setView('dashboard')}>Anpassa Studio</h1>
                     <button onClick={() => setView('dashboard')} className="text-sm font-bold text-slate-400 hover:text-slate-600 uppercase">Stäng Studio</button>
                 </header>
-                <QuestionStudio />
+                <QuestionStudio 
+                    onDoNowGenerate={handleDoNowGenerate} // FIXED: Prop was missing
+                    ui={ui}
+                    lang={lang}
+                />
             </div>
         );
     }
@@ -513,4 +512,4 @@ function App() {
     );
 }
 
-export default App; 
+export default App;
