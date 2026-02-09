@@ -68,11 +68,11 @@ export const SKILL_BUCKETS = {
       graphs: {
         name: 'Grafer & Funktioner',
         variations: [
-          { key: 'intercept_id', name: 'Hitta m-värde', desc: 'y-axelns skärning' },
+          { key: 'intercept_id', name: 'Hitta m-värde', desc: 'Graf med m-värdet mellan 4 och -4' },
           { key: 'slope_pos_int', name: 'Lutning (k > 0)', desc: 'Stigande linje' },
           { key: 'slope_neg_int', name: 'Lutning (k < 0)', desc: 'Sjunkande linje' },
-          { key: 'eq_standard', name: 'y = kx + m', desc: 'Hela ekvationen' },
-          { key: 'eq_no_m', name: 'y = kx', desc: 'Proportionalitet' }
+          { key: 'eq_standard', name: 'Räta linjens ekvation', desc: 'Grafer till y = kx + m' },
+          { key: 'eq_no_m', name: 'Proportionalitet', desc: 'Grafer till y = kx (inget m-värde)' }
         ]
       }
     }
@@ -87,11 +87,11 @@ export const SKILL_BUCKETS = {
         name: 'De fyra räknesätten',
         variations: [
           { key: 'add_std_vertical', name: 'Addition: Vertikal', desc: 'Uppställning' },
-          { key: 'add_missing_variable', name: 'Addition: Saknat tal', desc: 'a + x = b' },
+          { key: 'add_missing_variable', name: 'Addition: Saknat tal', desc: '10 + x = 12' },
           { key: 'sub_std_vertical', name: 'Subtraktion: Vertikal', desc: 'Växling' },
-          { key: 'sub_missing_variable', name: 'Subtraktion: Saknat tal', desc: 'a - x = b' },
-          { key: 'mult_table_std', name: 'Multiplikationstabell', desc: '2-10' },
-          { key: 'mult_decimal_std', name: 'Decimalmultiplikation', desc: 'Decimalsteg' },
+          { key: 'sub_missing_variable', name: 'Subtraktion: Saknat tal', desc: '30 - x = 20' },
+          { key: 'mult_table_std', name: 'Multiplikationstabell', desc: 'Tal mellan 2 till 9' },
+          { key: 'mult_decimal_std', name: 'Decimalmultiplikation', desc: 'med 1 eller 2 decimalsiffor' },
           { key: 'div_basic_std', name: 'Kort division', desc: 'Standardmetod' }
         ]
       },
@@ -99,9 +99,9 @@ export const SKILL_BUCKETS = {
         name: 'Negativa Tal',
         variations: [
           { key: 'theory_number_line', name: 'Tallinjen', desc: 'Position och hopp' },
-          { key: 'theory_sign_dominance', name: 'Teckendominans', desc: 'Störst absolutbelopp' },
-          { key: 'fluency_double_neg', name: 'Dubbeltecken', desc: '-(-) till +' },
-          { key: 'mult_chain', name: 'Teckenkedjan', desc: '3-5 faktorer' },
+          { key: 'theory_sign_dominance', name: 'Teckendominans', desc: 'Utan att räkna, blir svaret + eller -' },
+          { key: 'fluency_double_neg', name: 'Add/Sub med dubbeltecken', desc: 't. ex.  -(-) till +' },
+          { key: 'mult_chain', name: 'Gånger med neg. tal', desc: 'Mellan 2-5 faktorer' },
           { key: 'div_check_logic', name: 'Bevisa division', desc: 'Via multiplikation' }
         ]
       },

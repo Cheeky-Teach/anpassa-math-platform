@@ -1,14 +1,26 @@
-<!doctype html>
-<html lang="en">
-  <head>
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <!-- 1. Fix Quirks Mode by adding DOCTYPE -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
-    <title>Anpassa | Math Platform</title>
-  </head>
-  <body>
+    
+    <!-- 2. Relaxed CSP for Supabase, Google Auth, and KaTeX CDNs -->
+    <!-- Note: In production, 'unsafe-inline' is often required for React/Tailwind styles -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://apis.google.com;
+        style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;
+        img-src 'self' data: https://*.supabase.co https://lh3.googleusercontent.com;
+        connect-src 'self' https://*.supabase.co https://*.google.com;
+        font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net;
+        frame-src 'self' https://*.supabase.co https://accounts.google.com;
+    ">
+
+    <title>Anpassa - Math Platform</title>
+</head>
+<body class="bg-slate-50">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-  </body>
+</body>
 </html>
