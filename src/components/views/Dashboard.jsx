@@ -263,8 +263,8 @@ const Dashboard = ({
                 </div>
 
                 <div className="flex flex-col items-center md:items-end justify-center">
-                    <h2 className="text-3xl font-black text-slate-200 tracking-tighter italic">ANPASSA.io</h2>
-                    <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Utvecklad för den moderna skolan</p>
+                    <h2 className="text-3xl font-black text-slate-200 tracking-tighter italic">ANPASSA</h2>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Rätt stöd. Direkt.</p>
                 </div>
             </footer>
         </div>
