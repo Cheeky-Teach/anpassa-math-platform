@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  ChevronRight, Plus, Trash2, Layout, Send, Info, Layers, Search, Zap, FileText, Grid3X3, RefreshCcw, Bug, Loader2, Maximize2, CheckCircle2
+  ChevronRight, Plus, Trash2, Layout, Send, Info, Layers, Search, Zap, FileText, Grid3X3, RefreshCcw, Bug, Loader2, Maximize2, CheckCircle2, AlertTriangle, Filter
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 
@@ -16,10 +16,14 @@ import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry.j
 import PatternVisual from '../visuals/PatternComponents.jsx'; 
 import AngleVisual from '../visuals/AngleComponents.jsx'; 
 
-/**
- * REFINED MATH RENDERER
- * Handles mixed text and LaTeX using KaTeX auto-render.
- */
+// --- THEME CONFIGURATION ---
+const CATEGORY_THEMES = {
+  algebra: { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-200', icon: 'bg-indigo-500' },
+  arithmetic: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200', icon: 'bg-emerald-500' },
+  geometry_cat: { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200', icon: 'bg-amber-500' },
+  data: { bg: 'bg-rose-100', text: 'text-rose-700', border: 'border-rose-200', icon: 'bg-rose-500' }
+};
+
 const MathDisplay = ({ content }) => {
     const containerRef = useRef(null);
 
@@ -78,36 +82,73 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
   const [activePreviewKey, setActivePreviewKey] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(null);
 
   useEffect(() => {
     setPreviewData(null);
     setActivePreviewKey(null);
+    setPreviewError(null);
   }, [selectedTopicId]);
 
   const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => 
-    Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name, ...data }))
+    Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name, categoryId: cat.id, ...data }))
   );
 
   const currentTopic = allTopics.find(t => t.id === selectedTopicId) || allTopics[0];
 
+  // --- STRATEGY: SMART GROUPING ---
+  // Groups variations by their prefix (e.g. "Ensteg: Addition" -> Group "Ensteg")
+  const groupedVariations = React.useMemo(() => {
+    if (!currentTopic?.variations) return {};
+    const groups = {};
+    
+    currentTopic.variations.forEach(v => {
+        // Split on colon to find the "Category" prefix
+        const parts = v.name.split(':');
+        // If no colon, put it in 'Allmänt' (General)
+        const groupName = parts.length > 1 ? parts[0].trim() : 'Grundläggande';
+        // The display name is the part after the colon
+        const displayName = parts.length > 1 ? parts.slice(1).join(':').trim() : v.name;
+        
+        if (!groups[groupName]) groups[groupName] = [];
+        groups[groupName].push({ ...v, displayName });
+    });
+    
+    return groups;
+  }, [currentTopic]);
+
   const triggerPreview = async (variationKey) => {
     setIsPreviewLoading(true);
     setActivePreviewKey(variationKey);
+    setPreviewError(null);
+    setPreviewData(null); 
+
     try {
         const currentLang = lang || 'sv';
         const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variationKey}&lang=${currentLang}`);
+        
+        if (!res.ok) {
+            throw new Error(`Server returned ${res.status}`);
+        }
+
         const data = await res.json();
+        
+        if (!data || !data.renderData) {
+            console.error("Invalid data format received:", data);
+            throw new Error("Invalid data format from generator");
+        }
+
         setPreviewData(data);
     } catch (err) {
         console.error("Preview failed:", err);
-        setPreviewData(null);
+        setPreviewError(err.message || "Kunde inte ladda förhandsgranskning");
     } finally {
         setIsPreviewLoading(false);
     }
   };
 
   const addToPacket = (variation) => {
-    if (setupMode === 'donow' && packet.length >= 6) return; // Allow up to 6 for the grid
+    if (setupMode === 'donow' && packet.length >= 6) return; 
     setPacket([...packet, {
       id: crypto.randomUUID(),
       topicId: selectedTopicId,
@@ -119,11 +160,6 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
 
   const removeFromPacket = (id) => setPacket(packet.filter(p => p.id !== id));
 
-  /**
-   * FIXED FINAL ACTION LOGIC
-   * Maps the packet to a configuration that batch.ts understands,
-   * ensuring variation keys and correct levels are preserved.
-   */
   const handleFinalAction = () => {
     if (typeof onDoNowGenerate !== 'function') {
         console.error("Critical: onDoNowGenerate prop is missing from App.jsx");
@@ -132,14 +168,13 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
 
     if (setupMode === 'donow') {
       const config = packet.map(p => {
-          // Extract level number from variation key (e.g., "geom_level3" -> 3)
           const levelMatch = p.variationKey.match(/\d+/);
           const extractedLevel = levelMatch ? parseInt(levelMatch[0]) : 1;
 
           return {
             topic: p.topicId,
             level: extractedLevel, 
-            variation: p.variationKey // Sending the actual variation string
+            variation: p.variationKey 
           };
       });
       onDoNowGenerate(config);
@@ -162,8 +197,16 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
       case 'volume': return <div className={scaleWrapper}><VolumeVisualization data={data} /></div>;
       case 'angle': return <div className={scaleWrapper}><AngleVisual data={data} /></div>;
       case 'pattern': return <div className="scale-75 origin-top my-1"><PatternVisual data={data} /></div>;
+      case 'composite': return <div className="flex justify-center w-full py-1"><CompositeVisual data={data} /></div>;
+      case 'similarity_compare': return <div className={scaleWrapper}><SimilarityCompare data={data} /></div>;
+      case 'percent_grid': return <div className={scaleWrapper}><PercentGrid data={data} /></div>;
+      case 'probability_marbles': return <div className={scaleWrapper}><ProbabilityMarbles data={data} /></div>;
+      case 'probability_spinner': return <div className={scaleWrapper}><ProbabilitySpinner data={data} /></div>;
+      case 'probability_tree': return <div className={scaleWrapper}><ProbabilityTree data={data} /></div>;
+
       case 'rectangle': case 'square': case 'parallelogram': 
       case 'triangle': case 'circle': case 'semicircle': case 'quarter_circle':
+      case 'cylinder': case 'cone': case 'sphere': 
         return (
           <div className="flex justify-center w-full py-1">
             <svg width="240" height="180" viewBox="0 0 300 250" className="drop-shadow-sm overflow-visible">
@@ -205,7 +248,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
   return (
     <div className="flex h-[calc(100vh-64px)] bg-slate-100 overflow-hidden font-sans text-slate-900">
       
-      {/* PANE 1: SIDEBAR (LIBRARY) */}
+      {/* PANE 1: SIDEBAR - IMPROVED CATEGORY HEADERS */}
       <div className="w-90 bg-white border-r border-slate-200 flex flex-col shadow-sm shrink-0 font-medium">
         <div className="p-6 border-b border-slate-100 space-y-4">
           <div className="flex items-center justify-between">
@@ -225,19 +268,27 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
           {Object.values(SKILL_BUCKETS).map(cat => {
             const catTopics = Object.entries(cat.topics).filter(([id]) => filteredTopics.some(ft => ft.id === id));
             if (catTopics.length === 0) return null;
+            
+            // UX IMPROVEMENT: Color-coded headers
+            const theme = CATEGORY_THEMES[cat.id] || CATEGORY_THEMES['algebra'];
+            
             return (
               <div key={cat.id}>
-                <h3 className="px-3 text-xs font-black text-slate-400 uppercase mb-3 italic tracking-wider">{cat.name}</h3>
-                <div className="space-y-1.5">
+                {/* Colored Category Badge */}
+                <div className={`inline-block px-3 py-1 rounded-lg mb-3 ${theme.bg} ${theme.text} border ${theme.border}`}>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest">{cat.name}</h3>
+                </div>
+                
+                <div className="space-y-1.5 pl-1">
                   {catTopics.map(([id, data]) => (
                     <button
                       key={id} onClick={() => setSelectedTopicId(id)}
-                      className={`w-full text-left px-4 py-3 text-[17px] rounded-2xl transition-all flex items-center justify-between group ${
-                        selectedTopicId === id ? 'bg-indigo-600 text-white shadow-xl font-bold' : 'text-slate-600 hover:bg-slate-50'
+                      className={`w-full text-left px-4 py-3 text-[15px] rounded-2xl transition-all flex items-center justify-between group ${
+                        selectedTopicId === id ? 'bg-slate-900 text-white shadow-xl font-bold' : 'text-slate-600 hover:bg-slate-50'
                       }`}
                     >
                       <span className="truncate">{data.name}</span>
-                      <ChevronRight size={18} className={selectedTopicId === id ? 'opacity-100' : 'opacity-20'} />
+                      <ChevronRight size={16} className={selectedTopicId === id ? 'opacity-100' : 'opacity-20'} />
                     </button>
                   ))}
                 </div>
@@ -247,31 +298,50 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
         </div>
       </div>
 
-      {/* PANE 2: VARIATIONS */}
+      {/* PANE 2: VARIATIONS - IMPROVED GROUPING */}
       <div className="w-[420px] bg-slate-50 border-r border-slate-200 flex flex-col overflow-hidden shrink-0">
-        <div className="p-6 border-b border-slate-200 bg-white shrink-0">
-            <h1 className="text-l font-black text-slate-900 uppercase truncate italic tracking-tight">{currentTopic?.name}</h1>
-            <p className="text-s text-slate-400 font-bold uppercase tracking-widest mt-1">Klicka för att förhandsgranska</p>
+        <div className="p-6 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
+            <h1 className="text-lg font-black text-slate-900 uppercase truncate italic tracking-tight">{currentTopic?.name}</h1>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
+                {Object.keys(groupedVariations).length} Sektioner • {currentTopic?.variations.length} Varianter
+            </p>
         </div>
-        <div className="flex-1 overflow-y-auto p-6 space-y-5 shadow-inner custom-scrollbar">
-            {currentTopic?.variations.map(v => (
-                <div 
-                    key={v.key} onClick={() => triggerPreview(v.key)}
-                    className={`p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer relative group ${
-                        activePreviewKey === v.key ? 'border-indigo-500 bg-white shadow-xl ring-4 ring-indigo-50' : 'border-white bg-white hover:border-indigo-100 shadow-sm'
-                    }`}
-                >
-                    <div className="flex justify-between items-start gap-6">
-                        <div className="min-w-0">
-                            <h4 className="font-black text-slate-800 text-[18px] uppercase leading-tight group-hover:text-indigo-600 transition-colors tracking-tight italic">{v.name}</h4>
-                            <p className="text-[15px] text-slate-500 mt-2.5 leading-relaxed font-medium">{v.desc}</p>
-                        </div>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); addToPacket(v); }}
-                            className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-indigo-600 transition-all shadow-xl group-hover:scale-110 active:scale-90 shrink-0"
-                        >
-                            <Plus size={24} strokeWidth={3} />
-                        </button>
+        
+        <div className="flex-1 overflow-y-auto p-6 space-y-8 shadow-inner custom-scrollbar relative">
+            {Object.entries(groupedVariations).map(([groupName, variations]) => (
+                <div key={groupName} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {/* Sticky-ish Group Header */}
+                    <div className="flex items-center gap-3 mb-4 sticky top-0 bg-slate-50/95 backdrop-blur-sm py-2 z-10">
+                        <div className="h-px flex-1 bg-slate-300"></div>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-200/50 px-2 py-1 rounded">{groupName}</span>
+                        <div className="h-px flex-1 bg-slate-300"></div>
+                    </div>
+
+                    <div className="space-y-3">
+                        {variations.map(v => (
+                            <div 
+                                key={v.key} onClick={() => triggerPreview(v.key)}
+                                className={`p-5 rounded-[2rem] border-2 transition-all cursor-pointer relative group ${
+                                    activePreviewKey === v.key ? 'border-indigo-500 bg-white shadow-xl ring-2 ring-indigo-100' : 'border-white bg-white hover:border-indigo-200 shadow-sm'
+                                }`}
+                            >
+                                <div className="flex justify-between items-start gap-4">
+                                    <div className="min-w-0">
+                                        <h4 className={`font-bold text-[15px] leading-tight transition-colors ${activePreviewKey === v.key ? 'text-indigo-700' : 'text-slate-700'}`}>
+                                            {/* Show only the subtask name if we grouped it, otherwise full name */}
+                                            {v.displayName}
+                                        </h4>
+                                        <p className="text-[13px] text-slate-400 mt-1.5 leading-relaxed font-medium line-clamp-2">{v.desc}</p>
+                                    </div>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); addToPacket(v); }}
+                                        className="p-2.5 bg-slate-100 text-slate-400 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm group-hover:scale-105 active:scale-90 shrink-0"
+                                    >
+                                        <Plus size={20} strokeWidth={3} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             ))}
@@ -286,7 +356,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
                     <div className={`w-2.5 h-2.5 rounded-full ${isPreviewLoading ? 'bg-yellow-400 animate-spin' : 'bg-red-500 animate-pulse'}`} />
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Tavlan</span>
                 </div>
-                {activePreviewKey && (
+                {activePreviewKey && !previewError && (
                     <button 
                         onClick={() => triggerPreview(activePreviewKey)} disabled={isPreviewLoading}
                         className="text-[10px] bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full font-black uppercase transition-all flex items-center gap-2"
@@ -303,7 +373,13 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
                     </div>
                 )}
                 
-                {!previewData ? (
+                {previewError ? (
+                    <div className="text-red-400 flex flex-col items-center gap-4">
+                        <AlertTriangle size={60} />
+                        <p className="font-bold">{previewError}</p>
+                        <p className="text-sm opacity-75">Kontrollera att backend-generatorn är korrekt kopplad.</p>
+                    </div>
+                ) : !previewData ? (
                     <div className="text-slate-300 flex flex-col items-center gap-4 grayscale opacity-20">
                         <Maximize2 size={80} strokeWidth={0.5} />
                         <p className="text-sm font-black uppercase tracking-widest leading-relaxed">Välj variation för att förhandsgranska</p>
@@ -314,40 +390,44 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
                              {renderVisual()}
                         </div>
 
-                        <div className="text-xl text-slate-800 font-bold tracking-tight px-6 leading-relaxed">
-                            <MathDisplay content={previewData.renderData.description} />
-                        </div>
-                        
-                        {previewData.renderData.latex && (
-                            <div className="text-2xl font-serif text-indigo-600 py-6 px-4 bg-indigo-50/50 rounded-3xl border border-indigo-100 shadow-inner overflow-x-auto mx-6">
-                                <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
-                            </div>
-                        )}
-
-                        {previewData.renderData.options && previewData.renderData.options.length > 0 && (
-                            <div className="grid grid-cols-2 gap-3 px-6 mt-6">
-                                {previewData.renderData.options.map((opt, idx) => (
-                                    <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-4 text-left shadow-sm">
-                                        <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[12px] font-black text-slate-400 shrink-0">
-                                            {String.fromCharCode(65 + idx)}
-                                        </div>
-                                        <div className="text-sm font-semibold text-slate-700">
-                                            <MathDisplay content={opt} />
-                                        </div>
+                        {previewData.renderData && (
+                            <>
+                                <div className="text-xl text-slate-800 font-bold tracking-tight px-6 leading-relaxed">
+                                    <MathDisplay content={previewData.renderData.description} />
+                                </div>
+                                
+                                {previewData.renderData.latex && (
+                                    <div className="text-2xl font-serif text-indigo-600 py-6 px-4 bg-indigo-50/50 rounded-3xl border border-indigo-100 shadow-inner overflow-x-auto mx-6">
+                                        <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
                                     </div>
-                                ))}
-                            </div>
+                                )}
+
+                                {previewData.renderData.options && previewData.renderData.options.length > 0 && (
+                                    <div className="grid grid-cols-2 gap-3 px-6 mt-6">
+                                        {previewData.renderData.options.map((opt, idx) => (
+                                            <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-4 text-left shadow-sm">
+                                                <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[12px] font-black text-slate-400 shrink-0">
+                                                    {String.fromCharCode(65 + idx)}
+                                                </div>
+                                                <div className="text-sm font-semibold text-slate-700">
+                                                    <MathDisplay content={opt} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                
+                                <div className="pt-8 border-t border-slate-100 text-left px-8 mx-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Info size={16} className="text-indigo-500" />
+                                        <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Ledtråd</h5>
+                                    </div>
+                                    <p className="text-base text-slate-500 italic leading-relaxed font-medium">
+                                        <MathDisplay content={previewData.clues?.[0]?.text || "Ingen ledtråd tillgänglig."} />
+                                    </p>
+                                </div>
+                            </>
                         )}
-                        
-                        <div className="pt-8 border-t border-slate-100 text-left px-8 mx-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Info size={16} className="text-indigo-500" />
-                                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Ledtråd</h5>
-                            </div>
-                            <p className="text-base text-slate-500 italic leading-relaxed font-medium">
-                                <MathDisplay content={previewData.clues?.[0]?.text || "Ingen ledtråd tillgänglig."} />
-                            </p>
-                        </div>
                     </div>
                 )}
             </div>
