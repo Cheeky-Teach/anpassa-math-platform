@@ -317,7 +317,9 @@ export const SKILL_BUCKETS = {
           { key: 'area_quarter', name: 'Kvartscirkel: Area', desc: 'Fjärdedels area' },
           { key: 'perimeter_quarter', name: 'Kvartscirkel: Omkrets', desc: 'Båge + Radier' },
           { key: 'perimeter_house', name: 'Omkrets: Hus', desc: 'Avancerad (Tak)' },
-          { key: 'perimeter_portal', name: 'Omkrets: Portal', desc: 'Väggar + Båge' }
+          { key: 'perimeter_portal', name: 'Omkrets: Portal', desc: 'Väggar + Båge' },
+          { key: 'area_house', name: 'Area: Hus', desc: 'Rektangel + Triangel (Avancerad)' },
+          { key: 'area_portal', name: 'Area: Portal', desc: 'Rektangel + Halvcirkel' }
         ]
       },
       angles: {
@@ -390,7 +392,7 @@ export const SKILL_BUCKETS = {
         ]
       },
       volume: {
-        name: 'Volym & Area',
+        name: 'Volym & Begränsningsyta',
         variations: [
           { key: 'vol_cuboid_std', name: 'Volym: Rätblock', desc: 'b * d * h' },
           { key: 'vol_cuboid_inverse', name: 'Rätblock: Hitta sida', desc: 'Volym / Area' },
@@ -433,14 +435,14 @@ export const SKILL_BUCKETS = {
           { key: 'find_range', name: 'Variationsbredd', desc: 'Max - Min' },
           { key: 'find_outlier', name: 'Hitta extremvärde', desc: 'Avvikande data' },
           { key: 'mean_target_score', name: 'Mål-medelvärde', desc: 'Vad krävs på provet?' },
-          { key: 'mean_missing_value', name: 'Medelvärde: Hitta tal', desc: 'Beräkna talet med hjälp av medelvärdet' },
+          { key: 'mean_missing_value', name: 'Hitta saknat tal', desc: 'Givet medelvärde' },
           { key: 'median_missing_value', name: 'Median-pussel', desc: 'Logiskt tänkande' },
           { key: 'freq_table_mode', name: 'Tabell: Typvärde', desc: 'Högst frekvens' },
           { key: 'freq_table_range', name: 'Tabell: Bredd', desc: 'Max - Min obs' },
           { key: 'freq_table_mean', name: 'Tabell: Medelvärde', desc: 'Summa(f*x) / n' },
-          { key: 'freq_table_median', name: 'Tabell: Median', desc: 'Median utifrån frekvenstabell' },
-          { key: 'real_measure_choice', name: 'Vilket lägesmått', desc: 'Median vs medelvärde' },
-          { key: 'real_outlier_shift', name: 'Effekt av extremvärde', desc: 'Påverkan på medelvärdet' }
+          { key: 'freq_table_median', name: 'Tabell: Median', desc: 'Hitta mittenposition' },
+          { key: 'real_measure_choice', name: 'Välj Lägesmått', desc: 'Medel vs Median' },
+          { key: 'real_outlier_shift', name: 'Effekt av extremvärde', desc: 'Påverkan på medel' }
         ]
       },
       probability: {

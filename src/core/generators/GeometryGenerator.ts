@@ -55,6 +55,8 @@ export class GeometryGenerator {
             
             case 'perimeter_house':
             case 'perimeter_portal':
+            case 'area_house':
+            case 'area_portal':
                 return this.level6_CompositeAdvanced(lang, key);
 
             default:
@@ -367,9 +369,54 @@ export class GeometryGenerator {
 
     // --- LEVEL 6: COMPOSITE ADVANCED ---
     private level6_CompositeAdvanced(lang: string, variationKey?: string): any {
-        const v = variationKey || MathUtils.randomChoice(['perimeter_house', 'perimeter_portal']);
+        const v = variationKey || MathUtils.randomChoice(['perimeter_house', 'perimeter_portal', 'area_house', 'area_portal']);
         const w = 60, h = 40;
 
+        // 1. AREA: HOUSE
+        if (v === 'area_house') {
+            const hr = 30; // Roof height
+            const areaSquare = w * h;
+            const areaRoof = (w * hr) / 2;
+            const total = areaSquare + areaRoof;
+            
+            return {
+                renderData: {
+                    geometry: { type: 'composite', subtype: 'house', labels: { w, h, h_roof: hr } },
+                    description: lang === 'sv' ? "Beräkna husets totala area (kvadraten + taket)." : "Calculate the total area of the house (square + roof).",
+                    answerType: 'numeric', suffix: 'cm²' 
+                },
+                token: this.toBase64(total.toString()),
+                clues: [
+                    { text: lang === 'sv' ? "Dela upp figuren i en rektangel och en triangel." : "Split the figure into a rectangle and a triangle.", latex: "" },
+                    { text: lang === 'sv' ? `Rektangel: ${w} $\\cdot$ ${h}. Triangel: (${w} $\\cdot$ ${hr}) / 2.` : `Rectangle: ${w} $\\cdot$ ${h}. Triangle: (${w} $\\cdot$ ${hr}) / 2.`, latex: `${areaSquare} + ${areaRoof} = ${total}` }
+                ],
+                metadata: { variation_key: 'area_house', difficulty: 4 }
+            };
+        }
+
+        // 2. AREA: PORTAL
+        if (v === 'area_portal') {
+            const r = w / 2;
+            const areaRect = w * h;
+            const areaSemi = (3.14 * r * r) / 2;
+            const total = Math.round((areaRect + areaSemi) * 10) / 10;
+
+            return {
+                renderData: {
+                    geometry: { type: 'composite', subtype: 'portal', labels: { w, h } },
+                    description: lang === 'sv' ? "Beräkna portalens totala area (rektangeln + halvcirkeln)." : "Calculate the total area of the portal (rectangle + semicircle).",
+                    answerType: 'numeric', suffix: 'cm²'
+                },
+                token: this.toBase64(total.toString()),
+                clues: [
+                    { text: lang === 'sv' ? "Beräkna rektangelns area och halvcirkelns area var för sig." : "Calculate the rectangle's area and the semicircle's area separately.", latex: "" },
+                    { text: lang === 'sv' ? `Rektangel: ${w} $\\cdot$ ${h}. Halvcirkel: (3,14 $\\cdot$ ${r}^2) / 2.` : `Rectangle: ${w} $\\cdot$ ${h}. Semicircle: (3.14 $\\cdot$ ${r}^2) / 2.`, latex: "" }
+                ],
+                metadata: { variation_key: 'area_portal', difficulty: 4 }
+            };
+        }
+
+        // 3. PERIMETER: HOUSE
         if (v === 'perimeter_house') {
             const hr = 30;
             const slope = Math.sqrt((w/2)**2 + hr**2);
@@ -389,6 +436,7 @@ export class GeometryGenerator {
             };
         }
 
+        // 4. PERIMETER: PORTAL
         const r = w / 2;
         const arc = 3.14 * r;
         const ans = Math.round((w + 2*h + arc) * 10) / 10;
