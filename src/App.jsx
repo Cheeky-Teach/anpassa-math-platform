@@ -72,6 +72,9 @@ function App() {
     const [assignments, setAssignments] = useState([]); 
     const [doNowQuestions, setDoNowQuestions] = useState([]);
     const [doNowConfig, setDoNowConfig] = useState([]); 
+    
+    // NEW: State to persist the Question Studio cart (packet)
+    const [savedPacket, setSavedPacket] = useState([]); 
 
     // --- 7. TIMER STATE ---
     const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
@@ -380,15 +383,18 @@ function App() {
         } catch (e) { console.error(e); }
     };
 
-    // --- BATCH GENERATION (DO NOW) ---
-    // FIXED: Aligned with batch.ts parameters (requests vs config)
-    const handleDoNowGenerate = async (selected) => {
+    // --- DO NOW GENERATION ---
+    // UPDATED: Now accepts rawPacket to save the studio state
+    const handleDoNowGenerate = async (selected, rawPacket) => {
         if (!selected || selected.length === 0) return;
+        
         setDoNowConfig(selected);
+        // Save the raw packet for when we return to the studio
+        if (rawPacket) setSavedPacket(rawPacket); 
+        
         setLoading(true);
         
         const requestsPayload = [];
-        
         for (let i = 0; i < 6; i++) {
             const selection = selected[i % selected.length];
             requestsPayload.push({ 
@@ -403,7 +409,6 @@ function App() {
             const res = await fetch('/api/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // FIX: Sending 'requests' matches your batch.ts
                 body: JSON.stringify({ requests: requestsPayload }) 
             });
             
@@ -411,12 +416,11 @@ function App() {
             
             const data = await res.json();
             
-            // FIX: Your batch.ts returns the array directly, NOT inside a { data: ... } wrapper
             if (Array.isArray(data)) {
                 setDoNowQuestions(data);
                 setView('donow_grid');
             } else {
-                console.error("Batch response format invalid (expected array):", data);
+                console.error("Batch response format invalid:", data);
             }
         } catch (e) { 
             console.error("Do Now Error:", e); 
@@ -442,9 +446,21 @@ function App() {
     if (view === 'donow_config') {
         return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
     }
+    
+    // UPDATED: Pass callback to return to studio, and close to dashboard
     if (view === 'donow_grid') {
-        return <DoNowGrid questions={doNowQuestions} ui={ui} onBack={() => setView('dashboard')} lang={lang} onRefreshAll={() => handleDoNowGenerate(doNowConfig)} onRefreshOne={(i, t, l) => {}} />;
+        return (
+            <DoNowGrid 
+                questions={doNowQuestions} 
+                ui={ui} 
+                lang={lang} 
+                onBack={() => setView('question_studio')} // Back returns to Studio to edit packet
+                onClose={() => setView('dashboard')}      // Close returns to Dashboard
+                onRefreshAll={() => handleDoNowGenerate(doNowConfig, null)} 
+            />
+        );
     }
+    
     if (view === 'question_studio') {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -456,6 +472,7 @@ function App() {
                     onDoNowGenerate={handleDoNowGenerate} 
                     ui={ui}
                     lang={lang}
+                    initialPacket={savedPacket} // Pass the saved state back in
                 />
             </div>
         );

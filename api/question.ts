@@ -33,79 +33,72 @@ type VercelResponse = ServerResponse & {
 };
 
 // --- ADAPTER: LEGACY FRACTIONS GENERATOR ---
-// Combines Basics (L1-5) and Arithmetic (L6-10) into one unified topic for Practice Mode.
+// Fallback if the generic 'fractions' key is used (e.g. from old links or history)
 class LegacyFractionsGen {
     public generate(level: number, lang: string = 'sv'): any {
-        // Levels 1-5: Basics (Visuals, parts, mixed numbers)
-        if (level <= 5) {
-            return new FractionBasicsGen().generate(level, lang);
-        } 
-        // Levels 6+: Arithmetic (Add, Sub, Mult, Div)
-        // We map Level 6 -> Arith Level 1, Level 7 -> Arith Level 2, etc.
-        else {
-            const arithLevel = level - 5;
-            return new FractionArithGen().generate(arithLevel, lang);
-        }
+        if (level <= 5) return new FractionBasicsGen().generate(level, lang);
+        return new FractionArithGen().generate(level - 5, lang);
     }
-
-    // Required by interface, though mostly unused by legacy views
     public generateByVariation(key: string, lang: string): any {
-         // Fallback: Check Basics first, then Arith
-         try {
-             return new FractionBasicsGen().generateByVariation(key, lang);
-         } catch {
-             return new FractionArithGen().generateByVariation(key, lang);
-         }
+         try { return new FractionBasicsGen().generateByVariation(key, lang); } 
+         catch { return new FractionArithGen().generateByVariation(key, lang); }
     }
 }
 
 // --- UNIFIED TOPIC MAP ---
+// Maps ALL keys (Dashboard, Studio, and Legacy) to the correct Generator Class
 const TopicMap: Record<string, any> = {
-  // === STUDIO SPECIFIC KEYS (From skillBuckets.js) ===
-  'equations': LinearEquationGen,
-  'equations_word': LinearEquationGen,
-  'expressions': ExpressionSimplificationGen,
-  'patterns': PatternsGen,
-  'graphs': LinearGraphGenerator,
-  'basic_arithmetic': BasicArithmeticGen,
-  'negatives': NegativeNumbersGen,
-  'fractions_basics': FractionBasicsGen,
-  'fractions_arith': FractionArithGen,
-  'percent': PercentGen,
-  'change_factor': ChangeFactorGen,
-  'exponents': ExponentsGen,
-  'ten_powers': TenPowersGen,
-  'geometry': GeometryGenerator,
-  'angles': AnglesGen,
-  'pythagoras': PythagorasGen,
-  'scale': ScaleGen,
-  'similarity': SimilarityGen,
-  'volume': VolumeGen,
-  'statistics': StatisticsGen,
-  'probability': ProbabilityGen,
+  // 1. ARITHMETIC
+  'basic_arithmetic': BasicArithmeticGen, // Studio Key
+  'arithmetic': BasicArithmeticGen,       // Dashboard Key
+  
+  'negatives': NegativeNumbersGen,        // Studio Key
+  'negative': NegativeNumbersGen,         // Dashboard Key
+  
+  'fraction_basics': FractionBasicsGen,   // Shared Key
+  'fraction_arith': FractionArithGen,     // Shared Key
+  'fractions': LegacyFractionsGen,        // Legacy Fallback
+  
+  'percent': PercentGen,                  // Shared Key
+  'percentages': PercentGen,              // Common Alias
+  'ten_powers': TenPowersGen,             // Shared Key
+  'exponents': ExponentsGen,              // Shared Key
 
-  // === LEGACY / PRACTICE VIEW ALIASES ===
-  'algebra': LinearEquationGen,           
-  'linear-equations': LinearEquationGen,
+  // 2. ALGEBRA
+  'expressions': ExpressionSimplificationGen, // Studio Key
+  'simplify': ExpressionSimplificationGen,    // Dashboard Key
   
-  'arithmetic': BasicArithmeticGen,
+  'equations': LinearEquationGen,             // Shared Key
+  'linear-equations': LinearEquationGen,      // Legacy Alias
+  'equations_word': LinearEquationGen,        // Studio Internal
+  'algebra': LinearEquationGen,               // Dashboard "Algebra" Fallback
   
-  // FIX: Map 'fractions' to the composite class
-  'fractions': LegacyFractionsGen,          
+  'patterns': PatternsGen,                    // Shared Key
+  'graphs': LinearGraphGenerator,             // Shared Key
+  'change_factor': ChangeFactorGen,           // Studio Key
+
+  // 3. GEOMETRY
+  'geometry': GeometryGenerator,          // Shared Key
+  'geometry_cat': GeometryGenerator,      // Studio Category Fallback
   
-  'percentages': PercentGen,
-  'data': StatisticsGen,
-  'geometry_cat': GeometryGenerator
+  'angles': AnglesGen,                    // Shared Key
+  'volume': VolumeGen,                    // Shared Key
+  'similarity': SimilarityGen,            // Shared Key
+  'pythagoras': PythagorasGen,            // Shared Key
+  'scale': ScaleGen,                      // Studio Key
+
+  // 4. DATA
+  'statistics': StatisticsGen,            // Shared Key
+  'data': StatisticsGen,                  // Dashboard "Data" Fallback
+  'probability': ProbabilityGen           // Shared Key
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
+    // Standard CORS headers
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-    );
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
     if (req.method === 'OPTIONS') {
         res.status(200).end();
@@ -126,13 +119,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 2. Resolve Generator
+    // Now works for both 'arithmetic' (Dashboard) and 'basic_arithmetic' (Studio)
     const GeneratorClass = TopicMap[String(rawTopic)];
 
     if (!GeneratorClass) {
         console.warn(`[API] Generator not found for topic: ${rawTopic}`);
         return res.status(400).json({ 
-            error: `Generator not found for topic: ${rawTopic}`,
-            details: "Please check the TopicMap in api/question.ts"
+            error: `Generator not found for topic: ${rawTopic}.`,
+            details: "Check api/question.ts TopicMap."
         });
     }
 
@@ -148,11 +142,12 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         // Priority 2: Practice Mode (Level based)
         else {
             const safeLevel = Number(level) || 1;
-            // Ensure the generator supports level-based generation
+            // Check if generator supports level generation
             if (typeof generator.generate === 'function') {
                 question = generator.generate(safeLevel, String(lang));
             } else {
-                throw new Error(`Generator for ${rawTopic} does not support level-based generation.`);
+                // Fallback for any generator that might lack standard levels
+                question = generator.generate(1, String(lang));
             }
         }
 
@@ -160,7 +155,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         res.status(200).json(question);
 
     } catch (error: any) {
-        console.error("API Generation Error:", error);
+        console.error(`API Generation Error [${rawTopic}]:`, error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 }

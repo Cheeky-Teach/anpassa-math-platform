@@ -74,10 +74,14 @@ const MathDisplay = ({ content }) => {
     );
 };
 
-export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
-  const [setupMode, setSetupMode] = useState(null); 
+export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacket }) {
+  // If we have an initial packet, default to 'donow' mode so the user sees their cart
+  const [setupMode, setSetupMode] = useState(initialPacket && initialPacket.length > 0 ? 'donow' : null); 
   const [selectedTopicId, setSelectedTopicId] = useState('basic_arithmetic');
-  const [packet, setPacket] = useState([]);
+  
+  // Initialize packet with the saved state if available
+  const [packet, setPacket] = useState(initialPacket || []);
+  
   const [previewData, setPreviewData] = useState(null);
   const [activePreviewKey, setActivePreviewKey] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,18 +100,14 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
 
   const currentTopic = allTopics.find(t => t.id === selectedTopicId) || allTopics[0];
 
-  // --- STRATEGY: SMART GROUPING ---
-  // Groups variations by their prefix (e.g. "Ensteg: Addition" -> Group "Ensteg")
+  // --- SMART GROUPING ---
   const groupedVariations = React.useMemo(() => {
     if (!currentTopic?.variations) return {};
     const groups = {};
     
     currentTopic.variations.forEach(v => {
-        // Split on colon to find the "Category" prefix
         const parts = v.name.split(':');
-        // If no colon, put it in 'Allmänt' (General)
         const groupName = parts.length > 1 ? parts[0].trim() : 'Grundläggande';
-        // The display name is the part after the colon
         const displayName = parts.length > 1 ? parts.slice(1).join(':').trim() : v.name;
         
         if (!groups[groupName]) groups[groupName] = [];
@@ -177,7 +177,8 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
             variation: p.variationKey 
           };
       });
-      onDoNowGenerate(config);
+      // UPDATED: Pass both the config (for API) AND the raw packet (for state persistence)
+      onDoNowGenerate(config, packet);
     }
   };
 
@@ -248,7 +249,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
   return (
     <div className="flex h-[calc(100vh-64px)] bg-slate-100 overflow-hidden font-sans text-slate-900">
       
-      {/* PANE 1: SIDEBAR - IMPROVED CATEGORY HEADERS */}
+      {/* PANE 1: SIDEBAR */}
       <div className="w-90 bg-white border-r border-slate-200 flex flex-col shadow-sm shrink-0 font-medium">
         <div className="p-6 border-b border-slate-100 space-y-4">
           <div className="flex items-center justify-between">
@@ -298,7 +299,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
         </div>
       </div>
 
-      {/* PANE 2: VARIATIONS - IMPROVED GROUPING */}
+      {/* PANE 2: VARIATIONS */}
       <div className="w-[420px] bg-slate-50 border-r border-slate-200 flex flex-col overflow-hidden shrink-0">
         <div className="p-6 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
             <h1 className="text-lg font-black text-slate-900 uppercase truncate italic tracking-tight">{currentTopic?.name}</h1>
