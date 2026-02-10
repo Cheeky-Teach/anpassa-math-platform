@@ -122,36 +122,42 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
     setPacket(packet.map(p => p.id === id ? { ...p, quantity: Math.max(1, p.quantity + delta) } : p));
   };
 
+  /**
+   * FIXED FINAL ACTION LOGIC
+   * Maps the packet to a configuration that batch.ts understands,
+   * ensuring variation keys and correct levels are preserved.
+   */
   const handleFinalAction = () => {
     if (typeof onDoNowGenerate !== 'function') {
         console.error("Critical: onDoNowGenerate prop is missing from App.jsx");
         return;
     }
+
     if (setupMode === 'donow') {
-      const config = packet.map(p => ({
-        topic: p.topicId,
-        level: 1, 
-        variation: p.variationKey
-      }));
+      const config = packet.map(p => {
+          // FIX: Extract level number from variation key (e.g., "geom_level3" -> 3)
+          const levelMatch = p.variationKey.match(/\d+/);
+          const extractedLevel = levelMatch ? parseInt(levelMatch[0]) : 1;
+
+          return {
+            topic: p.topicId,
+            level: extractedLevel, 
+            variation: p.variationKey // Sending the actual variation string
+          };
+      });
       onDoNowGenerate(config);
     }
   };
 
-  /**
-   * REFINED VISUAL RENDERER
-   * Corrected logic: Look for data inside renderData.geometry or renderData.graph
-   */
   const renderVisual = () => {
     if (!previewData?.renderData) return null;
     
-    // Check various possible locations for the visual data
     const visual = previewData.renderData.geometry || previewData.renderData.graph;
     if (!visual) return null;
 
     const type = visual.type || (previewData.renderData.graph ? 'graph' : null);
     const data = visual;
     
-    // Scale for the "Thinner" board
     const scaleWrapper = "scale-[0.85] origin-top my-2 transform-gpu";
 
     switch (type) {
@@ -181,7 +187,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 p-6">
         <div className="max-w-4xl w-full text-center space-y-12 animate-in fade-in zoom-in-95 duration-500">
-            <h2 className="text-6xl font-black text-slate-900 tracking-tighter uppercase italic">Studio</h2>
+            <h2 className="text-6xl font-black text-slate-900 tracking-tighter uppercase italic tracking-widest">Studio</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <button onClick={() => setSetupMode('donow')} className="group p-12 bg-white border-2 border-slate-100 rounded-[3rem] hover:border-indigo-600 hover:shadow-2xl transition-all text-left">
                     <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600 mb-6 group-hover:scale-110 transition-transform"><Grid3X3 size={40} /></div>
@@ -203,17 +209,17 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
     <div className="flex h-[calc(100vh-64px)] bg-slate-100 overflow-hidden font-sans text-slate-900">
       
       {/* PANE 1: SIDEBAR (LIBRARY) - WIDER & LARGER TEXT */}
-      <div className="w-100 bg-white border-r border-slate-200 flex flex-col shadow-sm shrink-0 font-medium">
+      <div className="w-90 bg-white border-r border-slate-200 flex flex-col shadow-sm shrink-0 font-medium">
         <div className="p-6 border-b border-slate-100 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-black uppercase tracking-widest text-[11px] text-slate-400 italic">Bibliotek</h2>
-            <button onClick={() => setSetupMode(null)} className="text-[11px] font-black text-indigo-600 uppercase hover:underline">Byt läge</button>
+            <h2 className="font-black uppercase tracking-widest text-xs text-slate-400 italic">Bibliotek</h2>
+            <button onClick={() => setSetupMode(null)} className="text-xs font-black text-indigo-600 uppercase hover:underline">Byt läge</button>
           </div>
           <div className="relative">
-            <Search className="absolute left-3.5 top-3.5 text-slate-400" size={18} />
+            <Search className="absolute left-3.5 top-4 text-slate-400" size={18} />
             <input 
               type="text" placeholder="Sök område..." 
-              className="w-full pl-12 pr-4 py-3 bg-slate-100 border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-500 rounded-2xl text-base outline-none font-bold"
+              className="w-full pl-12 pr-4 py-3.5 bg-slate-100 border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-500 rounded-2xl text-base outline-none font-bold"
               value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
@@ -224,13 +230,13 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
             if (catTopics.length === 0) return null;
             return (
               <div key={cat.id}>
-                <h3 className="px-3 text-[11px] font-black text-slate-400 uppercase mb-3 italic tracking-wider">{cat.name}</h3>
+                <h3 className="px-3 text-xs font-black text-slate-400 uppercase mb-3 italic tracking-wider">{cat.name}</h3>
                 <div className="space-y-1.5">
                   {catTopics.map(([id, data]) => (
                     <button
                       key={id} onClick={() => setSelectedTopicId(id)}
                       className={`w-full text-left px-4 py-3 text-[17px] rounded-2xl transition-all flex items-center justify-between group ${
-                        selectedTopicId === id ? 'bg-indigo-600 text-white shadow-lg font-bold' : 'text-slate-600 hover:bg-slate-50'
+                        selectedTopicId === id ? 'bg-indigo-600 text-white shadow-xl font-bold' : 'text-slate-600 hover:bg-slate-50'
                       }`}
                     >
                       <span className="truncate">{data.name}</span>
@@ -245,10 +251,10 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
       </div>
 
       {/* PANE 2: VARIATIONS - WIDER & LARGER TEXT */}
-      <div className="w-[480px] bg-slate-50 border-r border-slate-200 flex flex-col overflow-hidden shrink-0">
+      <div className="w-[420px] bg-slate-50 border-r border-slate-200 flex flex-col overflow-hidden shrink-0">
         <div className="p-6 border-b border-slate-200 bg-white shrink-0">
-            <h1 className="text-xl font-black text-slate-900 uppercase truncate italic tracking-tight">{currentTopic?.name}</h1>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Klicka för att förhandsgranska</p>
+            <h1 className="text-l font-black text-slate-900 uppercase truncate italic tracking-tight">{currentTopic?.name}</h1>
+            <p className="text-s text-slate-400 font-bold uppercase tracking-widest mt-1">Klicka för att förhandsgranska</p>
         </div>
         <div className="flex-1 overflow-y-auto p-6 space-y-5 shadow-inner custom-scrollbar">
             {currentTopic?.variations.map(v => (
@@ -260,7 +266,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
                 >
                     <div className="flex justify-between items-start gap-6">
                         <div className="min-w-0">
-                            <h4 className="font-black text-slate-800 text-[17px] uppercase leading-tight group-hover:text-indigo-600 transition-colors tracking-tight">{v.name}</h4>
+                            <h4 className="font-black text-slate-800 text-[18px] uppercase leading-tight group-hover:text-indigo-600 transition-colors tracking-tight italic">{v.name}</h4>
                             <p className="text-[15px] text-slate-500 mt-2.5 leading-relaxed font-medium">{v.desc}</p>
                         </div>
                         <button 
@@ -275,10 +281,10 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
         </div>
       </div>
 
-      {/* PANE 3: THE BOARD (ENLARGED PREVIEW) - NARROWER TO ACCOMMODATE OTHERS */}
+      {/* PANE 3: THE BOARD (ENLARGED PREVIEW) - SCALED FOR OPTIMAL FIT */}
       <div className="flex-1 bg-slate-200 p-6 flex flex-col overflow-hidden relative">
         <div className="flex-1 bg-white rounded-[2.5rem] shadow-2xl border border-slate-300 overflow-hidden flex flex-col mx-auto w-full max-w-2xl">
-            <div className="bg-slate-900 px-6 py-3.5 text-white flex items-center justify-between shrink-0">
+            <div className="bg-slate-900 px-6 py-4 text-white flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                     <div className={`w-2.5 h-2.5 rounded-full ${isPreviewLoading ? 'bg-yellow-400 animate-spin' : 'bg-red-500 animate-pulse'}`} />
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Tavlan</span>
@@ -286,7 +292,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
                 {activePreviewKey && (
                     <button 
                         onClick={() => triggerPreview(activePreviewKey)} disabled={isPreviewLoading}
-                        className="text-[10px] bg-white/10 hover:bg-white/20 px-3.5 py-1.5 rounded-full font-black uppercase transition-all flex items-center gap-2"
+                        className="text-[10px] bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full font-black uppercase transition-all flex items-center gap-2"
                     >
                         <RefreshCcw size={12} className={isPreviewLoading ? 'animate-spin' : ''} /> Nytt exempel
                     </button>
@@ -303,10 +309,10 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
                 {!previewData ? (
                     <div className="text-slate-300 flex flex-col items-center gap-4 grayscale opacity-20">
                         <Maximize2 size={80} strokeWidth={0.5} />
-                        <p className="text-sm font-black uppercase tracking-widest leading-relaxed">Välj variation</p>
+                        <p className="text-sm font-black uppercase tracking-widest leading-relaxed">Välj variation för att förhandsgranska</p>
                     </div>
                 ) : (
-                    <div className="w-full space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="w-full space-y-6 animate-in fade-in zoom-in-95 duration-500 py-2">
                         <div className="w-full flex justify-center transform transition-transform">
                              {renderVisual()}
                         </div>
@@ -321,12 +327,11 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
                             </div>
                         )}
 
-                        {/* ALTERNATIVES */}
                         {previewData.renderData.options && previewData.renderData.options.length > 0 && (
                             <div className="grid grid-cols-2 gap-3 px-6 mt-6">
                                 {previewData.renderData.options.map((opt, idx) => (
-                                    <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-4 text-left">
-                                        <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[12px] font-black text-slate-400 shrink-0 shadow-sm">
+                                    <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-4 text-left shadow-sm">
+                                        <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[12px] font-black text-slate-400 shrink-0">
                                             {String.fromCharCode(65 + idx)}
                                         </div>
                                         <div className="text-sm font-semibold text-slate-700">
@@ -337,13 +342,12 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
                             </div>
                         )}
                         
-                        {/* LEDTRÅD */}
                         <div className="pt-8 border-t border-slate-100 text-left px-8 mx-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <Info size={16} className="text-indigo-500" />
                                 <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Ledtråd</h5>
                             </div>
-                            <p className="text-sm text-slate-500 italic leading-relaxed font-medium">
+                            <p className="text-base text-slate-500 italic leading-relaxed font-medium">
                                 <MathDisplay content={previewData.clues?.[0]?.text || "Ingen ledtråd tillgänglig."} />
                             </p>
                         </div>
@@ -354,7 +358,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
       </div>
 
       {/* PANE 4: THE CART */}
-      <div className="w-100 bg-white border-l border-slate-200 flex flex-col shadow-2xl relative z-10 shrink-0 font-medium">
+      <div className="w-80 bg-white border-l border-slate-200 flex flex-col shadow-2xl relative z-10 shrink-0 font-medium">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-sm font-black shadow-lg">
@@ -373,7 +377,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
           {packet.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-200 grayscale opacity-50">
               <Layers size={48} strokeWidth={1} className="mb-2" />
-              <p className="text-[10px] font-black uppercase tracking-widest">Inget valt</p>
+              <p className="text-[10px] font-black uppercase tracking-widest">Tomt paket</p>
             </div>
           ) : (
             packet.map((item) => (
@@ -385,16 +389,6 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
                   <button onClick={() => removeFromPacket(item.id)} className="p-1 text-red-400 hover:bg-red-50 rounded transition-all"><Trash2 size={14} /></button>
                 </div>
                 <h5 className="text-[14px] font-bold text-slate-800 leading-tight mb-3">{item.name}</h5>
-                {setupMode === 'worksheet' && (
-                    <div className="flex items-center justify-between bg-white rounded-xl p-2 border border-slate-100 shadow-sm">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter ml-1">Antal</span>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => updateQuantity(item.id, -1)} className="w-7 h-7 flex items-center justify-center bg-slate-50 rounded-lg hover:bg-indigo-600 hover:text-white transition-all text-sm font-bold">-</button>
-                            <span className="w-5 text-center font-bold text-slate-700 text-sm">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item.id, 1)} className="w-7 h-7 flex items-center justify-center bg-slate-50 rounded-lg hover:bg-indigo-600 hover:text-white transition-all text-sm font-bold">+</button>
-                        </div>
-                    </div>
-                )}
               </div>
             ))
           )}
