@@ -1,6 +1,7 @@
-PROJECT EXPORT GENERATED AT 2026-02-08T20:49:38.539Z
+PROJECT EXPORT GENERATED AT 2026-02-10T12:20:49.082Z
 
 --- FILE STRUCTURE ---
+.vercel\project.json
 api\answer.ts
 api\batch.ts
 api\curriculum.ts
@@ -8,6 +9,7 @@ api\debug.ts
 api\question.ts
 backup_UI.html
 bundle_project.ts
+create_context.js
 dev-server.ts
 index.html
 package-lock.json
@@ -31,6 +33,7 @@ src\components\views\Dashboard.jsx
 src\components\views\DoNowConfig.jsx
 src\components\views\DoNowGrid.jsx
 src\components\views\PracticeView.jsx
+src\components\views\QuestionStudio.jsx
 src\components\visuals\AngleComponents.jsx
 src\components\visuals\ComplexGeometry.jsx
 src\components\visuals\GeometryComponents.jsx
@@ -46,6 +49,7 @@ src\components\visuals\VolumeVisualization.jsx
 src\constants\content_map.js
 src\constants\curriculum.js
 src\constants\localization.js
+src\constants\skillBuckets.js
 src\core\generators\AnglesGen.ts
 src\core\generators\BasicArithmeticGen.ts
 src\core\generators\ChangeFactorGen.ts
@@ -85,6 +89,14 @@ vite.config.js
 
 ==================================================
 
+
+// =======================================================
+// FILE START: .vercel\project.json
+// =======================================================
+
+{"projectId":"prj_bAZRO01XQ7DU9a8O2vZDClzTSTHd","orgId":"team_HTxUb7ZViM2LYhSuJ6qkKEDI","projectName":"anpassa-math-platform"}
+
+// FILE END: .vercel\project.json
 
 // =======================================================
 // FILE START: api\answer.ts
@@ -163,7 +175,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
 import { IncomingMessage, ServerResponse } from 'http';
 
-// IMPORTS
+// IMPORTS - Ensuring .js extensions for ESM compatibility in Vercel
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen.js';
 import { TenPowersGen } from '../src/core/generators/TenPowersGen.js';
@@ -196,6 +208,7 @@ type VercelResponse = ServerResponse & {
 
 const generators: any = {
     arithmetic: new BasicArithmeticGen(),
+    basic_arithmetic: new BasicArithmeticGen(), // Alias for safety
     negative: new NegativeNumbersGen(),
     ten_powers: new TenPowersGen(),
     exponents: new ExponentsGen(),
@@ -222,41 +235,50 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { requests } = req.body;
+    // Vercel automatically parses req.body for 'POST' if content-type is json
+    const { requests } = req.body || {};
 
     if (!Array.isArray(requests)) {
-        return res.status(400).json({ error: 'Invalid request format' });
+        return res.status(400).json({ error: 'Invalid request format. Expected "requests" array.' });
     }
 
     try {
         const results = requests
             .map((item: any) => {
-                const topicId = item.topic || item.category;
-                const level = Number(item.level);
+                const rawTopicId = item.topic || item.category;
+                
+                // Map frontend IDs to generator keys if they differ
+                const topicId = rawTopicId === 'basic_arithmetic' ? 'arithmetic' : rawTopicId;
+                
+                const level = Number(item.level) || 1;
                 const lang = item.lang || 'sv';
+                const variation = item.variation || null;
                 
                 if (!generators[topicId]) {
-                    console.warn(`Generator not found for: ${topicId}`);
+                    console.error(`[API] Generator not found for topic: ${topicId}`);
                     return null;
                 }
 
-                const questionData = generators[topicId].generate(level, lang);
+                // PHASE 2 FIX: Pass the variation key to the generate method
+                const questionData = generators[topicId].generate(level, lang, variation);
 
-                // FIX: Inject topic/level/lang so DoNowGrid logic functions correctly
                 return {
                     ...questionData,
-                    topic: topicId,
+                    topic: rawTopicId,
                     level: level,
-                    lang: lang
+                    lang: lang,
+                    variation: variation
                 };
             })
-            .filter(q => q !== null); // Remove failed generations to prevent UI crashes
+            .filter(q => q !== null);
 
-        // FIX: Return the array directly to match DoNowGrid's expectation of questions.map()
-        res.status(200).json(results);
-    } catch (error) {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(results));
+    } catch (error: any) {
         console.error("Batch generation error:", error);
-        res.status(500).json({ error: 'Batch generation failed' });
+        res.statusCode = 500;
+        res.end(JSON.stringify({ error: 'Internal Server Error', details: error.message }));
     }
 }
 
@@ -405,7 +427,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
 import { IncomingMessage, ServerResponse } from 'http';
 
-// IMPORTS: Pointing to ../src/core/generators/ with .js extension for Vercel/ESM
+// IMPORTS: Pointing to ../src/core/generators/ with .js extension for Vercel/ESM compatibility
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen.js';
 import { TenPowersGen } from '../src/core/generators/TenPowersGen.js';
@@ -413,6 +435,7 @@ import { ExponentsGen } from '../src/core/generators/ExponentsGen.js';
 import { PercentGen } from '../src/core/generators/PercentGen.js';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen.js';
 import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
+import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen.js';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
 import { ScaleGen } from '../src/core/generators/ScaleGen.js';
@@ -435,37 +458,55 @@ interface VercelRequest extends IncomingMessage {
 type VercelResponse = ServerResponse & {
     status: (statusCode: number) => VercelResponse;
     json: (data: any) => VercelResponse;
-    send: (data: any) => VercelResponse;
 };
 
-// Instantiate generators
+// Instantiate reusable generators
 const graphGen = new LinearGraphGenerator();
+const basicArithmeticGen = new BasicArithmeticGen();
+const negativeGen = new NegativeNumbersGen();
+const percentGen = new PercentGen();
+const fractionBasicsGen = new FractionBasicsGen();
+const expressionGen = new ExpressionSimplificationGen();
+const equationGen = new LinearEquationGen();
 
+// Generator Registry with ID Aliasing
 const generators: any = {
-    arithmetic: new BasicArithmeticGen(),
-    negative: new NegativeNumbersGen(),
+    // Algebra
+    equation: equationGen,
+    equations: equationGen,
+    simplify: expressionGen,
+    expressions: expressionGen,
+    equations_word: new LinearEquationProblemGen(),
+    patterns: new PatternsGen(),
+    graph: graphGen,
+    linear_graph: graphGen,
+    graphs: graphGen,
+
+    // Arithmetic
+    arithmetic: basicArithmeticGen,
+    basic_arithmetic: basicArithmeticGen,
+    negative: negativeGen,
+    negatives: negativeGen,
     ten_powers: new TenPowersGen(),
     exponents: new ExponentsGen(),
-    percent: new PercentGen(),
-    fraction_basics: new FractionBasicsGen(),
+    percent: percentGen,
+    percents: percentGen,
+    fraction_basics: fractionBasicsGen,
+    fractions_basics: fractionBasicsGen,
     fraction_arith: new FractionArithGen(),
-    simplify: new ExpressionSimplificationGen(),
-    equation: new LinearEquationGen(),
-    
-    // FIX: Map both 'graph' and 'linear_graph' to the same generator
-    graph: graphGen,
-    linear_graph: graphGen, 
 
+    // Geometry
     geometry: new GeometryGenerator(),
-    scale: new ScaleGen(),
-    volume: new VolumeGen(),
-    similarity: new SimilarityGen(),
     pythagoras: new PythagorasGen(),
-    probability: new ProbabilityGen(),
-    statistics: new StatisticsGen(),
-    change_factor: new ChangeFactorGen(),
+    volume: new VolumeGen(),
+    scale: new ScaleGen(),
+    similarity: new SimilarityGen(),
     angles: new AnglesGen(),
-    patterns: new PatternsGen()
+
+    // Data
+    statistics: new StatisticsGen(),
+    probability: new ProbabilityGen(),
+    change_factor: new ChangeFactorGen()
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
@@ -480,31 +521,40 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         return;
     }
 
-    // Handle both GET (query) and POST (body)
     const body = req.body || {};
     const query = req.query || {};
 
-    // Normalize parameters (Frontend uses 'topic', API uses 'category')
+    // Normalize parameters (Supports both body and query string)
     const category = body.category || body.topic || query.category || query.topic;
     const level = body.level || query.level;
+    const variation = query.variation || body.variation; // Crucial for Studio Preview
     const lang = body.lang || query.lang || 'sv';
-
-    // Debug log
-    console.log(`[API] Generating: ${category} Level ${level} (${lang})`);
 
     if (!category) {
         return res.status(400).json({ error: "Missing 'topic' or 'category' parameter" });
     }
 
-    if (!generators[category]) {
+    const generator = generators[category];
+
+    if (!generator) {
         return res.status(400).json({ error: `Generator not found: ${category}` });
     }
 
     try {
-        const question = generators[category].generate(Number(level), String(lang));
+        let question;
+
+        // PREVIEW MODE: If a specific variation is requested
+        if (variation && typeof generator.generateByVariation === 'function') {
+            question = generator.generateByVariation(String(variation), String(lang));
+        } 
+        // STANDARD MODE: Randomly pick based on level
+        else {
+            question = generator.generate(Number(level || 1), String(lang));
+        }
+
         res.status(200).json(question);
     } catch (error) {
-        console.error(`[API] Generation error for ${category}:`, error);
+        console.error(`[API] Question generation error for ${category}:`, error);
         res.status(500).json({ error: 'Generation failed', details: String(error) });
     }
 }
@@ -2018,6 +2068,56 @@ bundle();
 // FILE END: bundle_project.ts
 
 // =======================================================
+// FILE START: create_context.js
+// =======================================================
+
+const fs = require('fs');
+const path = require('path');
+
+// List of all critical files to include in the context
+const files = [
+    'README.md',
+    'package.json',
+    'tsconfig.json',
+    'vercel.json',
+    'api/answer.ts',
+    'api/question.ts',
+    'public/index.html',
+    'src/core/types/generator.ts',
+    'src/core/utils/i18n.ts',
+    'src/core/utils/random.ts',
+    'src/core/utils/security.ts',
+    'src/core/utils/textEngine.ts',
+    'src/core/rules/ProgressionRules.ts',
+    'src/core/generators/ScaleGenerator.ts',
+    'src/core/generators/GeometryGenerator.ts',
+    'src/core/generators/LinearEquationGen.ts',
+    'src/core/generators/LinearGraphGenerator.ts',
+    'src/core/generators/ExpressionSimplificationGen.ts',
+    'src/core/generators/LinearEquationProblemGen.ts'
+];
+
+const outputFile = 'AI_CONTEXT.md';
+let output = "# Anpassa Project Context\n\n";
+
+output += content;
+            output += "\n```\n\n";
+            console.log(`✅ Added ${filePath}`);
+        } else {
+            console.warn(`⚠️  File not found: ${filePath}`);
+        }
+    } catch (err) {
+        console.error(`❌ Error reading ${filePath}:`, err.message);
+    }
+});
+
+// Write the result to AI_CONTEXT.md
+fs.writeFileSync(outputFile, output);
+console.log(`\n🎉 Success! All files concatenated into ${outputFile}`);
+
+// FILE END: create_context.js
+
+// =======================================================
 // FILE START: dev-server.ts
 // =======================================================
 
@@ -2081,19 +2181,31 @@ app.listen(PORT, () => {
 // FILE START: index.html
 // =======================================================
 
-<!doctype html>
-<html lang="en">
-  <head>
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <!-- 1. Fix Quirks Mode by adding DOCTYPE -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
-    <title>Anpassa | Math Platform</title>
-  </head>
-  <body>
+    
+    <!-- 2. Relaxed CSP for Supabase, Google Auth, and KaTeX CDNs -->
+    <!-- Note: In production, 'unsafe-inline' is often required for React/Tailwind styles -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://apis.google.com;
+        style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;
+        img-src 'self' data: https://*.supabase.co https://lh3.googleusercontent.com;
+        connect-src 'self' https://*.supabase.co https://*.google.com;
+        font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net;
+        frame-src 'self' https://*.supabase.co https://accounts.google.com;
+    ">
+
+    <title>Anpassa - Math Platform</title>
+</head>
+<body class="bg-slate-50">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-  </body>
+</body>
 </html>
 
 // FILE END: index.html
@@ -2167,9 +2279,10 @@ import { supabase } from './lib/supabaseClient';
 // Views
 import Dashboard from './components/views/Dashboard';
 import PracticeView from './components/views/PracticeView';
-import DoNowConfig from './components/views/DoNowConfig';
+import DoNowConfig from './components/views/DoNowConfig'; 
 import DoNowGrid from './components/views/DoNowGrid';
 import AuthView from './components/views/AuthView';
+import QuestionStudio from './components/views/QuestionStudio'; 
 
 // Modals
 import AboutModal from './components/modals/AboutModal';
@@ -2181,6 +2294,9 @@ import MobileDrawer from './components/practice/MobileDrawer';
 
 // Data & Constants
 import { UI_TEXT, LEVEL_DESCRIPTIONS } from './constants/localization';
+
+// --- DEBUG TOGGLE ---
+const DEVELOPER_MODE = true; 
 
 function App() {
     // --- 1. AUTH & PROFILE STATE ---
@@ -2227,7 +2343,8 @@ function App() {
     const [showStreakModal, setShowStreakModal] = useState(false);
     const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
-    // --- 6. DO NOW STATE ---
+    // --- 6. ASSIGNMENTS & STUDIO STATE ---
+    const [assignments, setAssignments] = useState([]); 
     const [doNowQuestions, setDoNowQuestions] = useState([]);
     const [doNowConfig, setDoNowConfig] = useState([]); 
 
@@ -2236,81 +2353,115 @@ function App() {
 
     const ui = UI_TEXT[lang];
 
-    // --- EFFECT: AUTH & PROFILE LISTENER ---
+    // --- EFFECT: REFINED AUTH & PROFILE LISTENER ---
     useEffect(() => {
-        // Initial session check
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            if (session) fetchProfile(session.user.id);
-            else setLoadingProfile(false);
-        });
+        let mounted = true;
 
-        // Listen for real-time auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            if (session) fetchProfile(session.user.id);
-            else {
+        const initializeAuth = async () => {
+            // Check for current session (cookie)
+            const { data: { session: initialSession } } = await supabase.auth.getSession();
+            
+            if (!mounted) return;
+
+            if (initialSession) {
+                console.log("Cookie session found.");
+                setSession(initialSession);
+                await fetchProfile(initialSession.user.id);
+            } else {
+                // If there is an access_token in the URL hash, we are in the middle of a redirect.
+                // Do NOT set loadingProfile to false yet, wait for the listener event.
+                if (!window.location.hash.includes('access_token')) {
+                    console.log("No session and no OAuth hash found.");
+                    setLoadingProfile(false);
+                }
+            }
+        };
+
+        initializeAuth();
+
+        // Listen for real-time auth events (SIGNED_IN, SIGNED_OUT, etc)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+            if (!mounted) return;
+            console.log(`Auth Event: ${event}`);
+            
+            setSession(currentSession);
+            
+            if (currentSession) {
+                await fetchProfile(currentSession.user.id);
+            } else {
                 setProfile(null);
                 setLoadingProfile(false);
+                setView('dashboard');
             }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
     const fetchProfile = async (userId) => {
-    // 1. Check if profile exists
-    const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-
-        if (error && error.code === 'PGRST116') { // Error code for "not found"
-            // 2. If it doesn't exist (Social User), create it!
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            // Pull metadata we sent during handleSocialLogin
-            const userRole = user.user_metadata?.role || 'student';
-            const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
-
-            const { data: newProfile, error: createError } = await supabase
+        if (!userId) return;
+        
+        try {
+            const { data, error } = await supabase
                 .from('profiles')
-                .insert([{ 
-                    id: userId, 
-                    full_name: fullName, 
-                    role: userRole,
-                    alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
-                }])
-                .select()
+                .select('*')
+                .eq('id', userId)
                 .single();
-                
-            if (newProfile) setProfile(newProfile);
-        } else if (data) {
-            setProfile(data);
+
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    // Profile row doesn't exist, create it from auth metadata
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) throw new Error("No user metadata available");
+                    
+                    const userRole = user.user_metadata?.role || 'student';
+                    const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
+
+                    const { data: newProfile, error: insertError } = await supabase
+                        .from('profiles')
+                        .insert([{ 
+                            id: userId, 
+                            full_name: fullName, 
+                            role: userRole,
+                            alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (insertError) throw insertError;
+                    if (newProfile) setProfile(newProfile);
+                } else {
+                    throw error;
+                }
+            } else if (data) {
+                setProfile(data);
+            }
+        } catch (err) {
+            console.error("fetchProfile logic error:", err.message);
+        } finally {
+            // ALWAYS release the loading screen
+            setLoadingProfile(false);
         }
-        setLoadingProfile(false);
     };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        setView('dashboard');
-        setStreak(0);
     };
 
-    // --- DATA PERSISTENCE: RECORD PROGRESS (The Skill Bucket Bridge) ---
+    // --- DATA PERSISTENCE: RECORD PROGRESS ---
     const recordProgress = async (isCorrect, metadata) => {
         if (!session?.user || !metadata) return;
-
         const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
 
         const { error } = await supabase.from('student_progress').insert({
             student_id: session.user.id,
             topic_id: topic,
-            variation_key: metadata.variation || 'unknown',
+            variation_key: metadata.variation_key || 'unknown',
             is_correct: isCorrect,
             help_used: helpUsed,
-            // assignment_id logic can be wired here in future phases
         });
 
         if (error) console.error("Database persistence error:", error.message);
@@ -2464,7 +2615,7 @@ function App() {
     };
 
     const handleSubmit = async (e, directInput) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (showStreakModal || timeUpOpen) return;
         if (feedback === 'correct') return;
         
@@ -2491,7 +2642,6 @@ function App() {
             });
             const result = await res.json();
             
-            // 🔥 DB RECORDING FIRE
             await recordProgress(result.correct, question.metadata);
 
             if (result.correct) {
@@ -2512,8 +2662,10 @@ function App() {
                 }
                 setFeedback('correct');
             } else {
-                question.attempts = (question.attempts || 0) + 1;
-                if (question.attempts >= 2) {
+                const newAttempts = (question.attempts || 0) + 1;
+                setQuestion({...question, attempts: newAttempts});
+                
+                if (newAttempts >= 2) {
                     if (!isStatsLocked) {
                         setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: true, time: Date.now() }, ...prev]);
                     }
@@ -2527,9 +2679,8 @@ function App() {
         } catch (e) { console.error(e); }
     };
 
-    // --- DO NOW LOGIC ---
     const handleDoNowGenerate = async (selected) => {
-        if (selected.length === 0) return;
+        if (!selected || selected.length === 0) return;
         setDoNowConfig(selected);
         setLoading(true);
         const requests = [];
@@ -2551,21 +2702,35 @@ function App() {
         } catch (e) { console.error("Do Now Error:", e); } finally { setLoading(false); }
     };
 
-    // --- RENDER LOGIC: AUTH GUARD ---
+    // --- RENDER ---
     if (session && loadingProfile) {
-        return <div className="h-screen flex items-center justify-center bg-white text-indigo-600 font-black animate-pulse">ANPASSA...</div>;
+        return <div className="h-screen flex items-center justify-center bg-white text-indigo-600 font-black animate-pulse uppercase tracking-tighter text-2xl">Anpassa...</div>;
     }
 
     if (!session) {
-        return <AuthView ui={ui} lang={lang} onGuestMode={() => {}} />; // Add guest mode if desired
+        return <AuthView ui={ui} lang={lang} onGuestMode={() => {}} />;
     }
 
-    // --- RENDER LOGIC: VIEW SWITCHER ---
     if (view === 'donow_config') {
         return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => setView('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
     }
     if (view === 'donow_grid') {
-        return <DoNowGrid questions={doNowQuestions} ui={ui} onBack={() => setView('donow_config')} lang={lang} onRefreshAll={() => handleDoNowGenerate(doNowConfig)} onRefreshOne={(i, t, l) => {}} />;
+        return <DoNowGrid questions={doNowQuestions} ui={ui} onBack={() => setView('dashboard')} lang={lang} onRefreshAll={() => handleDoNowGenerate(doNowConfig)} onRefreshOne={(i, t, l) => {}} />;
+    }
+    if (view === 'question_studio') {
+        return (
+            <div className="min-h-screen bg-gray-50 flex flex-col">
+                <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+                    <h1 className="text-xl font-black text-indigo-600 tracking-tighter cursor-pointer" onClick={() => setView('dashboard')}>Anpassa Studio</h1>
+                    <button onClick={() => setView('dashboard')} className="text-sm font-bold text-slate-400 hover:text-slate-600 uppercase">Stäng Studio</button>
+                </header>
+                <QuestionStudio 
+                    onDoNowGenerate={handleDoNowGenerate} 
+                    ui={ui}
+                    lang={lang}
+                />
+            </div>
+        );
     }
 
     return (
@@ -2590,9 +2755,9 @@ function App() {
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <div className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-xs font-bold">✅ {totalCorrect}</div>
-                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">🔥 {streak}</div>
-                        <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2">Logga ut</button>
+                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-emerald-200">✅ {totalCorrect}</div>
+                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-yellow-200">🔥 {streak}</div>
+                        <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2 transition-colors">Logga ut</button>
                     </div>
                 </div>
             </header>
@@ -2600,11 +2765,23 @@ function App() {
             <div className="flex-1 flex flex-col">
                 {view === 'dashboard' ? (
                     <Dashboard
-                        lang={lang} selectedTopic={topic} selectedLevel={level} profile={profile}
-                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} onStart={startPractice} 
-                        timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} 
-                        onLgrOpen={() => setLgrOpen(true)} onContentOpen={() => setContentOpen(true)} 
-                        onDoNowOpen={() => setView('donow_config')} toggleLang={() => setLang(l => l === 'sv' ? 'en' : 'sv')}
+                        lang={lang} 
+                        selectedTopic={topic} 
+                        selectedLevel={level} 
+                        userRole={DEVELOPER_MODE ? 'teacher' : (profile?.role || 'student')} 
+                        assignments={assignments} 
+                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
+                        onStart={startPractice} 
+                        timerSettings={timerSettings} 
+                        toggleTimer={toggleTimer} 
+                        resetTimer={resetTimer} 
+                        ui={ui} 
+                        onLgrOpen={() => setLgrOpen(true)} 
+                        onContentOpen={() => setContentOpen(true)} 
+                        onAboutOpen={() => setAboutOpen(true)}
+                        onStatsOpen={() => setStatsOpen(true)}
+                        onStudioOpen={() => setView('question_studio')}
+                        onDoNowOpen={() => setView('donow_config')} 
                     />
                 ) : (
                     <PracticeView
@@ -3587,24 +3764,42 @@ export default AuthView;
 // FILE START: src\components\views\Dashboard.jsx
 // =======================================================
 
-import React from 'react';
-import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
+import React, { useState } from 'react';
+import { 
+  ChevronDown, 
+  ChevronUp, 
+  ChevronRight,
+  Zap,
+  Play, 
+  Clock, 
+  Book, 
+  Map, 
+  Info, 
+  Award, 
+  BarChart3, 
+  PenTool, 
+  Calendar,
+  Sparkles
+} from 'lucide-react';
+
+// Using the @ alias to ensure the path is resolved correctly in your Vite environment
+import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
 
 const COLOR_VARIANTS = {
     pink: {
-        bgLight: 'bg-pink-50', bgDark: 'bg-pink-500', border: 'border-pink-100', text: 'text-pink-700', ring: 'ring-pink-500', borderSolid: 'border-pink-500', selectFocus: 'focus:ring-pink-500'
+        bgLight: 'bg-pink-50', bgDark: 'bg-pink-500', border: 'border-pink-100', text: 'text-pink-700', ring: 'ring-pink-500', borderSolid: 'border-pink-500', icon: 'text-pink-500'
     },
     indigo: {
-        bgLight: 'bg-indigo-50', bgDark: 'bg-indigo-500', border: 'border-indigo-100', text: 'text-indigo-700', ring: 'ring-indigo-500', borderSolid: 'border-indigo-500', selectFocus: 'focus:ring-indigo-500'
+        bgLight: 'bg-indigo-50', bgDark: 'bg-indigo-500', border: 'border-indigo-100', text: 'text-indigo-700', ring: 'ring-indigo-500', borderSolid: 'border-indigo-500', icon: 'text-indigo-500'
     },
     emerald: {
-        bgLight: 'bg-emerald-50', bgDark: 'bg-emerald-500', border: 'border-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-500', borderSolid: 'border-emerald-500', selectFocus: 'focus:ring-emerald-500'
+        bgLight: 'bg-emerald-50', bgDark: 'bg-emerald-500', border: 'border-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-500', borderSolid: 'border-emerald-500', icon: 'text-emerald-500'
     },
     purple: {
-        bgLight: 'bg-purple-50', bgDark: 'bg-purple-500', border: 'border-purple-100', text: 'text-purple-700', ring: 'ring-purple-500', borderSolid: 'border-purple-500', selectFocus: 'focus:ring-purple-500'
+        bgLight: 'bg-purple-50', bgDark: 'bg-purple-500', border: 'border-purple-100', text: 'text-purple-700', ring: 'ring-purple-500', borderSolid: 'border-purple-500', icon: 'text-purple-500'
     },
     yellow: {
-        bgLight: 'bg-yellow-50', bgDark: 'bg-yellow-500', border: 'border-yellow-100', text: 'text-yellow-700', ring: 'ring-yellow-500', borderSolid: 'border-yellow-500', selectFocus: 'focus:ring-yellow-500'
+        bgLight: 'bg-yellow-50', bgDark: 'bg-yellow-500', border: 'border-yellow-100', text: 'text-yellow-700', ring: 'ring-yellow-500', borderSolid: 'border-yellow-500', icon: 'text-yellow-500'
     }
 };
 
@@ -3619,76 +3814,163 @@ const Dashboard = ({
     resetTimer, 
     ui, 
     onLgrOpen, 
-    onContentOpen, // New Prop
-    onDoNowOpen, 
-    toggleLang 
+    onContentOpen,
+    onAboutOpen,
+    onStatsOpen,
+    onStudioOpen,
+    userRole = 'student',
+    assignments = [],
+    recommended = []
 }) => {
-    
+    // Defaulting to algebra being expanded for a smooth landing
+    const [expandedCategory, setExpandedCategory] = useState('algebra');
+
     const getStyles = (category) => {
         const color = category.color || 'emerald';
         return COLOR_VARIANTS[color] || COLOR_VARIANTS.emerald;
     };
 
     return (
-        <div className="max-w-6xl mx-auto w-full p-4 fade-in flex flex-col min-h-[calc(100vh-80px)]">
+        <div className="max-w-5xl mx-auto w-full p-4 fade-in flex flex-col min-h-screen pb-32">
             
-            <div className="text-center py-10 md:py-16 border-b border-gray-200 mb-12 bg-emerald-50/50 rounded-3xl mx-4 relative overflow-hidden">
-                <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 mb-4 tracking-tight relative z-10">Anpassa</h1>
-                <p className="text-xl md:text-2xl text-gray-500 font-medium tracking-wide relative z-10">{ui.tagline}</p>
+            {/* --- LANDING PANE / HERO SECTION --- */}
+            <header className="mb-12">
+                <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <span className="bg-white/20 backdrop-blur-md px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">
+                                Välkommen till Anpassa
+                            </span>
+                        </div>
+                        <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight leading-none">
+                            Dags att bemästra <br/>matematiken.
+                        </h1>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                            {assignments.length > 0 ? (
+                                <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 hover:bg-white/15 transition-all cursor-pointer group">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="font-bold flex items-center gap-2"><Calendar size={18}/> Aktuella Uppgifter</h3>
+                                        <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform"/>
+                                    </div>
+                                    <p className="text-sm text-indigo-100">Du har {assignments.length} aktiva uppdrag från din lärare.</p>
+                                </div>
+                            ) : (
+                                <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10">
+                                    <h3 className="font-bold flex items-center gap-2 mb-2"><Sparkles size={18}/> Dagens Tips</h3>
+                                    <p className="text-sm text-indigo-100">Repetera "Linjära ekvationer" för att hålla din streak vid liv!</p>
+                                </div>
+                            )}
 
-                <div className="mt-8 flex justify-center relative z-10">
-                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 px-4 shadow-sm border border-gray-100 flex items-center gap-3">
-                        <span className="font-bold text-gray-700 text-xs uppercase tracking-wider">{ui.timer_title}</span>
-                        <div className="relative group">
-                            <select
-                                value={timerSettings.duration / 60}
-                                onChange={(e) => toggleTimer(Number(e.target.value))}
-                                className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 py-1 pl-3 pr-8 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                            >
-                                <option value="0">{ui.timer_off}</option>
-                                {[5, 10, 15, 20, 30, 45, 60].map(m => <option key={m} value={m}>{m} {ui.timer_min}</option>)}
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-bold flex items-center gap-2 mb-1"><Clock size={18}/> {ui.timer_title}</h3>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <select
+                                            value={timerSettings.duration / 60}
+                                            onChange={(e) => toggleTimer(Number(e.target.value))}
+                                            className="bg-slate-900/50 border-none text-white py-1 px-3 rounded-lg text-sm font-bold focus:ring-2 focus:ring-white/50"
+                                        >
+                                            <option value="0">{ui.timer_off}</option>
+                                            {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
+                                        </select>
+                                        {timerSettings.duration > 0 && (
+                                            <button onClick={resetTimer} className="text-[10px] uppercase font-black text-red-300 hover:text-white transition-colors">Reset</button>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        {timerSettings.duration > 0 && (
-                            <button onClick={resetTimer} className="text-xs text-red-500 hover:text-red-700 font-medium underline">{ui.timer_reset}</button>
-                        )}
                     </div>
+                    <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
                 </div>
-            </div>
+            </header>
 
-            <div className="text-center mb-10">
-                <p className="text-gray-500 text-lg leading-relaxed max-w-2xl mx-auto">{ui.progressionInfo}</p>
-            </div>
+            {/* --- TEACHER COMMAND CENTER --- */}
+            {userRole === 'teacher' && (
+                <section className="mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="flex items-center gap-3 mb-4 px-4">
+                        <PenTool size={18} className="text-slate-400" />
+                        <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">Lärarverktyg</h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mx-4">
+                        <button 
+                            onClick={onStudioOpen}
+                            className="flex items-center justify-between p-6 bg-slate-900 text-white rounded-[2rem] hover:bg-indigo-600 transition-all shadow-xl group text-left"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                                    <Zap size={24} fill="currentColor" />
+                                </div>
+                                <div className="text-left">
+                                    <span className="block font-black text-lg">Question Studio</span>
+                                    <span className="text-xs text-slate-400 group-hover:text-indigo-100">Skapa paket & arbetsblad</span>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} />
+                        </button>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-20">
+                        <button 
+                            onClick={onStatsOpen}
+                            className="flex items-center justify-between p-6 bg-white border border-slate-200 rounded-[2rem] hover:border-indigo-500 transition-all shadow-sm group text-left"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                                    <BarChart3 size={24} />
+                                </div>
+                                <div className="text-left">
+                                    <span className="block font-black text-lg text-slate-800">Elevstatistik</span>
+                                    <span className="text-xs text-slate-500">Följ klassens utveckling</span>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} className="text-slate-300" />
+                        </button>
+                    </div>
+                </section>
+            )}
+
+            {/* --- CURRICULUM GRID --- */}
+            <div className="flex flex-col gap-6 mx-4">
+                <div className="flex items-center gap-3 mb-2">
+                    <Book size={18} className="text-slate-400" />
+                    <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">Kursmaterial</h2>
+                </div>
+
                 {Object.entries(CATEGORIES).map(([catKey, category]) => {
                     const styles = getStyles(category);
+                    const isExpanded = expandedCategory === catKey;
                     
                     return (
-                        <div key={catKey} className={`bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full`}>
-                            <div className={`${styles.bgLight} p-4 border-b ${styles.border}`}>
-                                <h3 className={`text-lg font-bold ${styles.text} uppercase tracking-wide flex items-center gap-2`}>
-                                    <span className={`w-3 h-3 rounded-full ${styles.bgDark}`}></span>
-                                    {category.label[lang]}
-                                </h3>
-                            </div>
+                        <div key={catKey} className={`bg-white rounded-[2rem] border-2 transition-all duration-500 overflow-hidden ${isExpanded ? `shadow-2xl ${styles.borderSolid}` : 'border-transparent shadow-sm hover:border-slate-200'}`}>
+                            <button 
+                                onClick={() => setExpandedCategory(isExpanded ? null : catKey)}
+                                className={`w-full p-6 flex items-center justify-between text-left ${isExpanded ? styles.bgLight : ''}`}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${styles.bgDark} text-white shadow-lg`}>
+                                        <Award size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className={`text-xl font-black text-slate-800 uppercase tracking-tight`}>{category.label[lang]}</h3>
+                                        <p className="text-xs text-slate-500 font-medium">{category.topics.length} delmoment tillgängliga</p>
+                                    </div>
+                                </div>
+                                {isExpanded ? <ChevronUp size={24} className="text-slate-400" /> : <ChevronDown size={24} className="text-slate-400" />}
+                            </button>
                             
-                            <div className="p-4 space-y-4 flex-1">
-                                {category.topics.map(topic => {
-                                    return (
-                                        <div key={topic.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                                            <div className="font-semibold text-gray-700 mb-3 ml-1">{topic.label[lang]}</div>
+                            <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[2000px] opacity-100 p-6' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {category.topics.map(topic => (
+                                        <div key={topic.id} className="bg-slate-50 rounded-3xl p-5 border border-slate-100 hover:bg-white hover:shadow-xl hover:border-indigo-100 transition-all group">
+                                            <div className="font-bold text-slate-800 mb-4 ml-1 flex items-center justify-between">
+                                                {topic.label[lang]}
+                                                <div className={`w-2 h-2 rounded-full ${styles.bgDark} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                                            </div>
                                             <div className="relative">
                                                 <select 
                                                     value={selectedTopic === topic.id ? selectedLevel : 0} 
                                                     onChange={(e) => onSelect(topic.id, Number(e.target.value))} 
-                                                    className={`
-                                                        w-full p-2 pl-3 bg-white border border-gray-200 rounded-lg text-sm font-medium focus:outline-none appearance-none cursor-pointer
-                                                        ${selectedTopic === topic.id ? `ring-2 ${styles.ring} ${styles.borderSolid}` : styles.selectFocus}
-                                                    `}
+                                                    className={`w-full p-3 pl-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:outline-none appearance-none cursor-pointer transition-all ${selectedTopic === topic.id ? `ring-4 ${styles.ring} border-transparent` : ''}`}
                                                 >
                                                     <option value={0} disabled>{ui.selectLevel}</option>
                                                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lvl => {
@@ -3700,46 +3982,55 @@ const Dashboard = ({
                                                         );
                                                     })}
                                                 </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                                    <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                                                <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
+                                                    <ChevronDown size={16} />
                                                 </div>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            <div className="fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-20">
+            {/* --- FIXED START ACTION BAR --- */}
+            <div className={`fixed bottom-8 left-0 right-0 flex justify-center pointer-events-none z-30 transition-all duration-500 ${selectedTopic ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
                 <button 
                     onClick={onStart} 
-                    className={`
-                        px-8 py-4 rounded-full font-bold text-lg shadow-2xl transition-all transform pointer-events-auto flex items-center gap-3 
-                        ${selectedTopic 
-                            ? 'bg-orange-500 text-white translate-y-0 opacity-100 hover:scale-105 hover:bg-orange-600 shadow-orange-200' 
-                            : 'bg-gray-300 text-gray-500 translate-y-20 opacity-0 cursor-not-allowed'}
-                    `}
+                    className="px-12 py-5 rounded-full font-black text-xl shadow-[0_20px_50px_rgba(249,115,22,0.4)] bg-orange-500 text-white pointer-events-auto flex items-center gap-4 hover:scale-110 hover:bg-orange-600 active:scale-95 transition-all uppercase tracking-tighter"
                 >
-                    {ui.startBtn} <span>🚀</span>
+                    Börja öva <Play fill="currentColor" size={20} />
                 </button>
             </div>
 
-            <footer className="mt-auto py-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center px-4 gap-4">
-                <button onClick={onDoNowOpen} className="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-6 rounded-full text-sm transition-colors shadow-sm order-2 md:order-1">
-                    {ui.donow_btn}
-                </button>
+            {/* --- RESOURCE FOOTER HUB --- */}
+            <footer className="mt-20 py-12 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-8 px-4 text-center md:text-left">
+                <div className="space-y-4">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Resurser</h4>
+                    <div className="flex flex-col gap-2">
+                        <button onClick={onContentOpen} className="flex items-center justify-center md:justify-start gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
+                            <Map size={16} /> Innehållskarta
+                        </button>
+                        <button onClick={onLgrOpen} className="flex items-center justify-center md:justify-start gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
+                            <Book size={16} /> LGR 22 Koppling
+                        </button>
+                    </div>
+                </div>
 
-                <div className="flex items-center gap-3 order-1 md:order-2 w-full md:w-auto justify-center md:justify-end">
-                    {/* NEW CONTENT BUTTON */}
-                    <button onClick={onContentOpen} className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-emerald-200 shadow-sm">
-                        Innehåll
-                    </button>
-                    <button onClick={onLgrOpen} className="bg-sky-100 hover:bg-sky-200 text-sky-700 font-bold py-2 px-6 rounded-full text-sm transition-colors border border-sky-200 shadow-sm">
-                        {ui.lgr_btn}
-                    </button>
+                <div className="space-y-4">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Support</h4>
+                    <div className="flex flex-col gap-2">
+                        <button onClick={onAboutOpen} className="flex items-center justify-center md:justify-start gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
+                            <Info size={16} /> Om skaparen
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-center md:items-end justify-center">
+                    <h2 className="text-3xl font-black text-slate-200 tracking-tighter italic">ANPASSA.io</h2>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Utvecklad för den moderna skolan</p>
                 </div>
             </footer>
         </div>
@@ -3832,75 +4123,90 @@ export default DoNowConfig;
 // FILE START: src\components\views\DoNowGrid.jsx
 // =======================================================
 
-import React, { useState, useEffect } from 'react';
-import MathText from '../ui/MathText';
+import React, { useState, useEffect, useRef } from 'react';
 import { GraphCanvas, VolumeVisualization, GeometryVisual } from '../visuals/GeometryComponents';
 
-const DoNowCard = ({ q, index, showAnswer, onToggle, lang, onRefresh }) => {
+/**
+ * PROJECTOR-OPTIMIZED MATH RENDERER
+ * Handles mixed text and LaTeX strings using KaTeX auto-render.
+ */
+const MathDisplay = ({ content, className }) => {
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const doRender = () => {
+            if (window.renderMathInElement && containerRef.current) {
+                window.renderMathInElement(containerRef.current, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                    ],
+                    throwOnError: false
+                });
+            }
+        };
+
+        if (content) {
+            // Wait for KaTeX to be available in global scope (loaded in index.html)
+            if (window.renderMathInElement) {
+                doRender();
+            } else {
+                const interval = setInterval(() => {
+                    if (window.renderMathInElement) {
+                        doRender();
+                        clearInterval(interval);
+                    }
+                }, 100);
+                return () => clearInterval(interval);
+            }
+        }
+    }, [content]);
+
+    return <div ref={containerRef} className={className}>{content}</div>;
+};
+
+const DoNowCard = ({ q, index, showAnswer, onToggle, lang }) => {
     const desc = typeof q.renderData.description === 'object' ? q.renderData.description[lang] : q.renderData.description;
     const latex = q.renderData.latex;
 
     // --- Adaptive Layout Logic ---
     const isTextOnly = 
         (q.topic === 'equation' && (q.level === 5 || q.level === 6)) ||
-        (q.topic === 'simplify' && q.level === 5);
+        (q.topic === 'simplify' && q.level === 5) ||
+        (q.topic === 'equations_word');
 
-    // --- Dynamic Text Scaling ---
-    const getDescSize = (text) => {
-        if (!text) return 'text-xl md:text-3xl';
-        const len = text.length;
-        if (isTextOnly) {
-            if (len > 200) return 'text-base md:text-xl leading-relaxed';
-            if (len > 100) return 'text-lg md:text-2xl leading-relaxed';
-            if (len > 50) return 'text-xl md:text-3xl leading-relaxed';
-            return 'text-2xl md:text-4xl leading-relaxed';
-        } else {
-            if (len > 80) return 'text-sm md:text-base leading-snug';
-            if (len > 40) return 'text-base md:text-xl leading-normal';
-            return 'text-lg md:text-2xl font-medium';
-        }
-    };
-
-    const hasVisualData = (q.renderData.geometry || q.renderData.graph) && !isTextOnly;
+    // --- REFINED VISUAL DETECTION (Phase 2 Compatible) ---
+    const visualData = q.renderData.geometry || q.renderData.graph;
+    const hasVisualData = visualData && !isTextOnly;
 
     const renderVisual = () => {
         if (!hasVisualData) return null;
 
+        // Scale up visuals for better projector visibility
+        const scaleStyle = { transform: 'scale(1.2)', transformOrigin: 'center' };
+
         if (q.renderData.graph) {
-            return <GraphCanvas data={q.renderData.graph} width={300} height={200} />;
+            return <div style={scaleStyle}><GraphCanvas data={q.renderData.graph} width={350} height={250} /></div>;
         }
 
         const geom = q.renderData.geometry;
-        if (!geom) return null;
-
         const volumeTypes = ['cuboid', 'cylinder', 'cone', 'sphere', 'hemisphere', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'];
+        
         if (volumeTypes.includes(geom.type)) {
-            return <VolumeVisualization data={geom} width={300} height={200} />;
+            return <div style={scaleStyle}><VolumeVisualization data={geom} width={350} height={250} /></div>;
         }
 
-        return <GeometryVisual data={geom} />;
+        // Standard 2D shapes and Composites (Huset/Portalen)
+        return <div style={scaleStyle}><GeometryVisual data={geom} /></div>;
     };
 
-    // Calculate rotation for refresh icon interaction
-    const [isSpinning, setIsSpinning] = useState(false);
-    
-    // Auto-stop spinning if the question data actually changes (detected by token or description change)
-    useEffect(() => {
-        if (isSpinning) {
-            const timer = setTimeout(() => setIsSpinning(false), 500); // Minimum spin time
-            return () => clearTimeout(timer);
-        }
-    }, [q.token, q.renderData.description]); // Dependency ensures spin stops when new data arrives
-
-    const handleRefreshClick = (e) => {
-        e.stopPropagation();
-        if (isSpinning) return; // Prevent double-clicks
-        
-        setIsSpinning(true);
-        if (onRefresh) onRefresh();
-        
-        // Safety timeout in case props don't change (e.g. same question generated)
-        setTimeout(() => setIsSpinning(false), 2000); 
+    // --- PROJECTOR FONT SCALING ---
+    const getDescSize = (text) => {
+        if (!text) return 'text-4xl';
+        const len = text.length;
+        if (len > 120) return 'text-2xl md:text-3xl leading-relaxed';
+        if (len > 60) return 'text-3xl md:text-4xl leading-tight';
+        return 'text-4xl md:text-5xl font-black tracking-tight';
     };
 
     return (
@@ -3908,63 +4214,64 @@ const DoNowCard = ({ q, index, showAnswer, onToggle, lang, onRefresh }) => {
             onClick={onToggle}
             className={`
                 relative flex flex-col justify-between 
-                bg-white rounded-2xl shadow-sm border-2 transition-all duration-300 cursor-pointer overflow-hidden group
-                ${showAnswer ? 'border-indigo-500 ring-4 ring-indigo-500/20 scale-[1.02]' : 'border-slate-200 hover:border-indigo-300 hover:shadow-md'}
+                bg-white rounded-[2.5rem] shadow-xl border-4 transition-all duration-500 cursor-pointer overflow-hidden group
+                ${showAnswer ? 'border-indigo-600 ring-8 ring-indigo-500/10 scale-[1.02]' : 'border-slate-100 hover:border-indigo-200 hover:shadow-2xl'}
             `}
         >
-            {/* Card Content */}
-            <div className="p-5 flex flex-col flex-1 h-full">
-                
-                {/* Refresh Button (New) */}
-                <button
-                    onClick={handleRefreshClick}
-                    disabled={isSpinning}
-                    className={`
-                        absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-colors z-20 border 
-                        ${isSpinning ? 'bg-indigo-50 border-indigo-200 cursor-wait' : 'bg-slate-50 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 border-slate-200'}
-                    `}
-                    title={lang === 'sv' ? "Ny fråga" : "New question"}
-                >
-                    <span className={`text-sm ${isSpinning ? 'animate-spin' : ''}`}>🔄</span>
-                </button>
+            <div className="p-10 flex flex-col flex-1 h-full min-h-[500px]">
+                {/* Large Number Badge */}
+                <div className={`w-16 h-16 rounded-3xl flex items-center justify-center text-2xl font-black mb-8 transition-all ${showAnswer ? 'bg-indigo-600 text-white rotate-12' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'}`}>
+                    {index + 1}
+                </div>
 
                 {/* Visual Container */}
                 {hasVisualData && (
-                    <div className="mb-4 bg-slate-50 rounded-xl border border-slate-100 overflow-hidden flex justify-center items-center py-4 min-h-[160px]">
+                    <div className="mb-10 bg-slate-50/50 rounded-3xl border-2 border-slate-100 overflow-hidden flex justify-center items-center py-10 min-h-[250px]">
                         {renderVisual()}
                     </div>
                 )}
 
-                {/* Text Content */}
-                <div className="flex-1 flex flex-col justify-center items-center text-center">
-                    <p className={`font-medium text-slate-700 mb-3 ${getDescSize(desc)}`}>
-                        {desc}
-                    </p>
+                {/* Text Content - Enlarged for Projectors */}
+                <div className="flex-1 flex flex-col justify-center items-center text-center px-4">
+                    <MathDisplay 
+                        content={desc} 
+                        className={`text-slate-800 mb-6 font-bold ${getDescSize(desc)}`} 
+                    />
                     
                     {latex && (
-                        <div className="mt-2 text-2xl md:text-4xl font-black text-slate-800 tracking-wide">
-                            <MathText text={latex} />
+                        <div className="mt-4 text-5xl md:text-6xl font-black text-indigo-600 tracking-wider py-4 px-6 bg-indigo-50/30 rounded-3xl border border-indigo-100/50 shadow-inner">
+                            <MathDisplay content={`$$${latex}$$`} />
                         </div>
+                    )}
+
+                    {/* Multiple Choice Options (Projector Optimized) */}
+                    {q.renderData.options && q.renderData.options.length > 0 && (
+                         <div className="grid grid-cols-2 gap-4 mt-8 w-full">
+                            {q.renderData.options.map((opt, i) => (
+                                <div key={i} className="text-xl md:text-2xl font-bold bg-white border-2 border-slate-100 rounded-2xl p-4 text-slate-600 shadow-sm flex items-center gap-4">
+                                    <span className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-sm font-black text-slate-400">{String.fromCharCode(65+i)}</span>
+                                    <MathDisplay content={opt} />
+                                </div>
+                            ))}
+                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Answer Overlay */}
+            {/* High-Visibility Answer Overlay */}
             {showAnswer && (
-                <div className="absolute inset-0 z-10 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in duration-200">
-                    <div className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-2">
+                <div className="absolute inset-0 z-10 bg-white/98 backdrop-blur-md flex flex-col items-center justify-center p-12 animate-in zoom-in-95 duration-300">
+                    <div className="text-xl font-black text-indigo-500 uppercase tracking-[0.3em] mb-6">
                         {lang === 'sv' ? 'FACIT' : 'ANSWER'}
                     </div>
-                    <div className="text-3xl md:text-5xl font-black text-indigo-900 text-center break-words w-full">
-                        {tryDecode(q.token)} <span className="text-xl text-slate-400 font-medium ml-1">{q.renderData.suffix}</span>
+                    <div className="text-6xl md:text-8xl font-black text-indigo-950 text-center break-words w-full leading-none tracking-tighter">
+                        <span className="drop-shadow-sm">{tryDecode(q.token)}</span>
+                        {q.renderData.suffix && (
+                            <span className="text-4xl text-slate-400 font-medium ml-4 tracking-normal uppercase">{q.renderData.suffix}</span>
+                        )}
                     </div>
                 </div>
             )}
-
-            {/* Number Badge */}
-            <div className={`absolute top-3 left-3 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${showAnswer ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200'}`}>
-                {index + 1}
-            </div>
         </div>
     );
 };
@@ -3973,10 +4280,9 @@ const tryDecode = (str) => {
     try { return atob(str); } catch (e) { return "Error"; }
 };
 
-const DoNowGrid = ({ questions, ui, lang, onBack, onRefreshAll, onRefreshOne }) => {
+const DoNowGrid = ({ questions, ui, lang, onBack, onRefreshAll }) => {
     const [revealed, setRevealed] = useState({});
     const [showAll, setShowAll] = useState(false);
-    const [isRegenerating, setIsRegenerating] = useState(false);
 
     const toggleOne = (idx) => {
         setRevealed(prev => ({ ...prev, [idx]: !prev[idx] }));
@@ -3994,63 +4300,39 @@ const DoNowGrid = ({ questions, ui, lang, onBack, onRefreshAll, onRefreshOne }) 
         }
     };
 
-    const handleRegenerateAll = () => {
-        setIsRegenerating(true);
-        setRevealed({});
-        setShowAll(false);
-        
-        if (onRefreshAll) {
-            onRefreshAll().finally(() => setIsRegenerating(false));
-        } else {
-            setTimeout(() => setIsRegenerating(false), 500);
-        }
-    };
-
     return (
-        <div className="h-screen flex flex-col bg-slate-50">
-            {/* Header */}
-            <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm z-20 sticky top-0">
-                <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="flex items-center gap-2 text-slate-500 font-bold hover:text-indigo-600 transition-colors">
-                        <span className="text-xl">←</span> 
-                        <span>{ui.backBtn || "Back"}</span>
+        <div className="h-screen flex flex-col bg-slate-200 p-4 md:p-8">
+            <header className="bg-slate-900 rounded-[2rem] px-10 py-6 flex justify-between items-center shadow-2xl z-20 mb-8 border border-white/10">
+                <div className="flex items-center gap-8">
+                    <button onClick={onBack} className="group flex items-center gap-3 text-slate-400 font-black hover:text-white transition-all uppercase tracking-widest text-sm">
+                        <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">←</div>
+                        <span>{ui.backBtn || "TILLBAKA"}</span>
                     </button>
-                    <h2 className="text-lg font-black text-slate-800 hidden md:block tracking-tight border-l border-slate-200 pl-4 ml-2">
-                        {ui.donow_title}
+                    <h2 className="text-2xl font-black text-white hidden lg:block tracking-tighter uppercase italic">
+                        {ui.donow_title || "CLASSROOM BOARD"}
                     </h2>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    {/* Regenerate All Button (New) */}
+                <div className="flex items-center gap-4">
                     <button 
-                        onClick={handleRegenerateAll}
-                        disabled={isRegenerating}
-                        className="px-4 py-2 rounded-full font-bold text-sm bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-indigo-600 transition-all flex items-center gap-2"
-                        title={ui.donow_regenerate || "Regenerate all"}
+                        onClick={onRefreshAll}
+                        className="px-8 py-4 rounded-2xl font-black text-sm bg-white/5 text-white hover:bg-indigo-600 transition-all flex items-center gap-3 shadow-lg uppercase tracking-widest border border-white/10"
                     >
-                        <span className={isRegenerating ? 'animate-spin' : ''}>🔄</span>
-                        <span className="hidden sm:inline">{ui.donow_regenerate || "New Set"}</span>
+                        <span>🔄</span> {lang === 'sv' ? 'NYTT SET' : 'NEW SET'}
                     </button>
 
                     <button 
                         onClick={toggleAll} 
-                        className={`
-                            px-5 py-2 rounded-full font-bold text-sm transition-all shadow-sm flex items-center gap-2
-                            ${showAll 
-                                ? 'bg-slate-800 text-white hover:bg-black' 
-                                : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'}
-                        `}
+                        className={`px-8 py-4 rounded-2xl font-black text-sm transition-all shadow-xl flex items-center gap-3 uppercase tracking-widest ${showAll ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
                     >
-                        <span>{showAll ? '👁️‍🗨️' : '👁️'}</span>
-                        {showAll ? (ui.donow_hide_all || "Hide All") : (ui.donow_show_all || "Show All")}
+                        <span>{showAll ? '🙈' : '👁️'}</span>
+                        {showAll ? (ui.donow_hide_all || "DÖLJ SVAR") : (ui.donow_show_all || "VISA FACIT")}
                     </button>
                 </div>
             </header>
 
-            {/* Scrollable Grid Area */}
-            <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-                {/* STRICT 3 COLUMN GRID */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 max-w-8xl mx-auto pb-10">
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 max-w-screen-2xl mx-auto pb-20">
                     {questions.map((q, i) => (
                         <DoNowCard
                             key={i}
@@ -4059,7 +4341,6 @@ const DoNowGrid = ({ questions, ui, lang, onBack, onRefreshAll, onRefreshOne }) 
                             showAnswer={!!revealed[i]}
                             onToggle={() => toggleOne(i)}
                             lang={lang}
-                            onRefresh={() => onRefreshOne && onRefreshOne(i, q.topic, q.level)}
                         />
                     ))}
                 </div>
@@ -4439,6 +4720,423 @@ const PracticeView = ({
 export default PracticeView;
 
 // FILE END: src\components\views\PracticeView.jsx
+
+// =======================================================
+// FILE START: src\components\views\QuestionStudio.jsx
+// =======================================================
+
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  ChevronRight, Plus, Trash2, Layout, Send, Info, Layers, Search, Zap, FileText, Grid3X3, RefreshCcw, Bug, Loader2, Maximize2, CheckCircle2
+} from 'lucide-react';
+import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
+
+// --- VISUAL COMPONENT IMPORTS ---
+import { GraphCanvas } from '../visuals/GraphCanvas.jsx';
+import { VolumeVisualization } from '../visuals/VolumeVisualization.jsx';
+import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals.jsx';
+import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals.jsx';
+import ProbabilityTree from '../visuals/ProbabilityTree.jsx'; 
+import { RenderShape } from '../visuals/GeometryShapes.jsx';
+import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals.jsx';
+import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry.jsx';
+import PatternVisual from '../visuals/PatternComponents.jsx'; 
+import AngleVisual from '../visuals/AngleComponents.jsx'; 
+
+/**
+ * REFINED MATH RENDERER
+ * Handles mixed text and LaTeX using KaTeX auto-render.
+ */
+const MathDisplay = ({ content }) => {
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const loadKaTeX = () => {
+            if (!document.getElementById('katex-css')) {
+                const link = document.createElement('link');
+                link.id = 'katex-css';
+                link.rel = 'stylesheet';
+                link.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css';
+                document.head.appendChild(link);
+            }
+
+            if (!window.renderMathInElement) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';
+                script.onload = () => {
+                    const autoRender = document.createElement('script');
+                    autoRender.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js';
+                    autoRender.onload = doRender;
+                    document.head.appendChild(autoRender);
+                };
+                document.head.appendChild(script);
+            } else {
+                doRender();
+            }
+        };
+
+        const doRender = () => {
+            if (window.renderMathInElement && containerRef.current) {
+                window.renderMathInElement(containerRef.current, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                    ],
+                    throwOnError: false
+                });
+            }
+        };
+
+        if (content) loadKaTeX();
+    }, [content]);
+
+    return (
+        <div ref={containerRef} className="math-content leading-relaxed whitespace-pre-wrap text-inherit">
+            {content}
+        </div>
+    );
+};
+
+export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
+  const [setupMode, setSetupMode] = useState(null); 
+  const [selectedTopicId, setSelectedTopicId] = useState('basic_arithmetic');
+  const [packet, setPacket] = useState([]);
+  const [previewData, setPreviewData] = useState(null);
+  const [activePreviewKey, setActivePreviewKey] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    setPreviewData(null);
+    setActivePreviewKey(null);
+  }, [selectedTopicId]);
+
+  const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => 
+    Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name, ...data }))
+  );
+
+  const currentTopic = allTopics.find(t => t.id === selectedTopicId) || allTopics[0];
+
+  const triggerPreview = async (variationKey) => {
+    setIsPreviewLoading(true);
+    setActivePreviewKey(variationKey);
+    try {
+        const currentLang = lang || 'sv';
+        const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variationKey}&lang=${currentLang}`);
+        const data = await res.json();
+        setPreviewData(data);
+    } catch (err) {
+        console.error("Preview failed:", err);
+        setPreviewData(null);
+    } finally {
+        setIsPreviewLoading(false);
+    }
+  };
+
+  const addToPacket = (variation) => {
+    if (setupMode === 'donow' && packet.length >= 3) return; 
+    setPacket([...packet, {
+      id: crypto.randomUUID(),
+      topicId: selectedTopicId,
+      variationKey: variation.key,
+      name: variation.name,
+      quantity: setupMode === 'donow' ? 2 : 5, 
+    }]);
+  };
+
+  const removeFromPacket = (id) => setPacket(packet.filter(p => p.id !== id));
+  const updateQuantity = (id, delta) => {
+    setPacket(packet.map(p => p.id === id ? { ...p, quantity: Math.max(1, p.quantity + delta) } : p));
+  };
+
+  /**
+   * FIXED FINAL ACTION LOGIC
+   * Maps the packet to a configuration that batch.ts understands,
+   * ensuring variation keys and correct levels are preserved.
+   */
+  const handleFinalAction = () => {
+    if (typeof onDoNowGenerate !== 'function') {
+        console.error("Critical: onDoNowGenerate prop is missing from App.jsx");
+        return;
+    }
+
+    if (setupMode === 'donow') {
+      const config = packet.map(p => {
+          // FIX: Extract level number from variation key (e.g., "geom_level3" -> 3)
+          const levelMatch = p.variationKey.match(/\d+/);
+          const extractedLevel = levelMatch ? parseInt(levelMatch[0]) : 1;
+
+          return {
+            topic: p.topicId,
+            level: extractedLevel, 
+            variation: p.variationKey // Sending the actual variation string
+          };
+      });
+      onDoNowGenerate(config);
+    }
+  };
+
+  const renderVisual = () => {
+    if (!previewData?.renderData) return null;
+    
+    const visual = previewData.renderData.geometry || previewData.renderData.graph;
+    if (!visual) return null;
+
+    const type = visual.type || (previewData.renderData.graph ? 'graph' : null);
+    const data = visual;
+    
+    const scaleWrapper = "scale-[0.85] origin-top my-2 transform-gpu";
+
+    switch (type) {
+      case 'graph': return <div className={scaleWrapper}><GraphCanvas data={data} /></div>;
+      case 'volume': return <div className={scaleWrapper}><VolumeVisualization data={data} /></div>;
+      case 'angle': return <div className={scaleWrapper}><AngleVisual data={data} /></div>;
+      case 'pattern': return <div className="scale-75 origin-top my-1"><PatternVisual data={data} /></div>;
+      case 'rectangle': case 'square': case 'parallelogram': 
+      case 'triangle': case 'circle': case 'semicircle': case 'quarter_circle':
+        return (
+          <div className="flex justify-center w-full py-1">
+            <svg width="240" height="180" viewBox="0 0 300 250" className="drop-shadow-sm overflow-visible">
+              <RenderShape type={type} dims={data} labels={data.labels} scale={0.7} />
+            </svg>
+          </div>
+        );
+      default: return null;
+    }
+  };
+
+  const filteredTopics = allTopics.filter(t => 
+    t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    t.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (!setupMode) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-4xl w-full text-center space-y-12 animate-in fade-in zoom-in-95 duration-500">
+            <h2 className="text-6xl font-black text-slate-900 tracking-tighter uppercase italic tracking-widest">Studio</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <button onClick={() => setSetupMode('donow')} className="group p-12 bg-white border-2 border-slate-100 rounded-[3rem] hover:border-indigo-600 hover:shadow-2xl transition-all text-left">
+                    <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600 mb-6 group-hover:scale-110 transition-transform"><Grid3X3 size={40} /></div>
+                    <h3 className="text-3xl font-black text-slate-800 mb-2 uppercase tracking-tighter">Do Now Grid</h3>
+                    <p className="text-lg text-slate-500 leading-relaxed font-medium">Rutnät för gemensam uppstart på tavlan.</p>
+                </button>
+                <button onClick={() => setSetupMode('worksheet')} className="group p-12 bg-white border-2 border-slate-100 rounded-[3rem] hover:border-emerald-600 hover:shadow-2xl transition-all text-left">
+                    <div className="w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform"><FileText size={40} /></div>
+                    <h3 className="text-3xl font-black text-slate-800 mb-2 uppercase tracking-tighter">Arbetsblad</h3>
+                    <p className="text-lg text-slate-500 leading-relaxed font-medium">Anpassade övningspaket för eleverna.</p>
+                </button>
+            </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-[calc(100vh-64px)] bg-slate-100 overflow-hidden font-sans text-slate-900">
+      
+      {/* PANE 1: SIDEBAR (LIBRARY) - WIDER & LARGER TEXT */}
+      <div className="w-90 bg-white border-r border-slate-200 flex flex-col shadow-sm shrink-0 font-medium">
+        <div className="p-6 border-b border-slate-100 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-black uppercase tracking-widest text-xs text-slate-400 italic">Bibliotek</h2>
+            <button onClick={() => setSetupMode(null)} className="text-xs font-black text-indigo-600 uppercase hover:underline">Byt läge</button>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-3.5 top-4 text-slate-400" size={18} />
+            <input 
+              type="text" placeholder="Sök område..." 
+              className="w-full pl-12 pr-4 py-3.5 bg-slate-100 border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-500 rounded-2xl text-base outline-none font-bold"
+              value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {Object.values(SKILL_BUCKETS).map(cat => {
+            const catTopics = Object.entries(cat.topics).filter(([id]) => filteredTopics.some(ft => ft.id === id));
+            if (catTopics.length === 0) return null;
+            return (
+              <div key={cat.id}>
+                <h3 className="px-3 text-xs font-black text-slate-400 uppercase mb-3 italic tracking-wider">{cat.name}</h3>
+                <div className="space-y-1.5">
+                  {catTopics.map(([id, data]) => (
+                    <button
+                      key={id} onClick={() => setSelectedTopicId(id)}
+                      className={`w-full text-left px-4 py-3 text-[17px] rounded-2xl transition-all flex items-center justify-between group ${
+                        selectedTopicId === id ? 'bg-indigo-600 text-white shadow-xl font-bold' : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="truncate">{data.name}</span>
+                      <ChevronRight size={18} className={selectedTopicId === id ? 'opacity-100' : 'opacity-20'} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* PANE 2: VARIATIONS - WIDER & LARGER TEXT */}
+      <div className="w-[420px] bg-slate-50 border-r border-slate-200 flex flex-col overflow-hidden shrink-0">
+        <div className="p-6 border-b border-slate-200 bg-white shrink-0">
+            <h1 className="text-l font-black text-slate-900 uppercase truncate italic tracking-tight">{currentTopic?.name}</h1>
+            <p className="text-s text-slate-400 font-bold uppercase tracking-widest mt-1">Klicka för att förhandsgranska</p>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 shadow-inner custom-scrollbar">
+            {currentTopic?.variations.map(v => (
+                <div 
+                    key={v.key} onClick={() => triggerPreview(v.key)}
+                    className={`p-6 rounded-[2.5rem] border-2 transition-all cursor-pointer relative group ${
+                        activePreviewKey === v.key ? 'border-indigo-500 bg-white shadow-xl ring-4 ring-indigo-50' : 'border-white bg-white hover:border-indigo-100 shadow-sm'
+                    }`}
+                >
+                    <div className="flex justify-between items-start gap-6">
+                        <div className="min-w-0">
+                            <h4 className="font-black text-slate-800 text-[18px] uppercase leading-tight group-hover:text-indigo-600 transition-colors tracking-tight italic">{v.name}</h4>
+                            <p className="text-[15px] text-slate-500 mt-2.5 leading-relaxed font-medium">{v.desc}</p>
+                        </div>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); addToPacket(v); }}
+                            className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-indigo-600 transition-all shadow-xl group-hover:scale-110 active:scale-90 shrink-0"
+                        >
+                            <Plus size={24} strokeWidth={3} />
+                        </button>
+                    </div>
+                </div>
+            ))}
+        </div>
+      </div>
+
+      {/* PANE 3: THE BOARD (ENLARGED PREVIEW) - SCALED FOR OPTIMAL FIT */}
+      <div className="flex-1 bg-slate-200 p-6 flex flex-col overflow-hidden relative">
+        <div className="flex-1 bg-white rounded-[2.5rem] shadow-2xl border border-slate-300 overflow-hidden flex flex-col mx-auto w-full max-w-2xl">
+            <div className="bg-slate-900 px-6 py-4 text-white flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className={`w-2.5 h-2.5 rounded-full ${isPreviewLoading ? 'bg-yellow-400 animate-spin' : 'bg-red-500 animate-pulse'}`} />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Tavlan</span>
+                </div>
+                {activePreviewKey && (
+                    <button 
+                        onClick={() => triggerPreview(activePreviewKey)} disabled={isPreviewLoading}
+                        className="text-[10px] bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full font-black uppercase transition-all flex items-center gap-2"
+                    >
+                        <RefreshCcw size={12} className={isPreviewLoading ? 'animate-spin' : ''} /> Nytt exempel
+                    </button>
+                )}
+            </div>
+            
+            <div className="p-10 flex-1 flex flex-col items-center justify-center text-center relative overflow-y-auto custom-scrollbar">
+                {isPreviewLoading && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3">
+                        <Loader2 className="animate-spin text-indigo-600" size={40} />
+                    </div>
+                )}
+                
+                {!previewData ? (
+                    <div className="text-slate-300 flex flex-col items-center gap-4 grayscale opacity-20">
+                        <Maximize2 size={80} strokeWidth={0.5} />
+                        <p className="text-sm font-black uppercase tracking-widest leading-relaxed">Välj variation för att förhandsgranska</p>
+                    </div>
+                ) : (
+                    <div className="w-full space-y-6 animate-in fade-in zoom-in-95 duration-500 py-2">
+                        <div className="w-full flex justify-center transform transition-transform">
+                             {renderVisual()}
+                        </div>
+
+                        <div className="text-xl text-slate-800 font-bold tracking-tight px-6 leading-relaxed">
+                            <MathDisplay content={previewData.renderData.description} />
+                        </div>
+                        
+                        {previewData.renderData.latex && (
+                            <div className="text-2xl font-serif text-indigo-600 py-6 px-4 bg-indigo-50/50 rounded-3xl border border-indigo-100 shadow-inner overflow-x-auto mx-6">
+                                <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
+                            </div>
+                        )}
+
+                        {previewData.renderData.options && previewData.renderData.options.length > 0 && (
+                            <div className="grid grid-cols-2 gap-3 px-6 mt-6">
+                                {previewData.renderData.options.map((opt, idx) => (
+                                    <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-4 text-left shadow-sm">
+                                        <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[12px] font-black text-slate-400 shrink-0">
+                                            {String.fromCharCode(65 + idx)}
+                                        </div>
+                                        <div className="text-sm font-semibold text-slate-700">
+                                            <MathDisplay content={opt} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        
+                        <div className="pt-8 border-t border-slate-100 text-left px-8 mx-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Info size={16} className="text-indigo-500" />
+                                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Ledtråd</h5>
+                            </div>
+                            <p className="text-base text-slate-500 italic leading-relaxed font-medium">
+                                <MathDisplay content={previewData.clues?.[0]?.text || "Ingen ledtråd tillgänglig."} />
+                            </p>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+      </div>
+
+      {/* PANE 4: THE CART */}
+      <div className="w-80 bg-white border-l border-slate-200 flex flex-col shadow-2xl relative z-10 shrink-0 font-medium">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-sm font-black shadow-lg">
+              {packet.length}
+            </div>
+            <h2 className="text-xs font-black text-slate-600 uppercase tracking-widest tracking-tighter italic">Ditt Paket</h2>
+          </div>
+          {packet.length > 0 && (
+            <button onClick={() => setPacket([])} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
+              <Trash2 size={20} />
+            </button>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white shadow-inner">
+          {packet.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-200 grayscale opacity-50">
+              <Layers size={48} strokeWidth={1} className="mb-2" />
+              <p className="text-[10px] font-black uppercase tracking-widest">Tomt paket</p>
+            </div>
+          ) : (
+            packet.map((item) => (
+              <div key={item.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl relative group transition-all hover:bg-white hover:shadow-md">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-[8px] font-black text-indigo-500 uppercase tracking-tighter bg-indigo-50 px-2 py-0.5 rounded truncate max-w-[120px]">
+                    {allTopics.find(t => t.id === item.topicId)?.name}
+                  </span>
+                  <button onClick={() => removeFromPacket(item.id)} className="p-1 text-red-400 hover:bg-red-50 rounded transition-all"><Trash2 size={14} /></button>
+                </div>
+                <h5 className="text-[14px] font-bold text-slate-800 leading-tight mb-3">{item.name}</h5>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="p-8 border-t border-slate-100 bg-white shrink-0">
+          <button 
+            onClick={handleFinalAction} disabled={packet.length === 0}
+            className={`w-full py-5 rounded-[2rem] font-black flex items-center justify-center gap-3 transition-all shadow-2xl tracking-tighter uppercase italic text-lg ${
+                setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-100'
+            } disabled:opacity-30 active:scale-95`}
+          >
+            <Send size={24} /> {setupMode === 'donow' ? 'Skapa Do Now' : 'Publicera'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// FILE END: src\components\views\QuestionStudio.jsx
 
 // =======================================================
 // FILE START: src\components\visuals\AngleComponents.jsx
@@ -5698,248 +6396,232 @@ export const VolumeVisualization = ({ data }) => {
 // FILE START: src\constants\content_map.js
 // =======================================================
 
+/**
+ * CONTENT_MAP
+ * En omfattande guide över alla ämnesområden, nivåer och variationer i Anpassa.
+ * Används för att visa innehållskartan för lärare och elever.
+ */
+
 export const CONTENT_MAP = {
     arithmetic: {
-        title: "Taluppfattning",
+        title: "Taluppfattning & Aritmetik",
         topics: [
             {
                 id: "arithmetic",
                 title: "De Fyra Räknesätten",
                 levels: [
-                    { lvl: 1, desc: "Addition (Uppställning)", ex: "345 + 129" },
-                    { lvl: 2, desc: "Subtraktion (Uppställning)", ex: "502 - 148" },
-                    { lvl: 3, desc: "Decimaltal (+/-)", ex: "4.5 + 2.15" },
-                    { lvl: 4, desc: "Multiplikation (Enkel)", ex: "6 · 12" },
-                    { lvl: 5, desc: "Multiplikation (Medel)", ex: "23 · 4" },
-                    { lvl: 6, desc: "Multiplikation (Svår)", ex: "45 · 12" },
-                    { lvl: 7, desc: "Kort Division", ex: "84 / 4" },
-                    { lvl: 8, desc: "Blandade Heltal", ex: "Mix av alla räknesätt" },
-                    { lvl: 9, desc: "Blandade Decimaltal", ex: "Mix med decimaler" }
-                ]
-            },
-            {
-                id: "fraction_basics",
-                title: "Bråk: Grunder",
-                levels: [
-                    { lvl: 1, desc: "Visuella Bråk", ex: "Del av helhet" },
-                    { lvl: 2, desc: "Beräkna delen", ex: "1/4 av 20" },
-                    { lvl: 3, desc: "Blandad & Bråkform", ex: "1 1/2 <-> 3/2" },
-                    { lvl: 4, desc: "Förlänga & Förkorta", ex: "2/4 -> 1/2" },
-                    { lvl: 5, desc: "Bråk & Decimaltal", ex: "1/5 = 0.2" }
-                ]
-            },
-            {
-                id: "fraction_arith",
-                title: "Bråk: Räkna",
-                levels: [
-                    { lvl: 1, desc: "Addition & Subtraktion (Lika)", ex: "1/5 + 2/5" },
-                    { lvl: 2, desc: "Addition & Subtraktion (Olika)", ex: "1/2 + 1/4" },
-                    { lvl: 3, desc: "Blandad form (+)", ex: "1 1/2 + 3/4" },
-                    { lvl: 4, desc: "Multiplikation", ex: "2/3 · 4/5" },
-                    { lvl: 5, desc: "Division", ex: "1/2 / 1/4" }
+                    { lvl: 1, desc: "Addition: Uppställning & Övergångar", ex: "345 + 129" },
+                    { lvl: 2, desc: "Subtraktion: Växling & Lån", ex: "502 - 148" },
+                    { lvl: 3, desc: "Decimaltal: Vertikal räkning", ex: "12,45 + 8,7" },
+                    { lvl: 4, desc: "Multiplikation: Tabellträning", ex: "7 • 8" },
+                    { lvl: 5, desc: "Multiplikation: 2-siffrigt", ex: "23 • 4" },
+                    { lvl: 6, desc: "Multiplikation: Decimaler", ex: "0,5 • 12" },
+                    { lvl: 7, desc: "Kort Division: Grunder", ex: "84 / 4" },
+                    { lvl: 8, desc: "Division med rest & Decimaler", ex: "125 / 4" },
+                    { lvl: 9, desc: "Algebraisk Aritmetik (Saknat tal)", ex: "45 + x = 112" }
                 ]
             },
             {
                 id: "negative",
                 title: "Negativa Tal",
                 levels: [
-                    { lvl: 1, desc: "Enkel Addition/Subtraktion", ex: "5 - 8" },
-                    { lvl: 2, desc: "Svårare Addition/Subtraktion", ex: "-5 - (-8)" },
-                    { lvl: 3, desc: "Multiplikation", ex: "-3 · 4" },
-                    { lvl: 4, desc: "Division", ex: "-12 / -3" },
-                    { lvl: 5, desc: "Blandade Uppgifter", ex: "Mix av räknesätt" }
+                    { lvl: 1, desc: "Tallinjen & Storleksordning", ex: "Vilket tal är minst: -5 eller -8?" },
+                    { lvl: 2, desc: "Addition & Subtraktion (Enkel)", ex: "5 - 8" },
+                    { lvl: 3, desc: "Dubbeltecken: Förenkling", ex: "-5 - (-8) = -5 + 8" },
+                    { lvl: 4, desc: "Multiplikation & Division", ex: "-3 • (-4)" },
+                    { lvl: 5, desc: "Räknekedjor & Teckenregler", ex: "(-2) • 3 • (-4)" }
                 ]
             },
             {
                 id: "ten_powers",
-                title: "10, 100, 1000",
+                title: "Tiopotenser & Decimaler",
                 levels: [
-                    { lvl: 1, desc: "Mult/Div med 10, 100, 1000", ex: "3.5 · 100" },
-                    { lvl: 2, desc: "Begreppsförståelse", ex: "Vilket är störst?" },
-                    { lvl: 3, desc: "Blandade Faktorer", ex: "0.1, 0.01, 1000" }
+                    { lvl: 1, desc: "Multiplikation/Division med 10, 100, 1000", ex: "3,5 • 100" },
+                    { lvl: 2, desc: "Begrepp: Skriva som potens", ex: "1000 = 10^3" },
+                    { lvl: 3, desc: "Division med 0,1 och 0,01", ex: "5 / 0,1 = 50" }
                 ]
             },
             {
                 id: "exponents",
                 title: "Potenser & Rötter",
                 levels: [
-                    { lvl: 1, desc: "Grunder & x^0", ex: "3^2, 5^0" },
-                    { lvl: 2, desc: "Tiopotenser", ex: "10^3, 10^-2" },
-                    { lvl: 3, desc: "Grundpotensform", ex: "4.5 · 10^3" },
-                    { lvl: 4, desc: "Kvadratrötter", ex: "sqrt(25)" },
-                    { lvl: 5, desc: "Potenslagar (Enkel)", ex: "x^2 · x^3" },
-                    { lvl: 6, desc: "Potenslagar (Avancerad)", ex: "(x^2)^3" }
+                    { lvl: 1, desc: "Grunder: Bas & Exponent", ex: "3^2 = 9" },
+                    { lvl: 2, desc: "Tiopotenser & Negativa exponenter", ex: "10^-2" },
+                    { lvl: 3, desc: "Grundpotensform", ex: "4,5 • 10^3" },
+                    { lvl: 4, desc: "Kvadratrötter & Uppskattning", ex: "sqrt(25)" },
+                    { lvl: 5, desc: "Potenslagar: Multiplikation", ex: "x^2 • x^3 = x^5" },
+                    { lvl: 6, desc: "Potenslagar: Division & Parentes", ex: "(x^2)^3" }
                 ]
             },
             {
-                id: "percent",
-                title: "Procent",
+                id: "fraction_basics",
+                title: "Bråk: Grunderna",
                 levels: [
-                    { lvl: 1, desc: "Grundläggande (Rutnät)", ex: "Bildstöd" },
-                    { lvl: 2, desc: "Huvudräkning (10%, 50%)", ex: "10% av 500" },
-                    { lvl: 3, desc: "Multiplar av 10%", ex: "30% av 200" },
-                    { lvl: 4, desc: "Beräkna andelen (Decimal)", ex: "0.15 · 400" },
-                    { lvl: 5, desc: "Hitta helheten (100%)", ex: "Delen är 20, andel 50%" },
-                    { lvl: 6, desc: "Verklig Förändring", ex: "Prisökning" }
+                    { lvl: 1, desc: "Visuella Bråk: Del av helhet", ex: "Hur stor andel är färgad?" },
+                    { lvl: 2, desc: "Beräkna delen av ett antal", ex: "1/4 av 20" },
+                    { lvl: 3, desc: "Blandad form & Bråkform", ex: "1 1/2 <-> 3/2" },
+                    { lvl: 4, desc: "Förkortning & Förlängning", ex: "2/4 -> 1/2" },
+                    { lvl: 5, desc: "Decimaltal <-> Bråk", ex: "1/5 = 0,2" }
+                ]
+            },
+            {
+                id: "fraction_arith",
+                title: "Bråkräkning",
+                levels: [
+                    { lvl: 1, desc: "Addition & Subtraktion (Lika nämnare)", ex: "1/5 + 2/5" },
+                    { lvl: 2, desc: "Addition & Subtraktion (MGN)", ex: "1/2 + 1/4" },
+                    { lvl: 3, desc: "Blandade tal i beräkningar", ex: "1 1/2 + 3/4" },
+                    { lvl: 4, desc: "Multiplikation", ex: "2/3 • 4/5" },
+                    { lvl: 5, desc: "Division (Invertera)", ex: "1/2 / 1/4" }
                 ]
             }
         ]
     },
     algebra: {
-        title: "Algebra",
+        title: "Algebra & Funktioner",
         topics: [
             {
                 id: "simplify",
-                title: "Uttryck",
+                title: "Uttryck & Förenkling",
                 levels: [
-                    { lvl: 1, desc: "Förenkla Uttryck", ex: "2x + 3x" },
-                    { lvl: 2, desc: "Parenteser (Addition)", ex: "2 + (x - 3)" },
-                    { lvl: 3, desc: "Parenteser (Multiplikation)", ex: "3(x + 2)" },
-                    { lvl: 4, desc: "Parenteser (Subtraktion)", ex: "5 - (x - 2)" },
-                    { lvl: 5, desc: "Problemlösning", ex: "Skriv uttryck för omkrets" },
-                    { lvl: 6, desc: "Blandade Nivåer", ex: "Mix av algebra" }
+                    { lvl: 1, desc: "Samla termer (Addition/Subtraktion)", ex: "2x + 3x - x" },
+                    { lvl: 2, desc: "Parenteser med plus framför", ex: "2 + (x - 3)" },
+                    { lvl: 3, desc: "Multiplicera in i parentes", ex: "3(x + 2)" },
+                    { lvl: 4, desc: "Minusparenteser (Teckenbyte)", ex: "5 - (x - 2)" },
+                    { lvl: 5, desc: "Sammansatta uttryck", ex: "2(x+3) - (x-1)" },
+                    { lvl: 6, desc: "Problemlösning med variabler", ex: "Uttryck för omkrets" }
                 ]
             },
             {
                 id: "equation",
-                title: "Ekvationer",
+                title: "Ekvationslösning",
                 levels: [
                     { lvl: 1, desc: "Enstegsekvationer", ex: "x + 5 = 12" },
                     { lvl: 2, desc: "Tvåstegsekvationer", ex: "2x + 3 = 11" },
-                    { lvl: 3, desc: "Med Parenteser", ex: "2(x + 1) = 10" },
+                    { lvl: 3, desc: "Ekvationer med parenteser", ex: "2(x + 1) = 10" },
                     { lvl: 4, desc: "Variabel på båda sidor", ex: "3x + 2 = x + 8" },
-                    { lvl: 5, desc: "Skriv Ekvation", ex: "Från text till ekvation" },
-                    { lvl: 6, desc: "Lös Problem", ex: "Textuppgifter" },
-                    { lvl: 7, desc: "Blandade Ekvationer", ex: "Mix av problem" }
+                    { lvl: 5, desc: "Skriva ekvationer från text", ex: "Ställ upp ax + b = c" },
+                    { lvl: 6, desc: "Lösa vardagsproblem", ex: "Rörlig kostnad + Fast avgift" }
+                ]
+            },
+            {
+                id: "patterns",
+                title: "Mönster & Talföljder",
+                levels: [
+                    { lvl: 1, desc: "Identifiera nästa tal", ex: "2, 5, 8, ..." },
+                    { lvl: 2, desc: "Aritmetiska mönster", ex: "Differensen är konstant" },
+                    { lvl: 3, desc: "Skapa formeln (an + b)", ex: "y = 3n + 2" },
+                    { lvl: 4, desc: "Baklängesräkning (Figurnummer)", ex: "Vilken figur har 100 delar?" }
                 ]
             },
             {
                 id: "linear_graph",
-                title: "Räta Linjen",
+                title: "Räta Linjens Ekvation",
                 levels: [
-                    { lvl: 1, desc: "Hitta m-värdet", ex: "Skärning y-axel" },
-                    { lvl: 2, desc: "Hitta k-värdet (Pos)", ex: "Lutning uppåt" },
-                    { lvl: 3, desc: "Hitta k-värdet (Neg)", ex: "Lutning nedåt" },
-                    { lvl: 4, desc: "Bestäm funktionen", ex: "y = kx + m" },
-                    { lvl: 5, desc: "Blandat", ex: "Mix av grafer" }
-                ]
-            }
-        ]
-    },
-    statistics: {
-        title: "Sannolikhet & Statistik",
-        topics: [
-            {
-                id: "probability",
-                title: "Sannolikhet",
-                levels: [
-                    { lvl: 1, desc: "Visuell Sannolikhet", ex: "Kulor i påse, Snurrhjul" },
-                    { lvl: 2, desc: "Tärning & Slump", ex: "Tärning, Kortlek" },
-                    { lvl: 3, desc: "Sannolikhet som Procent", ex: "Andel i %" },
-                    { lvl: 4, desc: "Komplementhändelse", ex: "Sannolikhet för 'Inte'" },
-                    { lvl: 5, desc: "Oberoende Händelser", ex: "Två mynt, Tärning + Mynt" },
-                    { lvl: 6, desc: "Kombinatorik", ex: "Antal kombinationer (Träd)" }
-                ]
-            },
-            {
-                id: "statistics",
-                title: "Statistik",
-                levels: [
-                    { lvl: 1, desc: "Typvärde & Variationsbredd", ex: "Mode, Range" },
-                    { lvl: 2, desc: "Medelvärde", ex: "Summa / Antal" },
-                    { lvl: 3, desc: "Median", ex: "Mittenvärdet (sorterat)" },
-                    { lvl: 4, desc: "Baklänges medelvärde", ex: "Hitta saknat tal" },
-                    { lvl: 5, desc: "Frekvenstabell", ex: "Medel/Median ur tabell" },
-                    { lvl: 6, desc: "Blandade begrepp", ex: "Jämför mått" }
-                ]
-            },
-            {
-                id: "change_factor",
-                title: "Förändringsfaktor",
-                levels: [
-                    { lvl: 1, desc: "Begrepp & Definition", ex: "Ökning 20% -> 1.20" },
-                    { lvl: 2, desc: "Beräkna nya värdet", ex: "500 * 1.20" },
-                    { lvl: 3, desc: "Beräkna gamla värdet", ex: "Nytt / Faktor" },
-                    { lvl: 4, desc: "Total förändring", ex: "1.10 * 0.90" },
-                    { lvl: 5, desc: "Textuppgifter", ex: "Befolkning, Ränta" }
+                    { lvl: 1, desc: "Identifiera m-värde", ex: "Skärning med y-axeln" },
+                    { lvl: 2, desc: "Identifiera k-värde (Lutning)", ex: "Trappstegsmetoden" },
+                    { lvl: 3, desc: "Bestäm funktionen y = kx + m", ex: "Från graf till formel" },
+                    { lvl: 4, desc: "Proportionalitet", ex: "Linjer genom origo" }
                 ]
             }
         ]
     },
     geometry: {
-        title: "Geometri",
+        title: "Geometri & Mätning",
         topics: [
             {
                 id: "geometry",
                 title: "Area & Omkrets",
                 levels: [
-                    { lvl: 1, desc: "Omkrets (Rektangel)", ex: "2(b+h)" },
-                    { lvl: 2, desc: "Area (Rektangel)", ex: "b*h" },
-                    { lvl: 3, desc: "Area (Triangel)", ex: "b*h/2" },
-                    { lvl: 4, desc: "Sammansatta (Rekt+Tri)", ex: "Rectanglar och trianglar" },
-                    { lvl: 5, desc: "Cirklar", ex: "pi*r^2" },
-                    { lvl: 6, desc: "Sammansatta (Alla)", ex: "Hus, Portal" }
+                    { lvl: 1, desc: "Omkrets: Rektanglar & Kvadrater", ex: "Vägen runt om" },
+                    { lvl: 2, desc: "Area: Rektangel & Parallellogram", ex: "Bas • Höjd" },
+                    { lvl: 3, desc: "Area: Triangel", ex: "(Bas • Höjd) / 2" },
+                    { lvl: 4, desc: "Sammansatta figurer (L-form)", ex: "Dela upp i kända ytor" },
+                    { lvl: 5, desc: "Cirkelns Area & Omkrets", ex: "Beräkningar med Pi" },
+                    { lvl: 6, desc: "Sammansatta figurer (Hus/Portaler)", ex: "Mix av former" }
                 ]
             },
             {
-                id: "scale",
-                title: "Skala",
+                id: "angles",
+                title: "Vinklar",
                 levels: [
-                    { lvl: 1, desc: "Begreppsförståelse", ex: "1:100 vs 100:1" },
-                    { lvl: 2, desc: "Beräkna längd (Enkel)", ex: "Bild -> Verklighet" },
-                    { lvl: 3, desc: "Blandade Scenarier", ex: "Karta, Ritning" },
-                    { lvl: 4, desc: "Bestäm Skalan", ex: "Bild / Verklighet" },
-                    { lvl: 5, desc: "Problemlösning", ex: "Textuppgifter" },
-                    { lvl: 6, desc: "Areaskala", ex: "Längdskala^2" },
-                    { lvl: 7, desc: "Blandat", ex: "Mix av uppgifter" }
-                ]
-            },
-            {
-                id: "volume",
-                title: "Volym",
-                levels: [
-                    { lvl: 1, desc: "Rätblock & Kub", ex: "b*d*h" },
-                    { lvl: 2, desc: "Prisma", ex: "B*h" },
-                    { lvl: 3, desc: "Cylinder", ex: "pi*r^2*h" },
-                    { lvl: 4, desc: "Pyramid & Kon", ex: "B*h/3" },
-                    { lvl: 5, desc: "Klot", ex: "4*pi*r^3/3" },
-                    { lvl: 6, desc: "Blandade Volymer", ex: "Mix av kroppar" },
-                    { lvl: 7, desc: "Enhetsomvandling", ex: "dm3 <-> liter" },
-                    { lvl: 8, desc: "Begränsningsyta", ex: "Area till 3D former" }
-                ]
-            },
-            {
-                id: "similarity",
-                title: "Likformighet",
-                levels: [
-                    { lvl: 1, desc: "Likformig eller inte?", ex: "Jämför former" },
-                    { lvl: 2, desc: "Beräkna sida", ex: "Skala * sida" },
-                    { lvl: 3, desc: "Topptriangelsatsen", ex: "Liten/Stor triangel" },
-                    { lvl: 4, desc: "Pythagoras", ex: "Rätvinklig triangel" }
+                    { lvl: 1, desc: "Vinkeltyper", ex: "Spetsig, rät, trubbig" },
+                    { lvl: 2, desc: "Sidovinklar & Vertikalvinklar", ex: "Summan är 180 grader" },
+                    { lvl: 3, desc: "Vinkelsumma i en triangel", ex: "180 - (v1 + v2)" }
                 ]
             },
             {
                 id: "pythagoras",
                 title: "Pythagoras Sats",
                 levels: [
-                    { lvl: 1, desc: "Kvadrater & Rötter", ex: "3^2, sqrt(9)" },
-                    { lvl: 2, desc: "Hitta Hypotenusan", ex: "a^2 + b^2 = c^2" },
-                    { lvl: 3, desc: "Hitta Kateten", ex: "c^2 - b^2 = a^2" },
-                    { lvl: 4, desc: "Problemlösning", ex: "Stege mot vägg" },
-                    { lvl: 5, desc: "Avstånd", ex: "Koordinatsystem" },
-                    { lvl: 6, desc: "Rätvinklig?", ex: "Omvänd sats" }
+                    { lvl: 1, desc: "Kvadrater & Rötter", ex: "Basen för Pythagoras" },
+                    { lvl: 2, desc: "Hitta Hypotenusan (c)", ex: "a^2 + b^2 = c^2" },
+                    { lvl: 3, desc: "Hitta Kateten (a/b)", ex: "c^2 - b^2 = a^2" },
+                    { lvl: 4, desc: "Tillämpningar (Stegen/Diagonalen)", ex: "Problemlösning" }
                 ]
             },
             {
-                id: "angles",
-                title: "Vinklar", // NEW
+                id: "volume",
+                title: "Volym & Yta",
                 levels: [
-                    { lvl: 1, desc: "Vinkeltyper", ex: "Spetsig, Rät, Trubbig" },
-                    { lvl: 2, desc: "Komplement & Supplement", ex: "Summa 90/180" },
-                    { lvl: 3, desc: "Vertikal- & Sidovinklar", ex: "Korsande linjer" },
-                    { lvl: 4, desc: "Vinkelsumma (Triangel)", ex: "x + y + z = 180" },
-                    { lvl: 5, desc: "Likbelägna & Alternatvinklar", ex: "Parallella linjer" },
-                    { lvl: 6, desc: "Vinkelsumma (Polygoner)", ex: "(n-2)*180" }
+                    { lvl: 1, desc: "Rätblock & Kub", ex: "Bredden • Djupet • Höjden" },
+                    { lvl: 2, desc: "Prisma & Cylinder", ex: "Basytan • Höjden" },
+                    { lvl: 3, desc: "Pyramid & Kon", ex: "(Basytan • Höjden) / 3" },
+                    { lvl: 4, desc: "Klot (Sfär)", ex: "Volym för bollar" },
+                    { lvl: 5, desc: "Enhetsomvandling (Liter)", ex: "dm3 <-> Liter" },
+                    { lvl: 6, desc: "Begränsningsyta", ex: "Arean på utsidan" }
+                ]
+            },
+            {
+                id: "scale",
+                title: "Skala & Likformighet",
+                levels: [
+                    { lvl: 1, desc: "Begrepp: Förstoring & Förminskning", ex: "1:100 vs 2:1" },
+                    { lvl: 2, desc: "Beräkna verklig längd", ex: "Från karta till verklighet" },
+                    { lvl: 3, desc: "Bestäm skalan", ex: "Bild / Verklighet" },
+                    { lvl: 4, desc: "Areaskala", ex: "Längdskala i kvadrat" },
+                    { lvl: 5, desc: "Likformighet: Kontroll", ex: "Jämför sidförhållanden" },
+                    { lvl: 6, desc: "Likformighet: Beräkna sida", ex: "Topptriangelsatsen" }
+                ]
+            }
+        ]
+    },
+    data: {
+        title: "Statistik & Sannolikhet",
+        topics: [
+            {
+                id: "probability",
+                title: "Sannolikhet",
+                levels: [
+                    { lvl: 1, desc: "Klassisk sannolikhet (Visuell)", ex: "Kulor i påse" },
+                    { lvl: 2, desc: "Händelser i flera steg", ex: "Tärning + Mynt" },
+                    { lvl: 3, desc: "Komplementhändelse", ex: "Sannolikheten för 'Inte'" },
+                    { lvl: 4, desc: "Sannolikhetsträd", ex: "Beroende händelser" },
+                    { lvl: 5, desc: "Kombinatorik", ex: "Handskakningsproblemet" }
+                ]
+            },
+            {
+                id: "statistics",
+                title: "Statistik",
+                levels: [
+                    { lvl: 1, desc: "Typvärde & Variationsbredd", ex: "Vanligaste värdet" },
+                    { lvl: 2, desc: "Medelvärde: Grund", ex: "Summa / Antal" },
+                    { lvl: 3, desc: "Median", ex: "Mittenvärdet (sorterat)" },
+                    { lvl: 4, desc: "Frekvenstabell", ex: "Viktat medelvärde" },
+                    { lvl: 5, desc: "Analys: Outliers & Centralmått", ex: "Välj rätt mått" },
+                    { lvl: 6, desc: "Mål-medelvärde", ex: "Vad krävs på nästa test?" }
+                ]
+            },
+            {
+                id: "percent",
+                title: "Procent & Förändring",
+                levels: [
+                    { lvl: 1, desc: "Huvudräkning (10%, 25%, 50%)", ex: "Benchmarks" },
+                    { lvl: 2, desc: "Beräkna delen", ex: "15% av 400" },
+                    { lvl: 3, desc: "Hitta helheten (100%)", ex: "Baklängesräkning" },
+                    { lvl: 4, desc: "Förändringsfaktor: Ökning", ex: "FF > 1" },
+                    { lvl: 5, desc: "Förändringsfaktor: Minskning", ex: "FF < 1" },
+                    { lvl: 6, desc: "Procentfällan: Upprepad förändring", ex: "Höjning sen sänkning" }
                 ]
             }
         ]
@@ -6441,8 +7123,8 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Hitta Hypotenusan", en: "Find Hypotenuse" },
         3: { sv: "Hitta Kateten", en: "Find Leg" },
         4: { sv: "Problemlösning", en: "Word Problems" },
-        5: { sv: "Avstånd (Koordinater)", en: "Distance (Coordinates)" },
-        6: { sv: "Är den rätvinklig?", en: "Is it Right-Angled?" }
+        5: { sv: "Är den rätvinklig?", en: "Is it Right-Angled?" },
+        6: { sv: "Avstånd (Koordinater)", en: "Distance (Coordinates)" }
     },
     patterns: { 
         1: { sv: "Hitta nästa tal & Skillnad", en: "Next Number & Difference" },
@@ -6454,6 +7136,234 @@ export const LEVEL_DESCRIPTIONS = {
 };
 
 // FILE END: src\constants\localization.js
+
+// =======================================================
+// FILE START: src\constants\skillBuckets.js
+// =======================================================
+
+/**
+ * MASTER REGISTRY OF SKILL BUCKETS (VARIATION KEYS)
+ * Scanned directly from the .ts generator source code.
+ */
+
+export const SKILL_BUCKETS = {
+  // --- ALGEBRA & MÖNSTER ---
+  algebra: {
+    id: 'algebra',
+    name: 'Algebra & Mönster',
+    topics: {
+      equations: {
+        name: 'Ekvationslösning',
+        variations: [
+          { key: 'onestep_concept_inverse', name: 'Koncept: Invers', desc: 'Motsatt räknesätt' },
+          { key: 'onestep_spot_lie', name: 'Hitta felet (Ensteg)', desc: 'Vilken lösning är falsk?' },
+          { key: 'onestep_calc', name: 'Enstegsekvationer', desc: 'Standard x + a = b' },
+          { key: 'twostep_concept_order', name: 'Koncept: Ordning', desc: 'Prioritering i algebra' },
+          { key: 'twostep_calc', name: 'Tvåstegsekvationer', desc: 'ax + b = c' },
+          { key: 'paren_lie_distribution', name: 'Parentes-fällan', desc: 'Felaktig multiplikation' },
+          { key: 'paren_calc', name: 'Ekvation m. parentes', desc: 'a(x + b) = c' },
+          { key: 'bothsides_concept_strategy', name: 'Strategi: x på båda sidor', desc: 'Effektiv samling' },
+          { key: 'bothsides_calc', name: 'X på båda sidor', desc: 'ax + b = cx + d' }
+        ]
+      },
+      expressions: {
+        name: 'Förenkling',
+        variations: [
+          { key: 'combine_lie_exponent', name: 'Exponent-fällan', desc: 'x + x vs x * x' },
+          { key: 'combine_concept_id', name: 'Identifiera termer', desc: 'Vilka hör ihop?' },
+          { key: 'combine_standard_mixed', name: 'Samla termer', desc: 'Standardförenkling' },
+          { key: 'distribute_lie_partial', name: 'Partiell multiplikation', desc: 'Vanligt misstag' },
+          { key: 'distribute_inverse_factor', name: 'Hitta faktorn', desc: 'Vad står utanför?' },
+          { key: 'distribute_plus', name: 'Parentes (+)', desc: 'Multiplicera in positivt' },
+          { key: 'distribute_minus', name: 'Parentes (-)', desc: 'Multiplicera in negativt' },
+          { key: 'distribute_double', name: 'Dubbel parenteser', desc: 'Summa av uttryck' },
+          { key: 'distribute_combine_std', name: 'Expandera & Förenkla', desc: 'Hela kedjan' },
+          { key: 'sub_concept_plus_logic', name: 'Teckenbyte logik', desc: 'Minus framför parentes' },
+          { key: 'sub_block_plus', name: 'Minusparentes (+)', desc: '-(x + a)' },
+          { key: 'sub_block_minus', name: 'Minusparentes (-)', desc: '-(x - a)' }
+        ]
+      },
+      equations_word: {
+        name: 'Ekvationer: Vardag',
+        variations: [
+          { key: 'rate_fixed_add_write', name: 'Ställ upp: Rörlig + Fast', desc: 'ax + b' },
+          { key: 'rate_fixed_add_solve', name: 'Lös: Rörlig + Fast', desc: 'Hitta x' },
+          { key: 'rate_fixed_sub_write', name: 'Ställ upp: Minskning', desc: 'ax - b' },
+          { key: 'rate_fixed_sub_solve', name: 'Lös: Minskning', desc: 'Hitta x' },
+          { key: 'compare_word_sum_write', name: 'Ställ upp: Jämförelse', desc: 'x + (x + a)' },
+          { key: 'compare_word_sum_solve', name: 'Lös: Jämförelse', desc: 'Hitta x' }
+        ]
+      },
+      patterns: {
+        name: 'Mönster & Formler',
+        variations: [
+          { key: 'seq_lie', name: 'Egenskaps-lögnen', desc: 'Analys av följd' },
+          { key: 'seq_type', name: 'Aritmetisk/Geometrisk', desc: 'Typ av mönster' },
+          { key: 'seq_diff', name: 'Hitta differensen', desc: 'Hoppstorlek' },
+          { key: 'seq_next', name: 'Nästa tal', desc: 'Fortsätt följden' },
+          { key: 'high_term', name: 'Hitta term n', desc: 'Genvägsräkning' },
+          { key: 'formula_missing', name: 'Lös ? i formeln', desc: '?n + b' },
+          { key: 'visual_calc', name: 'Matchsticksberäkning', desc: 'Hur många stickor?' },
+          { key: 'find_formula', name: 'Skriv formeln', desc: 'an + b' },
+          { key: 'reverse_calc', name: 'Hitta figurnummer', desc: 'Givet totalen, sök n' }
+        ]
+      },
+      graphs: {
+        name: 'Grafer & Funktioner',
+        variations: [
+          { key: 'intercept_id', name: 'Hitta m-värde', desc: 'Graf med m-värdet mellan 4 och -4' },
+          { key: 'slope_pos_int', name: 'Lutning (k > 0)', desc: 'Stigande linje' },
+          { key: 'slope_neg_int', name: 'Lutning (k < 0)', desc: 'Sjunkande linje' },
+          { key: 'eq_standard', name: 'Räta linjens ekvation', desc: 'Grafer till y = kx + m' },
+          { key: 'eq_no_m', name: 'Proportionalitet', desc: 'Grafer till y = kx (inget m-värde)' }
+        ]
+      }
+    }
+  },
+
+  // --- ARITMETIK & TAL ---
+  arithmetic: {
+    id: 'arithmetic',
+    name: 'Aritmetik & Tal',
+    topics: {
+      basic_arithmetic: {
+        name: 'De fyra räknesätten',
+        variations: [
+          { key: 'add_std_vertical', name: 'Addition: Vertikal', desc: 'Uppställning' },
+          { key: 'add_missing_variable', name: 'Addition: Saknat tal', desc: '10 + x = 12' },
+          { key: 'sub_std_vertical', name: 'Subtraktion: Vertikal', desc: 'Växling' },
+          { key: 'sub_missing_variable', name: 'Subtraktion: Saknat tal', desc: '30 - x = 20' },
+          { key: 'mult_table_std', name: 'Multiplikationstabell', desc: 'Tal mellan 2 till 9' },
+          { key: 'mult_decimal_std', name: 'Decimalmultiplikation', desc: 'med 1 eller 2 decimalsiffor' },
+          { key: 'div_basic_std', name: 'Kort division', desc: 'Standardmetod' }
+        ]
+      },
+      negatives: {
+        name: 'Negativa Tal',
+        variations: [
+          { key: 'theory_number_line', name: 'Tallinjen', desc: 'Position och hopp' },
+          { key: 'theory_sign_dominance', name: 'Teckendominans', desc: 'Utan att räkna, blir svaret + eller -' },
+          { key: 'fluency_double_neg', name: 'Add/Sub med dubbeltecken', desc: 't. ex.  -(-) till +' },
+          { key: 'mult_chain', name: 'Gånger med neg. tal', desc: 'Mellan 2-5 faktorer' },
+          { key: 'div_check_logic', name: 'Bevisa division', desc: 'Via multiplikation' }
+        ]
+      },
+      ten_powers: {
+        name: 'Tiopotenser',
+        variations: [
+          { key: 'big_mult_std', name: 'Gånger 10/100/1000', desc: 'Flytta komma höger' },
+          { key: 'big_div_std', name: 'Delat med 10/100/1000', desc: 'Flytta komma vänster' },
+          { key: 'decimal_div_std', name: 'Dela med 0,1 / 0,01', desc: 'Resultatet blir större' },
+          { key: 'power_discovery', name: 'Skriv som potens', desc: 'Bas 10' }
+        ]
+      },
+      exponents: {
+        name: 'Potenser',
+        variations: [
+          { key: 'exp_concept', name: 'Bas & Exponent', desc: 'Grundbegrepp' },
+          { key: 'exp_mult_same_base', name: 'Multiplikation', desc: 'Addera exponenter' },
+          { key: 'exp_neg_base', name: 'Negativ bas', desc: 'Udda/Jämn exponent' }
+        ]
+      },
+      fractions_basics: {
+        name: 'Bråk: Grunder',
+        variations: [
+          { key: 'visual_translation', name: 'Identifiera andel', desc: 'Bild till bråk' },
+          { key: 'mixed_convert_imp', name: 'Blandad form', desc: 'Omvandling' },
+          { key: 'simplify_calc', name: 'Förkortning', desc: 'Enklaste form' }
+        ]
+      }
+    }
+  },
+
+  // --- GEOMETRI & MÄTNING ---
+  geometry_cat: {
+    id: 'geometry_cat',
+    name: 'Geometri & Mätning',
+    topics: {
+      geometry: {
+        name: 'Area & Omkrets',
+        variations: [
+          { key: 'perimeter_rect', name: 'Omkrets rektangel', desc: 'Sidorna runt om' },
+          { key: 'perimeter_inverse', name: 'Hitta sidan (Omkrets)', desc: 'Givet O, sök b eller h' },
+          { key: 'area_rect', name: 'Area rektangel', desc: 'b * h' },
+          { key: 'area_triangle', name: 'Area triangel', desc: '(b * h) / 2' },
+          { key: 'circle_area', name: 'Area cirkel', desc: 'pi * r^2' },
+          { key: 'circle_perimeter', name: 'Omkrets cirkel', desc: 'pi * d' },
+          { key: 'combined_house', name: 'Sammansatt: Huset', desc: 'Rektangel + Triangel' },
+          { key: 'perimeter_portal', name: 'Portalen (Omkrets)', desc: 'Innehåller kurva' }
+        ]
+      },
+      pythagoras: {
+        name: 'Pythagoras Sats',
+        variations: [
+          { key: 'hyp_visual', name: 'Hitta c', desc: 'Standard rätvinklig' },
+          { key: 'leg_visual', name: 'Hitta a eller b', desc: 'Subtraktion av kvadrater' },
+          { key: 'app_ladder', name: 'Stegen', desc: 'Vardagsproblem' },
+          { key: 'app_displacement', name: 'Fågelvägen', desc: 'Nord/Ost förflyttning' },
+          { key: 'conv_trap', name: 'Triangel-lögnen', desc: 'Logiskt test' }
+        ]
+      },
+      volume: {
+        name: 'Volym & Yta',
+        variations: [
+          { key: 'vol_cuboid_std', name: 'Rätblock', desc: 'b * d * h' },
+          { key: 'vol_cyl_std', name: 'Cylinder', desc: 'Cirkelarea * h' },
+          { key: 'vol_cone_rule3', name: 'Tredjedelsregeln', desc: 'Kon vs Cylinder' },
+          { key: 'vol_units_liter', name: 'Enheter: Liter', desc: 'dm3 till liter' },
+          { key: 'sa_cuboid', name: 'Ytarea: Rätblock', desc: 'Begränsningsarea' }
+        ]
+      },
+      scale: {
+        name: 'Skala & Likformighet',
+        variations: [
+          { key: 'calc_real', name: 'Beräkna verklighet', desc: '1:X' },
+          { key: 'determine_magnification', name: 'Bestäm förstoring', desc: 'X:1' },
+          { key: 'area_reverse', name: 'Omvänd areaskala', desc: 'Längd via roten ur' },
+          { key: 'sim_calc_big', name: 'Likformig sida', desc: 'Använd k-faktor' }
+        ]
+      },
+      angles: {
+        name: 'Vinklar',
+        variations: [
+          { key: 'id_type', name: 'Namnge vinkeltyp', desc: 'Spetsig/Trubbig/Rät' },
+          { key: 'calc_missing_straight', name: 'Sidovinklar', desc: 'Summa 180' },
+          { key: 'calc_missing_tri', name: 'Vinkelsumma triangel', desc: 'Hitta saknad vinkel' }
+        ]
+      }
+    }
+  },
+
+  // --- DATA & CHANS ---
+  data: {
+    id: 'data',
+    name: 'Data & Chans',
+    topics: {
+      statistics: {
+        name: 'Statistik',
+        variations: [
+          { key: 'find_mode', name: 'Typvärde', desc: 'Vanligaste' },
+          { key: 'find_range', name: 'Variationsbredd', desc: 'Största - Minsta' },
+          { key: 'calc_mean', name: 'Medelvärde', desc: 'Summa / Antal' },
+          { key: 'mean_target_score', name: 'Mål-medelvärde', desc: 'Vad krävs på nästa test?' },
+          { key: 'real_measure_choice', name: 'Välj rätt mått', desc: 'Median vs Medel vid outliers' }
+        ]
+      },
+      probability: {
+        name: 'Sannolikhet',
+        variations: [
+          { key: 'visual_calc', name: 'Klassisk sannolikhet', desc: 'Vinstchans' },
+          { key: 'visual_spinner', name: 'Lyckohjul', desc: 'Sektorer' },
+          { key: 'comp_at_least', name: 'Minst en gång', desc: 'Komplementmetoden' },
+          { key: 'tree_calc', name: 'Sannolikhetsträd', desc: 'Flerstegshändelser' },
+          { key: 'comb_handshake', name: 'Kombinatorik', desc: 'Handskakningar' }
+        ]
+      }
+    }
+  }
+};
+
+// FILE END: src\constants\skillBuckets.js
 
 // =======================================================
 // FILE START: src\core\generators\AnglesGen.ts
@@ -15414,7 +16324,7 @@ export default {
     }
   },
   "include": ["src", "api"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "references": []
 }
 
 // FILE END: tsconfig.json
