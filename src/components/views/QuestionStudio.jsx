@@ -107,20 +107,17 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
   };
 
   const addToPacket = (variation) => {
-    if (setupMode === 'donow' && packet.length >= 3) return; 
+    if (setupMode === 'donow' && packet.length >= 6) return; // Allow up to 6 for the grid
     setPacket([...packet, {
       id: crypto.randomUUID(),
       topicId: selectedTopicId,
       variationKey: variation.key,
       name: variation.name,
-      quantity: setupMode === 'donow' ? 2 : 5, 
+      quantity: setupMode === 'donow' ? 1 : 5, 
     }]);
   };
 
   const removeFromPacket = (id) => setPacket(packet.filter(p => p.id !== id));
-  const updateQuantity = (id, delta) => {
-    setPacket(packet.map(p => p.id === id ? { ...p, quantity: Math.max(1, p.quantity + delta) } : p));
-  };
 
   /**
    * FIXED FINAL ACTION LOGIC
@@ -135,7 +132,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
 
     if (setupMode === 'donow') {
       const config = packet.map(p => {
-          // FIX: Extract level number from variation key (e.g., "geom_level3" -> 3)
+          // Extract level number from variation key (e.g., "geom_level3" -> 3)
           const levelMatch = p.variationKey.match(/\d+/);
           const extractedLevel = levelMatch ? parseInt(levelMatch[0]) : 1;
 
@@ -208,7 +205,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
   return (
     <div className="flex h-[calc(100vh-64px)] bg-slate-100 overflow-hidden font-sans text-slate-900">
       
-      {/* PANE 1: SIDEBAR (LIBRARY) - WIDER & LARGER TEXT */}
+      {/* PANE 1: SIDEBAR (LIBRARY) */}
       <div className="w-90 bg-white border-r border-slate-200 flex flex-col shadow-sm shrink-0 font-medium">
         <div className="p-6 border-b border-slate-100 space-y-4">
           <div className="flex items-center justify-between">
@@ -250,7 +247,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
         </div>
       </div>
 
-      {/* PANE 2: VARIATIONS - WIDER & LARGER TEXT */}
+      {/* PANE 2: VARIATIONS */}
       <div className="w-[420px] bg-slate-50 border-r border-slate-200 flex flex-col overflow-hidden shrink-0">
         <div className="p-6 border-b border-slate-200 bg-white shrink-0">
             <h1 className="text-l font-black text-slate-900 uppercase truncate italic tracking-tight">{currentTopic?.name}</h1>
@@ -281,7 +278,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang }) {
         </div>
       </div>
 
-      {/* PANE 3: THE BOARD (ENLARGED PREVIEW) - SCALED FOR OPTIMAL FIT */}
+      {/* PANE 3: THE BOARD */}
       <div className="flex-1 bg-slate-200 p-6 flex flex-col overflow-hidden relative">
         <div className="flex-1 bg-white rounded-[2.5rem] shadow-2xl border border-slate-300 overflow-hidden flex flex-col mx-auto w-full max-w-2xl">
             <div className="bg-slate-900 px-6 py-4 text-white flex items-center justify-between shrink-0">

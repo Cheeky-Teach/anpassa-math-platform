@@ -78,45 +78,87 @@ function App() {
 
     const ui = UI_TEXT[lang];
 
-    // --- EFFECT: REFINED AUTH & PROFILE LISTENER ---
+    // --- ROBUST AUTH INITIALIZATION ---
     useEffect(() => {
         let mounted = true;
 
-        const initializeAuth = async () => {
-            // Check for current session (cookie)
-            const { data: { session: initialSession } } = await supabase.auth.getSession();
-            
-            if (!mounted) return;
+        async function getProfile(userId) {
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
 
-            if (initialSession) {
-                console.log("Cookie session found.");
-                setSession(initialSession);
-                await fetchProfile(initialSession.user.id);
-            } else {
-                // If there is an access_token in the URL hash, we are in the middle of a redirect.
-                // Do NOT set loadingProfile to false yet, wait for the listener event.
-                if (!window.location.hash.includes('access_token')) {
-                    console.log("No session and no OAuth hash found.");
-                    setLoadingProfile(false);
+                if (error && error.code === 'PGRST116') {
+                    // Profile missing, create one
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        const userRole = user.user_metadata?.role || 'student';
+                        const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown';
+                        
+                        const { data: newProfile } = await supabase
+                            .from('profiles')
+                            .insert([{ 
+                                id: userId, 
+                                full_name: fullName, 
+                                role: userRole,
+                                alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
+                            }])
+                            .select()
+                            .single();
+                        return newProfile;
+                    }
                 }
+                return data;
+            } catch (error) {
+                console.error('Profile fetch error:', error);
+                return null;
             }
-        };
+        }
 
-        initializeAuth();
-
-        // Listen for real-time auth events (SIGNED_IN, SIGNED_OUT, etc)
+        // 1. Setup Auth Listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
             if (!mounted) return;
             console.log(`Auth Event: ${event}`);
-            
-            setSession(currentSession);
-            
+
             if (currentSession) {
-                await fetchProfile(currentSession.user.id);
+                setSession(currentSession);
+                // Only fetch profile if we haven't loaded it yet or user changed
+                if (!profile || profile.id !== currentSession.user.id) {
+                    setLoadingProfile(true);
+                    const userProfile = await getProfile(currentSession.user.id);
+                    if (mounted) {
+                        setProfile(userProfile);
+                        setLoadingProfile(false);
+                    }
+                } else {
+                    setLoadingProfile(false);
+                }
             } else {
+                setSession(null);
                 setProfile(null);
                 setLoadingProfile(false);
                 setView('dashboard');
+            }
+        });
+
+        // 2. Check Initial Session (Handles page reload)
+        supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
+            if (!mounted) return;
+            if (initialSession) {
+                // The listener will catch this, but we set state here to prevent flash
+                setSession(initialSession); 
+                const userProfile = await getProfile(initialSession.user.id);
+                if (mounted) {
+                    setProfile(userProfile);
+                    setLoadingProfile(false);
+                }
+            } else {
+                // If no session and no OAuth hash, stop loading immediately
+                if (!window.location.hash.includes('access_token')) {
+                    setLoadingProfile(false);
+                }
             }
         });
 
@@ -124,59 +166,16 @@ function App() {
             mounted = false;
             subscription.unsubscribe();
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const fetchProfile = async (userId) => {
-        if (!userId) return;
-        
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .single();
-
-            if (error) {
-                if (error.code === 'PGRST116') {
-                    // Profile row doesn't exist, create it from auth metadata
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (!user) throw new Error("No user metadata available");
-                    
-                    const userRole = user.user_metadata?.role || 'student';
-                    const fullName = user.user_metadata?.full_name || user.email.split('@')[0];
-
-                    const { data: newProfile, error: insertError } = await supabase
-                        .from('profiles')
-                        .insert([{ 
-                            id: userId, 
-                            full_name: fullName, 
-                            role: userRole,
-                            alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
-                        }])
-                        .select()
-                        .single();
-                    
-                    if (insertError) throw insertError;
-                    if (newProfile) setProfile(newProfile);
-                } else {
-                    throw error;
-                }
-            } else if (data) {
-                setProfile(data);
-            }
-        } catch (err) {
-            console.error("fetchProfile logic error:", err.message);
-        } finally {
-            // ALWAYS release the loading screen
-            setLoadingProfile(false);
-        }
-    };
-
     const handleLogout = async () => {
+        setLoadingProfile(true);
         await supabase.auth.signOut();
+        // Listener handles state cleanup
     };
 
-    // --- DATA PERSISTENCE: RECORD PROGRESS ---
+    // --- DATA PERSISTENCE ---
     const recordProgress = async (isCorrect, metadata) => {
         if (!session?.user || !metadata) return;
         const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
@@ -404,32 +403,58 @@ function App() {
         } catch (e) { console.error(e); }
     };
 
+    // --- CRITICAL FIX: DO NOW GENERATION ---
     const handleDoNowGenerate = async (selected) => {
         if (!selected || selected.length === 0) return;
         setDoNowConfig(selected);
         setLoading(true);
-        const requests = [];
+        
+        const configPayload = [];
+        
+        // Ensure we fill the 6-grid, but with CORRECT structure
         for (let i = 0; i < 6; i++) {
             const selection = selected[i % selected.length];
-            requests.push({ topic: selection.topic, level: selection.level, lang });
+            configPayload.push({ 
+                topic: selection.topic, 
+                level: selection.level,
+                variation: selection.variation, // <-- MUST BE INCLUDED for batch.ts
+                lang 
+            });
         }
+
         try {
+            // FIX: Sending { config: [...] } instead of { requests: [...] }
             const res = await fetch('/api/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requests })
+                body: JSON.stringify({ config: configPayload }) 
             });
+            
+            if (!res.ok) throw new Error(`Batch API Error: ${res.status}`);
+            
             const data = await res.json();
-            if (Array.isArray(data)) {
-                setDoNowQuestions(data);
+            
+            if (data.success && Array.isArray(data.data)) {
+                setDoNowQuestions(data.data);
                 setView('donow_grid');
+            } else {
+                console.error("Batch response format invalid:", data);
             }
-        } catch (e) { console.error("Do Now Error:", e); } finally { setLoading(false); }
+        } catch (e) { 
+            console.error("Do Now Error:", e); 
+        } finally { 
+            setLoading(false); 
+        }
     };
 
     // --- RENDER ---
     if (session && loadingProfile) {
-        return <div className="h-screen flex items-center justify-center bg-white text-indigo-600 font-black animate-pulse uppercase tracking-tighter text-2xl">Anpassa...</div>;
+        return (
+            <div className="h-screen flex flex-col items-center justify-center bg-white gap-4">
+                <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                <div className="text-indigo-600 font-black animate-pulse uppercase tracking-tighter text-xl">Laddar Anpassa...</div>
+            </div>
+        );
     }
 
     if (!session) {
