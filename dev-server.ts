@@ -18,6 +18,7 @@ const cleanup = register({
 import questionHandler from './api/question';
 import answerHandler from './api/answer';
 import curriculumHandler from './api/curriculum';
+import batchHandler from './api/batch'; // <--- ADDED: Import the batch handler
 
 const app = express();
 const PORT = 3000;
@@ -42,6 +43,7 @@ const adapter = (handler: any) => async (req: Request, res: Response) => {
 app.get('/api/question', adapter(questionHandler));
 app.post('/api/answer', adapter(answerHandler));
 app.get('/api/curriculum', adapter(curriculumHandler));
+app.post('/api/batch', adapter(batchHandler)); // <--- ADDED: Register the route
 
 // 5. Start Server
 app.listen(PORT, () => {
@@ -49,5 +51,6 @@ app.listen(PORT, () => {
     console.log(`   - /api/question`);
     console.log(`   - /api/answer`);
     console.log(`   - /api/curriculum`);
+    console.log(`   - /api/batch`); // <--- ADDED: Log the new route
     console.log(`\n🎨 Frontend running at http://localhost:5173 (Proxy active)\n`);
 });

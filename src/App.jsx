@@ -78,61 +78,55 @@ function App() {
 
     const ui = UI_TEXT[lang];
 
-    // --- ROBUST AUTH INITIALIZATION ---
+    // --- HELPER: GET OR CREATE PROFILE ---
+    const getOrCreateProfile = async (user) => {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+
+            if (data && !error) return data;
+
+            if (error && error.code === 'PGRST116') {
+                const userRole = user.user_metadata?.role || 'student';
+                const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown';
+                
+                const { data: newProfile, error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([{ 
+                        id: user.id, 
+                        full_name: fullName, 
+                        role: userRole,
+                        alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
+                    }])
+                    .select()
+                    .single();
+                
+                if (insertError) throw insertError;
+                return newProfile;
+            }
+            return null;
+        } catch (err) {
+            console.error('Profile Error:', err);
+            return null;
+        }
+    };
+
+    // --- AUTHENTICATION EFFECT ---
     useEffect(() => {
         let mounted = true;
 
-        async function getProfile(userId) {
-            try {
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', userId)
-                    .single();
-
-                if (error && error.code === 'PGRST116') {
-                    // Profile missing, create one
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (user) {
-                        const userRole = user.user_metadata?.role || 'student';
-                        const fullName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Unknown';
-                        
-                        const { data: newProfile } = await supabase
-                            .from('profiles')
-                            .insert([{ 
-                                id: userId, 
-                                full_name: fullName, 
-                                role: userRole,
-                                alias: userRole === 'student' ? `User-${Math.floor(Math.random() * 10000)}` : null
-                            }])
-                            .select()
-                            .single();
-                        return newProfile;
-                    }
-                }
-                return data;
-            } catch (error) {
-                console.error('Profile fetch error:', error);
-                return null;
-            }
-        }
-
-        // 1. Setup Auth Listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+        const handleSession = async (currentSession) => {
             if (!mounted) return;
-            console.log(`Auth Event: ${event}`);
 
             if (currentSession) {
                 setSession(currentSession);
-                // Only fetch profile if we haven't loaded it yet or user changed
-                if (!profile || profile.id !== currentSession.user.id) {
-                    setLoadingProfile(true);
-                    const userProfile = await getProfile(currentSession.user.id);
-                    if (mounted) {
-                        setProfile(userProfile);
-                        setLoadingProfile(false);
-                    }
-                } else {
+                const userProfile = await getOrCreateProfile(currentSession.user);
+                
+                if (mounted) {
+                    setProfile(userProfile);
                     setLoadingProfile(false);
                 }
             } else {
@@ -141,38 +135,21 @@ function App() {
                 setLoadingProfile(false);
                 setView('dashboard');
             }
-        });
+        };
 
-        // 2. Check Initial Session (Handles page reload)
-        supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
-            if (!mounted) return;
-            if (initialSession) {
-                // The listener will catch this, but we set state here to prevent flash
-                setSession(initialSession); 
-                const userProfile = await getProfile(initialSession.user.id);
-                if (mounted) {
-                    setProfile(userProfile);
-                    setLoadingProfile(false);
-                }
-            } else {
-                // If no session and no OAuth hash, stop loading immediately
-                if (!window.location.hash.includes('access_token')) {
-                    setLoadingProfile(false);
-                }
-            }
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            handleSession(session);
         });
 
         return () => {
             mounted = false;
             subscription.unsubscribe();
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleLogout = async () => {
         setLoadingProfile(true);
         await supabase.auth.signOut();
-        // Listener handles state cleanup
     };
 
     // --- DATA PERSISTENCE ---
@@ -403,42 +380,43 @@ function App() {
         } catch (e) { console.error(e); }
     };
 
-    // --- CRITICAL FIX: DO NOW GENERATION ---
+    // --- BATCH GENERATION (DO NOW) ---
+    // FIXED: Aligned with batch.ts parameters (requests vs config)
     const handleDoNowGenerate = async (selected) => {
         if (!selected || selected.length === 0) return;
         setDoNowConfig(selected);
         setLoading(true);
         
-        const configPayload = [];
+        const requestsPayload = [];
         
-        // Ensure we fill the 6-grid, but with CORRECT structure
         for (let i = 0; i < 6; i++) {
             const selection = selected[i % selected.length];
-            configPayload.push({ 
+            requestsPayload.push({ 
                 topic: selection.topic, 
                 level: selection.level,
-                variation: selection.variation, // <-- MUST BE INCLUDED for batch.ts
+                variation: selection.variation, 
                 lang 
             });
         }
 
         try {
-            // FIX: Sending { config: [...] } instead of { requests: [...] }
             const res = await fetch('/api/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ config: configPayload }) 
+                // FIX: Sending 'requests' matches your batch.ts
+                body: JSON.stringify({ requests: requestsPayload }) 
             });
             
             if (!res.ok) throw new Error(`Batch API Error: ${res.status}`);
             
             const data = await res.json();
             
-            if (data.success && Array.isArray(data.data)) {
-                setDoNowQuestions(data.data);
+            // FIX: Your batch.ts returns the array directly, NOT inside a { data: ... } wrapper
+            if (Array.isArray(data)) {
+                setDoNowQuestions(data);
                 setView('donow_grid');
             } else {
-                console.error("Batch response format invalid:", data);
+                console.error("Batch response format invalid (expected array):", data);
             }
         } catch (e) { 
             console.error("Do Now Error:", e); 
