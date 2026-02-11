@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
+import { BarChart3 } from 'lucide-react';
 
 // Views
 import Dashboard from './components/views/Dashboard';
@@ -47,9 +48,17 @@ function App() {
 
     // --- 4. SESSION STATS & HISTORY ---
     const [sessionStats, setSessionStats] = useState({
-        attempted: 0, correctNoHelp: 0, correctHelp: 0, incorrect: 0, skipped: 0, maxStreak: 0
+        attempted: 0, 
+        correctNoHelp: 0, 
+        correctHelp: 0, 
+        incorrect: 0, 
+        skipped: 0, 
+        maxStreak: 0
     });
+    
+    // Structure: { topicId: { levelNumber: { skipped: 0, incorrect: 0, correctHelp: 0, correctNoHelp: 0 } } }
     const [granularStats, setGranularStats] = useState({});
+    
     const [history, setHistory] = useState([]);
     const [levelUpAvailable, setLevelUpAvailable] = useState(false);
     
@@ -73,7 +82,36 @@ function App() {
 
     const ui = UI_TEXT[lang];
 
-    // --- 8. SMART NAVIGATION ---
+    // --- 8. HELPER: UPDATE GRANULAR STATS ---
+    const updateStats = (type) => {
+        // 1. Update Global Session Stats
+        setSessionStats(prev => ({
+            ...prev,
+            attempted: type !== 'skipped' ? prev.attempted + 1 : prev.attempted,
+            [type]: prev[type] + 1
+        }));
+
+        // 2. Update Granular Topic/Level Stats for StatsModal
+        if (topic && level) {
+            setGranularStats(prev => {
+                const topicData = prev[topic] || {};
+                const levelData = topicData[level] || { skipped: 0, incorrect: 0, correctHelp: 0, correctNoHelp: 0 };
+                
+                return {
+                    ...prev,
+                    [topic]: {
+                        ...topicData,
+                        [level]: {
+                            ...levelData,
+                            [type]: (levelData[type] || 0) + 1
+                        }
+                    }
+                };
+            });
+        }
+    };
+
+    // --- 9. SMART NAVIGATION ---
     useEffect(() => {
         window.history.replaceState({ view: 'dashboard' }, '');
         const handlePopState = (event) => {
@@ -107,7 +145,6 @@ function App() {
     useEffect(() => {
         let mounted = true;
         
-        // Initial session check (happens in background)
         supabase.auth.getSession().then(({ data: { session: initSession } }) => {
             if (mounted) {
                 if (initSession) {
@@ -192,6 +229,7 @@ function App() {
     };
 
     const handleSkip = () => {
+        updateStats('skipped');
         setStreak(0);
         fetchQuestion(topic, level, lang, true);
     };
@@ -209,6 +247,7 @@ function App() {
         if (feedback === 'correct') return;
         let finalInput = directInput !== undefined ? directInput : input;
         if (!question || !finalInput) return;
+        
         const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
 
         try {
@@ -219,18 +258,28 @@ function App() {
             const result = await res.json();
             
             if (result.correct) {
-                setHistory(prev => [{ topic, level, correct: true, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
-                setStreak(result.newStreak);
-                setTotalCorrect(prev => prev + 1);
-                if ([15, 20, 30, 40, 50].includes(result.newStreak)) setShowStreakModal(true);
-                else if (result.levelUp) setLevelUpAvailable(true);
-                else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
+                if (!isSolutionRevealed) {
+                    setHistory(prev => [{ topic, level, correct: true, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
+                    setStreak(result.newStreak);
+                    setTotalCorrect(prev => prev + 1);
+                    
+                    // Track granular stats for success
+                    updateStats(helpUsed ? 'correctHelp' : 'correctNoHelp');
+
+                    if ([15, 20, 30, 40, 50].includes(result.newStreak)) setShowStreakModal(true);
+                    else if (result.levelUp) setLevelUpAvailable(true);
+                    else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
+                }
                 setFeedback('correct');
             } else {
                 const currentAttempts = (question.attempts || 0) + 1;
                 setQuestion({...question, attempts: currentAttempts});
+                
+                // Track granular stats for failure
+                updateStats('incorrect');
+
                 if (currentAttempts >= 2) { 
-                    setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: true, time: Date.now() }, ...prev]);
+                    if (!isSolutionRevealed) setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: true, time: Date.now() }, ...prev]);
                     setUsedHelp(true); setRevealedClues(question.clues || []); setIsSolutionRevealed(true); setStreak(0);
                 } else if (question.clues) {
                     setUsedHelp(true); setRevealedClues(prev => [...prev, question.clues[prev.length] || question.clues[0]]);
@@ -257,11 +306,7 @@ function App() {
     // --- TIMER HELPERS ---
     const toggleTimer = (minutes) => setTimerSettings({ duration: minutes * 60, remaining: minutes * 60, isActive: minutes > 0 });
     const resetTimer = () => setTimerSettings({ duration: 0, remaining: 0, isActive: false });
-    const formatTimerTime = (seconds) => {
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    };
+    const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
 
     // --- RENDER LOGIC ---
     if (loadingProfile) return (
@@ -270,7 +315,6 @@ function App() {
         </div>
     );
 
-    // Deep routing logic
     if (view === 'donow_config') return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => navigate('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
     if (view === 'donow_grid') return <DoNowGrid questions={doNowQuestions} ui={ui} lang={lang} onBack={() => navigate('question_studio')} onClose={() => navigate('dashboard')} onRefreshAll={() => handleDoNowGenerate(doNowConfig, null)} />;
     if (view === 'question_studio') {
@@ -302,7 +346,7 @@ function App() {
                         {view === 'dashboard' && timerSettings.remaining > 0 && (
                             <div className="hidden sm:flex bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold items-center gap-2 border border-orange-200">
                                 <span>⏸ {ui.timer_paused}</span>
-                                <span className="font-mono text-sm">{formatTimerTime(timerSettings.remaining)}</span>
+                                <span className="font-mono text-sm">{formatTime(timerSettings.remaining)}</span>
                             </div>
                         )}
                     </div>
@@ -311,14 +355,22 @@ function App() {
                             {lang === 'sv' ? '🇸🇪' : '🇬🇧'}
                         </button>
                         
-                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">✅ {totalCorrect}</div>
-                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">🔥 {streak}</div>
+                        {/* --- RESTORED STATS BUTTON --- */}
+                        <button 
+                            onClick={() => setStatsOpen(true)}
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
+                            title={ui.stats_title}
+                        >
+                            <BarChart3 size={20} />
+                        </button>
+
+                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-emerald-200">✅ {totalCorrect}</div>
+                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-yellow-200">🔥 {streak}</div>
                         
                         {session ? (
                             <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2 transition-colors">Logga ut</button>
                         ) : (
                             <button 
-                                // onClick={() => navigate('auth')} // DISABLED TEMPORARILY
                                 className="text-xs font-bold text-slate-300 cursor-not-allowed uppercase ml-2 transition-colors"
                                 title="Login is currently disabled"
                             >
@@ -332,12 +384,10 @@ function App() {
             <div className="flex-1 flex flex-col">
                 {view === 'dashboard' ? (
                     <Dashboard
-                        lang={lang} selectedTopic={topic} selectedLevel={level} 
-                        userRole={DEVELOPER_MODE ? 'teacher' : (profile?.role || 'student')} 
-                        assignments={assignments} 
+                        lang={lang} selectedTopic={topic} selectedLevel={level} userRole={DEVELOPER_MODE ? 'teacher' : (profile?.role || 'student')} assignments={assignments} 
                         onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
-                        onStart={startPractice} ui={ui} 
-                        timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer}
+                        onStart={startPractice} 
+                        timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} 
                         onLgrOpen={() => setLgrOpen(true)} onContentOpen={() => setContentOpen(true)} onAboutOpen={() => setAboutOpen(true)}
                         onStatsOpen={() => setStatsOpen(true)} onStudioOpen={() => navigate('question_studio')} onDoNowOpen={() => navigate('donow_config')} 
                     />
@@ -348,7 +398,7 @@ function App() {
                         handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{ history, topic, level }} 
                         actions={{ retry: (force) => fetchQuestion(topic, level, lang, force), goBack: quitPractice }} 
                         levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable} isSolutionRevealed={isSolutionRevealed} 
-                        timerSettings={timerSettings} formatTime={formatTimerTime} setMobileHistoryOpen={setMobileHistoryOpen}
+                        timerSettings={timerSettings} formatTime={formatTime} setMobileHistoryOpen={setMobileHistoryOpen}
                     />
                 )}
             </div>
