@@ -8,6 +8,7 @@ import { ExponentsGen } from '../src/core/generators/ExponentsGen.js';
 import { PercentGen } from '../src/core/generators/PercentGen.js';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen.js';
 import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
+import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen.js'; // Added to match batch.ts
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
 import { ScaleGen } from '../src/core/generators/ScaleGen.js';
@@ -33,7 +34,6 @@ type VercelResponse = ServerResponse & {
 };
 
 // --- ADAPTER: LEGACY FRACTIONS GENERATOR ---
-// Fallback if the generic 'fractions' key is used (e.g. from old links or history)
 class LegacyFractionsGen {
     public generate(level: number, lang: string = 'sv'): any {
         if (level <= 5) return new FractionBasicsGen().generate(level, lang);
@@ -49,48 +49,60 @@ class LegacyFractionsGen {
 // Maps ALL keys (Dashboard, Studio, and Legacy) to the correct Generator Class
 const TopicMap: Record<string, any> = {
   // 1. ARITHMETIC
-  'basic_arithmetic': BasicArithmeticGen, // Studio Key
-  'arithmetic': BasicArithmeticGen,       // Dashboard Key
+  'basic_arithmetic': BasicArithmeticGen,
+  'arithmetic': BasicArithmeticGen,
   
-  'negatives': NegativeNumbersGen,        // Studio Key
-  'negative': NegativeNumbersGen,         // Dashboard Key
+  'negatives': NegativeNumbersGen,
+  'negative': NegativeNumbersGen,
   
-  'fraction_basics': FractionBasicsGen,   // Shared Key
-  'fraction_arith': FractionArithGen,     // Shared Key
-  'fractions': LegacyFractionsGen,        // Legacy Fallback
+  'fraction_basics': FractionBasicsGen,
+  'fraction_arith': FractionArithGen,
+  'fractions': LegacyFractionsGen,
   
-  'percent': PercentGen,                  // Shared Key
-  'percentages': PercentGen,              // Common Alias
-  'ten_powers': TenPowersGen,             // Shared Key
-  'exponents': ExponentsGen,              // Shared Key
+  'percent': PercentGen,
+  'percentages': PercentGen,
+  'ten_powers': TenPowersGen,
+  'exponents': ExponentsGen,
 
   // 2. ALGEBRA
-  'expressions': ExpressionSimplificationGen, // Studio Key
-  'simplify': ExpressionSimplificationGen,    // Dashboard Key
+  'expressions': ExpressionSimplificationGen,
+  'simplify': ExpressionSimplificationGen,
+  'expression_simplification': ExpressionSimplificationGen,
   
-  'equations': LinearEquationGen,             // Shared Key
-  'linear-equations': LinearEquationGen,      // Legacy Alias
-  'equations_word': LinearEquationGen,        // Studio Internal
-  'algebra': LinearEquationGen,               // Dashboard "Algebra" Fallback
+  'equation': LinearEquationGen,        // Dashboard singular (FIXED)
+  'equations': LinearEquationGen,       // Studio/General plural
+  'linear-equations': LinearEquationGen,
+  'algebra': LinearEquationGen,
   
-  'patterns': PatternsGen,                    // Shared Key
-  'graphs': LinearGraphGenerator,             // Shared Key
-  'change_factor': ChangeFactorGen,           // Studio Key
+  'equations_word': LinearEquationProblemGen, // Specific for word problems
+  
+  'patterns': PatternsGen,
+  'pattern': PatternsGen,
+  
+  'graphs': LinearGraphGenerator,
+  'graph': LinearGraphGenerator,
+  'linear_graph': LinearGraphGenerator,
+  
+  'change_factor': ChangeFactorGen,
 
   // 3. GEOMETRY
-  'geometry': GeometryGenerator,          // Shared Key
-  'geometry_cat': GeometryGenerator,      // Studio Category Fallback
+  'geometry': GeometryGenerator,
+  'geometry_cat': GeometryGenerator,
+  'geom': GeometryGenerator,
   
-  'angles': AnglesGen,                    // Shared Key
-  'volume': VolumeGen,                    // Shared Key
-  'similarity': SimilarityGen,            // Shared Key
-  'pythagoras': PythagorasGen,            // Shared Key
-  'scale': ScaleGen,                      // Studio Key
+  'angles': AnglesGen,
+  'angle': AnglesGen,
+  
+  'volume': VolumeGen,
+  'similarity': SimilarityGen,
+  'pythagoras': PythagorasGen,
+  'scale': ScaleGen,
 
   // 4. DATA
-  'statistics': StatisticsGen,            // Shared Key
-  'data': StatisticsGen,                  // Dashboard "Data" Fallback
-  'probability': ProbabilityGen           // Shared Key
+  'statistics': StatisticsGen,
+  'stats': StatisticsGen,
+  'data': StatisticsGen,
+  'probability': ProbabilityGen
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
@@ -119,7 +131,6 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 2. Resolve Generator
-    // Now works for both 'arithmetic' (Dashboard) and 'basic_arithmetic' (Studio)
     const GeneratorClass = TopicMap[String(rawTopic)];
 
     if (!GeneratorClass) {
@@ -135,23 +146,17 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         let question;
 
         // 3. GENERATION LOGIC
-        // Priority 1: Studio Mode (Specific Variation)
         if (variation && typeof generator.generateByVariation === 'function') {
             question = generator.generateByVariation(String(variation), String(lang));
-        } 
-        // Priority 2: Practice Mode (Level based)
-        else {
+        } else {
             const safeLevel = Number(level) || 1;
-            // Check if generator supports level generation
             if (typeof generator.generate === 'function') {
                 question = generator.generate(safeLevel, String(lang));
             } else {
-                // Fallback for any generator that might lack standard levels
                 question = generator.generate(1, String(lang));
             }
         }
 
-        // 4. Send Response
         res.status(200).json(question);
 
     } catch (error: any) {
