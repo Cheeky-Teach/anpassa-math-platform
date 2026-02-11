@@ -431,7 +431,7 @@ export class FractionBasicsGen {
         return {
             renderData: {
                 description: lang === 'sv' 
-                    ? (isToDec ? "Skriv bråket som ett decimaltal." : "Skriv decimaltalet som ett bråk i dess enklaste form.") 
+                    ? (isToDec ? "Skriv bråket som ett decimaltal." : "Skriv decimaltalet som ett bråk i enklaste form.") 
                     : (isToDec ? "Write the fraction as a decimal number." : "Write the decimal number as a fraction in its simplest form."),
                 latex: isToDec ? pair.f : pair.d.toString().replace('.', ','),
                 answerType: isToDec ? 'numeric' : 'fraction'

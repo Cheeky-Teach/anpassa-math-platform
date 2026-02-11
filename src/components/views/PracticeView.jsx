@@ -73,10 +73,10 @@ const PracticeView = ({
         }
     }, [feedback, isSolutionRevealed]);
 
-    // Focus & Reset logic: Detects mobile to prevent keyboard pop-up blocking the question
+    // Focus & Reset logic: Updated for Mobile UX and Visual consistency
     useEffect(() => {
         if (question && !loading) {
-            // Reset local states
+            // Reset specialized inputs
             setScaleInputLeft(''); setScaleInputRight('');
             setPowerBase(question.renderData.prefillBase || '');
             setPowerExp('');
@@ -87,7 +87,7 @@ const PracticeView = ({
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // QUALITY OF LIFE: Only auto-focus on desktop
+            // QUALITY OF LIFE: Detect mobile and prevent auto-focus to keep keyboard down
             const isMobile = window.innerWidth < 768;
             if (!isMobile && !feedback && !levelUpAvailable && inputRef.current) {
                 setTimeout(() => inputRef.current?.focus(), 50);
@@ -168,7 +168,7 @@ const PracticeView = ({
         }
         if (uiState.topic === 'geometry') return <StaticGeometryVisual description={descriptionText} />;
         if (question.renderData.latex) {
-             return <div className="text-2xl sm:text-4xl font-mono text-gray-800 my-4 text-center overflow-x-auto py-2"><MathText text={`$$${question.renderData.latex}$$`} large={true} /></div>;
+             return <div className="text-2xl sm:text-4xl font-mono text-slate-800 my-4 text-center overflow-x-auto py-2"><MathText text={`$$${question.renderData.latex}$$`} large={true} /></div>;
         }
         return null;
     };
@@ -184,61 +184,61 @@ const PracticeView = ({
     if (!question && !loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh]">
-                <p className="text-red-400 mb-4">{ui.error || "Error loading question"}</p>
-                <button onClick={() => actions.retry(true)} className="bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition">Retry</button>
+                <p className="text-rose-400 font-bold mb-4">{ui.error || "Error loading question"}</p>
+                <button onClick={() => actions.retry(true)} className="bg-indigo-600 text-white px-8 py-3 rounded-2xl hover:bg-indigo-700 shadow-lg transition-all active:scale-95">Retry</button>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-8 flex flex-col lg:flex-row gap-8 items-start fade-in relative min-h-screen">
+        <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-8 flex flex-col lg:flex-row gap-8 items-start fade-in relative min-h-screen font-sans">
             
             <LevelUpModal visible={levelUpAvailable} ui={ui} onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }} onStay={() => { setLevelUpAvailable(false); actions.retry(true); }} lang={lang} />
             
             <div className="flex-1 w-full min-w-0">
-                {/* HEADER - Updated with Pill Design and Shadows */}
+                {/* HEADER - Updated for Premium Dashboard alignment */}
                 <div className="flex justify-between items-center mb-8 bg-white/80 backdrop-blur-md p-4 rounded-[2rem] shadow-xl border border-white sticky top-4 z-20">
-                    <button onClick={actions.goBack} className="flex items-center gap-2 bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 font-black text-xs uppercase tracking-widest px-5 py-2.5 rounded-2xl transition-all active:scale-95">
+                    <button onClick={actions.goBack} className="flex items-center gap-2 bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 font-black text-xs uppercase tracking-widest px-5 py-2.5 rounded-2xl transition-all active:scale-95 border border-slate-200/50">
                         <span>←</span> {ui.backBtn}
                     </button>
 
                     <div className="flex items-center gap-4">
                         {timerSettings.isActive && (
-                            <div className={`font-mono text-sm font-black px-4 py-2 rounded-2xl border hidden sm:block shadow-inner ${timerSettings.remaining < 60 ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
+                            <div className={`font-mono text-sm font-black px-4 py-2 rounded-2xl border hidden sm:block shadow-inner ${timerSettings.remaining < 60 ? 'bg-rose-50 text-rose-600 border-rose-100 animate-pulse' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
                                 {formatTime(timerSettings.remaining)}
                             </div>
                         )}
                         <div className="flex items-center gap-2 bg-indigo-50 rounded-2xl p-1.5 border border-indigo-100 shadow-sm">
-                            <button onClick={() => handleChangeLevel(-1)} disabled={uiState.level <= 1} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white hover:text-indigo-600 disabled:opacity-30 transition-all text-indigo-400 font-black">&lt;</button>
+                            <button onClick={() => handleChangeLevel(-1)} disabled={uiState.level <= 1} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white hover:text-indigo-600 disabled:opacity-30 transition-all text-indigo-400 font-black border border-transparent hover:border-indigo-100">&lt;</button>
                             <span className="text-[10px] font-black uppercase tracking-tighter text-indigo-700 min-w-[90px] text-center italic">
                                 {uiState.level < maxLevels ? `Lv ${uiState.level}` : 'MAX LEVEL'}
                             </span>
-                            <button onClick={() => handleChangeLevel(1)} disabled={uiState.level >= maxLevels} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white hover:text-indigo-600 disabled:opacity-30 transition-all text-indigo-400 font-black">&gt;</button>
+                            <button onClick={() => handleChangeLevel(1)} disabled={uiState.level >= maxLevels} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white hover:text-indigo-600 disabled:opacity-30 transition-all text-indigo-400 font-black border border-transparent hover:border-indigo-100">&gt;</button>
                         </div>
                         
-                        <button onClick={() => setMobileHistoryOpen(true)} className="lg:hidden w-10 h-10 flex items-center justify-center bg-white rounded-2xl text-slate-400 shadow-sm border border-slate-100 transition-colors active:bg-slate-50">
+                        <button onClick={() => setMobileHistoryOpen(true)} className="lg:hidden w-10 h-10 flex items-center justify-center bg-white rounded-2xl text-slate-400 shadow-md border border-slate-100 transition-all active:scale-95">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                         </button>
                     </div>
                 </div>
 
-                {/* MAIN QUESTION CARD - Updated with Smooth Corners and Deep Shadows */}
-                <main className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 relative">
+                {/* MAIN QUESTION CARD - Updated Styling */}
+                <main className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 relative transition-all">
                     {loading ? (
                         <div className="p-32 text-center flex flex-col items-center gap-6">
                             <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Anpassar uppgift...</span>
+                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Laddar utmaning...</span>
                         </div>
                     ) : question ? (
-                        <div className="p-6 sm:p-10">
+                        <div className="p-6 sm:p-12">
                             {/* Visual Container */}
-                            <div className="mb-8 flex justify-center bg-slate-50 rounded-[2rem] p-6 min-h-[200px] items-center border border-slate-100 shadow-inner relative overflow-hidden">
+                            <div className="mb-10 flex justify-center bg-slate-50 rounded-[2rem] p-8 min-h-[220px] items-center border border-slate-100 shadow-inner relative overflow-hidden">
                                 {renderVisual()}
                             </div>
                             
-                            {/* Question Text */}
-                            <div className="mb-8 text-center px-4">
-                                <h2 className="text-xl sm:text-3xl font-black text-slate-800 leading-tight tracking-tight uppercase italic">
+                            {/* Question Text - Standard font, easy to read, no forced uppercase */}
+                            <div className="mb-10 text-center px-4 max-w-2xl mx-auto">
+                                <h2 className="text-xl sm:text-2xl font-semibold text-slate-700 leading-relaxed tracking-tight">
                                     <MathText text={descriptionText} />
                                 </h2>
                             </div>
@@ -250,7 +250,7 @@ const PracticeView = ({
                                         <button 
                                             key={idx} 
                                             onClick={() => handleChoiceClick(choice)} 
-                                            className={`group relative p-5 rounded-2xl font-black text-lg transition-all active:scale-95 border-2 text-left flex items-center gap-4
+                                            className={`group relative p-5 rounded-2xl font-bold text-lg transition-all active:scale-95 border-2 text-left flex items-center gap-4
                                                 ${feedback === 'correct' && choice === input ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-100' : 
                                                   feedback === 'incorrect' && choice === input ? 'bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-100' : 
                                                   'bg-white border-slate-100 text-slate-700 hover:border-indigo-500 hover:text-indigo-600 hover:shadow-md'}`} 
@@ -280,20 +280,20 @@ const PracticeView = ({
                                                     value={input} 
                                                     onChange={setInput} 
                                                     allowMixed={true}
-                                                    autoFocus={false} // Refined for mobile
+                                                    autoFocus={false} 
                                                 />
                                             </div>
                                         )}
 
                                         {question.renderData.answerType === 'scale' && (
                                             <div className="flex items-center justify-center gap-3">
-                                                <input type="text" value={scaleInputLeft} onChange={(e) => handleInputChange(e, setScaleInputLeft, 'numeric')} className="w-28 p-5 text-center text-2xl font-black border-2 rounded-2xl outline-none transition-all shadow-sm focus:border-indigo-500" placeholder="X" disabled={isDisabled} />
+                                                <input type="text" value={scaleInputLeft} onChange={(e) => handleInputChange(e, setScaleInputLeft, 'numeric')} className="w-28 p-5 text-center text-2xl font-black border-2 rounded-2xl outline-none transition-all shadow-md focus:border-indigo-500 bg-white" placeholder="X" disabled={isDisabled} />
                                                 <span className="text-3xl font-black text-slate-300">:</span>
-                                                <input type="text" value={scaleInputRight} onChange={(e) => handleInputChange(e, setScaleInputRight, 'numeric')} className="w-28 p-5 text-center text-2xl font-black border-2 rounded-2xl outline-none transition-all shadow-sm focus:border-indigo-500" placeholder="X" disabled={isDisabled} />
+                                                <input type="text" value={scaleInputRight} onChange={(e) => handleInputChange(e, setScaleInputRight, 'numeric')} className="w-28 p-5 text-center text-2xl font-black border-2 rounded-2xl outline-none transition-all shadow-md focus:border-indigo-500 bg-white" placeholder="X" disabled={isDisabled} />
                                             </div>
                                         )}
 
-                                        {/* Standard Text/Numeric Inputs */}
+                                        {/* Standard Inputs */}
                                         {!['scale', 'structured_power', 'structured_scientific', 'structured_range', 'fraction'].includes(question.renderData.answerType) && (
                                             <div className="relative group">
                                                 <input 
@@ -330,8 +330,8 @@ const PracticeView = ({
                                 </form>
                             )}
 
-                            {/* Help Actions - Puffy Pill Buttons */}
-                            <div className="mt-10 flex gap-3 justify-center flex-wrap">
+                            {/* Help Actions - Premium Pill Buttons */}
+                            <div className="mt-12 flex gap-3 justify-center flex-wrap">
                                 <button type="button" onClick={handleHint} disabled={!question.clues || revealedClues.length >= question.clues.length} className="px-6 py-3 text-xs font-black uppercase tracking-widest rounded-2xl bg-amber-50 text-amber-700 border border-amber-100 hover:bg-amber-100 disabled:opacity-30 transition-all flex items-center gap-2 shadow-sm active:scale-95">
                                     <span>💡</span> {ui.btnHint}
                                 </button>
@@ -356,7 +356,7 @@ const PracticeView = ({
                 </div>
             </div>
             
-            {/* DESKTOP SIDE PANEL - Refined matching the Dashboard vibe */}
+            {/* DESKTOP SIDE PANEL - Premium Layout */}
             <div className="lg:w-80 w-full shrink-0 flex flex-col gap-6 hidden lg:flex">
                 <div className="bg-white rounded-[2rem] p-6 shadow-xl border border-slate-100">
                     <div className="flex items-center gap-3 mb-4">
