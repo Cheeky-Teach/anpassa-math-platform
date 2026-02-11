@@ -92,7 +92,7 @@ const Dashboard = ({
                             ) : (
                                 <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10">
                                     <h3 className="font-bold flex items-center gap-2 mb-2"><Sparkles size={18}/> Dagens Tips</h3>
-                                    <p className="text-sm text-indigo-100">Repetera "Linjära ekvationer" för att hålla din streak vid liv!</p>
+                                    <p className="text-sm text-indigo-100">Använd timern till högern för att hjälpa dig skapa en bra rutin att öva 15 minuter och sen ta en kort paus!</p>
                                 </div>
                             )}
 
