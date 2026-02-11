@@ -209,7 +209,7 @@ export class BasicArithmeticGen {
         const part2 = a % 10;
         return {
             renderData: {
-                description: lang === 'sv' ? `Beräkna genom att dela upp talet i talsorter: (${part1} × ${b}) + (${part2} × ${b})` : `Calculate by splitting the number into place values: (${part1} × ${b}) + (${part2} × ${b})`,
+                description: lang === 'sv' ? `Beräkna genom att dela upp talet i talsorter: (${part1}×${b})+(${part2}×${b})` : `Calculate by splitting the number into place values: (${part1} × ${b}) + (${part2} × ${b})`,
                 answerType: 'numeric'
             },
             token: this.toBase64((a * b).toString()),
