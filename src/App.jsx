@@ -66,8 +66,6 @@ function App() {
     const [assignments, setAssignments] = useState([]); 
     const [doNowQuestions, setDoNowQuestions] = useState([]);
     const [doNowConfig, setDoNowConfig] = useState([]); 
-    
-    // State to persist the Question Studio cart (packet)
     const [savedPacket, setSavedPacket] = useState([]); 
 
     // --- 7. TIMER STATE ---
@@ -108,59 +106,46 @@ function App() {
 
     useEffect(() => {
         let mounted = true;
-        const handleSession = async (currentSession) => {
-            if (!mounted) return;
-            if (currentSession) {
-                setSession(currentSession);
-                const userProfile = await getOrCreateProfile(currentSession.user);
-                if (mounted) { setProfile(userProfile); setLoadingProfile(false); }
-            } else {
-                setSession(null); setProfile(null); setLoadingProfile(false); setView('dashboard');
+        
+        // Initial session check
+        supabase.auth.getSession().then(({ data: { session: initSession } }) => {
+            if (mounted) {
+                if (initSession) {
+                    setSession(initSession);
+                    getOrCreateProfile(initSession.user).then(p => {
+                        if (mounted) { setProfile(p); setLoadingProfile(false); }
+                    });
+                } else {
+                    setLoadingProfile(false);
+                }
             }
-        };
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => handleSession(s));
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+            if (!mounted) return;
+            setSession(currentSession);
+            if (currentSession) {
+                const userProfile = await getOrCreateProfile(currentSession.user);
+                if (mounted) { 
+                    setProfile(userProfile); 
+                    setLoadingProfile(false);
+                    if (view === 'auth') setView('dashboard'); // Auto-return to dashboard on login
+                }
+            } else {
+                setProfile(null);
+                setLoadingProfile(false);
+            }
+        });
+
         return () => { mounted = false; subscription.unsubscribe(); };
     }, []);
 
-    const handleLogout = async () => { setLoadingProfile(true); await supabase.auth.signOut(); };
-
-    // --- DATA PERSISTENCE ---
-    const recordProgress = async (isCorrect, metadata) => {
-        if (!session?.user || !metadata) return;
-        const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
-        const { error } = await supabase.from('student_progress').insert({
-            student_id: session.user.id,
-            topic_id: topic,
-            variation_key: metadata.variation_key || 'unknown',
-            is_correct: isCorrect,
-            help_used: helpUsed,
-        });
-        if (error) console.error("Database persistence error:", error.message);
+    const handleLogout = async () => { 
+        await supabase.auth.signOut(); 
+        setSession(null);
+        setProfile(null);
+        navigate('dashboard');
     };
-
-    // --- TIMER LOGIC ---
-    useEffect(() => {
-        let interval = null;
-        if (timerSettings.isActive && timerSettings.remaining > 0 && view === 'practice') {
-            interval = setInterval(() => {
-                setTimerSettings(prev => {
-                    if (prev.remaining <= 1) {
-                        clearInterval(interval);
-                        setTimeUpOpen(true);
-                        return { ...prev, remaining: 0, isActive: false };
-                    }
-                    return { ...prev, remaining: prev.remaining - 1 };
-                });
-            }, 1000);
-        }
-        return () => clearInterval(interval);
-    }, [timerSettings.isActive, view, timerSettings.remaining]);
-
-    const toggleTimer = (minutes) => setTimerSettings({ duration: minutes * 60, remaining: minutes * 60, isActive: minutes > 0 });
-    const resetTimer = () => setTimerSettings({ duration: 0, remaining: 0, isActive: false });
-    const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
-
-    useEffect(() => { if (streak > sessionStats.maxStreak) setSessionStats(prev => ({ ...prev, maxStreak: streak })); }, [streak]);
 
     // --- GAMEPLAY HANDLERS ---
     const fetchQuestion = async (t, l, lg, force) => {
@@ -189,12 +174,11 @@ function App() {
         setQuestion(null); 
     };
 
-    // New handlers to fix ReferenceErrors
     const handleHint = () => {
         if (question?.clues && revealedClues.length < question.clues.length) {
             setUsedHelp(true);
             const nextClue = question.clues[revealedClues.length];
-            setRevealedClues([...revealedClues, nextClue]);
+            setRevealedClues(prev => [...prev, nextClue]);
         }
     };
 
@@ -230,29 +214,26 @@ function App() {
         try {
             const res = await fetch('/api/answer', { 
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ answer: finalInput, token: question.token, streak, level, topic, usedHelp: helpUsed, solutionUsed: isSolutionRevealed, attempts: question.attempts }) 
+                body: JSON.stringify({ answer: finalInput, token: question.token, streak, level, topic, usedHelp: helpUsed, solutionUsed: isSolutionRevealed, attempts: (question.attempts || 0) }) 
             });
             const result = await res.json();
-            await recordProgress(result.correct, question.metadata);
-
+            
             if (result.correct) {
-                if (!isSolutionRevealed) {
-                    setHistory(prev => [{ topic, level, correct: true, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
-                    setStreak(result.newStreak);
-                    setTotalCorrect(prev => prev + 1);
-                    if ([15, 20, 30, 40, 50].includes(result.newStreak)) setShowStreakModal(true);
-                    else if (result.levelUp) setLevelUpAvailable(true);
-                    else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
-                }
+                setHistory(prev => [{ topic, level, correct: true, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
+                setStreak(result.newStreak);
+                setTotalCorrect(prev => prev + 1);
+                if ([15, 20, 30, 40, 50].includes(result.newStreak)) setShowStreakModal(true);
+                else if (result.levelUp) setLevelUpAvailable(true);
+                else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
                 setFeedback('correct');
             } else {
                 const currentAttempts = (question.attempts || 0) + 1;
                 setQuestion({...question, attempts: currentAttempts});
                 if (currentAttempts >= 2) { 
-                    if (!isSolutionRevealed) setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: true, time: Date.now() }, ...prev]);
+                    setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: true, time: Date.now() }, ...prev]);
                     setUsedHelp(true); setRevealedClues(question.clues || []); setIsSolutionRevealed(true); setStreak(0);
                 } else if (question.clues) {
-                    setUsedHelp(true); setRevealedClues([...revealedClues, question.clues[revealedClues.length] || question.clues[0]]);
+                    setUsedHelp(true); setRevealedClues(prev => [...prev, question.clues[prev.length] || question.clues[0]]);
                 }
                 setFeedback('incorrect'); setStreak(0);
             }
@@ -264,25 +245,35 @@ function App() {
         setDoNowConfig(selectedConfig);
         if (rawPacket) setSavedPacket(rawPacket); 
         setLoading(true);
-        const requestsPayload = [];
-        for (let i = 0; i < 6; i++) {
-            const selection = selectedConfig[i % selectedConfig.length];
-            requestsPayload.push({ topic: selection.topic, level: selection.level, variation: selection.variation, lang });
-        }
+        const requestsPayload = selectedConfig.map(s => ({ topic: s.topic, level: s.level, variation: s.variation, lang }));
         try {
-            const res = await fetch('/api/batch', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requests: requestsPayload }) 
-            });
-            if (!res.ok) throw new Error(`Batch API Error: ${res.status}`);
+            const res = await fetch('/api/batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requests: requestsPayload }) });
             const data = await res.json();
             if (Array.isArray(data)) { setDoNowQuestions(data); navigate('donow_grid'); }
         } catch (e) { console.error("Do Now Error:", e); } 
         finally { setLoading(false); }
     };
 
-    // --- RENDER ---
-    if (session && loadingProfile) return <div className="h-screen bg-white" />;
-    if (!session) return <AuthView ui={ui} lang={lang} onGuestMode={() => {}} />;
+    // --- TIMER HELPERS ---
+    const toggleTimer = (minutes) => setTimerSettings({ duration: minutes * 60, remaining: minutes * 60, isActive: minutes > 0 });
+    const resetTimer = () => setTimerSettings({ duration: 0, remaining: 0, isActive: false });
+    const formatTimerTime = (seconds) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    // --- RENDER LOGIC ---
+    if (loadingProfile) return (
+        <div className="h-screen flex items-center justify-center bg-white">
+            <div className="animate-pulse text-indigo-600 font-black uppercase tracking-tighter text-2xl">Laddar...</div>
+        </div>
+    );
+
+    // View Routing
+    if (view === 'auth') {
+        return <AuthView ui={ui} lang={lang} onGuestMode={() => navigate('dashboard')} />;
+    }
 
     if (view === 'donow_config') {
         return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => navigate('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
@@ -319,15 +310,23 @@ function App() {
                         {view === 'dashboard' && timerSettings.remaining > 0 && (
                             <div className="hidden sm:flex bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold items-center gap-2 border border-orange-200">
                                 <span>⏸ {ui.timer_paused}</span>
-                                <span className="font-mono text-sm">{formatTime(timerSettings.remaining)}</span>
+                                <span className="font-mono text-sm">{formatTimerTime(timerSettings.remaining)}</span>
                             </div>
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <button onClick={() => setLang(prev => prev === 'sv' ? 'en' : 'sv')} className="text-2xl hover:scale-110 transition-transform mr-2">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</button>
-                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-emerald-200">✅ {totalCorrect}</div>
-                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-yellow-200">🔥 {streak}</div>
-                        <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2 transition-colors">Logga ut</button>
+                        <button onClick={() => setLang(prev => prev === 'sv' ? 'en' : 'sv')} className="text-2xl hover:scale-110 transition-transform mr-2" title="Switch Language">
+                            {lang === 'sv' ? '🇸🇪' : '🇬🇧'}
+                        </button>
+                        
+                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">✅ {totalCorrect}</div>
+                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold">🔥 {streak}</div>
+                        
+                        {session ? (
+                            <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2 transition-colors">Logga ut</button>
+                        ) : (
+                            <button onClick={() => navigate('auth')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase ml-2 transition-colors">Logga in</button>
+                        )}
                     </div>
                 </div>
             </header>
@@ -335,10 +334,12 @@ function App() {
             <div className="flex-1 flex flex-col">
                 {view === 'dashboard' ? (
                     <Dashboard
-                        lang={lang} selectedTopic={topic} selectedLevel={level} userRole={DEVELOPER_MODE ? 'teacher' : (profile?.role || 'student')} assignments={assignments} 
+                        lang={lang} selectedTopic={topic} selectedLevel={level} 
+                        userRole={DEVELOPER_MODE ? 'teacher' : (profile?.role || 'student')} 
+                        assignments={assignments} 
                         onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
-                        onStart={startPractice} 
-                        timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} 
+                        onStart={startPractice} ui={ui} 
+                        timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer}
                         onLgrOpen={() => setLgrOpen(true)} onContentOpen={() => setContentOpen(true)} onAboutOpen={() => setAboutOpen(true)}
                         onStatsOpen={() => setStatsOpen(true)} onStudioOpen={() => navigate('question_studio')} onDoNowOpen={() => navigate('donow_config')} 
                     />
@@ -349,7 +350,7 @@ function App() {
                         handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{ history, topic, level }} 
                         actions={{ retry: (force) => fetchQuestion(topic, level, lang, force), goBack: quitPractice }} 
                         levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable} isSolutionRevealed={isSolutionRevealed} 
-                        timerSettings={timerSettings} formatTime={formatTime} setMobileHistoryOpen={setMobileHistoryOpen}
+                        timerSettings={timerSettings} formatTime={formatTimerTime} setMobileHistoryOpen={setMobileHistoryOpen}
                     />
                 )}
             </div>
