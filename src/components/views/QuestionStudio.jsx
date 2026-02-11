@@ -5,16 +5,8 @@ import {
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 
 // --- VISUAL COMPONENT IMPORTS ---
-import { GraphCanvas } from '../visuals/GraphCanvas.jsx';
-import { VolumeVisualization } from '../visuals/VolumeVisualization.jsx';
-import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals.jsx';
-import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals.jsx';
-import ProbabilityTree from '../visuals/ProbabilityTree.jsx'; 
-import { RenderShape } from '../visuals/GeometryShapes.jsx';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals.jsx';
-import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry.jsx';
-import PatternVisual from '../visuals/PatternComponents.jsx'; 
-import AngleVisual from '../visuals/AngleComponents.jsx'; 
+// FIX: Importerar den centrala dispatchern GeometryVisual för att hantera alla geometrityper korrekt
+import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents.jsx';
 
 // --- THEME CONFIGURATION ---
 const CATEGORY_THEMES = {
@@ -134,13 +126,11 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacke
         const data = await res.json();
         
         if (!data || !data.renderData) {
-            console.error("Invalid data format received:", data);
             throw new Error("Invalid data format from generator");
         }
 
         setPreviewData(data);
     } catch (err) {
-        console.error("Preview failed:", err);
         setPreviewError(err.message || "Kunde inte ladda förhandsgranskning");
     } finally {
         setIsPreviewLoading(false);
@@ -161,10 +151,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacke
   const removeFromPacket = (id) => setPacket(packet.filter(p => p.id !== id));
 
   const handleFinalAction = () => {
-    if (typeof onDoNowGenerate !== 'function') {
-        console.error("Critical: onDoNowGenerate prop is missing from App.jsx");
-        return;
-    }
+    if (typeof onDoNowGenerate !== 'function') return;
 
     if (setupMode === 'donow') {
       const config = packet.map(p => {
@@ -177,46 +164,40 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacke
             variation: p.variationKey 
           };
       });
-      // UPDATED: Pass both the config (for API) AND the raw packet (for state persistence)
       onDoNowGenerate(config, packet);
     }
   };
 
+  /**
+   * REFINED VISUAL RENDERER
+   * Uses the central GeometryVisual dispatcher to handle all complex shapes
+   * (House, Portal, L-shape) as well as Graphs and Volume.
+   */
   const renderVisual = () => {
     if (!previewData?.renderData) return null;
     
-    const visual = previewData.renderData.geometry || previewData.renderData.graph;
-    if (!visual) return null;
-
-    const type = visual.type || (previewData.renderData.graph ? 'graph' : null);
-    const data = visual;
-    
-    const scaleWrapper = "scale-[0.85] origin-top my-2 transform-gpu";
-
-    switch (type) {
-      case 'graph': return <div className={scaleWrapper}><GraphCanvas data={data} /></div>;
-      case 'volume': return <div className={scaleWrapper}><VolumeVisualization data={data} /></div>;
-      case 'angle': return <div className={scaleWrapper}><AngleVisual data={data} /></div>;
-      case 'pattern': return <div className="scale-75 origin-top my-1"><PatternVisual data={data} /></div>;
-      case 'composite': return <div className="flex justify-center w-full py-1"><CompositeVisual data={data} /></div>;
-      case 'similarity_compare': return <div className={scaleWrapper}><SimilarityCompare data={data} /></div>;
-      case 'percent_grid': return <div className={scaleWrapper}><PercentGrid data={data} /></div>;
-      case 'probability_marbles': return <div className={scaleWrapper}><ProbabilityMarbles data={data} /></div>;
-      case 'probability_spinner': return <div className={scaleWrapper}><ProbabilitySpinner data={data} /></div>;
-      case 'probability_tree': return <div className={scaleWrapper}><ProbabilityTree data={data} /></div>;
-
-      case 'rectangle': case 'square': case 'parallelogram': 
-      case 'triangle': case 'circle': case 'semicircle': case 'quarter_circle':
-      case 'cylinder': case 'cone': case 'sphere': 
+    // 1. Check for functional graphs
+    if (previewData.renderData.graph) {
         return (
-          <div className="flex justify-center w-full py-1">
-            <svg width="240" height="180" viewBox="0 0 300 250" className="drop-shadow-sm overflow-visible">
-              <RenderShape type={type} dims={data} labels={data.labels} scale={0.7} />
-            </svg>
-          </div>
+            <div className="scale-90 origin-top transform-gpu">
+                <GraphCanvas data={previewData.renderData.graph} />
+            </div>
         );
-      default: return null;
     }
+
+    // 2. Use GeometryVisual dispatcher for EVERYTHING else
+    // This handles: basic shapes, composite (house/portal/L), angles, patterns, stats, probability
+    if (previewData.renderData.geometry) {
+        const data = previewData.renderData.geometry;
+        
+        return (
+            <div className="scale-90 lg:scale-100 origin-top transform-gpu flex justify-center w-full">
+                <GeometryVisual data={data} />
+            </div>
+        );
+    }
+
+    return null;
   };
 
   const filteredTopics = allTopics.filter(t => 
@@ -270,12 +251,10 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacke
             const catTopics = Object.entries(cat.topics).filter(([id]) => filteredTopics.some(ft => ft.id === id));
             if (catTopics.length === 0) return null;
             
-            // UX IMPROVEMENT: Color-coded headers
             const theme = CATEGORY_THEMES[cat.id] || CATEGORY_THEMES['algebra'];
             
             return (
               <div key={cat.id}>
-                {/* Colored Category Badge */}
                 <div className={`inline-block px-3 py-1 rounded-lg mb-3 ${theme.bg} ${theme.text} border ${theme.border}`}>
                     <h3 className="text-[10px] font-black uppercase tracking-widest">{cat.name}</h3>
                 </div>
@@ -311,7 +290,6 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacke
         <div className="flex-1 overflow-y-auto p-6 space-y-8 shadow-inner custom-scrollbar relative">
             {Object.entries(groupedVariations).map(([groupName, variations]) => (
                 <div key={groupName} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    {/* Sticky-ish Group Header */}
                     <div className="flex items-center gap-3 mb-4 sticky top-0 bg-slate-50/95 backdrop-blur-sm py-2 z-10">
                         <div className="h-px flex-1 bg-slate-300"></div>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-200/50 px-2 py-1 rounded">{groupName}</span>
@@ -329,7 +307,6 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacke
                                 <div className="flex justify-between items-start gap-4">
                                     <div className="min-w-0">
                                         <h4 className={`font-bold text-[15px] leading-tight transition-colors ${activePreviewKey === v.key ? 'text-indigo-700' : 'text-slate-700'}`}>
-                                            {/* Show only the subtask name if we grouped it, otherwise full name */}
                                             {v.displayName}
                                         </h4>
                                         <p className="text-[13px] text-slate-400 mt-1.5 leading-relaxed font-medium line-clamp-2">{v.desc}</p>
@@ -387,7 +364,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacke
                     </div>
                 ) : (
                     <div className="w-full space-y-6 animate-in fade-in zoom-in-95 duration-500 py-2">
-                        <div className="w-full flex justify-center transform transition-transform">
+                        <div className="w-full flex justify-center">
                              {renderVisual()}
                         </div>
 

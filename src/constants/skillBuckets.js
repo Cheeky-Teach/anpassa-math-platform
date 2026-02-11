@@ -322,7 +322,7 @@ export const SKILL_BUCKETS = {
           { key: 'perimeter_triangle_iso', name: 'Omkrets: Likbent', desc: 'Två lika sidor' },
           { key: 'perimeter_triangle_scalene', name: 'Omkrets: Oliksidig', desc: 'Alla sidor olika' },
           { key: 'combined_rect_tri', name: 'Sammansatt: Rekt+Tri', desc: 'Additionsmetoden' },
-          { key: 'combined_l_shape', name: 'Sammansatt: L-form', desc: 'Delning' },
+          { key: 'combined_l_shape', name: 'Sammansatt: L-form', desc: '2 Rektanglar (ihop)' },
           { key: 'combined_house', name: 'Sammansatt: Hus', desc: 'Kvadrat + Triangel' },
           { key: 'circle_area', name: 'Cirkel: Area', desc: 'pi * r^2' },
           { key: 'circle_perimeter', name: 'Cirkel: Omkrets', desc: 'pi * d' },
@@ -332,7 +332,7 @@ export const SKILL_BUCKETS = {
           { key: 'perimeter_quarter', name: 'Kvartscirkel: Omkrets', desc: 'Båge + Radier' },
           { key: 'perimeter_house', name: 'Omkrets: Hus', desc: 'Avancerad (Tak)' },
           { key: 'perimeter_portal', name: 'Omkrets: Portal', desc: 'Väggar + Båge' },
-          { key: 'area_house', name: 'Area: Hus', desc: 'Rektangel + Triangel (Avancerad)' },
+          { key: 'area_house', name: 'Area: Hus', desc: 'Rektangel + Triangel' },
           { key: 'area_portal', name: 'Area: Portal', desc: 'Rektangel + Halvcirkel' }
         ]
       },
@@ -431,7 +431,7 @@ export const SKILL_BUCKETS = {
       }
     }
   },
-
+  
   // ==========================================
   // 4. DATA & SANNOLIKHET
   // ==========================================
@@ -443,41 +443,42 @@ export const SKILL_BUCKETS = {
         name: 'Statistik',
         variations: [
           { key: 'find_mode', name: 'Typvärde', desc: 'Vanligaste värdet' },
-          { key: 'find_median_odd', name: 'Median (Udda)', desc: 'Mittersta värdet' },
-          { key: 'find_median_even', name: 'Median (Jämnt)', desc: 'Medel av mitten' },
-          { key: 'find_mean', name: 'Medelvärde', desc: 'Summa / Antal' },
           { key: 'find_range', name: 'Variationsbredd', desc: 'Max - Min' },
-          { key: 'find_outlier', name: 'Hitta extremvärde', desc: 'Avvikande data' },
-          { key: 'mean_target_score', name: 'Mål-medelvärde', desc: 'Vad krävs på provet?' },
-          { key: 'mean_missing_value', name: 'Hitta saknat tal', desc: 'Givet medelvärde' },
-          { key: 'median_missing_value', name: 'Median-pussel', desc: 'Logiskt tänkande' },
-          { key: 'freq_table_mode', name: 'Tabell: Typvärde', desc: 'Högst frekvens' },
-          { key: 'freq_table_range', name: 'Tabell: Bredd', desc: 'Max - Min obs' },
-          { key: 'freq_table_mean', name: 'Tabell: Medelvärde', desc: 'Summa(f*x) / n' },
-          { key: 'freq_table_median', name: 'Tabell: Median', desc: 'Hitta mittenposition' },
-          { key: 'real_measure_choice', name: 'Välj Lägesmått', desc: 'Medel vs Median' },
-          { key: 'real_outlier_shift', name: 'Effekt av extremvärde', desc: 'Påverkan på medel' }
+          { key: 'find_min_max', name: 'Minsta/Största tal', desc: 'Hitta extrempunkter' },
+          { key: 'calc_mean', name: 'Medelvärde', desc: 'Beräkna genomsnitt' },
+          { key: 'mean_negatives', name: 'Medelvärde: Negativa', desc: 'Temperaturer etc.' },
+          { key: 'median_odd', name: 'Median (Udda)', desc: 'Mittersta värdet' },
+          { key: 'median_even', name: 'Median (Jämnt)', desc: 'Medel av mittentalen' },
+          { key: 'reverse_mean_calc', name: 'Hitta saknat tal', desc: 'Givet medelvärde' },
+          { key: 'mean_target_score', name: 'Mål-medelvärde', desc: 'Vad krävs för snittet?' },
+          { key: 'freq_mode', name: 'Tabell: Typvärde', desc: 'Högst frekvens' },
+          { key: 'freq_mean', name: 'Tabell: Medelvärde', desc: 'Summa(f*x) / n' },
+          { key: 'freq_count', name: 'Tabell: Observationer', desc: 'Summera antal' },
+          { key: 'real_measure_choice', name: 'Välj Lägesmått', desc: 'Medel vs Median vid outliers' },
+          { key: 'real_outlier_shift', name: 'Effekt av extremvärde', desc: 'Hur påverkas medelvärdet?' },
+          { key: 'real_weighted_missing', name: 'Viktat medelvärde', desc: 'Blandade priser/mängder' }
         ]
       },
       probability: {
         name: 'Sannolikhet',
         variations: [
-          { key: 'visual_simple_prob', name: 'Enkel Sannolikhet', desc: 'Gynsamma / Möjliga' },
-          { key: 'visual_complement', name: 'Komplementhändelse', desc: 'P(Inte A) = 1 - P(A)' },
-          { key: 'visual_comparison', name: 'Jämför Chanser', desc: 'Var är chansen störst?' },
-          { key: 'spinner_simple', name: 'Lyckohjul', desc: 'Sektorernas andel' },
-          { key: 'spinner_color', name: 'Lyckohjul: Färg', desc: 'Additionsprincipen' },
-          { key: 'spinner_comparison', name: 'Jämför Hjul', desc: 'Bästa hjulet' },
-          { key: 'independent_dice', name: 'Oberoende: Tärning', desc: 'Flera tärningar' },
-          { key: 'independent_coin', name: 'Oberoende: Mynt', desc: 'Krona/Klave serier' },
-          { key: 'independent_mixed', name: 'Oberoende: Blandat', desc: 'Mynt och Tärning' },
-          { key: 'dependent_marbles_2', name: 'Beroende: 2 Drag', desc: 'Utan återläggning' },
-          { key: 'dependent_marbles_3', name: 'Beroende: 3 Drag', desc: 'Komplexa träd' },
-          { key: 'dependent_calc', name: 'Beräkna Beroende', desc: 'P(A) * P(B|A)' },
-          { key: 'tree_visual_2', name: 'Trädiagram (2 steg)', desc: 'Tolka diagram' },
-          { key: 'tree_visual_3', name: 'Trädiagram (3 steg)', desc: 'Avancerad tolkning' },
-          { key: 'pathways_count', name: 'Räkna Vägar', desc: 'Kombinatorik' },
-          { key: 'pathways_prob', name: 'Sannolikhet Väg', desc: 'Produktregeln' }
+          { key: 'visual_calc', name: 'Enkel Sannolikhet', desc: 'Gynsamma / Möjliga (Bilder)' },
+          { key: 'visual_not', name: 'Komplementhändelse', desc: 'Sannolikheten för "Inte"' },
+          { key: 'visual_or', name: 'Antingen Eller', desc: 'Addition av sannolikheter' },
+          { key: 'visual_spinner', name: 'Lyckohjul', desc: 'Sektorernas andel' },
+          { key: 'group_ratio', name: 'Förhållanden', desc: 'Sannolikhet utifrån n:m' },
+          { key: 'group_ternary', name: 'Tre grupper', desc: 'A, B och Resten' },
+          { key: 'concept_likelihood', name: 'Begrepp: Chans', desc: 'Säkert, Omöjligt, Even' },
+          { key: 'concept_compare', name: 'Jämför Chanser', desc: 'Var är chansen störst?' },
+          { key: 'comp_at_least', name: 'Minst en gång', desc: '1 - P(Ingen)' },
+          { key: 'tree_calc', name: 'Sannolikhetsträd', desc: 'Dragning utan återläggning' },
+          { key: 'tree_missing', name: 'Pussel: Träd', desc: 'Hitta saknad gren-sannolikhet' },
+          { key: 'chain_any_order', name: 'Oberoende ordning', desc: 'En av varje färg' },
+          { key: 'chain_fixed_order', name: 'Bestämd ordning', desc: 'Två av samma i rad' },
+          { key: 'comb_constraint', name: 'Kombinatorik: Outfits', desc: 'Multiplikationsprincipen' },
+          { key: 'comb_handshake', name: 'Handskakningar', desc: 'n(n-1)/2' },
+          { key: 'pathways_basic', name: 'Räkna Vägar', desc: 'A till B genom nätverk' },
+          { key: 'pathways_prob', name: 'Sannolikhet Väg', desc: 'Chansen att en väg är öppen' }
         ]
       }
     }
