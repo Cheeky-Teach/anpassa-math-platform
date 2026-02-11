@@ -188,7 +188,7 @@ export class GeometryGenerator {
             return {
                 renderData: {
                     geometry: { type: 'parallelogram', width: b, height: h, labels: { b: b, h: h, s: s } },
-                    description: lang === 'sv' ? "Beräkna parallellogrammens area." : "Calculate the area of the parallelogram. Be sure to choose the correct dimensions!",
+                    description: lang === 'sv' ? "Beräkna parallellogrammens area." : "Calculate the area of the parallelogram.",
                     answerType: 'numeric', suffix: 'cm²'
                 },
                 token: this.toBase64((b * h).toString()),
