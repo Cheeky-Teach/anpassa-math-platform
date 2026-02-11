@@ -75,22 +75,17 @@ function App() {
 
     const ui = UI_TEXT[lang];
 
-    // --- 8. SMART NAVIGATION (PREVENT ACCIDENTAL EXIT) ---
+    // --- 8. SMART NAVIGATION ---
     useEffect(() => {
-        // Initialize history state on mount
         window.history.replaceState({ view: 'dashboard' }, '');
-
         const handlePopState = (event) => {
-            // When user hits browser back button, go to previous view state
             const nextView = event.state?.view || 'dashboard';
             setView(nextView);
         };
-
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
-    // Wrapper to update View AND Browser History
     const navigate = (destination) => {
         if (destination !== view) {
             window.history.pushState({ view: destination }, '');
@@ -132,12 +127,13 @@ function App() {
     // --- DATA PERSISTENCE ---
     const recordProgress = async (isCorrect, metadata) => {
         if (!session?.user || !metadata) return;
+        const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
         const { error } = await supabase.from('student_progress').insert({
             student_id: session.user.id,
             topic_id: topic,
             variation_key: metadata.variation_key || 'unknown',
             is_correct: isCorrect,
-            help_used: revealedClues.length > 0 || isSolutionRevealed,
+            help_used: helpUsed,
         });
         if (error) console.error("Database persistence error:", error.message);
     };
@@ -181,7 +177,7 @@ function App() {
     const startPractice = () => {
         if (topic && level) { 
             setStreak(0); 
-            navigate('practice'); // Use navigate for history
+            navigate('practice');
             if (timerSettings.duration > 0) setTimerSettings(prev => ({ ...prev, isActive: true })); 
             fetchQuestion(topic, level, lang); 
         }
@@ -189,8 +185,39 @@ function App() {
 
     const quitPractice = () => { 
         setStreak(0); 
-        navigate('dashboard'); // Use navigate for history
+        navigate('dashboard');
         setQuestion(null); 
+    };
+
+    // New handlers to fix ReferenceErrors
+    const handleHint = () => {
+        if (question?.clues && revealedClues.length < question.clues.length) {
+            setUsedHelp(true);
+            const nextClue = question.clues[revealedClues.length];
+            setRevealedClues([...revealedClues, nextClue]);
+        }
+    };
+
+    const handleSolution = () => {
+        if (question?.clues) {
+            setUsedHelp(true);
+            setRevealedClues(question.clues);
+            setIsSolutionRevealed(true);
+            setStreak(0);
+        }
+    };
+
+    const handleSkip = () => {
+        setStreak(0);
+        fetchQuestion(topic, level, lang, true);
+    };
+
+    const handleChangeLevel = (delta) => {
+        const newLevel = level + delta;
+        if (newLevel >= 1 && LEVEL_DESCRIPTIONS[topic]?.[newLevel]) {
+            setLevel(newLevel);
+            fetchQuestion(topic, newLevel, lang, true);
+        }
     };
 
     const handleSubmit = async (e, directInput) => {
@@ -219,8 +246,9 @@ function App() {
                 }
                 setFeedback('correct');
             } else {
-                setQuestion({...question, attempts: (question.attempts || 0) + 1});
-                if ((question.attempts || 0) + 1 >= 2) { 
+                const currentAttempts = (question.attempts || 0) + 1;
+                setQuestion({...question, attempts: currentAttempts});
+                if (currentAttempts >= 2) { 
                     if (!isSolutionRevealed) setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: true, time: Date.now() }, ...prev]);
                     setUsedHelp(true); setRevealedClues(question.clues || []); setIsSolutionRevealed(true); setStreak(0);
                 } else if (question.clues) {
@@ -231,31 +259,23 @@ function App() {
         } catch (e) { console.error(e); }
     };
 
-    // --- DO NOW GENERATION ---
     const handleDoNowGenerate = async (selectedConfig, rawPacket) => {
         if (!selectedConfig || selectedConfig.length === 0) return;
-        
         setDoNowConfig(selectedConfig);
         if (rawPacket) setSavedPacket(rawPacket); 
-        
         setLoading(true);
-        
         const requestsPayload = [];
         for (let i = 0; i < 6; i++) {
             const selection = selectedConfig[i % selectedConfig.length];
             requestsPayload.push({ topic: selection.topic, level: selection.level, variation: selection.variation, lang });
         }
-
         try {
             const res = await fetch('/api/batch', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requests: requestsPayload }) 
             });
             if (!res.ok) throw new Error(`Batch API Error: ${res.status}`);
             const data = await res.json();
-            if (Array.isArray(data)) { 
-                setDoNowQuestions(data); 
-                navigate('donow_grid'); // Use navigate for history
-            }
+            if (Array.isArray(data)) { setDoNowQuestions(data); navigate('donow_grid'); }
         } catch (e) { console.error("Do Now Error:", e); } 
         finally { setLoading(false); }
     };
@@ -267,20 +287,9 @@ function App() {
     if (view === 'donow_config') {
         return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => navigate('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
     }
-    
     if (view === 'donow_grid') {
-        return (
-            <DoNowGrid 
-                questions={doNowQuestions} 
-                ui={ui} 
-                lang={lang} 
-                onBack={() => navigate('question_studio')} // Use navigate
-                onClose={() => navigate('dashboard')}      // Use navigate
-                onRefreshAll={() => handleDoNowGenerate(doNowConfig, null)} 
-            />
-        );
+        return <DoNowGrid questions={doNowQuestions} ui={ui} lang={lang} onBack={() => navigate('question_studio')} onClose={() => navigate('dashboard')} onRefreshAll={() => handleDoNowGenerate(doNowConfig, null)} />;
     }
-    
     if (view === 'question_studio') {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -288,12 +297,7 @@ function App() {
                     <h1 className="text-xl font-black text-indigo-600 tracking-tighter cursor-pointer" onClick={() => navigate('dashboard')}>Anpassa Studio</h1>
                     <button onClick={() => navigate('dashboard')} className="text-sm font-bold text-slate-400 hover:text-slate-600 uppercase">Stäng Studio</button>
                 </header>
-                <QuestionStudio 
-                    onDoNowGenerate={handleDoNowGenerate} 
-                    ui={ui}
-                    lang={lang}
-                    initialPacket={savedPacket} 
-                />
+                <QuestionStudio onDoNowGenerate={handleDoNowGenerate} ui={ui} lang={lang} initialPacket={savedPacket} />
             </div>
         );
     }
@@ -319,17 +323,8 @@ function App() {
                             </div>
                         )}
                     </div>
-                    
-                    {/* --- RESTORED LANGUAGE TOGGLE & USER CONTROLS --- */}
                     <div className="flex items-center gap-3">
-                        <button 
-                            onClick={() => setLang(prev => prev === 'sv' ? 'en' : 'sv')}
-                            className="text-2xl hover:scale-110 transition-transform mr-2"
-                            title={lang === 'sv' ? "Byt till Engelska" : "Switch to Swedish"}
-                        >
-                            {lang === 'sv' ? '🇸🇪' : '🇬🇧'}
-                        </button>
-
+                        <button onClick={() => setLang(prev => prev === 'sv' ? 'en' : 'sv')} className="text-2xl hover:scale-110 transition-transform mr-2">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</button>
                         <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-emerald-200">✅ {totalCorrect}</div>
                         <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-yellow-200">🔥 {streak}</div>
                         <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2 transition-colors">Logga ut</button>

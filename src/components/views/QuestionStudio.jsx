@@ -250,7 +250,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacke
     <div className="flex h-[calc(100vh-64px)] bg-slate-100 overflow-hidden font-sans text-slate-900">
       
       {/* PANE 1: SIDEBAR */}
-      <div className="w-90 bg-white border-r border-slate-200 flex flex-col shadow-sm shrink-0 font-medium">
+      <div className="w-70 bg-white border-r border-slate-200 flex flex-col shadow-sm shrink-0 font-medium">
         <div className="p-6 border-b border-slate-100 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-black uppercase tracking-widest text-xs text-slate-400 italic">Bibliotek</h2>
@@ -300,7 +300,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacke
       </div>
 
       {/* PANE 2: VARIATIONS */}
-      <div className="w-[420px] bg-slate-50 border-r border-slate-200 flex flex-col overflow-hidden shrink-0">
+      <div className="w-[320px] bg-slate-50 border-r border-slate-200 flex flex-col overflow-hidden shrink-0">
         <div className="p-6 border-b border-slate-200 bg-white shrink-0 shadow-sm z-10">
             <h1 className="text-lg font-black text-slate-900 uppercase truncate italic tracking-tight">{currentTopic?.name}</h1>
             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
@@ -436,13 +436,13 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang, initialPacke
       </div>
 
       {/* PANE 4: THE CART */}
-      <div className="w-80 bg-white border-l border-slate-200 flex flex-col shadow-2xl relative z-10 shrink-0 font-medium">
+      <div className="w-60 bg-white border-l border-slate-200 flex flex-col shadow-2xl relative z-10 shrink-0 font-medium">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-sm font-black shadow-lg">
               {packet.length}
             </div>
-            <h2 className="text-xs font-black text-slate-600 uppercase tracking-widest tracking-tighter italic">Ditt Paket</h2>
+            <h2 className="text-xs font-black text-slate-600 uppercase tracking-widest tracking-tighter italic">Utvalda frågor</h2>
           </div>
           {packet.length > 0 && (
             <button onClick={() => setPacket([])} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
