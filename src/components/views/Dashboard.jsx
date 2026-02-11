@@ -125,7 +125,7 @@ const Dashboard = ({
                 <section className="mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex items-center gap-3 mb-4 px-4">
                         <PenTool size={18} className="text-slate-400" />
-                        <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">Lärarverktyg</h2>
+                        <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">Anpassa Studion</h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mx-4">
                         <button 
@@ -138,7 +138,7 @@ const Dashboard = ({
                                 </div>
                                 <div className="text-left">
                                     <span className="block font-black text-lg">Question Studio</span>
-                                    <span className="text-xs text-slate-400 group-hover:text-indigo-100">Skapa paket & arbetsblad</span>
+                                    <span className="text-xs text-slate-400 group-hover:text-indigo-100">Skapa Do Now & Arbetsblad</span>
                                 </div>
                             </div>
                             <ChevronRight size={20} />

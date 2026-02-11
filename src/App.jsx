@@ -107,7 +107,7 @@ function App() {
     useEffect(() => {
         let mounted = true;
         
-        // Initial session check
+        // Initial session check (happens in background)
         supabase.auth.getSession().then(({ data: { session: initSession } }) => {
             if (mounted) {
                 if (initSession) {
@@ -129,7 +129,7 @@ function App() {
                 if (mounted) { 
                     setProfile(userProfile); 
                     setLoadingProfile(false);
-                    if (view === 'auth') setView('dashboard'); // Auto-return to dashboard on login
+                    if (view === 'auth') setView('dashboard'); 
                 }
             } else {
                 setProfile(null);
@@ -270,17 +270,9 @@ function App() {
         </div>
     );
 
-    // View Routing
-    if (view === 'auth') {
-        return <AuthView ui={ui} lang={lang} onGuestMode={() => navigate('dashboard')} />;
-    }
-
-    if (view === 'donow_config') {
-        return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => navigate('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
-    }
-    if (view === 'donow_grid') {
-        return <DoNowGrid questions={doNowQuestions} ui={ui} lang={lang} onBack={() => navigate('question_studio')} onClose={() => navigate('dashboard')} onRefreshAll={() => handleDoNowGenerate(doNowConfig, null)} />;
-    }
+    // Deep routing logic
+    if (view === 'donow_config') return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => navigate('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
+    if (view === 'donow_grid') return <DoNowGrid questions={doNowQuestions} ui={ui} lang={lang} onBack={() => navigate('question_studio')} onClose={() => navigate('dashboard')} onRefreshAll={() => handleDoNowGenerate(doNowConfig, null)} />;
     if (view === 'question_studio') {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -325,7 +317,13 @@ function App() {
                         {session ? (
                             <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2 transition-colors">Logga ut</button>
                         ) : (
-                            <button onClick={() => navigate('auth')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase ml-2 transition-colors">Logga in</button>
+                            <button 
+                                // onClick={() => navigate('auth')} // DISABLED TEMPORARILY
+                                className="text-xs font-bold text-slate-300 cursor-not-allowed uppercase ml-2 transition-colors"
+                                title="Login is currently disabled"
+                            >
+                                Logga in
+                            </button>
                         )}
                     </div>
                 </div>
