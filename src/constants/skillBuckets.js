@@ -35,6 +35,20 @@ export const SKILL_BUCKETS = {
           { key: 'bothsides_mixed', name: 'X på båda sidor (Blandat)', desc: 'Komplexa ekvationer' }
         ]
       },
+      equations: {
+        name: 'Ekvationslösning',
+        variations: [
+          { key: 'onestep_calc', name: 'Ensteg: Beräkning', desc: 'Lös enkla x + a = b' },
+          { key: 'onestep_concept_inverse', name: 'Ensteg: Invers', desc: 'Välj rätt räknesätt (+/-/*/÷)' },
+          { key: 'onestep_spot_lie', name: 'Hitta felet: Ensteg', desc: 'Identifiera felaktig lösning' },
+          { key: 'twostep_calc', name: 'Tvåsteg: Beräkning', desc: 'ax + b = c' },
+          { key: 'twostep_concept_order', name: 'Tvåsteg: Ordning', desc: 'Vilket steg tas först?' },
+          { key: 'paren_calc', name: 'Parenteser: Beräkning', desc: 'a(x + b) = c' },
+          { key: 'paren_lie_distribution', name: 'Hitta felet: Parentes', desc: 'Analysera multiplikation i parentes' },
+          { key: 'bothsides_calc', name: 'X på båda sidor', desc: 'Samla x-termer på en sida' },
+          { key: 'bothsides_concept_strategy', name: 'X på båda sidor: Strategi', desc: 'Håll antalet x positivt' }
+        ]
+      },
       equations_word: {
         name: 'Ekvationer: Problemlösning',
         variations: [
