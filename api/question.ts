@@ -22,6 +22,7 @@ import { FractionArithGen } from '../src/core/generators/FractionArithGen.js';
 import { ChangeFactorGen } from '../src/core/generators/ChangeFactorGen.js';
 import { AnglesGen } from '../src/core/generators/AnglesGen.js';
 import { PatternsGen } from '../src/core/generators/PatternsGen.js';
+import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js';
 
 interface VercelRequest extends IncomingMessage {
     query: Record<string, string | string[]>;
@@ -63,6 +64,7 @@ const TopicMap: Record<string, any> = {
   'percentages': PercentGen,
   'ten_powers': TenPowersGen,
   'exponents': ExponentsGen,
+  'order_of_operations': OrderOperationsGen,
 
   // 2. ALGEBRA
   'expressions': ExpressionSimplificationGen,

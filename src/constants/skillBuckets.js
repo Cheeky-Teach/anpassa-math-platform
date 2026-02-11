@@ -128,6 +128,15 @@ export const SKILL_BUCKETS = {
           { key: 'div_inverse_logic', name: { sv: 'Division via multiplikation', en: 'Division via mult' }, desc: { sv: 'Samband', en: 'Connection' } }
         ]
       },
+      order_of_operations: {
+        name: { sv: 'Prioriteringsregler', en: 'Order of Operations' },
+        variations: [
+          { key: 'order_basic', name: { sv: 'Prioritering: Grund', en: 'Order: Basic' }, desc: { sv: 'Mult/Div före Add/Sub', en: 'Mult/Div before Add/Sub' } },
+          { key: 'order_paren', name: { sv: 'Prioritering: Parenteser', en: 'Order: Parentheses' }, desc: { sv: 'Räkna ut parentesen först', en: 'Solve parentheses first' } },
+          { key: 'order_fraction', name: { sv: 'Prioritering: Bråkstreck', en: 'Order: Fraction Bar' }, desc: { sv: 'Täljaren fungerar som en parentes', en: 'Numerator acts as a parenthesis' } },
+          { key: 'order_powers', name: { sv: 'Prioritering: Potenser', en: 'Order: Powers' }, desc: { sv: 'Parenteser > Potenser > Mult/Div', en: 'Paren > Powers > Mult/Div' } }
+        ]
+      },
       negatives: {
         name: { sv: 'Negativa Tal', en: 'Negative Numbers' },
         variations: [

@@ -6,6 +6,7 @@ export const CATEGORIES = {
         levels: 9,
         topics: [
             { id: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
+            { id: 'order_of_operations', label: { sv: "Prioriteringsregler", en: "Order of Operations" } }, // Ny generator tillagd här
             { id: 'fraction_basics', label: { sv: "Bråk: Grunder", en: "Fractions: Basics" } }, 
             { id: 'fraction_arith', label: { sv: "Bråk: Räkna", en: "Fractions: Arithmetic" } }, 
             { id: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
@@ -23,7 +24,7 @@ export const CATEGORIES = {
         topics: [
             { id: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
             { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
-            { id: 'patterns', label: { sv: "Algebraiska möster", en: "Algebraic patterns" } }
+            { id: 'patterns', label: { sv: "Algebraiska mönster", en: "Algebraic patterns" } }
         ]
     },
     geometry: {
@@ -37,7 +38,7 @@ export const CATEGORIES = {
             { id: 'volume', label: { sv: "Volym", en: "Volume" } },
             { id: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } },
             { id: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } },
-            { id: 'angles', label: { sv: "Vinklar", en: "Angles" } } // NEW
+            { id: 'angles', label: { sv: "Vinklar", en: "Angles" } }
         ]
     },
 
@@ -50,7 +51,7 @@ export const CATEGORIES = {
              { id: 'probability', label: { sv: "Sannolikhet", en: "Probability" } },
              { id: 'statistics', label: { sv: "Statistik", en: "Statistics" } },
              { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } },
-             { id: 'change_factor', label: { sv: "Förändringsfaktor", en: "Change Factor" } } // NEW
+             { id: 'change_factor', label: { sv: "Förändringsfaktor", en: "Change Factor" } }
         ]
     }
 };
@@ -123,7 +124,12 @@ export const UI_TEXT = {
 };
 
 export const LEVEL_DESCRIPTIONS = {
-    
+    order_of_operations: {
+        1: { sv: "Prioritering: Grund", en: "Order: Basics" },
+        2: { sv: "Prioritering: Parenteser", en: "Order: Parentheses" },
+        3: { sv: "Prioritering: Bråkstreck", en: "Order: Fraction Bars" },
+        4: { sv: "Prioritering: Potenser", en: "Order: Powers" }
+    },
     angles: {
         1: { sv: "Vinkeltyper", en: "Types of Angles" },
         2: { sv: "Komplement & Supplement", en: "Complementary & Supplementary" },
@@ -219,7 +225,7 @@ export const LEVEL_DESCRIPTIONS = {
         6: { sv: "Blandade Nivåer", en: "Mixed Levels" }
     },
     equation: {
-        1: { sv: "Enkels steg (x+a=b)", en: "One Step" },
+        1: { sv: "Enkla steg (x+a=b)", en: "One Step" },
         2: { sv: "Två steg (ax+b=c)", en: "Two Steps" },
         3: { sv: "Med Parenteser", en: "With Parentheses" },
         4: { sv: "Variabel på båda sidor", en: "Variables on both sides" },
@@ -259,7 +265,7 @@ export const LEVEL_DESCRIPTIONS = {
         5: { sv: "Klot & Sammansatta", en: "Sphere & Composite" },
         6: { sv: "Blandade Volymer", en: "Mixed Volumes" },
         7: { sv: "Enhetsomvandling", en: "Unit Conversion" },
-        8: { sv: "Begrängsningsyta", en: "Surface Area" } 
+        8: { sv: "Begränsningsyta", en: "Surface Area" } 
     },
     similarity: {
         1: { sv: "Är de likformiga?", en: "Are they similar?" },
