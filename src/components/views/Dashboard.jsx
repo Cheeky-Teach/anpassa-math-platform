@@ -16,7 +16,7 @@ import {
   Sparkles
 } from 'lucide-react';
 
-// Using the @ alias to ensure the path is resolved correctly in your Vite environment
+// Using the import path from your source code
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
 
 const COLOR_VARIANTS = {
@@ -38,7 +38,7 @@ const COLOR_VARIANTS = {
 };
 
 const Dashboard = ({ 
-    lang, 
+    lang = 'sv', 
     selectedTopic, 
     selectedLevel, 
     onSelect, 
@@ -59,6 +59,64 @@ const Dashboard = ({
     // Defaulting to algebra being expanded for a smooth landing
     const [expandedCategory, setExpandedCategory] = useState('algebra');
 
+    // --- INTERNAL TRANSLATIONS ---
+    const TEXT = {
+        sv: {
+            welcome_badge: "Välkommen till Anpassa",
+            welcome_title: "Dags att bemästra matematiken.",
+            current_assignments: "Aktuella Uppgifter",
+            assignment_status: (count) => `Du har ${count} aktiva uppdrag från din lärare.`,
+            daily_tip: "Dagens Tips",
+            tip_body: "Slå på timern för att hjälpa dig skapa en bra rutin att öva 15 minuter och sen ta en kort paus!",
+            timer_title: "Timer",
+            timer_off: "Timer av",
+            timer_reset: "Nollställ",
+            studio_section: "Anpassa Studion",
+            studio_title: "Question Studio",
+            studio_desc: "Skapa Do Now & Arbetsblad",
+            stats_title: "Elevstatistik",
+            stats_desc: "Följ klassens utveckling",
+            curriculum_title: "Kursmaterial",
+            topics_count: (count) => `${count} delmoment tillgängliga`,
+            select_level: "Välj nivå",
+            level_label: "Nivå",
+            start_btn: "Börja öva",
+            resources: "Resurser",
+            content_map: "Innehållskarta",
+            lgr_link: "LGR 22 Koppling",
+            about_link: "Om skaparen",
+            brand_motto: "Rätt stöd. Direkt."
+        },
+        en: {
+            welcome_badge: "Welcome to Adapt",
+            welcome_title: "Time to master mathematics.",
+            current_assignments: "Current Assignments",
+            assignment_status: (count) => `You have ${count} active assignments from your teacher.`,
+            daily_tip: "Daily Tip",
+            tip_body: "Turn on the timer to help you create a routine of practicing for 15 minutes and then taking a short break!",
+            timer_title: "Timer",
+            timer_off: "Timer off",
+            timer_reset: "Reset",
+            studio_section: "Adapt Studio",
+            studio_title: "Question Studio",
+            studio_desc: "Create Do Now & Worksheets",
+            stats_title: "Your stats today",
+            stats_desc: "See your progress",
+            curriculum_title: "Course Material",
+            topics_count: (count) => `${count} topics available`,
+            select_level: "Select Level",
+            level_label: "Level",
+            start_btn: "Start practicing",
+            resources: "Resources",
+            content_map: "Content Map",
+            lgr_link: "Curriculum Links",
+            about_link: "About Creator",
+            brand_motto: "Right support. Instantly."
+        }
+    };
+
+    const t = TEXT[lang] || TEXT.sv;
+
     const getStyles = (category) => {
         const color = category.color || 'emerald';
         return COLOR_VARIANTS[color] || COLOR_VARIANTS.emerald;
@@ -73,43 +131,43 @@ const Dashboard = ({
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
                             <span className="bg-white/20 backdrop-blur-md px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest border border-white/10">
-                                Välkommen till Anpassa
+                                {t.welcome_badge}
                             </span>
                         </div>
                         <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight leading-none">
-                            Dags att bemästra <br/>matematiken.
+                            {t.welcome_title}
                         </h1>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
                             {assignments.length > 0 ? (
                                 <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 hover:bg-white/15 transition-all cursor-pointer group">
                                     <div className="flex items-center justify-between mb-2">
-                                        <h3 className="font-bold flex items-center gap-2"><Calendar size={18}/> Aktuella Uppgifter</h3>
+                                        <h3 className="font-bold flex items-center gap-2"><Calendar size={18}/> {t.current_assignments}</h3>
                                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform"/>
                                     </div>
-                                    <p className="text-sm text-indigo-100">Du har {assignments.length} aktiva uppdrag från din lärare.</p>
+                                    <p className="text-sm text-indigo-100">{t.assignment_status(assignments.length)}</p>
                                 </div>
                             ) : (
                                 <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10">
-                                    <h3 className="font-bold flex items-center gap-2 mb-2"><Sparkles size={18}/> Dagens Tips</h3>
-                                    <p className="text-sm text-indigo-100">Använd timern till högern för att hjälpa dig skapa en bra rutin att öva 15 minuter och sen ta en kort paus!</p>
+                                    <h3 className="font-bold flex items-center gap-2 mb-2"><Sparkles size={18}/> {t.daily_tip}</h3>
+                                    <p className="text-sm text-indigo-100">{t.tip_body}</p>
                                 </div>
                             )}
 
                             <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 flex items-center justify-between">
                                 <div>
-                                    <h3 className="font-bold flex items-center gap-2 mb-1"><Clock size={18}/> {ui.timer_title}</h3>
+                                    <h3 className="font-bold flex items-center gap-2 mb-1"><Clock size={18}/> {t.timer_title}</h3>
                                     <div className="flex items-center gap-2 mt-2">
                                         <select
                                             value={timerSettings.duration / 60}
                                             onChange={(e) => toggleTimer(Number(e.target.value))}
                                             className="bg-slate-900/50 border-none text-white py-1 px-3 rounded-lg text-sm font-bold focus:ring-2 focus:ring-white/50"
                                         >
-                                            <option value="0">{ui.timer_off}</option>
+                                            <option value="0">{t.timer_off}</option>
                                             {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
                                         </select>
                                         {timerSettings.duration > 0 && (
-                                            <button onClick={resetTimer} className="text-[10px] uppercase font-black text-red-300 hover:text-white transition-colors">Reset</button>
+                                            <button onClick={resetTimer} className="text-[10px] uppercase font-black text-red-300 hover:text-white transition-colors">{t.timer_reset}</button>
                                         )}
                                     </div>
                                 </div>
@@ -125,7 +183,7 @@ const Dashboard = ({
                 <section className="mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
                     <div className="flex items-center gap-3 mb-4 px-4">
                         <PenTool size={18} className="text-slate-400" />
-                        <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">Anpassa Studion</h2>
+                        <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">{t.studio_section}</h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mx-4">
                         <button 
@@ -137,8 +195,8 @@ const Dashboard = ({
                                     <Zap size={24} fill="currentColor" />
                                 </div>
                                 <div className="text-left">
-                                    <span className="block font-black text-lg">Question Studio</span>
-                                    <span className="text-xs text-slate-400 group-hover:text-indigo-100">Skapa Do Now & Arbetsblad</span>
+                                    <span className="block font-black text-lg">{t.studio_title}</span>
+                                    <span className="text-xs text-slate-400 group-hover:text-indigo-100">{t.studio_desc}</span>
                                 </div>
                             </div>
                             <ChevronRight size={20} />
@@ -153,8 +211,8 @@ const Dashboard = ({
                                     <BarChart3 size={24} />
                                 </div>
                                 <div className="text-left">
-                                    <span className="block font-black text-lg text-slate-800">Elevstatistik</span>
-                                    <span className="text-xs text-slate-500">Följ klassens utveckling</span>
+                                    <span className="block font-black text-lg text-slate-800">{t.stats_title}</span>
+                                    <span className="text-xs text-slate-500">{t.stats_desc}</span>
                                 </div>
                             </div>
                             <ChevronRight size={20} className="text-slate-300" />
@@ -167,7 +225,7 @@ const Dashboard = ({
             <div className="flex flex-col gap-6 mx-4">
                 <div className="flex items-center gap-3 mb-2">
                     <Book size={18} className="text-slate-400" />
-                    <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">Kursmaterial</h2>
+                    <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest">{t.curriculum_title}</h2>
                 </div>
 
                 {Object.entries(CATEGORIES).map(([catKey, category]) => {
@@ -186,7 +244,7 @@ const Dashboard = ({
                                     </div>
                                     <div>
                                         <h3 className={`text-xl font-black text-slate-800 uppercase tracking-tight`}>{category.label[lang]}</h3>
-                                        <p className="text-xs text-slate-500 font-medium">{category.topics.length} delmoment tillgängliga</p>
+                                        <p className="text-xs text-slate-500 font-medium">{t.topics_count(category.topics.length)}</p>
                                     </div>
                                 </div>
                                 {isExpanded ? <ChevronUp size={24} className="text-slate-400" /> : <ChevronDown size={24} className="text-slate-400" />}
@@ -206,7 +264,7 @@ const Dashboard = ({
                                                     onChange={(e) => onSelect(topic.id, Number(e.target.value))} 
                                                     className={`w-full p-3 pl-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:outline-none appearance-none cursor-pointer transition-all ${selectedTopic === topic.id ? `ring-4 ${styles.ring} border-transparent` : ''}`}
                                                 >
-                                                    <option value={0} disabled>{ui.selectLevel}</option>
+                                                    <option value={0} disabled>{t.select_level}</option>
                                                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lvl => {
                                                         if (!LEVEL_DESCRIPTIONS[topic.id]?.[lvl]) return null;
                                                         return (
@@ -235,20 +293,20 @@ const Dashboard = ({
                     onClick={onStart} 
                     className="px-12 py-5 rounded-full font-black text-xl shadow-[0_20px_50px_rgba(249,115,22,0.4)] bg-orange-500 text-white pointer-events-auto flex items-center gap-4 hover:scale-110 hover:bg-orange-600 active:scale-95 transition-all uppercase tracking-tighter"
                 >
-                    Börja öva <Play fill="currentColor" size={20} />
+                    {t.start_btn} <Play fill="currentColor" size={20} />
                 </button>
             </div>
 
             {/* --- RESOURCE FOOTER HUB --- */}
             <footer className="mt-20 py-12 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-8 px-4 text-center md:text-left">
                 <div className="space-y-4">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Resurser</h4>
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.resources}</h4>
                     <div className="flex flex-col gap-2">
                         <button onClick={onContentOpen} className="flex items-center justify-center md:justify-start gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
-                            <Map size={16} /> Innehållskarta
+                            <Map size={16} /> {t.content_map}
                         </button>
                         <button onClick={onLgrOpen} className="flex items-center justify-center md:justify-start gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
-                            <Book size={16} /> LGR 22 Koppling
+                            <Book size={16} /> {t.lgr_link}
                         </button>
                     </div>
                 </div>
@@ -257,14 +315,16 @@ const Dashboard = ({
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Support</h4>
                     <div className="flex flex-col gap-2">
                         <button onClick={onAboutOpen} className="flex items-center justify-center md:justify-start gap-2 text-slate-600 hover:text-indigo-600 font-bold transition-colors">
-                            <Info size={16} /> Om skaparen
+                            <Info size={16} /> {t.about_link}
                         </button>
                     </div>
                 </div>
 
                 <div className="flex flex-col items-center md:items-end justify-center">
-                    <h2 className="text-3xl font-black text-slate-200 tracking-tighter italic">ANPASSA</h2>
-                    <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">Rätt stöd. Direkt.</p>
+                    <h2 className="text-3xl font-black text-slate-200 tracking-tighter italic">
+                        {lang === 'sv' ? 'ANPASSA' : 'ADAPT'}
+                    </h2>
+                    <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">{t.brand_motto}</p>
                 </div>
             </footer>
         </div>

@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 // FIX: Lagt till .jsx filändelse och importerat alla nödvändiga komponenter från god-filen
 import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents.jsx';
-import { X, Maximize, Minimize, ZoomIn, ZoomOut, RefreshCw } from 'lucide-react';
+import { X, Maximize, Minimize, ZoomIn, ZoomOut, RefreshCw, Eye, EyeOff } from 'lucide-react';
 
+/**
+ * MATH DISPLAY COMPONENT
+ * Renders LaTeX content using KaTeX if available.
+ */
 const MathDisplay = ({ content, className }) => {
     const containerRef = useRef(null);
     useEffect(() => {
@@ -33,32 +37,24 @@ const MathDisplay = ({ content, className }) => {
 // Tillgängliga textstorlekar för projektoroptimering
 const TEXT_SIZES = ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'text-3xl'];
 
-const DoNowCard = ({ index, q, showAnswer, onToggle, lang, textSizeClass }) => {
+/**
+ * DO NOW CARD COMPONENT
+ * Individual task card with visual support and answer reveal.
+ */
+const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onFocus, lang, textSizeClass, isFocused = false }) => {
     const decode = (str) => { try { return atob(str); } catch { return str; } };
 
-    // --- REFINED VISUAL DISPATCHER ---
     const renderVisualContent = () => {
         if (!q.renderData) return null;
-
-        // 1. Grafer
-        if (q.renderData.graph) {
-            return <GraphCanvas data={q.renderData.graph} />;
-        }
-
-        // 2. Geometri (inklusive Volym och Area)
+        if (q.renderData.graph) return <GraphCanvas data={q.renderData.graph} />;
         if (q.renderData.geometry) {
             const geom = q.renderData.geometry;
-            
-            // Hantera volym-visualiseringar specifikt (eftersom de är en egen komponent)
             const volumeTypes = ['cuboid', 'cylinder', 'cone', 'sphere', 'hemisphere', 'pyramid', 'triangular_prism', 'silo', 'ice_cream', 'volume'];
             if (volumeTypes.includes(geom.type)) {
-                return <VolumeVisualization data={geom} />;
+                return <VolumeVisualization data={geom} width={isFocused ? 400 : 280} height={isFocused ? 250 : 180} />;
             }
-
-            // Använd den centrala GeometryVisual för allt annat (Vinklar, Mönster, Sannolikhet, etc.)
             return <GeometryVisual data={geom} />;
         }
-
         return null;
     };
 
@@ -66,13 +62,14 @@ const DoNowCard = ({ index, q, showAnswer, onToggle, lang, textSizeClass }) => {
 
     return (
         <div 
-            onClick={onToggle} 
-            className={`relative rounded-[1.5rem] border-2 transition-all cursor-pointer flex flex-col overflow-hidden h-full select-none shadow-sm 
-            ${showAnswer ? 'bg-emerald-50 border-emerald-500 ring-4 ring-emerald-500/10' : 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md'}`}
+            onClick={onFocus}
+            className={`relative rounded-[1.5rem] border-2 transition-all flex flex-col overflow-hidden h-full select-none shadow-sm group
+            ${isFocused ? 'bg-white border-indigo-500 shadow-2xl' : 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md cursor-zoom-in'}
+            ${showAnswer && !isFocused ? 'bg-emerald-50 border-emerald-500 ring-4 ring-emerald-500/10' : ''}`}
         >
             {/* Header */}
-            <div className={`px-4 py-2 flex justify-between items-center border-b transition-colors ${showAnswer ? 'bg-emerald-100/50 border-emerald-200' : 'bg-slate-50 border-slate-100'}`}>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${showAnswer ? 'text-emerald-700' : 'text-slate-400'}`}>
+            <div className={`px-4 py-2 flex justify-between items-center border-b transition-colors ${showAnswer && !isFocused ? 'bg-emerald-100/50 border-emerald-200' : 'bg-slate-50 border-slate-100'}`}>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${showAnswer && !isFocused ? 'text-emerald-700' : 'text-slate-400'}`}>
                     {lang === 'sv' ? 'Uppgift' : 'Task'} {index + 1}
                 </span>
                 {q.topic && (
@@ -82,34 +79,35 @@ const DoNowCard = ({ index, q, showAnswer, onToggle, lang, textSizeClass }) => {
                 )}
             </div>
 
-            {/* Content Area */}
-            <div className="flex-1 p-4 flex flex-col justify-center items-center text-center relative overflow-hidden">
+            {/* Content Area - Added significantly higher padding when in focus mode */}
+            <div className={`flex-1 flex flex-col justify-center items-center text-center relative overflow-hidden transition-all duration-300 
+                ${isFocused ? 'p-12 md:p-16 lg:p-24' : 'p-4'}`}>
                 
-                {/* 1. VISUALS - Skalat för projektor */}
                 {hasVisual && (
-                    <div className="mb-6 w-full flex justify-center items-center transition-transform duration-300">
+                    <div className={`w-full flex justify-center items-center ${isFocused ? 'mb-12' : 'mb-6'}`}>
                         <div className="transform scale-110 lg:scale-125 origin-center">
                             {renderVisualContent()}
                         </div>
                     </div>
                 )}
                 
-                {/* 2. QUESTION TEXT */}
-                <div className={`font-bold text-slate-800 leading-tight ${textSizeClass} transition-all my-auto px-2`}>
+                {/* Question Text - Increased horizontal padding when focused to prevent border collision */}
+                <div className={`font-bold text-slate-800 leading-tight ${textSizeClass} transition-all my-auto ${isFocused ? 'px-12 md:px-20' : 'px-2'}`}>
                     <MathDisplay content={q.renderData?.description} />
                     {q.renderData?.latex && (
-                        <div className="mt-3 text-indigo-600 font-serif">
+                        <div className={`text-indigo-600 font-serif ${isFocused ? 'mt-6' : 'mt-3'}`}>
                             <MathDisplay content={`$$${q.renderData.latex}$$`} />
                         </div>
                     )}
                 </div>
                 
-                {/* 3. OPTIONS */}
+                {/* Options - Spaced out more when focused */}
                 {q.renderData?.options && q.renderData.options.length > 0 && (
-                    <div className="grid grid-cols-2 gap-3 mt-6 w-full px-2 pb-2">
+                    <div className={`grid grid-cols-2 gap-4 w-full ${isFocused ? 'mt-12 px-12 pb-12' : 'mt-6 px-2 pb-2'}`}>
                         {q.renderData.options.map((opt, idx) => (
-                            <div key={idx} className="bg-white border-2 border-slate-100 rounded-xl px-3 py-2 text-base font-bold text-left text-slate-700 shadow-sm flex items-center gap-3">
-                                <span className="w-6 h-6 shrink-0 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center text-[10px] font-black">
+                            <div key={idx} className={`bg-white border-2 border-slate-100 rounded-xl flex items-center gap-3 shadow-sm
+                                ${isFocused ? 'p-6 text-xl' : 'p-3 text-base font-bold text-left text-slate-700'}`}>
+                                <span className="w-8 h-8 shrink-0 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center text-xs font-black">
                                     {String.fromCharCode(65 + idx)}
                                 </span>
                                 <MathDisplay className="truncate" content={opt} />
@@ -119,13 +117,25 @@ const DoNowCard = ({ index, q, showAnswer, onToggle, lang, textSizeClass }) => {
                 )}
             </div>
 
-            {/* Answer Footer */}
+            {/* Answer Toggle Button (Discrete in corner) */}
+            {!isFocused && (
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onToggleAnswer(); }}
+                    className={`absolute bottom-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90
+                    ${showAnswer ? 'bg-emerald-600 text-white' : 'bg-white text-slate-400 border border-slate-200 hover:text-indigo-600 hover:border-indigo-200'}`}
+                    title={lang === 'sv' ? "Visa/Dölj svar" : "Show/Hide answer"}
+                >
+                    {showAnswer ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+            )}
+
+            {/* Answer Footer (Shown when active) */}
             {showAnswer && (
-                <div className="bg-emerald-600 text-white py-3 text-center shrink-0 animate-in slide-in-from-bottom duration-300">
+                <div className={`bg-emerald-600 text-white py-4 text-center shrink-0 animate-in slide-in-from-bottom duration-300 ${isFocused ? 'mt-auto' : ''}`}>
                     <div className="text-xs font-black uppercase tracking-[0.2em] mb-1 opacity-80">FACIT</div>
-                    <div className="text-3xl font-black tracking-tighter leading-none">
+                    <div className={`${isFocused ? 'text-5xl' : 'text-3xl'} font-black tracking-tighter leading-none`}>
                         <MathDisplay content={decode(q.token)} />
-                        {q.renderData?.suffix && <span className="text-lg ml-2 opacity-90 uppercase">{q.renderData.suffix}</span>}
+                        {q.renderData?.suffix && <span className={`${isFocused ? 'text-2xl' : 'text-lg'} ml-2 opacity-90 uppercase`}>{q.renderData.suffix}</span>}
                     </div>
                 </div>
             )}
@@ -135,44 +145,38 @@ const DoNowCard = ({ index, q, showAnswer, onToggle, lang, textSizeClass }) => {
 
 export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefreshAll }) {
     const [revealed, setRevealed] = useState({});
+    const [focusedIndex, setFocusedIndex] = useState(null);
     const [showAll, setShowAll] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [textSizeIndex, setTextSizeIndex] = useState(3); // Standard: text-xl
+    const [textSizeIndex, setTextSizeIndex] = useState(3); // Default: text-xl
 
     useEffect(() => {
+        const handleEsc = (e) => { if (e.key === 'Escape') setFocusedIndex(null); };
+        window.addEventListener('keydown', handleEsc);
         return () => {
-            if (document.fullscreenElement) {
-                document.exitFullscreen().catch(() => {});
-            }
+            window.removeEventListener('keydown', handleEsc);
+            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
         };
     }, []);
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen()
-                .then(() => setIsFullscreen(true))
-                .catch(e => console.error(e));
+            document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(e => console.error(e));
         } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen().then(() => setIsFullscreen(false));
-            }
+            if (document.exitFullscreen) document.exitFullscreen().then(() => setIsFullscreen(false));
         }
     };
 
     const handleSafeExit = (callback) => {
-        if (document.fullscreenElement) {
-            document.exitFullscreen().finally(() => callback());
-        } else {
-            callback();
-        }
+        if (document.fullscreenElement) document.exitFullscreen().finally(() => callback());
+        else callback();
     };
 
     const toggleOne = (i) => setRevealed(prev => ({ ...prev, [i]: !prev[i] }));
     
     const toggleAll = () => {
-        if (showAll) {
-            setRevealed({});
-        } else {
+        if (showAll) setRevealed({});
+        else {
             const all = {};
             questions.forEach((_, i) => all[i] = true);
             setRevealed(all);
@@ -187,11 +191,42 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
     const handleRefresh = () => {
         setRevealed({}); 
         setShowAll(false); 
+        setFocusedIndex(null);
         onRefreshAll();
     };
 
     return (
-        <div className="h-screen w-screen bg-slate-200 flex flex-col overflow-hidden font-sans">
+        <div className="h-screen w-screen bg-slate-200 flex flex-col overflow-hidden font-sans relative">
+            
+            {/* Whiteboard Focus Overlay */}
+            {focusedIndex !== null && (
+                <div 
+                    className="fixed inset-0 z-[60] bg-white/95 backdrop-blur-sm flex items-start justify-center pt-16 px-12 pb-12 animate-in fade-in duration-300 cursor-zoom-out"
+                    onClick={() => setFocusedIndex(null)}
+                >
+                    <div 
+                        className="w-full max-w-5xl h-auto transform lg:scale-105 shadow-2xl rounded-[3rem] cursor-default bg-white border border-slate-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <DoNowCard 
+                            index={focusedIndex} 
+                            q={questions[focusedIndex]} 
+                            showAnswer={!!revealed[focusedIndex]} 
+                            onToggleAnswer={() => toggleOne(focusedIndex)}
+                            onFocus={() => {}}
+                            lang={lang} 
+                            textSizeClass="text-4xl"
+                            isFocused={true}
+                        />
+                    </div>
+                    {/* Floating Close Hint */}
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-2 bg-slate-900/10 text-slate-400 rounded-full font-black text-xs uppercase tracking-widest pointer-events-none">
+                        {lang === 'sv' ? 'Klicka utanför för att återgå' : 'Click outside to return'}
+                    </div>
+                </div>
+            )}
+
+            {/* Header */}
             <header className="bg-slate-900 text-white px-6 py-3 shrink-0 flex justify-between items-center shadow-2xl z-20">
                 <div className="flex items-center gap-6">
                     <button 
@@ -219,7 +254,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                         onClick={handleRefresh} 
                         className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl text-xs font-black transition-all uppercase tracking-wider border border-indigo-500/30 flex items-center gap-2"
                     >
-                        <RefreshCw size={14} /> NYTT SET
+                        <RefreshCw size={14} /> {lang === 'sv' ? 'NYTT SET' : 'NEW SET'}
                     </button>
 
                     <button 
@@ -227,7 +262,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                         className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest ${showAll ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
                     >
                         <span>{showAll ? '🙈' : '👁️'}</span>
-                        {showAll ? "DÖLJ SVAR" : "VISA FACIT"}
+                        {showAll ? (lang === 'sv' ? "DÖLJ FACIT" : "HIDE ANSWERS") : (lang === 'sv' ? "VISA FACIT" : "SHOW ANSWERS")}
                     </button>
                     
                     <div className="h-6 w-px bg-slate-700 mx-2"></div>
@@ -240,6 +275,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                 </div>
             </header>
 
+            {/* Grid Container */}
             <main className="flex-1 p-6 overflow-hidden">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 grid-rows-2 gap-6 h-full w-full max-w-[1800px] mx-auto">
                     {questions.slice(0, 6).map((q, i) => (
@@ -248,7 +284,8 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                                 index={i} 
                                 q={q} 
                                 showAnswer={!!revealed[i]} 
-                                onToggle={() => toggleOne(i)} 
+                                onToggleAnswer={() => toggleOne(i)} 
+                                onFocus={() => setFocusedIndex(i)}
                                 lang={lang} 
                                 textSizeClass={TEXT_SIZES[textSizeIndex]} 
                             />

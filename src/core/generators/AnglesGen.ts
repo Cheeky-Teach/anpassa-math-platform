@@ -74,7 +74,7 @@ export class AnglesGen {
                     }
                 },
                 token: this.toBase64(lang === 'sv' ? labelSv : labelEn),
-                clues: [{ text: lang === 'sv' ? "En rät vinkel är exakt $90^\\circ$. Vinklar mindre än det är spetsiga, och vinklar större är trubbiga." : "A right angle is exactly $90^\\circ$. Smaller angles are acute, and larger angles are obtuse." }],
+                clues: [{ text: lang === 'sv' ? "En rät vinkel är exakt $90^\\circ$. Vinklar mindre än det är spetsiga. De som är större är trubbiga." : "A right angle is exactly $90^\\circ$. Smaller angles are acute, and larger angles are obtuse." }],
                 metadata: { variation_key: "classification_visual", difficulty: 1 }
             };
         }
