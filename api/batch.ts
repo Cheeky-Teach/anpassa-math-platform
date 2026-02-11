@@ -21,6 +21,7 @@ import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
 import { VolumeGen } from '../src/core/generators/VolumeGen.js';
 import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
 import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
+import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js';
 
 // COMPLETE TOPIC MAP (Aligned with skillBuckets.js)
 const TopicMap: Record<string, any> = {
@@ -40,6 +41,8 @@ const TopicMap: Record<string, any> = {
   'change_factor': ChangeFactorGen,
   'exponents': ExponentsGen,
   'ten_powers': TenPowersGen,
+  // NYTT: Mappning för prioriteringsregler
+  'order_of_operations': OrderOperationsGen,
 
   // Geometry
   'geometry': GeometryGenerator,
@@ -83,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const { requests } = body; // Updated to match App.jsx contract
+    const { requests } = body; // Matches App.jsx contract
 
     if (!requests || !Array.isArray(requests)) {
       return res.status(400).json({ error: 'Missing or invalid "requests" array in payload' });

@@ -29,6 +29,16 @@ export const CONTENT_MAP = [
                 ]
             },
             {
+                id: "order_of_operations",
+                name: { sv: "Prioriteringsregler", en: "Order of Operations" },
+                levels: [
+                    { lvl: 1, desc: { sv: "Grundläggande prioritering", en: "Basic Priority" }, ex: "5 + 2 × 3" },
+                    { lvl: 2, desc: { sv: "Använda parenteser", en: "Using Parentheses" }, ex: "(5 + 2) × 3" },
+                    { lvl: 3, desc: { sv: "Bråkstreck som gruppering", en: "Fraction Bar Grouping" }, ex: "(10-2)/4 + 5" },
+                    { lvl: 4, desc: { sv: "Potenser & Kombinationer", en: "Powers & Combinations" }, ex: "3² + 2 × (10-4)" }
+                ]
+            },
+            {
                 id: "fraction_basics",
                 name: { sv: "Bråk: Grunder", en: "Fractions: Basics" },
                 levels: [
@@ -193,7 +203,7 @@ export const CONTENT_MAP = [
                     { lvl: 2, desc: { sv: "Grannvinklar (180/90)", en: "Comp/Supp" }, ex: "180 - känd vinkel" },
                     { lvl: 3, desc: { sv: "Vertikalvinklar", en: "Vertical Angles" }, ex: "Mitt emot varandra" },
                     { lvl: 4, desc: { sv: "Triangelns vinkelsumma", en: "Triangle Sum" }, ex: "Svar: 180°" },
-                    { lvl: 5, desc: { sv: "Månghörningar", en: "Polygons" }, ex: "Beräkna vinkelsumma: (n-2) × 180" },
+                    { lvl: 5, desc: { sv: "Polygoner", en: "Polygons" }, ex: "(n-2) × 180" },
                     { lvl: 6, desc: { sv: "Parallella linjer", en: "Parallel Lines" }, ex: "Z, F och U-vinklar" }
                 ]
             },
@@ -206,7 +216,7 @@ export const CONTENT_MAP = [
                     { lvl: 3, desc: { sv: "Cylinder", en: "Cylinder" }, ex: "Pi × r² × H" },
                     { lvl: 4, desc: { sv: "Pyramid & Kon", en: "Pyramid & Cone" }, ex: "(Basarea × H) / 3" },
                     { lvl: 5, desc: { sv: "Klot & Sammansatta", en: "Sphere & Composite" }, ex: "4 × Pi × r³ / 3" },
-                    { lvl: 6, desc: { sv: "Blandade Volymer", en: "Mixed Volumes" }, ex: "Öva på allt från Nivå 1-5" },
+                    { lvl: 6, desc: { sv: "Blandade Volymer", en: "Mixed Volumes" }, ex: "Diameter-fällor" },
                     { lvl: 7, desc: { sv: "Enhetsomvandling", en: "Unit Conversion" }, ex: "dm³ <-> Liter" },
                     { lvl: 8, desc: { sv: "Begränsningsyta", en: "Surface Area" }, ex: "Arean på utsidan" }
                 ]
@@ -265,9 +275,9 @@ export const CONTENT_MAP = [
                     { lvl: 3, desc: { sv: "Begrepp & Chans", en: "Concepts & Chance" }, ex: "Säkert, Omöjligt" },
                     { lvl: 4, desc: { sv: "Komplementhändelse", en: "Complementary" }, ex: "Sannolikhet för 'Inte'" },
                     { lvl: 5, desc: { sv: "Sannolikhetsträd", en: "Probability Trees" }, ex: "Dragning utan återläggning" },
-                    { lvl: 6, desc: { sv: "Beroende händelser", en: "Event Chains" }, ex: "Fler omgångar" },
+                    { lvl: 6, desc: { sv: "Händelsekedjor", en: "Event Chains" }, ex: "En av varje färg" },
                     { lvl: 7, desc: { sv: "Kombinatorik", en: "Combinatorics" }, ex: "Handskakningar" },
-                    { lvl: 8, desc: { sv: "Avancerade vägar", en: "Complex Pathways" }, ex: "A till B genom olika spår" }
+                    { lvl: 8, desc: { sv: "Avancerade vägar", en: "Complex Pathways" }, ex: "A till B genom nätverk" }
                 ]
             }
         ]
