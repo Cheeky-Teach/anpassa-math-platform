@@ -175,7 +175,7 @@ export class FractionBasicsGen {
         if (v === 'mixed_convert_imp') {
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Skriv om till bråkform (oäkta bråk)." : "Rewrite as an improper fraction.",
+                    description: lang === 'sv' ? "Skriv om från blandadform till bråkform." : "Rewrite the mixed number as an improper fraction.",
                     latex: `${w}\\frac{${n}}{${d}}`,
                     answerType: 'fraction'
                 },
@@ -191,7 +191,7 @@ export class FractionBasicsGen {
                 renderData: {
                     description: lang === 'sv' ? "Skriv om till blandad form." : "Rewrite in mixed form.",
                     latex: `\\frac{${imp}}{${d}}`,
-                    answerType: 'mixed_fraction'
+                    answerType: 'fraction'
                 },
                 token: this.toBase64(`${w} ${n}/${d}`),
                 clues: [

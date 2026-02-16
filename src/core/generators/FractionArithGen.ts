@@ -45,17 +45,17 @@ export class FractionArithGen {
         return Buffer.from(str).toString('base64');
     }
 
-    private gcd(a: number, b: number): number {
-        return MathUtils.gcd(a, b);
+    private simplify(n: number, d: number) {
+        const common = MathUtils.gcd(n, d);
+        return { n: n / common, d: d / common };
     }
 
+    /**
+     * Helper to calculate Least Common Multiple
+     */
     private lcm(a: number, b: number): number {
-        return (a * b) / this.gcd(a, b);
-    }
-
-    private simplify(n: number, d: number): { n: number, d: number } {
-        const div = this.gcd(n, d);
-        return { n: n / div, d: d / div };
+        if (a === 0 || b === 0) return 0;
+        return Math.abs(a * b) / MathUtils.gcd(a, b);
     }
 
     // --- LEVEL 1: SAME DENOMINATORS ---
@@ -94,6 +94,8 @@ export class FractionArithGen {
     private level2_DiffDenom(lang: string, variationKey?: string): any {
         const d1 = MathUtils.randomInt(2, 4);
         const d2 = MathUtils.randomChoice([3, 5].filter(x => x !== d1));
+        
+        // Fixed: this.lcm is now defined above
         const lcd = this.lcm(d1, d2);
         const f1 = lcd / d1, f2 = lcd / d2;
         const sumN = f1 + f2;
@@ -123,7 +125,7 @@ export class FractionArithGen {
                     latex: visualAnswer 
                 }
             ],
-            metadata: { variation_key: 'add_diff_denom', difficulty: 3 }
+            metadata: { variation_key: 'add_diff_denom', difficulty: 2 }
         };
     }
 

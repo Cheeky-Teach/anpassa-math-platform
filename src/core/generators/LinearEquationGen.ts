@@ -198,11 +198,7 @@ export class LinearEquationGen {
         const intermediate = isPlus ? c - b : c + b;
 
         return {
-            renderData: { 
-                latex: `${a}x ${isPlus ? '+' : '-'} ${b} = ${c}`, 
-                description: lang === 'sv' ? "Lös ekvationen i två steg." : "Solve the equation in two steps.", 
-                answerType: 'text' 
-            },
+            renderData: { latex: `${a}x ${isPlus ? '+' : '-'} ${b} = ${c}`, description: lang === 'sv' ? "Lös ekvationen steg för steg." : "Solve the equation step by step.", answerType: 'text' },
             token: this.toBase64(x.toString()),
             clues: [
                 { 
@@ -225,6 +221,7 @@ export class LinearEquationGen {
         const a = MathUtils.randomInt(2, 5), b = MathUtils.randomInt(2, 6), x = MathUtils.randomInt(1, 8);
 
         if (v === 'paren_lie_distribution') {
+            const correct = `${a}(x + ${b}) = ${a}x + ${a*b}`;
             const lie = `${a}(x + ${b}) = ${a}x + ${b}`; 
             const correct1 = `${a}(x + ${b}) = ${a}x + ${a*b}`;
             return {
@@ -275,7 +272,7 @@ export class LinearEquationGen {
     // --- LEVEL 4: Both Sides ---
     private level4_BothSides(lang: string, variationKey?: string): any {
         const v = variationKey || MathUtils.randomChoice(['bothsides_concept_strategy', 'bothsides_calc']);
-        const x = MathUtils.randomInt(2, 8), a = MathUtils.randomInt(6, 10), c = MathUtils.randomInt(2, 5);
+        const x = MathUtils.randomInt(2, 10), a = MathUtils.randomInt(6, 10), c = MathUtils.randomInt(2, 5);
         const b = MathUtils.randomInt(2, 12);
         const d = (a - c) * x + b;
         const eq = `${a}x + ${b} = ${c}x + ${d}`;
