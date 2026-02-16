@@ -14,10 +14,6 @@ export class LinearEquationProblemGen {
         }
     }
 
-    /**
-     * Phase 2: Targeted Generation
-     * Allows the Question Studio to request a specific skill bucket.
-     */
     public generateByVariation(key: string, lang: string = 'sv'): any {
         const mode = key.endsWith('_write') ? 'write' : 'solve';
         const baseKey = key.replace('_write', '').replace('_solve', '');
@@ -70,14 +66,34 @@ export class LinearEquationProblemGen {
         const equation = `${a}x+${b}=${c}`;
         const desc = (lang === 'sv' ? s.textSv(a,b,c) : s.textEn(a,b,c)) + " " + this.getTaskText(lang, mode);
 
-        const clues = mode === 'write' ? [
-            { text: lang === 'sv' ? `Steg 1: Identifiera den rörliga kostnaden (${a} kr för varje x).` : `Step 1: Identify the variable cost (${a} kr for each x).`, latex: `${a} \\cdot x = ${a}x` },
-            { text: lang === 'sv' ? `Steg 2: Lägg till den fasta kostnaden för ${s.fixedName} (${b} kr).` : `Step 2: Add the fixed cost for the ${s.fixedName} (${b} kr).`, latex: `${a}x + ${b}` },
-            { text: lang === 'sv' ? `Steg 3: Sätt hela uttrycket lika med det totala beloppet ${c} kr.` : `Step 3: Set the entire expression equal to the total amount of ${c} kr.`, latex: `${equation}` }
-        ] : [
-            { text: lang === 'sv' ? `Börja med att ta bort den fasta avgiften (${b}) från totalsumman.` : `Start by removing the fixed fee (${b}) from the total amount.`, latex: `${a}x = ${c} - ${b} = ${c-b}` },
-            { text: lang === 'sv' ? `Dela nu resultatet med priset per enhet (${a}) för att få fram x.` : `Now divide the result by the price per unit (${a}) to find x.`, latex: `x = \\frac{${c-b}}{${a}} = ${x}` }
-        ];
+        let clues;
+        if (mode === 'write') {
+            clues = [
+                { 
+                    text: lang === 'sv' ? `Först uttrycker vi den rörliga kostnaden. Om varje enhet kostar ${a} kr, så kostar x stycken totalt ${a}x.` : `First, express the variable cost. If each unit costs ${a} kr, then x units cost ${a}x in total.`, 
+                    latex: `${a}x` 
+                },
+                { 
+                    text: lang === 'sv' ? `Sedan lägger vi till den fasta kostnaden på ${b} kr som betalas oavsett hur många x man har.` : `Next, add the fixed cost of ${b} kr that is paid regardless of how many x units you have.`, 
+                    latex: `${a}x + ${b}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Slutligen sätter vi uttrycket lika med det totala beloppet ${c} kr.` : `Finally, set the expression equal to the total amount of ${c} kr.`, 
+                    latex: `${a}x + ${b} = ${c}` 
+                }
+            ];
+        } else {
+            clues = [
+                { 
+                    text: lang === 'sv' ? `För att veta vad bara själva föremålen/kilometrarna kostade, drar vi bort den fasta avgiften (${b} kr) från totalsumman.` : `To find out the cost of just the items/kilometers, subtract the fixed fee (${b} kr) from the total sum.`, 
+                    latex: `${a}x = ${c} - ${b} = ${c-b}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Eftersom vi nu vet att ${a} stycken kostar ${c-b} kr, delar vi med ${a} för att få fram värdet på x.` : `Since we now know that ${a} units cost ${c-b} kr, divide by ${a} to find the value of x.`, 
+                    latex: `x = \\frac{${c-b}}{${a}} = ${x}` 
+                }
+            ];
+        }
 
         return {
             renderData: { description: desc, answerType: 'text', latex: "" },
@@ -99,14 +115,34 @@ export class LinearEquationProblemGen {
             : `You buy x computer games that cost ${a} kr each. Since you have a gift card, you get a ${b} kr discount on the total. You end up paying ${c} kr. ${this.getTaskText(lang, mode)}`;
 
         const equation = `${a}x-${b}=${c}`;
-        const clues = mode === 'write' ? [
-            { text: lang === 'sv' ? `Steg 1: Beräkna vad spelen kostar tillsammans utan rabatt.` : `Step 1: Calculate what the games cost together without the discount.`, latex: `${a}x` },
-            { text: lang === 'sv' ? `Steg 2: Subtrahera rabatten på ${b} kr från uttrycket.` : `Step 2: Subtract the discount of ${b} kr from the expression.`, latex: `${a}x - ${b}` },
-            { text: lang === 'sv' ? `Steg 3: Sätt detta lika med vad du faktiskt betalade (${c} kr).` : `Step 3: Set this equal to what you actually paid (${c} kr).`, latex: `${equation}` }
-        ] : [
-            { text: lang === 'sv' ? `Addera rabatten (${b}) till summan för att se vad det kostade före rabatten.` : `Add the discount (${b}) to the total to see the cost before the discount.`, latex: `${a}x = ${c} + ${b} = ${c+b}` },
-            { text: lang === 'sv' ? `Dela det beloppet med styckpriset (${a}) för att hitta antalet spel.` : `Divide that amount by the unit price (${a}) to find the number of games.`, latex: `x = ${x}` }
-        ];
+        let clues;
+        if (mode === 'write') {
+            clues = [
+                { 
+                    text: lang === 'sv' ? `Börja med att räkna ut vad spelen kostar tillsammans (${a} kr gånger x).` : `Start by calculating the cost of the games together (${a} kr times x).`, 
+                    latex: `${a}x` 
+                },
+                { 
+                    text: lang === 'sv' ? `Dra sedan bort rabatten på ${b} kr från det priset.` : `Then subtract the discount of ${b} kr from that price.`, 
+                    latex: `${a}x - ${b}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Sätt detta lika med slutpriset du betalade (${c} kr).` : `Set this equal to the final price you paid (${c} kr).`, 
+                    latex: `${a}x - ${b} = ${c}` 
+                }
+            ];
+        } else {
+            clues = [
+                { 
+                    text: lang === 'sv' ? `För att veta vad spelen kostade innan rabatten, lägger vi tillbaka de ${b} kr som drogs bort.` : `To find out what the games cost before the discount, we add back the ${b} kr that were subtracted.`, 
+                    latex: `${a}x = ${c} + ${b} = ${c+b}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Nu när vi har priset utan rabatt, delar vi med styckpriset ${a} kr för att hitta antalet x.` : `Now that we have the price without the discount, divide by the unit price ${a} kr to find the number of x.`, 
+                    latex: `x = \\frac{${c+b}}{${a}} = ${x}` 
+                }
+            ];
+        }
 
         return {
             renderData: { description: desc, answerType: 'text', latex: "" },
@@ -128,13 +164,30 @@ export class LinearEquationProblemGen {
             : `${names[0]} has x kr. ${names[1]} has ${diff} kr more than ${names[0]}. Together they have ${total} kr. ${this.getTaskText(lang, mode)}`;
 
         const equation = `2x+${diff}=${total}`;
-        const clues = mode === 'write' ? [
-            { text: lang === 'sv' ? `${names[0]}s pengar: x. ${names[1]}s pengar: (x + ${diff}).` : `${names[0]}'s money: x. ${names[1]}'s money: (x + ${diff}).`, latex: "" },
-            { text: lang === 'sv' ? `Summera dem: x + (x + ${diff}) = 2x + ${diff}.` : `Sum them up: x + (x + ${diff}) = 2x + ${diff}.`, latex: `${equation}` }
-        ] : [
-            { text: lang === 'sv' ? `Ta bort skillnaden (${diff}) från totalen för att få reda på vad de har om de hade haft lika mycket.` : `Subtract the difference (${diff}) from the total to find out what they have if they were equal.`, latex: `2x = ${total} - ${diff} = ${total-diff}` },
-            { text: lang === 'sv' ? "Dela nu resultatet med 2 för att hitta värdet på x." : "Now divide the result by 2 to find the value of x.", latex: `x = ${x}` }
-        ];
+        let clues;
+        if (mode === 'write') {
+            clues = [
+                { 
+                    text: lang === 'sv' ? `${names[0]} har x kr. Eftersom ${names[1]} har ${diff} mer, skriver vi det som (x + ${diff}).` : `${names[0]} has x kr. Since ${names[1]} has ${diff} more, we write that as (x + ${diff}).`, 
+                    latex: `x + (x + ${diff})` 
+                },
+                { 
+                    text: lang === 'sv' ? `Slå ihop de två x-termerna (x + x = 2x) och sätt summan lika med ${total}.` : `Combine the two x-terms (x + x = 2x) and set the sum equal to ${total}.`, 
+                    latex: `2x + ${diff} = ${total}` 
+                }
+            ];
+        } else {
+            clues = [
+                { 
+                    text: lang === 'sv' ? `Vi börjar med att ta bort "överskottet" på ${diff} kr för att se vad de skulle ha om de hade exakt lika mycket pengar.` : `We start by removing the "excess" of ${diff} kr to see what they would have if they had exactly the same amount of money.`, 
+                    latex: `2x = ${total} - ${diff} = ${total-diff}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Eftersom resultatet motsvarar två personers lika stora summor, delar vi med 2 för att hitta värdet på x.` : `Since the result corresponds to two people's equal sums, we divide by 2 to find the value of x.`, 
+                    latex: `x = \\frac{${total-diff}}{2} = ${x}` 
+                }
+            ];
+        }
 
         return {
             renderData: { description: desc, answerType: 'text', latex: "" },
@@ -156,13 +209,30 @@ export class LinearEquationProblemGen {
             : `A plank that is ${length} cm long is cut into two pieces. The long piece is x cm. The short piece is ${diff} cm shorter than the long one. ${this.getTaskText(lang, mode)}`;
 
         const equation = `2x-${diff}=${length}`;
-        const clues = mode === 'write' ? [
-            { text: lang === 'sv' ? `Lång bit: x. Kort bit: (x - ${diff}).` : `Long piece: x. Short piece: (x - ${diff}).`, latex: "" },
-            { text: lang === 'sv' ? `Lägg ihop bitarna: x + (x - ${diff}) = 2x - ${diff}.` : `Add the pieces: x + (x - ${diff}) = 2x - ${diff}.`, latex: `${equation}` }
-        ] : [
-            { text: lang === 'sv' ? `Lägg till skillnaden (${diff}) till plankans längd för att göra bitarna lika långa i din beräkning.` : `Add the difference (${diff}) to the plank's length to make the pieces equal in your calculation.`, latex: `2x = ${length} + ${diff} = ${length+diff}` },
-            { text: lang === 'sv' ? "Dela totalen med 2 för att hitta den längsta biten x." : "Divide the total by 2 to find the longest piece x.", latex: `x = ${x}` }
-        ];
+        let clues;
+        if (mode === 'write') {
+            clues = [
+                { 
+                    text: lang === 'sv' ? `Den långa biten är x. Den korta är ${diff} cm kortare, vilket skrivs som (x - ${diff}).` : `The long piece is x. The short one is ${diff} cm shorter, which is written as (x - ${diff}).`, 
+                    latex: `x + (x - ${diff})` 
+                },
+                { 
+                    text: lang === 'sv' ? `Förenkla genom att lägga ihop bitarna (2x) och sätt det lika med den totala längden ${length} cm.` : `Simplify by adding the pieces together (2x) and set it equal to the total length ${length} cm.`, 
+                    latex: `2x - ${diff} = ${length}` 
+                }
+            ];
+        } else {
+            clues = [
+                { 
+                    text: lang === 'sv' ? `Om vi "lägger till" de ${diff} cm som saknas på den korta biten, skulle vi ha två bitar som båda är x cm långa.` : `If we "add" the missing ${diff} cm to the short piece, we would have two pieces that are both x cm long.`, 
+                    latex: `2x = ${length} + ${diff} = ${length+diff}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Dela nu den nya totala längden med 2 för att få fram längden på den långa biten x.` : `Now divide the new total length by 2 to find the length of the long piece x.`, 
+                    latex: `x = \\frac{${length+diff}}{2} = ${x}` 
+                }
+            ];
+        }
 
         return {
             renderData: { description: desc, answerType: 'text', latex: "" },
