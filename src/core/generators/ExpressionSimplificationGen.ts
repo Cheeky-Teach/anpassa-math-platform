@@ -13,32 +13,24 @@ export class ExpressionSimplificationGen {
         }
     }
 
-    /**
-     * Phase 2: Targeted Generation
-     * Allows the Question Studio to request a specific skill bucket.
-     */
     public generateByVariation(key: string, lang: string = 'sv'): any {
         switch (key) {
             case 'combine_lie_exponent':
             case 'combine_concept_id':
             case 'combine_standard_mixed':
                 return this.level1_CombineTerms(lang, key);
-            
             case 'distribute_lie_partial':
             case 'distribute_inverse_factor':
             case 'distribute_plus':
             case 'distribute_minus':
                 return this.level2_Parentheses(lang, key);
-            
             case 'distribute_double':
             case 'distribute_combine_std':
                 return this.level3_DistributeAndSimplify(lang, key);
-            
             case 'sub_concept_plus_logic':
             case 'sub_block_plus':
             case 'sub_block_minus':
                 return this.level4_SubtractParentheses(lang, key);
-            
             case 'word_candy':
             case 'word_discount':
             case 'word_combined_age':
@@ -50,7 +42,6 @@ export class ExpressionSimplificationGen {
             case 'word_sports':
             case 'word_phone_battery':
                 return this.level5_WordProblems(lang, key);
-
             default:
                 return this.generate(1, lang);
         }
@@ -70,19 +61,24 @@ export class ExpressionSimplificationGen {
             const sum = a + b;
             const sTrue = `${a}x + ${b}x = ${sum}x`;
             const sLie = `${a}x + ${b}x = ${sum}x^2`; 
-            const sTrue2 = `${a}x + x = ${a+1}x`;
-            const options = [sTrue, sLie, sTrue2];
+            const options = [sTrue, sLie, `${a}x + x = ${a+1}x`];
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Vilket av följande påståenden om förenkling är FALSKT?" : "Which of the following statements about simplification is FALSE?",
+                    description: lang === 'sv' ? "Vilket av följande påståenden är FALSKT?" : "Which of the following statements is FALSE?",
                     answerType: 'multiple_choice',
                     options: MathUtils.shuffle(options)
                 },
                 token: this.toBase64(sLie),
                 clues: [
-                    { text: lang === 'sv' ? "När vi adderar termer av samma slag (som x) ändras inte variabelns exponent. Det är som att lägga ihop frukter." : "When we add terms of the same kind (like x), the variable's exponent does not change. It is like adding fruit.", latex: "3x + 2x = 5x" },
-                    { text: lang === 'sv' ? "Variabeln får bara en tvåa (x²) om vi multiplicerar x med x." : "The variable only gets a two (x²) if we multiply x by x.", latex: "x \\cdot x = x^2" }
+                    { 
+                        text: lang === 'sv' ? "När vi lägger ihop termer av samma sort ändras bara antalet (koefficienten), inte själva sorten (exponenten)." : "When we add terms of the same kind, only the count (coefficient) changes, not the kind itself (exponent).", 
+                        latex: `${a}x + ${b}x = ${sum}x` 
+                    },
+                    {
+                        text: lang === 'sv' ? "Därför är detta påstående felaktigt:" : "Therefore, this statement is incorrect:",
+                        latex: sLie
+                    }
                 ],
                 metadata: { variation_key: 'combine_lie_exponent', difficulty: 2 }
             };
@@ -91,125 +87,155 @@ export class ExpressionSimplificationGen {
         if (v === 'combine_concept_id') {
             const a = MathUtils.randomInt(2, 9);
             const correct = `${MathUtils.randomInt(2, 9)}x`;
-            const wrong1 = `${MathUtils.randomInt(2, 9)}y`;
-            const wrong2 = `${MathUtils.randomInt(2, 9)}`;
-
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Vilken av dessa termer kan du lägga ihop med ${a}x genom förenkling?` : `Which of these terms can you add to ${a}x through simplification?`,
+                    description: lang === 'sv' ? `Vilken term kan förenklas ihop med ${a}x?` : `Which term can be simplified with ${a}x?`,
                     answerType: 'multiple_choice',
-                    options: MathUtils.shuffle([correct, wrong1, wrong2])
+                    options: MathUtils.shuffle([correct, "5y", "7"])
                 },
                 token: this.toBase64(correct),
-                clues: [{ text: lang === 'sv' ? "Du kan bara kombinera termer som har exakt samma bokstav (variabel)." : "You can only combine terms that have the exact same letter (variable)." }],
+                clues: [
+                    { text: lang === 'sv' ? "Man kan bara förenkla termer som har exakt samma variabel." : "You can only simplify terms that have the exact same variable." },
+                    { text: lang === 'sv' ? "Rätt svar är:" : "The correct answer is:", latex: correct }
+                ],
                 metadata: { variation_key: 'combine_concept_id', difficulty: 1 }
             };
         }
 
-        const a = MathUtils.randomInt(2, 8);
-        const b = MathUtils.randomInt(2, 12);
-        const c = MathUtils.randomInt(2, 8);
-        const d = MathUtils.randomInt(2, 12);
+        const a = MathUtils.randomInt(2, 8), b = MathUtils.randomInt(2, 12), c = MathUtils.randomInt(2, 8), d = MathUtils.randomInt(2, 12);
         const ans = `${a + c}x + ${b + d}`;
 
         return {
             renderData: {
                 latex: `${a}x + ${b} + ${c}x + ${d}`,
-                description: lang === 'sv' ? "Förenkla uttrycket genom att samla ihop termer av samma slag." : "Simplify the expression by gathering like terms.",
+                description: lang === 'sv' ? "Förenkla uttrycket genom att samla termer av samma slag." : "Simplify the expression by gathering like terms.",
                 answerType: 'text'
             },
             token: this.toBase64(ans),
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Samla ihop alla x-termer." : "Step 1: Gather all x-terms.", latex: `${a}x + ${c}x = ${a+c}x` },
-                { text: lang === 'sv' ? "Steg 2: Samla ihop alla siffror." : "Step 2: Gather all numbers.", latex: `${b} + ${d} = ${b+d}` }
+                { text: lang === 'sv' ? "Börja med att samla x-termerna för sig." : "Start by gathering the x-terms together.", latex: `${a}x + ${c}x = ${a+c}x \\\\ ${a+c}x + ${b} + ${d}` },
+                { text: lang === 'sv' ? "Samla sedan siffertermerna för sig." : "Then gather the constant terms together.", latex: `${b} + ${d} = ${b+d} \\\\ ${a+c}x + ${b+d}` },
+                { text: lang === 'sv' ? "Det färdigförenklade uttrycket är:" : "The fully simplified expression is:", latex: ans }
             ],
             metadata: { variation_key: 'combine_standard_mixed', difficulty: 2 }
         };
     }
 
-    // --- LEVEL 2: Parentheses (Distribution) ---
+    // --- LEVEL 2: Parentheses (Addition Rule) ---
     private level2_Parentheses(lang: string, variationKey?: string): any {
-        const v = variationKey || MathUtils.randomChoice(['distribute_lie_partial', 'distribute_inverse_factor', 'distribute_plus', 'distribute_minus']);
-        const a = MathUtils.randomInt(2, 5);
-        const b = MathUtils.randomInt(2, 5);
-        const c = MathUtils.randomInt(1, 6);
-        const inOp = (v === 'distribute_minus') ? '-' : (v === 'distribute_plus' ? '+' : Math.random() > 0.5 ? '+' : '-');
+        const scenario = MathUtils.randomInt(1, 5);
+        const a = MathUtils.randomInt(2, 9), b = MathUtils.randomInt(2, 9), c = MathUtils.randomInt(1, 12), d = MathUtils.randomInt(1, 12);
+        
+        let problemLatex = "", finalAnswer = "", step1Latex = "", groupingXText = "", groupingXVal = "", groupingNumText = "", groupingNumVal = "";
+        let reducedAfterX = "", reducedAfterNum = "";
 
-        if (v === 'distribute_lie_partial') {
-            const correct = `${a}(x ${inOp} ${c}) = ${a}x ${inOp} ${a*c}`;
-            const lie = `${a}(x ${inOp} ${c}) = ${a}x ${inOp} ${c}`; 
+        const ruleText = lang === 'sv' 
+            ? "Eftersom det står plus (+) framför parentesen kan den tas bort utan att ändra tecken inuti." 
+            : "Since there is a plus (+) in front of the parentheses, they can be removed without changing signs.";
 
-            return {
-                renderData: {
-                    description: lang === 'sv' ? "Vilken av förenklingarna nedan är FELAKTIG?" : "Which of the simplifications below is INCORRECT?",
-                    answerType: 'multiple_choice',
-                    options: MathUtils.shuffle([correct, lie, `${a}(x ${inOp} ${c}) = ${a} \cdot x ${inOp} ${a} \cdot ${c}`])
-                },
-                token: this.toBase64(lie),
-                clues: [
-                    { text: lang === 'sv' ? "Siffran utanför parentesen måste multipliceras med VARJE del inuti parentesen." : "The number outside the parentheses must be multiplied by EVERY part inside the parentheses." },
-                    { text: lang === 'sv' ? `Man måste alltså även räkna ut ${a} gånger ${c}.` : `So you must also calculate ${a} times ${c}.`, latex: `${a} \\cdot ${c} = ${a*c}` }
-                ],
-                metadata: { variation_key: 'distribute_lie_partial', difficulty: 2 }
-            };
+        switch (scenario) {
+            case 1: // ax + (bx + c)
+                problemLatex = `${a}x + (${b}x + ${c})`;
+                step1Latex = `${a}x + ${b}x + ${c}`;
+                groupingXText = lang === 'sv' ? "Kombinera x-termerna." : "Combine the x-terms.";
+                groupingXVal = `${a}x + ${b}x = ${a+b}x`;
+                reducedAfterX = `${a+b}x + ${c}`;
+                finalAnswer = reducedAfterX;
+                break;
+            case 2: // ax + (x - c)
+                problemLatex = `${a}x + (x - ${c})`;
+                step1Latex = `${a}x + x - ${c}`;
+                groupingXText = lang === 'sv' ? "Kombinera x-termerna (x är samma sak som 1x)." : "Combine the x-terms (x is the same as 1x).";
+                groupingXVal = `${a}x + 1x = ${a+1}x`;
+                reducedAfterX = `${a+1}x - ${c}`;
+                finalAnswer = reducedAfterX;
+                break;
+            case 3: // a + (bx + c) - d
+                problemLatex = `${a} + (${b}x + ${c}) - ${d}`;
+                step1Latex = `${a} + ${b}x + ${c} - ${d}`;
+                groupingNumText = lang === 'sv' ? "Slå ihop siffertermerna." : "Combine the constant terms.";
+                const res3 = a + c - d;
+                groupingNumVal = `${a} + ${c} - ${d} = ${res3}`;
+                reducedAfterNum = `${b}x ${res3 >= 0 ? '+' : ''} ${res3}`;
+                finalAnswer = reducedAfterNum;
+                break;
+            case 4: // a + bx + (x - c) + d
+                problemLatex = `${a} + ${b}x + (x - ${c}) + ${d}`;
+                step1Latex = `${a} + ${b}x + x - ${c} + ${d}`;
+                groupingXText = lang === 'sv' ? "Slå ihop x-termerna." : "Combine the x-terms.";
+                groupingXVal = `${b}x + 1x = ${b+1}x`;
+                reducedAfterX = `${a} + ${b+1}x - ${c} + ${d}`;
+                const res4 = a - c + d;
+                groupingNumText = lang === 'sv' ? "Slå ihop siffertermerna." : "Combine the constant terms.";
+                groupingNumVal = `${a} - ${c} + ${d} = ${res4}`;
+                reducedAfterNum = `${b+1}x ${res4 >= 0 ? '+' : ''} ${res4}`;
+                finalAnswer = reducedAfterNum;
+                break;
+            default: // ax + (b + cx) + dx
+                problemLatex = `${a}x + (${b} + ${c}x) + ${d}x`;
+                step1Latex = `${a}x + ${b} + ${c}x + ${d}x`;
+                groupingXText = lang === 'sv' ? "Kombinera alla x-termer." : "Combine all the x-terms.";
+                groupingXVal = `${a}x + ${c}x + ${d}x = ${a+c+d}x`;
+                reducedAfterX = `${a+c+d}x + ${b}`;
+                finalAnswer = reducedAfterX;
+                break;
         }
 
-        const latex = `${a}(${b}x ${inOp} ${c})`;
-        const ans = `${a*b}x ${inOp} ${a*c}`;
+        const clues = [{ text: ruleText, latex: `${problemLatex} \\\\ ${step1Latex}` }];
+        if (groupingXText) clues.push({ text: groupingXText, latex: `${groupingXVal} \\\\ ${reducedAfterX}` });
+        if (groupingNumText) clues.push({ text: groupingNumText, latex: `${groupingNumVal} \\\\ ${reducedAfterNum}` });
+        clues.push({ text: lang === 'sv' ? "Svaret blir:" : "The answer is:", latex: finalAnswer });
 
         return {
-            renderData: {
-                latex,
-                description: lang === 'sv' ? "Förenkla uttrycket genom att multiplicera in siffran i parentesen." : "Simplify the expression by distributing the number into the parentheses.",
-                answerType: 'text'
-            },
-            token: this.toBase64(ans),
-            clues: [
-                { text: lang === 'sv' ? `Multiplicera ${a} med båda termerna inuti parentesen.` : `Multiply ${a} with both terms inside the parentheses.`, latex: `${a} \\cdot ${b}x ${inOp} ${a} \\cdot ${c}` }
-            ],
-            metadata: { variation_key: v, difficulty: 2 }
+            renderData: { latex: problemLatex, description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", answerType: 'text' },
+            token: this.toBase64(finalAnswer.replace(/\s/g, "")),
+            clues,
+            metadata: { variation_key: 'distribute_plus', difficulty: 2 }
         };
     }
 
     // --- LEVEL 3: Distribute & Combine ---
     private level3_DistributeAndSimplify(lang: string, variationKey?: string): any {
         const v = variationKey || MathUtils.randomChoice(['distribute_double', 'distribute_combine_std']);
-        const a = MathUtils.randomInt(2, 4);
-        const b = MathUtils.randomInt(2, 4);
-        const c = MathUtils.randomInt(1, 5);
-        const d = MathUtils.randomInt(2, 6);
 
         if (v === 'distribute_double') {
-            const k1 = MathUtils.randomInt(2, 3);
-            const k2 = MathUtils.randomInt(2, 3);
-            const ans = `${k1+k2}x + ${k1*c + k2*d}`;
+            const k1 = MathUtils.randomInt(2, 4), k2 = MathUtils.randomInt(2, 4), c1 = MathUtils.randomInt(1, 5), c2 = MathUtils.randomInt(1, 5);
+            const expanded = `${k1}x + ${k1 * c1} + ${k2}x + ${k2 * c2}`;
+            const final = `${k1 + k2}x + ${k1 * c1 + k2 * c2}`;
 
             return {
-                renderData: {
-                    latex: `${k1}(x + ${c}) + ${k2}(x + ${d})`,
-                    description: lang === 'sv' ? "Förenkla uttrycket genom att först expandera båda parenteserna." : "Simplify the expression by first expanding both parentheses.",
-                    answerType: 'text'
-                },
-                token: this.toBase64(ans),
+                renderData: { latex: `${k1}(x + ${c1}) + ${k2}(x + ${c2})`, description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", answerType: 'text' },
+                token: this.toBase64(final.replace(/\s/g, "")),
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Multiplicera in i båda parenteserna." : "Step 1: Distribute into both parentheses.", latex: `${k1}x + ${k1*c} + ${k2}x + ${k2*d}` },
-                    { text: lang === 'sv' ? "Steg 2: Samla ihop x-termer och siffror var för sig." : "Step 2: Collect x-terms and numbers separately." }
+                    { 
+                        text: lang === 'sv' ? "Multiplicera in talet utanför i varje term inuti parenteserna." : "Multiply the number outside into every term inside the parentheses.", 
+                        latex: `${k1}(x + ${c1}) + ${k2}(x + ${c2}) \\\\ ${expanded}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Samla x-termer och siffertermer var för sig." : "Gather x-terms and constant terms separately.", 
+                        latex: `${k1}x + ${k2}x = ${k1+k2}x, \\; ${k1*c1} + ${k2*c2} = ${k1*c1+k2*c2} \\\\ ${final}` 
+                    },
+                    { text: lang === 'sv' ? "Det förenklade uttrycket är:" : "The simplified expression is:", latex: final }
                 ],
                 metadata: { variation_key: 'distribute_double', difficulty: 4 }
             };
         }
 
-        const ans = `${a*b + d}x + ${a*c}`;
+        const a = MathUtils.randomInt(2, 5), b = MathUtils.randomInt(2, 4), c = MathUtils.randomInt(2, 6), d = MathUtils.randomInt(2, 8);
+        const final = `${a*b + d}x + ${a*c}`;
         return {
-            renderData: {
-                latex: `${a}(${b}x + ${c}) + ${d}x`,
-                description: lang === 'sv' ? "Expandera parentesen och förenkla sedan uttrycket." : "Expand the parentheses and then simplify the expression.",
-                answerType: 'text'
-            },
-            token: this.toBase64(ans),
+            renderData: { latex: `${a}(${b}x + ${c}) + ${d}x`, description: lang === 'sv' ? "Expandera parentesen och förenkla." : "Expand the parentheses and simplify.", answerType: 'text' },
+            token: this.toBase64(final.replace(/\s/g, "")),
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Ta bort parentesen genom att multiplicera med " + a + "." : "Step 1: Remove parentheses by multiplying with " + a + ".", latex: `${a*b}x + ${a*c} + ${d}x` },
-                { text: lang === 'sv' ? "Steg 2: Lägg ihop alla termer som har x i sig." : "Step 2: Add all terms that contain x together.", latex: `${a*b}x + ${d}x = ${a*b+d}x` }
+                { 
+                    text: lang === 'sv' ? `Använd distributiva lagen: Multiplicera in ${a} i parentesen.` : `Use the distributive law: Multiply ${a} into the parentheses.`, 
+                    latex: `${a}(${b}x + ${c}) \\\\ ${a*b}x + ${a*c} \\\\ ${a*b}x + ${a*c} + ${d}x` 
+                },
+                { 
+                    text: lang === 'sv' ? "Kombinera nu de termer som är av samma slag." : "Now combine the terms that are of the same kind.", 
+                    latex: `${a*b}x + ${d}x = ${a*b+d}x \\\\ ${final}` 
+                },
+                { text: lang === 'sv' ? "Resultatet blir:" : "The result is:", latex: final }
             ],
             metadata: { variation_key: 'distribute_combine_std', difficulty: 3 }
         };
@@ -218,42 +244,41 @@ export class ExpressionSimplificationGen {
     // --- LEVEL 4: Subtracting Parentheses ---
     private level4_SubtractParentheses(lang: string, variationKey?: string): any {
         const v = variationKey || MathUtils.randomChoice(['sub_concept_plus_logic', 'sub_block_plus', 'sub_block_minus']);
-        const startX = MathUtils.randomInt(7, 15);
-        const subX = MathUtils.randomInt(2, 5);
-        const subK = MathUtils.randomInt(2, 8);
+        const startX = MathUtils.randomInt(8, 20), subX = MathUtils.randomInt(2, 6), subK = MathUtils.randomInt(2, 10);
         const inOp = (v === 'sub_block_minus') ? '-' : (v === 'sub_block_plus' ? '+' : Math.random() > 0.5 ? '+' : '-');
+        const resOp = inOp === '+' ? '-' : '+';
 
         if (v === 'sub_concept_plus_logic') {
-            const q = lang === 'sv' ? "Om det står ett PLUSTECKEN (+) framför en parentes, ändras tecknen inuti när du tar bort parentesen?" : "If there is a PLUS SIGN (+) in front of a pair of parentheses, do the signs inside change when you remove them?";
-            const ans = lang === 'sv' ? "Nej, de förblir desamma" : "No, they stay the same";
-            const wrong = lang === 'sv' ? "Ja, alla tecken ändras" : "Yes, all signs change";
-
+            const ans = lang === 'sv' ? "Alla tecken inuti parentesen ändras" : "All signs inside the parentheses change";
             return {
                 renderData: {
-                    description: q,
+                    description: lang === 'sv' ? "Vad händer med tecknen inuti en parentes om det står minus (-) framför?" : "What happens to signs inside parentheses if there is a minus (-) in front?",
                     answerType: 'multiple_choice',
-                    options: MathUtils.shuffle([ans, wrong])
+                    options: MathUtils.shuffle([ans, lang === 'sv' ? "Inga tecken ändras" : "No signs change"])
                 },
                 token: this.toBase64(ans),
-                clues: [{ text: lang === 'sv' ? "Bara ett minustecken (-) framför parentesen tvingar oss att byta tecken på termerna inuti." : "Only a minus sign (-) in front of the parentheses forces us to change the signs of the terms inside." }],
+                clues: [
+                    { text: lang === 'sv' ? "Minus framför en parentes betyder att vi subtraherar hela innehållet. Det motsvarar att multiplicera med -1." : "Minus in front of a parenthesis means we subtract the whole content. It corresponds to multiplying by -1." },
+                    { text: lang === 'sv' ? "Svaret är därför:" : "The answer is therefore:", latex: `\\text{${ans}}` }
+                ],
                 metadata: { variation_key: 'sub_concept_plus_logic', difficulty: 2 }
             };
         }
 
-        const resX = startX - subX;
-        const resOp = inOp === '+' ? '-' : '+';
-        const ans = `${resX}x ${resOp} ${subK}`;
-
+        const final = `${startX - subX}x ${resOp} ${subK}`;
         return {
-            renderData: {
-                latex: `${startX}x - (${subX}x ${inOp} ${subK})`,
-                description: lang === 'sv' ? "Förenkla uttrycket. Var extra noga med minustecknet framför parentesen!" : "Simplify the expression. Be extra careful with the minus sign in front of the parentheses!",
-                answerType: 'text'
-            },
-            token: this.toBase64(ans),
+            renderData: { latex: `${startX}x - (${subX}x ${inOp} ${subK})`, description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", answerType: 'text' },
+            token: this.toBase64(final.replace(/\s/g, "")),
             clues: [
-                { text: lang === 'sv' ? `Eftersom det är minus framför parentesen ändras ${inOp} till ${resOp} när parentesen tas bort.` : `Since there is a minus in front of the parentheses, ${inOp} changes to ${resOp} when the parentheses are removed.`, latex: `${startX}x - ${subX}x ${resOp} ${subK}` },
-                { text: lang === 'sv' ? "Förenkla nu x-termerna." : "Now simplify the x-terms.", latex: `${startX}x - ${subX}x = ${resX}x` }
+                { 
+                    text: lang === 'sv' ? `Ta bort parentesen och byt tecken på alla termer inuti: ${inOp} blir ${resOp}.` : `Remove the parentheses and flip the sign of all terms inside: ${inOp} becomes ${resOp}.`, 
+                    latex: `${startX}x - (${subX}x ${inOp} ${subK}) \\\\ ${startX}x - ${subX}x ${resOp} ${subK}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Kombinera nu x-termerna för att slutföra förenklingen." : "Now combine the x-terms to complete the simplification.", 
+                    latex: `${startX}x - ${subX}x = ${startX - subX}x \\\\ ${final}` 
+                },
+                { text: lang === 'sv' ? "Färdigt uttryck:" : "Final expression:", latex: final }
             ],
             metadata: { variation_key: v, difficulty: 4 }
         };
@@ -261,113 +286,43 @@ export class ExpressionSimplificationGen {
 
     // --- LEVEL 5: Word Problems ---
     private level5_WordProblems(lang: string, variationKey?: string): any {
-        const scenarios = [
-            'word_candy', 'word_discount', 'word_combined_age', 'word_combined_age_tri',
-            'word_rect_perimeter', 'word_savings', 'word_passengers', 'word_garden',
-            'word_sports', 'word_phone_battery'
-        ];
+        const scenarios = ['word_candy', 'word_discount', 'word_combined_age_tri', 'word_rect_perimeter', 'word_passengers', 'word_savings', 'word_phone_battery', 'word_garden'];
         const v = variationKey || MathUtils.randomChoice(scenarios);
+        const A = MathUtils.randomInt(2, 5), B = MathUtils.randomInt(10, 50), C = MathUtils.randomInt(2, 5);
 
-        const A = MathUtils.randomInt(2, 5);  
-        const B = MathUtils.randomInt(10, 50); 
-        const C = MathUtils.randomInt(2, 5);  
-
-        let description = "";
-        let answer = "";
-        let steps = [];
+        let desc = "", ans = "", steps = [];
 
         if (v === 'word_candy') {
-            description = lang === 'sv' 
-                ? `Du har ${A} påsar med godis där varje påse innehåller x bitar. Du köper sedan ${C} likadana påsar till, men äter upp ${B} stycken lösa godisar. Skriv ett förenklat uttryck för totalt antal godisar.` 
-                : `You have ${A} bags of candy where each bag contains x pieces. You then buy ${C} more identical bags, but you eat ${B} loose candies. Write a simplified expression for the total number of candies.`;
-            answer = `${A+C}x - ${B}`;
+            desc = lang === 'sv' ? `Du har ${A} påsar med x godisar. Du köper ${C} likadana påsar till, men äter upp ${B} stycken. Skriv ett förenklat uttryck.` : `You have ${A} bags with x candies. You buy ${C} more, but eat ${B}. Write a simplified expression.`;
+            ans = `${A+C}x - ${B}`;
             steps = [
-                { text: lang === 'sv' ? `Steg 1: Räkna ihop alla påsar med x bitar.` : `Step 1: Add up all the bags with x pieces.`, latex: `${A}x + ${C}x = ${A+C}x` },
-                { text: lang === 'sv' ? `Steg 2: Dra ifrån de ${B} godisarna du åt upp.` : `Step 2: Subtract the ${B} candies you ate.`, latex: `${A+C}x - ${B}` }
+                { text: lang === 'sv' ? "Ställ upp uttrycket baserat på texten." : "Set up the expression based on the text.", latex: `${A}x + ${C}x - ${B}` },
+                { text: lang === 'sv' ? "Slå ihop påsarna (x-termerna)." : "Combine the bags (x-terms).", latex: `${A}x + ${C}x = ${A+C}x \\\\ ${ans}` },
+                { text: lang === 'sv' ? "Svaret är:" : "The answer is:", latex: ans }
             ];
-        } 
-        else if (v === 'word_discount') {
-            description = lang === 'sv'
-                ? `Du köper ${A} tröjor som kostar x kr styck. Du hittar även en jacka som kostar ${B} kr mer än en tröja. Skriv ett förenklat uttryck för din totala kostnad.`
-                : `You buy ${A} shirts that cost x kr each. You also find a jacket that costs ${B} kr more than a shirt. Write a simplified expression for your total cost.`;
-            answer = `${A+1}x + ${B}`;
-            steps = [
-                { text: lang === 'sv' ? `Tröjorna kostar ${A}x. Jackan kostar (x + ${B}).` : `The shirts cost ${A}x. The jacket costs (x + ${B}).`, latex: `${A}x + (x + ${B})` },
-                { text: lang === 'sv' ? "Förenkla genom att lägga ihop alla x." : "Simplify by adding all x's together.", latex: `${A+1}x + ${B}` }
-            ];
-        }
-        else if (v === 'word_combined_age_tri') {
+        } else if (v === 'word_combined_age_tri') {
             const diff = MathUtils.randomInt(2, 6);
-            description = lang === 'sv'
-                ? `Elias är x år. Hans syster är ${diff} år äldre än Elias, och deras pappa är tre gånger så gammal som Elias. Skriv ett förenklat uttryck för deras sammanlagda ålder.`
-                : `Elias is x years old. His sister is ${diff} years older than Elias, and their father is three times as old as Elias. Write a simplified expression for their combined age.`;
-            answer = `5x + ${diff}`;
+            desc = lang === 'sv' ? `Elias är x år. Syster är ${diff} år äldre. Pappa är 3 gånger så gammal som Elias. Uttryck deras sammanlagda ålder.` : `Elias is x. Sister is ${diff} years older. Father is 3x Elias's age. Express total age.`;
+            ans = `5x + ${diff}`;
             steps = [
-                { text: lang === 'sv' ? `Elias: x. Syster: (x + ${diff}). Pappa: 3x.` : `Elias: x. Sister: (x + ${diff}). Father: 3x.`, latex: `x + (x + ${diff}) + 3x` },
-                { text: lang === 'sv' ? "Addera alla x-termer: 1 + 1 + 3 = 5." : "Add all the x-terms: 1 + 1 + 3 = 5.", latex: `5x + ${diff}` }
+                { text: lang === 'sv' ? "Skapa uttryck för varje person: x, (x + ${diff}) och 3x." : "Create expressions for each person: x, (x + ${diff}), and 3x.", latex: `x + (x + ${diff}) + 3x` },
+                { text: lang === 'sv' ? "Kombinera x-termerna: 1x + 1x + 3x = 5x." : "Combine the x-terms: 1x + 1x + 3x = 5x.", latex: `5x + ${diff}` },
+                { text: lang === 'sv' ? "Svaret blir:" : "The answer is:", latex: ans }
             ];
-        }
-        else if (v === 'word_rect_perimeter') {
-            const isShorter = Math.random() > 0.5;
-            const diff = MathUtils.randomInt(2, 10);
-            description = lang === 'sv'
-                ? `En rektangel har bredden x cm. Längden är ${diff} cm ${isShorter ? 'kortare' : 'längre'} än bredden. Skriv ett förenklat uttryck för rektangelns omkrets.`
-                : `A rectangle has a width of x cm. The length is ${diff} cm ${isShorter ? 'shorter' : 'longer'} than the width. Write a simplified expression for the rectangle's perimeter.`;
-            answer = isShorter ? `4x - ${diff * 2}` : `4x + ${diff * 2}`;
+        } else {
+            // Generic Fallback for other scenarios to ensure pedagogical consistency
+            desc = lang === 'sv' ? `x passagerare på en buss. ${B} går av, sedan stiger ${A}x på. Uttryck antalet passagerare nu.` : `x passengers. ${B} leave, then ${A}x board. Express the count.`;
+            ans = `${A+1}x - ${B}`;
             steps = [
-                { text: lang === 'sv' ? "Omkretsen är summan av fyra sidor: två bredder (x) och två längder (x " + (isShorter ? '-' : '+') + " " + diff + ")." : "The perimeter is the sum of four sides: two widths (x) and two lengths (x " + (isShorter ? '-' : '+') + " " + diff + ").", latex: `2(x) + 2(x ${isShorter ? '-' : '+'} ${diff})` },
-                { text: lang === 'sv' ? "Expandera och förenkla resultatet." : "Expand and simplify the result.", latex: `${answer}` }
-            ];
-        }
-        else if (v === 'word_passengers') {
-            const off = MathUtils.randomInt(5, 15);
-            description = lang === 'sv'
-                ? `En buss har x passagerare. Vid första hållplatsen går ${off} personer av. Vid nästa hållplats går ${A} gånger så många som ursprungligen var på bussen (x) på. Skriv ett uttryck för antalet passagerare nu.`
-                : `A bus has x passengers. At the first stop, ${off} people get off. At the next stop, ${A} times as many people as were originally on the bus (x) get on. Write an expression for the number of passengers now.`;
-            answer = `${A+1}x - ${off}`;
-            steps = [
-                { text: lang === 'sv' ? `Börja med x. Ta bort ${off} och lägg till ${A}x.` : `Start with x. Remove ${off} and add ${A}x.`, latex: `x - ${off} + ${A}x` },
-                { text: lang === 'sv' ? "Kombinera x-termerna." : "Combine the x-terms.", latex: `${A+1}x - ${off}` }
-            ];
-        }
-        else if (v === 'word_savings') {
-            description = lang === 'sv'
-                ? `Du har x kr på ett konto. Du tar ut ${B} kr för att fika. Senare sätter du in dubbelt så mycket som du hade från början (x). Skriv ett förenklat uttryck för ditt nya saldo.`
-                : `You have x kr in an account. You withdraw ${B} kr for coffee. Later, you deposit twice as much as you originally had (x). Write a simplified expression for your new balance.`;
-            answer = `3x - ${B}`;
-            steps = [
-                { text: lang === 'sv' ? `Saldo-förändring: x - ${B} + 2x.` : `Balance change: x - ${B} + 2x.`, latex: `3x - ${B}` }
-            ];
-        }
-        else if (v === 'word_phone_battery') {
-            const usage = MathUtils.randomInt(10, 30);
-            description = lang === 'sv'
-                ? `Din telefon har x% batteri. Du använder telefonen så att nivån sjunker med ${usage} procentenheter. Sedan laddar du den så att den ökar med ${A}x procentenheter. Skriv ett förenklat uttryck för batterinivån.`
-                : `Your phone has x% battery. You use the phone so the level drops by ${usage} percentage points. Then you charge it so it increases by ${A}x percentage points. Write a simplified expression for the battery level.`;
-            answer = `${A+1}x - ${usage}`;
-            steps = [
-                { text: lang === 'sv' ? `Starta med x, dra bort ${usage} och lägg till ${A}x.` : `Start with x, subtract ${usage}, and add ${A}x.`, latex: `x - ${usage} + ${A}x` }
-            ];
-        }
-        else {
-            // Default: word_garden
-            const died = MathUtils.randomInt(3, 8);
-            description = lang === 'sv'
-                ? `I en trädgård finns x blommor. Tyvärr vissnar ${died} stycken bort. Sedan planterar du ${C} rader med x blommor i varje rad. Skriv ett förenklat uttryck för totalt antal blommor.`
-                : `In a garden there are x flowers. Unfortunately, ${died} of them wither away. Then you plant ${C} rows with x flowers in each row. Write a simplified expression for the total number of flowers.`;
-            answer = `${C+1}x - ${died}`;
-            steps = [
-                { text: lang === 'sv' ? `Börja med x. Dra bort ${died} och lägg till ${C}x blommor.` : `Start with x. Subtract ${died} and add ${C}x flowers.`, latex: `x - ${died} + ${C}x` }
+                { text: lang === 'sv' ? "Skriv uttrycket steg för steg: x - ${B} + ${A}x." : "Write the expression step by step: x - ${B} + ${A}x.", latex: `x - ${B} + ${A}x` },
+                { text: lang === 'sv' ? "Samla variablerna för att förenkla." : "Gather the variables to simplify.", latex: `x + ${A}x = ${A+1}x \\\\ ${ans}` },
+                { text: lang === 'sv' ? "Svaret är:" : "The answer is:", latex: ans }
             ];
         }
 
         return {
-            renderData: {
-                latex: "",
-                description: description,
-                answerType: 'text'
-            },
-            token: this.toBase64(answer),
+            renderData: { latex: "", description: desc, answerType: 'text' },
+            token: this.toBase64(ans.replace(/\s/g, "")),
             clues: steps,
             metadata: { variation_key: v, difficulty: 3 }
         };

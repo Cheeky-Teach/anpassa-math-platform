@@ -14,7 +14,7 @@ export class LinearGraphGenerator {
 
     /**
      * Phase 2: Targeted Generation
-     * Allows the Question Studio to request specific "Skill Buckets".
+     * Allows the Question Studio to request a specific "Skill Buckets".
      */
     public generateByVariation(key: string, lang: string = 'sv'): any {
         switch (key) {
@@ -56,15 +56,15 @@ export class LinearGraphGenerator {
             clues: [
                 { 
                     text: lang === 'sv' 
-                        ? "m-värdet är den punkt där linjen korsar (skär) y-axeln." 
-                        : "The m-value is the point where the line crosses (intersects) the y-axis.", 
+                        ? "m-värdet är den punkt på den vertikala y-axeln där linjen skär axeln." 
+                        : "The m-value is the point on the vertical y-axis where the line intersects the axis.", 
                     latex: `(0, m)` 
                 },
                 { 
                     text: lang === 'sv' 
-                        ? `Leta upp siffran på den vertikala axeln där linjen går igenom.` 
-                        : `Look for the number on the vertical axis where the line passes through.`, 
-                    latex: `y = ${m}` 
+                        ? `Leta upp koordinaten där x är 0. Siffran på y-axeln är ditt svar.` 
+                        : `Locate the coordinate where x is 0. The number on the y-axis is your answer.`, 
+                    latex: `m = ${m}` 
                 }
             ],
             metadata: { variation_key: 'intercept_id', difficulty: 1 }
@@ -81,7 +81,6 @@ export class LinearGraphGenerator {
             k = MathUtils.randomInt(1, 4);
             kDisplay = k.toString();
         } else {
-            // Fractional slope: 1/2 or 1/4
             const den = MathUtils.randomChoice([2, 4]);
             k = 1 / den;
             kDisplay = `1/${den}`;
@@ -101,15 +100,15 @@ export class LinearGraphGenerator {
             clues: [
                 { 
                     text: lang === 'sv' 
-                        ? "k-värdet beskriver lutningen. Vi mäter 'skillnad i y' delat med 'skillnad i x'." 
-                        : "The k-value describes the slope. We measure 'change in y' divided by 'change in x'.", 
+                        ? "k-värdet beskriver hur brant linjen lutar. Vi mäter skillnaden i höjd (y) delat med skillnaden i sidled (x)." 
+                        : "The k-value describes how steep the line is. We measure the change in height (y) divided by the change in horizontal distance (x).", 
                     latex: "k = \\frac{\\Delta y}{\\Delta x}" 
                 },
                 { 
-                    text: v === 'slope_pos_int' 
-                        ? (lang === 'sv' ? `Om du går 1 steg åt höger, går linjen upp ${k} steg.` : `If you go 1 step to the right, the line goes up ${k} steps.`)
-                        : (lang === 'sv' ? `Här behöver du gå flera steg åt höger för att hamna på en jämn punkt.` : `Here you need to go several steps to the right to hit an even point.`),
-                    latex: v === 'slope_pos_frac' ? `k = \\frac{1}{\\text{steg åt höger}}` : `k = ${k}`
+                    text: lang === 'sv' 
+                        ? `Se hur många steg linjen går uppåt när du går åt höger i systemet.` 
+                        : `See how many steps the line moves upward as you move to the right in the system.`,
+                    latex: `k = ${kDisplay}`
                 }
             ],
             metadata: { variation_key: v, difficulty: v === 'slope_pos_frac' ? 3 : 2 }
@@ -143,8 +142,18 @@ export class LinearGraphGenerator {
             },
             token: this.toBase64(kDisplay),
             clues: [
-                { text: lang === 'sv' ? "Eftersom linjen lutar nedåt när vi går åt höger, måste k-värdet vara negativt." : "Since the line slopes downward as we move to the right, the k-value must be negative." },
-                { text: lang === 'sv' ? "Använd trappstegsmetoden: Hur många steg går linjen ner för varje steg åt höger?" : "Use the step method: How many steps does the line go down for every step to the right?", latex: `k = ${kDisplay}` }
+                { 
+                    text: lang === 'sv' 
+                        ? "Eftersom linjen går nedåt när vi läser den från vänster till höger är lutningen negativ." 
+                        : "Since the line goes downward when read from left to right, the slope is negative.",
+                    latex: "k < 0"
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? "Använd 'trappstegsmetoden' för att se hur många steg linjen sjunker per steg åt höger." 
+                        : "Use the 'staircase method' to see how many steps the line falls per step to the right.", 
+                    latex: `k = ${kDisplay}` 
+                }
             ],
             metadata: { variation_key: v, difficulty: 3 }
         };
@@ -186,9 +195,18 @@ export class LinearGraphGenerator {
             },
             token: this.toBase64(eq),
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Hitta m (där linjen skär y-axeln)." : "Step 1: Find m (where the line crosses the y-axis).", latex: `m = ${m}` },
-                { text: lang === 'sv' ? "Steg 2: Hitta k (lutningen per steg)." : "Step 2: Find k (the slope per step).", latex: `k = ${k}` },
-                { text: lang === 'sv' ? "Steg 3: Sätt ihop dem i formeln y = kx + m." : "Step 3: Combine them into the formula y = kx + m.", latex: eq }
+                { 
+                    text: lang === 'sv' 
+                        ? "Hitta först var linjen skär y-axeln (m) och bestäm därefter lutningen (k)." 
+                        : "First find where the line intersects the y-axis (m) and then determine the slope (k).", 
+                    latex: `m = ${m}, \\; k = ${k}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? "Sätt in värdena i mallen y = kx + m för att få fram ekvationen." 
+                        : "Insert the values into the template y = kx + m to produce the equation.", 
+                    latex: eq 
+                }
             ],
             metadata: { variation_key: v, difficulty: 4 }
         };

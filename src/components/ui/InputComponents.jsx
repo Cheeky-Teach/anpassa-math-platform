@@ -95,7 +95,7 @@ export const ExponentInput = ({ value, onChange, autoFocus = false }) => {
     }
 
     const update = (newBase, newExp) => {
-        if (newExp) onChange(`${newBase}^${newExp}`);
+        if (newExp !== "") onChange(`${newBase}^${newExp}`);
         else onChange(newBase);
     };
 
@@ -119,6 +119,68 @@ export const ExponentInput = ({ value, onChange, autoFocus = false }) => {
                 onChange={(e) => update(base, e.target.value)}
                 placeholder="n"
             />
+        </div>
+    );
+};
+
+// =====================================================================
+// SCIENTIFIC NOTATION INPUT COMPONENT
+// =====================================================================
+export const ScientificInput = ({ value, onChange, autoFocus = false }) => {
+    const mantissaRef = useRef(null);
+    const expRef = useRef(null);
+
+    let mantissa = "", exponent = "";
+    const strVal = value || "";
+
+    // Parse values from format "a*10^n"
+    if (strVal.includes('*10^')) {
+        [mantissa, exponent] = strVal.split('*10^');
+    } else {
+        mantissa = strVal;
+    }
+
+    const update = (newM, newE) => {
+        // Construct string format for internal state
+        if (newE !== "") {
+            onChange(`${newM}*10^${newE}`);
+        } else {
+            onChange(newM);
+        }
+    };
+
+    useEffect(() => {
+        if (autoFocus) mantissaRef.current?.focus();
+    }, [autoFocus]);
+
+    return (
+        <div className="inline-flex items-center font-mono text-slate-800">
+            {/* Mantissa (a) */}
+            <input
+                ref={mantissaRef}
+                type="text"
+                inputMode="decimal"
+                className="w-20 h-14 text-center border-2 border-slate-300 rounded-xl focus:border-indigo-500 focus:outline-none bg-white text-2xl font-bold shadow-sm"
+                value={mantissa}
+                onChange={(e) => update(e.target.value, exponent)}
+                placeholder="a"
+            />
+
+            {/* Times 10 Base */}
+            <span className="mx-2 text-2xl font-bold text-slate-400">· 10</span>
+
+            {/* Exponent (n) */}
+            <div className="relative -top-4">
+                <input
+                    ref={expRef}
+                    type="text"
+                    inputMode="numeric"
+                    className="w-12 h-10 text-center border-2 border-slate-300 rounded-lg focus:border-indigo-500 focus:outline-none bg-white text-lg font-bold shadow-sm"
+                    value={exponent}
+                    onChange={(e) => update(mantissa, e.target.value)}
+                    placeholder="n"
+                />
+            </div>
         </div>
     );
 };

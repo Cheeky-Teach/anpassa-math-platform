@@ -78,11 +78,11 @@ export class ExponentsGen {
                 },
                 token: this.toBase64(isZero ? "1" : base.toString()),
                 clues: isZero ? [
-                    { text: lang === 'sv' ? "Kom ihåg noll-regeln: Alla tal (utom noll) som är upphöjda till 0 blir alltid exakt 1." : "Remember the zero rule: Any number (except zero) raised to the power of 0 is always exactly 1.", latex: "x^{0} = 1" },
-                    { text: lang === 'sv' ? "Detta beror på att en division av ett tal med sig självt skapar en noll-exponent." : "This is because dividing a number by itself creates a zero exponent.", latex: "\\frac{x^n}{x^n} = x^{n-n} = x^0 = 1" }
+                    { text: lang === 'sv' ? "Alla tal som är upphöjda till 0 (utom noll) blir alltid exakt 1." : "Any number raised to the power of 0 (except zero) is always exactly 1.", latex: "x^{0} = 1" },
+                    { text: lang === 'sv' ? "Svaret är alltså:" : "The answer is therefore:", latex: "1" }
                 ] : [
-                    { text: lang === 'sv' ? "En exponent på 1 betyder att basen bara förekommer en enda gång." : "An exponent of 1 means the base appears only one single time.", latex: "x^{1} = x" },
-                    { text: lang === 'sv' ? `Eftersom talet bara står där en gång förblir värdet ${base}.` : `Since the number is only there once, the value remains ${base}.`, latex: `${base}^{1} = ${base}` }
+                    { text: lang === 'sv' ? "När ett tal är upphöjt till 1 betyder det att basen bara förekommer en enda gång." : "When a number is raised to 1, it means the base appears only once.", latex: "x^{1} = x" },
+                    { text: lang === 'sv' ? "Värdet förblir oförändrat:" : "The value remains unchanged:", latex: `${base}` }
                 ],
                 metadata: { variation_key: v, difficulty: 1 }
             };
@@ -99,13 +99,14 @@ export class ExponentsGen {
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Vilket av följande påståenden om potenser är FALSKT?" : "Which of the following statements about powers is FALSE?",
+                    description: lang === 'sv' ? "Vilket påstående är FALSKT?" : "Which statement is FALSE?",
                     answerType: 'multiple_choice',
                     options: MathUtils.shuffle([true1, true2, lie])
                 },
                 token: this.toBase64(lie),
                 clues: [
-                    { text: lang === 'sv' ? "En vanlig fälla är att multiplicera basen med exponenten. Men en potens betyder upprepad multiplikation!" : "A common trap is multiplying the base by the exponent. But a power means repeated multiplication!", latex: `${base}^{${exp}} = ` + Array(exp).fill(base).join(" \\cdot ") }
+                    { text: lang === 'sv' ? "En potens betyder upprepad multiplikation, inte multiplikation mellan basen och exponenten." : "A power means repeated multiplication, not multiplication between the base and the exponent.", latex: `${base}^{${exp}} = ` + Array(exp).fill(base).join(" \\cdot ") },
+                    { text: lang === 'sv' ? "Denna beräkning är alltså felaktig:" : "This calculation is therefore incorrect:", latex: `${lie}` }
                 ],
                 metadata: { variation_key: "foundations_spot_the_lie", difficulty: 2 }
             };
@@ -118,14 +119,14 @@ export class ExponentsGen {
 
         return {
             renderData: {
-                description: lang === 'sv' ? `Beräkna potensen genom att multiplicera basen med sig själv ${exp} gånger.` : `Calculate the power by multiplying the base by itself ${exp} times.`,
+                description: lang === 'sv' ? `Beräkna potensen.` : `Calculate the power.`,
                 latex: `${base}^{${exp}}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()),
             clues: [
-                { text: lang === 'sv' ? `Exponenten (${exp}) talar om att vi ska ha ${exp} stycken faktorer av basen (${base}).` : `The exponent (${exp}) tells us to have ${exp} factors of the base (${base}).`, latex: Array(exp).fill(base).join(' \\cdot ') },
-                { text: lang === 'sv' ? "Räkna ut produkten av dessa faktorer." : "Calculate the product of these factors.", latex: `${ans}` }
+                { text: lang === 'sv' ? `Exponenten visar hur många gånger basen ${base} ska multipliceras med sig själv.` : `The exponent shows how many times the base ${base} should be multiplied by itself.`, latex: Array(exp).fill(base).join(' \\cdot ') },
+                { text: lang === 'sv' ? "Räkna ut produkten för att få det slutgiltiga svaret." : "Calculate the product to get the final answer.", latex: `${ans}` }
             ],
             metadata: { variation_key: "foundations_calc", difficulty: 1 }
         };
@@ -140,14 +141,14 @@ export class ExponentsGen {
             const ansStr = (1 / Math.pow(10, power)).toString();
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Skriv tiopotensen som ett decimaltal." : "Write the power of ten as a decimal number.",
+                    description: lang === 'sv' ? "Skriv som ett decimaltal." : "Write as a decimal number.",
                     latex: `10^{-${power}}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ansStr),
                 clues: [
-                    { text: lang === 'sv' ? "En negativ exponent betyder att vi dividerar 1 med basen." : "A negative exponent means we divide 1 by the base.", latex: `10^{-${power}} = \\frac{1}{10^{${power}}}` },
-                    { text: lang === 'sv' ? `Detta resulterar i ett decimaltal där 1:an hamnar på den ${power}:e decimalplatsen.` : `This results in a decimal where the 1 is placed at the ${power}:th decimal position.`, latex: ansStr }
+                    { text: lang === 'sv' ? "En negativ exponent innebär att vi dividerar 1 med basen upphöjt till samma positiva tal." : "A negative exponent means we divide 1 by the base raised to the same positive power.", latex: `10^{-${power}} = \\frac{1}{10^{${power}}}` },
+                    { text: lang === 'sv' ? `Detta ger en etta på den ${power}:e decimalplatsen.` : `This results in a one at the ${power}:th decimal place.`, latex: `${ansStr}` }
                 ],
                 metadata: { variation_key: "ten_negative_exponent", difficulty: 2 }
             };
@@ -158,13 +159,14 @@ export class ExponentsGen {
             const num = "1" + "0".repeat(zeros);
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Skriv talet ${num.replace(/\B(?=(\d{3})+(?!\d))/g, " ")} som en potens med basen 10.` : `Write the number ${num.replace(/\B(?=(\d{3})+(?!\d))/g, " ")} as a power with base 10.`,
+                    description: lang === 'sv' ? `Skriv ${num.replace(/\B(?=(\d{3})+(?!\d))/g, " ")} som en tiopotens.` : `Write ${num.replace(/\B(?=(\d{3})+(?!\d))/g, " ")} as a power of ten.`,
                     latex: `10^{?} = ${num}`,
                     answerType: 'structured_power'
                 },
                 token: this.toBase64(`10^${zeros}`),
                 clues: [
-                    { text: lang === 'sv' ? "Räkna hur många nollor som står efter ettan. Antalet nollor motsvarar exponenten." : "Count how many zeros follow the one. The number of zeros corresponds to the exponent.", latex: `\\text{Antal nollor} = ${zeros}` }
+                    { text: lang === 'sv' ? "Räkna antalet nollor efter ettan. Antalet nollor motsvarar exponenten i tiopotensen." : "Count the number of zeros after the one. The number of zeros corresponds to the exponent in the power of ten.", latex: `\\text{Antal nollor} = ${zeros}` },
+                    { text: lang === 'sv' ? "Svaret skrivs som:" : "The answer is written as:", latex: `10^{${zeros}}` }
                 ],
                 metadata: { variation_key: "ten_inverse_counting", difficulty: 2 }
             };
@@ -173,13 +175,14 @@ export class ExponentsGen {
         const ans = Math.pow(10, power);
         return {
             renderData: {
-                description: lang === 'sv' ? "Skriv tiopotensen som ett vanligt heltal." : "Write the power of ten as a standard integer.",
+                description: lang === 'sv' ? "Skriv ut tiopotensen som ett heltal." : "Write the power of ten as an integer.",
                 latex: `10^{${power}}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()),
             clues: [
-                { text: lang === 'sv' ? `En snabb regel för basen 10 är att skriva en 1:a och sedan lägga till lika många nollor som exponenten visar.` : `A quick rule for base 10 is writing a 1 and then adding as many zeros as the exponent shows.`, latex: `1 \\rightarrow ${ans}` }
+                { text: lang === 'sv' ? `För tiopotenser skriver man en etta följt av lika många nollor som exponenten anger.` : `For powers of ten, write a one followed by as many zeros as the exponent indicates.`, latex: `10^{${power}} = 1\\underbrace{00...0}_{${power}}` },
+                { text: lang === 'sv' ? "Detta ger oss talet:" : "This gives us the number:", latex: `${ans}` }
             ],
             metadata: { variation_key: "ten_positive_exponent", difficulty: 1 }
         };
@@ -196,32 +199,31 @@ export class ExponentsGen {
         if (v === 'scientific_to_form') {
             return {
                 renderData: {
-                    description: lang === 'sv' 
-                        ? `Skriv talet ${number.toLocaleString(lang)} i grundpotensform.` 
-                        : `Write the number ${number.toLocaleString(lang)} in scientific notation.`,
+                    description: lang === 'sv' ? `Skriv ${number.toLocaleString(lang)} i grundpotensform.` : `Write ${number.toLocaleString(lang)} in scientific notation.`,
                     answerType: 'structured_scientific'
                 },
                 token: this.toBase64(`${mantissa}*10^${exponent}`),
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Flytta decimalkommat så att du får ett tal mellan 1 och 10." : "Step 1: Move the decimal point so you get a number between 1 and 10.", latex: `a = ${mantissa}` },
-                    { text: lang === 'sv' ? `Steg 2: Räkna hur många steg kommat flyttades. Det blir din tiopotens.` : `Step 2: Count how many steps the decimal was moved. That will be your power of ten.`, latex: `10^{${exponent}}` }
+                    { text: lang === 'sv' ? "Flytta kommat så du får ett tal mellan 1 och 10." : "Move the decimal point so you get a number between 1 and 10.", latex: `${mantissa}` },
+                    { text: lang === 'sv' ? "Räkna antalet steg kommat flyttades för att få exponenten." : "Count the number of steps the decimal point was moved to get the exponent.", latex: `n = ${exponent}` },
+                    { text: lang === 'sv' ? "Hela talet blir då:" : "The whole number is then:", latex: `${mantissa} \\cdot 10^{${exponent}}` }
                 ],
                 metadata: { variation_key: "scientific_to_form", difficulty: 3 }
             };
         }
 
         const isMantissaMissing = v === 'scientific_missing_mantissa';
+        const ans = isMantissaMissing ? mantissa : exponent;
         return {
             renderData: {
-                description: lang === 'sv' 
-                    ? `Vilket värde saknas för att talet ska vara korrekt skrivet i grundpotensform?` 
-                    : `Which value is missing for the number to be correctly written in scientific notation?`,
+                description: lang === 'sv' ? `Vilket värde saknas i uttrycket?` : `Which value is missing in the expression?`,
                 latex: `${number.toLocaleString(lang)} = ${isMantissaMissing ? 'a' : mantissa} \\cdot 10^{${isMantissaMissing ? exponent : 'n'}}`,
                 answerType: 'numeric'
             },
-            token: this.toBase64(isMantissaMissing ? mantissa.toString() : exponent.toString()),
+            token: this.toBase64(ans.toString()),
             clues: [
-                { text: lang === 'sv' ? "Grundpotensform består always av en mantissa (mellan 1-10) och en tiopotens." : "Scientific notation always consists of a mantissa (between 1-10) and a power of ten.", latex: "a \\cdot 10^{n}" }
+                { text: lang === 'sv' ? "Grundpotensform ska bestå av ett tal mellan 1 och 10 multiplicerat med en tiopotens." : "Scientific notation must consist of a number between 1 and 10 multiplied by a power of ten.", latex: "a \\cdot 10^{n}" },
+                { text: lang === 'sv' ? "Det saknade värdet är:" : "The missing value is:", latex: `${ans}` }
             ],
             metadata: { variation_key: v, difficulty: 3 }
         };
@@ -236,14 +238,15 @@ export class ExponentsGen {
         if (v === 'root_inverse_algebra') {
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Hitta det positiva värdet på x som gör att ekvationen stämmer.` : `Find the positive value of x that makes the equation true.`,
+                    description: lang === 'sv' ? `Lös ekvationen (hitta det positiva värdet på x).` : `Solve the equation (find the positive value of x).`,
                     latex: `x^{2} = ${square}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(base.toString()),
                 clues: [
-                    { text: lang === 'sv' ? "För att få bort upphöjt till 2, drar vi kvadratroten ur båda sidor." : "To remove the power of 2, we take the square root of both sides.", latex: "x = \\sqrt{" + square + "}" },
-                    { text: lang === 'sv' ? `Vilket tal gånger sig självt blir ${square}?` : `What number times itself equals ${square}?`, latex: `${base} \\cdot ${base} = ${square}` }
+                    { text: lang === 'sv' ? "Motsatsen till 'upphöjt till 2' är kvadratroten." : "The opposite of 'squared' is the square root.", latex: "x = \\sqrt{" + square + "}" },
+                    { text: lang === 'sv' ? "Vi letar efter det tal som multiplicerat med sig självt blir resultatet." : "We are looking for the number that, when multiplied by itself, equals the result.", latex: `${base} \\cdot ${base} = ${square}` },
+                    { text: lang === 'sv' ? "Värdet på x är:" : "The value of x is:", latex: `${base}` }
                 ],
                 metadata: { variation_key: "root_inverse_algebra", difficulty: 2 }
             };
@@ -251,13 +254,14 @@ export class ExponentsGen {
 
         return {
             renderData: {
-                description: lang === 'sv' ? "Beräkna kvadratroten ur talet." : "Calculate the square root of the number.",
+                description: lang === 'sv' ? "Beräkna kvadratroten." : "Calculate the square root.",
                 latex: `\\sqrt{${square}}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(base.toString()),
             clues: [
-                { text: lang === 'sv' ? `Kvadratroten ur ${square} är det tal som multiplicerat med sig självt blir ${square}.` : `The square root of ${square} is the number that, when multiplied by itself, equals ${square}.`, latex: `? \\cdot ? = ${square}` }
+                { text: lang === 'sv' ? `Fråga dig själv: Vilket positivt tal gånger sig självt blir ${square}?` : `Ask yourself: Which positive number times itself equals ${square}?`, latex: `? \\cdot ? = ${square}` },
+                { text: lang === 'sv' ? "Svaret är:" : "The answer is:", latex: `${base}` }
             ],
             metadata: { variation_key: "root_calc", difficulty: 2 }
         };
@@ -272,14 +276,15 @@ export class ExponentsGen {
         if (v === 'law_multiplication') {
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Använd potenslagarna för att skriva om uttrycket till en enda potens." : "Use the power laws to rewrite the expression as a single power.",
+                    description: lang === 'sv' ? "Förenkla till en enda potens." : "Simplify to a single power.",
                     latex: `x^{${a}} \\cdot x^{${b}}`,
                     answerType: 'structured_power'
                 },
                 token: this.toBase64(`x^${a + b}`),
                 clues: [
-                    { text: lang === 'sv' ? "När vi multiplicerar potenser med samma bas, adderar vi deras exponenter." : "When multiplying powers with the same base, we add their exponents.", latex: "x^{a} \\cdot x^{b} = x^{a+b}" },
-                    { text: lang === 'sv' ? `Räkna ut den nya exponenten: ${a} + ${b}.` : `Calculate the new exponent: ${a} + ${b}.`, latex: `${a+b}` }
+                    { text: lang === 'sv' ? "Vid multiplikation av potenser med samma bas adderar vi exponenterna." : "When multiplying powers with the same base, we add the exponents.", latex: "x^{a} \\cdot x^{b} = x^{a+b}" },
+                    { text: lang === 'sv' ? `Räkna ut summan av exponenterna.` : `Calculate the sum of the exponents.`, latex: `${a} + ${b} = ${a + b}` },
+                    { text: lang === 'sv' ? "Den förenklade potensen blir:" : "The simplified power is:", latex: `x^{${a + b}}` }
                 ],
                 metadata: { variation_key: "law_multiplication", difficulty: 3 }
             };
@@ -289,59 +294,52 @@ export class ExponentsGen {
             const big = MathUtils.randomInt(b + 1, b + 12);
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Förenkla divisionen till en enda potens." : "Simplify the division to a single power.",
+                    description: lang === 'sv' ? "Förenkla till en enda potens." : "Simplify to a single power.",
                     latex: `\\frac{x^{${big}}}{x^{${b}}}`,
                     answerType: 'structured_power'
                 },
                 token: this.toBase64(`x^${big - b}`),
                 clues: [
-                    { text: lang === 'sv' ? "När vi dividerar potenser med samma bas, subtraherar vi nämnarens exponent från täljarens." : "When dividing powers with the same base, we subtract the denominator's exponent from the numerator's.", latex: "\\frac{x^{a}}{x^{b}} = x^{a-b}" },
-                    { text: lang === 'sv' ? `Räkna ut den nya exponenten: ${big} - ${b}.` : `Calculate the new exponent: ${big} - ${b}.`, latex: `${big - b}` }
+                    { text: lang === 'sv' ? "Vid division av potenser med samma bas subtraherar vi täljarens exponent med nämnarens." : "When dividing powers with the same base, we subtract the denominator's exponent from the numerator's.", latex: "\\frac{x^{a}}{x^{b}} = x^{a-b}" },
+                    { text: lang === 'sv' ? "Räkna ut skillnaden mellan exponenterna." : "Calculate the difference between the exponents.", latex: `${big} - ${b} = ${big - b}` },
+                    { text: lang === 'sv' ? "Den förenklade potensen blir:" : "The simplified power is:", latex: `x^{${big - b}}` }
                 ],
                 metadata: { variation_key: "law_division", difficulty: 3 }
             };
         }
 
         if (v === 'law_mult_div_combined') {
-            const nTerms = MathUtils.randomInt(2, 3);
-            const dTerms = MathUtils.randomInt(1, 2);
-            const nExps = Array.from({length: nTerms}, () => MathUtils.randomInt(2, 8));
-            const dExps = Array.from({length: dTerms}, () => MathUtils.randomInt(2, 5));
-            
-            const nSum = nExps.reduce((acc, cur) => acc + cur, 0);
-            const dSum = dExps.reduce((acc, cur) => acc + cur, 0);
-            const finalExp = nSum - dSum;
-
-            // Prevent negative results for basic level
-            if (finalExp < 0) return this.level5_LawsBasic(lang, v);
-
-            const nLatex = nExps.map(e => `x^{${e}}`).join(' \\cdot ');
-            const dLatex = dExps.map(e => `x^{${e}}`).join(' \\cdot ');
-            const fullLatex = `\\frac{${nLatex}}{${dLatex}}`;
+            const n1 = MathUtils.randomInt(2, 8), n2 = MathUtils.randomInt(2, 8), d1 = MathUtils.randomInt(2, 5);
+            const finalExp = n1 + n2 - d1;
+            if (finalExp < 1) return this.level5_LawsBasic(lang, v);
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Förenkla uttrycket genom att kombinera både multiplikations- och divisionsreglerna." : "Simplify the expression by combining both the multiplication and division rules.",
-                    latex: fullLatex,
+                    description: lang === 'sv' ? "Förenkla uttrycket till en enda potens." : "Simplify the expression to a single power.",
+                    latex: `\\frac{x^{${n1}} \\cdot x^{${n2}}}{x^{${d1}}}`,
                     answerType: 'structured_power'
                 },
                 token: this.toBase64(`x^${finalExp}`),
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Förenkla täljaren och nämnaren var för sig genom att addera exponenterna." : "Step 1: Simplify the numerator and denominator separately by adding the exponents.", latex: `\\frac{x^{${nSum}}}{x^{${dSum}}}` },
-                    { text: lang === 'sv' ? "Steg 2: Subtrahera nämnarens exponent från täljarens." : "Step 2: Subtract the denominator's exponent from the numerator's.", latex: `x^{${nSum} - ${dSum}} = x^{${finalExp}}` }
+                    { text: lang === 'sv' ? "Börja med att förenkla täljaren genom att addera exponenterna." : "Start by simplifying the numerator by adding the exponents.", latex: `x^{${n1} + ${n2}} = x^{${n1+n2}}` },
+                    { text: lang === 'sv' ? "Subtrahera sedan nämnarens exponent från den nya täljaren." : "Then subtract the denominator's exponent from the new numerator.", latex: `x^{${n1+n2} - ${d1}}` },
+                    { text: lang === 'sv' ? "Resultatet blir:" : "The result is:", latex: `x^{${finalExp}}` }
                 ],
                 metadata: { variation_key: "law_mult_div_combined", difficulty: 4 }
             };
         }
 
-        const q = lang === 'sv' ? `Går det att förenkla $x^{${a}} + x^{${b}}$ med hjälp av potenslagarna?` : `Is it possible to simplify $x^{${a}} + x^{${b}}$ using the power laws?`;
         const options = lang === 'sv' ? ["Nej, lagarna gäller bara mult/div", "Ja, det blir x upphöjt till summan"] : ["No, laws only apply to mult/div", "Yes, it becomes x to the power of the sum"];
-        
         return {
-            renderData: { description: q, answerType: 'multiple_choice', options },
+            renderData: { 
+                description: lang === 'sv' ? `Går det att förenkla $x^{${a}} + x^{${b}}$ med potenslagarna?` : `Can $x^{${a}} + x^{${b}}$ be simplified with the power laws?`, 
+                answerType: 'multiple_choice', 
+                options 
+            },
             token: this.toBase64(options[0]),
             clues: [
-                { text: lang === 'sv' ? "Potenslagarna är begränsade. De fungerar bara när vi multiplicerar eller dividerar baserna." : "Power laws are limited. They only work when we multiply or divide the bases.", latex: "x^a + x^b \\neq x^{a+b}" }
+                { text: lang === 'sv' ? "Potenslagarna för exponenter fungerar bara när vi multiplicerar eller dividerar samma bas." : "The power laws for exponents only work when we multiply or divide the same base.", latex: "x^a \\cdot x^b = x^{a+b}" },
+                { text: lang === 'sv' ? "Därför är svaret:" : "Therefore the answer is:", latex: `\\text{${options[0]}}` }
             ],
             metadata: { variation_key: "law_addition_trap", difficulty: 2 }
         };
@@ -356,51 +354,36 @@ export class ExponentsGen {
         if (v === 'law_power_of_power') {
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Använd regeln för 'potens av en potens' för att förenkla uttrycket." : "Use the 'power of a power' rule to simplify the expression.",
+                    description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.",
                     latex: `(x^{${a}})^{${b}}`,
                     answerType: 'structured_power'
                 },
                 token: this.toBase64(`x^${a * b}`),
                 clues: [
-                    { text: lang === 'sv' ? "När en potens är upphöjd till en annan exponent, ska exponenterna multipliceras." : "When a power is raised to another exponent, the exponents should be multiplied.", latex: "(x^{a})^{b} = x^{a \\cdot b}" },
-                    { text: lang === 'sv' ? `Multiplicera ${a} med ${b}.` : `Multiply ${a} by ${b}.`, latex: `${a * b}` }
+                    { text: lang === 'sv' ? "När man har en 'potens av en potens' ska exponenterna multipliceras." : "When you have a 'power of a power', the exponents should be multiplied.", latex: "(x^{a})^{b} = x^{a \\cdot b}" },
+                    { text: lang === 'sv' ? "Räkna ut produkten av exponenterna." : "Calculate the product of the exponents.", latex: `${a} \\cdot ${b} = ${a*b}` },
+                    { text: lang === 'sv' ? "Svaret blir:" : "The answer is:", latex: `x^{${a*b}}` }
                 ],
                 metadata: { variation_key: "law_power_of_power", difficulty: 4 }
             };
         }
 
         if (v === 'law_all_combined') {
-            // ((x^a)^b * (x^c)^d) / (x^e)^f
-            const e1 = MathUtils.randomInt(2, 4);
-            const p1 = MathUtils.randomInt(2, 4);
-            const e2 = MathUtils.randomInt(2, 4);
-            const p2 = MathUtils.randomInt(2, 3);
-            const e3 = MathUtils.randomInt(2, 5);
-            const p3 = MathUtils.randomInt(2, 4);
-
+            const e1 = MathUtils.randomInt(2, 4), p1 = MathUtils.randomInt(2, 3), e2 = MathUtils.randomInt(2, 5);
             const n1 = e1 * p1;
-            const n2 = e2 * p2;
-            const d1 = e3 * p3;
-            
-            const nSum = n1 + n2;
-            const finalExp = nSum - d1;
-
-            // Ensure difficulty fits advanced level but remains solvable
-            if (finalExp < 0 || finalExp > 25) return this.level6_LawsAdvanced(lang, v);
-
-            const fullLatex = `\\frac{(x^{${e1}})^{${p1}} \\cdot (x^{${e2}})^{${p2}}}{(x^{${e3}})^{${p3}}}`;
+            const finalExp = n1 + e2;
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Förenkla hela uttrycket till en enda potens. Använd alla potenslagar du lärt dig." : "Simplify the entire expression to a single power. Use all the power laws you have learned.",
-                    latex: fullLatex,
+                    description: lang === 'sv' ? "Förenkla till en enda potens." : "Simplify to a single power.",
+                    latex: `(x^{${e1}})^{${p1}} \\cdot x^{${e2}}`,
                     answerType: 'structured_power'
                 },
                 token: this.toBase64(`x^${finalExp}`),
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Använd 'potens av en potens' för att förenkla varje parentes först." : "Step 1: Use the 'power of a power' rule to simplify each set of parentheses first.", latex: `\\frac{x^{${n1}} \\cdot x^{${n2}}}{x^{${d1}}}` },
-                    { text: lang === 'sv' ? "Steg 2: Addera exponenterna i täljaren." : "Step 2: Add the exponents in the numerator.", latex: `\\frac{x^{${nSum}}}{x^{${d1}}}` },
-                    { text: lang === 'sv' ? "Steg 3: Subtrahera nämnarens exponent från täljarens." : "Step 3: Subtract the denominator's exponent from the numerator's.", latex: `x^{${nSum} - ${d1}} = x^{${finalExp}}` }
+                    { text: lang === 'sv' ? "Börja med att förenkla parentesen genom att multiplicera exponenterna." : "Start by simplifying the parentheses by multiplying the exponents.", latex: `x^{${e1} \\cdot ${p1}} = x^{${n1}}` },
+                    { text: lang === 'sv' ? "Addera nu den andra exponenten eftersom det är multiplikation mellan baserna." : "Now add the other exponent because there is multiplication between the bases.", latex: `x^{${n1} + ${e2}}` },
+                    { text: lang === 'sv' ? "Den förenklade potensen är:" : "The simplified power is:", latex: `x^{${finalExp}}` }
                 ],
                 metadata: { variation_key: "law_all_combined", difficulty: 5 }
             };
@@ -409,13 +392,14 @@ export class ExponentsGen {
         const target = a * b;
         return {
             renderData: {
-                description: lang === 'sv' ? `Vilket värde på y gör att förenklingen stämmer?` : `What value of y makes the simplification correct?`,
+                description: lang === 'sv' ? `Vilket värde på y saknas?` : `Which value of y is missing?`,
                 latex: `(x^{${a}})^{y} = x^{${target}}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(b.toString()),
             clues: [
-                { text: lang === 'sv' ? "Eftersom regeln är multiplikation söker vi ett tal y som gånger a blir resultatet." : "Since the rule is multiplication, we seek a number y that times a equals the result.", latex: `${a} \\cdot y = ${target}` }
+                { text: lang === 'sv' ? "Vid potens av en potens multipliceras exponenterna för att få slutresultatet." : "For a power of a power, the exponents are multiplied to get the final result.", latex: `${a} \\cdot y = ${target}` },
+                { text: lang === 'sv' ? "Lös ut y för att få svaret:" : "Solve for y to get the answer:", latex: `${b}` }
             ],
             metadata: { variation_key: "law_inverse_algebra", difficulty: 4 }
         };

@@ -9,12 +9,9 @@ export class LinearEquationGen {
     }
 
     public generate(level: number, lang: string = 'sv'): any {
-        // Delegate Word Problems to the Specialist (Levels 5 & 6)
         if (level === 5 || level === 6) {
             return this.problemGen.generate(level, lang);
         }
-        
-        // Mixed Level Drill (Level 7)
         if (level === 7) {
             return this.level7_Mixed(lang);
         }
@@ -29,7 +26,6 @@ export class LinearEquationGen {
     }
 
     public generateByVariation(key: string, lang: string = 'sv'): any {
-        // Handle Word Problem delegation
         const wordProblemKeys = [
             'rate_fixed_add_write', 'rate_fixed_add_solve',
             'rate_fixed_sub_write', 'rate_fixed_sub_solve',
@@ -47,19 +43,15 @@ export class LinearEquationGen {
             case 'onestep_spot_lie':
             case 'onestep_calc':
                 return this.level1_OneStep(lang, key);
-            
             case 'twostep_concept_order':
             case 'twostep_calc':
                 return this.level2_TwoStep(lang, key);
-            
             case 'paren_lie_distribution':
             case 'paren_calc':
                 return this.level3_Parentheses(lang, key);
-            
             case 'bothsides_concept_strategy':
             case 'bothsides_calc':
                 return this.level4_BothSides(lang, key);
-
             default:
                 return this.generate(1, lang);
         }
@@ -77,46 +69,45 @@ export class LinearEquationGen {
             const type = MathUtils.randomInt(1, 4);
             const val1 = MathUtils.randomInt(2, 12);
             const val2 = MathUtils.randomInt(2, 12);
-            
-            let q = "";
-            let correctOp = "";
-            let clueText = "";
-            let latexStep = "";
+            let q = "", correctOp = "", clueText = "", latexStep = "", ansVal = "";
 
             const ops = lang === 'sv' 
                 ? ["Addition (+)", "Subtraktion (-)", "Multiplikation (·)", "Division (/)"] 
                 : ["Addition (+)", "Subtraction (-)", "Multiplication (·)", "Division (/)"];
 
-            if (type === 1) { // x + a = b
+            if (type === 1) {
                 q = `x + ${val1} = ${val1 + val2}`;
-                correctOp = lang === 'sv' ? "Subtraktion (-)" : "Subtraction (-)";
-                clueText = lang === 'sv' ? `Eftersom det står $+${val1}$, använder vi motsatsen (subtraktion) för att få x ensamt.` : `Since it says $+${val1}$, we use the opposite (subtraction) to get x alone.`;
-                latexStep = `x = ${val1 + val2} - ${val1}`;
-            } else if (type === 2) { // x - a = b
+                ansVal = (lang === 'sv' ? "Subtraktion (-)" : "Subtraction (-)");
+                clueText = lang === 'sv' ? `För att nollställa $+${val1}$ använder vi den motsatta räkneoperationen.` : `To cancel out $+${val1}$, we use the opposite mathematical operation.`;
+                latexStep = `${val1 + val2} - ${val1} = ${val2}`;
+            } else if (type === 2) {
                 q = `x - ${val1} = ${val2}`;
-                correctOp = lang === 'sv' ? "Addition (+)" : "Addition (+)";
-                clueText = lang === 'sv' ? `Eftersom det står $-${val1}$, använder vi motsatsen (addition) för att nollställa termen.` : `Since it says $-${val1}$, we use the opposite (addition) to cancel the term.`;
-                latexStep = `x = ${val2} + ${val1}`;
-            } else if (type === 3) { // ax = b
+                ansVal = (lang === 'sv' ? "Addition (+)" : "Addition (+)");
+                clueText = lang === 'sv' ? `Motsatsen till subtraktion är addition. Vi lägger till samma värde på båda sidor.` : `The opposite of subtraction is addition. We add the same value to both sides.`;
+                latexStep = `${val2} + ${val1} = ${val1 + val2}`;
+            } else if (type === 3) {
                 q = `${val1}x = ${val1 * val2}`;
-                correctOp = lang === 'sv' ? "Division (/)" : "Division (/)";
-                clueText = lang === 'sv' ? `Talet står precis bredvid x, vilket betyder multiplikation. Motsatsen till det är division.` : `The number is right next to x, which means multiplication. The opposite of that is division.`;
-                latexStep = `x = \\frac{${val1 * val2}}{${val1}}`;
-            } else { // x / a = b
+                ansVal = (lang === 'sv' ? "Division (/)" : "Division (/)");
+                clueText = lang === 'sv' ? `Eftersom x är multiplicerat med ${val1}, måste vi dela (dividera) för att få x ensamt.` : `Since x is multiplied by ${val1}, we must divide to get x alone.`;
+                latexStep = `\\frac{${val1 * val2}}{${val1}} = ${val2}`;
+            } else {
                 q = `\\frac{x}{${val1}} = ${val2}`;
-                correctOp = lang === 'sv' ? "Multiplikation (·)" : "Multiplication (·)";
-                clueText = lang === 'sv' ? `Här är x dividerat med ${val1}. För att få x fritt använder vi multiplikation.` : `Here x is divided by ${val1}. To free x, we use multiplication.`;
-                latexStep = `x = ${val2} \\cdot ${val1}`;
+                ansVal = (lang === 'sv' ? "Multiplikation (·)" : "Multiplication (·)");
+                clueText = lang === 'sv' ? `Motsatsen till division är multiplikation. Multiplicera båda sidor med nämnaren.` : `The opposite of division is multiplication. Multiply both sides by the denominator.`;
+                latexStep = `${val2} \\cdot ${val1} = ${val1 * val2}`;
             }
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Betrakta ekvationen $${q}$. Vilken räkneoperation ska du utföra på båda sidor för att isolera variabeln x?` : `Consider the equation $${q}$. Which operation should you perform on both sides to isolate the variable x?`,
+                    description: lang === 'sv' ? `Vilken operation isolerar x i $${q}$?` : `Which operation isolates x in $${q}$?`,
                     answerType: 'multiple_choice',
                     options: MathUtils.shuffle(ops)
                 },
-                token: this.toBase64(correctOp),
-                clues: [{ text: clueText, latex: latexStep }],
+                token: this.toBase64(ansVal),
+                clues: [
+                    { text: clueText, latex: latexStep },
+                    { text: lang === 'sv' ? "Rätt operation är:" : "The correct operation is:", latex: `\\text{${ansVal}}` }
+                ],
                 metadata: { variation_key: 'onestep_concept_inverse', difficulty: 1 }
             };
         }
@@ -131,67 +122,46 @@ export class LinearEquationGen {
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Om vi utgår från att $x = ${targetX}$, vilket av följande påståenden stämmer då INTE?` : `Assuming that $x = ${targetX}$, which of the following statements is NOT true?`,
+                    description: lang === 'sv' ? `Om $x = ${targetX}$, vilket påstående är FALSKT?` : `If $x = ${targetX}$, which statement is FALSE?`,
                     answerType: 'multiple_choice',
                     options: MathUtils.shuffle([sTrue1, sTrue2, lie])
                 },
                 token: this.toBase64(lie),
-                clues: [{ 
-                    text: lang === 'sv' ? `Testa att ersätta x med ${targetX} i ekvationerna. I en av dem kommer vänster sida inte bli lika med höger sida.` : `Try replacing x with ${targetX} in the equations. In one of them, the left side will not equal the right side.`,
-                    latex: `${targetX} - ${b} \\neq ${targetX + b}`
-                }],
+                clues: [
+                    { text: lang === 'sv' ? `Sätt in ${targetX} istället för x och kontrollera om båda sidor blir lika.` : `Substitute ${targetX} for x and check if both sides are equal.`, latex: `${targetX} - ${b} \\neq ${targetX + b}` },
+                    { text: lang === 'sv' ? "Falskt påstående:" : "False statement:", latex: `\\text{${lie}}` }
+                ],
                 metadata: { variation_key: 'onestep_spot_lie', difficulty: 1 }
             };
         }
 
-        // Standard Calculation
         const type = MathUtils.randomInt(1, 3);
         const x = MathUtils.randomInt(2, 12);
-        let latex = '', answer = x.toString(), pedagogicalClues = [];
+        let latex = '', pedagogicalClues = [];
         
-        if (type === 1) { // kx = res
+        if (type === 1) {
             const k = MathUtils.randomInt(2, 9);
             const res = k * x;
             latex = `${k}x = ${res}`;
             pedagogicalClues = [
-                { 
-                    sv: `För att få x ensamt delar vi båda sidor med talet framför x, som är ${k}.`, 
-                    en: `To get x alone, we divide both sides by the number in front of x, which is ${k}.`,
-                    latex: `\\frac{${k}x}{${k}} = \\frac{${res}}{${k}}`
-                },
-                { 
-                    sv: `Uträkningen ger oss svaret.`, 
-                    en: `The calculation gives us the answer.`,
-                    latex: `x = ${x}`
-                }
+                { text: lang === 'sv' ? `Dela båda sidor med ${k} för att få x ensamt.` : `Divide both sides by ${k} to get x alone.`, latex: `\\frac{${res}}{${k}} = ${x} \\\\ x = ${x}` }
             ];
-        } else { // x +/- k = res
+        } else {
             const k = MathUtils.randomInt(1, 20);
             const isPlus = Math.random() > 0.5;
             const res = isPlus ? x + k : x - k;
             latex = isPlus ? `x + ${k} = ${res}` : `x - ${k} = ${res}`;
             pedagogicalClues = [
-                { 
-                    sv: isPlus ? `Ta bort $+${k}$ genom att subtrahera ${k} från båda sidor.` : `Ta bort $-${k}$ genom att addera ${k} till båda sidor.`, 
-                    en: isPlus ? `Remove $+${k}$ by subtracting ${k} from both sides.` : `Remove $-${k}$ by adding ${k} to both sides.`,
-                    latex: isPlus ? `x = ${res} - ${k}` : `x = ${res} + ${k}`
-                },
-                { 
-                    sv: `Räkna ut värdet för att hitta x.`, 
-                    en: `Calculate the value to find x.`,
-                    latex: `x = ${x}`
-                }
+                { text: lang === 'sv' ? (isPlus ? `Ta bort ${k} från båda sidor.` : `Lägg till ${k} på båda sidor.`) : (isPlus ? `Subtract ${k} from both sides.` : `Add ${k} to both sides.`), latex: isPlus ? `${res} - ${k} = ${x} \\\\ x = ${x}` : `${res} + ${k} = ${x} \\\\ x = ${x}` }
             ];
         }
 
+        pedagogicalClues.push({ text: lang === 'sv' ? "Svaret är:" : "The answer is:", latex: `x = ${x}` });
+
         return {
-            renderData: { 
-                latex, 
-                description: lang === 'sv' ? "Beräkna värdet på variabeln x i ekvationen nedan." : "Calculate the value of the variable x in the equation below.", 
-                answerType: 'text' 
-            },
-            token: this.toBase64(answer),
-            clues: pedagogicalClues.map(c => ({ text: lang === 'sv' ? c.sv : c.en, latex: c.latex })),
+            renderData: { latex, description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.", answerType: 'text' },
+            token: this.toBase64(x.toString()),
+            clues: pedagogicalClues,
             metadata: { variation_key: 'onestep_calc', difficulty: 1 }
         };
     }
@@ -207,12 +177,15 @@ export class LinearEquationGen {
             
             return {
                 renderData: {
-                    description: lang === 'sv' ? `För $${a}x + ${b} = ${c}$, vilket steg bör man börja med?` : `For $${a}x + ${b} = ${c}$, which step should you start with?`,
+                    description: lang === 'sv' ? `För $${a}x + ${b} = ${c}$, vilket steg är bäst att börja med?` : `For $${a}x + ${b} = ${c}$, which step is best to start with?`,
                     answerType: 'multiple_choice',
                     options: [correct, wrong]
                 },
                 token: this.toBase64(correct),
-                clues: [{ text: lang === 'sv' ? "Börja med att ta bort termen som inte sitter ihop med x (additionen/subtraktionen)." : "Start by removing the term not attached to x (the addition/subtraction)." }],
+                clues: [
+                    { text: lang === 'sv' ? "Det är lättast att först 'flytta' den term som inte innehåller x." : "It is easiest to first 'move' the term that does not contain x." },
+                    { text: lang === 'sv' ? "Rätt steg är:" : "The correct step is:", latex: `\\text{${correct}}` }
+                ],
                 metadata: { variation_key: 'twostep_concept_order', difficulty: 2 }
             };
         }
@@ -222,6 +195,7 @@ export class LinearEquationGen {
         const b = MathUtils.randomInt(1, 15);
         const isPlus = Math.random() > 0.5;
         const c = isPlus ? a * x + b : a * x - b;
+        const intermediate = isPlus ? c - b : c + b;
 
         return {
             renderData: { 
@@ -232,20 +206,14 @@ export class LinearEquationGen {
             token: this.toBase64(x.toString()),
             clues: [
                 { 
-                    sv: `Steg 1: Flytta siffran som står ensam. Eftersom det står ${isPlus ? '+' : '-'}${b}, så ${isPlus ? 'tar vi bort' : 'lägger vi till'} ${b} på båda sidor.`, 
-                    en: `Step 1: Move the standalone number. Since it says ${isPlus ? '+' : '-'}${b}, we ${isPlus ? 'subtract' : 'add'} ${b} on both sides.`,
-                    latex: `${a}x = ${isPlus ? c - b : c + b}`
+                    text: lang === 'sv' ? `Flytta siffran ${b} genom att utföra motsatt operation.` : `Move the number ${b} by performing the opposite operation.`,
+                    latex: isPlus ? `${c} - ${b} = ${intermediate} \\\\ ${a}x = ${intermediate}` : `${c} + ${b} = ${intermediate} \\\\ ${a}x = ${intermediate}`
                 },
                 { 
-                    sv: `Steg 2: Nu står det att ${a} gånger x är ${isPlus ? c-b : c+b}. Dela båda sidor med ${a} för att få fram x.`, 
-                    en: `Step 2: Now it says that ${a} times x is ${isPlus ? c-b : c+b}. Divide both sides by ${a} to find x.`,
-                    latex: `x = \\frac{${isPlus ? c-b : c+b}}{${a}}`
+                    text: lang === 'sv' ? `Dela nu båda sidor med ${a} för att isolera x.` : `Now divide both sides by ${a} to isolate x.`,
+                    latex: `\\frac{${intermediate}}{${a}} = ${x} \\\\ x = ${x}`
                 },
-                {
-                    sv: "Då får vi det slutgiltiga svaret.",
-                    en: "Then we get the final answer.",
-                    latex: `x = ${x}`
-                }
+                { text: lang === 'sv' ? "Värdet på x är:" : "The value of x is:", latex: `x = ${x}` }
             ],
             metadata: { variation_key: 'twostep_calc', difficulty: 2 }
         };
@@ -259,49 +227,46 @@ export class LinearEquationGen {
         if (v === 'paren_lie_distribution') {
             const lie = `${a}(x + ${b}) = ${a}x + ${b}`; 
             const correct1 = `${a}(x + ${b}) = ${a}x + ${a*b}`;
-            const correct2 = `${a}(x + ${b}) = ${a} · x + ${a} · ${b}`;
-
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Vilket alternativ visar ett FELAKTIGT sätt att multiplicera in i parentesen?" : "Which option shows an INCORRECT way to distribute into the parentheses?",
+                    description: lang === 'sv' ? "Vilket påstående är FELAKTIGT?" : "Which statement is INCORRECT?",
                     answerType: 'multiple_choice',
-                    options: MathUtils.shuffle([correct1, lie, correct2]),
+                    options: MathUtils.shuffle([correct1, lie]),
                 },
                 token: this.toBase64(lie),
-                clues: [{ text: lang === 'sv' ? "Kom ihåg att siffran utanför parentesen måste multipliceras med ALLA delar inuti parentesen." : "Remember that the number outside the parentheses must be multiplied by ALL parts inside the parentheses." }],
+                clues: [
+                    { text: lang === 'sv' ? "Siffran framför parentesen måste multipliceras med ALLA termer inuti." : "The number in front of the parentheses must be multiplied by ALL terms inside.", latex: `${a} \\cdot x + ${a} \\cdot ${b}` },
+                    { text: lang === 'sv' ? "Lögnen är:" : "The lie is:", latex: `\\text{${lie}}` }
+                ],
                 metadata: { variation_key: 'paren_lie_distribution', difficulty: 3 }
             };
         }
 
+        const ab = a * b;
         const constantSum = a * (x + b);
+        const diff = constantSum - ab;
+
         return {
             renderData: {
                 latex: `${a}(x + ${b}) = ${constantSum}`,
-                description: lang === 'sv' ? "Förenkla uttrycket och lös ekvationen." : "Simplify the expression and solve the equation.",
+                description: lang === 'sv' ? "Lös ut x ur ekvationen." : "Solve for x in the equation.",
                 answerType: 'text'
             },
             token: this.toBase64(x.toString()),
             clues: [
                 { 
-                    sv: `Steg 1: Ta bort parentesen genom att multiplicera ${a} med både x och ${b}.`, 
-                    en: `Step 1: Remove the parentheses by multiplying ${a} with both x and ${b}.`,
-                    latex: `${a} \\cdot x + ${a} \\cdot ${b} = ${constantSum} \\Rightarrow ${a}x + ${a*b} = ${constantSum}`
+                    text: lang === 'sv' ? `Multiplicera in ${a} i parentesen.` : `Distribute ${a} into the parentheses.`,
+                    latex: `${a} \\cdot x + ${a} \\cdot ${b} = ${ab} \\\\ ${a}x + ${ab} = ${constantSum}`
                 },
                 { 
-                    sv: `Steg 2: Flytta nu $+${a*b}$ genom att subtrahera ${a*b} från båda sidor.`, 
-                    en: `Step 2: Now move $+${a*b}$ by subtracting ${a*b} from both sides.`,
-                    latex: `${a}x = ${constantSum - a*b}`
+                    text: lang === 'sv' ? `Subtrahera ${ab} från båda sidor.` : `Subtract ${ab} from both sides.`,
+                    latex: `${constantSum} - ${ab} = ${diff} \\\\ ${a}x = ${diff}`
                 },
                 { 
-                    sv: `Steg 3: Dela med ${a} på båda sidor för att få fram x.`, 
-                    en: `Step 3: Divide by ${a} on both sides to find x.`,
-                    latex: `x = \\frac{${constantSum - a*b}}{${a}}`
+                    text: lang === 'sv' ? `Dela med ${a} för att få svaret.` : `Divide by ${a} to get the answer.`,
+                    latex: `\\frac{${diff}}{${a}} = ${x} \\\\ x = ${x}`
                 },
-                {
-                    sv: "Resultat:",
-                    en: "Result:",
-                    latex: `x = ${x}`
-                }
+                { text: lang === 'sv' ? "Svaret är:" : "The answer is:", latex: `x = ${x}` }
             ],
             metadata: { variation_key: 'paren_calc', difficulty: 3 }
         };
@@ -313,52 +278,49 @@ export class LinearEquationGen {
         const x = MathUtils.randomInt(2, 8), a = MathUtils.randomInt(6, 10), c = MathUtils.randomInt(2, 5);
         const b = MathUtils.randomInt(2, 12);
         const d = (a - c) * x + b;
+        const eq = `${a}x + ${b} = ${c}x + ${d}`;
 
         if (v === 'bothsides_concept_strategy') {
-            const eq = `${a}x + ${b} = ${c}x + ${d}`;
             const correct = lang === 'sv' ? `Subtrahera ${c}x från båda sidor` : `Subtract ${c}x from both sides`;
-            const wrong = lang === 'sv' ? `Subtrahera ${a}x från båda sidor` : `Subtract ${a}x from both sides`;
-            
             return {
                 renderData: {
-                    description: lang === 'sv' ? `I $${eq}$, vilket steg är smartast för att hålla x positivt?` : `In $${eq}$, which step is smartest to keep x positive?`,
+                    description: lang === 'sv' ? `I $${eq}$, vad är smartast att göra först?` : `In $${eq}$, what is smartest to do first?`,
                     answerType: 'multiple_choice',
-                    options: [correct, wrong]
+                    options: MathUtils.shuffle([correct, lang === 'sv' ? `Addera ${a}x` : `Add ${a}x` ])
                 },
                 token: this.toBase64(correct),
-                clues: [{ text: lang === 'sv' ? "Det är oftast enklast att 'flytta' den minsta x-termen först. Då slipper man räkna med negativa antal x." : "It is usually easiest to 'move' the smallest x-term first. That way, you avoid working with negative amounts of x." }],
+                clues: [
+                    { text: lang === 'sv' ? "Det är oftast enklast att ta bort den minsta x-termen först för att slippa negativa tal." : "It's usually easiest to remove the smallest x-term first to avoid negative numbers." },
+                    { text: lang === 'sv' ? "Rätt val är:" : "The correct choice is:", latex: `\\text{${correct}}` }
+                ],
                 metadata: { variation_key: 'bothsides_concept_strategy', difficulty: 3 }
             };
         }
 
+        const ac = a - c;
+        const db = d - b;
+
         return {
             renderData: {
-                latex: `${a}x + ${b} = ${c}x + ${d}`,
-                description: lang === 'sv' ? "Samla x-termerna på ena sidan och talen på den andra." : "Gather x-terms on one side and constants on the other.",
+                latex: eq,
+                description: lang === 'sv' ? "Samla x på ena sidan och talen på den andra." : "Gather x on one side and numbers on the other.",
                 answerType: 'text'
             },
             token: this.toBase64(x.toString()),
             clues: [
                 { 
-                    sv: `Steg 1: Samla alla x på en sida. Dra bort den minsta x-termen (${c}x) från båda sidor.`, 
-                    en: `Step 1: Collect all x's on one side. Subtract the smallest x-term (${c}x) from both sides.`,
-                    latex: `${a}x - ${c}x + ${b} = ${d} \\Rightarrow ${a-c}x + ${b} = ${d}`
+                    text: lang === 'sv' ? `Börja med att samla x på vänster sida genom att dra bort ${c}x.` : `Start by gathering x on the left side by subtracting ${c}x.`,
+                    latex: `${a}x - ${c}x = ${ac}x \\\\ ${ac}x + ${b} = ${d}`
                 },
                 { 
-                    sv: `Steg 2: Flytta nu siffran ${b} till den andra sidan genom att subtrahera ${b} från båda sidor.`, 
-                    en: `Step 2: Now move the number ${b} to the other side by subtracting ${b} from both sides.`,
-                    latex: `${a-c}x = ${d} - ${b} \\Rightarrow ${a-c}x = ${d-b}`
+                    text: lang === 'sv' ? `Flytta nu siffran ${b} genom att dra bort den från båda sidor.` : `Now move the number ${b} by subtracting it from both sides.`,
+                    latex: `${d} - ${b} = ${db} \\\\ ${ac}x = ${db}`
                 },
                 { 
-                    sv: `Steg 3: Dela nu båda sidor med ${a-c} för att räkna ut vad ett x är värt.`, 
-                    en: `Step 3: Now divide both sides by ${a-c} to calculate what one x is worth.`,
-                    latex: `x = \\frac{${d-b}}{${a-c}}`
+                    text: lang === 'sv' ? `Dela med ${ac} för att hitta x.` : `Divide by ${ac} to find x.`,
+                    latex: `\\frac{${db}}{${ac}} = ${x} \\\\ x = ${x}`
                 },
-                {
-                    sv: "Svaret blir:",
-                    en: "The answer is:",
-                    latex: `x = ${x}`
-                }
+                { text: lang === 'sv' ? "Slutresultat:" : "Final result:", latex: `x = ${x}` }
             ],
             metadata: { variation_key: 'bothsides_calc', difficulty: 4 }
         };
