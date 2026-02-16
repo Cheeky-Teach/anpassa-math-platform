@@ -56,7 +56,7 @@ const TopicMap: Record<string, any> = {
   'negatives': NegativeNumbersGen,
   'negative': NegativeNumbersGen,
   
-  'fraction_basics': FractionBasicsGen,
+  'fractions_basics': FractionBasicsGen,
   'fraction_arith': FractionArithGen,
   'fractions': LegacyFractionsGen,
   

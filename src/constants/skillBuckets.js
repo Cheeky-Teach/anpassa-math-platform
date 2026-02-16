@@ -48,9 +48,7 @@ export const SKILL_BUCKETS = {
           { key: 'combine_concept_id', name: { sv: 'Begrepp: Termer', en: 'Concept: Terms' }, desc: { sv: 'Identifiera lika termer', en: 'Identify like terms' } },
           { key: 'combine_standard_mixed', name: { sv: 'Förenkla uttryck', en: 'Simplify expressions' }, desc: { sv: 'Samla x och tal', en: 'Combine x and constants' } },
           { key: 'distribute_lie_partial', name: { sv: 'Hitta felet: Parentes', en: 'Find error: Parentheses' }, desc: { sv: 'Partiell distribution', en: 'Partial distribution' } },
-          { key: 'distribute_inverse_factor', name: { sv: 'Faktorisera', en: 'Factorize' }, desc: { sv: 'Bryt ut största faktor', en: 'Factor out greatest common factor' } },
-          { key: 'distribute_plus', name: { sv: 'Parentes (+)', en: 'Parentheses (+)' }, desc: { sv: 'Multiplicera in positivt tal', en: 'Multiply in positive number' } },
-          { key: 'distribute_minus', name: { sv: 'Parentes (-)', en: 'Parentheses (-)' }, desc: { sv: 'Multiplicera in negativt tal', en: 'Multiply in negative number' } },
+          { key: 'distribute_plus', name: { sv: 'Parentes (+)', en: 'Parentheses (+)' }, desc: { sv: '+ framför parentes', en: '+ in front of parenthesis' } },
           { key: 'distribute_double', name: { sv: 'Dubbla parenteser', en: 'Double parentheses' }, desc: { sv: 'Expandera två parenteser', en: 'Expand two parentheses' } },
           { key: 'distribute_combine_std', name: { sv: 'Expandera & Förenkla', en: 'Expand & Simplify' }, desc: { sv: 'Multiplicera och samla termer', en: 'Multiply and combine terms' } },
           { key: 'sub_concept_plus_logic', name: { sv: 'Teckenregler', en: 'Sign rules' }, desc: { sv: 'Plus framför parentes', en: 'Plus in front of parentheses' } },
@@ -172,12 +170,14 @@ export const SKILL_BUCKETS = {
           { key: 'simplify_missing', name: { sv: 'Likvärdiga bråk', en: 'Equivalent fractions' }, desc: { sv: 'Förlängning/Förkortning', en: 'Extension/Simplification' } },
           { key: 'simplify_concept', name: { sv: 'Koncept: Förkortning', en: 'Concept: Simplification' }, desc: { sv: 'Ändras värdet?', en: 'Does the value change?' } },
           { key: 'simplify_calc', name: { sv: 'Förkorta bråk', en: 'Simplify fraction' }, desc: { sv: 'Enklaste form', en: 'Simplest form' } },
+          { key: 'equivalence_basic_frac', name: { sv: 'Basfakta: Bråk till %', en: 'Basic Facts: Fraction to %' }, desc: { sv: 'Ex: 1/4 = 25%', en: 'Ex: 1/4 = 25%' } },
+          { key: 'equivalence_basic_dec', name: { sv: 'Basfakta: Decimal till %', en: 'Basic Facts: Decimal to %' }, desc: { sv: 'Ex: 0,2 = 20%', en: 'Ex: 0.2 = 20%' } },
           { key: 'decimal_inequality', name: { sv: 'Jämför bråk/decimal', en: 'Compare fraction/decimal' }, desc: { sv: 'Större, mindre, lika', en: 'Greater, smaller, equal' } },
           { key: 'decimal_to_dec', name: { sv: 'Bråk till decimal', en: 'Fraction to decimal' }, desc: { sv: 'Ex: 1/4 = 0,25', en: 'Ex: 1/4 = 0.25' } },
           { key: 'decimal_to_frac', name: { sv: 'Decimal till bråk', en: 'Decimal to fraction' }, desc: { sv: 'Ex: 0,5 = 1/2', en: 'Ex: 0.5 = 1/2' } }
         ]
       },
-      fractions_arith: {
+      fraction_arith: {
         name: { sv: 'Bråk: Räknesätt', en: 'Fraction Operations' },
         variations: [
           { key: 'add_concept', name: { sv: 'Addition: Regler', en: 'Addition: Rules' }, desc: { sv: 'Addera täljare, ej nämnare', en: 'Add numerators, not denominators' } },
