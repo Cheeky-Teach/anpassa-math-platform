@@ -12,9 +12,6 @@ export class FractionBasicsGen {
         }
     }
 
-    /**
-     * Phase 2: Targeted Generation
-     */
     public generateByVariation(key: string, lang: string = 'sv'): any {
         switch (key) {
             case 'visual_lie':
@@ -205,38 +202,73 @@ export class FractionBasicsGen {
 
     // --- LEVEL 4: SIMPLIFY & EXTEND ---
     private level4_SimplifyExtend(lang: string, variationKey?: string): any {
-        const v = variationKey || MathUtils.randomChoice(['simplify_missing', 'simplify_calc']);
+        const v = variationKey || MathUtils.randomChoice(['simplify_missing', 'simplify_calc', 'simplify_concept']);
+
+        // Base fraction logic: Ensure we start with a reduced fraction n/d where n < d
+        let baseN = MathUtils.randomInt(1, 5);
+        let baseD = MathUtils.randomInt(baseN + 1, 12);
+        while (this.gcd(baseN, baseD) !== 1) {
+            baseN = MathUtils.randomInt(1, 5);
+            baseD = MathUtils.randomInt(baseN + 1, 12);
+        }
 
         if (v === 'simplify_missing') {
-            const baseN = 1, baseD = MathUtils.randomInt(2, 4), f = MathUtils.randomInt(2, 5);
-            const targetD = baseD * f, targetN = baseN * f; 
+            const f = MathUtils.randomInt(2, 10);
+            const targetD = baseD * f;
+            const targetN = baseN * f; 
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Vilket tal saknas för att bråken ska vara lika mycket värda?" : "What number is missing for the fractions to be equal in value?",
+                    description: lang === 'sv' ? "Vilket tal saknas för att likheten ska stämma?" : "What number is missing for the equality to be true?",
                     latex: `\\frac{${baseN}}{${baseD}} = \\frac{?}{${targetD}}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(targetN.toString()),
                 clues: [
-                    { text: lang === 'sv' ? `För att nämnaren ska bli ${targetD} har den multiplicerats med ${f}.` : `To make the denominator ${targetD}, it has been multiplied by ${f}.`, latex: `${baseD} \\cdot ${f} = ${targetD}` },
-                    { text: lang === 'sv' ? "Gör exakt samma sak med täljaren för att bevara bråkets värde." : "Do exactly the same to the numerator to preserve the fraction's value.", latex: `${baseN} \\cdot ${f} = ${targetN}` }
+                    { text: lang === 'sv' ? "För att bråken ska vara lika värda måste täljaren och nämnaren multipliceras med samma tal." : "For the fractions to have the same value, the numerator and denominator must be multiplied by the same number." },
+                    { text: lang === 'sv' ? `Vi ser att nämnaren har multiplicerats med ${f}.` : `We see that the denominator has been multiplied by ${f}.`, latex: `${baseD} \\cdot ${f} = ${targetD} \\rightarrow ${baseN} \\cdot ${f} = ${targetN}` },
+                    { text: lang === 'sv' ? "Den saknade täljaren är:" : "The missing numerator is:", latex: `${targetN}` }
                 ],
                 metadata: { variation_key: 'simplify_missing', difficulty: 3 }
             };
         }
 
-        const factor = MathUtils.randomInt(2, 4), sn = 1, sd = MathUtils.randomInt(2, 5);
+        if (v === 'simplify_concept') {
+            const f = MathUtils.randomInt(2, 5);
+            const sLie = lang === 'sv' ? "Värdet ändras om vi förkortar" : "The value changes if we simplify";
+            const sTrue = lang === 'sv' ? "Värdet är detsamma" : "The value is the same";
+            
+            return {
+                renderData: {
+                    description: lang === 'sv' ? `Vad händer med ett bråks värde om vi förlänger det med ${f}?` : `What happens to a fraction's value if we extend it by ${f}?`,
+                    answerType: 'multiple_choice',
+                    options: MathUtils.shuffle([sTrue, sLie, lang === 'sv' ? "Det blir hälften så stort" : "It becomes half as large"])
+                },
+                token: this.toBase64(sTrue),
+                clues: [
+                    { text: lang === 'sv' ? "Förlängning och förkortning ändrar hur bråket skrivs, men inte hur stor andel det representerar." : "Extending and simplifying changes how the fraction is written, but not the share it represents.", latex: `\\frac{a}{b} = \\frac{a \\cdot k}{b \\cdot k}` },
+                    { text: lang === 'sv' ? "Rätt svar är:" : "The correct answer is:", latex: `\\text{${sTrue}}` }
+                ],
+                metadata: { variation_key: 'simplify_concept', difficulty: 2 }
+            };
+        }
+
+        // simplify_calc (Förkortning)
+        const factor = MathUtils.randomInt(2, 9);
+        const startN = baseN * factor;
+        const startD = baseD * factor;
+
         return {
             renderData: {
-                description: lang === 'sv' ? "Förkorta bråket så långt det går." : "Simplify the fraction as much as possible.",
-                latex: `\\frac{${sn * factor}}{${sd * factor}}`,
+                description: lang === 'sv' ? "Förkorta bråket så långt det går (enklaste form)." : "Simplify the fraction as much as possible (simplest form).",
+                latex: `\\frac{${startN}}{${startD}}`,
                 answerType: 'fraction'
             },
-            token: this.toBase64(`${sn}/${sd}`),
+            token: this.toBase64(`${baseN}/${baseD}`),
             clues: [
-                { text: lang === 'sv' ? `Hitta ett tal som både täljaren och nämnaren kan delas med. Här kan båda delas med ${factor}.` : `Find a number that both the numerator and the denominator can be divided by. Here, both can be divided by ${factor}.`, latex: `\\frac{${sn*factor} / ${factor}}{${sd*factor} / ${factor}}` },
-                { text: lang === 'sv' ? "Svaret i enklaste form är:" : "The answer in simplest form is:", latex: `\\frac{${sn}}{${sd}}` }
+                { text: lang === 'sv' ? "Hitta det största talet som både täljaren och nämnaren kan delas med." : "Find the largest number that both the numerator and the denominator can be divided by." },
+                { text: lang === 'sv' ? `Här kan båda talen divideras med ${factor}.` : `Here, both numbers can be divided by ${factor}.`, latex: `\\frac{${startN} / ${factor}}{${startD} / ${factor}} = \\frac{${baseN}}{${baseD}}` },
+                { text: lang === 'sv' ? "Svaret i enklaste form är:" : "The answer in simplest form is:", latex: `\\frac{${baseN}}{${baseD}}` }
             ],
             metadata: { variation_key: 'simplify_calc', difficulty: 3 }
         };
