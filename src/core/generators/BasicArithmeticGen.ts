@@ -342,7 +342,7 @@ export class BasicArithmeticGen {
         }
 
         const description = vertical 
-            ? (lang === 'sv' ? "Ställ upp och beräkna. Tänk på talsorterna." : "Set up and calculate. Pay attention to place values.")
+            ? (lang === 'sv' ? "Beräkna." : "Calculate")
             : (lang === 'sv' ? "Beräkna." : "Calculate.");
 
         const clues = [
