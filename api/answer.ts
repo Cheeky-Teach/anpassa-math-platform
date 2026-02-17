@@ -1,15 +1,21 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase for the backend
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+/**
+ * LAZY INITIALIZATION HELPER
+ * This prevents the script from crashing at the top-level if 
+ * environment variables are missing during local practice.
+ */
+const getSupabase = () => {
+    const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const key = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("CRITICAL: Supabase environment variables are missing!");
-}
-
-const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+    if (!url || !key) {
+        console.warn("Supabase credentials missing. Database features are inactive.");
+        return null;
+    }
+    return createClient(url, key);
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 1. Standard Security Headers
@@ -40,30 +46,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let newStreak = isCorrect ? streak + 1 : 0;
         let levelUp = isCorrect && newStreak > 0 && newStreak % 8 === 0;
 
-        // 4. THE HYBRID LOGIC: Save to Database ONLY if in a Classroom Room
+        // 4. THE HYBRID LOGIC: Only attempt DB connection if roomId exists
         if (roomId && studentAlias) {
-            const { error: dbError } = await supabase
-                .from('responses')
-                .insert([{
-                    room_id: roomId,
-                    student_alias: studentAlias,
-                    question_index: questionIndex || 0,
-                    answer: String(answer),
-                    is_correct: isCorrect
-                }]);
+            const supabase = getSupabase();
+            
+            if (supabase) {
+                const { error: dbError } = await supabase
+                    .from('responses')
+                    .insert([{
+                        room_id: roomId,
+                        student_alias: studentAlias,
+                        question_index: questionIndex || 0,
+                        answer: String(answer),
+                        is_correct: isCorrect
+                    }]);
 
-            // If the student tries to submit twice, the "Crash-Shield" will trigger error 23505
-            if (dbError && dbError.code === '23505') {
-                return res.status(400).json({ error: "Du har redan svarat på denna fråga." });
+                // Handle unique constraint (prevents double submissions in live rooms)
+                if (dbError && dbError.code === '23505') {
+                    return res.status(400).json({ error: "Du har redan svarat på denna fråga." });
+                }
+            } else {
+                console.error("Critical: Room ID provided but Supabase is not configured.");
             }
         }
 
         // 5. Return everything App.jsx needs to keep the game running
+        // This now works even if the database step was skipped!
         return res.status(200).json({
             correct: isCorrect,
-            correctAnswer, // Allows the UI to show the right answer if they fail
-            newStreak,     // Updates the flame icon in App.jsx
-            levelUp        // Triggers the "Level Up" modal in App.jsx
+            correctAnswer, 
+            newStreak,     
+            levelUp        
         });
 
     } catch (error: any) {
