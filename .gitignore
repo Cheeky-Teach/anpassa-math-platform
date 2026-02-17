@@ -16,3 +16,4 @@ yarn-debug.log*
 yarn-error.log*
 create_context.js
 project_context.txt
+.env*.local

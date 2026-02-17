@@ -46,6 +46,10 @@ function App() {
     const [isSolutionRevealed, setIsSolutionRevealed] = useState(false);
     const [usedHelp, setUsedHelp] = useState(false);
 
+    // Live room state
+    const [activeRoom, setActiveRoom] = useState(null); // Stores { id, classCode, namingMode }
+    const [studentAlias, setStudentAlias] = useState(''); // The name the student joined with
+
     // --- 4. SESSION STATS & HISTORY ---
     const [sessionStats, setSessionStats] = useState({
         attempted: 0, 
@@ -243,50 +247,88 @@ function App() {
     };
 
     const handleSubmit = async (e, directInput) => {
-        if (e) e.preventDefault();
-        if (feedback === 'correct') return;
-        let finalInput = directInput !== undefined ? directInput : input;
-        if (!question || !finalInput) return;
+    if (e) e.preventDefault();
+    if (feedback === 'correct') return;
+    let finalInput = directInput !== undefined ? directInput : input;
+    if (!question || !finalInput) return;
+    
+    const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
+
+    try {
+        const res = await fetch('/api/answer', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ 
+                answer: finalInput, 
+                token: question.token, 
+                streak, 
+                level, 
+                topic, 
+                usedHelp: helpUsed, 
+                solutionUsed: isSolutionRevealed, 
+                attempts: (question.attempts || 0),
+                // --- NEW LIVE DATA ---
+                roomId: activeRoom?.id,       // Only sent if in a live session
+                studentAlias: studentAlias,   // Only sent if in a live session
+                questionIndex: question.number // Used for the "Crash-Shield" logic
+            }) 
+        });
+
+        const result = await res.json();
         
-        const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
+        // Handle "Crash-Shield" Duplicate Error
+        if (res.status === 400 && result.error) {
+            setFeedback('incorrect');
+            alert(result.error); // Warn student they can't submit twice
+            return;
+        }
 
-        try {
-            const res = await fetch('/api/answer', { 
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ answer: finalInput, token: question.token, streak, level, topic, usedHelp: helpUsed, solutionUsed: isSolutionRevealed, attempts: (question.attempts || 0) }) 
-            });
-            const result = await res.json();
-            
-            if (result.correct) {
-                if (!isSolutionRevealed) {
-                    setHistory(prev => [{ topic, level, correct: true, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
-                    setStreak(result.newStreak);
-                    setTotalCorrect(prev => prev + 1);
-                    
-                    // Track granular stats for success
-                    updateStats(helpUsed ? 'correctHelp' : 'correctNoHelp');
-
-                    if ([15, 20, 30, 40, 50].includes(result.newStreak)) setShowStreakModal(true);
-                    else if (result.levelUp) setLevelUpAvailable(true);
-                    else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
-                }
-                setFeedback('correct');
-            } else {
-                const currentAttempts = (question.attempts || 0) + 1;
-                setQuestion({...question, attempts: currentAttempts});
+        if (result.correct) {
+            if (!isSolutionRevealed) {
+                setHistory(prev => [{ 
+                    topic, level, 
+                    correct: true, 
+                    text: question.renderData.latex || question.renderData.description, 
+                    clueUsed: helpUsed, 
+                    time: Date.now() 
+                }, ...prev]);
                 
-                // Track granular stats for failure
-                updateStats('incorrect');
+                setStreak(result.newStreak); // Kept from existing logic
+                setTotalCorrect(prev => prev + 1);
+                updateStats(helpUsed ? 'correctHelp' : 'correctNoHelp');
 
-                if (currentAttempts >= 2) { 
-                    if (!isSolutionRevealed) setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: true, time: Date.now() }, ...prev]);
-                    setUsedHelp(true); setRevealedClues(question.clues || []); setIsSolutionRevealed(true); setStreak(0);
-                } else if (question.clues) {
-                    setUsedHelp(true); setRevealedClues(prev => [...prev, question.clues[prev.length] || question.clues[0]]);
-                }
-                setFeedback('incorrect'); setStreak(0);
+                if ([15, 20, 30, 40, 50].includes(result.newStreak)) setShowStreakModal(true);
+                else if (result.levelUp) setLevelUpAvailable(true); // Kept from existing logic
+                else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
             }
-        } catch (e) { console.error(e); }
+            setFeedback('correct');
+        } else {
+            const currentAttempts = (question.attempts || 0) + 1;
+            setQuestion({...question, attempts: currentAttempts});
+            updateStats('incorrect');
+
+            if (currentAttempts >= 2) { 
+                if (!isSolutionRevealed) setHistory(prev => [{ 
+                    topic, level, 
+                    correct: false, 
+                    text: question.renderData.latex || question.renderData.description, 
+                    clueUsed: true, 
+                    time: Date.now() 
+                }, ...prev]);
+                setUsedHelp(true); 
+                setRevealedClues(question.clues || []); 
+                setIsSolutionRevealed(true); 
+                setStreak(0);
+            } else if (question.clues) {
+                setUsedHelp(true); 
+                setRevealedClues(prev => [...prev, question.clues[prev.length] || question.clues[0]]);
+            }
+            setFeedback('incorrect'); 
+            setStreak(0);
+            }
+            } catch (e) { 
+        console.error("Submission error:", e); 
+        }
     };
 
     const handleDoNowGenerate = async (selectedConfig, rawPacket) => {
