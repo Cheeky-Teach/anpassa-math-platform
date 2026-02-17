@@ -9,6 +9,7 @@ import DoNowConfig from './components/views/DoNowConfig';
 import DoNowGrid from './components/views/DoNowGrid';
 import AuthView from './components/views/AuthView';
 import QuestionStudio from './components/views/QuestionStudio'; 
+import PrintView from './components/views/PrintView';
 
 // Modals
 import AboutModal from './components/modals/AboutModal';
@@ -24,18 +25,16 @@ import { UI_TEXT, LEVEL_DESCRIPTIONS } from './constants/localization';
 const DEVELOPER_MODE = true; 
 
 function App() {
-    // --- 1. AUTH & PROFILE STATE ---
+    // --- AUTH & NAV STATE ---
     const [session, setSession] = useState(null);
     const [profile, setProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(true);
-
-    // --- 2. UI NAVIGATION STATE ---
     const [view, setView] = useState('dashboard');
     const [lang, setLang] = useState('sv');
     const [topic, setTopic] = useState('');
     const [level, setLevel] = useState(0);
 
-    // --- 3. GAMEPLAY STATE ---
+    // --- GAMEPLAY STATE ---
     const [question, setQuestion] = useState(null);
     const [input, setInput] = useState('');
     const [feedback, setFeedback] = useState(null);
@@ -47,26 +46,16 @@ function App() {
     const [usedHelp, setUsedHelp] = useState(false);
 
     // Live room state
-    const [activeRoom, setActiveRoom] = useState(null); // Stores { id, classCode, namingMode }
-    const [studentAlias, setStudentAlias] = useState(''); // The name the student joined with
+    const [activeRoom, setActiveRoom] = useState(null); 
+    const [studentAlias, setStudentAlias] = useState(''); 
 
-    // --- 4. SESSION STATS & HISTORY ---
-    const [sessionStats, setSessionStats] = useState({
-        attempted: 0, 
-        correctNoHelp: 0, 
-        correctHelp: 0, 
-        incorrect: 0, 
-        skipped: 0, 
-        maxStreak: 0
-    });
-    
-    // Structure: { topicId: { levelNumber: { skipped: 0, incorrect: 0, correctHelp: 0, correctNoHelp: 0 } } }
+    // --- SESSION STATS ---
+    const [sessionStats, setSessionStats] = useState({ attempted: 0, correctNoHelp: 0, correctHelp: 0, incorrect: 0, skipped: 0, maxStreak: 0 });
     const [granularStats, setGranularStats] = useState({});
-    
     const [history, setHistory] = useState([]);
     const [levelUpAvailable, setLevelUpAvailable] = useState(false);
     
-    // --- 5. MODALS & UI STATE ---
+    // --- MODALS ---
     const [aboutOpen, setAboutOpen] = useState(false);
     const [statsOpen, setStatsOpen] = useState(false);
     const [timeUpOpen, setTimeUpOpen] = useState(false);
@@ -75,53 +64,25 @@ function App() {
     const [showStreakModal, setShowStreakModal] = useState(false);
     const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
 
-    // --- 6. ASSIGNMENTS & STUDIO STATE ---
+    // --- STUDIO & PRINT STATE ---
     const [assignments, setAssignments] = useState([]); 
     const [doNowQuestions, setDoNowQuestions] = useState([]);
     const [doNowConfig, setDoNowConfig] = useState([]); 
     const [savedPacket, setSavedPacket] = useState([]); 
+    const [sheetTitle, setSheetTitle] = useState(""); 
+    const [studioMode, setStudioMode] = useState(null); 
+    const [includeAnswerKey, setIncludeAnswerKey] = useState(true); // NEW
+    const [answerKeyStyle, setAnswerKeyStyle] = useState('compact'); // 'compact' or 'detailed'
 
-    // --- 7. TIMER STATE ---
+    // --- TIMER STATE ---
     const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
 
     const ui = UI_TEXT[lang];
 
-    // --- 8. HELPER: UPDATE GRANULAR STATS ---
-    const updateStats = (type) => {
-        // 1. Update Global Session Stats
-        setSessionStats(prev => ({
-            ...prev,
-            attempted: type !== 'skipped' ? prev.attempted + 1 : prev.attempted,
-            [type]: prev[type] + 1
-        }));
-
-        // 2. Update Granular Topic/Level Stats for StatsModal
-        if (topic && level) {
-            setGranularStats(prev => {
-                const topicData = prev[topic] || {};
-                const levelData = topicData[level] || { skipped: 0, incorrect: 0, correctHelp: 0, correctNoHelp: 0 };
-                
-                return {
-                    ...prev,
-                    [topic]: {
-                        ...topicData,
-                        [level]: {
-                            ...levelData,
-                            [type]: (levelData[type] || 0) + 1
-                        }
-                    }
-                };
-            });
-        }
-    };
-
-    // --- 9. SMART NAVIGATION ---
+    // --- NAVIGATION ---
     useEffect(() => {
         window.history.replaceState({ view: 'dashboard' }, '');
-        const handlePopState = (event) => {
-            const nextView = event.state?.view || 'dashboard';
-            setView(nextView);
-        };
+        const handlePopState = (event) => setView(event.state?.view || 'dashboard');
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
@@ -133,7 +94,7 @@ function App() {
         }
     };
 
-    // --- HELPER: GET OR CREATE PROFILE ---
+    // --- AUTH HELPERS ---
     const getOrCreateProfile = async (user) => {
         try {
             const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
@@ -148,45 +109,24 @@ function App() {
 
     useEffect(() => {
         let mounted = true;
-        
         supabase.auth.getSession().then(({ data: { session: initSession } }) => {
-            if (mounted) {
-                if (initSession) {
-                    setSession(initSession);
-                    getOrCreateProfile(initSession.user).then(p => {
-                        if (mounted) { setProfile(p); setLoadingProfile(false); }
-                    });
-                } else {
-                    setLoadingProfile(false);
-                }
-            }
+            if (mounted && initSession) {
+                setSession(initSession);
+                getOrCreateProfile(initSession.user).then(p => { if (mounted) { setProfile(p); setLoadingProfile(false); } });
+            } else { setLoadingProfile(false); }
         });
-
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
             if (!mounted) return;
             setSession(currentSession);
             if (currentSession) {
                 const userProfile = await getOrCreateProfile(currentSession.user);
-                if (mounted) { 
-                    setProfile(userProfile); 
-                    setLoadingProfile(false);
-                    if (view === 'auth') setView('dashboard'); 
-                }
-            } else {
-                setProfile(null);
-                setLoadingProfile(false);
-            }
+                if (mounted) { setProfile(userProfile); setLoadingProfile(false); if (view === 'auth') setView('dashboard'); }
+            } else { setProfile(null); setLoadingProfile(false); }
         });
-
         return () => { mounted = false; subscription.unsubscribe(); };
     }, []);
 
-    const handleLogout = async () => { 
-        await supabase.auth.signOut(); 
-        setSession(null);
-        setProfile(null);
-        navigate('dashboard');
-    };
+    const handleLogout = async () => { await supabase.auth.signOut(); setSession(null); setProfile(null); navigate('dashboard'); };
 
     // --- GAMEPLAY HANDLERS ---
     const fetchQuestion = async (t, l, lg, force) => {
@@ -195,142 +135,14 @@ function App() {
         try {
             const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}${force ? `&force=true&t=${Date.now()}` : ''}`);
             const data = await res.json();
-            if (data.error) throw new Error(data.error);
             setQuestion(data);
-        } catch (e) { console.error(e); setQuestion(null); } finally { setLoading(false); }
+        } catch (e) { setQuestion(null); } finally { setLoading(false); }
     };
 
-    const startPractice = () => {
-        if (topic && level) { 
-            setStreak(0); 
-            navigate('practice');
-            if (timerSettings.duration > 0) setTimerSettings(prev => ({ ...prev, isActive: true })); 
-            fetchQuestion(topic, level, lang); 
-        }
-    };
+    const startPractice = () => { if (topic && level) { setStreak(0); navigate('practice'); if (timerSettings.duration > 0) setTimerSettings(prev => ({ ...prev, isActive: true })); fetchQuestion(topic, level, lang); } };
+    const quitPractice = () => { setStreak(0); navigate('dashboard'); setQuestion(null); };
 
-    const quitPractice = () => { 
-        setStreak(0); 
-        navigate('dashboard');
-        setQuestion(null); 
-    };
-
-    const handleHint = () => {
-        if (question?.clues && revealedClues.length < question.clues.length) {
-            setUsedHelp(true);
-            const nextClue = question.clues[revealedClues.length];
-            setRevealedClues(prev => [...prev, nextClue]);
-        }
-    };
-
-    const handleSolution = () => {
-        if (question?.clues) {
-            setUsedHelp(true);
-            setRevealedClues(question.clues);
-            setIsSolutionRevealed(true);
-            setStreak(0);
-        }
-    };
-
-    const handleSkip = () => {
-        updateStats('skipped');
-        setStreak(0);
-        fetchQuestion(topic, level, lang, true);
-    };
-
-    const handleChangeLevel = (delta) => {
-        const newLevel = level + delta;
-        if (newLevel >= 1 && LEVEL_DESCRIPTIONS[topic]?.[newLevel]) {
-            setLevel(newLevel);
-            fetchQuestion(topic, newLevel, lang, true);
-        }
-    };
-
-    const handleSubmit = async (e, directInput) => {
-    if (e) e.preventDefault();
-    if (feedback === 'correct') return;
-    let finalInput = directInput !== undefined ? directInput : input;
-    if (!question || !finalInput) return;
-    
-    const helpUsed = revealedClues.length > 0 || isSolutionRevealed;
-
-    try {
-        const res = await fetch('/api/answer', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ 
-                answer: finalInput, 
-                token: question.token, 
-                streak, 
-                level, 
-                topic, 
-                usedHelp: helpUsed, 
-                solutionUsed: isSolutionRevealed, 
-                attempts: (question.attempts || 0),
-                // --- NEW LIVE DATA ---
-                roomId: activeRoom?.id,       // Only sent if in a live session
-                studentAlias: studentAlias,   // Only sent if in a live session
-                questionIndex: question.number // Used for the "Crash-Shield" logic
-            }) 
-        });
-
-        const result = await res.json();
-        
-        // Handle "Crash-Shield" Duplicate Error
-        if (res.status === 400 && result.error) {
-            setFeedback('incorrect');
-            alert(result.error); // Warn student they can't submit twice
-            return;
-        }
-
-        if (result.correct) {
-            if (!isSolutionRevealed) {
-                setHistory(prev => [{ 
-                    topic, level, 
-                    correct: true, 
-                    text: question.renderData.latex || question.renderData.description, 
-                    clueUsed: helpUsed, 
-                    time: Date.now() 
-                }, ...prev]);
-                
-                setStreak(result.newStreak); // Kept from existing logic
-                setTotalCorrect(prev => prev + 1);
-                updateStats(helpUsed ? 'correctHelp' : 'correctNoHelp');
-
-                if ([15, 20, 30, 40, 50].includes(result.newStreak)) setShowStreakModal(true);
-                else if (result.levelUp) setLevelUpAvailable(true); // Kept from existing logic
-                else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
-            }
-            setFeedback('correct');
-        } else {
-            const currentAttempts = (question.attempts || 0) + 1;
-            setQuestion({...question, attempts: currentAttempts});
-            updateStats('incorrect');
-
-            if (currentAttempts >= 2) { 
-                if (!isSolutionRevealed) setHistory(prev => [{ 
-                    topic, level, 
-                    correct: false, 
-                    text: question.renderData.latex || question.renderData.description, 
-                    clueUsed: true, 
-                    time: Date.now() 
-                }, ...prev]);
-                setUsedHelp(true); 
-                setRevealedClues(question.clues || []); 
-                setIsSolutionRevealed(true); 
-                setStreak(0);
-            } else if (question.clues) {
-                setUsedHelp(true); 
-                setRevealedClues(prev => [...prev, question.clues[prev.length] || question.clues[0]]);
-            }
-            setFeedback('incorrect'); 
-            setStreak(0);
-            }
-            } catch (e) { 
-        console.error("Submission error:", e); 
-        }
-    };
-
+    // --- STUDIO HANDLERS ---
     const handleDoNowGenerate = async (selectedConfig, rawPacket) => {
         if (!selectedConfig || selectedConfig.length === 0) return;
         setDoNowConfig(selectedConfig);
@@ -341,24 +153,33 @@ function App() {
             const res = await fetch('/api/batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requests: requestsPayload }) });
             const data = await res.json();
             if (Array.isArray(data)) { setDoNowQuestions(data); navigate('donow_grid'); }
-        } catch (e) { console.error("Do Now Error:", e); } 
-        finally { setLoading(false); }
+        } catch (e) { console.error(e); } finally { setLoading(false); }
     };
 
-    // --- TIMER HELPERS ---
-    const toggleTimer = (minutes) => setTimerSettings({ duration: minutes * 60, remaining: minutes * 60, isActive: minutes > 0 });
-    const resetTimer = () => setTimerSettings({ duration: 0, remaining: 0, isActive: false });
+    const handleWorksheetGenerate = (packet) => {
+        if (!packet || packet.length === 0) return;
+        setSavedPacket(packet); 
+        navigate('print'); 
+    };
+
     const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
 
     // --- RENDER LOGIC ---
-    if (loadingProfile) return (
-        <div className="h-screen flex items-center justify-center bg-white">
-            <div className="animate-pulse text-indigo-600 font-black uppercase tracking-tighter text-2xl">Laddar...</div>
-        </div>
+    if (loadingProfile) return <div className="h-screen flex items-center justify-center bg-white"><div className="animate-pulse text-indigo-600 font-black uppercase text-2xl">Laddar...</div></div>;
+    
+    if (view === 'donow_grid') return <DoNowGrid questions={doNowQuestions} ui={ui} lang={lang} onBack={() => navigate('question_studio')} onClose={() => navigate('dashboard')} onRefreshAll={() => handleDoNowGenerate(doNowConfig, null)} />;
+    
+    if (view === 'print') return (
+        <PrintView 
+            packet={savedPacket} 
+            title={sheetTitle} 
+            lang={lang} 
+            onBack={() => navigate('question_studio')} 
+            includeAnswerKey={includeAnswerKey}
+            answerKeyStyle={answerKeyStyle}
+        />
     );
 
-    if (view === 'donow_config') return <div className="min-h-screen bg-gray-50"><DoNowConfig ui={ui} lang={lang} onBack={() => navigate('dashboard')} onGenerate={handleDoNowGenerate} /></div>;
-    if (view === 'donow_grid') return <DoNowGrid questions={doNowQuestions} ui={ui} lang={lang} onBack={() => navigate('question_studio')} onClose={() => navigate('dashboard')} onRefreshAll={() => handleDoNowGenerate(doNowConfig, null)} />;
     if (view === 'question_studio') {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -366,83 +187,44 @@ function App() {
                     <h1 className="text-xl font-black text-indigo-600 tracking-tighter cursor-pointer" onClick={() => navigate('dashboard')}>Anpassa Studio</h1>
                     <button onClick={() => navigate('dashboard')} className="text-sm font-bold text-slate-400 hover:text-slate-600 uppercase">Stäng Studio</button>
                 </header>
-                <QuestionStudio onDoNowGenerate={handleDoNowGenerate} ui={ui} lang={lang} initialPacket={savedPacket} />
+                <QuestionStudio 
+                    onDoNowGenerate={handleDoNowGenerate} 
+                    onWorksheetGenerate={handleWorksheetGenerate}
+                    ui={ui} lang={lang} 
+                    initialPacket={savedPacket} setInitialPacket={setSavedPacket}
+                    sheetTitle={sheetTitle} setSheetTitle={setSheetTitle}
+                    studioMode={studioMode} setStudioMode={setStudioMode}
+                    includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey}
+                    answerKeyStyle={answerKeyStyle} setAnswerKeyStyle={setAnswerKeyStyle}
+                />
             </div>
         );
     }
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
-            <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
-            <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
-            <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
+            <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} /><LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} /><ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
             <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
-            <StatsModal visible={timeUpOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setTimeUpOpen(false)} title={ui.stats_times_up} />
             <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
-            <MobileDrawer open={mobileHistoryOpen} onClose={() => setMobileHistoryOpen(false)} history={history} ui={ui} />
-
+            
             <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 shadow-sm">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-xl font-black text-indigo-600 tracking-tighter cursor-pointer" onClick={quitPractice}>Anpassa</h1>
-                        {view === 'dashboard' && timerSettings.remaining > 0 && (
-                            <div className="hidden sm:flex bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold items-center gap-2 border border-orange-200">
-                                <span>⏸ {ui.timer_paused}</span>
-                                <span className="font-mono text-sm">{formatTime(timerSettings.remaining)}</span>
-                            </div>
-                        )}
-                    </div>
+                    <h1 className="text-xl font-black text-indigo-600 tracking-tighter cursor-pointer" onClick={quitPractice}>Anpassa</h1>
                     <div className="flex items-center gap-3">
-                        <button onClick={() => setLang(prev => prev === 'sv' ? 'en' : 'sv')} className="text-2xl hover:scale-110 transition-transform mr-2" title="Switch Language">
-                            {lang === 'sv' ? '🇸🇪' : '🇬🇧'}
-                        </button>
-                        
-                        {/* --- RESTORED STATS BUTTON --- */}
-                        <button 
-                            onClick={() => setStatsOpen(true)}
-                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
-                            title={ui.stats_title}
-                        >
-                            <BarChart3 size={20} />
-                        </button>
-
-                        <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-emerald-200">✅ {totalCorrect}</div>
-                        <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold shadow-sm border border-yellow-200">🔥 {streak}</div>
-                        
-                        {session ? (
-                            <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-red-500 uppercase ml-2 transition-colors">Logga ut</button>
-                        ) : (
-                            <button 
-                                className="text-xs font-bold text-slate-300 cursor-not-allowed uppercase ml-2 transition-colors"
-                                title="Login is currently disabled"
-                            >
-                                Logga in
-                            </button>
-                        )}
+                        <button onClick={() => setLang(prev => prev === 'sv' ? 'en' : 'sv')} className="text-2xl hover:scale-110 transition-transform">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</button>
+                        <button onClick={() => setStatsOpen(true)} className="p-2 text-slate-400 hover:text-indigo-600 rounded-full"><BarChart3 size={20} /></button>
+                        {session ? <button onClick={handleLogout} className="text-xs font-bold text-slate-400 uppercase">Logga ut</button> : <button className="text-xs font-bold text-slate-300 uppercase">Logga in</button>}
                     </div>
                 </div>
             </header>
 
             <div className="flex-1 flex flex-col">
-                {view === 'dashboard' ? (
-                    <Dashboard
-                        lang={lang} selectedTopic={topic} selectedLevel={level} userRole={DEVELOPER_MODE ? 'teacher' : (profile?.role || 'student')} assignments={assignments} 
-                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
-                        onStart={startPractice} 
-                        timerSettings={timerSettings} toggleTimer={toggleTimer} resetTimer={resetTimer} ui={ui} 
-                        onLgrOpen={() => setLgrOpen(true)} onContentOpen={() => setContentOpen(true)} onAboutOpen={() => setAboutOpen(true)}
-                        onStatsOpen={() => setStatsOpen(true)} onStudioOpen={() => navigate('question_studio')} onDoNowOpen={() => navigate('donow_config')} 
-                    />
-                ) : (
-                    <PracticeView
-                        lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} 
-                        handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip}
-                        handleChangeLevel={handleChangeLevel} revealedClues={revealedClues} uiState={{ history, topic, level }} 
-                        actions={{ retry: (force) => fetchQuestion(topic, level, lang, force), goBack: quitPractice }} 
-                        levelUpAvailable={levelUpAvailable} setLevelUpAvailable={setLevelUpAvailable} isSolutionRevealed={isSolutionRevealed} 
-                        timerSettings={timerSettings} formatTime={formatTime} setMobileHistoryOpen={setMobileHistoryOpen}
-                    />
-                )}
+                <Dashboard
+                    lang={lang} selectedTopic={topic} selectedLevel={level} userRole={DEVELOPER_MODE ? 'teacher' : (profile?.role || 'student')} assignments={assignments} 
+                    onSelect={(t, l) => { setTopic(t); setLevel(l); }} onStart={startPractice} timerSettings={timerSettings} toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} ui={ui} 
+                    onLgrOpen={() => setLgrOpen(true)} onContentOpen={() => setContentOpen(true)} onAboutOpen={() => setAboutOpen(true)}
+                    onStatsOpen={() => setStatsOpen(true)} onStudioOpen={() => navigate('question_studio')} onDoNowOpen={() => navigate('donow_config')} 
+                />
             </div>
         </div>
     );
