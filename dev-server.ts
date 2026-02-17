@@ -21,7 +21,7 @@ import curriculumHandler from './api/curriculum';
 import batchHandler from './api/batch'; // <--- ADDED: Import the batch handler
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
 
 app.use(cors());
 app.use(express.json());
