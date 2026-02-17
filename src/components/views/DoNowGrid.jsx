@@ -13,10 +13,7 @@ const MathDisplay = ({ content, className = "" }) => {
         if (!content || !containerRef.current) return;
 
         const renderMath = () => {
-            // 1. Manually set the text so React doesn't track the internal changes
             containerRef.current.innerText = content;
-
-            // 2. Trigger KaTeX on this specific element
             if (window.renderMathInElement) {
                 window.renderMathInElement(containerRef.current, {
                     delimiters: [
@@ -31,13 +28,10 @@ const MathDisplay = ({ content, className = "" }) => {
             }
         };
 
-        // Use a slight delay to ensure the DOM node is fully ready
         const timer = setTimeout(renderMath, 30);
         return () => clearTimeout(timer);
     }, [content]);
 
-    // Note: We return an empty div with a ref. 
-    // We don't put {content} here because React would try to manage it.
     return <div ref={containerRef} className={`math-container ${className}`} />;
 };
 
@@ -175,6 +169,11 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
         setShowAll(!showAll);
     };
 
+    // RESTORED: adjustText logic
+    const adjustText = (delta) => {
+        setTextSizeIndex(prev => Math.max(0, Math.min(prev + delta, TEXT_SIZES.length - 1)));
+    };
+
     return (
         <div className="h-screen w-screen bg-slate-200 flex flex-col overflow-hidden font-sans relative">
             {focusedIndex !== null && (
@@ -198,7 +197,19 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                         <span className="text-[9px] font-bold text-slate-500 tracking-widest uppercase">Classroom Session</span>
                     </div>
                 </div>
+                
                 <div className="flex items-center gap-3">
+                    {/* RESTORED: Zoom Buttons */}
+                    <div className="flex items-center bg-white/10 rounded-xl p-1 border border-white/10 mr-4">
+                        <button onClick={() => adjustText(-1)} className="p-2 hover:bg-white/10 rounded-lg text-slate-300 transition-colors">
+                            <ZoomOut size={18} />
+                        </button>
+                        <div className="w-px h-4 bg-white/10 mx-1"></div>
+                        <button onClick={() => adjustText(1)} className="p-2 hover:bg-white/10 rounded-lg text-slate-300 transition-colors">
+                            <ZoomIn size={18} />
+                        </button>
+                    </div>
+
                     <button onClick={onRefreshAll} className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl text-xs font-black transition-all uppercase tracking-wider border border-indigo-500/30 flex items-center gap-2">
                         <RefreshCw size={14} /> NYTT SET
                     </button>

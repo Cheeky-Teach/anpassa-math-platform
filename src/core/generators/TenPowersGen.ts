@@ -41,6 +41,17 @@ export class TenPowersGen {
     }
 
     /**
+     * Generates a number that is either a whole number, has 1 decimal, or 2 decimals.
+     */
+    private generateNum(): number {
+        const type = MathUtils.randomInt(0, 2); // 0 = whole, 1 = 1 decimal, 2 = 2 decimals
+        const base = MathUtils.randomInt(5, 95);
+        if (type === 0) return base;
+        if (type === 1) return base / 10;
+        return base / 100;
+    }
+
+    /**
      * Converts numbers/signs into Unicode superscripts for clear button display.
      */
     private toSup(num: number | string): string {
@@ -58,13 +69,13 @@ export class TenPowersGen {
         if (v === 'big_mult_std' || v === 'big_div_std') {
             const power = MathUtils.randomChoice([10, 100, 1000, 10000]);
             const isMult = v === 'big_mult_std';
-            const num = MathUtils.randomInt(5, 95) / (Math.random() > 0.5 ? 1 : 10);
+            const num = this.generateNum();
             const ans = isMult ? num * power : this.fixFloat(num / power);
             const zeros = Math.round(Math.log10(power));
 
             return {
                 renderData: {
-                    latex: isMult ? `${num} \\cdot ${power}` : `${num} / ${power}`,
+                    latex: isMult ? `${num.toString().replace('.', ',')} \\cdot ${power}` : `${num.toString().replace('.', ',')} / ${power}`,
                     description: lang === 'sv' ? "Beräkna uttryckets värde." : "Calculate the value of the expression.",
                     answerType: 'numeric'
                 },
@@ -76,9 +87,9 @@ export class TenPowersGen {
                     },
                     { 
                         text: lang === 'sv' ? `Flytta kommat ${zeros} steg åt ${isMult ? 'höger (talet blir större).' : 'vänster (talet blir mindre).'}` : `Move the decimal ${zeros} places to the ${isMult ? 'right (making the number larger).' : 'left (making the number smaller).'}`, 
-                        latex: `${num} \\rightarrow ${ans}`
+                        latex: `${num.toString().replace('.', ',')} \\rightarrow ${ans.toString().replace('.', ',')}`
                     },
-                    { text: lang === 'sv' ? "Svaret blir:" : "The answer is:", latex: `${ans}` }
+                    { text: lang === 'sv' ? "Svaret blir:" : "The answer is:", latex: `${ans.toString().replace('.', ',')}` }
                 ],
                 metadata: { variation_key: v, difficulty: 1 }
             };
@@ -86,19 +97,19 @@ export class TenPowersGen {
 
         if (v === 'big_missing_factor') {
             const power = MathUtils.randomChoice([10, 100, 1000]);
-            const num = MathUtils.randomInt(5, 50);
+            const num = this.generateNum();
             const isMult = Math.random() > 0.5;
             const res = isMult ? num * power : this.fixFloat(num / power);
 
             return {
                 renderData: {
-                    latex: isMult ? `${num} \\cdot ? = ${res}` : `${num} / ? = ${res}`,
+                    latex: isMult ? `${num.toString().replace('.', ',')} \\cdot ? = ${res.toString().replace('.', ',')}` : `${num.toString().replace('.', ',')} / ? = ${res.toString().replace('.', ',')}`,
                     description: lang === 'sv' ? "Vilken tiopotens saknas?" : "Which power of ten is missing?",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(power.toString()),
                 clues: [
-                    { text: lang === 'sv' ? `Jämför ${num} med ${res}. Hur många steg har kommatecknet flyttats?` : `Compare ${num} with ${res}. How many places has the decimal point moved?` },
+                    { text: lang === 'sv' ? `Jämför ${num.toString().replace('.', ',')} med ${res.toString().replace('.', ',')}. Hur många steg har kommatecknet flyttats?` : `Compare ${num} with ${res}. How many places has the decimal point moved?` },
                     { text: lang === 'sv' ? `Varje steg motsvarar en nolla efter ettan.` : `Each step corresponds to a zero after the one.`, latex: `10^{${Math.round(Math.log10(power))}} = ${power}` },
                     { text: lang === 'sv' ? "Den saknade tiopotensen är:" : "The missing power of ten is:", latex: `${power}` }
                 ],
@@ -135,41 +146,47 @@ export class TenPowersGen {
             const scenarios = [
                 { op: 'mul', val: 0.1, equiv: 10, equivOp: 'div' },
                 { op: 'mul', val: 0.01, equiv: 100, equivOp: 'div' },
+                { op: 'mul', val: 0.001, equiv: 1000, equivOp: 'div' },
                 { op: 'div', val: 0.1, equiv: 10, equivOp: 'mul' },
-                { op: 'div', val: 0.01, equiv: 100, equivOp: 'mul' }
+                { op: 'div', val: 0.01, equiv: 100, equivOp: 'mul' },
+                { op: 'div', val: 0.001, equiv: 1000, equivOp: 'mul' }
             ];
             const s = MathUtils.randomChoice(scenarios);
             const opText = lang === 'sv' ? (s.op === 'mul' ? "multiplicera med" : "dividera med") : (s.op === 'mul' ? "multiplying by" : "dividing by");
             const targetText = lang === 'sv' ? (s.equivOp === 'mul' ? "multiplicera med..." : "dividera med...") : (s.equivOp === 'mul' ? "multiplying by..." : "dividing by...");
 
+            const valStr = s.val.toString().replace('.', ',');
+            const suffix = s.val === 0.1 ? (lang === 'sv' ? 'tiondel' : 'tenth') : s.val === 0.01 ? (lang === 'sv' ? 'hundradel' : 'hundredth') : (lang === 'sv' ? 'tusendel' : 'thousandth');
+
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Att ${opText} ${s.val.toString().replace('.', ',')} ger samma resultat som att ${targetText}` : `To ${opText} ${s.val} gives the same result as ${targetText}`,
+                    description: lang === 'sv' ? `Att ${opText} ${valStr} ger samma resultat som att ${targetText}` : `To ${opText} ${s.val} gives the same result as ${targetText}`,
                     answerType: 'multiple_choice',
-                    options: MathUtils.shuffle(["10", "100", "0,1", "0,01", "1000"])
+                    options: MathUtils.shuffle(["10", "100", "1000", "0,1", "0,01", "0,001"])
                 },
                 token: this.toBase64(s.equiv.toString()),
                 clues: [
-                    { text: lang === 'sv' ? `Kom ihåg att ${s.val.toString().replace('.', ',')} är en ${s.equiv === 10 ? 'tiondel' : 'hundradel'}.` : `Remember that ${s.val} is one ${s.equiv === 10 ? 'tenth' : 'hundredth'}.`, latex: `${s.val.toString().replace('.', ',')} = \\frac{1}{${s.equiv}}` },
+                    { text: lang === 'sv' ? `Kom ihåg att ${valStr} är en ${suffix}.` : `Remember that ${s.val} is one ${suffix}.`, latex: `${valStr} = \\frac{1}{${s.equiv}}` },
+                    { text: lang === 'sv' ? `Att ${opText} en ${suffix} är identiskt med att ${s.equivOp === 'mul' ? 'multiplicera' : 'dividera'} med ${s.equiv}.` : `To ${s.op === 'mul' ? 'multiply' : 'divide'} by one ${suffix} is identical to ${s.equivOp === 'mul' ? 'multiplying' : 'dividing'} by ${s.equiv}.` },
                     { text: lang === 'sv' ? "Rätt tal att använda är:" : "The correct number to use is:", latex: `${s.equiv}` }
                 ],
                 metadata: { variation_key: 'reciprocal_equivalence', difficulty: 2 }
             };
         }
 
-        const num = MathUtils.randomInt(3, 9) * 10;
-        const sTrue = `${num} · 0,1 = ${num/10}`;
+        const num = MathUtils.randomChoice([10, 20, 50, 100]);
+        const sTrue = `${num} · 0,1 = ${this.fixFloat(num/10).toString().replace('.', ',')}`;
         const sLie = `${num} · 0,1 = ${num * 10}`;
 
         return {
             renderData: {
                 description: lang === 'sv' ? "Vilket påstående är FALSKT?" : "Which statement is FALSE?",
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([sTrue, sLie, `${num} / 0,1 = ${num * 10}`])
+                options: MathUtils.shuffle([sTrue, sLie, `${num} / 0,01 = ${num * 100}`])
             },
             token: this.toBase64(sLie),
             clues: [
-                { text: lang === 'sv' ? "Multiplikation med ett tal mindre än 1 (som 0,1) gör talet mindre, inte större." : "Multiplication with a number less than 1 (like 0.1) makes the number smaller, not larger.", latex: `${num} \\cdot 0,1 = ${num/10}` },
+                { text: lang === 'sv' ? "Multiplikation med ett tal mindre än 1 (som 0,1 eller 0,01) gör talet mindre, inte större." : "Multiplication with a number less than 1 (like 0.1 or 0.01) makes the number smaller, not larger.", latex: `${num} \\cdot 0,1 = ${num/10}` },
                 { text: lang === 'sv' ? "Denna beräkning stämmer alltså inte:" : "This calculation is therefore incorrect:", latex: `\\text{${sLie}}` }
             ],
             metadata: { variation_key: 'concept_spot_lie', difficulty: 2 }
@@ -179,22 +196,23 @@ export class TenPowersGen {
     // --- LEVEL 3: DECIMAL POWERS ---
     private level3_DecimalPowers(lang: string, variationKey?: string): any {
         const v = variationKey || MathUtils.randomChoice(['decimal_div_std', 'decimal_mult_std', 'decimal_logic_trap']);
-        const factor = MathUtils.randomChoice([0.1, 0.01]);
-        const num = MathUtils.randomInt(5, 50);
+        const factor = MathUtils.randomChoice([0.1, 0.01, 0.001]);
+        const num = this.generateNum();
+        const factorStr = factor.toString().replace('.', ',');
 
         if (v === 'decimal_div_std') {
             const ans = this.fixFloat(num / factor);
             const equivMult = Math.round(1 / factor);
             return {
                 renderData: {
-                    latex: `${num} / ${factor.toString().replace('.', ',')}`,
+                    latex: `${num.toString().replace('.', ',')} / ${factorStr}`,
                     description: lang === 'sv' ? "Beräkna resultatet." : "Calculate the result.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()),
                 clues: [
-                    { text: lang === 'sv' ? `Division med ${factor.toString().replace('.', ',')} är samma sak som multiplikation med ${equivMult}.` : `Division by ${factor} is the same as multiplication by ${equivMult}.`, latex: `\\frac{${num}}{${factor.toString().replace('.', ',')}} = ${num} \\cdot ${equivMult}` },
-                    { text: lang === 'sv' ? "Resultatet blir:" : "The result is:", latex: `${ans}` }
+                    { text: lang === 'sv' ? `Division med ${factorStr} är samma sak som multiplikation med ${equivMult}.` : `Division by ${factor} is the same as multiplication by ${equivMult}.`, latex: `\\frac{${num.toString().replace('.', ',')}}{${factorStr}} = ${num.toString().replace('.', ',')} \\cdot ${equivMult}` },
+                    { text: lang === 'sv' ? "Resultatet blir:" : "The result is:", latex: `${ans.toString().replace('.', ',')}` }
                 ],
                 metadata: { variation_key: 'decimal_div_std', difficulty: 3 }
             };
@@ -205,14 +223,14 @@ export class TenPowersGen {
             const equivDiv = Math.round(1 / factor);
             return {
                 renderData: {
-                    latex: `${num} \\cdot ${factor.toString().replace('.', ',')}`,
+                    latex: `${num.toString().replace('.', ',')} \\cdot ${factorStr}`,
                     description: lang === 'sv' ? "Beräkna resultatet." : "Calculate the result.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()),
                 clues: [
-                    { text: lang === 'sv' ? `Multiplikation med ${factor.toString().replace('.', ',')} är detsamma som division med ${equivDiv}.` : `Multiplication by ${factor} is the same as division by ${equivDiv}.`, latex: `${num} \\cdot ${factor.toString().replace('.', ',')} = \\frac{${num}}{${equivDiv}}` },
-                    { text: lang === 'sv' ? "Svaret är:" : "The answer is:", latex: `${ans}` }
+                    { text: lang === 'sv' ? `Multiplikation med ${factorStr} är detsamma som division med ${equivDiv}.` : `Multiplication by ${factor} is the same as division by ${equivDiv}.`, latex: `${num.toString().replace('.', ',')} \\cdot ${factorStr} = \\frac{${num.toString().replace('.', ',')}}{${equivDiv}}` },
+                    { text: lang === 'sv' ? "Svaret är:" : "The answer is:", latex: `${ans.toString().replace('.', ',')}` }
                 ],
                 metadata: { variation_key: 'decimal_mult_std', difficulty: 3 }
             };
@@ -220,7 +238,7 @@ export class TenPowersGen {
 
         const isMult = Math.random() > 0.5;
         const result = isMult ? this.fixFloat(num * factor) : this.fixFloat(num / factor);
-        const correctStmt = `${num} ${isMult ? '·' : '/'} ${factor.toString().replace('.', ',')} = ${result.toString().replace('.', ',')}`;
+        const correctStmt = `${num.toString().replace('.', ',')} ${isMult ? '·' : '/'} ${factorStr} = ${result.toString().replace('.', ',')}`;
 
         return {
             renderData: {
@@ -228,8 +246,8 @@ export class TenPowersGen {
                 answerType: 'multiple_choice',
                 options: MathUtils.shuffle([
                     correctStmt,
-                    `${num} ${isMult ? '·' : '/'} ${1/factor} = ${result.toString().replace('.', ',')}`,
-                    `${num} ${isMult ? '·' : '/'} 1 = ${result.toString().replace('.', ',')}`
+                    `${num.toString().replace('.', ',')} ${isMult ? '·' : '/'} ${1/factor} = ${result.toString().replace('.', ',')}`,
+                    `${num.toString().replace('.', ',')} ${isMult ? '·' : '/'} 1 = ${result.toString().replace('.', ',')}`
                 ])
             },
             token: this.toBase64(correctStmt),
