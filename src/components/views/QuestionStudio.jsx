@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  ChevronRight, Plus, Trash2, Layout, Send, Info, Layers, Search, Zap, 
+  ChevronRight, ChevronLeft, Plus, Trash2, Layout, Send, Info, Layers, Search, Zap, 
   FileText, Grid3X3, RefreshCcw, Loader2, Maximize2, AlertTriangle, 
-  Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock
+  Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock,
+  PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents.jsx';
-// IMPORT NOTE: Ensure you have your supabase client imported here
 import { supabase } from '../../supabaseClient.js'; 
 
 const MathDisplay = ({ content, className = "" }) => {
@@ -23,8 +23,7 @@ const MathDisplay = ({ content, className = "" }) => {
                         { left: '\\(', right: '\\)', display: false },
                         { left: '\\[', right: '\\]', display: true }
                     ],
-                    throwOnError: false,
-                    trust: true
+                    throwOnError: false, trust: true
                 });
             }
         };
@@ -34,33 +33,55 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
 };
 
-export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initialPacket }) {
+export default function QuestionStudio({ 
+    onDoNowGenerate, 
+    onWorksheetGenerate, 
+    ui, 
+    lang = 'sv', 
+    initialPacket, 
+    setInitialPacket, 
+    sheetTitle, 
+    setSheetTitle, 
+    studioMode, 
+    setStudioMode,
+    includeAnswerKey,
+    setIncludeAnswerKey,
+    answerKeyStyle,
+    setAnswerKeyStyle
+}) {
   // --- TRANSLATIONS ---
   const t = {
     sv: {
       studio: "Studio", library_title: "Mina sparade blad", donow_title: "Do Now Grid", worksheet_title: "Arbetsblad",
       change_mode: "Byt läge", search_placeholder: "Sök område...", board_label: "Tavlan", new_example: "Nytt exempel",
-      select_hint: "Välj en variant för att förhandsgranska", selected_questions: "Utvalda frågor", clear_all: "Rensa allt",
+      select_hint: "Välj en variant för att förhandsgranska", selected_questions: "Frågor", clear_all: "Rensa allt",
       create_donow: "Starta Live Grid", publish: "Skriv ut / Spara", title_label: "Namnge din session/blad",
       save_success: "Sparad i biblioteket!", unsaved_warning: "Du har inte sparat än. Fortsätt ändå?",
       width_label: "Bredd", work_area_toggle: "Arbetsyta", section_label: "Instruktion:",
-      regenerate: "Slumpa ny", load_btn: "Öppna", delete_sheet: "Radera", delete_confirm: "Vill du radera detta blad permanent?",
-      compact: "Kompakt", spacious: "Gott om plats"
+      regenerate: "Slumpa ny", load_btn: "Öppna", delete_confirm: "Radera detta blad permanent?",
+      compact: "Kompakt", spacious: "Gott om plats",
+      answer_key_toggle: "Inkludera facit", answer_style_label: "Facit-stil",
+      style_compact: "Endast svar", style_detailed: "Steg-för-steg",
+      delete_task: "Radera uppgift"
     },
     en: {
       studio: "Studio", library_title: "My Saved Sheets", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
       change_mode: "Change mode", search_placeholder: "Search topics...", board_label: "The Board", new_example: "New Example",
-      select_hint: "Select a variation to preview", selected_questions: "Selected Questions", clear_all: "Clear Cart",
+      select_hint: "Select a variation to preview", selected_questions: "Questions", clear_all: "Clear Cart",
       create_donow: "Start Live Grid", publish: "Print / Save", title_label: "Name your session/sheet",
       save_success: "Saved to library!", unsaved_warning: "Unsaved work! Proceed anyway?",
       width_label: "Width", work_area_toggle: "Work Area", section_label: "Instruction:",
-      regenerate: "Randomize new", load_btn: "Open", delete_sheet: "Delete", delete_confirm: "Delete this sheet permanently?",
-      compact: "Compact", spacious: "Spacious"
+      regenerate: "Randomize new", load_btn: "Open", delete_confirm: "Delete this sheet permanently?",
+      compact: "Compact", spacious: "Spacious",
+      answer_key_toggle: "Include answer key", answer_style_label: "Key Style",
+      style_compact: "Answers only", style_detailed: "Step-by-step",
+      delete_task: "Delete task"
     }
   }[lang];
 
   // --- STATE ---
-  const [setupMode, setSetupMode] = useState(initialPacket?.length > 0 ? 'donow' : null); 
+  const [isPane1Collapsed, setIsPane1Collapsed] = useState(false); 
+  const [setupMode, setSetupMode] = useState(studioMode); 
   const [activeSheetId, setActiveSheetId] = useState(null); 
   const [savedSheets, setSavedSheets] = useState([]);
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
@@ -68,7 +89,6 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
   const [showWorkArea, setShowWorkArea] = useState(true);
   const [selectedTopicId, setSelectedTopicId] = useState('basic_arithmetic');
   const [packet, setPacket] = useState(initialPacket || []);
-  const [sheetTitle, setSheetTitle] = useState("");
   const [isSaved, setIsSaved] = useState(true);
   const [previewData, setPreviewData] = useState(null);
   const [activePreviewKey, setActivePreviewKey] = useState(null);
@@ -76,23 +96,22 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [pendingQuantity, setPendingQuantity] = useState(1);
 
-  // --- EFFECTS ---
-  useEffect(() => {
-    if (!setupMode) fetchLibrary();
-  }, [setupMode]);
+  // --- HELPERS ---
+  const getAuthToken = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session ? session.access_token : 'dev-mock-token';
+  };
 
-  useEffect(() => {
-    if (currentTopic?.variations?.[0]) triggerPreview(currentTopic.variations[0].key);
-  }, [selectedTopicId]);
+  useEffect(() => { if (!setupMode) fetchLibrary(); setIsSaved(true); }, [setupMode]);
+  useEffect(() => { if (currentTopic?.variations?.[0]) triggerPreview(currentTopic.variations[0].key); }, [selectedTopicId]);
+  useEffect(() => { setInitialPacket(packet); }, [packet]);
+  useEffect(() => { setStudioMode(setupMode); }, [setupMode]);
 
-  // --- API ACTIONS ---
   const fetchLibrary = async () => {
     setIsLibraryLoading(true);
     try {
-        const { data: { session } } = await supabase.auth.getSession(); 
-        const res = await fetch('/api/sheets', {
-            headers: { 'Authorization': `Bearer ${session?.access_token}` }
-        });
+        const token = await getAuthToken();
+        const res = await fetch('/api/sheets', { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await res.json();
         if (Array.isArray(data)) setSavedSheets(data);
     } catch (err) { console.error("Library load error:", err); }
@@ -102,26 +121,17 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
   const handleSave = async () => {
       if (!sheetTitle) { alert(t.title_label); return; }
       try {
-          const { data: { session } } = await supabase.auth.getSession();
+          const token = await getAuthToken();
           const res = await fetch('/api/sheets', {
               method: 'POST',
-              headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${session?.access_token}`
-              },
-              body: JSON.stringify({
-                  id: activeSheetId,
-                  title: sheetTitle,
-                  type: setupMode,
-                  packet,
-                  config: { showWorkArea, lang }
-              })
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ id: activeSheetId, title: sheetTitle, type: setupMode, packet, config: { showWorkArea, lang } })
           });
           const savedData = await res.json();
           setActiveSheetId(savedData.id);
           setIsSaved(true);
           alert(t.save_success);
-          fetchLibrary(); // Refresh background list
+          fetchLibrary(); 
       } catch (err) { alert("Systemfel vid sparning."); }
   };
 
@@ -129,11 +139,8 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
     e.stopPropagation();
     if (!window.confirm(t.delete_confirm)) return;
     try {
-        const { data: { session } } = await supabase.auth.getSession();
-        await fetch(`/api/sheets?id=${id}`, { 
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${session?.access_token}` }
-        });
+        const token = await getAuthToken();
+        await fetch(`/api/sheets?id=${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
         setSavedSheets(savedSheets.filter(s => s.id !== id));
     } catch (err) { alert("Kunde inte radera."); }
   };
@@ -154,8 +161,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
         const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variationKey}&lang=${lang}`);
         const data = await res.json();
         setPreviewData(data);
-    } catch (err) { console.error(err); } 
-    finally { setIsPreviewLoading(false); }
+    } catch (err) { console.error(err); } finally { setIsPreviewLoading(false); }
   };
 
   const addToPacket = async (variation, qty) => {
@@ -166,24 +172,12 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
         for (let i = 0; i < qty; i++) {
             const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variation.key}&lang=${lang}`);
             const data = await res.json();
-            newItems.push({
-                id: crypto.randomUUID(),
-                topicId: selectedTopicId,
-                variationKey: variation.key,
-                name: variation.name[lang] || variation.name.sv,
-                columnSpan: 2, // DEFAULT 1/3 (2 of 6)
-                resolvedData: data,
-                hideInstruction: i > 0 
-            });
+            newItems.push({ id: crypto.randomUUID(), topicId: selectedTopicId, variationKey: variation.key, name: variation.name[lang] || variation.name.sv, columnSpan: 2, resolvedData: data, hideInstruction: i > 0 });
         }
-        if (setupMode === 'donow' && packet.length + newItems.length > 6) {
-            alert("Do Now max 6.");
-            return;
-        }
+        if (setupMode === 'donow' && packet.length + newItems.length > 6) { alert("Do Now max 6."); return; }
         setPacket(prev => [...prev, ...newItems]);
         setPendingQuantity(1);
-    } catch (err) { alert(err.message); } 
-    finally { setIsPreviewLoading(false); }
+    } catch (err) { alert(err.message); } finally { setIsPreviewLoading(false); }
   };
 
   const regenerateItem = async (id, topicId, variationKey) => {
@@ -206,7 +200,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
       const config = packet.map(p => ({ topic: p.topicId, level: parseInt(p.variationKey.match(/\d+/)?.[0] || '1'), variation: p.variationKey }));
       onDoNowGenerate(config, packet);
     } else {
-        console.log("Proceeding to Print View...");
+        onWorksheetGenerate(packet);
     }
   };
 
@@ -217,17 +211,10 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
     return null;
   };
 
-  const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => 
-    Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name[lang], categoryId: cat.id, ...data }))
-  );
+  const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name[lang], categoryId: cat.id, ...data })));
   const currentTopic = allTopics.find(tp => tp.id === selectedTopicId) || allTopics[0];
+  const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
 
-  const getColSpanClass = (span) => {
-      const mapping = { 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' };
-      return mapping[span] || 'col-span-6';
-  };
-
-  // --- VIEW: START SCREEN & LIBRARY ---
   if (!setupMode) {
     return (
       <div className="flex-1 bg-slate-50 flex flex-col items-center p-12 overflow-y-auto custom-scrollbar">
@@ -245,28 +232,17 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
                     </button>
                 </div>
             </div>
-
             <div className="space-y-6">
-                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-3">
-                    <Clock size={16}/> {t.library_title}
-                </h3>
-                {isLibraryLoading ? (
-                    <div className="flex justify-center py-12"><Loader2 className="animate-spin text-slate-300" size={32}/></div>
-                ) : (
+                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-3"><Clock size={16}/> {t.library_title}</h3>
+                {isLibraryLoading ? <div className="flex justify-center py-12"><Loader2 className="animate-spin text-slate-300" size={32}/></div> : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {savedSheets.map(sheet => (
                             <div key={sheet.id} className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-md transition-all group relative">
-                                <button onClick={(e) => deleteSheet(e, sheet.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all">
-                                    <Trash2 size={16}/>
-                                </button>
-                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-4 ${sheet.type === 'donow' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                    {sheet.type === 'donow' ? <Grid3X3 size={16}/> : <FileText size={16}/>}
-                                </div>
+                                <button onClick={(e) => deleteSheet(e, sheet.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={16}/></button>
+                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-4 ${sheet.type === 'donow' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>{sheet.type === 'donow' ? <Grid3X3 size={16}/> : <FileText size={16}/>}</div>
                                 <h4 className="font-bold text-slate-800 truncate mb-1 pr-8">{sheet.title}</h4>
                                 <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-6">{sheet.packet?.length || 0} Uppgifter • {new Date(sheet.updated_at).toLocaleDateString()}</p>
-                                <button onClick={() => loadSheet(sheet)} className="w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-black uppercase hover:bg-indigo-600 transition-colors">
-                                    {t.load_btn}
-                                </button>
+                                <button onClick={() => loadSheet(sheet)} className="w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-black uppercase hover:bg-indigo-600 transition-colors">{t.load_btn}</button>
                             </div>
                         ))}
                     </div>
@@ -277,31 +253,47 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
     );
   }
 
-  // --- VIEW: STUDIO MAIN ---
   return (
     <div className="flex h-[calc(100vh-64px)] bg-slate-100 overflow-hidden font-sans">
-      <div className="w-72 bg-white border-r border-slate-200 flex flex-col shrink-0">
-        <div className="p-6 border-b">
-          <button onClick={() => { if(!isSaved && !window.confirm(t.unsaved_warning)) return; setSetupMode(null); }} className="text-[10px] font-black text-indigo-600 uppercase mb-4 block hover:underline">← {t.change_mode}</button>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 text-slate-400" size={16} />
-            <input type="text" placeholder={t.search_placeholder} className="w-full pl-10 pr-4 py-2 bg-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          </div>
+      
+      {/* PANE 1: TOPICS (Collapsible) */}
+      <div className={`bg-white border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 ${isPane1Collapsed ? 'w-16' : 'w-72'}`}>
+        <div className={`p-6 border-b flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-between'}`}>
+          {!isPane1Collapsed && (
+            <button onClick={() => { if(!isSaved && !window.confirm(t.unsaved_warning)) return; setSetupMode(null); }} className="text-[14px] font-black text-indigo-600 uppercase hover:underline">← {t.change_mode}</button>
+          )}
+          <button 
+            onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} 
+            className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
+            title={isPane1Collapsed ? "Expand list" : "Collapse list"}
+          >
+            {isPane1Collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+          </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
-          {Object.values(SKILL_BUCKETS).map(cat => (
-            <div key={cat.id}>
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-2">{cat.name[lang]}</h3>
-              <div className="space-y-1">
-                {Object.entries(cat.topics).map(([id, data]) => (
-                  <button key={id} onClick={() => setSelectedTopicId(id)} className={`w-full text-left px-4 py-2.5 text-sm rounded-xl transition-all ${selectedTopicId === id ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}>{data.name[lang]}</button>
-                ))}
+
+        <div className={`flex-1 overflow-y-auto custom-scrollbar transition-opacity duration-200 ${isPane1Collapsed ? 'opacity-0 invisible' : 'opacity-100 p-4 space-y-6'}`}>
+          {!isPane1Collapsed && (
+            <>
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-3 text-slate-400" size={16} />
+                <input type="text" placeholder={t.search_placeholder} className="w-full pl-10 pr-4 py-2 bg-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
-            </div>
-          ))}
+              {Object.values(SKILL_BUCKETS).map(cat => (
+                <div key={cat.id}>
+                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 ml-2">{cat.name[lang]}</h3>
+                  <div className="space-y-1">
+                    {Object.entries(cat.topics).map(([id, data]) => (
+                      <button key={id} onClick={() => setSelectedTopicId(id)} className={`w-full text-left px-4 py-2.5 text-sm rounded-xl transition-all ${selectedTopicId === id ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}>{data.name[lang]}</button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
 
+      {/* PANE 2: VARIATIONS */}
       <div className="w-[340px] bg-slate-50 border-r border-slate-200 flex flex-col shrink-0">
         <div className="p-6 border-b bg-white shrink-0"><h1 className="text-lg font-black text-slate-900 uppercase italic truncate">{currentTopic?.name[lang]}</h1></div>
         <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
@@ -324,6 +316,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
         </div>
       </div>
 
+      {/* PANE 3: CANVAS (Preview) */}
       <div className="flex-1 bg-slate-200 p-6 flex flex-col overflow-hidden relative">
         <div className="flex flex-col items-center mb-6 gap-2">
             <div className="flex items-center gap-4">
@@ -348,12 +341,12 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
                         <div className="w-full flex justify-center">{renderVisual(previewData)}</div>
                         <div className="text-xl text-slate-800 font-bold text-center px-6 leading-relaxed"><MathDisplay content={previewData.renderData.description} /></div>
                         {previewData.renderData.latex && <div className="text-2xl text-indigo-600 bg-indigo-50 p-6 rounded-3xl border border-indigo-100 shadow-inner text-center"><MathDisplay content={`$$${previewData.renderData.latex}$$`} /></div>}
-                        {previewData.renderData.options && previewData.renderData.options.length > 0 && (
-                            <div className="grid grid-cols-2 gap-3 w-full px-6 mt-6">
-                                {previewData.renderData.options.map((opt, idx) => (
-                                    <div key={idx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-4 text-left shadow-sm">
-                                        <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-[12px] font-black text-slate-400 shrink-0">{String.fromCharCode(65 + idx)}</div>
-                                        <div className="text-sm font-semibold text-slate-700"><MathDisplay content={opt} /></div>
+                        {previewData.renderData.options && (
+                            <div className="grid grid-cols-2 gap-4 mt-8 px-6">
+                                {previewData.renderData.options.map((opt, i) => (
+                                    <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex gap-3 text-left">
+                                        <span className="font-black text-indigo-500">{String.fromCharCode(65 + i)})</span>
+                                        <MathDisplay content={opt} className="text-sm font-bold" />
                                     </div>
                                 ))}
                             </div>
@@ -377,11 +370,27 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
                                         <button onClick={() => updatePacketItem(item.id, 'columnSpan', 6)}>1/1</button>
                                     </div>
                                     <button onClick={() => regenerateItem(item.id, item.topicId, item.variationKey)} className="bg-amber-500 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase shadow-lg hover:bg-amber-600"><Shuffle size={10} /></button>
-                                    <button onClick={() => updatePacketItem(item.id, 'hideInstruction', !item.hideInstruction)} className={`px-3 py-1 rounded-full text-[9px] font-black uppercase shadow-lg transition-all ${item.hideInstruction ? 'bg-slate-800 text-white' : 'bg-emerald-500 text-white'}`}><Type size={10} /></button>
+                                    <button onClick={() => updatePacketItem(item.id, 'hideInstruction', !item.hideInstruction)} className={`px-3 py-1 rounded-full text-[9px] font-black uppercase shadow-lg transition-all ${item.hideInstruction ? 'bg-slate-800 text-white' : 'bg-emerald-50 text-white'}`}><Type size={10} /></button>
+                                    
+                                    {/* --- NEW INJECTED DELETE BUTTON --- */}
+                                    <button 
+                                        onClick={() => setPacket(packet.filter(p => p.id !== item.id))} 
+                                        className="bg-rose-500 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase shadow-lg hover:bg-rose-600 transition-all hover:scale-110"
+                                        title={t.delete_task}
+                                    >
+                                        <Trash2 size={10} />
+                                    </button>
                                 </div>
                                 <div className="text-sm flex flex-col h-full">
                                     <div className="font-bold mb-1 text-slate-300 text-[10px] flex justify-between items-center"><span>{idx + 1}.</span></div>
                                     {item.resolvedData?.renderData.latex && (<div className="py-2 text-center"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} /></div>)}
+                                    {item.resolvedData?.renderData.options && (
+                                        <div className="grid grid-cols-2 gap-2 text-[10px] mb-2 border-l pl-2 border-slate-100">
+                                            {item.resolvedData.renderData.options.map((opt, i) => (
+                                                <div key={i} className="flex gap-1.5"><span className="font-black">{String.fromCharCode(65 + i)})</span><MathDisplay content={opt} /></div>
+                                            ))}
+                                        </div>
+                                    )}
                                     <div className="flex justify-center scale-90 origin-top">{renderVisual(item.resolvedData)}</div>
                                     <div className="mt-auto pt-2">{showWorkArea ? <div className="min-h-[100px] border-b border-dashed border-slate-200" /> : <div className="border-b border-slate-50" />}</div>
                                 </div>
@@ -393,6 +402,7 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
         )}
       </div>
 
+      {/* PANE 4: CART & SETTINGS */}
       <div className="w-72 bg-white border-l border-slate-200 flex flex-col shadow-2xl shrink-0">
         <div className="p-6 border-b flex items-center justify-between bg-slate-50/50">
             <div className="flex items-center gap-2"><h2 className="text-xs font-black uppercase italic text-slate-400">{t.selected_questions}</h2><div className="bg-slate-900 text-white px-2 py-0.5 rounded-full text-[10px] font-black">{packet.length}</div></div>
@@ -406,6 +416,27 @@ export default function QuestionStudio({ onDoNowGenerate, ui, lang = 'sv', initi
                 </div>
             ))}
         </div>
+
+        {setupMode === 'worksheet' && (
+            <div className="p-6 border-t bg-white space-y-3">
+                <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">{t.answer_key_toggle}</label>
+                    <button onClick={() => setIncludeAnswerKey(!includeAnswerKey)} className={`w-10 h-5 rounded-full transition-all relative ${includeAnswerKey ? 'bg-indigo-600' : 'bg-slate-200'}`}>
+                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeAnswerKey ? 'left-6' : 'left-1'}`} />
+                    </button>
+                </div>
+                {includeAnswerKey && (
+                    <div className="animate-in fade-in slide-in-from-top-2">
+                        <label className="text-[9px] font-black uppercase text-slate-300 mb-2 block">{t.answer_style_label}</label>
+                        <select value={answerKeyStyle} onChange={(e) => setAnswerKeyStyle(e.target.value)} className="w-full bg-slate-100 border-none rounded-xl text-[10px] font-black uppercase px-3 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="compact">{t.style_compact}</option>
+                            <option value="detailed">{t.style_detailed}</option>
+                        </select>
+                    </div>
+                )}
+            </div>
+        )}
+
         <div className="p-6 border-t bg-slate-50 space-y-4">
             <div>
                 <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">{t.title_label}</label>
