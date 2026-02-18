@@ -55,27 +55,29 @@ export default function QuestionStudio({
       studio: "Studio", library_title: "Mina sparade blad", donow_title: "Do Now Grid", worksheet_title: "Arbetsblad",
       change_mode: "Byt läge", search_placeholder: "Sök område...", board_label: "Tavlan", new_example: "Nytt exempel",
       select_hint: "Välj en variant för att förhandsgranska", selected_questions: "Frågor", clear_all: "Rensa allt",
-      create_donow: "Starta Live Grid", publish: "Skriv ut / Spara", title_label: "Namnge din session/blad",
+      create_donow: "Starta Live Grid", publish: "Skriv ut / Presentera", title_label: "Namnge din session/blad",
       save_success: "Sparad i biblioteket!", unsaved_warning: "Du har inte sparat än. Fortsätt ändå?",
       width_label: "Bredd", work_area_toggle: "Arbetsyta", section_label: "Instruktion:",
       regenerate: "Slumpa ny", load_btn: "Öppna", delete_confirm: "Radera detta blad permanent?",
       compact: "Kompakt", spacious: "Gott om plats",
       answer_key_toggle: "Inkludera facit", answer_style_label: "Facit-stil",
       style_compact: "Endast svar", style_detailed: "Steg-för-steg",
-      delete_task: "Radera uppgift"
+      delete_task: "Radera uppgift", name_label: "Namn:", date_label: "Datum:",
+      save_btn: "Spara", live_btn: "Digital Live"
     },
     en: {
       studio: "Studio", library_title: "My Saved Sheets", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
       change_mode: "Change mode", search_placeholder: "Search topics...", board_label: "The Board", new_example: "New Example",
       select_hint: "Select a variation to preview", selected_questions: "Questions", clear_all: "Clear Cart",
-      create_donow: "Start Live Grid", publish: "Print / Save", title_label: "Name your session/sheet",
+      create_donow: "Start Live Grid", publish: "Print / Present", title_label: "Name your session/sheet",
       save_success: "Saved to library!", unsaved_warning: "Unsaved work! Proceed anyway?",
       width_label: "Width", work_area_toggle: "Work Area", section_label: "Instruction:",
       regenerate: "Randomize new", load_btn: "Open", delete_confirm: "Delete this sheet permanently?",
       compact: "Compact", spacious: "Spacious",
       answer_key_toggle: "Include answer key", answer_style_label: "Key Style",
       style_compact: "Answers only", style_detailed: "Step-by-step",
-      delete_task: "Delete task"
+      delete_task: "Delete task", name_label: "Name:", date_label: "Date:",
+      save_btn: "Save", live_btn: "Digital Live"
     }
   }[lang];
 
@@ -194,14 +196,19 @@ export default function QuestionStudio({
     setIsSaved(false);
   };
 
-  const handleFinalAction = () => {
+  const handleLaunchLive = () => {
     if (!isSaved && !window.confirm(t.unsaved_warning)) return;
-    if (setupMode === 'donow') {
-      const config = packet.map(p => ({ topic: p.topicId, level: parseInt(p.variationKey.match(/\d+/)?.[0] || '1'), variation: p.variationKey }));
-      onDoNowGenerate(config, packet);
-    } else {
-        onWorksheetGenerate(packet);
-    }
+    const config = packet.map(p => ({ 
+        topic: p.topicId, 
+        level: parseInt(p.variationKey.match(/\d+/)?.[0] || '1'), 
+        variation: p.variationKey 
+    }));
+    onDoNowGenerate(config, packet);
+  };
+
+  const handleLaunchPrint = () => {
+    if (!isSaved && !window.confirm(t.unsaved_warning)) return;
+    onWorksheetGenerate(packet);
   };
 
   const renderVisual = (data) => {
@@ -256,21 +263,16 @@ export default function QuestionStudio({
   return (
     <div className="flex h-[calc(100vh-64px)] bg-slate-100 overflow-hidden font-sans">
       
-      {/* PANE 1: TOPICS (Collapsible) */}
+      {/* PANE 1: TOPICS */}
       <div className={`bg-white border-r border-slate-200 flex flex-col shrink-0 transition-all duration-300 ${isPane1Collapsed ? 'w-16' : 'w-72'}`}>
         <div className={`p-6 border-b flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-between'}`}>
           {!isPane1Collapsed && (
             <button onClick={() => { if(!isSaved && !window.confirm(t.unsaved_warning)) return; setSetupMode(null); }} className="text-[14px] font-black text-indigo-600 uppercase hover:underline">← {t.change_mode}</button>
           )}
-          <button 
-            onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} 
-            className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"
-            title={isPane1Collapsed ? "Expand list" : "Collapse list"}
-          >
+          <button onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
             {isPane1Collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
           </button>
         </div>
-
         <div className={`flex-1 overflow-y-auto custom-scrollbar transition-opacity duration-200 ${isPane1Collapsed ? 'opacity-0 invisible' : 'opacity-100 p-4 space-y-6'}`}>
           {!isPane1Collapsed && (
             <>
@@ -316,7 +318,7 @@ export default function QuestionStudio({
         </div>
       </div>
 
-      {/* PANE 3: CANVAS (Preview) */}
+      {/* PANE 3: CANVAS */}
       <div className="flex-1 bg-slate-200 p-6 flex flex-col overflow-hidden relative">
         <div className="flex flex-col items-center mb-6 gap-2">
             <div className="flex items-center gap-4">
@@ -341,62 +343,44 @@ export default function QuestionStudio({
                         <div className="w-full flex justify-center">{renderVisual(previewData)}</div>
                         <div className="text-xl text-slate-800 font-bold text-center px-6 leading-relaxed"><MathDisplay content={previewData.renderData.description} /></div>
                         {previewData.renderData.latex && <div className="text-2xl text-indigo-600 bg-indigo-50 p-6 rounded-3xl border border-indigo-100 shadow-inner text-center"><MathDisplay content={`$$${previewData.renderData.latex}$$`} /></div>}
-                        {previewData.renderData.options && (
-                            <div className="grid grid-cols-2 gap-4 mt-8 px-6">
-                                {previewData.renderData.options.map((opt, i) => (
-                                    <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex gap-3 text-left">
-                                        <span className="font-black text-indigo-500">{String.fromCharCode(65 + i)})</span>
-                                        <MathDisplay content={opt} className="text-sm font-bold" />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
                       </div>}
                 </div>
             </div>
         ) : (
             <div className="flex-1 overflow-y-auto custom-scrollbar pb-20">
-                <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] mx-auto p-[20mm] grid grid-cols-6 gap-x-12 gap-y-2 animate-in slide-in-from-bottom-4 items-start content-start">
-                    {packet.map((item, idx) => (
-                        <React.Fragment key={item.id}>
-                            {!item.hideInstruction && (
-                                <div className="col-span-6 border-l-4 border-indigo-500 pl-4 py-2 mb-1 mt-4 first:mt-0 bg-slate-50/50 rounded-r-xl"><div className="text-sm font-bold text-slate-800 italic"><MathDisplay content={item.resolvedData?.renderData.description || item.name} /></div></div>
-                            )}
-                            <div className={`relative group border border-transparent hover:border-dashed hover:border-indigo-300 p-4 transition-all flex flex-col h-full ${getColSpanClass(item.columnSpan)}`}>
-                                <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-10 transition-opacity gap-2">
-                                    <div className="bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full flex gap-3 shadow-lg italic">
-                                        <button onClick={() => updatePacketItem(item.id, 'columnSpan', 2)}>1/3</button>
-                                        <button onClick={() => updatePacketItem(item.id, 'columnSpan', 3)}>1/2</button>
-                                        <button onClick={() => updatePacketItem(item.id, 'columnSpan', 6)}>1/1</button>
+                <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] mx-auto p-[15mm] flex flex-col animate-in slide-in-from-bottom-4">
+                    <header className="border-b-2 border-black pb-1 mb-3 flex items-end justify-between">
+                        <h1 className="text-[14px] font-bold uppercase tracking-tight w-1/3 truncate">{sheetTitle || "Matematik"}</h1>
+                        <div className="flex gap-4 w-2/3 justify-end text-[12px] font-medium">
+                            <div className="border-b border-black pb-0 flex gap-2 flex-1 max-w-[180px]"><span>{t.name_label}</span><div className="flex-1" /></div>
+                            <div className="border-b border-black pb-0 flex gap-2 w-[100px]"><span>{t.date_label}</span><div className="flex-1" /></div>
+                        </div>
+                    </header>
+                    <div className={`grid grid-cols-6 gap-x-8 ${showWorkArea ? 'gap-y-4' : 'gap-y-1'} items-start content-start`}>
+                        {packet.map((item, idx) => (
+                            <React.Fragment key={item.id}>
+                                {!item.hideInstruction && (
+                                    <div className={`col-span-6 border-l-4 border-indigo-500 pl-3 bg-slate-50/50 rounded-r-lg ${showWorkArea ? 'py-1 mt-4 mb-1' : 'py-0.5 mt-1 mb-0'}`}>
+                                        <div className="text-[11px] font-bold text-slate-800 italic"><MathDisplay content={item.resolvedData?.renderData.description || item.name} /></div>
                                     </div>
-                                    <button onClick={() => regenerateItem(item.id, item.topicId, item.variationKey)} className="bg-amber-500 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase shadow-lg hover:bg-amber-600"><Shuffle size={10} /></button>
-                                    <button onClick={() => updatePacketItem(item.id, 'hideInstruction', !item.hideInstruction)} className={`px-3 py-1 rounded-full text-[9px] font-black uppercase shadow-lg transition-all ${item.hideInstruction ? 'bg-slate-800 text-white' : 'bg-emerald-50 text-white'}`}><Type size={10} /></button>
-                                    
-                                    {/* --- NEW INJECTED DELETE BUTTON --- */}
-                                    <button 
-                                        onClick={() => setPacket(packet.filter(p => p.id !== item.id))} 
-                                        className="bg-rose-500 text-white px-3 py-1 rounded-full text-[9px] font-black uppercase shadow-lg hover:bg-rose-600 transition-all hover:scale-110"
-                                        title={t.delete_task}
-                                    >
-                                        <Trash2 size={10} />
-                                    </button>
+                                )}
+                                <div className={`relative group border border-transparent hover:border-dashed hover:border-indigo-300 transition-all flex flex-col h-full ${getColSpanClass(item.columnSpan)} ${showWorkArea ? 'p-4' : 'px-4 py-0.5'}`}>
+                                    <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-10 transition-opacity gap-2">
+                                        <button onClick={() => updatePacketItem(item.id, 'columnSpan', 2)} className="bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full shadow-lg italic">1/3</button>
+                                        <button onClick={() => regenerateItem(item.id, item.topicId, item.variationKey)} className="bg-amber-500 text-white px-3 py-1 rounded-full text-[9px] font-black shadow-lg"><Shuffle size={10} /></button>
+                                        <button onClick={() => updatePacketItem(item.id, 'hideInstruction', !item.hideInstruction)} className={`px-3 py-1 rounded-full text-[9px] font-black shadow-lg ${item.hideInstruction ? 'bg-slate-800 text-white' : 'bg-emerald-50 text-white'}`}><Type size={10} /></button>
+                                        <button onClick={() => setPacket(packet.filter(p => p.id !== item.id))} className="bg-rose-500 text-white px-3 py-1 rounded-full text-[9px] font-black shadow-lg hover:bg-rose-600 hover:scale-110"><Trash2 size={10} /></button>
+                                    </div>
+                                    <div className="text-sm flex flex-col h-full">
+                                        <div className="font-bold mb-0.5 text-slate-300 text-[10px]">{idx + 1}.</div>
+                                        {item.resolvedData?.renderData.latex && (<div className={`${showWorkArea ? 'py-2' : 'py-0.5'} text-center`}><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} /></div>)}
+                                        <div className="flex justify-center scale-90 origin-top">{renderVisual(item.resolvedData)}</div>
+                                        <div className="mt-auto">{showWorkArea ? <div className="min-h-[80px] border-b border-dashed border-slate-200" /> : <div className="h-0 border-b border-transparent" />}</div>
+                                    </div>
                                 </div>
-                                <div className="text-sm flex flex-col h-full">
-                                    <div className="font-bold mb-1 text-slate-300 text-[10px] flex justify-between items-center"><span>{idx + 1}.</span></div>
-                                    {item.resolvedData?.renderData.latex && (<div className="py-2 text-center"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} /></div>)}
-                                    {item.resolvedData?.renderData.options && (
-                                        <div className="grid grid-cols-2 gap-2 text-[10px] mb-2 border-l pl-2 border-slate-100">
-                                            {item.resolvedData.renderData.options.map((opt, i) => (
-                                                <div key={i} className="flex gap-1.5"><span className="font-black">{String.fromCharCode(65 + i)})</span><MathDisplay content={opt} /></div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <div className="flex justify-center scale-90 origin-top">{renderVisual(item.resolvedData)}</div>
-                                    <div className="mt-auto pt-2">{showWorkArea ? <div className="min-h-[100px] border-b border-dashed border-slate-200" /> : <div className="border-b border-slate-50" />}</div>
-                                </div>
-                            </div>
-                        </React.Fragment>
-                    ))}
+                            </React.Fragment>
+                        ))}
+                    </div>
                 </div>
             </div>
         )}
@@ -417,6 +401,7 @@ export default function QuestionStudio({
             ))}
         </div>
 
+        {/* FACIT SETTINGS */}
         {setupMode === 'worksheet' && (
             <div className="p-6 border-t bg-white space-y-3">
                 <div className="flex items-center justify-between">
@@ -437,14 +422,31 @@ export default function QuestionStudio({
             </div>
         )}
 
+        {/* ACTION BUTTONS */}
         <div className="p-6 border-t bg-slate-50 space-y-4">
             <div>
                 <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">{t.title_label}</label>
                 <input type="text" className="w-full px-4 py-2 rounded-xl border border-slate-200 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none" value={sheetTitle} onChange={(e) => { setSheetTitle(e.target.value); setIsSaved(false); }} />
             </div>
+            
+            {/* SAVING ROW */}
+            <button onClick={handleSave} disabled={packet.length === 0} className="w-full py-3 bg-white border-2 border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-slate-50 disabled:opacity-50"><Save size={16}/> {t.save_btn}</button>
+            
+            {/* LAUNCH ROW: Dynamically split based on mode */}
             <div className="grid grid-cols-2 gap-2">
-                <button onClick={handleSave} disabled={packet.length === 0} className="py-3 bg-white border-2 border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-slate-50 disabled:opacity-50"><Save size={16}/> Spara</button>
-                <button onClick={handleFinalAction} disabled={packet.length === 0} className={`py-3 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg transition-all ${setupMode === 'donow' ? 'bg-indigo-600' : 'bg-emerald-600'} disabled:opacity-50`}><Send size={16}/> {setupMode === 'donow' ? t.create_donow : t.publish}</button>
+                <button onClick={handleLaunchLive} disabled={packet.length === 0} className="py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-50">
+                    <Send size={16}/> {t.live_btn}
+                </button>
+                
+                {setupMode === 'worksheet' ? (
+                    <button onClick={handleLaunchPrint} disabled={packet.length === 0} className="py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg hover:bg-emerald-500 transition-all disabled:opacity-50">
+                        <Printer size={16}/> {t.publish}
+                    </button>
+                ) : (
+                    <button onClick={handleLaunchLive} disabled={packet.length === 0} className="py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg hover:bg-indigo-500 transition-all disabled:opacity-50">
+                        <Grid3X3 size={16}/> {t.create_donow}
+                    </button>
+                )}
             </div>
         </div>
       </div>
