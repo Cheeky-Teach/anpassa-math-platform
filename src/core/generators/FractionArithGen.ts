@@ -155,7 +155,7 @@ export class FractionArithGen {
             token: this.toBase64(tokenAnswer),
             clues: [
                 { 
-                    text: lang === 'sv' ? "Börja med att skriva om talen från blandad form till oäkta bråk." : "Start by rewriting the numbers from mixed form to improper fractions.", 
+                    text: lang === 'sv' ? "Börja med att skriva om talen från blandad form till bråkform." : "Start by rewriting the numbers from mixed form to improper fractions.", 
                     latex: `\\frac{${imp1N}}{${d1}} ${isSub ? '-' : '+'} \\frac{${imp2N}}{${d2}}` 
                 },
                 { 

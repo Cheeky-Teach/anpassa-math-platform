@@ -1,21 +1,19 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-    <!-- 1. Fix Quirks Mode by adding DOCTYPE -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- 2. Relaxed CSP for Supabase, Google Auth, and KaTeX CDNs -->
-    <!-- Note: In production, 'unsafe-inline' is often required for React/Tailwind styles -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://apis.google.com;
         style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;
         img-src 'self' data: https://*.supabase.co https://lh3.googleusercontent.com;
-        connect-src 'self' https://*.supabase.co https://*.google.com;
+        connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google.com;
         font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net;
         frame-src 'self' https://*.supabase.co https://accounts.google.com;
     ">
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
