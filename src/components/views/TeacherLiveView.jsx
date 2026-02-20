@@ -1,21 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Users, Eye, EyeOff, Shield, BarChart3, Loader2, Signal, SignalLow, RefreshCw } from 'lucide-react';
+import { 
+    Users, Eye, EyeOff, Shield, BarChart3, Loader2, 
+    Signal, SignalLow, RefreshCw, Download, Printer, Copy, Save, X 
+} from 'lucide-react';
 import { UI_TEXT } from '../../constants/localization';
 
-export default function TeacherLiveView({ session, packet, lang, onEnd }) {
+export default function TeacherLiveView({ session, packet, lang, onEnd, onCreateReport }) {
     const [responses, setResponses] = useState([]);
     const [isAnonymous, setIsAnonymous] = useState(false);
     const [hideCorrectness, setHideCorrectness] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [connStatus, setConnStatus] = useState('CONNECTING');
     const [isSyncing, setIsSyncing] = useState(false);
+    const [showWrapUp, setShowWrapUp] = useState(false); 
+    
     const ui = UI_TEXT[lang];
-
     const isMounted = useRef(true);
     const channelRef = useRef(null);
 
-    // Initial Fetch & Sync
     const syncData = async () => {
         if (!session?.id || !isMounted.current) return;
         setIsSyncing(true);
@@ -88,90 +91,222 @@ export default function TeacherLiveView({ session, packet, lang, onEnd }) {
         };
     }, [session?.id]);
 
-    const handleEndSession = async () => {
-        if (!window.confirm("Avsluta sessionen?")) return;
-        setIsClosing(true);
-        try { await onEnd(); } 
-        finally { if (isMounted.current) setIsClosing(false); }
+    const copyToClipboard = async () => {
+        const studentList = [...new Set(responses.map(r => r.student_alias))].sort();
+        let tableHTML = `<table border="1" style="border-collapse: collapse; font-family: sans-serif;">
+            <thead style="background: #f1f5f9;">
+                <tr><th style="padding: 8px;">Elev</th><th style="padding: 8px;">Resultat</th>`;
+        packet.forEach((_, i) => tableHTML += `<th style="padding: 8px;">U${i+1}</th>`);
+        tableHTML += `</tr></thead><tbody>`;
+
+        studentList.forEach(student => {
+            const studentResps = packet.map((_, qIdx) => responses.find(r => r.student_alias === student && r.question_index === qIdx));
+            const score = studentResps.filter(r => r?.is_correct).length;
+            tableHTML += `<tr><td style="padding: 8px; font-weight: bold;">${student}</td><td style="padding: 8px;">${score}/${packet.length}</td>`;
+            studentResps.forEach(r => {
+                const text = r ? (r.is_correct ? 'Rätt' : 'Fel') : '-';
+                const color = r ? (r.is_correct ? '#10b981' : '#f43f5e') : '#94a3b8';
+                tableHTML += `<td style="padding: 8px; color: ${color}; text-align: center;">${text}</td>`;
+            });
+            tableHTML += `</tr>`;
+        });
+        tableHTML += `</tbody></table>`;
+
+        try {
+            const blob = new Blob([tableHTML], { type: 'text/html' });
+            const item = new ClipboardItem({ 'text/html': blob });
+            await navigator.clipboard.write([item]);
+            alert(lang === 'sv' ? "Tabellen har kopierats!" : "Table copied!");
+        } catch (err) {
+            alert("Kunde inte kopiera.");
+        }
     };
 
-    const students = [...new Set(responses.map(r => r.student_alias))];
+    const exportToCSV = () => {
+        const studentList = [...new Set(responses.map(r => r.student_alias))].sort();
+        let csvContent = "data:text/csv;charset=utf-8,Elev,Resultat,";
+        csvContent += packet.map((_, i) => `Uppgift ${i + 1}`).join(",") + "\n";
+
+        studentList.forEach(student => {
+            const studentAnswers = packet.map((_, qIdx) => {
+                const resp = responses.find(r => r.student_alias === student && r.question_index === qIdx);
+                return resp ? (resp.is_correct ? "RÄTT" : "FEL") : "-";
+            });
+            const correctCount = studentAnswers.filter(a => a === "RÄTT").length;
+            csvContent += `${student},${correctCount}/${packet.length},${studentAnswers.join(",")}\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Resultat_${session.class_code}_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // --- REFACTORED END SESSION LOGIC ---
+    const handleEndSession = async () => {
+        if (isClosing) return;
+        setIsClosing(true);
+        try {
+            // We await the onEnd call from App.jsx to ensure the DB update finishes
+            await onEnd(); 
+        } catch (err) {
+            console.error("Error ending session:", err);
+            alert("Kunde inte avsluta sessionen. Försök igen.");
+            setIsClosing(false);
+        }
+    };
+
+    const students = [...new Set(responses.map(r => r.student_alias))].sort();
     
     const getStatusColor = (isCorrect, answered) => {
-        if (!answered) return 'bg-slate-100';
-        if (hideCorrectness) return 'bg-indigo-400';
-        return isCorrect ? 'bg-emerald-500' : 'bg-rose-500';
+        if (!answered) return 'bg-slate-100 opacity-30';
+        if (hideCorrectness) return 'bg-indigo-300';
+        return isCorrect ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.2)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.2)]';
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6 font-sans">
-            <div className={`fixed bottom-6 right-6 px-4 py-2 rounded-full text-[10px] font-black uppercase flex items-center gap-2 shadow-2xl z-50 border transition-all ${
-                connStatus === 'SUBSCRIBED' ? 'bg-white text-emerald-600 border-emerald-100' : 'bg-rose-600 text-white animate-pulse'
-            }`}>
-                {connStatus === 'SUBSCRIBED' ? <Signal size={14}/> : <SignalLow size={14}/>}
-                {connStatus === 'SUBSCRIBED' ? 'ANSLUTEN' : connStatus}
-            </div>
+        <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+            
+            {showWrapUp && (
+                <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300 border-b-8 border-indigo-100">
+                        <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                            <h2 className="text-2xl font-black uppercase tracking-tight italic">Avsluta Session</h2>
+                            <button onClick={() => setShowWrapUp(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><X /></button>
+                        </div>
+                        
+                        <div className="p-8 space-y-4">
+                            <button onClick={() => onCreateReport(responses)} className="w-full group p-6 bg-indigo-50 border-2 border-indigo-100 hover:border-indigo-600 rounded-3xl text-left transition-all">
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg"><Printer size={20}/></div>
+                                    <span className="font-black uppercase tracking-tight text-indigo-900 text-lg">Utskriftsvänlig Rapport</span>
+                                </div>
+                                <p className="text-indigo-600/60 text-xs font-bold leading-relaxed ml-14">Genererar en kompakt A4-översikt för din betygsmapp eller sparar som PDF.</p>
+                            </button>
 
-            <header className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
-                <div className="flex items-center gap-4">
-                    <div className="bg-slate-900 text-white p-4 rounded-3xl shadow-xl leading-none">
-                        <span className="text-[10px] font-black uppercase block opacity-50 mb-1">Gå med på</span>
-                        <span className="text-3xl font-black italic tracking-tighter uppercase">ANPASSA.APP</span>
+                            <button onClick={copyToClipboard} className="w-full group p-6 bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-600 rounded-3xl text-left transition-all">
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-lg"><Copy size={20}/></div>
+                                    <span className="font-black uppercase tracking-tight text-emerald-900 text-lg">Kopiera Tabell</span>
+                                </div>
+                                <p className="text-emerald-600/60 text-xs font-bold leading-relaxed ml-14">Klistra in resultatet direkt i Word, Excel eller din lärplattform.</p>
+                            </button>
+
+                            {/* TRIGGER END SESSION */}
+                            <button 
+                                onClick={handleEndSession} 
+                                disabled={isClosing}
+                                className="w-full group p-6 bg-slate-50 border-2 border-slate-100 hover:border-slate-900 rounded-3xl text-left transition-all disabled:opacity-50"
+                            >
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="p-3 bg-slate-900 text-white rounded-2xl shadow-lg">
+                                        {isClosing ? <Loader2 className="animate-spin" size={20}/> : <Save size={20}/>}
+                                    </div>
+                                    <span className="font-black uppercase tracking-tight text-slate-900 text-lg">Stäng & Arkivera (48h)</span>
+                                </div>
+                                <p className="text-slate-400 text-xs font-bold leading-relaxed ml-14">Resultatet sparas i ditt arkiv i 48 timmar innan det rensas automatiskt (GDPR).</p>
+                            </button>
+                        </div>
+
+                        <div className="p-6 bg-slate-50 flex justify-end items-center border-t border-slate-100">
+                             <button onClick={() => setShowWrapUp(false)} className="px-6 py-2 bg-slate-200 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-300 transition-colors">Avbryt</button>
+                        </div>
                     </div>
-                    <div className="text-7xl font-black text-indigo-600 tracking-widest bg-white px-8 py-2 rounded-3xl border-4 border-indigo-600 shadow-2xl">
-                        {session.class_code}
+                </div>
+            )}
+
+            <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-40 shadow-sm flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl flex flex-col items-center">
+                        <span className="text-[7px] font-black uppercase opacity-50 leading-none">KOD</span>
+                        <span className="text-xl font-black italic leading-none">{session.class_code}</span>
+                    </div>
+                    <div className="hidden sm:block">
+                        <h1 className="text-xs font-black uppercase tracking-tight text-slate-900 leading-none truncate max-w-[150px]">{session.title}</h1>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Live Klassrum</p>
                     </div>
                 </div>
 
-                <div className="flex gap-3">
-                    <button onClick={syncData} disabled={isSyncing} className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-400 hover:text-indigo-600 transition-all">
-                        <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
+                <div className="flex items-center gap-2">
+                    <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase flex items-center gap-1.5 border transition-all ${
+                        connStatus === 'SUBSCRIBED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100 animate-pulse'
+                    }`}>
+                        {connStatus === 'SUBSCRIBED' ? 'Live' : connStatus}
+                    </div>
+
+                    <button onClick={syncData} disabled={isSyncing} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 transition-all shadow-sm">
+                        <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
                     </button>
-                    <button onClick={() => setIsAnonymous(!isAnonymous)} className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${isAnonymous ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white text-slate-400 border border-slate-200'}`}>
-                        {isAnonymous ? <Shield size={16} /> : <Users size={16} />} {isAnonymous ? "Dolda" : "Visa Namn"}
+                    
+                    <button onClick={() => setIsAnonymous(!isAnonymous)} title="Namn" className={`p-2 rounded-lg border transition-all shadow-sm ${isAnonymous ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'}`}>
+                        {isAnonymous ? <Shield size={14} /> : <Users size={14} />}
                     </button>
-                    <button onClick={() => setHideCorrectness(!hideCorrectness)} className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${hideCorrectness ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-400 border border-slate-200'}`}>
-                        {hideCorrectness ? <EyeOff size={16} /> : <Eye size={16} />} {hideCorrectness ? "Dölj" : "Visa"}
+                    
+                    <button onClick={() => setHideCorrectness(!hideCorrectness)} title="Resultat" className={`p-2 rounded-lg border transition-all shadow-sm ${hideCorrectness ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-200'}`}>
+                        {hideCorrectness ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
-                    <button onClick={handleEndSession} disabled={isClosing} className="bg-rose-50 text-rose-600 px-6 py-3 rounded-2xl font-black text-xs uppercase hover:bg-rose-600 hover:text-white transition-all">
-                        {isClosing ? <Loader2 className="animate-spin" size={16} /> : "Avsluta"}
+
+                    <button onClick={() => setShowWrapUp(true)} className="bg-rose-500 text-white px-5 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 transition-all shadow-md">
+                         Avsluta
                     </button>
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-200">
-                <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <div className="flex items-center gap-3">
-                        <BarChart3 className="text-indigo-600" />
-                        <h2 className="text-xl font-black uppercase italic tracking-tighter text-slate-900">{session.title}</h2>
+            <main className="flex-1 overflow-auto p-4 lg:p-6">
+                <div className="max-w-[1600px] mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col h-full min-h-[600px]">
+                    <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                        <div className="flex items-center gap-3">
+                            <BarChart3 className="text-indigo-600" size={18} />
+                            <h2 className="text-sm font-black uppercase italic tracking-tighter text-slate-900 leading-none">{session.title}</h2>
+                        </div>
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{students.length} Elever anslutna</div>
                     </div>
-                    <div className="text-xs font-black text-slate-400 uppercase tracking-widest">{students.length} Elever</div>
-                </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                <th className="p-6 w-64">Elev</th>
-                                {packet.map((_, i) => <th key={i} className="p-6 text-center border-l border-slate-100">U {i+1}</th>)}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {students.map((student, sIdx) => (
-                                <tr key={student} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                    <td className="p-6 font-bold text-slate-700">{isAnonymous ? `Elev ${sIdx + 1}` : student}</td>
-                                    {packet.map((_, qIdx) => {
-                                        const resp = responses.find(r => r.student_alias === student && r.question_index === qIdx);
-                                        return (
-                                            <td key={qIdx} className="p-2 border-l border-slate-50">
-                                                <div className={`w-10 h-10 mx-auto rounded-xl shadow-inner transition-all duration-500 ${getStatusColor(resp?.is_correct, !!resp)}`} />
-                                            </td>
-                                        );
-                                    })}
+                    <div className="overflow-x-auto overflow-y-auto">
+                        <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
+                            <thead className="sticky top-0 z-10 shadow-sm">
+                                <tr className="bg-slate-900 text-white">
+                                    <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-white/10">Elev</th>
+                                    <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-white/10">Klar</th>
+                                    {packet.map((_, i) => (
+                                        <th key={i} className="p-3 text-[9px] font-black uppercase tracking-widest text-center border-r border-white/10">U {i + 1}</th>
+                                    ))}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {students.map((student, sIdx) => {
+                                    const studentResps = responses.filter(r => r.student_alias === student);
+                                    const progress = Math.round((studentResps.length / packet.length) * 100);
+                                    return (
+                                        <tr key={student} className="hover:bg-slate-50 transition-colors">
+                                            <td className="p-2 border-r border-slate-100 font-bold text-slate-700 text-xs truncate">
+                                                {isAnonymous ? `Elev ${sIdx + 1}` : student}
+                                            </td>
+                                            <td className="p-2 border-r border-slate-100 text-center">
+                                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${progress === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
+                                                    {progress}%
+                                                </span>
+                                            </td>
+                                            {packet.map((_, qIdx) => {
+                                                const resp = responses.find(r => r.student_alias === student && r.question_index === qIdx);
+                                                return (
+                                                    <td key={qIdx} className="p-1.5 border-r border-slate-50">
+                                                        <div 
+                                                            title={resp ? `Svar: ${resp.answer}` : 'Inget svar'}
+                                                            className={`w-full h-8 rounded-md transition-all duration-500 cursor-help ${getStatusColor(resp?.is_correct, !!resp)}`} 
+                                                        />
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </main>
         </div>

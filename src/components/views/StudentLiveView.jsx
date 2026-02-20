@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, CheckCircle2, ChevronLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Send, CheckCircle2, ChevronLeft, ChevronRight, Loader2, LogOut, ListChecks, LayoutGrid, XCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-// --- VISUAL COMPONENT IMPORTS ---
+// --- VISUAL & INPUT IMPORTS ---
 import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
 import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry';
 import PatternVisual from '../visuals/PatternComponents';
@@ -11,9 +11,6 @@ import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVi
 import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
 import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
 import AngleVisual from '../visuals/AngleComponents';
-
-// --- MATH INPUT IMPORTS ---
-// Matching the directory structure used in your current project
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 
 const MathDisplay = ({ content, className = "" }) => {
@@ -41,185 +38,304 @@ const MathDisplay = ({ content, className = "" }) => {
 };
 
 export default function StudentLiveView({ session, packet, lang = 'sv', studentAlias, onBack }) {
+    // Logic & Navigation State
+    const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState({});
-    const [completed, setCompleted] = useState({});
+    const [completed, setCompleted] = useState({}); 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [roomActive, setRoomActive] = useState(true);
+    const [showFinalReview, setShowFinalReview] = useState(false);
 
-    // --- RENDER VISUAL HELPER ---
-    const renderVisual = (item) => {
-        const data = item.resolvedData?.renderData;
-        if (!data) return null;
+    // --- 1. THE KILL SWITCH ---
+    useEffect(() => {
+        if (!session?.id) return;
+        const roomChannel = supabase.channel(`room_status_${session.id}`)
+            .on('postgres_changes', { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'rooms', 
+                filter: `id=eq.${session.id}` 
+            }, (payload) => {
+                if (payload.new.status === 'closed') {
+                    setRoomActive(false);
+                    setTimeout(onBack, 4000);
+                }
+            })
+            .subscribe();
+        return () => { supabase.removeChannel(roomChannel); };
+    }, [session?.id, onBack]);
 
-        if (data.graph) return <GraphCanvas data={data.graph} />;
-        if (data.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism'].includes(data.geometry.type)) {
-            return <VolumeVisualization data={data.geometry} width={240} height={200} />;
-        }
-        if (data.geometry?.type === 'transversal') return <TransversalVisual data={data.geometry} />;
-        if (data.geometry?.type === 'composite') return <CompositeVisual data={data.geometry} />;
-        if (data.geometry?.type === 'angle') return <AngleVisual data={data.geometry} />;
-        if (data.pattern) return <PatternVisual data={data.pattern} />;
-        if (data.probTree) return <ProbabilityTree data={data.probTree} />;
-        if (data.marbles) return <ProbabilityMarbles data={data.marbles} />;
-        if (data.spinner) return <ProbabilitySpinner data={data.spinner} />;
-        if (data.freqTable) return <FrequencyTable data={data.freqTable} />;
-        if (data.percentGrid) return <PercentGrid data={data.percentGrid} />;
-        if (data.scale) return <ScaleVisual data={data.scale} />;
-        if (data.similarity) return <SimilarityCompare data={data.similarity} />;
-        if (data.compareArea) return <CompareShapesArea data={data.compareArea} />;
-
-        return null;
+    // --- 2. RELAXED INPUT SHIELDING ---
+    const sanitizeInput = (val, type) => {
+        let str = String(val).replace(/<[^>]*>?/gm, ''); // Protect against scripts
+        if (type === 'fraction') return str.replace(/[^0-9\s/]/g, '');
+        if (type === 'scientific' || type === 'exponent') return str.replace(/[^0-9.,\-*^x]/g, '');
+        
+        // UPDATED: Now allows / for k-values and : for ratios
+        return str.replace(/[^0-9.,\-xy=/: ]/gi, '');
     };
 
-    // --- RENDER INPUT HELPER (FIXED: Properly extracting inputType) ---
-    const renderInput = (item, idx) => {
-        // FIXED: Now checks renderData.answerType and renderData.inputType to match backend generators
-        const rd = item.resolvedData?.renderData;
-        const inputType = rd?.answerType || rd?.inputType || item.resolvedData?.inputType || 'text';
+    const handleSolve = async () => {
+        const val = answers[currentIndex];
+        if (!val || isSubmitting || !roomActive) return;
         
-        const value = answers[idx] || '';
-        const onChange = (val) => setAnswers({ ...answers, [idx]: val });
-
-        switch (inputType) {
-            case 'fraction':
-                return <FractionInput value={value} onChange={onChange} allowMixed={true} autoFocus={true} />;
-            case 'exponent':
-                return <ExponentInput value={value} onChange={onChange} autoFocus={true} />;
-            case 'structured_scientific':
-            case 'scientific':
-                return <ScientificInput value={value} onChange={onChange} autoFocus={true} />;
-            default:
-                return (
-                    <input 
-                        type="text" 
-                        className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-3 text-center font-bold text-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-300 w-full"
-                        placeholder="Ditt svar..."
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSolve(idx, value)}
-                    />
-                );
-        }
-    };
-
-    const handleSolve = async (idx, val) => {
-        if (!val || isSubmitting) return;
-        
-        // Normalizing values for comparison (removes spaces, converts to lowercase, handles base64 tokens)
         const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.');
-        
-        // Correct answer check: handles both direct comparisons and base64 encoded tokens from the API
-        let correctAnswer = packet[idx].resolvedData?.answer;
-        if (!correctAnswer && packet[idx].resolvedData?.token) {
-            try {
-                correctAnswer = atob(packet[idx].resolvedData.token);
-            } catch (e) {
-                console.error("Token decode error", e);
-            }
+        let correctAnswer = packet[currentIndex].resolvedData?.answer;
+        if (!correctAnswer && packet[currentIndex].resolvedData?.token) {
+            try { correctAnswer = atob(packet[currentIndex].resolvedData.token); } catch (e) {}
         }
         
         const isCorrect = normalize(val) === normalize(correctAnswer);
-        
         setIsSubmitting(true);
+
         try {
             const { error } = await supabase.from('responses').insert([{
                 room_id: session.id,
                 student_alias: studentAlias || "Anonym",
-                question_index: idx,
+                question_index: currentIndex,
                 answer: String(val),
                 is_correct: isCorrect
             }]);
-
             if (error) throw error;
-            setCompleted(prev => ({ ...prev, [idx]: isCorrect ? 'correct' : 'wrong' }));
+            
+            setCompleted(prev => ({ ...prev, [currentIndex]: isCorrect ? 'correct' : 'wrong' }));
+            
+            // Advance automatically after a short delay
+            if (currentIndex < packet.length - 1) {
+                setTimeout(() => setCurrentIndex(prev => prev + 1), 600);
+            }
         } catch (err) {
             console.error("Submission error:", err);
-            alert("Kunde inte skicka svar.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    return (
-        <div className="min-h-screen bg-slate-50 font-sans selection:bg-indigo-100">
-            <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 shadow-sm">
-                <div className="max-w-5xl mx-auto flex justify-between items-center">
+    // --- 3. HARDENED VISUAL RENDERING ---
+    const renderVisual = (item) => {
+        const data = item.resolvedData?.renderData;
+        if (!data) return null;
+
+        // Visual mapping: Expanded to handle nested geometry data
+        if (data.graph) return <GraphCanvas data={data.graph} />;
+        
+        // Patterns (Matchsticks and Sequences)
+        if (data.pattern || data.geometry?.subtype === 'matchsticks' || data.geometry?.subtype === 'sequence') {
+            return <PatternVisual data={data.pattern || data.geometry} />;
+        }
+        
+        // Probability (Marbles and Spinners)
+        if (data.marbles || data.geometry?.type === 'marbles' || data.geometry?.items) {
+            return <ProbabilityMarbles data={data.marbles || data.geometry} />;
+        }
+        if (data.spinner || data.geometry?.type === 'spinner') {
+            return <ProbabilitySpinner data={data.spinner || data.geometry} />;
+        }
+        
+        // Statistics (Tables and Grids)
+        if (data.freqTable || data.geometry?.type === 'frequency_table' || data.geometry?.headers) {
+            return <FrequencyTable data={data.freqTable || data.geometry} />;
+        }
+        if (data.percentGrid || data.geometry?.type === 'percent_grid') {
+            return <PercentGrid data={data.percentGrid || data.geometry} />;
+        }
+
+        // Geometry & Volume
+        if (data.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism'].includes(data.geometry.type)) {
+            return <VolumeVisualization data={data.geometry} width={280} height={220} />;
+        }
+        if (data.geometry?.type === 'transversal') return <TransversalVisual data={data.geometry} />;
+        if (data.geometry?.type === 'composite') return <CompositeVisual data={data.geometry} />;
+        if (data.geometry?.type === 'angle') return <AngleVisual data={data.geometry} />;
+        if (data.scale || data.geometry?.type === 'scale') return <ScaleVisual data={data.scale || data.geometry} />;
+        if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
+        if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
+        
+        return null;
+    };
+
+    const renderInput = (idx = currentIndex) => {
+        const item = packet[idx];
+        const rd = item.resolvedData?.renderData;
+        const inputType = rd?.answerType || rd?.inputType || item.resolvedData?.inputType || 'text';
+        const value = answers[idx] || '';
+
+        const handleWrappedChange = (val) => {
+            const clean = sanitizeInput(val, inputType);
+            setAnswers({ ...answers, [idx]: clean });
+        };
+
+        switch (inputType) {
+            case 'fraction': return <FractionInput value={value} onChange={handleWrappedChange} allowMixed={true} autoFocus={true} />;
+            case 'exponent': return <ExponentInput value={value} onChange={handleWrappedChange} autoFocus={true} />;
+            case 'scientific': return <ScientificInput value={value} onChange={handleWrappedChange} autoFocus={true} />;
+            default:
+                return (
+                    <input 
+                        type="text" 
+                        className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 shadow-inner"
+                        placeholder="Ditt svar..."
+                        value={value}
+                        onChange={(e) => handleWrappedChange(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSolve()}
+                    />
+                );
+        }
+    };
+
+    // --- 4. RENDER: FINAL REVIEW GRID ---
+    if (showFinalReview) {
+        return (
+            <div className="min-h-screen bg-slate-50 font-sans p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <header className="max-w-6xl mx-auto flex justify-between items-center mb-8">
                     <div className="flex items-center gap-3">
-                        <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400">
-                            <ChevronLeft size={20} />
-                        </button>
-                        <div>
-                            <h1 className="text-sm font-black uppercase italic text-slate-900 tracking-tighter leading-none">
-                                {session.title || "Live Session"}
-                            </h1>
-                            <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mt-1">
-                                {studentAlias}
-                            </p>
+                        <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white"><LayoutGrid size={20} /></div>
+                        <h2 className="text-xl font-black uppercase italic tracking-tighter text-slate-900">Resultatöversikt</h2>
+                    </div>
+                    <button onClick={onBack} className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-indigo-600 transition-all">Stäng</button>
+                </header>
+                <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {packet.map((item, idx) => (
+                        <div key={item.id} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-xl flex flex-col ${completed[idx] === 'correct' ? 'border-emerald-500 shadow-emerald-50/50' : 'border-rose-400 shadow-rose-50/50'}`}>
+                            <div className="flex justify-between items-center mb-6">
+                                <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">Uppgift {idx + 1}</span>
+                                {completed[idx] === 'correct' ? <CheckCircle2 className="text-emerald-500" size={24} /> : <XCircle className="text-rose-400" size={24} />}
+                            </div>
+                            <div className="flex-1 flex flex-col items-center justify-center space-y-6">
+                                <div className="scale-75 origin-center">{renderVisual(item)}</div>
+                                <div className="text-center font-bold text-slate-700 text-sm px-4">
+                                    <MathDisplay content={item.resolvedData?.renderData?.description} />
+                                </div>
+                                <div className={`w-full py-3 rounded-2xl text-center font-black text-sm uppercase tracking-widest ${completed[idx] === 'correct' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'}`}>
+                                    Svar: {answers[idx] || '-'}
+                                </div>
+                            </div>
                         </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    // --- 5. RENDER: SESSION COMPLETE SPLASH ---
+    const allDone = Object.keys(completed).length === packet.length;
+    if (allDone) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center">
+                <div className="max-w-md w-full bg-white rounded-[3.5rem] p-12 shadow-2xl animate-in zoom-in duration-500 border-b-8 border-indigo-100">
+                    <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+                        <ListChecks size={40} className="text-indigo-600" />
                     </div>
-                    <div className="bg-slate-900 px-3 py-1 rounded-lg text-[10px] font-black text-white tracking-widest uppercase">
-                        {session.class_code}
+                    <h2 className="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2 italic">Aktivitet klar</h2>
+                    <p className="text-slate-500 font-medium leading-relaxed mb-10">Alla svar har skickats till din lärare. Bra jobbat med dina insatser!</p>
+                    
+                    <button onClick={() => setShowFinalReview(true)} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-[0.15em] hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-xl">
+                        <LayoutGrid size={20} /> Granska resultat
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // --- 6. RENDER: KILL SWITCH ---
+    if (!roomActive) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center animate-in fade-in duration-500">
+                <div className="max-w-md bg-white rounded-[3rem] p-10 shadow-2xl border-4 border-rose-500">
+                    <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-6"><LogOut size={40} className="text-rose-600 ml-1" /></div>
+                    <h2 className="text-2xl font-black uppercase text-slate-900 mb-2 tracking-tighter">Sessionen avslutad</h2>
+                    <p className="text-slate-500 font-medium leading-relaxed">Läraren har stängt rummet. Du skickas strax vidare.</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
+            <header className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-20 shadow-sm">
+                <div className="max-w-3xl mx-auto flex justify-between items-center mb-4">
+                    <button onClick={onBack} className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 transition-colors"><ChevronLeft size={24} /></button>
+                    <div className="text-center">
+                        <h1 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-1 leading-none">{session.title}</h1>
+                        <div className="bg-slate-900 text-white px-3 py-1 rounded-lg text-[10px] font-black tracking-widest inline-block uppercase italic">KOD: {session.class_code}</div>
                     </div>
+                    <div className="w-10" />
+                </div>
+                {/* Visual Progress Bar */}
+                <div className="max-w-3xl mx-auto h-2 bg-slate-100 rounded-full flex gap-1.5 p-0.5">
+                    {packet.map((_, i) => (
+                        <div key={i} className={`flex-1 rounded-full transition-all duration-700 ${i === currentIndex ? 'bg-indigo-500 ring-4 ring-indigo-50' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
+                    ))}
                 </div>
             </header>
 
-            <main className="max-w-5xl mx-auto p-4 md:p-8 pb-32">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                    {packet.map((item, idx) => {
-                        const status = completed[idx];
-                        return (
-                            <div 
-                                key={item.id} 
-                                className={`group bg-white rounded-[2.5rem] shadow-sm border-2 transition-all duration-300 flex flex-col overflow-hidden
-                                    ${status === 'correct' ? 'border-emerald-500 shadow-emerald-100' : 
-                                      status === 'wrong' ? 'border-rose-400 shadow-rose-100' : 
-                                      'border-slate-100 hover:border-indigo-200 hover:shadow-xl'}`}
-                            >
-                                <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-                                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Uppgift {idx + 1}</span>
-                                    {status === 'correct' && <CheckCircle2 className="text-emerald-500" size={18} />}
-                                    {status === 'wrong' && <AlertCircle className="text-rose-500" size={18} />}
-                                </div>
+            <main className="flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col justify-center pb-32">
+                <div className={`bg-white rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-hidden transition-all duration-300 ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
+                    <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.25em]">Uppgift {currentIndex + 1} / {packet.length}</span>
+                        {!!completed[currentIndex] && <CheckCircle2 className="text-emerald-500" size={24} />}
+                    </div>
 
-                                <div className="p-6 flex-1 flex flex-col items-center justify-center space-y-6">
-                                    <div className="w-full flex justify-center scale-95 origin-center">
-                                        {renderVisual(item)}
-                                    </div>
-                                    
-                                    <div className="text-lg font-bold text-slate-800 text-center leading-relaxed w-full">
-                                        <MathDisplay content={item.resolvedData?.renderData?.description} />
-                                        {item.resolvedData?.renderData?.latex && (
-                                            <div className="mt-4 text-2xl text-indigo-600 font-serif">
-                                                <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} />
-                                            </div>
-                                        )}
-                                    </div>
+                    <div className="p-8 space-y-8 flex flex-col items-center min-h-[420px] justify-center">
+                        <div className="w-full flex justify-center py-4 drop-shadow-sm">{renderVisual(packet[currentIndex])}</div>
+                        <div className="text-2xl font-bold text-slate-800 text-center leading-relaxed max-w-lg">
+                            <MathDisplay content={packet[currentIndex].resolvedData?.renderData?.description} />
+                            {packet[currentIndex].resolvedData?.renderData?.latex && (
+                                <div className="mt-8 text-4xl text-indigo-600 font-serif">
+                                    <MathDisplay content={`$$${packet[currentIndex].resolvedData.renderData.latex}$$`} />
                                 </div>
+                            )}
+                        </div>
+                    </div>
 
-                                <div className={`p-6 border-t transition-colors ${status ? 'bg-slate-50' : 'bg-white'}`}>
-                                    {status ? (
-                                        <div className="py-2 text-center">
-                                            <span className={`text-xs font-black uppercase tracking-widest ${status === 'correct' ? 'text-emerald-600' : 'text-rose-500'}`}>
-                                                {status === 'correct' ? 'Korrekt Svar!' : 'Svar Skickat'}
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-4">
-                                            <div className="w-full flex justify-center min-h-[60px]">
-                                                {renderInput(item, idx)}
-                                            </div>
-                                            <button 
-                                                onClick={() => handleSolve(idx, answers[idx])}
-                                                disabled={isSubmitting || !answers[idx]}
-                                                className="w-full bg-slate-900 text-white py-4 rounded-2xl hover:bg-indigo-600 transition-all font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2"
-                                            >
-                                                {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <><Send size={18} /> Skicka Svar</>}
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
+                    <div className="p-10 bg-slate-50/50 border-t border-slate-100">
+                        {!!completed[currentIndex] ? (
+                            <div className="py-6 text-center flex flex-col items-center gap-2">
+                                <span className="text-xs font-black uppercase tracking-[0.3em] text-emerald-600 italic">Svar mottaget</span>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Fortsätt med nästa pil</p>
                             </div>
-                        );
-                    })}
+                        ) : (
+                            <div className="max-w-md mx-auto space-y-6">
+                                {renderInput()}
+                                <button 
+                                    onClick={handleSolve} 
+                                    disabled={isSubmitting || !answers[currentIndex]} 
+                                    className="w-full bg-slate-900 text-white py-5 rounded-[2.5rem] font-black uppercase text-xs tracking-[0.25em] shadow-[0_15px_30px_rgba(15,23,42,0.15)] active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 transition-all"
+                                >
+                                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} /> Skicka Svar</>}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Footer Navigation Controls */}
+                <div className="mt-12 flex justify-between items-center px-6">
+                    <button 
+                        onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+                        disabled={currentIndex === 0}
+                        className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 disabled:opacity-0 transition-all"
+                    >
+                        <ChevronLeft size={24} /> Föregående
+                    </button>
+                    
+                    <div className="flex gap-2.5">
+                        {packet.map((_, i) => (
+                            <button 
+                                key={i} 
+                                onClick={() => setCurrentIndex(i)} 
+                                className={`w-3 h-3 rounded-full transition-all duration-300 ${i === currentIndex ? 'bg-slate-900 w-8 shadow-md shadow-slate-200' : 'bg-slate-200'}`} 
+                            />
+                        ))}
+                    </div>
+
+                    <button 
+                        onClick={() => setCurrentIndex(prev => Math.min(packet.length - 1, prev + 1))}
+                        disabled={currentIndex === packet.length - 1}
+                        className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 disabled:opacity-0 transition-all"
+                    >
+                        Nästa <ChevronRight size={24} />
+                    </button>
                 </div>
             </main>
         </div>
