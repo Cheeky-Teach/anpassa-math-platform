@@ -50,7 +50,7 @@ export default function PrintView({
     }[lang];
 
     // --- PHASE 6: GRID-AWARE PAGINATION ENGINE ---
-    // Tracks current row width to accurately predict page breaks
+    // Tracks current row width and instruction modes to accurately predict page breaks
     const paginatedPages = useMemo(() => {
         const MAX_HEIGHT_PER_PAGE = 960; 
         const pages = [];
@@ -61,12 +61,12 @@ export default function PrintView({
 
         packet.forEach((item, idx) => {
             const colSpan = item.columnSpan || 6;
-            const hasHeader = item.instructionMode === 'header' || !item.instructionMode;
+            const isHeaderMode = item.instructionMode === 'header' || !item.instructionMode;
             
-            // 1. Estimate vertical height
+            // 1. Estimate vertical height of item components
             let itemHeight = 40; 
-            if (hasHeader) itemHeight += 40; // Height of instruction header
-            if (item.instructionMode === 'inline') itemHeight += 30; // Height of inline text
+            if (isHeaderMode) itemHeight += 40;
+            if (item.instructionMode === 'inline') itemHeight += 30;
             if (item.resolvedData?.renderData?.latex) itemHeight += 100;
             if (item.resolvedData?.renderData?.graph || item.resolvedData?.renderData?.geometry) itemHeight += 180;
             if (item.resolvedData?.renderData?.options) itemHeight += (item.resolvedData.renderData.options.length * 15);
@@ -75,14 +75,14 @@ export default function PrintView({
                 itemHeight += workAreaHeights[density];
             }
 
-            // 2. Row & Page Management
-            // If it's a header, it must start a new row
-            if (hasHeader || (currentRowWidth + colSpan > 6)) {
+            // 2. Commit previous row if this item is a Header or exceeds 6 columns
+            if (isHeaderMode || (currentRowWidth + colSpan > 6)) {
                 currentHeight += maxHeightInCurrentRow; 
                 currentRowWidth = 0;
                 maxHeightInCurrentRow = 0;
             }
 
+            // 3. Page Break Decision
             if (currentHeight + itemHeight > MAX_HEIGHT_PER_PAGE && currentPage.length > 0) {
                 pages.push(currentPage);
                 currentPage = [];
@@ -92,7 +92,7 @@ export default function PrintView({
             }
 
             currentPage.push({ ...item, originalIdx: idx });
-            currentRowWidth += hasHeader ? 6 : colSpan;
+            currentRowWidth += isHeaderMode ? 6 : colSpan;
             maxHeightInCurrentRow = Math.max(maxHeightInCurrentRow, itemHeight);
         });
 
@@ -139,7 +139,7 @@ export default function PrintView({
                         </div>
                     </header>
 
-                    {/* SYNCED GRID CONTAINER */}
+                    {/* GRID-AWARE CONTENT CONTAINER */}
                     <div className="grid grid-cols-6 gap-x-10 gap-y-10 items-start flex-1">
                         {pageItems.map((item) => {
                             const isHeaderMode = item.instructionMode === 'header' || !item.instructionMode;
@@ -147,7 +147,6 @@ export default function PrintView({
                             
                             return (
                                 <React.Fragment key={item.id}>
-                                    {/* Sub-header instruction if enabled */}
                                     {isHeaderMode && (
                                         <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-1 mb-2 bg-slate-50/50">
                                             <MathDisplay content={item.resolvedData?.renderData.description || item.name} className="text-xs font-bold italic text-slate-700" />
@@ -206,13 +205,14 @@ export default function PrintView({
                 </div>
             ))}
 
-            {/* ANSWER KEY PAGE (Preserved) */}
+            {/* --- 3-COLUMN SPILLING ANSWER KEY --- */}
             {includeAnswerKey && (
                  <div className="max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[15mm] flex flex-col min-h-[297mm] print:shadow-none print:my-0 print:p-[12mm] break-before-page relative border-t-[12px] border-emerald-600">
                     <header className="border-b-2 border-black pb-4 mb-6">
                         <div className="text-[8px] font-black uppercase text-slate-300 italic tracking-widest leading-none mb-1">{t.watermark}</div>
                         <h2 className="text-xl font-black uppercase tracking-tight">{t.key_title}: {title}</h2>
                     </header>
+                    
                     <div className="print-columns-3 flex-1">
                         {packet.map((item, idx) => (
                             <div key={`ans-${item.id}`} className={`break-inside-avoid border-slate-100 ${answerKeyStyle === 'compact' ? 'mb-2 flex gap-2 items-baseline' : 'mb-6 pb-4 border-b'}`}>
@@ -242,7 +242,10 @@ export default function PrintView({
                     .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
                     .break-after-page { break-before: page; page-break-before: always; }
                     .print-columns-3 { column-count: 3; column-gap: 1cm; }
-                    body { background: white !important; }
+                    body { background: white !important; -webkit-print-color-adjust: exact; }
+                }
+                @media screen {
+                    .print-columns-3 { display: grid; grid-template-cols: repeat(3, 1fr); gap: 1.5rem; }
                 }
             `}} />
         </div>
