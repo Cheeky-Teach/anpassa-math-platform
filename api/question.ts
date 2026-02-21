@@ -8,7 +8,7 @@ import { ExponentsGen } from '../src/core/generators/ExponentsGen.js';
 import { PercentGen } from '../src/core/generators/PercentGen.js';
 import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen.js';
 import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
-import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen.js'; // Added to match batch.ts
+import { LinearEquationProblemGen } from '../src/core/generators/LinearEquationProblemGen.js';
 import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
 import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
 import { ScaleGen } from '../src/core/generators/ScaleGen.js';
@@ -36,9 +36,9 @@ type VercelResponse = ServerResponse & {
 
 // --- ADAPTER: LEGACY FRACTIONS GENERATOR ---
 class LegacyFractionsGen {
-    public generate(level: number, lang: string = 'sv'): any {
-        if (level <= 5) return new FractionBasicsGen().generate(level, lang);
-        return new FractionArithGen().generate(level - 5, lang);
+    public generate(level: number, lang: string = 'sv', options: any = {}): any {
+        if (level <= 5) return new FractionBasicsGen().generate(level, lang, options);
+        return new FractionArithGen().generate(level - 5, lang, options);
     }
     public generateByVariation(key: string, lang: string): any {
          try { return new FractionBasicsGen().generateByVariation(key, lang); } 
@@ -47,61 +47,43 @@ class LegacyFractionsGen {
 }
 
 // --- UNIFIED TOPIC MAP ---
-// Maps ALL keys (Dashboard, Studio, and Legacy) to the correct Generator Class
 const TopicMap: Record<string, any> = {
-  // 1. ARITHMETIC
   'basic_arithmetic': BasicArithmeticGen,
   'arithmetic': BasicArithmeticGen,
-  
   'negatives': NegativeNumbersGen,
   'negative': NegativeNumbersGen,
-  
   'fractions_basics': FractionBasicsGen,
   'fraction_basics': FractionBasicsGen,
   'fraction_arith': FractionArithGen,
   'fractions': LegacyFractionsGen,
-  
   'percent': PercentGen,
   'percentages': PercentGen,
   'ten_powers': TenPowersGen,
   'exponents': ExponentsGen,
   'order_of_operations': OrderOperationsGen,
-
-  // 2. ALGEBRA
   'expressions': ExpressionSimplificationGen,
   'simplify': ExpressionSimplificationGen,
   'expression_simplification': ExpressionSimplificationGen,
-  
-  'equation': LinearEquationGen,        // Dashboard singular (FIXED)
-  'equations': LinearEquationGen,       // Studio/General plural
+  'equation': LinearEquationGen,
+  'equations': LinearEquationGen,
   'linear-equations': LinearEquationGen,
   'algebra': LinearEquationGen,
-  
-  'equations_word': LinearEquationProblemGen, // Specific for word problems
-  
+  'equations_word': LinearEquationProblemGen,
   'patterns': PatternsGen,
   'pattern': PatternsGen,
-  
   'graphs': LinearGraphGenerator,
   'graph': LinearGraphGenerator,
   'linear_graph': LinearGraphGenerator,
-  
   'change_factor': ChangeFactorGen,
-
-  // 3. GEOMETRY
   'geometry': GeometryGenerator,
   'geometry_cat': GeometryGenerator,
   'geom': GeometryGenerator,
-  
   'angles': AnglesGen,
   'angle': AnglesGen,
-  
   'volume': VolumeGen,
   'similarity': SimilarityGen,
   'pythagoras': PythagorasGen,
   'scale': ScaleGen,
-
-  // 4. DATA
   'statistics': StatisticsGen,
   'stats': StatisticsGen,
   'data': StatisticsGen,
@@ -109,7 +91,6 @@ const TopicMap: Record<string, any> = {
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-    // Standard CORS headers
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -129,11 +110,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const variation = query.variation || body.variation; 
     const lang = query.lang || body.lang || 'sv';
 
+    // NEW: Extract adaptive filtering parameters
+    const exclude = query.exclude || body.exclude || "";
+    const hideConcept = (query.hideConcept === 'true' || body.hideConcept === true);
+
     if (!rawTopic) {
         return res.status(400).json({ error: "Missing 'topic' parameter" });
     }
 
-    // 2. Resolve Generator
     const GeneratorClass = TopicMap[String(rawTopic)];
 
     if (!GeneratorClass) {
@@ -153,10 +137,18 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
             question = generator.generateByVariation(String(variation), String(lang));
         } else {
             const safeLevel = Number(level) || 1;
+            
+            // Prepare Adaptive Options Object
+            const options = {
+                exclude: String(exclude).split(',').filter(Boolean),
+                hideConcept: hideConcept
+            };
+
             if (typeof generator.generate === 'function') {
-                question = generator.generate(safeLevel, String(lang));
+                // Pass options as the 3rd argument
+                question = generator.generate(safeLevel, String(lang), options);
             } else {
-                question = generator.generate(1, String(lang));
+                question = generator.generate(1, String(lang), options);
             }
         }
 
