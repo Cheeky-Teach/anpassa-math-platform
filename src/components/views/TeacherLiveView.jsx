@@ -2,11 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { 
     Users, Eye, EyeOff, Shield, BarChart3, Loader2, 
-    Signal, SignalLow, RefreshCw, Download, Printer, Copy, Save, X 
+    RefreshCw, Download, Printer, Copy, Save, X, UserX 
 } from 'lucide-react';
 import { UI_TEXT } from '../../constants/localization';
 
-export default function TeacherLiveView({ session, packet, lang, onEnd, onCreateReport }) {
+export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, onCreateReport }) {
     const [responses, setResponses] = useState([]);
     const [isAnonymous, setIsAnonymous] = useState(false);
     const [hideCorrectness, setHideCorrectness] = useState(false);
@@ -38,6 +38,22 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onCreate
         }
     };
 
+    /**
+     * REFINED KICK HANDLER:
+     * Simply confirms the action and passes the alias up to App.jsx
+     */
+    const handleKickStudent = (alias) => {
+        const confirmMsg = lang === 'sv' 
+            ? `Vill du verkligen ta bort ${alias} från sessionen? All data raderas.` 
+            : `Are you sure you want to kick ${alias}? All data for this student will be deleted.`;
+        
+        if (window.confirm(confirmMsg)) {
+            onKick(alias);
+            // Local optimistic update so the teacher sees the change instantly
+            setResponses(prev => prev.filter(r => r.student_alias !== alias));
+        }
+    };
+
     useEffect(() => {
         isMounted.current = true;
         if (!session?.id) return;
@@ -62,6 +78,14 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onCreate
                             return [...prev, payload.new];
                         });
                     }
+                })
+                .on('postgres_changes', {
+                    event: 'DELETE',
+                    schema: 'public',
+                    table: 'responses'
+                }, () => {
+                    // Sync data if a deletion happens (e.g. from handleKick)
+                    syncData();
                 })
                 .subscribe(async (status) => {
                     if (!isMounted.current) return;
@@ -122,35 +146,10 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onCreate
         }
     };
 
-    const exportToCSV = () => {
-        const studentList = [...new Set(responses.map(r => r.student_alias))].sort();
-        let csvContent = "data:text/csv;charset=utf-8,Elev,Resultat,";
-        csvContent += packet.map((_, i) => `Uppgift ${i + 1}`).join(",") + "\n";
-
-        studentList.forEach(student => {
-            const studentAnswers = packet.map((_, qIdx) => {
-                const resp = responses.find(r => r.student_alias === student && r.question_index === qIdx);
-                return resp ? (resp.is_correct ? "RÄTT" : "FEL") : "-";
-            });
-            const correctCount = studentAnswers.filter(a => a === "RÄTT").length;
-            csvContent += `${student},${correctCount}/${packet.length},${studentAnswers.join(",")}\n`;
-        });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Resultat_${session.class_code}_${new Date().toLocaleDateString()}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    // --- REFACTORED END SESSION LOGIC ---
     const handleEndSession = async () => {
         if (isClosing) return;
         setIsClosing(true);
         try {
-            // We await the onEnd call from App.jsx to ensure the DB update finishes
             await onEnd(); 
         } catch (err) {
             console.error("Error ending session:", err);
@@ -184,7 +183,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onCreate
                                     <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg"><Printer size={20}/></div>
                                     <span className="font-black uppercase tracking-tight text-indigo-900 text-lg">Utskriftsvänlig Rapport</span>
                                 </div>
-                                <p className="text-indigo-600/60 text-xs font-bold leading-relaxed ml-14">Genererar en kompakt A4-översikt för din betygsmapp eller sparar som PDF.</p>
+                                <p className="text-indigo-600/60 text-xs font-bold leading-relaxed ml-14">Genererar en kompakt A4-översikt för din betygsmapp.</p>
                             </button>
 
                             <button onClick={copyToClipboard} className="w-full group p-6 bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-600 rounded-3xl text-left transition-all">
@@ -192,22 +191,17 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onCreate
                                     <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-lg"><Copy size={20}/></div>
                                     <span className="font-black uppercase tracking-tight text-emerald-900 text-lg">Kopiera Tabell</span>
                                 </div>
-                                <p className="text-emerald-600/60 text-xs font-bold leading-relaxed ml-14">Klistra in resultatet direkt i Word, Excel eller din lärplattform.</p>
+                                <p className="text-emerald-600/60 text-xs font-bold leading-relaxed ml-14">Klistra in resultatet direkt i Word eller Excel.</p>
                             </button>
 
-                            {/* TRIGGER END SESSION */}
-                            <button 
-                                onClick={handleEndSession} 
-                                disabled={isClosing}
-                                className="w-full group p-6 bg-slate-50 border-2 border-slate-100 hover:border-slate-900 rounded-3xl text-left transition-all disabled:opacity-50"
-                            >
+                            <button onClick={handleEndSession} disabled={isClosing} className="w-full group p-6 bg-slate-50 border-2 border-slate-100 hover:border-slate-900 rounded-3xl text-left transition-all disabled:opacity-50">
                                 <div className="flex items-center gap-4 mb-2">
                                     <div className="p-3 bg-slate-900 text-white rounded-2xl shadow-lg">
                                         {isClosing ? <Loader2 className="animate-spin" size={20}/> : <Save size={20}/>}
                                     </div>
                                     <span className="font-black uppercase tracking-tight text-slate-900 text-lg">Stäng & Arkivera (48h)</span>
                                 </div>
-                                <p className="text-slate-400 text-xs font-bold leading-relaxed ml-14">Resultatet sparas i ditt arkiv i 48 timmar innan det rensas automatiskt (GDPR).</p>
+                                <p className="text-slate-400 text-xs font-bold leading-relaxed ml-14">Rensas automatiskt efter 48 timmar (GDPR).</p>
                             </button>
                         </div>
 
@@ -220,7 +214,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onCreate
 
             <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-40 shadow-sm flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl flex flex-col items-center">
+                    <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl flex flex-col items-center shadow-md">
                         <span className="text-[7px] font-black uppercase opacity-50 leading-none">KOD</span>
                         <span className="text-xl font-black italic leading-none">{session.class_code}</span>
                     </div>
@@ -265,7 +259,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onCreate
                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{students.length} Elever anslutna</div>
                     </div>
 
-                    <div className="overflow-x-auto overflow-y-auto">
+                    <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
                             <thead className="sticky top-0 z-10 shadow-sm">
                                 <tr className="bg-slate-900 text-white">
@@ -281,9 +275,16 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onCreate
                                     const studentResps = responses.filter(r => r.student_alias === student);
                                     const progress = Math.round((studentResps.length / packet.length) * 100);
                                     return (
-                                        <tr key={student} className="hover:bg-slate-50 transition-colors">
-                                            <td className="p-2 border-r border-slate-100 font-bold text-slate-700 text-xs truncate">
-                                                {isAnonymous ? `Elev ${sIdx + 1}` : student}
+                                        <tr key={student} className="hover:bg-slate-50 transition-colors group/row">
+                                            <td className="p-2 border-r border-slate-100 font-bold text-slate-700 text-xs truncate flex items-center justify-between">
+                                                <span>{isAnonymous ? `Elev ${sIdx + 1}` : student}</span>
+                                                <button 
+                                                    onClick={() => handleKickStudent(student)}
+                                                    className="opacity-0 group-hover/row:opacity-100 p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all"
+                                                    title="Kick"
+                                                >
+                                                    <UserX size={14} />
+                                                </button>
                                             </td>
                                             <td className="p-2 border-r border-slate-100 text-center">
                                                 <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${progress === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>

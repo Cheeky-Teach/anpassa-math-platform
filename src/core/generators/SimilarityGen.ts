@@ -14,7 +14,7 @@ export class SimilarityGen {
             case 1: return this.level1_Concept(lang, undefined, options);
             case 2: return this.level2_CalcSide(lang, undefined, options);
             case 3: return this.level3_TopTriangle(lang, undefined, options);
-            case 4: return this.level4_Pythagoras(lang, undefined, options);
+            case 4: return this.level4_Mixed(lang, options);
             default: return this.level1_Concept(lang, undefined, options);
         }
     }
@@ -41,7 +41,8 @@ export class SimilarityGen {
                 return this.level3_TopTriangle(lang, key);
             case 'pythagoras_sim_hyp':
             case 'pythagoras_sim_leg':
-                return this.level4_Pythagoras(lang, key);
+                // Redirect legacy Pythagoras keys to the new Mixed logic
+                return this.level4_Mixed(lang, {});
             default:
                 return this.generate(1, lang);
         }
@@ -149,7 +150,6 @@ export class SimilarityGen {
         const v = variationKey || this.getVariation(pool, options);
         const k = MathUtils.randomChoice(SimilarityGen.COMMON_K);
         
-        // Randomize shape type for Level 2
         const shapeType = MathUtils.randomChoice(['rectangle', 'parallelogram', 'triangle']);
         const s1 = MathUtils.randomChoice([4, 6, 8, 10]), s2 = MathUtils.randomChoice([3, 5, 7, 9]);
         const bigS1 = s1 * k, bigS2 = s2 * k;
@@ -193,7 +193,7 @@ export class SimilarityGen {
         };
     }
 
-    // --- LEVEL 3: TOP TRIANGLE (Transversal Atomic Clues) ---
+    // --- LEVEL 3: TOP TRIANGLE ---
     private level3_TopTriangle(lang: string, variationKey?: string, options: any = {}): any {
         const v = variationKey || this.getVariation([
             { key: 'transversal_total', type: 'calculate' },
@@ -245,35 +245,16 @@ export class SimilarityGen {
         };
     }
 
-    // --- LEVEL 4: PYTHAGORAS ---
-    private level4_Pythagoras(lang: string, variationKey?: string, options: any = {}): any {
-        const v = variationKey || MathUtils.randomChoice(['pythagoras_sim_hyp', 'pythagoras_sim_leg']);
-        const triples = [[3, 4, 5], [5, 12, 13], [8, 15, 17]];
-        const [a, b, c] = MathUtils.randomChoice(triples);
-        const k = MathUtils.randomChoice([2, 3, 5]);
-        const bigA = a*k, bigB = b*k, bigC = c*k;
-
-        const isHyp = v === 'pythagoras_sim_hyp';
-        const ansValue = isHyp ? bigC : bigA;
-
-        return {
-            renderData: {
-                geometry: { 
-                    type: 'similarity_compare', shapeType: 'triangle', 
-                    left: { labels: { b: a, h: b, hyp: c } }, 
-                    right: { labels: isHyp ? { b: bigA, h: bigB, hyp: 'x' } : { b: 'x', h: bigB, hyp: bigC } } 
-                },
-                description: lang === 'sv' ? "Beräkna sidan x i den stora rätvinkliga triangeln." : "Calculate side x in the large right-angled triangle.",
-                answerType: 'numeric'
-            },
-            token: this.toBase64(ansValue.toString()), variationKey: v, type: 'calculate',
-            clues: [
-                { text: lang === 'sv' ? "Steg 1: Eftersom trianglarna är likformiga är förhållandet mellan alla motsvarande sidor detsamma." : "Step 1: Since the triangles are similar, the ratio between all corresponding sides is the same." },
-                { text: lang === 'sv' ? "Steg 2: Beräkna skalan (k) med hjälp av sidorna som är kända i båda figurerna." : "Step 2: Calculate the scale (k) using the sides that are known in both shapes.", latex: `k = \\frac{${bigB}}{${b}} = ${k}` },
-                { text: lang === 'sv' ? (isHyp ? `Steg 3: Multiplicera hypotenusan i den lilla triangeln (${c}) med skalan.` : `Steg 3: Dela den stora hypotenusan med skalan för att bekräfta, eller använd k på kateten.`) : (isHyp ? `Step 3: Multiply the hypotenuse in the small triangle (${c}) by the scale.` : `Step 3: Divide the large hypotenuse by the scale to confirm, or apply k to the leg.`) },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: isHyp ? `${c} · ${k} = ${bigC}` : `\\frac{${bigC}}{${k}} = ${c}` },
-                { text: lang === 'sv' ? `Svar: ${ansValue}` : `Answer: ${ansValue}` }
-            ]
-        };
+    // --- LEVEL 4: MIXED (Variety and Comprehensive Review) ---
+    private level4_Mixed(lang: string, options: any): any {
+        const subLevel = MathUtils.randomInt(1, 3);
+        const data = this.generate(subLevel, lang, options);
+        
+        // Ensure metadata exists and mark as mixed
+        if (!data.metadata) data.metadata = {};
+        data.metadata.mixed = true;
+        data.metadata.original_level = subLevel;
+        
+        return data;
     }
 }

@@ -67,7 +67,10 @@ function App() {
     const [contentOpen, setContentOpen] = useState(false); 
     const [showStreakModal, setShowStreakModal] = useState(false);
 
-    // --- 6. STUDIO & PRINT STATE ---
+    // --- 6. TOAST SYSTEM STATE ---
+    const [toast, setToast] = useState(null);
+
+    // --- 7. STUDIO & PRINT STATE ---
     const [savedPacket, setSavedPacket] = useState([]); 
     const [sheetTitle, setSheetTitle] = useState("");
     const [studioMode, setStudioMode] = useState(null);
@@ -75,7 +78,7 @@ function App() {
     const [answerKeyStyle, setAnswerKeyStyle] = useState('compact');
     const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
 
-    // --- 7. BROWSER & FOCUS CONTEXT ---
+    // --- 8. BROWSER & FOCUS CONTEXT ---
     const [isFocused, setIsFocused] = useState(true);
 
     const ui = UI_TEXT[lang];
@@ -97,6 +100,50 @@ function App() {
             });
         }
     };
+
+    // --- KICK LOGIC HANDLER ---
+    const handleKick = async (alias) => {
+        if (!activeRoom?.id) return;
+        try {
+            const { error } = await supabase
+                .from('responses')
+                .delete()
+                .eq('room_id', activeRoom.id)
+                .eq('student_alias', alias);
+            
+            if (error) throw error;
+        } catch (err) {
+            console.error("Error kicking student:", err);
+        }
+    };
+
+    // --- STUDENT REAL-TIME KICK LISTENER ---
+    useEffect(() => {
+        if (view === 'live_session' && activeRoom?.id && studentAlias) {
+            const channel = supabase.channel(`room_kick_${studentAlias}`)
+                .on('postgres_changes', { 
+                    event: 'DELETE', 
+                    schema: 'public', 
+                    table: 'responses',
+                    filter: `room_id=eq.${activeRoom.id}`
+                }, (payload) => {
+                    if (payload.old && payload.old.student_alias === studentAlias) {
+                        alert(lang === 'sv' ? "Du har blivit borttagen från sessionen av läraren." : "You have been removed from the session by the teacher.");
+                        
+                        setActiveRoom(null);
+                        setStudentAlias('');
+                        localStorage.removeItem('anpassa_alias');
+                        
+                        setView('landing');
+                    }
+                })
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
+        }
+    }, [view, activeRoom?.id, studentAlias, lang]);
 
     // --- SMART NAVIGATION ENGINE (URL Deep-linking) ---
     useEffect(() => {
@@ -177,10 +224,6 @@ function App() {
         }
     };
 
-    // --- SUBSCRIPTION LOGIC ---
-    const isPaid = profile?.subscription_status === 'active' || 
-                  (profile?.subscription_status === 'trial' && new Date(profile.subscription_end_date) > new Date());
-
     // --- AUTH EFFECTS ---
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session: s } }) => {
@@ -192,7 +235,6 @@ function App() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
             setSession(s);
             if (s) {
-                // Catch the Password Recovery event to prevent dashboard redirect
                 if (event === 'PASSWORD_RECOVERY') {
                     setView('profile');
                     fetchProfile(s.user.id);
@@ -212,9 +254,7 @@ function App() {
         setProfile(data);
         
         setView(currentView => {
-            // If the user is already on 'profile' (via recovery link or deep link), stay there
             if (currentView === 'profile') return 'profile';
-            // Otherwise, if they were on a landing/auth page, move to dashboard
             if (currentView === 'landing' || currentView === 'auth') return 'dashboard';
             return currentView;
         });
@@ -229,6 +269,7 @@ function App() {
         setTimerSettings(prev => ({ ...prev, isActive: false })); 
     };
 
+    // --- ENHANCED SUBMIT LOGIC (History Fix & Adaptive Progression) ---
     const handleSubmit = async (e, directInput) => {
         if (e) e.preventDefault();
         if (feedback === 'correct') return;
@@ -246,17 +287,40 @@ function App() {
                 }) 
             });
             const result = await res.json();
+            
             if (result.correct) {
                 if (!isSolutionRevealed) {
                     setHistory(prev => [{ topic, level, correct: true, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
                     setStreak(result.newStreak); setTotalCorrect(prev => prev + 1);
                     updateStats(helpUsed ? 'correctHelp' : 'correctNoHelp');
+
+                    // --- ADAPTIVE PROGRESSION LOGIC ---
+                    if (result.levelUp) {
+                        const nextLvl = Math.min(level + 1, 9);
+                        setFeedback('correct');
+                        
+                        setToast({
+                            title: lang === 'sv' ? "Nivå avklarad!" : "Level Mastered!",
+                            message: lang === 'sv' ? `Snyggt jobbat! Du går nu vidare till nivå ${nextLvl}.` : `Great work! Moving up to level ${nextLvl}.`,
+                            type: 'success'
+                        });
+
+                        setTimeout(() => {
+                            setLevel(nextLvl);
+                            fetchQuestion(topic, nextLvl, lang);
+                            setToast(null);
+                        }, 2500);
+                        return;
+                    }
+
                     if ([15, 25, 50].includes(result.newStreak)) setShowStreakModal(true);
-                    else if (result.levelUp) setLevelUpAvailable(true); 
                     else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
                 }
                 setFeedback('correct');
             } else {
+                // FIXED: History now registers incorrect answers
+                setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
+                
                 setQuestion({...question, attempts: (question.attempts || 0) + 1});
                 updateStats('incorrect');
                 if ((question.attempts || 0) + 1 >= 2) { 
@@ -283,6 +347,9 @@ function App() {
     };
 
     const handleSkip = () => {
+        // FIXED: History now registers skipped questions
+        setHistory(prev => [{ topic, level, correct: false, skipped: true, text: question.renderData.latex || question.renderData.description, time: Date.now() }, ...prev]);
+        
         updateStats('skipped');
         fetchQuestion(topic, level, lang, true);
     };
@@ -431,43 +498,21 @@ function App() {
             <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
             
             {(view === 'dashboard' || view === 'practice') && (
-                <header className="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-emerald-100 px-4 py-3">
-                    <div className="max-w-7xl mx-auto flex justify-between items-center">
-                        <div className="flex items-center gap-4">
-                            <h1 className="text-xl font-black text-emerald-800 tracking-tighter cursor-pointer uppercase italic" onClick={quitPractice}>ANPASSA</h1>
-                            {view === 'dashboard' && timerSettings.remaining > 0 && (
-                                <div className="hidden sm:flex bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase items-center gap-2 border border-orange-100">
-                                    <span>⏸ {ui.timer_paused}</span>
-                                    <span className="font-mono text-sm">{formatTime(timerSettings.remaining)}</span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <button onClick={() => setLang(lang === 'sv' ? 'en' : 'sv')} className="text-2xl hover:scale-110 transition-transform">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</button>
-                            <button onClick={() => setStatsOpen(true)} className="p-2 text-emerald-600/40 hover:text-emerald-700 rounded-full transition-all"><BarChart3 size={20} /></button>
-                            <div className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200/50">✅ {totalCorrect}</div>
-                            <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold border border-orange-200/50">🔥 {streak}</div>
-                            {session && <button onClick={() => supabase.auth.signOut()} className="text-[10px] font-bold text-slate-400 uppercase hover:text-rose-500 transition-colors ml-2">Logga ut</button>}
-                        </div>
+                <header className="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-emerald-100 px-4 py-3 flex justify-between items-center shadow-sm">
+                    <h1 className="text-xl font-black text-emerald-800 tracking-tighter cursor-pointer uppercase italic" onClick={quitPractice}>ANPASSA</h1>
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setLang(lang === 'sv' ? 'en' : 'sv')} className="text-2xl hover:scale-110 transition-transform">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</button>
+                        <button onClick={() => setStatsOpen(true)} className="p-2 text-emerald-600/40 hover:text-emerald-700 rounded-full transition-all"><BarChart3 size={20} /></button>
+                        <div className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200/50">✅ {totalCorrect}</div>
+                        <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold border border-orange-200/50">🔥 {streak}</div>
+                        {session && <button onClick={() => supabase.auth.signOut()} className="text-[10px] font-bold text-slate-400 uppercase hover:text-rose-500 transition-colors ml-2">Logga ut</button>}
                     </div>
                 </header>
             )}
 
             <div className="flex-1 flex flex-col relative overflow-x-hidden">
                 {view === 'dashboard' ? (
-                    <Dashboard
-                        profile={profile}
-                        lang={lang} selectedTopic={topic} selectedLevel={level} userRole={profile?.role || 'teacher'} 
-                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} onStart={startPractice} ui={ui} 
-                        onLgrOpen={() => setLgrOpen(true)} onContentOpen={() => setContentOpen(true)} onAboutOpen={() => setAboutOpen(true)}
-                        onStudioOpen={() => setView('question_studio')} 
-                        onStatsOpen={() => setStatsOpen(true)}
-                        onProfileOpen={() => setView('profile')} 
-                        onRelaunch={handleRelaunchSession} 
-                        onViewReport={handleViewArchiveReport}
-                        onEdit={handleEditArchivedPacket}
-                        timerSettings={timerSettings} toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})}
-                    />
+                    <Dashboard profile={profile} lang={lang} selectedTopic={topic} selectedLevel={level} userRole={profile?.role || 'teacher'} onSelect={(t, l) => { setTopic(t); setLevel(l); }} onStart={startPractice} ui={ui} onStudioOpen={() => setView('question_studio')} onProfileOpen={() => setView('profile')} onRelaunch={handleRelaunchSession} onViewReport={handleViewArchiveReport} onEdit={(r) => { setSavedPacket(r.active_question_data.packet); setSheetTitle(r.title); setStudioMode(r.active_question_data.mode || 'worksheet'); setView('question_studio'); }} timerSettings={timerSettings} toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} />
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />
                 ) : view === 'practice' ? (
@@ -478,68 +523,20 @@ function App() {
                         revealedClues={revealedClues} uiState={{ history, topic, level }} 
                         actions={{ retry: (f) => fetchQuestion(topic, level, lang, f), goBack: quitPractice }} 
                         isSolutionRevealed={isSolutionRevealed} timerSettings={timerSettings} formatTime={formatTime}
+                        toast={toast}
                     />
                 ) : view === 'question_studio' ? (
-                    <QuestionStudio 
-                        profile={profile}
-                        ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} 
-                        studioMode={studioMode} setStudioMode={setStudioMode}
-                        includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey}
-                        answerKeyStyle={answerKeyStyle} setAnswerKeyStyle={setAnswerKeyStyle}
-                        onClose={() => setView('dashboard')}
-                        onWorksheetGenerate={(p) => { setSavedPacket(p); setView('print'); }} 
-                        onDoNowGenerate={(conf, pack, liveData) => {
-                            if (liveData?.room) { setActiveRoom(liveData.room); setSavedPacket(liveData.packet); setView('teacher_live'); }
-                            else if (pack) { setSavedPacket(pack); if (conf?.title) setSheetTitle(conf.title); setView('do_now'); }
-                        }} 
-                    />
+                    <QuestionStudio profile={profile} ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} onWorksheetGenerate={(p) => { setSavedPacket(p); setView('print'); }} onDoNowGenerate={(conf, pack, liveData) => { if (liveData?.room) { setActiveRoom(liveData.room); setSavedPacket(liveData.packet); setView('teacher_live'); } else if (pack) { setSavedPacket(pack); if (conf?.title) setSheetTitle(conf.title); setView('do_now'); } }} />
                 ) : view === 'print' ? (
                     <PrintView packet={savedPacket} title={sheetTitle} lang={lang} onBack={() => setView('question_studio')} includeAnswerKey={includeAnswerKey} answerKeyStyle={answerKeyStyle} />
                 ) : view === 'do_now' ? (
-                    <DoNowGrid 
-                        questions={savedPacket} 
-                        ui={ui} 
-                        lang={lang} 
-                        onBack={() => setView('question_studio')} 
-                        onClose={() => setView('dashboard')} 
-                        onRefreshAll={handleRefreshAllDoNow} 
-                        onRefreshOne={handleRefreshOneDoNow}
-                    />
+                    <DoNowGrid questions={savedPacket} ui={ui} lang={lang} onBack={() => setView('question_studio')} onClose={() => setView('dashboard')} onRefreshAll={handleRefreshAllDoNow} onRefreshOne={handleRefreshOneDoNow} />
                 ) : view === 'live_session' && activeRoom ? (
                     <StudentLiveView session={activeRoom} packet={activeRoom.active_question_data?.packet || []} lang={lang} studentAlias={studentAlias} onBack={quitPractice} />
                 ) : view === 'teacher_live' && activeRoom ? (
-                    <TeacherLiveView 
-                        session={activeRoom} 
-                        packet={savedPacket} 
-                        lang={lang} 
-                        onCreateReport={(res) => { setReportData(res); setView('live_report'); }} 
-                        onEnd={async () => { 
-                            try {
-                                const { error } = await supabase.rpc('close_teacher_room', { target_room_id: activeRoom.id });
-                                if (error) throw error;
-                                setActiveRoom(null);
-                                setSavedPacket([]);
-                                setSheetTitle("");
-                                setView('dashboard');
-                            } catch (e) { alert("Fel vid arkivering: " + (e.message || "Databasfel")); }
-                        }} 
-                    />
+                    <TeacherLiveView session={activeRoom} packet={savedPacket} lang={lang} onEnd={handleEndSession} onKick={handleKick} onCreateReport={(res) => { setReportData(res); setView('live_report'); }} />
                 ) : view === 'live_report' && activeRoom && reportData ? (
-                    <SessionReportView 
-                        session={activeRoom} 
-                        packet={savedPacket} 
-                        responses={reportData} 
-                        onBack={() => {
-                            if (activeRoom.status === 'closed') {
-                                setView('dashboard');
-                                setActiveRoom(null); 
-                                setReportData(null);
-                            } else {
-                                setView('teacher_live');
-                            }
-                        }} 
-                        lang={lang} 
-                    />
+                    <SessionReportView session={activeRoom} packet={savedPacket} responses={reportData} onBack={() => { if (activeRoom.status === 'closed') { setView('dashboard'); setActiveRoom(null); setReportData(null); } else { setView('teacher_live'); } }} lang={lang} />
                 ) : null}
             </div>
         </div>

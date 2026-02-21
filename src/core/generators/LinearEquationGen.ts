@@ -19,6 +19,7 @@ export class LinearEquationGen {
             return this.problemGen.generate(level, lang);
         }
         
+        // Fix: Level 7 handles the mixed logic safely
         if (level === 7) {
             return this.level7_Mixed(lang, options);
         }
@@ -127,7 +128,7 @@ export class LinearEquationGen {
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Vilken operation isolerar x i $${q}$?` : `Which operation isolates x in $${q}$?`,
+                    description: lang === 'sv' ? `Vilket operation isolerar x i $${q}$?` : `Which operation isolates x in $${q}$?`,
                     answerType: 'multiple_choice', options: MathUtils.shuffle(ops)
                 },
                 token: this.toBase64(ansVal), variationKey: v, type: 'concept',
@@ -137,7 +138,8 @@ export class LinearEquationGen {
                     { text: rule },
                     { text: lang === 'sv' ? "Exempel på uträkning:" : "Example calculation:", latex: example },
                     { text: lang === 'sv' ? `Svar: ${ansVal}` : `Answer: ${ansVal}` }
-                ]
+                ],
+                metadata: { variation_key: v, difficulty: 1 }
             };
         }
 
@@ -159,7 +161,8 @@ export class LinearEquationGen {
                     { text: lang === 'sv' ? `Uträkning: ${targetX} - ${b} = ${targetX - b}.` : `Calculation: ${targetX} - ${b} = ${targetX - b}.` },
                     { text: lang === 'sv' ? `Eftersom ${targetX - b} inte är lika med ${targetX + b}, är påståendet falskt.` : `Since ${targetX - b} is not equal to ${targetX + b}, the statement is false.` },
                     { text: lang === 'sv' ? `Svar: ${lie}` : `Answer: ${lie}` }
-                ]
+                ],
+                metadata: { variation_key: v, difficulty: 1 }
             };
         }
 
@@ -219,7 +222,8 @@ export class LinearEquationGen {
                     { text: lang === 'sv' ? "Steg 1: I en ekvation med två steg är det oftast lättast att börja med additionen eller subtraktionen." : "Step 1: In a two-step equation, it is usually easiest to start with the addition or subtraction." },
                     { text: lang === 'sv' ? "Steg 2: Genom att 'flytta' siffertermen först får vi variabeltermen ensam på ena sidan." : "Step 2: By 'moving' the constant term first, we isolate the variable term on one side." },
                     { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}` }
-                ]
+                ],
+                metadata: { variation_key: v, difficulty: 2 }
             };
         }
 
@@ -268,7 +272,8 @@ export class LinearEquationGen {
                     { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${a}x + ${a*b}` },
                     { text: lang === 'sv' ? `Eftersom ${b} inte multiplicerats med ${a} i ett av alternativen, är det lögnen.` : `Since ${b} was not multiplied by ${a} in one of the options, that is the lie.` },
                     { text: lang === 'sv' ? `Svar: ${lie}` : `Answer: ${lie}` }
-                ]
+                ],
+                metadata: { variation_key: v, difficulty: 3 }
             };
         }
 
@@ -321,7 +326,8 @@ export class LinearEquationGen {
                     { text: lang === 'sv' ? "Steg 1: När x finns på båda sidor vill vi samla dem på en och samma sida." : "Step 1: When x is on both sides, we want to gather them on one side." },
                     { text: lang === 'sv' ? "Steg 2: Det är oftast bäst att ta bort den MINSTA x-termen först för att undvika negativa tal." : "Step 2: It is usually best to remove the SMALLEST x-term first to avoid negative numbers." },
                     { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}` }
-                ]
+                ],
+                metadata: { variation_key: v, difficulty: 4 }
             };
         }
 
@@ -344,10 +350,20 @@ export class LinearEquationGen {
         };
     }
 
+    // --- LEVEL 7: MIXED ---
     private level7_Mixed(lang: string, options: any): any {
-        const subLevel = MathUtils.randomInt(1, 4);
+        // Expand range to 1-6 to include Word Problems (5-6)
+        const subLevel = MathUtils.randomInt(1, 6);
         const data = this.generate(subLevel, lang, options);
+        
+        // Fix: Safety check to ensure metadata exists before assigning property
+        // Some variations in level 1 (concepts) did not return a metadata object
+        if (!data.metadata) {
+            data.metadata = { variation_key: data.variationKey || 'mixed_calc' };
+        }
+        
         data.metadata.mixed = true;
+        data.metadata.original_level = subLevel;
         return data;
     }
 }
