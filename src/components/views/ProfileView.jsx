@@ -45,23 +45,31 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
     }, [formData.class_code, originalCode]);
 
     const handleSave = async () => {
+        // Double check permissions and status before firing
+        if (!profile?.id) {
+            alert("Session saknas. Logga in igen.");
+            return;
+        }
+
         if (codeStatus !== 'available' && formData.class_code !== originalCode) return;
+        
         setIsSaving(true);
         try {
             const { error } = await supabase
                 .from('profiles')
                 .update({
-                    full_name: formData.full_name,
+                    full_name: formData.full_name.trim(),
                     class_code: formData.class_code.toUpperCase().trim(),
-                    school_name: formData.school_name,
+                    school_name: formData.school_name.trim(),
                     updated_at: new Date().toISOString()
                 })
-                .eq('id', profile.id);
+                .eq('id', profile.id); // Strict ID matching
 
             if (error) throw error;
             alert(lang === 'sv' ? "Profil sparad!" : "Profile saved!");
-            onBack(); // Return to dashboard to refresh profile data
+            onBack(); 
         } catch (err) {
+            console.error("Save Error:", err);
             alert("Error: " + err.message);
         } finally {
             setIsSaving(false);
@@ -70,19 +78,17 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
 
     return (
         <div className="min-h-screen bg-[#f9fbf7] font-sans pb-40 relative overflow-hidden">
-            {/* Header: Sage tinted with clean typography */}
             <header className="bg-white/70 backdrop-blur-md border-b border-emerald-100 px-6 py-5 sticky top-0 z-20">
                 <div className="max-w-4xl mx-auto flex justify-between items-center">
                     <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold uppercase text-emerald-700 hover:text-emerald-900 transition-colors">
                         <ChevronLeft size={20}/> Dashboard
                     </button>
                     <h1 className="text-lg font-black uppercase tracking-tight text-slate-800">Kontoinställningar</h1>
-                    <div className="w-24" /> {/* Spacer for balance */}
+                    <div className="w-24" /> 
                 </div>
             </header>
 
             <main className="max-w-4xl mx-auto p-6 space-y-10 relative z-10">
-                {/* 1. PERSONAL INFO SECTION */}
                 <section className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/5 border border-emerald-50 overflow-hidden">
                     <div className="p-8 border-b border-emerald-50 bg-emerald-50/30 flex items-center gap-4">
                         <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white">
@@ -116,7 +122,6 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                     </div>
                 </section>
 
-                {/* 2. PRACTICE CODE SECTION (Orange Accent) */}
                 <section className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/5 border border-emerald-50 overflow-hidden">
                     <div className="p-8 border-b border-orange-50 bg-orange-50/30 flex items-center gap-4">
                         <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white">
@@ -156,14 +161,12 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                     </div>
                 </section>
 
-                {/* 3. SUBSCRIPTION TIERS */}
                 <section className="space-y-6">
                     <div className="flex items-center gap-3 px-4">
                         <CreditCard size={18} className="text-emerald-600" />
                         <h2 className="text-xs font-bold uppercase tracking-[0.3em] text-emerald-800/40">Din Plan</h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* ACTIVE TRIAL CARD */}
                         <div className="bg-emerald-900 text-white p-8 rounded-[3rem] shadow-2xl relative overflow-hidden ring-8 ring-emerald-500/10">
                             <div className="absolute top-0 right-0 p-5 bg-emerald-500 rounded-bl-[2rem] text-[9px] font-black uppercase tracking-widest shadow-lg">Aktiv</div>
                             <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-2">Nuvarande Plan</div>
@@ -178,11 +181,10 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                             </div>
                             <div className="pt-6 border-t border-white/10">
                                 <p className="text-[9px] font-bold uppercase text-emerald-400/60 mb-1">Slutar gälla:</p>
-                                <p className="font-bold text-base">{new Date(profile?.subscription_end_date).toLocaleDateString()}</p>
+                                <p className="font-bold text-base">{profile?.subscription_end_date ? new Date(profile.subscription_end_date).toLocaleDateString() : '---'}</p>
                             </div>
                         </div>
 
-                        {/* PRO PLACEHOLDER */}
                         <div className="bg-white p-8 rounded-[3rem] shadow-lg border border-emerald-50 flex flex-col opacity-50 grayscale transition-all hover:grayscale-0 hover:opacity-100 group">
                             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Individuell</div>
                             <div className="text-2xl font-black text-slate-800 mb-6 uppercase tracking-tight">Pro-Lärare</div>
@@ -190,7 +192,6 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                             <button disabled className="mt-auto w-full py-4 bg-[#f9fbf7] text-slate-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest border border-slate-100">Kommer Snart</button>
                         </div>
 
-                        {/* SCHOOL PLACEHOLDER */}
                         <div className="bg-white p-8 rounded-[3rem] shadow-lg border border-emerald-50 flex flex-col opacity-50 grayscale transition-all hover:grayscale-0 hover:opacity-100 group">
                             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Organisation</div>
                             <div className="text-2xl font-black text-slate-800 mb-2 uppercase tracking-tight">Hel Skola</div>
@@ -201,7 +202,6 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                 </section>
             </main>
 
-            {/* FLOATING SAVE BAR */}
             <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-50 animate-in slide-in-from-bottom-6 duration-500">
                 <button 
                     onClick={handleSave}
@@ -213,7 +213,6 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                 </button>
             </div>
 
-            {/* Visual Anchor: Bottom Wave */}
             <div className="absolute bottom-0 left-0 w-full leading-[0] pointer-events-none z-0">
                 <svg className="relative block w-full h-[400px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
                     <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-emerald-100/40"></path>
