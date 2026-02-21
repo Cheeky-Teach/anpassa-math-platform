@@ -264,11 +264,12 @@ export class PercentGen {
         };
     }
 
-    // --- LEVEL 5: REVERSE PERCENTAGE ---
+    // --- LEVEL 5: REVERSE PERCENTAGE (Scaling Strategy Refactor) ---
     private level5_ReversePercentage(lang: string, variationKey?: string, options: any = {}): any {
         const p = MathUtils.randomChoice([5, 10, 20, 25]);
         const w = MathUtils.randomInt(10, 50) * 10;
         const part = (p * w) / 100;
+        const multiplier = 100 / p;
 
         return {
             renderData: {
@@ -278,9 +279,10 @@ export class PercentGen {
             token: this.toBase64(w.toString()), variationKey: 'reverse_find_whole', type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? `Steg 1: Vi vet att ${p}% motsvarar ${part} kr.` : `Step 1: We know that ${p}% corresponds to ${part} kr.` },
-                { text: lang === 'sv' ? `Steg 2: Beräkna vad 1% är genom att dela värdet med ${p}.` : `Step 2: Calculate what 1% is by dividing the value by ${p}.`, latex: `1\\% = \\frac{${part}}{${p}} = ${part/p}` },
-                { text: lang === 'sv' ? "Steg 3: Nu kan vi hitta 100% genom att multiplicera värdet för 1% med 100." : "Step 3: Now we can find 100% by multiplying the value for 1% by 100.", latex: `${part/p} · 100 = ${w}` },
-                { text: lang === 'sv' ? `Svar: ${w}` : `Answer: ${w}` }
+                { text: lang === 'sv' ? `Steg 2: Hur många gånger går ${p}% i 100%?` : `Step 2: How many times does ${p}% fit into 100%?` },
+                { text: lang === 'sv' ? `Det går ${multiplier} stycken delar (eftersom ${multiplier} · ${p} = 100).` : `It fits ${multiplier} times (since ${multiplier} · ${p} = 100).` },
+                { text: lang === 'sv' ? `Steg 3: För att få 100% multiplicerar vi därför värdet för delen (${part}) med ${multiplier}.` : `Step 3: To find 100%, we multiply the value of the part (${part}) by ${multiplier}.`, latex: `100\\% = ${part} · ${multiplier} = ${w}` },
+                { text: lang === 'sv' ? `Svar: ${w} kr` : `Answer: ${w} kr` }
             ]
         };
     }

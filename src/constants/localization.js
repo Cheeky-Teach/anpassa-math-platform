@@ -271,7 +271,7 @@ export const LEVEL_DESCRIPTIONS = {
         1: { sv: "Är de likformiga?", en: "Are they similar?" },
         2: { sv: "Beräkna sida (Enkel)", en: "Calc Side (Simple)" },
         3: { sv: "Topptriangelsatsen", en: "Top Triangle Theorem" },
-        4: { sv: "Pythagoras & Likformighet", en: "Pythagoras & Similarity" }
+        4: { sv: "Blandad (1-3)", en: "Mixed (1-3)" }
     },
     pythagoras: {
         1: { sv: "Kvadrater & Rötter", en: "Squares & Roots" },

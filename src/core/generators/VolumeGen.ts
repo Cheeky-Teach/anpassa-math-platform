@@ -197,7 +197,7 @@ export class VolumeGen {
             return {
                 renderData: {
                     geometry: { type: 'pyramid', labels: { s, h } },
-                    description: lang === 'sv' ? "Beräkna pyramidens volym." : "Calculate the volume of the pyramid.",
+                    description: lang === 'sv' ? "Pyramiden har en kvadratisk basyta. Beräkna pyramidens volym." : "Calculate the volume of the pyramid with a square base.",
                     answerType: 'numeric', suffix: 'cm³'
                 },
                 token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',

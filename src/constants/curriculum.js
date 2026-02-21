@@ -148,7 +148,7 @@ export const LEVEL_DESCRIPTIONS = {
         1: { sv: "Likformig eller inte?", en: "Similar or not?" },
         2: { sv: "Beräkna längden (x)", en: "Calculate length (x)" },
         3: { sv: "Topptriangelsatsen", en: "Top Triangle Theorem" },
-        4: { sv: "Pythagoras sats", en: "Pythagorean Theorem" }
+        4: { sv: "Blandad", en: "Mixed" }
     },
     PythagorasGen: { 
         1: { sv: "Kvadrater & Rötter", en: "Squares & Roots" },
