@@ -1,19 +1,34 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 /**
- * VolumeVisualization - Corrected for rendering stability and scaling logic.
- * Ensures all 3D volume types (cuboids, prisms, pyramids, spheres, etc.) 
- * render correctly in the QuestionStudio preview pane.
+ * VolumeVisualization - Refactored to be fully responsive to its parent container.
  */
-export const VolumeVisualization = ({ data, width = 200, height = 200 }) => {
+export const VolumeVisualization = ({ data }) => {
     const canvasRef = useRef(null);
+    const containerRef = useRef(null);
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+    // Handle container resizing
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (let entry of entries) {
+                const { width, height } = entry.contentRect;
+                setDimensions({ width, height });
+            }
+        });
+
+        resizeObserver.observe(containerRef.current);
+        return () => resizeObserver.disconnect();
+    }, []);
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas || !data) return;
+        if (!canvas || !data || dimensions.width === 0) return;
         const ctx = canvas.getContext('2d');
         
-        // Internal resolution (doubled for sharpness on all screens)
+        // Internal resolution (doubled for sharpness)
         const w = canvas.width;
         const h = canvas.height;
         const cx = w / 2;
@@ -42,7 +57,6 @@ export const VolumeVisualization = ({ data, width = 200, height = 200 }) => {
             
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; 
             ctx.beginPath();
-            // Fallback for older environments without roundRect
             if (ctx.roundRect) {
                 ctx.roundRect(x - m.width/2 - pW, y - fontSize/2 - pH, m.width + (pW * 2), fontSize + (pH * 2), 8);
                 ctx.fill();
@@ -73,12 +87,9 @@ export const VolumeVisualization = ({ data, width = 200, height = 200 }) => {
         const labels = data.labels || {};
         const type = (data.type || '').toLowerCase();
 
-        // Use parseInt to strip potential units (e.g., "10 cm" -> 10) and ensure valid numbers
         const valW = parseInt(labels.w || labels.s || labels.b) || 10;
         const valH = parseInt(labels.h) || 10;
         const valD = parseInt(labels.d || labels.l) || 10;
-        
-        // Fixed: Calculate valR safely to avoid NaN during scale calculation
         const rawD = parseInt(labels.d);
         const valR = parseInt(labels.r) || (rawD ? rawD / 2 : 5);
 
@@ -101,11 +112,11 @@ export const VolumeVisualization = ({ data, width = 200, height = 200 }) => {
             logicalH = valH + (valR * 0.8);
         }
 
+        // Scaling remains identical, now using dynamic dimensions
         const scale = (Math.min(w, h) * 0.52) / Math.max(logicalW, logicalH);
         const labelGap = 42; 
 
         // --- DRAWING FUNCTIONS ---
-
         if (type === 'cuboid') {
             const dw = valW * scale;
             const dh = valH * scale;
@@ -175,7 +186,6 @@ export const VolumeVisualization = ({ data, width = 200, height = 200 }) => {
             drawLabel(labels.w || labels.s, x0 + pw/2, y0 + labelGap);
         }
         else {
-            // ROUNDED SHAPES logic
             const r = valR * scale;
             const vh = valH * scale;
 
@@ -235,15 +245,18 @@ export const VolumeVisualization = ({ data, width = 200, height = 200 }) => {
                 drawRadiusOrDiameter(cx, cy, r);
             }
         }
-    }, [data, width, height]);
+    }, [data, dimensions]);
 
     return (
-        <div className="flex justify-center items-center w-full h-full min-h-[260px] p-4 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div 
+            ref={containerRef} 
+            className="flex justify-center items-center w-full h-full p-4 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+        >
             <canvas 
                 ref={canvasRef} 
-                width={width * 2} 
-                height={height * 2} 
-                style={{ width: '100%', height: '100%', maxWidth: width, maxHeight: height }}
+                width={dimensions.width * 2} 
+                height={dimensions.height * 2} 
+                style={{ width: '100%', height: '100%', display: 'block' }}
                 className="object-contain"
             />
         </div>
