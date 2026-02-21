@@ -38,9 +38,9 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
     const renderVisualContent = () => {
         if (!data) return null;
 
-        // Pass explicit sizing to Canvas/3D components
-        const vW = isFocused ? 450 : 240;
-        const vH = isFocused ? 300 : 140;
+        // Increased height dimensions for grid (220px) and focused (420px) states
+        const vW = isFocused ? 600 : 300;
+        const vH = isFocused ? 420 : 220;
 
         if (data.graph) return <GraphCanvas data={data.graph} width={vW} height={vH} />;
         if (data.geometry) {
@@ -75,30 +75,28 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
             </div>
 
             <div className={`flex-1 flex flex-col items-center text-center relative overflow-hidden transition-all duration-300 
-                ${isFocused ? 'p-12' : 'p-3'}`}>
+                ${isFocused ? 'p-10' : 'p-3'}`}>
                 
-                {/* FIX: Removed CSS 'transform scale'. 
-                   Instead, we use a fixed height container that is responsive.
-                */}
+                {/* Visual Area: Height increased from 180px to 220px for better vertical breathing room */}
                 {hasVisual && (
                     <div className={`w-full flex justify-center items-center shrink-0 overflow-hidden
-                        ${isFocused ? 'h-[320px] mb-8' : 'h-[140px] mb-3'}`}>
+                        ${isFocused ? 'h-[440px] mb-6' : 'h-[220px] mb-2'}`}>
                         {renderVisualContent()}
                     </div>
                 )}
 
                 <div className={`font-bold text-slate-800 leading-tight ${textSizeClass} flex-1 flex flex-col justify-center items-center transition-all w-full
-                    ${isFocused ? 'px-8 pb-8' : 'px-1'}`}>
+                    ${isFocused ? 'px-8 pb-4' : 'px-1'}`}>
                     <MathDisplay content={data?.description} />
                     {data?.latex && (
-                        <div className={`text-indigo-600 font-serif ${isFocused ? 'mt-6 text-5xl' : 'mt-2'}`}>
+                        <div className={`text-indigo-600 font-serif ${isFocused ? 'mt-4 text-5xl' : 'mt-1'}`}>
                             <MathDisplay content={`$$${data.latex}$$`} />
                         </div>
                     )}
                 </div>
 
                 {data?.options && data.options.length > 0 && (
-                    <div className={`grid grid-cols-2 gap-3 w-full shrink-0 ${isFocused ? 'mt-8 max-w-4xl' : 'mt-2'}`}>
+                    <div className={`grid grid-cols-2 gap-3 w-full shrink-0 ${isFocused ? 'mt-6 max-w-4xl pb-4' : 'mt-2'}`}>
                         {data.options.map((opt, idx) => (
                             <div key={idx} className={`bg-white border-2 border-slate-100 rounded-xl flex items-center gap-3 shadow-sm
                                 ${isFocused ? 'p-6 text-2xl' : 'p-2 text-sm font-bold text-left text-slate-700'}`}>
@@ -198,7 +196,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                     className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-6 md:p-12 animate-in fade-in zoom-in duration-300 cursor-zoom-out"
                     onClick={() => setFocusedIndex(null)}
                 >
-                    <div className="w-full max-w-6xl h-full max-h-[90vh] shadow-2xl rounded-[3rem] cursor-default bg-white overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+                    <div className="w-full max-w-6xl h-full max-h-[95vh] shadow-2xl rounded-[3rem] cursor-default bg-white overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
                         <DoNowCard index={focusedIndex} q={questions[focusedIndex]} showAnswer={!!revealed[focusedIndex]} onToggleAnswer={() => toggleOne(focusedIndex)} onRefresh={() => onRefreshOne(focusedIndex)} onFocus={() => {}} lang={lang} textSizeClass="text-5xl" isFocused={true} />
                     </div>
                 </div>
