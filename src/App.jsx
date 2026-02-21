@@ -189,10 +189,20 @@ function App() {
             else setLoadingProfile(false);
         });
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
             setSession(s);
-            if (s) fetchProfile(s.user.id);
-            else { setProfile(null); setView('landing'); }
+            if (s) {
+                // Catch the Password Recovery event to prevent dashboard redirect
+                if (event === 'PASSWORD_RECOVERY') {
+                    setView('profile');
+                    fetchProfile(s.user.id);
+                } else {
+                    fetchProfile(s.user.id);
+                }
+            } else {
+                setProfile(null);
+                setView('landing');
+            }
         });
         return () => subscription.unsubscribe();
     }, []);
@@ -200,7 +210,15 @@ function App() {
     const fetchProfile = async (uid) => {
         const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
         setProfile(data);
-        setView(currentView => (currentView === 'landing' || currentView === 'auth') ? 'dashboard' : currentView);
+        
+        setView(currentView => {
+            // If the user is already on 'profile' (via recovery link or deep link), stay there
+            if (currentView === 'profile') return 'profile';
+            // Otherwise, if they were on a landing/auth page, move to dashboard
+            if (currentView === 'landing' || currentView === 'auth') return 'dashboard';
+            return currentView;
+        });
+
         setLoadingProfile(false);
     };
 
@@ -341,17 +359,12 @@ function App() {
         }
     };
 
-    // --- REFACTORED: SMART EDIT HANDLER (Detects mode from archive) ---
     const handleEditArchivedPacket = (archivedRoom) => {
         if (!archivedRoom?.active_question_data?.packet) return;
-        
         setSavedPacket(archivedRoom.active_question_data.packet);
         setSheetTitle(archivedRoom.title || "Kopia av " + archivedRoom.class_code);
-        
-        // Detect mode from metadata or fallback
         const mode = archivedRoom.active_question_data.mode || 'worksheet';
         setStudioMode(mode); 
-        
         setView('question_studio');
     };
 
