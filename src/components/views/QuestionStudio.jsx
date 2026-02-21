@@ -34,6 +34,15 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
 };
 
+// --- NEW: SHARED BACKGROUND COMPONENT ---
+const BackgroundWave = () => (
+    <div className="fixed bottom-0 left-0 w-full leading-[0] pointer-events-none z-[-1] overflow-hidden opacity-40">
+        <svg className="relative block w-full h-[300px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-emerald-100"></path>
+        </svg>
+    </div>
+);
+
 export default function QuestionStudio({ 
     profile,
     onDoNowGenerate, 
@@ -237,7 +246,6 @@ export default function QuestionStudio({
   const handleLaunchGrid = () => { if (!isSaved && !window.confirm(t.unsaved_warning)) return; onDoNowGenerate({ title: sheetTitle }, packet); };
   const handleLaunchPrint = () => { if (!isSaved && !window.confirm(t.unsaved_warning)) return; onWorksheetGenerate(packet); };
   
-  // --- UPDATED: Save Mode Metadata to Live Session ---
   const handleLaunchLive = async () => {
     if (!isSaved && !window.confirm(t.unsaved_warning)) return;
     const { data: { user } } = await supabase.auth.getUser();
@@ -249,7 +257,6 @@ export default function QuestionStudio({
             status: 'active', 
             title: sheetTitle || "Live Session", 
             active_worksheet_id: activeSheetId, 
-            // Save the mode (donow vs worksheet) so the dashboard can render it correctly
             active_question_data: { packet: packet, mode: setupMode } 
         }]).select().single();
         
@@ -273,7 +280,6 @@ export default function QuestionStudio({
         for (let i = 0; i < qty; i++) {
             const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variation.key}&lang=${lang}`);
             const data = await res.json();
-            
             const isFirstInBatch = i === 0;
             
             newItems.push({ 
@@ -321,7 +327,7 @@ export default function QuestionStudio({
     return (
       <div className="flex-1 bg-slate-50 flex flex-col p-12 overflow-y-auto relative custom-scrollbar">
         <button onClick={onClose} className="absolute top-8 right-8 p-3 bg-slate-900 text-white hover:bg-rose-600 rounded-2xl shadow-xl transition-all flex items-center gap-2 font-black text-[10px] uppercase tracking-widest z-50"><X size={18}/> {t.btn_close}</button>
-        <div className="max-w-6xl w-full mx-auto space-y-12">
+        <div className="max-w-6xl w-full mx-auto space-y-12 relative z-10">
             <div className="text-center">
                 <h2 className="text-6xl font-black text-slate-900 tracking-tighter uppercase italic mb-8">{t.studio}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
@@ -364,6 +370,7 @@ export default function QuestionStudio({
                 </div>
             </div>
         </div>
+        <BackgroundWave /> {/* Background added to Library View */}
         {peekSheet && (
             <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-sm">
                 <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
@@ -383,7 +390,7 @@ export default function QuestionStudio({
 
   // --- RENDER: MAIN STUDIO ---
   return (
-    <div className="flex flex-col h-screen bg-slate-200 font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-slate-200 font-sans overflow-hidden relative">
       <header className="bg-white border-b border-slate-300 px-6 py-3 flex items-center justify-between shadow-md z-50">
         <div className="flex items-center gap-4 flex-1">
           <button onClick={() => { if(!isSaved && !window.confirm(t.unsaved_warning)) return; setSetupMode(null); }} className="text-[11px] font-black text-indigo-600 uppercase hover:underline flex items-center gap-1 shrink-0"><ChevronLeft size={16}/> {t.change_mode}</button>
@@ -405,7 +412,7 @@ export default function QuestionStudio({
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative z-10">
         <div className={`bg-white border-r border-slate-300 flex flex-col shrink-0 transition-all duration-300 ${isPane1Collapsed ? 'w-16' : 'w-72'}`}>
           <div className={`p-4 border-b flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-end'}`}><button onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">{isPane1Collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}</button></div>
           <div className={`flex-1 overflow-y-auto custom-scrollbar transition-opacity duration-200 ${isPane1Collapsed ? 'opacity-0 invisible' : 'opacity-100 p-4 space-y-6'}`}>
@@ -413,7 +420,7 @@ export default function QuestionStudio({
           </div>
         </div>
 
-        <div className="w-[340px] bg-slate-50 border-r border-slate-300 flex flex-col shrink-0">
+        <div className="w-[340px] bg-slate-50/80 backdrop-blur-sm border-r border-slate-300 flex flex-col shrink-0">
           <div className="p-6 border-b bg-white shrink-0 shadow-sm"><h1 className="text-lg font-black text-slate-900 uppercase italic truncate">{currentTopic?.name[lang]}</h1></div>
           <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
               {currentTopic?.variations.map(v => (
@@ -429,7 +436,7 @@ export default function QuestionStudio({
           </div>
         </div>
 
-        <div className="flex-1 bg-slate-200 p-8 flex flex-col overflow-hidden relative">
+        <div className="flex-1 p-8 flex flex-col overflow-hidden relative">
           <div className="flex justify-center mb-6 gap-4">
               <div className="bg-white/80 backdrop-blur-md p-1 rounded-2xl shadow-xl flex gap-1 border border-white">
                   <button onClick={() => setCanvasMode('studio')} className={`px-8 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'studio' ? 'bg-slate-900 text-white' : 'text-slate-400'}`}><Zap size={14}/> Studio</button>
@@ -480,7 +487,7 @@ export default function QuestionStudio({
           )}
         </div>
 
-        <div className={`bg-white border-l border-slate-300 flex flex-col shadow-2xl shrink-0 w-80 transition-all`}>
+        <div className={`bg-white/90 backdrop-blur-sm border-l border-slate-300 flex flex-col shadow-2xl shrink-0 w-80 transition-all`}>
           <div className="p-6 border-b flex items-center justify-between bg-slate-50/80">
               <div className="flex items-center gap-2"><Layers size={16} className="text-slate-400" /><h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 italic">{t.selected_questions}</h2><div className="bg-slate-900 text-white px-2 py-0.5 rounded-lg text-[10px] font-black">{packet.length}</div></div>
               <button onClick={() => { if(window.confirm(t.clear_all + "?")) setPacket([]); }} className="text-slate-300 hover:text-rose-500 transition-colors flex items-center gap-1 text-[9px] font-black uppercase tracking-widest"><Eraser size={14}/> {t.clear_all}</button>
@@ -501,6 +508,7 @@ export default function QuestionStudio({
           )}
         </div>
       </div>
+      <BackgroundWave /> {/* Background added to Editor View */}
     </div>
   );
 }
