@@ -318,7 +318,6 @@ function App() {
                 }
                 setFeedback('correct');
             } else {
-                // FIXED: History now registers incorrect answers
                 setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
                 
                 setQuestion({...question, attempts: (question.attempts || 0) + 1});
@@ -347,7 +346,6 @@ function App() {
     };
 
     const handleSkip = () => {
-        // FIXED: History now registers skipped questions
         setHistory(prev => [{ topic, level, correct: false, skipped: true, text: question.renderData.latex || question.renderData.description, time: Date.now() }, ...prev]);
         
         updateStats('skipped');
@@ -512,7 +510,21 @@ function App() {
 
             <div className="flex-1 flex flex-col relative overflow-x-hidden">
                 {view === 'dashboard' ? (
-                    <Dashboard profile={profile} lang={lang} selectedTopic={topic} selectedLevel={level} userRole={profile?.role || 'teacher'} onSelect={(t, l) => { setTopic(t); setLevel(l); }} onStart={startPractice} ui={ui} onStudioOpen={() => setView('question_studio')} onProfileOpen={() => setView('profile')} onRelaunch={handleRelaunchSession} onViewReport={handleViewArchiveReport} onEdit={(r) => { setSavedPacket(r.active_question_data.packet); setSheetTitle(r.title); setStudioMode(r.active_question_data.mode || 'worksheet'); setView('question_studio'); }} timerSettings={timerSettings} toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} />
+                    <Dashboard 
+                        profile={profile} 
+                        lang={lang} selectedTopic={topic} selectedLevel={level} userRole={profile?.role || 'teacher'} 
+                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} onStart={startPractice} ui={ui} 
+                        onStudioOpen={() => setView('question_studio')} 
+                        onProfileOpen={() => setView('profile')} 
+                        onRelaunch={handleRelaunchSession} 
+                        onViewReport={handleViewArchiveReport} 
+                        onEdit={handleEditArchivedPacket}
+                        onStatsOpen={() => setStatsOpen(true)}
+                        onLgrOpen={() => setLgrOpen(true)}
+                        onAboutOpen={() => setAboutOpen(true)}
+                        onContentOpen={() => setContentOpen(true)}
+                        timerSettings={timerSettings} toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
+                    />
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />
                 ) : view === 'practice' ? (
