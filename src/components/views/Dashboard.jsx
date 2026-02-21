@@ -4,7 +4,7 @@ import {
   ChevronDown, ChevronUp, ChevronRight, Zap, Play, Clock, Book, Map, Info, 
   Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, User, 
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet, MoreHorizontal,
-  PlayCircle // Added for Resume Banner
+  PlayCircle, CheckCircle2, AlertCircle // Icons for metrics
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
@@ -21,7 +21,7 @@ const Dashboard = ({
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
     timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen,
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, 
-    onRelaunch, onViewReport, // Props for Session Handlers
+    onRelaunch, onViewReport, onEdit, 
     userRole = 'teacher'
 }) => {
     const [expandedCategory, setExpandedCategory] = useState('algebra');
@@ -42,8 +42,9 @@ const Dashboard = ({
             start_btn: "Börja öva", resources: "Resurser", content_map: "Innehållskarta",
             lgr_link: "LGR 22 Koppling", about_link: "Om skaparen", brand_motto: "Rätt stöd. Direkt.",
             profile_btn: "Inställningar", profile_desc: "Konto & Skola",
-            archive_empty: "Inga avslutade lektioner än.", relaunch_btn: "Kör igen",
-            view_report: "Visa rapport", resume_h: "Lektion pågår", resume_btn: "Återuppta"
+            archive_empty: "Inga avslutade lektioner de senaste 48 timmarna.", relaunch_btn: "Kör igen",
+            view_report: "Visa rapport", resume_h: "Lektion pågår", resume_btn: "Återuppta",
+            accuracy_label: "Träffsäkerhet", edit_btn: "Öppna i Studio"
         },
         en: {
             tools_section: "Tools", class_code_label: "Your Class Code", connected_code_label: "Connected to code",
@@ -55,8 +56,9 @@ const Dashboard = ({
             start_btn: "Start practicing", resources: "Resources", content_map: "Content Map",
             lgr_link: "Curriculum Links", about_link: "About Creator", brand_motto: "Right support. Instantly.",
             profile_btn: "Settings", profile_desc: "Account & School",
-            archive_empty: "No finished sessions yet.", relaunch_btn: "Relaunch",
-            view_report: "View Report", resume_h: "Session in Progress", resume_btn: "Resume"
+            archive_empty: "No finished sessions in the last 48 hours.", relaunch_btn: "Relaunch",
+            view_report: "View Report", resume_h: "Session in Progress", resume_btn: "Resume",
+            accuracy_label: "Accuracy", edit_btn: "Open in Studio"
         }
     };
 
@@ -64,9 +66,7 @@ const Dashboard = ({
 
     // --- FETCH LOGIC ---
     useEffect(() => {
-        // Heartbeat check for active sessions
         fetchActiveSession();
-        
         if (activeTab === 'archive' && userRole === 'teacher') {
             fetchArchive();
         }
@@ -75,7 +75,6 @@ const Dashboard = ({
     const fetchActiveSession = async () => {
         if (userRole !== 'teacher' || !profile?.id) return;
         try {
-            // Preventing limbo: find the most recent room that hasn't been closed
             const { data, error } = await supabase
                 .from('rooms')
                 .select('*')
@@ -95,16 +94,30 @@ const Dashboard = ({
     const fetchArchive = async () => {
         setIsLoadingArchive(true);
         try {
+            const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
             const { data, error } = await supabase
                 .from('rooms')
-                .select(`*, responses(count)`)
+                .select(`
+                    *,
+                    responses(is_correct, student_alias)
+                `)
                 .eq('teacher_id', profile.id)
                 .eq('status', 'closed')
-                .order('created_at', { ascending: false })
-                .limit(15);
+                .gt('created_at', cutoff) 
+                .order('created_at', { ascending: false });
             
             if (error) throw error;
-            setArchivedSessions(data || []);
+
+            const processed = (data || []).map(room => {
+                const total = room.responses?.length || 0;
+                const correct = room.responses?.filter(r => r.is_correct).length || 0;
+                const uniqueStudents = new Set(room.responses?.map(r => r.student_alias)).size;
+                const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+                
+                return { ...room, accuracy, studentCount: uniqueStudents };
+            });
+
+            setArchivedSessions(processed);
         } catch (err) { console.error("Archive Fetch Error:", err); }
         finally { setIsLoadingArchive(false); }
     };
@@ -116,7 +129,7 @@ const Dashboard = ({
             <div className="max-w-5xl mx-auto w-full p-6 animate-in fade-in duration-700 flex flex-col min-h-screen relative z-10 font-sans">
                 
                 {/* --- ACTIVE SESSION RESUME BANNER --- */}
-                {activeSession && (
+                {activeSession && userRole === 'teacher' && (
                     <div className="mb-8 p-6 bg-emerald-900 rounded-[2.5rem] text-white shadow-2xl shadow-emerald-900/20 flex flex-col sm:flex-row items-center justify-between gap-6 animate-in slide-in-from-top-4 duration-500">
                         <div className="flex items-center gap-6">
                             <div className="w-14 h-14 bg-white/10 rounded-[1.5rem] flex items-center justify-center backdrop-blur-md">
@@ -149,7 +162,7 @@ const Dashboard = ({
                                 {userRole === 'teacher' ? (profile?.full_name || "Lärare") : "Elev"}
                             </h1>
                             <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/60 flex items-center gap-2">
-                                <Target size={12}/> {profile?.school_name || "Anpassa Digital"}
+                                <Target size={12}/> {profile?.school_name || "Anpassa Math Platform"}
                             </p>
                         </div>
                     </div>
@@ -198,11 +211,14 @@ const Dashboard = ({
                                 {timerSettings.duration > 0 && <button onClick={resetTimer} className="p-2 text-rose-500 bg-white rounded-xl shadow-sm border border-rose-100 hover:bg-rose-50"><History size={16} /></button>}
                             </div>
                         </div>
-                        <button onClick={onProfileOpen} className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-emerald-600 transition-all text-left shadow-sm">
-                            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm"><Settings size={20} /></div>
-                            <span className="block font-bold text-sm uppercase text-slate-700 mb-1">{t.profile_btn}</span>
-                            <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">{t.profile_desc}</span>
-                        </button>
+                        {/* Tool: Profile/Settings (Teacher Only) */}
+                        {userRole === 'teacher' && (
+                            <button onClick={onProfileOpen} className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-emerald-600 transition-all text-left shadow-sm">
+                                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm"><Settings size={20} /></div>
+                                <span className="block font-bold text-sm uppercase text-slate-700 mb-1">{t.profile_btn}</span>
+                                <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">{t.profile_desc}</span>
+                            </button>
+                        )}
                     </div>
                 </section>
 
@@ -267,7 +283,7 @@ const Dashboard = ({
                     </section>
                 ) : (
                     /* --- ARCHIVE VIEW --- */
-                    <section className="animate-in slide-in-from-right-4 duration-500">
+                    <section className="animate-in slide-in-from-right-4 duration-500 space-y-4">
                         {isLoadingArchive ? (
                             <div className="flex items-center justify-center p-20"><div className="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full" /></div>
                         ) : archivedSessions.length === 0 ? (
@@ -276,41 +292,53 @@ const Dashboard = ({
                                 <p className="font-bold text-slate-400 uppercase tracking-widest">{t.archive_empty}</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 gap-4">
-                                {archivedSessions.map(session => (
-                                    <div key={session.id} className="bg-white p-6 rounded-[2rem] border border-emerald-50 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center justify-between gap-6 group">
-                                        <div className="flex items-center gap-6 flex-1 min-w-0">
-                                            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                                                <FileSpreadsheet size={24} />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <h4 className="font-bold text-slate-800 text-lg truncate leading-none mb-1">{session.title || "Live Lektion"}</h4>
-                                                <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                                    <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(session.created_at).toLocaleDateString()}</span>
-                                                    <span className="flex items-center gap-1"><Users size={12}/> {session.responses[0]?.count || 0} Elever</span>
-                                                    <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md border border-emerald-100">{session.class_code}</span>
-                                                </div>
-                                            </div>
+                            archivedSessions.map(session => (
+                                <div key={session.id} className="bg-white p-6 rounded-[2.5rem] border border-emerald-50 shadow-sm hover:shadow-xl transition-all flex flex-col lg:flex-row items-center justify-between gap-6 group">
+                                    <div className="flex items-center gap-6 flex-1 min-w-0">
+                                        <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                                            <FileSpreadsheet size={28} />
                                         </div>
-                                        
-                                        <div className="flex items-center gap-3 w-full md:w-auto">
-                                            <button 
-                                                onClick={() => onViewReport(session)}
-                                                className="flex-1 md:flex-none px-6 py-3 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100"
-                                            >
-                                                {t.view_report}
-                                            </button>
-                                            <button 
-                                                onClick={() => onRelaunch(session)}
-                                                className="flex-1 md:flex-none px-6 py-3 bg-emerald-900 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg flex items-center gap-2"
-                                            >
-                                                <RotateCcw size={14}/> {t.relaunch_btn}
-                                            </button>
-                                            <button className="p-3 text-slate-300 hover:text-slate-900 transition-colors"><MoreHorizontal size={20}/></button>
+                                        <div className="min-w-0">
+                                            <h4 className="font-bold text-slate-800 text-lg truncate leading-none mb-2">{session.title || "Live Lektion"}</h4>
+                                            <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                                <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md"><Calendar size={12}/> {new Date(session.created_at).toLocaleDateString()}</span>
+                                                <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md"><Users size={12}/> {session.studentCount} Elever</span>
+                                                <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md border border-emerald-100 font-black">{session.class_code}</span>
+                                            </div>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+
+                                    {/* ACCURACY METRIC BADGE */}
+                                    <div className="flex items-center gap-8 px-6 border-l border-slate-100">
+                                        <div className="text-center">
+                                            <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">{t.accuracy_label}</span>
+                                            <div className={`text-2xl font-black italic ${session.accuracy > 70 ? 'text-emerald-500' : session.accuracy > 40 ? 'text-amber-500' : 'text-rose-500'}`}>
+                                                {session.accuracy}%
+                                            </div>
+                                        </div>
+                                        <div className="w-12 h-12 rounded-full border-4 border-slate-50 flex items-center justify-center">
+                                            {session.accuracy > 70 ? (
+                                                <CheckCircle2 size={20} className="text-emerald-500" />
+                                            ) : (
+                                                <AlertCircle size={20} className={session.accuracy > 40 ? "text-amber-500" : "text-rose-500"} />
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                                        <button onClick={() => onViewReport(session)} className="flex-1 lg:flex-none px-5 py-4 bg-slate-50 text-slate-600 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100">
+                                            {t.view_report}
+                                        </button>
+                                        <button onClick={() => onEdit(session)} className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 group/edit" title={t.edit_btn}>
+                                            <PenTool size={18} />
+                                        </button>
+                                        <button onClick={() => onRelaunch(session)} className="flex-1 lg:flex-none px-6 py-4 bg-emerald-900 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95">
+                                            <RotateCcw size={14}/> {t.relaunch_btn}
+                                        </button>
+                                        <button className="p-3 text-slate-200 hover:text-slate-900 transition-colors"><MoreHorizontal size={20}/></button>
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </section>
                 )}

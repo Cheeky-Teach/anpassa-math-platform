@@ -58,6 +58,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
     // --- 4. AUTO-HANDSHAKE ENGINE ---
     useEffect(() => {
         if (initialCode && initialCode.length >= 3) {
+            console.log("Auto-joining with code:", initialCode);
             executeJoin(initialCode);
         }
     }, []);
@@ -68,16 +69,18 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         setMessage(null);
 
         try {
+            console.log(`Searching for code: ${cleanCode} in mode: ${studentMode}`);
+            
             if (studentMode === 'live') {
                 // Find active room
-                const { data: room } = await supabase
+                const { data: room, error: roomError } = await supabase
                     .from('rooms')
                     .select('*')
                     .eq('class_code', cleanCode)
                     .eq('status', 'active')
                     .single();
 
-                if (!room) throw new Error(t.error_code);
+                if (roomError || !room) throw new Error(t.error_code);
 
                 // Check 35 student limit
                 const { data: participants } = await supabase
@@ -96,34 +99,34 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
 
                 if (studentName) {
                     localStorage.setItem('anpassa_alias', studentName);
-                    // Pass name directly to App.jsx to prevent second prompt
                     onSuccess({ role: 'live', room, student_name: studentName });
                 } else {
-                    // User cancelled the prompt
                     setLoading(false);
                 }
             } else {
-                // Practice Mode check
-                const { data: teacher } = await supabase
-                    .from('profiles')
-                    .select('*, subscription_status, subscription_end_date')
+                // --- UPDATED: Practice Mode check querying the Safe View ---
+                const { data: teacher, error: teacherError } = await supabase
+                    .from('teacher_public_info') 
+                    .select('*') 
                     .eq('class_code', cleanCode)
                     .single();
                 
-                if (teacher) {
-                    const isTeacherActive = teacher.subscription_status === 'active' || 
-                                          new Date(teacher.subscription_end_date) > new Date();
-                    
-                    if (isTeacherActive) {
-                        onSuccess({ role: 'student', class: { teacher_id: teacher.id, class_name: teacher.full_name } });
-                    } else {
-                        throw new Error(t.error_sub);
-                    }
-                } else {
+                if (teacherError || !teacher) {
+                    console.error("Teacher lookup error:", teacherError);
                     throw new Error(t.error_code);
+                }
+                
+                const isTeacherActive = teacher.subscription_status === 'active' || 
+                                      (teacher.subscription_status === 'trial' && new Date(teacher.subscription_end_date) > new Date());
+                
+                if (isTeacherActive) {
+                    onSuccess({ role: 'student', class: { teacher_id: teacher.id, class_name: teacher.full_name } });
+                } else {
+                    throw new Error(t.error_sub);
                 }
             }
         } catch (err) {
+            console.error("Auth Exception:", err.message);
             setMessage({ type: 'error', text: err.message });
             setLoading(false);
         }
@@ -189,7 +192,6 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                         <div className="text-4xl font-black mb-8 text-slate-800">0 kr<span className="text-xs text-slate-400 font-medium"> / 30 dgr</span></div>
                         <button onClick={startTrial} className="mt-auto w-full py-5 bg-emerald-600 text-white rounded-[2rem] font-bold uppercase text-xs tracking-widest hover:bg-emerald-700 transition-all shadow-xl active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto" /> : t.trial_btn}</button>
                     </div>
-                    {/* Simplified placeholders */}
                     <div className="bg-white p-10 rounded-[3rem] border border-emerald-50 flex flex-col items-center text-center opacity-40 grayscale"><div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mb-6"><Star size={32} /></div><h3 className="text-xl font-bold uppercase mb-2 text-slate-700">Pro-Lärare</h3><button disabled className="mt-auto w-full py-4 bg-slate-50 text-slate-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest">{t.coming_soon}</button></div>
                     <div className="bg-white p-10 rounded-[3rem] border border-emerald-50 flex flex-col items-center text-center opacity-40 grayscale"><div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mb-6"><CreditCard size={32} /></div><h3 className="text-xl font-bold uppercase mb-2 text-slate-700">Hela Skolan</h3><button disabled className="mt-auto w-full py-4 bg-slate-50 text-slate-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest">{t.coming_soon}</button></div>
                 </div>
@@ -211,7 +213,6 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                         </div>
                         <h2 className="text-3xl font-bold uppercase tracking-tighter italic text-slate-800 leading-tight">{t.student_h}</h2>
                         <form onSubmit={handleCodeJoin} className="space-y-6">
-                            {/* Simplified Typography for inputs */}
                             <input 
                                 type="text" maxLength={12} value={code} 
                                 onChange={(e) => setCode(e.target.value.toUpperCase())}

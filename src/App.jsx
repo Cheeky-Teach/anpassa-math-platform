@@ -95,6 +95,26 @@ function App() {
         }
     };
 
+    // --- BROWSER HISTORY LOGIC (Preventing accidental exit) ---
+    useEffect(() => {
+        const handlePopState = (event) => {
+            if (event.state && event.state.view) {
+                setView(event.state.view);
+            } else {
+                setView('landing');
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
+    useEffect(() => {
+        // Sync app state to browser history
+        if (window.history.state?.view !== view) {
+            window.history.pushState({ view }, "");
+        }
+    }, [view]);
+
     // --- SUBSCRIPTION LOGIC ---
     const isPaid = profile?.subscription_status === 'active' || 
                   (profile?.subscription_status === 'trial' && new Date(profile.subscription_end_date) > new Date());
@@ -221,18 +241,15 @@ function App() {
         }
     };
 
-    // --- REFACTORED: SESSION RELAUNCH / RESUME LOGIC ---
     const handleRelaunchSession = async (roomData) => {
         setLoadingProfile(true);
         try {
             if (roomData.status === 'active') {
-                // CASE 1: RESUMING
                 setSavedPacket(roomData.active_question_data.packet);
                 setSheetTitle(roomData.title);
                 setActiveRoom(roomData);
                 setView('teacher_live');
             } else {
-                // CASE 2: RELAUNCHING
                 const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
                 const { data, error } = await supabase.from('rooms').insert([{
                     teacher_id: profile.id,
@@ -275,6 +292,14 @@ function App() {
         } finally {
             setLoadingProfile(false);
         }
+    };
+
+    const handleEditArchivedPacket = (archivedRoom) => {
+        if (!archivedRoom?.active_question_data?.packet) return;
+        setSavedPacket(archivedRoom.active_question_data.packet);
+        setSheetTitle(archivedRoom.title || "Kopia av " + archivedRoom.class_code);
+        setStudioMode('worksheet');
+        setView('question_studio');
     };
 
     const navigate = (dest) => setView(dest);
@@ -334,7 +359,6 @@ function App() {
         );
     }
 
-    // --- RENDER MAIN SHELL ---
     return (
         <div className="min-h-screen flex flex-col bg-[#f9fbf7] font-sans text-slate-800 transition-colors duration-500">
             <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
@@ -378,6 +402,7 @@ function App() {
                         onProfileOpen={() => setView('profile')} 
                         onRelaunch={handleRelaunchSession} 
                         onViewReport={handleViewArchiveReport}
+                        onEdit={handleEditArchivedPacket}
                         timerSettings={timerSettings} toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})}
                     />
                 ) : view === 'profile' ? (
@@ -417,20 +442,36 @@ function App() {
                         packet={savedPacket} 
                         lang={lang} 
                         onCreateReport={(res) => { setReportData(res); setView('live_report'); }} 
-                        // --- REFACTORED END HANDSHAKE ---
                         onEnd={async () => { 
                             try {
-                                const { error } = await supabase.from('rooms').update({ status: 'closed' }).eq('id', activeRoom.id);
+                                const { error } = await supabase.rpc('close_teacher_room', { target_room_id: activeRoom.id });
                                 if (error) throw error;
                                 setActiveRoom(null);
                                 setSavedPacket([]);
                                 setSheetTitle("");
                                 setView('dashboard');
-                            } catch (e) { alert("Fel vid arkivering."); }
+                            } catch (e) { alert("Fel vid arkivering: " + (e.message || "Databasfel")); }
                         }} 
                     />
+                // --- FIXED: CONDITIONAL BACK NAVIGATION ---
                 ) : view === 'live_report' && activeRoom && reportData ? (
-                    <SessionReportView session={activeRoom} packet={savedPacket} responses={reportData} onBack={() => setView('teacher_live')} lang={lang} />
+                    <SessionReportView 
+                        session={activeRoom} 
+                        packet={savedPacket} 
+                        responses={reportData} 
+                        onBack={() => {
+                            // If the session is already closed (viewed from archive), go to dashboard
+                            if (activeRoom.status === 'closed') {
+                                setView('dashboard');
+                                setActiveRoom(null); // Cleanup
+                                setReportData(null);
+                            } else {
+                                // If viewed from a live session, go back to live monitor
+                                setView('teacher_live');
+                            }
+                        }} 
+                        lang={lang} 
+                    />
                 ) : null}
             </div>
         </div>
