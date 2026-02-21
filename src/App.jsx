@@ -39,7 +39,7 @@ function App() {
     const [activeRoom, setActiveRoom] = useState(null);
     const [studentAlias, setStudentAlias] = useState(localStorage.getItem('anpassa_alias') || '');
     const [reportData, setReportData] = useState(null);
-    const [prefilledCode, setPrefilledCode] = useState(''); // Bridge for Landing -> Auth
+    const [prefilledCode, setPrefilledCode] = useState(''); 
 
     // --- 3. GAMEPLAY STATE ---
     const [topic, setTopic] = useState('');
@@ -75,6 +75,9 @@ function App() {
     const [answerKeyStyle, setAnswerKeyStyle] = useState('compact');
     const [timerSettings, setTimerSettings] = useState({ duration: 0, remaining: 0, isActive: false });
 
+    // --- 7. BROWSER & FOCUS CONTEXT ---
+    const [isFocused, setIsFocused] = useState(true);
+
     const ui = UI_TEXT[lang];
 
     // --- HELPERS ---
@@ -95,30 +98,88 @@ function App() {
         }
     };
 
-    // --- BROWSER HISTORY LOGIC (Preventing accidental exit) ---
+    // --- SMART NAVIGATION ENGINE (URL Deep-linking) ---
     useEffect(() => {
-        const handlePopState = (event) => {
-            if (event.state && event.state.view) {
-                setView(event.state.view);
-            } else {
-                setView('landing');
-            }
+        const handleUrlNavigation = () => {
+            const path = window.location.pathname.replace('/', '');
+            const params = new URLSearchParams(window.location.search);
+            
+            if (path) setView(path);
+            if (params.has('topic')) setTopic(params.get('topic'));
+            if (params.has('level')) setLevel(parseInt(params.get('level')));
         };
-        window.addEventListener('popstate', handlePopState);
-        return () => window.removeEventListener('popstate', handlePopState);
+
+        window.addEventListener('popstate', handleUrlNavigation);
+        handleUrlNavigation(); 
+        
+        return () => window.removeEventListener('popstate', handleUrlNavigation);
     }, []);
 
     useEffect(() => {
-        // Sync app state to browser history
-        if (window.history.state?.view !== view) {
-            window.history.pushState({ view }, "");
+        const baseUrl = `/${view === 'landing' ? '' : view}`;
+        const queryParams = (view === 'practice' && topic) 
+            ? `?topic=${topic}&level=${level}` 
+            : "";
+        
+        if (window.location.pathname + window.location.search !== baseUrl + queryParams) {
+            window.history.pushState({ view, topic, level }, "", baseUrl + queryParams);
         }
-    }, [view]);
+    }, [view, topic, level]);
+
+    // --- WINDOW FOCUS ENGINE ---
+    useEffect(() => {
+        const handleFocus = () => setIsFocused(true);
+        const handleBlur = () => setIsFocused(false);
+        window.addEventListener('focus', handleFocus);
+        window.addEventListener('blur', handleBlur);
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('blur', handleBlur);
+        };
+    }, []);
+
+    // --- REFRESH HANDLERS (DoNowGrid Functionality) ---
+    const handleRefreshAllDoNow = async () => {
+        if (!savedPacket.length) return;
+        try {
+            const requests = savedPacket.map(item => ({
+                topic: item.topicId,
+                variation: item.variationKey,
+                lang: lang
+            }));
+            const res = await fetch('/api/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requests })
+            });
+            const newResults = await res.json();
+            const updatedPacket = savedPacket.map((item, idx) => ({
+                ...item,
+                resolvedData: newResults[idx]
+            }));
+            setSavedPacket(updatedPacket);
+        } catch (e) {
+            alert("Kunde inte ladda nya uppgifter.");
+        }
+    };
+
+    const handleRefreshOneDoNow = async (idx) => {
+        const item = savedPacket[idx];
+        if (!item) return;
+        try {
+            const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}`);
+            const newData = await res.json();
+            const updatedPacket = [...savedPacket];
+            updatedPacket[idx] = { ...item, resolvedData: newData };
+            setSavedPacket(updatedPacket);
+        } catch (e) {
+            console.error("Single refresh failed:", e);
+        }
+    };
 
     // --- SUBSCRIPTION LOGIC ---
     const isPaid = profile?.subscription_status === 'active' || 
                   (profile?.subscription_status === 'trial' && new Date(profile.subscription_end_date) > new Date());
-    const isTrialExpired = profile?.subscription_status === 'trial' && new Date(profile.subscription_end_date) <= new Date();
 
     // --- AUTH EFFECTS ---
     useEffect(() => {
@@ -139,14 +200,7 @@ function App() {
     const fetchProfile = async (uid) => {
         const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
         setProfile(data);
-        
-        setView(currentView => {
-            if (currentView === 'landing' || currentView === 'auth') {
-                return 'dashboard';
-            }
-            return currentView; 
-        });
-
+        setView(currentView => (currentView === 'landing' || currentView === 'auth') ? 'dashboard' : currentView);
         setLoadingProfile(false);
     };
 
@@ -258,9 +312,7 @@ function App() {
                     title: roomData.title,
                     active_question_data: roomData.active_question_data
                 }]).select().single();
-
                 if (error) throw error;
-                
                 setSavedPacket(roomData.active_question_data.packet);
                 setSheetTitle(roomData.title);
                 setActiveRoom(data);
@@ -276,13 +328,8 @@ function App() {
     const handleViewArchiveReport = async (archivedRoom) => {
         setLoadingProfile(true);
         try {
-            const { data: responses, error } = await supabase
-                .from('responses')
-                .select('*')
-                .eq('room_id', archivedRoom.id);
-            
+            const { data: responses, error } = await supabase.from('responses').select('*').eq('room_id', archivedRoom.id);
             if (error) throw error;
-            
             setActiveRoom(archivedRoom);
             setSavedPacket(archivedRoom.active_question_data.packet);
             setReportData(responses);
@@ -294,20 +341,24 @@ function App() {
         }
     };
 
+    // --- REFACTORED: SMART EDIT HANDLER (Detects mode from archive) ---
     const handleEditArchivedPacket = (archivedRoom) => {
         if (!archivedRoom?.active_question_data?.packet) return;
+        
         setSavedPacket(archivedRoom.active_question_data.packet);
         setSheetTitle(archivedRoom.title || "Kopia av " + archivedRoom.class_code);
-        setStudioMode('worksheet');
+        
+        // Detect mode from metadata or fallback
+        const mode = archivedRoom.active_question_data.mode || 'worksheet';
+        setStudioMode(mode); 
+        
         setView('question_studio');
     };
 
-    const navigate = (dest) => setView(dest);
-
-    // --- TIMER LOGIC ---
+    // --- CONTEXT-AWARE TIMER ENGINE ---
     useEffect(() => {
         let interval;
-        if (timerSettings.isActive && timerSettings.remaining > 0) {
+        if (view === 'practice' && isFocused && timerSettings.isActive && timerSettings.remaining > 0) {
             interval = setInterval(() => {
                 setTimerSettings(prev => ({ ...prev, remaining: prev.remaining - 1 }));
             }, 1000);
@@ -316,8 +367,7 @@ function App() {
             alert(lang === 'sv' ? "Tiden är slut!" : "Time is up!");
         }
         return () => clearInterval(interval);
-    }, [timerSettings.isActive, timerSettings.remaining]);
-
+    }, [timerSettings.isActive, timerSettings.remaining, view, isFocused]);
 
     // --- VIEW ORCHESTRATION ---
     if (loadingProfile) return <div className="h-screen flex items-center justify-center bg-[#f9fbf7]"><div className="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full" /></div>;
@@ -367,7 +417,7 @@ function App() {
             <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
             <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
             
-            {view !== 'question_studio' && (
+            {(view === 'dashboard' || view === 'practice') && (
                 <header className="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-emerald-100 px-4 py-3">
                     <div className="max-w-7xl mx-auto flex justify-between items-center">
                         <div className="flex items-center gap-4">
@@ -433,7 +483,15 @@ function App() {
                 ) : view === 'print' ? (
                     <PrintView packet={savedPacket} title={sheetTitle} lang={lang} onBack={() => setView('question_studio')} includeAnswerKey={includeAnswerKey} answerKeyStyle={answerKeyStyle} />
                 ) : view === 'do_now' ? (
-                    <DoNowGrid questions={savedPacket} title={sheetTitle} lang={lang} onBack={() => setView('question_studio')} onClose={() => setView('dashboard')} onRefreshAll={() => {}} />
+                    <DoNowGrid 
+                        questions={savedPacket} 
+                        ui={ui} 
+                        lang={lang} 
+                        onBack={() => setView('question_studio')} 
+                        onClose={() => setView('dashboard')} 
+                        onRefreshAll={handleRefreshAllDoNow} 
+                        onRefreshOne={handleRefreshOneDoNow}
+                    />
                 ) : view === 'live_session' && activeRoom ? (
                     <StudentLiveView session={activeRoom} packet={activeRoom.active_question_data?.packet || []} lang={lang} studentAlias={studentAlias} onBack={quitPractice} />
                 ) : view === 'teacher_live' && activeRoom ? (
@@ -453,20 +511,17 @@ function App() {
                             } catch (e) { alert("Fel vid arkivering: " + (e.message || "Databasfel")); }
                         }} 
                     />
-                // --- FIXED: CONDITIONAL BACK NAVIGATION ---
                 ) : view === 'live_report' && activeRoom && reportData ? (
                     <SessionReportView 
                         session={activeRoom} 
                         packet={savedPacket} 
                         responses={reportData} 
                         onBack={() => {
-                            // If the session is already closed (viewed from archive), go to dashboard
                             if (activeRoom.status === 'closed') {
                                 setView('dashboard');
-                                setActiveRoom(null); // Cleanup
+                                setActiveRoom(null); 
                                 setReportData(null);
                             } else {
-                                // If viewed from a live session, go back to live monitor
                                 setView('teacher_live');
                             }
                         }} 

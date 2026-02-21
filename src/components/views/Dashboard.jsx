@@ -25,12 +25,11 @@ const Dashboard = ({
     userRole = 'teacher'
 }) => {
     const [expandedCategory, setExpandedCategory] = useState('algebra');
-    const [activeTab, setActiveTab] = useState('curriculum'); // curriculum | archive
+    const [activeTab, setActiveTab] = useState('curriculum'); 
     const [archivedSessions, setArchivedSessions] = useState([]);
     const [isLoadingArchive, setIsLoadingArchive] = useState(false);
-    const [activeSession, setActiveSession] = useState(null); // Recovery State
+    const [activeSession, setActiveSession] = useState(null);
 
-    // --- TRANSLATIONS ---
     const TEXT = {
         sv: {
             tools_section: "Verktyg", class_code_label: "Din klasskod", connected_code_label: "Ansluten till kod",
@@ -44,7 +43,8 @@ const Dashboard = ({
             profile_btn: "Inställningar", profile_desc: "Konto & Skola",
             archive_empty: "Inga avslutade lektioner de senaste 48 timmarna.", relaunch_btn: "Kör igen",
             view_report: "Visa rapport", resume_h: "Lektion pågår", resume_btn: "Återuppta",
-            accuracy_label: "Träffsäkerhet", edit_btn: "Öppna i Studio"
+            accuracy_label: "Träffsäkerhet", edit_btn: "Öppna i Studio",
+            type_donow: "Do Now Grid", type_worksheet: "Arbetsblad"
         },
         en: {
             tools_section: "Tools", class_code_label: "Your Class Code", connected_code_label: "Connected to code",
@@ -58,13 +58,13 @@ const Dashboard = ({
             profile_btn: "Settings", profile_desc: "Account & School",
             archive_empty: "No finished sessions in the last 48 hours.", relaunch_btn: "Relaunch",
             view_report: "View Report", resume_h: "Session in Progress", resume_btn: "Resume",
-            accuracy_label: "Accuracy", edit_btn: "Open in Studio"
+            accuracy_label: "Accuracy", edit_btn: "Open in Studio",
+            type_donow: "Do Now Grid", type_worksheet: "Worksheet"
         }
     };
 
     const t = TEXT[lang] || TEXT.sv;
 
-    // --- FETCH LOGIC ---
     useEffect(() => {
         fetchActiveSession();
         if (activeTab === 'archive' && userRole === 'teacher') {
@@ -75,19 +75,15 @@ const Dashboard = ({
     const fetchActiveSession = async () => {
         if (userRole !== 'teacher' || !profile?.id) return;
         try {
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('rooms')
                 .select('*')
                 .eq('teacher_id', profile.id)
                 .eq('status', 'active')
                 .order('created_at', { ascending: false })
                 .limit(1);
-            
-            if (data && data.length > 0) {
-                setActiveSession(data[0]);
-            } else {
-                setActiveSession(null);
-            }
+            if (data && data.length > 0) setActiveSession(data[0]);
+            else setActiveSession(null);
         } catch (err) { console.error("Session Check Failed:", err); }
     };
 
@@ -97,10 +93,7 @@ const Dashboard = ({
             const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
             const { data, error } = await supabase
                 .from('rooms')
-                .select(`
-                    *,
-                    responses(is_correct, student_alias)
-                `)
+                .select('*, responses(is_correct, student_alias)')
                 .eq('teacher_id', profile.id)
                 .eq('status', 'closed')
                 .gt('created_at', cutoff) 
@@ -113,7 +106,6 @@ const Dashboard = ({
                 const correct = room.responses?.filter(r => r.is_correct).length || 0;
                 const uniqueStudents = new Set(room.responses?.map(r => r.student_alias)).size;
                 const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-                
                 return { ...room, accuracy, studentCount: uniqueStudents };
             });
 
@@ -142,10 +134,7 @@ const Dashboard = ({
                                 </p>
                             </div>
                         </div>
-                        <button 
-                            onClick={() => onRelaunch(activeSession)} 
-                            className="w-full sm:w-auto px-10 py-4 bg-white text-emerald-900 rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:bg-emerald-50 transition-all shadow-xl active:scale-95"
-                        >
+                        <button onClick={() => onRelaunch(activeSession)} className="w-full sm:w-auto px-10 py-4 bg-white text-emerald-900 rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:bg-emerald-50 transition-all shadow-xl active:scale-95">
                             {t.resume_btn}
                         </button>
                     </div>
@@ -177,13 +166,11 @@ const Dashboard = ({
                     </div>
                 </header>
 
-                {/* --- VERKTYG (TOOLS) GRID --- */}
                 <section className="mb-12">
                     <div className="flex items-center gap-3 mb-6 px-4">
                         <Zap size={18} className="text-orange-400" />
                         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.tools_section}</h2>
                     </div>
-                    
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {userRole === 'teacher' && (
                             <button onClick={onStudioOpen} className="group p-6 bg-emerald-900 text-white rounded-[2.5rem] hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-900/10 text-left relative overflow-hidden">
@@ -211,7 +198,6 @@ const Dashboard = ({
                                 {timerSettings.duration > 0 && <button onClick={resetTimer} className="p-2 text-rose-500 bg-white rounded-xl shadow-sm border border-rose-100 hover:bg-rose-50"><History size={16} /></button>}
                             </div>
                         </div>
-                        {/* Tool: Profile/Settings (Teacher Only) */}
                         {userRole === 'teacher' && (
                             <button onClick={onProfileOpen} className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-emerald-600 transition-all text-left shadow-sm">
                                 <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm"><Settings size={20} /></div>
@@ -222,25 +208,17 @@ const Dashboard = ({
                     </div>
                 </section>
 
-                {/* --- TAB NAVIGATION --- */}
                 <div className="flex gap-1 p-1 bg-emerald-950/5 rounded-2xl w-fit mb-8 mx-2">
-                    <button 
-                        onClick={() => setActiveTab('curriculum')}
-                        className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'curriculum' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}
-                    >
+                    <button onClick={() => setActiveTab('curriculum')} className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'curriculum' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}>
                         <div className="flex items-center gap-2"><Book size={14}/> {t.curriculum_title}</div>
                     </button>
                     {userRole === 'teacher' && (
-                        <button 
-                            onClick={() => setActiveTab('archive')}
-                            className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'archive' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}
-                        >
+                        <button onClick={() => setActiveTab('archive')} className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'archive' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}>
                             <div className="flex items-center gap-2"><History size={14}/> {t.archive_title}</div>
                         </button>
                     )}
                 </div>
 
-                {/* --- CONTENT AREA --- */}
                 {activeTab === 'curriculum' ? (
                     <section className="flex flex-col gap-6 animate-in slide-in-from-left-4 duration-500">
                         {Object.entries(CATEGORIES).map(([catKey, category]) => {
@@ -282,8 +260,7 @@ const Dashboard = ({
                         })}
                     </section>
                 ) : (
-                    /* --- ARCHIVE VIEW --- */
-                    <section className="animate-in slide-in-from-right-4 duration-500 space-y-4">
+                    <section className="animate-in slide-in-from-right-4 duration-500 space-y-4 pb-20">
                         {isLoadingArchive ? (
                             <div className="flex items-center justify-center p-20"><div className="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full" /></div>
                         ) : archivedSessions.length === 0 ? (
@@ -292,58 +269,65 @@ const Dashboard = ({
                                 <p className="font-bold text-slate-400 uppercase tracking-widest">{t.archive_empty}</p>
                             </div>
                         ) : (
-                            archivedSessions.map(session => (
-                                <div key={session.id} className="bg-white p-6 rounded-[2.5rem] border border-emerald-50 shadow-sm hover:shadow-xl transition-all flex flex-col lg:flex-row items-center justify-between gap-6 group">
-                                    <div className="flex items-center gap-6 flex-1 min-w-0">
-                                        <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                                            <FileSpreadsheet size={28} />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h4 className="font-bold text-slate-800 text-lg truncate leading-none mb-2">{session.title || "Live Lektion"}</h4>
-                                            <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                                <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md"><Calendar size={12}/> {new Date(session.created_at).toLocaleDateString()}</span>
-                                                <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md"><Users size={12}/> {session.studentCount} Elever</span>
-                                                <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md border border-emerald-100 font-black">{session.class_code}</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                            archivedSessions.map(session => {
+                                // --- DETECTION LOGIC: Detect if session was a Do Now ---
+                                const isDoNow = session.active_question_data?.mode === 'donow';
 
-                                    {/* ACCURACY METRIC BADGE */}
-                                    <div className="flex items-center gap-8 px-6 border-l border-slate-100">
-                                        <div className="text-center">
-                                            <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">{t.accuracy_label}</span>
-                                            <div className={`text-2xl font-black italic ${session.accuracy > 70 ? 'text-emerald-500' : session.accuracy > 40 ? 'text-amber-500' : 'text-rose-500'}`}>
-                                                {session.accuracy}%
+                                return (
+                                    <div key={session.id} className="bg-white p-6 rounded-[2.5rem] border border-emerald-50 shadow-sm hover:shadow-xl transition-all flex flex-col lg:flex-row items-center justify-between gap-6 group">
+                                        <div className="flex items-center gap-6 flex-1 min-w-0">
+                                            {/* Dynamic Icon & Color Based on Mode */}
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner group-hover:text-white transition-all ${
+                                                isDoNow 
+                                                ? 'bg-indigo-50 text-indigo-500 group-hover:bg-indigo-600' 
+                                                : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600'
+                                            }`}>
+                                                {isDoNow ? <LayoutGrid size={28} /> : <FileSpreadsheet size={28} />}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h4 className="font-bold text-slate-800 text-lg truncate leading-none mb-2">{session.title || (isDoNow ? "Do Now Grid" : "Live Lektion")}</h4>
+                                                <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                                    <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md"><Calendar size={12}/> {new Date(session.created_at).toLocaleDateString()}</span>
+                                                    <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md"><Users size={12}/> {session.studentCount} Elever</span>
+                                                    <span className={`px-2 py-0.5 rounded-md border font-black ${
+                                                        isDoNow ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                    }`}>{isDoNow ? t.type_donow : t.type_worksheet}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="w-12 h-12 rounded-full border-4 border-slate-50 flex items-center justify-center">
-                                            {session.accuracy > 70 ? (
-                                                <CheckCircle2 size={20} className="text-emerald-500" />
-                                            ) : (
-                                                <AlertCircle size={20} className={session.accuracy > 40 ? "text-amber-500" : "text-rose-500"} />
-                                            )}
+
+                                        <div className="flex items-center gap-8 px-6 border-l border-slate-100">
+                                            <div className="text-center">
+                                                <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">{t.accuracy_label}</span>
+                                                <div className={`text-2xl font-black italic ${session.accuracy > 70 ? 'text-emerald-500' : session.accuracy > 40 ? 'text-amber-500' : 'text-rose-500'}`}>{session.accuracy}%</div>
+                                            </div>
+                                            <div className="w-12 h-12 rounded-full border-4 border-slate-50 flex items-center justify-center">
+                                                {session.accuracy > 70 ? <CheckCircle2 size={20} className="text-emerald-500" /> : <AlertCircle size={20} className={session.accuracy > 40 ? "text-amber-500" : "text-rose-500"} />}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                                            <button onClick={() => onViewReport(session)} className="flex-1 lg:flex-none px-5 py-4 bg-slate-50 text-slate-600 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100">{t.view_report}</button>
+                                            
+                                            {/* Edit Button: Launches correct Studio mode */}
+                                            <button onClick={() => onEdit(session)} className={`p-4 rounded-2xl transition-all border group/edit ${
+                                                isDoNow ? 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-600 hover:text-white' : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white'
+                                            }`} title={t.edit_btn}>
+                                                <PenTool size={18} />
+                                            </button>
+
+                                            <button onClick={() => onRelaunch(session)} className="flex-1 lg:flex-none px-6 py-4 bg-emerald-900 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95">
+                                                <RotateCcw size={14}/> {t.relaunch_btn}
+                                            </button>
+                                            <button className="p-3 text-slate-200 hover:text-slate-900 transition-colors"><MoreHorizontal size={20}/></button>
                                         </div>
                                     </div>
-                                    
-                                    <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                                        <button onClick={() => onViewReport(session)} className="flex-1 lg:flex-none px-5 py-4 bg-slate-50 text-slate-600 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100">
-                                            {t.view_report}
-                                        </button>
-                                        <button onClick={() => onEdit(session)} className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100 group/edit" title={t.edit_btn}>
-                                            <PenTool size={18} />
-                                        </button>
-                                        <button onClick={() => onRelaunch(session)} className="flex-1 lg:flex-none px-6 py-4 bg-emerald-900 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95">
-                                            <RotateCcw size={14}/> {t.relaunch_btn}
-                                        </button>
-                                        <button className="p-3 text-slate-200 hover:text-slate-900 transition-colors"><MoreHorizontal size={20}/></button>
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </section>
                 )}
 
-                {/* --- FIXED START ACTION BAR --- */}
                 {activeTab === 'curriculum' && (
                     <div className={`fixed bottom-12 left-0 right-0 flex justify-center pointer-events-none z-30 transition-all duration-500 ${selectedTopic ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
                         <button onClick={onStart} className="px-14 py-6 rounded-[2.5rem] font-bold text-2xl shadow-[0_20px_50px_rgba(249,115,22,0.3)] bg-orange-500 text-white pointer-events-auto flex items-center gap-6 hover:scale-105 hover:bg-orange-600 active:scale-95 transition-all tracking-tight border-b-8 border-orange-700">
@@ -352,7 +336,6 @@ const Dashboard = ({
                     </div>
                 )}
 
-                {/* --- RESOURCE FOOTER --- */}
                 <footer className="mt-24 py-16 grid grid-cols-1 md:grid-cols-3 gap-12 px-4 relative z-10 border-t border-emerald-900/5">
                     <div className="space-y-6 text-center md:text-left">
                         <h4 className="text-[10px] font-bold text-emerald-800/30 uppercase tracking-[0.3em]">{t.resources}</h4>
@@ -373,7 +356,6 @@ const Dashboard = ({
                     </div>
                 </footer>
             </div>
-
             <div className="absolute bottom-0 left-0 w-full leading-[0] pointer-events-none z-0 overflow-hidden">
                 <svg className="relative block w-full h-[400px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
                     <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-emerald-100/40"></path>
