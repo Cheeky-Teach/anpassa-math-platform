@@ -32,18 +32,22 @@ const TEXT_SIZES = ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 't
 const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, lang, textSizeClass, isFocused = false }) => {
     const decode = (str) => { try { return atob(str); } catch { return str; } };
     
-    // Sync with QuestionStudio data structure
     const data = q.resolvedData?.renderData;
     const token = q.resolvedData?.token;
 
     const renderVisualContent = () => {
         if (!data) return null;
-        if (data.graph) return <GraphCanvas data={data.graph} />;
+
+        // Pass explicit sizing to Canvas/3D components
+        const vW = isFocused ? 450 : 240;
+        const vH = isFocused ? 300 : 140;
+
+        if (data.graph) return <GraphCanvas data={data.graph} width={vW} height={vH} />;
         if (data.geometry) {
             const geom = data.geometry;
             const volumeTypes = ['cuboid', 'cylinder', 'cone', 'sphere', 'hemisphere', 'pyramid', 'triangular_prism', 'silo', 'ice_cream', 'volume'];
             if (volumeTypes.includes(geom.type)) {
-                return <VolumeVisualization data={geom} width={isFocused ? 400 : 280} height={isFocused ? 250 : 180} />;
+                return <VolumeVisualization data={geom} width={vW} height={vH} />;
             }
             return <GeometryVisual data={geom} />;
         }
@@ -59,7 +63,7 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
             ${isFocused ? 'bg-white border-indigo-500 shadow-2xl' : 'bg-white border-slate-200 hover:border-indigo-400 hover:shadow-md cursor-zoom-in'}
             ${showAnswer && !isFocused ? 'bg-emerald-50 border-emerald-500 ring-4 ring-emerald-500/10' : ''}`}
         >
-            <div className={`px-4 py-2 flex justify-between items-center border-b transition-colors ${showAnswer && !isFocused ? 'bg-emerald-100/50 border-emerald-200' : 'bg-slate-50 border-slate-100'}`}>
+            <div className={`px-4 py-1.5 flex justify-between items-center border-b transition-colors ${showAnswer && !isFocused ? 'bg-emerald-100/50 border-emerald-200' : 'bg-slate-50 border-slate-100'}`}>
                 <span className={`text-[10px] font-black uppercase tracking-widest ${showAnswer && !isFocused ? 'text-emerald-700' : 'text-slate-400'}`}>
                     {lang === 'sv' ? 'Uppgift' : 'Task'} {index + 1}
                 </span>
@@ -70,29 +74,35 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
                 )}
             </div>
 
-            <div className={`flex-1 flex flex-col justify-center items-center text-center relative overflow-hidden transition-all duration-300 
-                ${isFocused ? 'p-12 md:p-16 lg:p-24' : 'p-4'}`}>
+            <div className={`flex-1 flex flex-col items-center text-center relative overflow-hidden transition-all duration-300 
+                ${isFocused ? 'p-12' : 'p-3'}`}>
+                
+                {/* FIX: Removed CSS 'transform scale'. 
+                   Instead, we use a fixed height container that is responsive.
+                */}
                 {hasVisual && (
-                    <div className={`w-full flex justify-center items-center ${isFocused ? 'mb-12' : 'mb-6'}`}>
-                        <div className="transform scale-110 lg:scale-125 origin-center">
-                            {renderVisualContent()}
-                        </div>
+                    <div className={`w-full flex justify-center items-center shrink-0 overflow-hidden
+                        ${isFocused ? 'h-[320px] mb-8' : 'h-[140px] mb-3'}`}>
+                        {renderVisualContent()}
                     </div>
                 )}
-                <div className={`font-bold text-slate-800 leading-tight ${textSizeClass} transition-all my-auto ${isFocused ? 'px-12 md:px-20' : 'px-2'}`}>
+
+                <div className={`font-bold text-slate-800 leading-tight ${textSizeClass} flex-1 flex flex-col justify-center items-center transition-all w-full
+                    ${isFocused ? 'px-8 pb-8' : 'px-1'}`}>
                     <MathDisplay content={data?.description} />
                     {data?.latex && (
-                        <div className={`text-indigo-600 font-serif ${isFocused ? 'mt-6' : 'mt-3'}`}>
+                        <div className={`text-indigo-600 font-serif ${isFocused ? 'mt-6 text-5xl' : 'mt-2'}`}>
                             <MathDisplay content={`$$${data.latex}$$`} />
                         </div>
                     )}
                 </div>
+
                 {data?.options && data.options.length > 0 && (
-                    <div className={`grid grid-cols-2 gap-4 w-full ${isFocused ? 'mt-12 px-12 pb-12' : 'mt-6 px-2 pb-2'}`}>
+                    <div className={`grid grid-cols-2 gap-3 w-full shrink-0 ${isFocused ? 'mt-8 max-w-4xl' : 'mt-2'}`}>
                         {data.options.map((opt, idx) => (
                             <div key={idx} className={`bg-white border-2 border-slate-100 rounded-xl flex items-center gap-3 shadow-sm
-                                ${isFocused ? 'p-6 text-xl' : 'p-3 text-base font-bold text-left text-slate-700'}`}>
-                                <span className="w-8 h-8 shrink-0 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center text-xs font-black">
+                                ${isFocused ? 'p-6 text-2xl' : 'p-2 text-sm font-bold text-left text-slate-700'}`}>
+                                <span className="w-6 h-6 shrink-0 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center text-[10px] font-black">
                                     {String.fromCharCode(65 + idx)}
                                 </span>
                                 <MathDisplay className="truncate" content={opt} />
@@ -102,32 +112,30 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
                 )}
             </div>
 
-            {/* Corner Actions */}
             {!isFocused && (
-                <div className="absolute bottom-3 right-3 flex gap-2">
+                <div className="absolute top-10 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
                         onClick={(e) => { e.stopPropagation(); onRefresh(); }}
-                        className="w-10 h-10 rounded-full flex items-center justify-center bg-white text-slate-400 border border-slate-200 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-md active:scale-90"
-                        title="Slumpa ny"
+                        className="w-8 h-8 rounded-full flex items-center justify-center bg-white/90 text-slate-400 border border-slate-200 hover:text-indigo-600 shadow-sm"
                     >
-                        <RefreshCw size={16} />
+                        <RefreshCw size={14} />
                     </button>
                     <button 
                         onClick={(e) => { e.stopPropagation(); onToggleAnswer(); }}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90
-                        ${showAnswer ? 'bg-emerald-600 text-white' : 'bg-white text-slate-400 border border-slate-200 hover:text-indigo-600 hover:border-indigo-200'}`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm
+                        ${showAnswer ? 'bg-emerald-600 text-white' : 'bg-white/90 text-slate-400 border border-slate-200'}`}
                     >
-                        {showAnswer ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {showAnswer ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                 </div>
             )}
 
             {showAnswer && (
-                <div className={`bg-emerald-400 text-white py-4 text-center shrink-0 animate-in slide-in-from-bottom duration-300 ${isFocused ? 'mt-auto' : ''}`}>
-                    <div className="text-xs font-black uppercase tracking-[0.2em] mb-1 opacity-80">FACIT</div>
-                    <div className={`${isFocused ? 'text-5xl' : 'text-3xl'} font-black tracking-tighter leading-none`}>
+                <div className={`bg-emerald-500 text-white py-3 text-center shrink-0 animate-in slide-in-from-bottom duration-300`}>
+                    <div className="text-[10px] font-black uppercase tracking-widest opacity-80">FACIT</div>
+                    <div className={`${isFocused ? 'text-6xl' : 'text-3xl'} font-black tracking-tighter`}>
                         <MathDisplay content={decode(token)} />
-                        {data?.suffix && <span className={`${isFocused ? 'text-2xl' : 'text-lg'} ml-2 opacity-90 uppercase`}>{data.suffix}</span>}
+                        {data?.suffix && <span className="ml-1 text-sm opacity-90">{data.suffix}</span>}
                     </div>
                 </div>
             )}
@@ -140,16 +148,13 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
     const [focusedIndex, setFocusedIndex] = useState(null);
     const [showAll, setShowAll] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [textSizeIndex, setTextSizeIndex] = useState(3);
+    const [textSizeIndex, setTextSizeIndex] = useState(2);
     const [isGlobalRefreshing, setIsGlobalRefreshing] = useState(false);
 
     useEffect(() => {
         const handleEsc = (e) => { if (e.key === 'Escape') setFocusedIndex(null); };
         window.addEventListener('keydown', handleEsc);
-        return () => {
-            window.removeEventListener('keydown', handleEsc);
-            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-        };
+        return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
     const toggleFullscreen = () => {
@@ -190,14 +195,15 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
         <div className="h-screen w-screen bg-slate-200 flex flex-col overflow-hidden font-sans relative">
             {focusedIndex !== null && (
                 <div 
-                    className="fixed inset-0 z-[60] bg-white/95 backdrop-blur-sm flex items-start justify-center pt-16 px-12 pb-12 animate-in fade-in duration-300 cursor-zoom-out"
+                    className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-6 md:p-12 animate-in fade-in zoom-in duration-300 cursor-zoom-out"
                     onClick={() => setFocusedIndex(null)}
                 >
-                    <div className="w-full max-w-5xl h-auto transform lg:scale-105 shadow-2xl rounded-[3rem] cursor-default bg-white border border-slate-200" onClick={(e) => e.stopPropagation()}>
-                        <DoNowCard index={focusedIndex} q={questions[focusedIndex]} showAnswer={!!revealed[focusedIndex]} onToggleAnswer={() => toggleOne(focusedIndex)} onRefresh={() => onRefreshOne(focusedIndex)} onFocus={() => {}} lang={lang} textSizeClass="text-4xl" isFocused={true} />
+                    <div className="w-full max-w-6xl h-full max-h-[90vh] shadow-2xl rounded-[3rem] cursor-default bg-white overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <DoNowCard index={focusedIndex} q={questions[focusedIndex]} showAnswer={!!revealed[focusedIndex]} onToggleAnswer={() => toggleOne(focusedIndex)} onRefresh={() => onRefreshOne(focusedIndex)} onFocus={() => {}} lang={lang} textSizeClass="text-5xl" isFocused={true} />
                     </div>
                 </div>
             )}
+            
             <header className="bg-slate-900 text-white px-6 py-3 shrink-0 flex justify-between items-center shadow-2xl z-20">
                 <div className="flex items-center gap-6">
                     <button onClick={() => handleSafeExit(onBack)} className="group flex items-center gap-2 text-slate-400 hover:text-white font-black text-xs uppercase tracking-widest transition-all">
@@ -224,7 +230,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                     <button onClick={handleGlobalRefresh} disabled={isGlobalRefreshing} className="px-5 py-2.5 bg-indigo-400/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl text-xs font-black transition-all uppercase tracking-wider border border-indigo-500/30 flex items-center gap-2 disabled:opacity-70">
                         {isGlobalRefreshing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} NYTT SET
                     </button>
-                    <button onClick={toggleAll} className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest ${showAll ? 'bg-rose-50 text-white' : 'bg-emerald-600 text-white'}`}>
+                    <button onClick={toggleAll} className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest ${showAll ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`}>
                         <span>{showAll ? '🙈' : '👁️'}</span> FACIT
                     </button>
                     <button onClick={toggleFullscreen} className="text-slate-400 hover:text-white transition-colors p-2 bg-white/5 rounded-xl">
@@ -233,6 +239,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                     <button onClick={() => handleSafeExit(onClose)} className="text-slate-400 hover:text-rose-500 transition-colors p-2 bg-white/5 rounded-xl"><X size={20} /></button>
                 </div>
             </header>
+
             <main className="flex-1 p-6 overflow-hidden">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 grid-rows-2 gap-6 h-full w-full max-w-[1800px] mx-auto">
                     {questions.slice(0, 6).map((q, i) => (

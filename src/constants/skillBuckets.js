@@ -1,9 +1,6 @@
 /**
  * MASTER REGISTRY OF SKILL BUCKETS (VARIATION KEYS)
- * Refactored for Bilingual Support (SV/EN)
- * * STRUCTURE:
- * Category -> Topic -> Variations
- * Each variation corresponds to a specific 'case' in the generator's generateByVariation() method.
+ * Synchronized with refactored generators.
  */
 
 export const SKILL_BUCKETS = {
@@ -31,10 +28,10 @@ export const SKILL_BUCKETS = {
       equations_word: {
         name: { sv: 'Ekvationer: Problemlösning', en: 'Equations: Problem Solving' },
         variations: [
-          { key: 'rate_fixed_add_write', name: { sv: 'Skriv: Fast + Rörlig', en: 'Write: Fixed + Variable' }, desc: { sv: 'Teckna uttryck y = kx + m', en: 'Formulate expression y = kx + m' } },
+          { key: 'rate_fixed_add_write', name: { sv: 'Skriv: Fast + Rörlig', en: 'Write: Fixed + Variable' }, desc: { sv: 'Teckna ekvation', en: 'Formulate equation' } },
           { key: 'rate_fixed_add_solve', name: { sv: 'Lös: Fast + Rörlig', en: 'Solve: Fixed + Variable' }, desc: { sv: 'Beräkna x givet total', en: 'Calculate x given total' } },
-          { key: 'rate_fixed_sub_write', name: { sv: 'Skriv: Minskning', en: 'Write: Decrease' }, desc: { sv: 'Teckna uttryck y = m - kx', en: 'Formulate expression y = m - kx' } },
-          { key: 'rate_fixed_sub_solve', name: { sv: 'Lös: Minskning', en: 'Solve: Decrease' }, desc: { sv: 'När tar värdet slut?', en: 'When does the value run out?' } },
+          { key: 'rate_fixed_sub_write', name: { sv: 'Skriv: Rabatt/Minskning', en: 'Write: Discount/Decrease' }, desc: { sv: 'Teckna ekvation', en: 'Formulate equation' } },
+          { key: 'rate_fixed_sub_solve', name: { sv: 'Lös: Rabatt/Minskning', en: 'Solve: Discount/Decrease' }, desc: { sv: 'Hitta antal efter rabatt', en: 'Find count after discount' } },
           { key: 'compare_word_sum_write', name: { sv: 'Skriv: Jämförelse (Summa)', en: 'Write: Comparison (Sum)' }, desc: { sv: 'x + (x+a) = Total', en: 'x + (x+a) = Total' } },
           { key: 'compare_word_sum_solve', name: { sv: 'Lös: Jämförelse (Summa)', en: 'Solve: Comparison (Sum)' }, desc: { sv: 'Hitta delarna', en: 'Find the parts' } },
           { key: 'compare_word_diff_write', name: { sv: 'Skriv: Jämförelse (Diff)', en: 'Write: Comparison (Diff)' }, desc: { sv: 'x + (x-a) = Total', en: 'x + (x-a) = Total' } },
@@ -49,20 +46,16 @@ export const SKILL_BUCKETS = {
           { key: 'combine_standard_mixed', name: { sv: 'Förenkla uttryck', en: 'Simplify expressions' }, desc: { sv: 'Samla x och tal', en: 'Combine x and constants' } },
           { key: 'distribute_lie_partial', name: { sv: 'Hitta felet: Parentes', en: 'Find error: Parentheses' }, desc: { sv: 'Partiell distribution', en: 'Partial distribution' } },
           { key: 'distribute_plus', name: { sv: 'Parentes (+)', en: 'Parentheses (+)' }, desc: { sv: '+ framför parentes', en: '+ in front of parenthesis' } },
+          { key: 'distribute_minus', name: { sv: 'Parentes (-)', en: 'Parentheses (-)' }, desc: { sv: '- framför parentes', en: '- in front of parenthesis' } },
           { key: 'distribute_double', name: { sv: 'Dubbla parenteser', en: 'Double parentheses' }, desc: { sv: 'Expandera två parenteser', en: 'Expand two parentheses' } },
           { key: 'distribute_combine_std', name: { sv: 'Expandera & Förenkla', en: 'Expand & Simplify' }, desc: { sv: 'Multiplicera och samla termer', en: 'Multiply and combine terms' } },
-          { key: 'sub_concept_plus_logic', name: { sv: 'Teckenregler', en: 'Sign rules' }, desc: { sv: 'Plus framför parentes', en: 'Plus in front of parentheses' } },
+          { key: 'sub_concept_plus_logic', name: { sv: 'Teckenregler', en: 'Sign rules' }, desc: { sv: 'Minus framför parentes', en: 'Minus in front of parentheses' } },
           { key: 'sub_block_plus', name: { sv: 'Minusparentes (+)', en: 'Minus parentheses (+)' }, desc: { sv: '-(ax + b)', en: '-(ax + b)' } },
           { key: 'sub_block_minus', name: { sv: 'Minusparentes (-)', en: 'Minus parentheses (-)' }, desc: { sv: '-(ax - b)', en: '-(ax - b)' } },
           { key: 'word_candy', name: { sv: 'Uttryck: Godispåsar', en: 'Expressions: Candy bags' }, desc: { sv: 'Teckna uttryck', en: 'Formulate expression' } },
-          { key: 'word_discount', name: { sv: 'Uttryck: Rabatt', en: 'Expressions: Discount' }, desc: { sv: 'Prisrelationer', en: 'Price relations' } },
           { key: 'word_combined_age_tri', name: { sv: 'Uttryck: Åldrar', en: 'Expressions: Ages' }, desc: { sv: 'Tre personers ålder', en: 'Ages of three people' } },
           { key: 'word_rect_perimeter', name: { sv: 'Uttryck: Omkrets', en: 'Expressions: Perimeter' }, desc: { sv: 'Rektangel med x', en: 'Rectangle with x' } },
-          { key: 'word_savings', name: { sv: 'Uttryck: Sparande', en: 'Expressions: Savings' }, desc: { sv: 'Saldo med uttag/insättning', en: 'Balance with withdrawal/deposit' } },
-          { key: 'word_passengers', name: { sv: 'Uttryck: Passagerare', en: 'Expressions: Passengers' }, desc: { sv: 'Förändring på buss', en: 'Changes on a bus' } },
-          { key: 'word_garden', name: { sv: 'Uttryck: Trädgård', en: 'Expressions: Garden' }, desc: { sv: 'Plantering och bortfall', en: 'Planting and loss' } },
-          { key: 'word_sports', name: { sv: 'Uttryck: Sport', en: 'Expressions: Sports' }, desc: { sv: 'Poängberäkning', en: 'Score calculation' } },
-          { key: 'word_phone_battery', name: { sv: 'Uttryck: Batteri', en: 'Expressions: Battery' }, desc: { sv: 'Laddning och förbrukning', en: 'Charging and consumption' } }
+          { key: 'word_passengers', name: { sv: 'Uttryck: Passagerare', en: 'Expressions: Passengers' }, desc: { sv: 'Förändring på buss', en: 'Changes on a bus' } }
         ]
       },
       patterns: {
@@ -149,9 +142,10 @@ export const SKILL_BUCKETS = {
           { key: 'mult_same_sign', name: { sv: 'Mult: Samma tecken', en: 'Mult: Same signs' }, desc: { sv: 'Minus * Minus = Plus', en: 'Minus * Minus = Plus' } },
           { key: 'mult_diff_sign', name: { sv: 'Mult: Olika tecken', en: 'Mult: Different signs' }, desc: { sv: 'Minus * Plus = Minus', en: 'Minus * Plus = Minus' } },
           { key: 'mult_chain', name: { sv: 'Mult: Kedja', en: 'Mult: Chain' }, desc: { sv: 'Jämnt/Udda antal minus', en: 'Even/Odd number of minuses' } },
-          { key: 'div_basic', name: { sv: 'Division: Grund', en: 'Division: Basic' }, desc: { sv: 'Enkel division', en: 'Simple division' } },
-          { key: 'div_fraction', name: { sv: 'Division: Bråkform', en: 'Division: Fractions' }, desc: { sv: 'Tecken i bråk', en: 'Signs in fractions' } },
-          { key: 'div_check_logic', name: { sv: 'Division: Kontroll', en: 'Division: Checking' }, desc: { sv: 'Rimlighetsbedömning', en: 'Reasonableness' } }
+          { key: 'mult_inverse_missing', name: { sv: 'Mult: Saknad faktor', en: 'Mult: Missing factor' }, desc: { sv: 'a * ? = b', en: 'a * ? = b' } },
+          { key: 'div_same_sign', name: { sv: 'Division: Samma tecken', en: 'Division: Same signs' }, desc: { sv: 'Svaret blir positivt', en: 'Answer is positive' } },
+          { key: 'div_diff_sign', name: { sv: 'Division: Olika tecken', en: 'Division: Different signs' }, desc: { sv: 'Svaret blir negativt', en: 'Answer is negative' } },
+          { key: 'div_check_logic', name: { sv: 'Division: Kontroll', en: 'Division: Checking' }, desc: { sv: 'Använd multiplikation', en: 'Use multiplication' } }
         ]
       },
       fractions_basics: {
@@ -164,7 +158,6 @@ export const SKILL_BUCKETS = {
           { key: 'part_compare', name: { sv: 'Jämför andelar', en: 'Compare shares' }, desc: { sv: 'Vilken del är störst?', en: 'Which part is largest?' } },
           { key: 'part_calc', name: { sv: 'Beräkna del av antal', en: 'Calculate part of count' }, desc: { sv: '1/n av x', en: '1/n of x' } },
           { key: 'mixed_bounds', name: { sv: 'Storleksbedömning', en: 'Size assessment' }, desc: { sv: 'Större/Mindre än heltal', en: 'Greater/Smaller than integer' } },
-          { key: 'mixed_missing', name: { sv: 'Blandad form: Pussel', en: 'Mixed form: Puzzle' }, desc: { sv: 'Hitta täljaren', en: 'Find the numerator' } },
           { key: 'mixed_convert_imp', name: { sv: 'Till bråkform', en: 'To improper fraction' }, desc: { sv: 'Blandad -> Bråk', en: 'Mixed -> Improper' } },
           { key: 'mixed_convert_mix', name: { sv: 'Till blandad form', en: 'To mixed form' }, desc: { sv: 'Bråk -> Blandad', en: 'Improper -> Mixed' } },
           { key: 'simplify_missing', name: { sv: 'Likvärdiga bråk', en: 'Equivalent fractions' }, desc: { sv: 'Förlängning/Förkortning', en: 'Extension/Simplification' } },
@@ -186,15 +179,10 @@ export const SKILL_BUCKETS = {
           { key: 'lcd_find', name: { sv: 'Hitta MGN', en: 'Find LCD' }, desc: { sv: 'Minsta gemensamma nämnare', en: 'Lowest common denominator' } },
           { key: 'add_error_spot', name: { sv: 'Hitta felet: Olika nämnare', en: 'Find error: Diff denom' }, desc: { sv: 'Vanliga misstag', en: 'Common mistakes' } },
           { key: 'add_diff_denom', name: { sv: 'Addition: Olika nämnare', en: 'Addition: Diff denom' }, desc: { sv: 'Förlängning krävs', en: 'Extension required' } },
-          { key: 'mixed_est', name: { sv: 'Blandad: Uppskattning', en: 'Mixed: Estimation' }, desc: { sv: 'Rimlighet', en: 'Reasonableness' } },
-          { key: 'mixed_add_same', name: { sv: 'Blandad Add: Samma', en: 'Mixed Add: Same' }, desc: { sv: 'Addera heltal och bråk', en: 'Add integers and fractions' } },
           { key: 'mixed_add_diff', name: { sv: 'Blandad Add: Olika', en: 'Mixed Add: Diff' }, desc: { sv: 'MGN med blandad form', en: 'LCD with mixed form' } },
-          { key: 'mixed_sub_same', name: { sv: 'Blandad Sub: Samma', en: 'Mixed Sub: Same' }, desc: { sv: 'Subtraktion', en: 'Subtraction' } },
           { key: 'mixed_sub_diff', name: { sv: 'Blandad Sub: Olika', en: 'Mixed Sub: Diff' }, desc: { sv: 'Låna från heltal', en: 'Borrow from integer' } },
           { key: 'mult_scaling', name: { sv: 'Multiplikation: Skalning', en: 'Mult: Scaling' }, desc: { sv: 'Större eller mindre?', en: 'Larger or smaller?' } },
-          { key: 'mult_area', name: { sv: 'Multiplikation: Area', en: 'Mult: Area' }, desc: { sv: 'Visuell modell', en: 'Visual model' } },
           { key: 'mult_calc', name: { sv: 'Multiplikation', en: 'Multiplication' }, desc: { sv: 'Täljare*Täljare / Nämnare*Nämnare', en: 'Top*Top / Bottom*Bottom' } },
-          { key: 'div_operator', name: { sv: 'Division: Koncept', en: 'Division: Concept' }, desc: { sv: 'Hur många ryms?', en: 'How many fit?' } },
           { key: 'div_reciprocal', name: { sv: 'Inverterade tal', en: 'Reciprocal numbers' }, desc: { sv: 'Vänd på bråket', en: 'Flip the fraction' } },
           { key: 'div_calc', name: { sv: 'Division', en: 'Division' }, desc: { sv: 'Mult med invers', en: 'Mult by inverse' } }
         ]
@@ -204,21 +192,16 @@ export const SKILL_BUCKETS = {
         variations: [
           { key: 'visual_translation', name: { sv: 'Bild till Procent', en: 'Visual to Percent' }, desc: { sv: 'Tolka figurer', en: 'Interpret figures' } },
           { key: 'visual_lie', name: { sv: 'Hitta felet: Bild', en: 'Find error: Visual' }, desc: { sv: 'Visuell analys', en: 'Visual analysis' } },
-          { key: 'equivalence', name: { sv: 'Bråk-Decimal-Procent', en: 'Fraction-Decimal-Percent' }, desc: { sv: 'Samband', en: 'Relationships' } },
+          { key: 'equivalence', name: { sv: 'Decimal-Procent', en: 'Decimal-Percent' }, desc: { sv: 'Samband', en: 'Relationships' } },
           { key: 'benchmark_calc', name: { sv: 'Huvudräkning (Bas)', en: 'Mental Math (Basic)' }, desc: { sv: '10%, 25%, 50%', en: '10%, 25%, 50%' } },
           { key: 'benchmark_inverse', name: { sv: 'Hitta 100% (Bas)', en: 'Find 100% (Basic)' }, desc: { sv: 'Om 10% är 5, vad är allt?', en: 'If 10% is 5, what is total?' } },
-          { key: 'benchmark_commutative', name: { sv: 'Kommutativitet', en: 'Commutativity' }, desc: { sv: 'x% av y = y% av x', en: 'x% of y = y% of x' } },
-          { key: 'composition', name: { sv: 'Sammansättning', en: 'Composition' }, desc: { sv: 'Bygg 35% av 10% och 25%', en: 'Build 35% from 10% and 25%' } },
-          { key: 'decomposition', name: { sv: 'Uppdelning', en: 'Decomposition' }, desc: { sv: 'Dela upp svåra procent', en: 'Break down hard percents' } },
-          { key: 'estimation', name: { sv: 'Överslagsräkning', en: 'Estimation' }, desc: { sv: 'Ungefärligt värde', en: 'Approximate value' } },
-          { key: 'equation_calc', name: { sv: 'Procentekvationen', en: 'Percent Equation' }, desc: { sv: 'Andelen * Hela = Delen', en: 'Share * Whole = Part' } },
-          { key: 'equation_missing_part', name: { sv: 'Hitta delen', en: 'Find the part' }, desc: { sv: 'x% av y', en: 'x% of y' } },
-          { key: 'equation_missing_whole', name: { sv: 'Hitta det hela', en: 'Find the whole' }, desc: { sv: 'Delen / Andelen', en: 'Part / Share' } },
-          { key: 'reverse_add_tax', name: { sv: 'Baklänges: Moms', en: 'Backwards: VAT' }, desc: { sv: 'Hitta pris före skatt', en: 'Find price before tax' } },
-          { key: 'reverse_find_original', name: { sv: 'Baklänges: Ursprung', en: 'Backwards: Original' }, desc: { sv: 'Hitta startvärde', en: 'Find starting value' } },
+          { key: 'composition', name: { sv: 'Sammansättning', en: 'Composition' }, desc: { sv: 'Bygg 30, 40, 70%', en: 'Build 30, 40, 70%' } },
+          { key: 'decomposition', name: { sv: 'Uppdelning (5%)', en: 'Decomposition (5%)' }, desc: { sv: 'Använd 10% för att hitta 5%', en: 'Use 10% to find 5%' } },
+          { key: 'find_percent_test', name: { sv: 'Procentsats: Prov', en: 'Percent: Test' }, desc: { sv: 'Delen / Hela', en: 'Part / Whole' } },
+          { key: 'find_percent_discount', name: { sv: 'Procentsats: Rabatt', en: 'Percent: Discount' }, desc: { sv: 'Beräkna andelen', en: 'Calculate share' } },
+          { key: 'reverse_find_whole', name: { sv: 'Hitta 100%', en: 'Find 100%' }, desc: { sv: 'Beräkna hela summan', en: 'Calculate total sum' } },
           { key: 'change_calc', name: { sv: 'Beräkna förändring', en: 'Calculate change' }, desc: { sv: 'Skillnad / Ursprung', en: 'Difference / Original' } },
-          { key: 'change_diff_vs_pct', name: { sv: 'Kronor vs Procent', en: 'Currency vs Percent' }, desc: { sv: 'Enhetsförståelse', en: 'Unit understanding' } },
-          { key: 'change_sequential_trap', name: { sv: 'Fälla: Dubbla ändringar', en: 'Trap: Double changes' }, desc: { sv: '+10% sen -10%', en: '+10% then -10%' } }
+          { key: 'change_multiplier', name: { sv: 'Förändringsfaktor', en: 'Change Factor' }, desc: { sv: '1,0 +/- %', en: '1.0 +/- %' } }
         ]
       },
       change_factor: {
@@ -226,14 +209,14 @@ export const SKILL_BUCKETS = {
         variations: [
           { key: 'pct_to_factor_inc', name: { sv: 'Ökning till Faktor', en: 'Increase to Factor' }, desc: { sv: '+20% -> 1,20', en: '+20% -> 1.20' } },
           { key: 'pct_to_factor_dec', name: { sv: 'Minskning till Faktor', en: 'Decrease to Factor' }, desc: { sv: '-20% -> 0,80', en: '-20% -> 0.80' } },
-          { key: 'factor_to_pct_inc', name: { sv: 'Faktor till Ökning', en: 'Factor to Increase' }, desc: { sv: '1,20 -> +20%', en: '1.20 -> +20%' } },
-          { key: 'factor_to_pct_dec', name: { sv: 'Faktor till Minskning', en: 'Factor to Decrease' }, desc: { sv: '0,80 -> -20%', en: '0.80 -> -20%' } },
+          { key: 'factor_to_pct_inc', name: { sv: 'Factor till Ökning', en: 'Factor to Increase' }, desc: { sv: '1,20 -> +20%', en: '1.20 -> +20%' } },
+          { key: 'factor_to_pct_dec', name: { sv: 'Factor till Minskning', en: 'Factor to Decrease' }, desc: { sv: '0,80 -> -20%', en: '0.80 -> -20%' } },
           { key: 'apply_factor_inc', name: { sv: 'Beräkna nytt (Ökning)', en: 'Calc new (Increase)' }, desc: { sv: 'Start * Faktor', en: 'Start * Factor' } },
           { key: 'apply_factor_dec', name: { sv: 'Beräkna nytt (Minskning)', en: 'Calc new (Decrease)' }, desc: { sv: 'Start * Faktor', en: 'Start * Factor' } },
           { key: 'find_original_inc', name: { sv: 'Hitta gamla (Ökning)', en: 'Find old (Increase)' }, desc: { sv: 'Nytt / Faktor', en: 'New / Factor' } },
           { key: 'find_original_dec', name: { sv: 'Hitta gamla (Minskning)', en: 'Find old (Decrease)' }, desc: { sv: 'Nytt / Faktor', en: 'New / Factor' } },
           { key: 'sequential_factors', name: { sv: 'Total faktor', en: 'Total factor' }, desc: { sv: 'Faktor1 * Faktor2', en: 'Factor1 * Factor2' } },
-          { key: 'word_population', name: { sv: 'Problem: Befolkning', en: 'Problem: Population' }, desc: { sv: 'Tillämpning', en: 'Application' } },
+          { key: 'word_population', name: { sv: 'Problem: Befolkning', en: 'Problem: Population' }, desc: { sv: 'Förändringsfaktor', en: 'Change factor' } },
           { key: 'word_interest', name: { sv: 'Problem: Ränta', en: 'Problem: Interest' }, desc: { sv: 'Bank och lån', en: 'Bank and loans' } },
           { key: 'word_depreciation', name: { sv: 'Problem: Värdeminskning', en: 'Problem: Depreciation' }, desc: { sv: 'Bil/Maskin', en: 'Car/Machine' } },
           { key: 'word_sale', name: { sv: 'Problem: Rea', en: 'Problem: Sale' }, desc: { sv: 'Rabatter', en: 'Discounts' } },
@@ -255,30 +238,26 @@ export const SKILL_BUCKETS = {
           { key: 'ten_inverse_counting', name: { sv: 'Räkna nollor', en: 'Count zeros' }, desc: { sv: 'Skriv som 10^n', en: 'Write as 10^n' } },
           { key: 'scientific_to_form', name: { sv: 'Till Grundpotensform', en: 'To Scientific Notation' }, desc: { sv: 'a * 10^n', en: 'a * 10^n' } },
           { key: 'scientific_missing_mantissa', name: { sv: 'Hitta mantissan', en: 'Find mantissa' }, desc: { sv: 'Talet mellan 1-10', en: 'Number between 1-10' } },
-          { key: 'scientific_missing_exponent', name: { sv: 'Hitta exponenten', en: 'Find exponent' }, desc: { sv: 'Antal steg', en: 'Number of steps' } },
           { key: 'root_calc', name: { sv: 'Kvadratrötter', en: 'Square roots' }, desc: { sv: 'Roten ur x', en: 'Square root of x' } },
           { key: 'root_inverse_algebra', name: { sv: 'Ekvation x^2', en: 'Equation x^2' }, desc: { sv: 'Lös ut x', en: 'Solve for x' } },
           { key: 'law_multiplication', name: { sv: 'Lag: Multiplikation', en: 'Law: Multiplication' }, desc: { sv: 'Addera exponenter', en: 'Add exponents' } },
           { key: 'law_division', name: { sv: 'Lag: Division', en: 'Law: Division' }, desc: { sv: 'Subtrahera exponenter', en: 'Subtract exponents' } },
-          { key: 'law_addition_trap', name: { sv: 'Fälla: Addition', en: 'Trap: Addition' }, desc: { sv: 'Ingen regel för plus', en: 'No rule for plus' } },
           { key: 'law_mult_div_combined', name: { sv: 'Lag: Mult & Div', en: 'Law: Mult & Div' }, desc: { sv: 'Blandade regler', en: 'Mixed rules' } },
           { key: 'law_power_of_power', name: { sv: 'Lag: Potens av potens', en: 'Law: Power of power' }, desc: { sv: 'Multiplicera exponenter', en: 'Multiply exponents' } },
-          { key: 'law_inverse_algebra', name: { sv: 'Potensekvationer', en: 'Power equations' }, desc: { sv: 'Hitta exponenten', en: 'Find the exponent' } },
           { key: 'law_all_combined', name: { sv: 'Blandade Lagar', en: 'Mixed Laws' }, desc: { sv: 'Avancerad förenkling', en: 'Advanced simplification' } }
         ]
       },
       ten_powers: {
         name: { sv: 'Tiopotenser & Prefix', en: 'Powers of Ten & Prefixes' },
         variations: [
-          { key: 'big_mult_std', name: { sv: 'Mult med 10/100', en: 'Mult by 10/100' }, desc: { sv: 'Flytta komma höger', en: 'Move decimal right' } },
-          { key: 'big_div_std', name: { sv: 'Div med 10/100', en: 'Div by 10/100' }, desc: { sv: 'Flytta komma vänster', en: 'Move decimal left' } },
+          { key: 'big_mult_std', name: { sv: 'Mult med 10/100/1000', en: 'Mult by 10/100/1000' }, desc: { sv: 'Flytta komma höger', en: 'Move decimal right' } },
+          { key: 'big_div_std', name: { sv: 'Div med 10/100/1000', en: 'Div by 10/100/1000' }, desc: { sv: 'Flytta komma vänster', en: 'Move decimal left' } },
           { key: 'big_missing_factor', name: { sv: 'Hitta 10-faktorn', en: 'Find 10-factor' }, desc: { sv: 'Vad multiplicerades?', en: 'What was multiplied?' } },
           { key: 'power_discovery', name: { sv: 'Potensform', en: 'Power form' }, desc: { sv: 'Skriv som 10^n', en: 'Write as 10^n' } },
-          { key: 'reciprocal_equivalence', name: { sv: 'Inverser', en: 'Reciprocals' }, desc: { sv: '0,1 = 1/10', en: '0.1 = 1/10' } },
+          { key: 'reciprocal_equivalence', name: { sv: 'Inverser (0,1/0,01)', en: 'Reciprocals (0.1/0.01)' }, desc: { sv: '0,1 = 1/10', en: '0.1 = 1/10' } },
           { key: 'concept_spot_lie', name: { sv: 'Hitta felet: 10-bas', en: 'Find error: base 10' }, desc: { sv: 'Konceptuell förståelse', en: 'Conceptual understanding' } },
-          { key: 'decimal_div_std', name: { sv: 'Div med 0,1/0,01', en: 'Div by 0.1/0.01' }, desc: { sv: 'Talet blir större', en: 'Number gets larger' } },
-          { key: 'decimal_mult_std', name: { sv: 'Mult med 0,1/0,01', en: 'Mult by 0.1/0.01' }, desc: { sv: 'Talet blir mindre', en: 'Number gets smaller' } },
-          { key: 'decimal_logic_trap', name: { sv: 'Fälla: Mult/Div', en: 'Trap: Mult/Div' }, desc: { sv: 'Logiskt tänkande', en: 'Logical thinking' } }
+          { key: 'decimal_div_std', name: { sv: 'Div med 0,1/0,01/0,001', en: 'Div by 0.1/0.01/0.001' }, desc: { sv: 'Talet blir större', en: 'Number gets larger' } },
+          { key: 'decimal_mult_std', name: { sv: 'Mult med 0,1/0,01/0,001', en: 'Mult by 0.1/0.01/0.001' }, desc: { sv: 'Talet blir mindre', en: 'Number gets smaller' } }
         ]
       }
     }
@@ -298,28 +277,16 @@ export const SKILL_BUCKETS = {
           { key: 'perimeter_rect', name: { sv: 'Omkrets: Rektangel', en: 'Perimeter: Rectangle' }, desc: { sv: '2b + 2h', en: '2w + 2h' } },
           { key: 'perimeter_parallel', name: { sv: 'Omkrets: Parallellogram', en: 'Perimeter: Parallelogram' }, desc: { sv: 'Samma som rektangel', en: 'Same as rectangle' } },
           { key: 'perimeter_inverse', name: { sv: 'Omkrets: Hitta sidan', en: 'Perimeter: Find side' }, desc: { sv: 'Givet O, hitta x', en: 'Given P, find x' } },
-          { key: 'perimeter_lie', name: { sv: 'Hitta felet: Omkrets', en: 'Find error: Perimeter' }, desc: { sv: 'Analysera påstående', en: 'Analyze statement' } },
           { key: 'area_square', name: { sv: 'Area: Kvadrat', en: 'Area: Square' }, desc: { sv: 's * s', en: 's * s' } },
           { key: 'area_rect', name: { sv: 'Area: Rektangel', en: 'Area: Rectangle' }, desc: { sv: 'b * h', en: 'w * h' } },
-          { key: 'area_parallel', name: { sv: 'Area: Parallellogram', en: 'Area: Parallelogram' }, desc: { sv: 'b * h (ej sida)', en: 'w * h (not side)' } },
-          { key: 'area_inverse', name: { sv: 'Area: Hitta sidan', en: 'Area: Find side' }, desc: { sv: 'Givet A, hitta x', en: 'Given A, find x' } },
-          { key: 'area_trap', name: { sv: 'Fälla: Area', en: 'Trap: Area' }, desc: { sv: 'Vinkelrät höjd!', en: 'Perpendicular height!' } },
+          { key: 'area_parallel', name: { sv: 'Area: Parallellogram', en: 'Area: Parallelogram' }, desc: { sv: 'Vinkelrät höjd', en: 'Perpendicular height' } },
           { key: 'area_triangle', name: { sv: 'Area: Triangel', en: 'Area: Triangle' }, desc: { sv: '(b * h) / 2', en: '(b * h) / 2' } },
-          { key: 'inverse_triangle', name: { sv: 'Triangel: Hitta höjd', en: 'Triangle: Find height' }, desc: { sv: 'Givet A, hitta h', en: 'Given A, find h' } },
-          { key: 'perimeter_triangle_right', name: { sv: 'Omkrets: Rätvinklig', en: 'Perimeter: Right-angled' }, desc: { sv: 'Summa av sidor', en: 'Sum of sides' } },
-          { key: 'perimeter_triangle_iso', name: { sv: 'Omkrets: Likbent', en: 'Perimeter: Isosceles' }, desc: { sv: 'Två lika sidor', en: 'Two equal sides' } },
-          { key: 'perimeter_triangle_scalene', name: { sv: 'Omkrets: Oliksidig', en: 'Perimeter: Scalene' }, desc: { sv: 'Alla sidor olika', en: 'All sides different' } },
-          { key: 'combined_rect_tri', name: { sv: 'Sammansatt: Rekt+Tri', en: 'Composite: Rect+Tri' }, desc: { sv: 'Additionsmetoden', en: 'Addition method' } },
-          { key: 'combined_l_shape', name: { sv: 'Sammansatt: L-form', en: 'Composite: L-shape' }, desc: { sv: '2 Rektanglar (ihop)', en: '2 Rectangles (joined)' } },
-          { key: 'combined_house', name: { sv: 'Sammansatt: Hus', en: 'Composite: House' }, desc: { sv: 'Kvadrat + Triangel', en: 'Square + Triangle' } },
-          { key: 'circle_area', name: { sv: 'Cirkel: Area', en: 'Circle: Area' }, desc: { sv: 'pi * r^2', en: 'pi * r^2' } },
-          { key: 'circle_perimeter', name: { sv: 'Cirkel: Omkrets', en: 'Circle: Perimeter' }, desc: { sv: 'pi * d', en: 'pi * d' } },
-          { key: 'semicircle_area', name: { sv: 'Halvcirkel: Area', en: 'Semicircle: Area' }, desc: { sv: 'Halva arean', en: 'Half the area' } },
-          { key: 'semicircle_perimeter', name: { sv: 'Halvcirkel: Omkrets', en: 'Semicircle: Perimeter' }, desc: { sv: 'Båge + Diameter', en: 'Arc + Diameter' } },
-          { key: 'area_quarter', name: { sv: 'Kvartscirkel: Area', en: 'Quarter circle: Area' }, desc: { sv: 'Fjärdedels area', en: 'Quarter of area' } },
-          { key: 'perimeter_quarter', name: { sv: 'Kvartscirkel: Omkrets', en: 'Quarter circle: Perimeter' }, desc: { sv: 'Båge + Radier', en: 'Arc + Radii' } },
-          { key: 'perimeter_house', name: { sv: 'Omkrets: Hus', en: 'Perimeter: House' }, desc: { sv: 'Avancerad (Tak)', en: 'Advanced (Roof)' } },
-          { key: 'perimeter_portal', name: { sv: 'Omkrets: Portal', en: 'Perimeter: Portal' }, desc: { sv: 'Väggar + Båge', en: 'Walls + Arc' } },
+          { key: 'perimeter_triangle_right', name: { sv: 'Omkrets: Rätvinklig triangel', en: 'Perimeter: Right triangle' }, desc: { sv: 'Summa av sidor', en: 'Sum of sides' } },
+          { key: 'combined_l_shape', name: { sv: 'Area: L-figur', en: 'Area: L-shape' }, desc: { sv: 'Dela i två rektanglar', en: 'Split into two rectangles' } },
+          { key: 'combined_rect_tri', name: { sv: 'Area: Sammansatt Rekt+Tri', en: 'Area: Comp. Rect+Tri' }, desc: { sv: 'Addera delarna', en: 'Add the parts' } },
+          { key: 'semicircle_area', name: { sv: 'Area: Halvcirkel', en: 'Area: Semicircle' }, desc: { sv: 'Hälften av pi*r^2', en: 'Half of pi*r^2' } },
+          { key: 'semicircle_perimeter', name: { sv: 'Omkrets: Halvcirkel', en: 'Perimeter: Semicircle' }, desc: { sv: 'Båge + Diameter', en: 'Arc + Diameter' } },
+          { key: 'perimeter_quarter', name: { sv: 'Omkrets: Kvartscirkel', en: 'Perimeter: Quarter circle' }, desc: { sv: 'Båge + 2 Radier', en: 'Arc + 2 Radii' } },
           { key: 'area_house', name: { sv: 'Area: Hus', en: 'Area: House' }, desc: { sv: 'Rektangel + Triangel', en: 'Rectangle + Triangle' } },
           { key: 'area_portal', name: { sv: 'Area: Portal', en: 'Area: Portal' }, desc: { sv: 'Rektangel + Halvcirkel', en: 'Rectangle + Semicircle' } }
         ]
@@ -328,93 +295,77 @@ export const SKILL_BUCKETS = {
         name: { sv: 'Vinklar', en: 'Angles' },
         variations: [
           { key: 'classification_visual', name: { sv: 'Vinkeltyper', en: 'Angle types' }, desc: { sv: 'Spetsig, Rät, Trubbig', en: 'Acute, Right, Obtuse' } },
-          { key: 'classification_inverse_numeric', name: { sv: 'Klassificera tal', en: 'Classify numbers' }, desc: { sv: 'Vilken typ är 120°?', en: 'What type is 120°?' } },
-          { key: 'classification_lie', name: { sv: 'Hitta felet: Typer', en: 'Find error: Types' }, desc: { sv: 'Falska påståenden', en: 'False statements' } },
+          { key: 'classification_check_acute', name: { sv: 'Är det spetsig?', en: 'Is it acute?' }, desc: { sv: '<90 grader', en: '<90 degrees' } },
           { key: 'comp_supp_visual', name: { sv: 'Grannvinklar', en: 'Neighbor angles' }, desc: { sv: 'Summa 180 eller 90', en: 'Sum 180 or 90' } },
-          { key: 'comp_supp_inverse', name: { sv: 'Terminologi', en: 'Terminology' }, desc: { sv: 'Supplement/Komplement', en: 'Supp/Comp' } },
           { key: 'vertical_side_visual', name: { sv: 'Vertikalvinklar', en: 'Vertical angles' }, desc: { sv: 'Mittemot varandra', en: 'Opposite each other' } },
-          { key: 'vertical_side_lie', name: { sv: 'Hitta felet: Relationer', en: 'Find error: Relations' }, desc: { sv: 'Analys', en: 'Analysis' } },
           { key: 'triangle_sum_visual', name: { sv: 'Triangelns summa', en: 'Triangle sum' }, desc: { sv: 'Alltid 180 grader', en: 'Always 180 degrees' } },
-          { key: 'triangle_isosceles', name: { sv: 'Likbent triangel', en: 'Isosceles triangle' }, desc: { sv: 'Basvinklar lika', en: 'Base angles equal' } },
-          { key: 'polygon_sum', name: { sv: 'Polygoners summa', en: 'Polygon sum' }, desc: { sv: '(n-2) * 180', en: '(n-2) * 180' } },
-          { key: 'polygon_inverse', name: { sv: 'Hitta antalet hörn', en: 'Find vertices' }, desc: { sv: 'Givet vinkelsumma', en: 'Given angle sum' } },
-          { key: 'quad_missing', name: { sv: 'Fyrhörning', en: 'Quadrilateral' }, desc: { sv: 'Summa 360', en: 'Sum 360' } },
-          { key: 'parallel_visual', name: { sv: 'Parallella linjer', en: 'Parallel lines' }, desc: { sv: 'Z, F och U-vinklar', en: 'Z, F and U angles' } },
-          { key: 'parallel_lie', name: { sv: 'Hitta felet: Parallell', en: 'Find error: Parallel' }, desc: { sv: 'Regler för linjer', en: 'Line rules' } }
+          { key: 'quad_missing', name: { sv: 'Fyrhörning', en: 'Quadrilateral' }, desc: { sv: 'Summa 360 grader', en: 'Sum 360 degrees' } },
+          { key: 'parallel_visual', name: { sv: 'Parallella linjer', en: 'Parallel lines' }, desc: { sv: 'Alternat/Likbelägen', en: 'Alternate/Corresponding' } }
         ]
       },
       pythagoras: {
         name: { sv: 'Pythagoras Sats', en: 'Pythagorean Theorem' },
         variations: [
           { key: 'sqrt_calc', name: { sv: 'Kvadratrot', en: 'Square root' }, desc: { sv: 'Beräkning', en: 'Calculation' } },
-          { key: 'square_calc', name: { sv: 'Kvadrat', en: 'Square' }, desc: { sv: 'Tal gånger sig självt', en: 'Number times itself' } },
+          { key: 'square_calc', name: { sv: 'Kvadrat', en: 'Square' }, desc: { sv: 'Tal i kvadrat', en: 'Number squared' } },
           { key: 'missing_square', name: { sv: 'Invers kvadrat', en: 'Inverse square' }, desc: { sv: 'x^2 = a', en: 'x^2 = a' } },
-          { key: 'sqrt_estimation', name: { sv: 'Uppskatta rot', en: 'Estimate root' }, desc: { sv: 'Mellan vilka heltal?', en: 'Between which integers?' } },
+          { key: 'sqrt_estimation', name: { sv: 'Uppskatta rot', en: 'Estimate root' }, desc: { sv: 'Ja/Nej frågor', en: 'Yes/No questions' } },
           { key: 'hyp_visual', name: { sv: 'Hitta Hypotenusan', en: 'Find Hypotenuse' }, desc: { sv: 'a^2 + b^2 = c^2', en: 'a^2 + b^2 = c^2' } },
-          { key: 'hyp_equation', name: { sv: 'Ekvation: Hypotenusa', en: 'Equation: Hypotenuse' }, desc: { sv: 'Lös ut c', en: 'Solve for c' } },
-          { key: 'hyp_error', name: { sv: 'Hitta felet: Hyp', en: 'Find error: Hyp' }, desc: { sv: 'Vanliga fel', en: 'Common errors' } },
+          { key: 'hyp_equation', name: { sv: 'Ekvation: Hypotenusa', en: 'Equation: Hypotenuse' }, desc: { sv: 'Rätt uppställning', en: 'Correct setup' } },
           { key: 'leg_visual', name: { sv: 'Hitta Kateten', en: 'Find Leg' }, desc: { sv: 'c^2 - a^2 = b^2', en: 'c^2 - a^2 = b^2' } },
           { key: 'leg_concept', name: { sv: 'Koncept: Katet', en: 'Concept: Leg' }, desc: { sv: 'Subtraktion krävs', en: 'Subtraction required' } },
-          { key: 'leg_text', name: { sv: 'Textproblem: Katet', en: 'Word problem: Leg' }, desc: { sv: 'Tillämpning', en: 'Application' } },
-          { key: 'app_ladder', name: { sv: 'Problem: Stegen', en: 'Problem: The Ladder' }, desc: { sv: 'Vardagsproblem', en: 'Everyday problem' } },
-          { key: 'app_displacement', name: { sv: 'Problem: Fågelvägen', en: 'Problem: As the crow flies' }, desc: { sv: 'Avstånd', en: 'Distance' } },
+          { key: 'app_ladder', name: { sv: 'Problem: Stegen', en: 'Problem: The Ladder' }, desc: { sv: 'Lutande stege', en: 'Leaning ladder' } },
           { key: 'app_diagonal', name: { sv: 'Problem: Diagonal', en: 'Problem: Diagonal' }, desc: { sv: 'Rektangelns diagonal', en: 'Rectangle diagonal' } },
-          { key: 'conv_check', name: { sv: 'Rätvinklig?', en: 'Right-angled?' }, desc: { sv: 'Kontrollera satsen', en: 'Check the theorem' } },
-          { key: 'conv_trap', name: { sv: 'Triangel-fällan', en: 'Triangle trap' }, desc: { sv: 'Är den rät?', en: 'Is it right-angled?' } }
-        ]
-      },
-      scale: {
-        name: { sv: 'Skala', en: 'Scale' },
-        variations: [
-          { key: 'calc_real', name: { sv: 'Beräkna verklighet', en: 'Calculate reality' }, desc: { sv: 'Från bild till verklighet', en: 'From image to reality' } },
-          { key: 'calc_map', name: { sv: 'Beräkna avbildning', en: 'Calculate image' }, desc: { sv: 'Från verklighet till bild', en: 'From reality to image' } },
-          { key: 'determine_scale', name: { sv: 'Bestäm skalan', en: 'Determine scale' }, desc: { sv: 'Bild / Verklighet', en: 'Image / Reality' } },
-          { key: 'compare_scales', name: { sv: 'Jämför skalor', en: 'Compare scales' }, desc: { sv: 'Vilken är störst?', en: 'Which is largest?' } },
-          { key: 'area_calc_large', name: { sv: 'Areaskala: Förstoring', en: 'Area scale: Enlargement' }, desc: { sv: 'Längdskala i kvadrat', en: 'Length scale squared' } },
-          { key: 'area_calc_small', name: { sv: 'Areaskala: Förminskning', en: 'Area scale: Reduction' }, desc: { sv: 'Dividera med kvadrat', en: 'Divide by square' } },
-          { key: 'area_find_scale', name: { sv: 'Hitta Areaskala', en: 'Find Area scale' }, desc: { sv: 'Roten ur areakvot', en: 'Root of area ratio' } }
+          { key: 'conv_check', name: { sv: 'Rätvinklig?', en: 'Right-angled?' }, desc: { sv: 'Kontrollera satsen', en: 'Check the theorem' } }
         ]
       },
       similarity: {
         name: { sv: 'Likformighet', en: 'Similarity' },
         variations: [
           { key: 'sim_rect_check', name: { sv: 'Är de likformiga?', en: 'Are they similar?' }, desc: { sv: 'Rektanglar', en: 'Rectangles' } },
-          { key: 'sim_tri_angle_check', name: { sv: 'Likformighet: Vinklar', en: 'Similarity: Angles' }, desc: { sv: 'AA-kriteriet', en: 'AA criterion' } },
+          { key: 'sim_tri_angle_check', name: { sv: 'Likformighet: Vinklar', en: 'Similarity: Angles' }, desc: { sv: 'Samma vinklar', en: 'Same angles' } },
           { key: 'sim_tri_side_check', name: { sv: 'Likformighet: Sidor', en: 'Similarity: Sides' }, desc: { sv: 'Proportioner', en: 'Proportions' } },
-          { key: 'sim_concept_lie', name: { sv: 'Hitta felet: Likformighet', en: 'Find error: Similarity' }, desc: { sv: 'Teori', en: 'Theory' } },
-          { key: 'sim_calc_big', name: { sv: 'Beräkna stor sida', en: 'Calculate long side' }, desc: { sv: 'Multiplicera med skala', en: 'Multiply by scale' } },
-          { key: 'sim_calc_small', name: { sv: 'Beräkna liten sida', en: 'Calculate short side' }, desc: { sv: 'Dividera med skala', en: 'Divide by scale' } },
-          { key: 'sim_find_k', name: { sv: 'Hitta skalfaktor', en: 'Find scale factor' }, desc: { sv: 'Stor / Liten', en: 'Large / Small' } },
-          { key: 'sim_calc_lie', name: { sv: 'Hitta felet: Beräkning', en: 'Find error: Calculation' }, desc: { sv: 'Kontrollera kvoter', en: 'Check ratios' } },
-          { key: 'transversal_total', name: { sv: 'Topptriangelsatsen', en: 'Top triangle theorem' }, desc: { sv: 'Hela sidan', en: 'Entire side' } },
-          { key: 'transversal_extension', name: { sv: 'Parallelltransversal', en: 'Parallel transversal' }, desc: { sv: 'Del av sida', en: 'Part of side' } },
+          { key: 'sim_concept_lie', name: { sv: 'Hitta felet: Teori', en: 'Find error: Theory' }, desc: { sv: 'Begreppsförståelse', en: 'Conceptual understanding' } },
+          { key: 'sim_calc_big', name: { sv: 'Beräkna stor sida', en: 'Calculate long side' }, desc: { sv: 'Multiplicera med k', en: 'Multiply by k' } },
+          { key: 'sim_calc_small', name: { sv: 'Beräkna liten sida', en: 'Calculate short side' }, desc: { sv: 'Dividera med k', en: 'Divide by k' } },
+          { key: 'sim_find_k', name: { sv: 'Hitta skalfaktor', en: 'Find scale factor' }, desc: { sv: 'Kvot av sidor', en: 'Ratio of sides' } },
+          { key: 'transversal_total', name: { sv: 'Transversal: Hela', en: 'Transversal: Total' }, desc: { sv: 'Söker stora basen', en: 'Seeking large base' } },
+          { key: 'transversal_extension', name: { sv: 'Transversal: Del', en: 'Transversal: Part' }, desc: { sv: 'Del av sidosidan', en: 'Part of side' } },
           { key: 'transversal_concept_id', name: { sv: 'Identifiera fall', en: 'Identify case' }, desc: { sv: 'Topp vs Transversal', en: 'Top vs Transversal' } },
-          { key: 'pythagoras_sim_hyp', name: { sv: 'Likformighet & Pythagoras', en: 'Similarity & Pythagoras' }, desc: { sv: 'Kombination (Hyp)', en: 'Combination (Hyp)' } },
-          { key: 'pythagoras_sim_leg', name: { sv: 'Likformighet & Pythagoras', en: 'Similarity & Pythagoras' }, desc: { sv: 'Kombination (Kat)', en: 'Combination (Leg)' } }
+          { key: 'pythagoras_sim_hyp', name: { sv: 'Likf. & Pythagoras', en: 'Sim. & Pythagoras' }, desc: { sv: 'Kombinerad (Hyp)', en: 'Combined (Hyp)' } }
+        ]
+      },
+      scale: {
+        name: { sv: 'Skala', en: 'Scale' },
+        variations: [
+          { key: 'concept_lie', name: { sv: 'Hitta felet: Skala', en: 'Find error: Scale' }, desc: { sv: 'Analysera påstående', en: 'Analyze statement' } },
+          { key: 'calc_real', name: { sv: 'Beräkna verklighet', en: 'Calculate reality' }, desc: { sv: 'Bild till verklighet', en: 'Image to reality' } },
+          { key: 'calc_image', name: { sv: 'Beräkna bild', en: 'Calculate image' }, desc: { sv: 'Verklighet till bild', en: 'Reality to image' } },
+          { key: 'find_scale', name: { sv: 'Bestäm skalan', en: 'Determine scale' }, desc: { sv: '1:X form', en: '1:X form' } },
+          { key: 'map_real', name: { sv: 'Karta till verklighet', en: 'Map to reality' }, desc: { sv: 'Använd kartskala', en: 'Use map scale' } },
+          { key: 'blueprint_draw', name: { sv: 'Ritning: Beräkna cm', en: 'Blueprint: Calc cm' }, desc: { sv: 'Skala 1:50', en: 'Scale 1:50' } },
+          { key: 'microscope_calc', name: { sv: 'Förstoring (Mikroskop)', en: 'Magnification (Micro)' }, desc: { sv: 'X:1 form', en: 'X:1 form' } },
+          { key: 'area_concept', name: { sv: 'Areaskala: Koncept', en: 'Area scale: Concept' }, desc: { sv: 'Längdskala i kvadrat', en: 'Length scale squared' } },
+          { key: 'area_calc_large', name: { sv: 'Beräkna stor area', en: 'Calculate large area' }, desc: { sv: 'Använd areaskala', en: 'Use area scale' } }
         ]
       },
       volume: {
-        name: { sv: 'Volym & Begränsningsyta', en: 'Volume & Surface Area' },
+        name: { sv: 'Volym & Yta', en: 'Volume & Surface Area' },
         variations: [
-          { key: 'vol_cuboid_std', name: { sv: 'Volym: Rätblock', en: 'Volume: Cuboid' }, desc: { sv: 'b * d * h', en: 'w * d * h' } },
-          { key: 'vol_cuboid_inverse', name: { sv: 'Rätblock: Hitta sida', en: 'Cuboid: Find side' }, desc: { sv: 'Volym / Area', en: 'Volume / Area' } },
-          { key: 'vol_cuboid_scaling', name: { sv: 'Rätblock: Skalning', en: 'Cuboid: Scaling' }, desc: { sv: 'Dubbla sidor -> 8x volym', en: 'Double sides -> 8x vol' } },
-          { key: 'vol_tri_prism_std', name: { sv: 'Volym: Prisma', en: 'Volume: Prism' }, desc: { sv: 'Basarea * höjd', en: 'Base area * height' } },
-          { key: 'vol_tri_prism_inverse', name: { sv: 'Prisma: Hitta höjd', en: 'Prism: Find height' }, desc: { sv: 'Volym / Basarea', en: 'Volume / Base area' } },
+          { key: 'vol_cuboid_std', name: { sv: 'Volym: Rätblock', en: 'Volume: Cuboid' }, desc: { sv: 'l * b * h', en: 'l * w * h' } },
+          { key: 'vol_cuboid_inverse', name: { sv: 'Rätblock: Hitta höjd', en: 'Cuboid: Find height' }, desc: { sv: 'Givet V, sök h', en: 'Given V, seek h' } },
+          { key: 'vol_cuboid_scaling', name: { sv: 'Rätblock: Skalning', en: 'Cuboid: Scaling' }, desc: { sv: 'Ökad höjd', en: 'Increased height' } },
+          { key: 'vol_tri_prism_std', name: { sv: 'Volym: Prisma', en: 'Volume: Prism' }, desc: { sv: 'Basarea * längd', en: 'Base area * length' } },
           { key: 'vol_cyl_std', name: { sv: 'Volym: Cylinder', en: 'Volume: Cylinder' }, desc: { sv: 'pi * r^2 * h', en: 'pi * r^2 * h' } },
-          { key: 'vol_cyl_inverse', name: { sv: 'Cylinder: Hitta höjd', en: 'Cylinder: Find height' }, desc: { sv: 'Ekvationslösning', en: 'Equation solving' } },
-          { key: 'vol_pyramid_sq', name: { sv: 'Volym: Pyramid', en: 'Volume: Pyramid' }, desc: { sv: '(Bas * h) / 3', en: '(Base * h) / 3' } },
+          { key: 'vol_pyramid_std', name: { sv: 'Volym: Pyramid', en: 'Volume: Pyramid' }, desc: { sv: '(Bas * h) / 3', en: '(Base * h) / 3' } },
           { key: 'vol_cone_std', name: { sv: 'Volym: Kon', en: 'Volume: Cone' }, desc: { sv: '(Cirkel * h) / 3', en: '(Circle * h) / 3' } },
-          { key: 'vol_sphere_std', name: { sv: 'Volym: Klot', en: 'Volume: Sphere' }, desc: { sv: '4 * pi * r^3 / 3', en: '4 * pi * r^3 / 3' } },
-          { key: 'vol_semi_sphere', name: { sv: 'Volym: Halvklot', en: 'Volume: Hemisphere' }, desc: { sv: 'Hälften av klot', en: 'Half a sphere' } },
-          { key: 'vol_composite_silo', name: { sv: 'Sammansatt: Silo', en: 'Composite: Silo' }, desc: { sv: 'Cylinder + Kon', en: 'Cylinder + Cone' } },
-          { key: 'vol_composite_house', name: { sv: 'Sammansatt: Hus', en: 'Composite: House' }, desc: { sv: 'Rätblock + Prisma', en: 'Cuboid + Prism' } },
-          { key: 'unit_liters_basic', name: { sv: 'Enheter: Liter', en: 'Units: Liters' }, desc: { sv: 'dm3 till liter', en: 'dm3 to liters' } },
-          { key: 'unit_cubic_conversion', name: { sv: 'Enheter: Kubik', en: 'Units: Cubic' }, desc: { sv: 'm3 till dm3', en: 'm3 to dm3' } },
-          { key: 'sa_cuboid', name: { sv: 'Begränsningsarea: Rätblock', en: 'Surface Area: Cuboid' }, desc: { sv: 'Summa av sidor', en: 'Sum of sides' } },
-          { key: 'sa_cylinder', name: { sv: 'Begränsningsarea: Cylinder', en: 'Surface Area: Cylinder' }, desc: { sv: 'Mantel + 2 Cirklar', en: 'Mantle + 2 Circles' } },
-          { key: 'sa_sphere', name: { sv: 'Begränsningsarea: Klot', en: 'Surface Area: Sphere' }, desc: { sv: '4 * pi * r^2', en: '4 * pi * r^2' } },
-          { key: 'sa_cone', name: { sv: 'Begränsningsarea: Kon', en: 'Surface Area: Cone' }, desc: { sv: 'Mantel + Cirkel', en: 'Mantle + Circle' } }
+          { key: 'vol_sphere_std', name: { sv: 'Volym: Klot', en: 'Volume: Sphere' }, desc: { sv: '4*pi*r^3 / 3', en: '4*pi*r^3 / 3' } },
+          { key: 'vol_silo_std', name: { sv: 'Silo (Cyl+Halvklot)', en: 'Silo (Cyl+Hemis)' }, desc: { sv: 'Sammansatt volym', en: 'Composite volume' } },
+          { key: 'vol_icecream_std', name: { sv: 'Strut (Kon+Halvklot)', en: 'Cone (Cone+Hemis)' }, desc: { sv: 'Sammansatt volym', en: 'Composite volume' } },
+          { key: 'vol_units_liter', name: { sv: 'Enheter: Liter', en: 'Units: Liter' }, desc: { sv: 'dm3 = liter', en: 'dm3 = liter' } },
+          { key: 'vol_units_m3', name: { sv: 'Enheter: Kubikmeter', en: 'Units: Cubic meter' }, desc: { sv: 'm3 till liter', en: 'm3 to liter' } },
+          { key: 'sa_cuboid', name: { sv: 'Begränsningsyta: Rätbl.', en: 'Surface area: Cuboid' }, desc: { sv: 'Alla sex sidor', en: 'All six sides' } },
+          { key: 'sa_sphere', name: { sv: 'Begränsningsyta: Klot', en: 'Surface area: Sphere' }, desc: { sv: '4 * pi * r^2', en: '4 * pi * r^2' } }
         ]
       }
     }
@@ -434,39 +385,29 @@ export const SKILL_BUCKETS = {
           { key: 'find_range', name: { sv: 'Variationsbredd', en: 'Range' }, desc: { sv: 'Max - Min', en: 'Max - Min' } },
           { key: 'find_min_max', name: { sv: 'Minsta/Största tal', en: 'Min/Max number' }, desc: { sv: 'Hitta extrempunkter', en: 'Find extremes' } },
           { key: 'calc_mean', name: { sv: 'Medelvärde', en: 'Mean' }, desc: { sv: 'Beräkna genomsnitt', en: 'Calculate average' } },
-          { key: 'mean_negatives', name: { sv: 'Medelvärde: Negativa', en: 'Mean: Negatives' }, desc: { sv: 'Temperaturer etc.', en: 'Temperatures etc.' } },
-          { key: 'median_odd', name: { sv: 'Median (Udda)', en: 'Median (Odd)' }, desc: { sv: 'Mittersta värdet', en: 'Middle value' } },
-          { key: 'median_even', name: { sv: 'Median (Jämnt)', en: 'Median (Even)' }, desc: { sv: 'Medel av mittentalen', en: 'Mean of middle values' } },
+          { key: 'mean_concept_balance', name: { sv: 'Medel: Koncept', en: 'Mean: Concept' }, desc: { sv: 'Effekt av nytt tal', en: 'Effect of new value' } },
+          { key: 'median_odd', name: { sv: 'Median', en: 'Median' }, desc: { sv: 'Talet i mitten', en: 'Middle number' } },
           { key: 'reverse_mean_calc', name: { sv: 'Hitta saknat tal', en: 'Find missing number' }, desc: { sv: 'Givet medelvärde', en: 'Given mean' } },
-          { key: 'mean_target_score', name: { sv: 'Mål-medelvärde', en: 'Target mean' }, desc: { sv: 'Vad krävs för snittet?', en: 'What is required for the average?' } },
+          { key: 'freq_count', name: { sv: 'Tabell: Totalt antal', en: 'Table: Total count' }, desc: { sv: 'Summera frekvens', en: 'Sum frequency' } },
           { key: 'freq_mode', name: { sv: 'Tabell: Typvärde', en: 'Table: Mode' }, desc: { sv: 'Högst frekvens', en: 'Highest frequency' } },
-          { key: 'freq_mean', name: { sv: 'Tabell: Medelvärde', en: 'Table: Mean' }, desc: { sv: 'Summa(f*x) / n', en: 'Sum(f*x) / n' } },
-          { key: 'freq_count', name: { sv: 'Tabell: Observationer', en: 'Table: Observations' }, desc: { sv: 'Summera antal', en: 'Sum count' } },
           { key: 'real_measure_choice', name: { sv: 'Välj Lägesmått', en: 'Choose measure' }, desc: { sv: 'Medel vs Median', en: 'Mean vs Median' } },
-          { key: 'real_outlier_shift', name: { sv: 'Effekt av extremvärde', en: 'Outlier effect' }, desc: { sv: 'Påverkan på medel', en: 'Impact on mean' } },
-          { key: 'real_weighted_missing', name: { sv: 'Viktat medelvärde', en: 'Weighted average' }, desc: { sv: 'Blandade priser/mängder', en: 'Mixed prices/quantities' } }
+          { key: 'real_weighted_missing', name: { sv: 'Viktat medelvärde', en: 'Weighted average' }, desc: { sv: 'Sammansatt snitt', en: 'Composite average' } }
         ]
       },
       probability: {
         name: { sv: 'Sannolikhet', en: 'Probability' },
         variations: [
-          { key: 'visual_calc', name: { sv: 'Enkel Sannolikhet', en: 'Basic Probability' }, desc: { sv: 'Gynsamma / Möjliga (Bilder)', en: 'Favorable / Possible (Visual)' } },
+          { key: 'visual_calc', name: { sv: 'Beräkna Sannolikhet', en: 'Calculate Probability' }, desc: { sv: 'Gynsamma / Möjliga', en: 'Favorable / Possible' } },
           { key: 'visual_not', name: { sv: 'Komplementhändelse', en: 'Complementary event' }, desc: { sv: 'Sannolikheten för "Inte"', en: 'Probability of "Not"' } },
-          { key: 'visual_or', name: { sv: 'Antingen Eller', en: 'Either Or' }, desc: { sv: 'Addition av sannolikheter', en: 'Addition of probabilities' } },
           { key: 'visual_spinner', name: { sv: 'Lyckohjul', en: 'Lucky wheel' }, desc: { sv: 'Sektorernas andel', en: 'Sector share' } },
-          { key: 'group_ratio', name: { sv: 'Förhållanden', en: 'Ratios' }, desc: { sv: 'Sannolikhet utifrån n:m', en: 'Probability from n:m' } },
-          { key: 'group_ternary', name: { sv: 'Tre grupper', en: 'Three groups' }, desc: { sv: 'A, B och Resten', en: 'A, B and the rest' } },
-          { key: 'concept_likelihood', name: { sv: 'Begrepp: Chans', en: 'Concept: Chance' }, desc: { sv: 'Säkert, Omöjligt, Even', en: 'Certain, Impossible, Even' } },
-          { key: 'concept_compare', name: { sv: 'Jämför Chanser', en: 'Compare chances' }, desc: { sv: 'Var är chansen störst?', en: 'Where is the highest chance?' } },
-          { key: 'comp_at_least', name: { sv: 'Minst en gång', en: 'At least once' }, desc: { sv: '1 - P(Ingen)', en: '1 - P(None)' } },
-          { key: 'tree_calc', name: { sv: 'Sannolikhetsträd', en: 'Probability tree' }, desc: { sv: 'Dragning utan återläggning', en: 'Drawing without replacement' } },
-          { key: 'tree_missing', name: { sv: 'Pussel: Träd', en: 'Puzzle: Tree' }, desc: { sv: 'Hitta saknad gren', en: 'Find missing branch' } },
+          { key: 'group_ratio', name: { sv: 'Förhållanden', en: 'Ratios' }, desc: { sv: 'Sannolikhet från n:m', en: 'Probability from n:m' } },
+          { key: 'group_ternary', name: { sv: 'Tre grupper', en: 'Three groups' }, desc: { sv: 'Hitta restens chans', en: 'Find rest\'s chance' } },
+          { key: 'concept_likelihood', name: { sv: 'Begrepp: Chans', en: 'Concept: Chance' }, desc: { sv: 'Säkert / Omöjligt', en: 'Certain / Impossible' } },
+          { key: 'comp_multi', name: { sv: 'Inte vinst', en: 'Not winning' }, desc: { sv: '100% - Vinstchans', en: '100% - Win chance' } },
+          { key: 'tree_calc', name: { sv: 'Sannolikhetsträd', en: 'Probability tree' }, desc: { sv: 'Dragning utan återl.', en: 'Pick w/o replacement' } },
           { key: 'chain_any_order', name: { sv: 'Oberoende ordning', en: 'Independent order' }, desc: { sv: 'En av varje färg', en: 'One of each color' } },
-          { key: 'chain_fixed_order', name: { sv: 'Bestämd ordning', en: 'Fixed order' }, desc: { sv: 'Två av samma i rad', en: 'Two of same in a row' } },
-          { key: 'comb_constraint', name: { sv: 'Kombinatorik: Outfits', en: 'Combinatorics: Outfits' }, desc: { sv: 'Multiplikationsprincipen', en: 'Multiplication principle' } },
-          { key: 'comb_handshake', name: { sv: 'Handskakningar', en: 'Handshakes' }, desc: { sv: 'n(n-1)/2', en: 'n(n-1)/2' } },
-          { key: 'pathways_basic', name: { sv: 'Räkna Vägar', en: 'Count paths' }, desc: { sv: 'A till B genom nätverk', en: 'A to B via network' } },
-          { key: 'pathways_prob', name: { sv: 'Sannolikhet Väg', en: 'Path probability' }, desc: { sv: 'Chansen att en väg är öppen', en: 'Chance path is open' } }
+          { key: 'comb_constraint', name: { sv: 'Kombinatorik: Outfits', en: 'Combinatorics: Outfits' }, desc: { sv: 'Multiplikation', en: 'Multiplication' } },
+          { key: 'pathways_basic', name: { sv: 'Räkna Vägar', en: 'Count paths' }, desc: { sv: 'A till B nätverk', en: 'A to B network' } }
         ]
       }
     }

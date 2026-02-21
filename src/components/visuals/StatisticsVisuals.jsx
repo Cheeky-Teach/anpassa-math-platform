@@ -1,11 +1,17 @@
 import React from 'react';
 
+/**
+ * FrequencyTable refactored to remove fixed height/width.
+ * It will now expand to fill its container's width and height.
+ */
 export const FrequencyTable = ({ data }) => {
     const { headers, rows } = data;
     return (
-        <div className="flex justify-center my-4 w-full px-2">
-            {/* Added max-h and overflow-auto to prevent the table from pushing out the container height */}
-            <div className="border border-slate-300 rounded-lg overflow-auto shadow-sm bg-white w-full max-w-md max-h-[300px]">
+        <div className="flex justify-center w-full h-full p-2">
+            {/* Removed 'max-w-md' and 'max-h-[300px]'. 
+                'w-full' and 'h-full' now allow the table to scale to the parent.
+            */}
+            <div className="border border-slate-300 rounded-lg overflow-auto shadow-sm bg-white w-full h-full">
                 <table className="w-full text-sm text-left border-collapse">
                     <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-xs sticky top-0">
                         <tr>
@@ -33,10 +39,13 @@ export const FrequencyTable = ({ data }) => {
     );
 };
 
+/**
+ * PercentGrid refactored to be truly fluid.
+ * The SVG uses viewBox to maintain internal proportions while scaling.
+ */
 export const PercentGrid = ({ data }) => {
     const { colored = 0 } = data;
     
-    // We use a constant coordinate system (100x100) inside the viewBox
     const internalSize = 100;
     const cellSize = internalSize / 10;
     const cells = [];
@@ -62,14 +71,14 @@ export const PercentGrid = ({ data }) => {
     }
 
     return (
-        <div className="flex justify-center items-center p-4 w-full h-full min-h-[200px]">
-            {/* Removing fixed width/height attributes from <svg>.
-                Using 'aspect-square' and 'max-h-full' to ensure it stays 
-                within the practiceView container boundaries.
+        <div className="flex justify-center items-center w-full h-full p-2">
+            {/* Removed 'min-h-[200px]' and 'max-w-[280px]'.
+                Added 'max-h-full' to ensure it doesn't overflow vertically.
+                'preserveAspectRatio' ensures the 10x10 grid stays square.
             */}
             <svg 
                 viewBox={`0 0 ${internalSize} ${internalSize}`} 
-                className="w-full h-full max-w-[280px] max-h-full drop-shadow-sm"
+                className="w-full h-full max-h-full aspect-square drop-shadow-sm"
                 preserveAspectRatio="xMidYMid meet"
             >
                 {cells}
