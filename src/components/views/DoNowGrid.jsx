@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents.jsx';
-import { X, Maximize, Minimize, ZoomIn, ZoomOut, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { X, Maximize, Minimize, ZoomIn, ZoomOut, RefreshCw, Eye, EyeOff, Loader2 } from 'lucide-react';
 
-/**
- * REFACTORED MATH DISPLAY
- * Hardened for projector use.
- */
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
-
     useEffect(() => {
         if (!content || !containerRef.current) return;
-
         const renderMath = () => {
             containerRef.current.innerText = content;
             if (window.renderMathInElement) {
@@ -27,24 +21,26 @@ const MathDisplay = ({ content, className = "" }) => {
                 });
             }
         };
-
         const timer = setTimeout(renderMath, 30);
         return () => clearTimeout(timer);
     }, [content]);
-
     return <div ref={containerRef} className={`math-container ${className}`} />;
 };
 
 const TEXT_SIZES = ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'text-3xl'];
 
-const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onFocus, lang, textSizeClass, isFocused = false }) => {
+const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, lang, textSizeClass, isFocused = false }) => {
     const decode = (str) => { try { return atob(str); } catch { return str; } };
+    
+    // Sync with QuestionStudio data structure
+    const data = q.resolvedData?.renderData;
+    const token = q.resolvedData?.token;
 
     const renderVisualContent = () => {
-        if (!q.renderData) return null;
-        if (q.renderData.graph) return <GraphCanvas data={q.renderData.graph} />;
-        if (q.renderData.geometry) {
-            const geom = q.renderData.geometry;
+        if (!data) return null;
+        if (data.graph) return <GraphCanvas data={data.graph} />;
+        if (data.geometry) {
+            const geom = data.geometry;
             const volumeTypes = ['cuboid', 'cylinder', 'cone', 'sphere', 'hemisphere', 'pyramid', 'triangular_prism', 'silo', 'ice_cream', 'volume'];
             if (volumeTypes.includes(geom.type)) {
                 return <VolumeVisualization data={geom} width={isFocused ? 400 : 280} height={isFocused ? 250 : 180} />;
@@ -54,7 +50,7 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onFocus, lang, textSi
         return null;
     };
 
-    const hasVisual = q.renderData?.graph || q.renderData?.geometry;
+    const hasVisual = data?.graph || data?.geometry;
 
     return (
         <div 
@@ -67,9 +63,9 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onFocus, lang, textSi
                 <span className={`text-[10px] font-black uppercase tracking-widest ${showAnswer && !isFocused ? 'text-emerald-700' : 'text-slate-400'}`}>
                     {lang === 'sv' ? 'Uppgift' : 'Task'} {index + 1}
                 </span>
-                {q.topic && (
+                {q.topicId && (
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter bg-white px-2 py-0.5 rounded-full border border-slate-200">
-                        {q.topic.split('_')[0]}
+                        {q.topicId.split('_')[0]}
                     </span>
                 )}
             </div>
@@ -84,16 +80,16 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onFocus, lang, textSi
                     </div>
                 )}
                 <div className={`font-bold text-slate-800 leading-tight ${textSizeClass} transition-all my-auto ${isFocused ? 'px-12 md:px-20' : 'px-2'}`}>
-                    <MathDisplay content={q.renderData?.description} />
-                    {q.renderData?.latex && (
+                    <MathDisplay content={data?.description} />
+                    {data?.latex && (
                         <div className={`text-indigo-600 font-serif ${isFocused ? 'mt-6' : 'mt-3'}`}>
-                            <MathDisplay content={`$$${q.renderData.latex}$$`} />
+                            <MathDisplay content={`$$${data.latex}$$`} />
                         </div>
                     )}
                 </div>
-                {q.renderData?.options && q.renderData.options.length > 0 && (
+                {data?.options && data.options.length > 0 && (
                     <div className={`grid grid-cols-2 gap-4 w-full ${isFocused ? 'mt-12 px-12 pb-12' : 'mt-6 px-2 pb-2'}`}>
-                        {q.renderData.options.map((opt, idx) => (
+                        {data.options.map((opt, idx) => (
                             <div key={idx} className={`bg-white border-2 border-slate-100 rounded-xl flex items-center gap-3 shadow-sm
                                 ${isFocused ? 'p-6 text-xl' : 'p-3 text-base font-bold text-left text-slate-700'}`}>
                                 <span className="w-8 h-8 shrink-0 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center text-xs font-black">
@@ -106,22 +102,32 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onFocus, lang, textSi
                 )}
             </div>
 
+            {/* Corner Actions */}
             {!isFocused && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onToggleAnswer(); }}
-                    className={`absolute bottom-3 right-3 w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90
-                    ${showAnswer ? 'bg-emerald-600 text-white' : 'bg-white text-slate-400 border border-slate-200 hover:text-indigo-600 hover:border-indigo-200'}`}
-                >
-                    {showAnswer ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                <div className="absolute bottom-3 right-3 flex gap-2">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onRefresh(); }}
+                        className="w-10 h-10 rounded-full flex items-center justify-center bg-white text-slate-400 border border-slate-200 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-md active:scale-90"
+                        title="Slumpa ny"
+                    >
+                        <RefreshCw size={16} />
+                    </button>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onToggleAnswer(); }}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90
+                        ${showAnswer ? 'bg-emerald-600 text-white' : 'bg-white text-slate-400 border border-slate-200 hover:text-indigo-600 hover:border-indigo-200'}`}
+                    >
+                        {showAnswer ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                </div>
             )}
 
             {showAnswer && (
-                <div className={`bg-emerald-600 text-white py-4 text-center shrink-0 animate-in slide-in-from-bottom duration-300 ${isFocused ? 'mt-auto' : ''}`}>
+                <div className={`bg-emerald-400 text-white py-4 text-center shrink-0 animate-in slide-in-from-bottom duration-300 ${isFocused ? 'mt-auto' : ''}`}>
                     <div className="text-xs font-black uppercase tracking-[0.2em] mb-1 opacity-80">FACIT</div>
                     <div className={`${isFocused ? 'text-5xl' : 'text-3xl'} font-black tracking-tighter leading-none`}>
-                        <MathDisplay content={decode(q.token)} />
-                        {q.renderData?.suffix && <span className={`${isFocused ? 'text-2xl' : 'text-lg'} ml-2 opacity-90 uppercase`}>{q.renderData.suffix}</span>}
+                        <MathDisplay content={decode(token)} />
+                        {data?.suffix && <span className={`${isFocused ? 'text-2xl' : 'text-lg'} ml-2 opacity-90 uppercase`}>{data.suffix}</span>}
                     </div>
                 </div>
             )}
@@ -129,12 +135,13 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onFocus, lang, textSi
     );
 };
 
-export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefreshAll }) {
+export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefreshAll, onRefreshOne }) {
     const [revealed, setRevealed] = useState({});
     const [focusedIndex, setFocusedIndex] = useState(null);
     const [showAll, setShowAll] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [textSizeIndex, setTextSizeIndex] = useState(3);
+    const [isGlobalRefreshing, setIsGlobalRefreshing] = useState(false);
 
     useEffect(() => {
         const handleEsc = (e) => { if (e.key === 'Escape') setFocusedIndex(null); };
@@ -169,9 +176,14 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
         setShowAll(!showAll);
     };
 
-    // RESTORED: adjustText logic
     const adjustText = (delta) => {
         setTextSizeIndex(prev => Math.max(0, Math.min(prev + delta, TEXT_SIZES.length - 1)));
+    };
+
+    const handleGlobalRefresh = async () => {
+        setIsGlobalRefreshing(true);
+        await onRefreshAll();
+        setIsGlobalRefreshing(false);
     };
 
     return (
@@ -182,7 +194,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                     onClick={() => setFocusedIndex(null)}
                 >
                     <div className="w-full max-w-5xl h-auto transform lg:scale-105 shadow-2xl rounded-[3rem] cursor-default bg-white border border-slate-200" onClick={(e) => e.stopPropagation()}>
-                        <DoNowCard index={focusedIndex} q={questions[focusedIndex]} showAnswer={!!revealed[focusedIndex]} onToggleAnswer={() => toggleOne(focusedIndex)} onFocus={() => {}} lang={lang} textSizeClass="text-4xl" isFocused={true} />
+                        <DoNowCard index={focusedIndex} q={questions[focusedIndex]} showAnswer={!!revealed[focusedIndex]} onToggleAnswer={() => toggleOne(focusedIndex)} onRefresh={() => onRefreshOne(focusedIndex)} onFocus={() => {}} lang={lang} textSizeClass="text-4xl" isFocused={true} />
                     </div>
                 </div>
             )}
@@ -199,7 +211,6 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                 </div>
                 
                 <div className="flex items-center gap-3">
-                    {/* RESTORED: Zoom Buttons */}
                     <div className="flex items-center bg-white/10 rounded-xl p-1 border border-white/10 mr-4">
                         <button onClick={() => adjustText(-1)} className="p-2 hover:bg-white/10 rounded-lg text-slate-300 transition-colors">
                             <ZoomOut size={18} />
@@ -210,10 +221,10 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                         </button>
                     </div>
 
-                    <button onClick={onRefreshAll} className="px-5 py-2.5 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl text-xs font-black transition-all uppercase tracking-wider border border-indigo-500/30 flex items-center gap-2">
-                        <RefreshCw size={14} /> NYTT SET
+                    <button onClick={handleGlobalRefresh} disabled={isGlobalRefreshing} className="px-5 py-2.5 bg-indigo-400/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl text-xs font-black transition-all uppercase tracking-wider border border-indigo-500/30 flex items-center gap-2 disabled:opacity-70">
+                        {isGlobalRefreshing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} NYTT SET
                     </button>
-                    <button onClick={toggleAll} className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest ${showAll ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                    <button onClick={toggleAll} className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest ${showAll ? 'bg-rose-50 text-white' : 'bg-emerald-600 text-white'}`}>
                         <span>{showAll ? '🙈' : '👁️'}</span> FACIT
                     </button>
                     <button onClick={toggleFullscreen} className="text-slate-400 hover:text-white transition-colors p-2 bg-white/5 rounded-xl">
@@ -226,7 +237,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 grid-rows-2 gap-6 h-full w-full max-w-[1800px] mx-auto">
                     {questions.slice(0, 6).map((q, i) => (
                         <div key={i} className="min-h-0 min-w-0">
-                            <DoNowCard index={i} q={q} showAnswer={!!revealed[i]} onToggleAnswer={() => toggleOne(i)} onFocus={() => setFocusedIndex(i)} lang={lang} textSizeClass={TEXT_SIZES[textSizeIndex]} />
+                            <DoNowCard index={i} q={q} showAnswer={!!revealed[i]} onToggleAnswer={() => toggleOne(i)} onRefresh={() => onRefreshOne(i)} onFocus={() => setFocusedIndex(i)} lang={lang} textSizeClass={TEXT_SIZES[textSizeIndex]} />
                         </div>
                     ))}
                 </div>

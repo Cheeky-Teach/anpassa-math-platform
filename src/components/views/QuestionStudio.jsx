@@ -64,7 +64,7 @@ export default function QuestionStudio({
       regenerate: "Slumpa ny", load_btn: "Öppna", delete_confirm: "Radera permanent?",
       compact: "Kompakt", spacious: "Gott om plats",
       answer_key_toggle: "Inkludera facit", answer_style_label: "Facit stil",
-      style_compact: "Bara svar", style_detailed: "Steg-för-steg",
+      style_compact: "Bara svar", style_detailed: "Steg",
       delete_task: "Radera", name_label: "Namn:", date_label: "Datum:",
       save_btn: "Spara", live_btn: "Live", btn_close: "Stäng",
       visibility_label: "Delning", vis_private: "Privat", vis_school: "Skola", vis_public: "Global",
@@ -236,12 +236,23 @@ export default function QuestionStudio({
   // --- ACTION HANDLERS ---
   const handleLaunchGrid = () => { if (!isSaved && !window.confirm(t.unsaved_warning)) return; onDoNowGenerate({ title: sheetTitle }, packet); };
   const handleLaunchPrint = () => { if (!isSaved && !window.confirm(t.unsaved_warning)) return; onWorksheetGenerate(packet); };
+  
+  // --- UPDATED: Save Mode Metadata to Live Session ---
   const handleLaunchLive = async () => {
     if (!isSaved && !window.confirm(t.unsaved_warning)) return;
     const { data: { user } } = await supabase.auth.getUser();
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     try {
-        const { data, error } = await supabase.from('rooms').insert([{ teacher_id: user.id, class_code: code, status: 'active', title: sheetTitle || "Live Session", active_worksheet_id: activeSheetId, active_question_data: { packet: packet } }]).select().single();
+        const { data, error } = await supabase.from('rooms').insert([{ 
+            teacher_id: user.id, 
+            class_code: code, 
+            status: 'active', 
+            title: sheetTitle || "Live Session", 
+            active_worksheet_id: activeSheetId, 
+            // Save the mode (donow vs worksheet) so the dashboard can render it correctly
+            active_question_data: { packet: packet, mode: setupMode } 
+        }]).select().single();
+        
         if (error) throw error;
         onDoNowGenerate(null, null, { room: data, packet: packet }); 
     } catch (err) { alert("Systemfel: " + err.message); }
@@ -255,7 +266,6 @@ export default function QuestionStudio({
     } catch (err) { console.error(err); } finally { setIsPreviewLoading(false); }
   };
 
-  // --- UPDATED ADD TO PACKET (Intelligent Layout) ---
   const addToPacket = async (variation, qty) => {
     setIsPreviewLoading(true); setIsSaved(false);
     try {
@@ -264,7 +274,6 @@ export default function QuestionStudio({
             const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variation.key}&lang=${lang}`);
             const data = await res.json();
             
-            // Logic: 1st item in batch is Header (Full width), rest are 1/3 width with Hidden text
             const isFirstInBatch = i === 0;
             
             newItems.push({ 
@@ -272,9 +281,9 @@ export default function QuestionStudio({
                 topicId: selectedTopicId, 
                 variationKey: variation.key, 
                 name: variation.name[lang] || variation.name.sv, 
-                columnSpan: isFirstInBatch ? 6 : 2, // 1/3 if not first
+                columnSpan: isFirstInBatch ? 6 : 2, 
                 resolvedData: data, 
-                instructionMode: isFirstInBatch ? 'header' : 'hidden' // Header only for first
+                instructionMode: isFirstInBatch ? 'header' : 'hidden' 
             });
         }
         if (setupMode === 'donow' && packet.length + newItems.length > 6) { alert("Do Now max 6."); return; }
