@@ -64,40 +64,63 @@ export class OrderOperationsGen {
         if (useMult) {
             a = MathUtils.randomInt(3, 7);
             b = MathUtils.randomInt(2, 6);
-            c = MathUtils.randomInt(2, 10);
             const product = a * b;
 
+            if (usePlus) {
+                c = MathUtils.randomInt(2, 10);
+                result = product + c;
+            } else {
+                // For subtraction, ensure result is non-negative
+                if (isPrioFirst) {
+                    // product - c
+                    c = MathUtils.randomInt(1, product);
+                    result = product - c;
+                } else {
+                    // c - product
+                    c = product + MathUtils.randomInt(1, 10);
+                    result = c - product;
+                }
+            }
+
+            // FINAL ASSIGNMENT: Generate latex after c and result are confirmed
             if (isPrioFirst) {
                 latex = `${a} · ${b} ${op} ${c}`;
-                result = usePlus ? product + c : product - c;
                 step1Latex = `${a} · ${b} = ${product}`;
                 step2Latex = `${product} ${op} ${c} = ${result}`;
             } else {
                 latex = `${c} ${op} ${a} · ${b}`;
-                result = usePlus ? c + product : c - product;
-                if (result < 0) { // Safety for negative results in basic level
-                    c = product + MathUtils.randomInt(1, 5);
-                    result = c - product;
-                }
                 step1Latex = `${a} · ${b} = ${product}`;
                 step2Latex = `${c} ${op} ${product} = ${result}`;
             }
+
         } else {
             b = MathUtils.randomInt(2, 5);
             const quotient = MathUtils.randomInt(2, 8);
             a = b * quotient;
-            c = MathUtils.randomInt(2, 12);
 
+            if (usePlus) {
+                c = MathUtils.randomInt(2, 12);
+                result = quotient + c;
+            } else {
+                // For subtraction, ensure result is non-negative
+                if (isPrioFirst) {
+                    // quotient - c
+                    c = MathUtils.randomInt(1, quotient);
+                    result = quotient - c;
+                } else {
+                    // c - quotient
+                    c = quotient + MathUtils.randomInt(1, 10);
+                    result = c - quotient;
+                }
+            }
+
+            // FINAL ASSIGNMENT: Generate latex after c and result are confirmed
             if (isPrioFirst) {
                 latex = `\\frac{${a}}{${b}} ${op} ${c}`;
-                result = usePlus ? quotient + c : quotient - c;
-                if (result < 0) { c = quotient - 1; result = 1; }
                 step1Latex = `\\frac{${a}}{${b}} = ${quotient}`;
                 step2Latex = `${quotient} ${op} ${c} = ${result}`;
             } else {
                 latex = `${c} ${op} \\frac{${a}}{${b}}`;
-                result = usePlus ? c + quotient : c - quotient;
-                if (result < 0) { c = quotient + 2; result = c - quotient; }
                 step1Latex = `\\frac{${a}}{${b}} = ${quotient}`;
                 step2Latex = `${c} ${op} ${quotient} = ${result}`;
             }
@@ -118,7 +141,10 @@ export class OrderOperationsGen {
 
     // --- LEVEL 2: Parentheses ---
     private level2_Parentheses(lang: string, variationKey?: string, options: any = {}): any {
-        const a = MathUtils.randomInt(2, 6), b = MathUtils.randomInt(3, 8), c = MathUtils.randomInt(2, 5), d = MathUtils.randomInt(1, 10);
+        const a = MathUtils.randomInt(2, 6);
+        const b = MathUtils.randomInt(5, 10);
+        const c = MathUtils.randomInt(2, 4); // Keep c small so b-c is positive
+        const d = MathUtils.randomInt(1, 10);
         
         const templates = [
             {
@@ -142,6 +168,9 @@ export class OrderOperationsGen {
         ];
 
         const p = MathUtils.randomChoice(templates);
+        // Safety for negatives in Level 2: Re-generate if template 1 results in negative
+        if (p.ans < 0) return this.level2_Parentheses(lang, variationKey, options);
+
         const finalClues = p.steps.map((s, i) => ({ text: lang === 'sv' ? `Steg ${i+1}: ${s.sv}` : `Step ${i+1}: ${s.en}`, latex: s.l }));
         finalClues.push({ text: lang === 'sv' ? `Svar: ${p.ans}` : `Answer: ${p.ans}` });
 
@@ -158,8 +187,8 @@ export class OrderOperationsGen {
         const div = MathUtils.randomInt(2, 4), quotient = MathUtils.randomInt(2, 5);
         const numTotal = div * quotient;
         const n1 = MathUtils.randomInt(1, numTotal - 1), n2 = numTotal - n1;
-        const m1 = MathUtils.randomInt(2, 5), m2 = MathUtils.randomInt(2, 4);
-        const constant = MathUtils.randomInt(10, 20);
+        const m1 = MathUtils.randomInt(2, 4), m2 = MathUtils.randomInt(2, 3);
+        const constant = MathUtils.randomInt(15, 25); // Increased to ensure non-negative result
         
         const ans = constant + quotient - (m1 * m2);
         const latex = `${constant} + \\frac{${n1} + ${n2}}{${div}} - ${m1} · ${m2}`;
@@ -185,8 +214,8 @@ export class OrderOperationsGen {
         const exponent = 2;
         const pVal = Math.pow(base, exponent);
         
-        const m1 = MathUtils.randomInt(2, 5), m2 = MathUtils.randomInt(2, 3);
-        const constant = MathUtils.randomInt(5, 15);
+        const m1 = MathUtils.randomInt(2, 4), m2 = MathUtils.randomInt(2, 3);
+        const constant = MathUtils.randomInt(10, 15); // Ensure high enough to avoid negatives
         
         const ans = pVal + constant - (m1 * m2);
         const latex = `${base}^{${exponent}} + ${constant} - ${m1} · ${m2}`;

@@ -18,13 +18,18 @@ const getSupabase = () => {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // 1. Standard Security Headers
+    // 1. Standard Security & CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+    // Handle Preflight OPTIONS request
     if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: "Use POST" });
+    
+    // Strict Method Enforcement: Rejects any non-POST requests
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: "Metod tillåts ej. Använd POST." });
+    }
 
     try {
         const { 
@@ -36,7 +41,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             questionIndex 
         } = req.body;
 
-        // 2. Decode & Validate (Anti-Cheat)
+        // --- SECURITY UPDATES: INPUT VALIDATION & LENGTH SHIELD ---
+        
+        // 1. Validate Answer: Must be string and max 20 chars
+        if (typeof answer !== 'string' || answer.length > 20) {
+            return res.status(400).json({ 
+                error: "Ogiltigt svar-format eller för långt svar (max 20 tecken)." 
+            });
+        }
+
+        // 2. Validate Student Alias: Must be string and max 50 chars
+        if (studentAlias && (typeof studentAlias !== 'string' || studentAlias.length > 50)) {
+            return res.status(400).json({ error: "Ogiltigt namn-format." });
+        }
+
+        // 3. Validate Token: Must exist and be string for Base64 decoding
+        if (!token || typeof token !== 'string') {
+            return res.status(400).json({ error: "Säkerhetstoken saknas." });
+        }
+
+        // 2. Decode & Validate (Base64 Mode)
         const correctAnswer = Buffer.from(token, 'base64').toString('utf-8');
         const normalize = (str: any) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.');
         
@@ -71,7 +95,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         // 5. Return everything App.jsx needs to keep the game running
-        // This now works even if the database step was skipped!
         return res.status(200).json({
             correct: isCorrect,
             correctAnswer, 

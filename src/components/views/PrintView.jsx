@@ -100,8 +100,22 @@ export default function PrintView({
         return pages;
     }, [packet, showWorkArea, density]);
 
+    // SECURITY: REFACTORED TO HANDLE SCRUBBED PAYLOAD
     const getFinalAnswer = (data) => {
+        // 1. Check for legacy answer property (un-scrubbed fallback)
         if (data?.answer && data.answer !== "Se lösning") return data.answer;
+        
+        // 2. Decode the Base64 token to retrieve the answer for the teacher's key
+        if (data?.token) {
+            try {
+                return atob(data.token);
+            } catch (e) {
+                console.warn("PrintView: Could not decode answer token.");
+                return "---";
+            }
+        }
+
+        // 3. Fallback to the last clue if available
         if (data?.clues && data.clues.length > 0) {
             const lastClue = data.clues[data.clues.length - 1];
             return lastClue.latex ? `$${lastClue.latex}$` : lastClue.text;

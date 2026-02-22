@@ -91,14 +91,20 @@ const TopicMap: Record<string, any> = {
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
+    // 1. Standard Security Headers
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
     if (req.method === 'OPTIONS') {
         res.status(200).end();
         return;
+    }
+
+    // SECURITY: Strict Method Enforcement
+    if (req.method !== 'GET' && req.method !== 'POST') {
+        return res.status(405).json({ error: "Method Not Allowed" });
     }
 
     const body = req.body || {};
@@ -110,7 +116,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const variation = query.variation || body.variation; 
     const lang = query.lang || body.lang || 'sv';
 
-    // NEW: Extract adaptive filtering parameters
+    // Extract adaptive filtering parameters
     const exclude = query.exclude || body.exclude || "";
     const hideConcept = (query.hideConcept === 'true' || body.hideConcept === true);
 
@@ -130,29 +136,36 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         const generator = new GeneratorClass();
-        let question;
+        let questionData;
 
         // 3. GENERATION LOGIC
         if (variation && typeof generator.generateByVariation === 'function') {
-            question = generator.generateByVariation(String(variation), String(lang));
+            questionData = generator.generateByVariation(String(variation), String(lang));
         } else {
             const safeLevel = Number(level) || 1;
             
-            // Prepare Adaptive Options Object
             const options = {
                 exclude: String(exclude).split(',').filter(Boolean),
                 hideConcept: hideConcept
             };
 
             if (typeof generator.generate === 'function') {
-                // Pass options as the 3rd argument
-                question = generator.generate(safeLevel, String(lang), options);
+                questionData = generator.generate(safeLevel, String(lang), options);
             } else {
-                question = generator.generate(1, String(lang), options);
+                questionData = generator.generate(1, String(lang), options);
             }
         }
 
-        res.status(200).json(question);
+        // SECURITY: Payload Scrubbing
+        // Explicitly defining returned properties to ensure raw 'answer' is hidden.
+        const scrubbedQuestion = {
+            renderData: questionData.renderData,
+            token: questionData.token,
+            clues: questionData.clues,
+            level: questionData.level || level
+        };
+
+        res.status(200).json(scrubbedQuestion);
 
     } catch (error: any) {
         console.error(`API Generation Error [${rawTopic}]:`, error);

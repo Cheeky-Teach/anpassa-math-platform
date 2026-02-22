@@ -117,6 +117,31 @@ function App() {
         }
     };
 
+    const handleEndSession = async () => {
+        if (!activeRoom?.id) return;
+        
+        try {
+            // 1. Update the status in Supabase to 'closed'
+            // This triggers the real-time listener in StudentLiveView.jsx
+            const { error } = await supabase
+                .from('rooms')
+                .update({ status: 'closed' })
+                .eq('id', activeRoom.id);
+
+            if (error) throw error;
+
+            // 2. Update local state to reflect the closure
+            setActiveRoom(prev => ({ ...prev, status: 'closed' }));
+            
+            // 3. Return to dashboard
+            setView('dashboard');
+            
+        } catch (err) {
+            console.error("Error ending session:", err);
+            alert(lang === 'sv' ? "Kunde inte avsluta sessionen." : "Could not end session.");
+        }
+    };
+    
     // --- STUDENT REAL-TIME KICK LISTENER ---
     useEffect(() => {
         if (view === 'live_session' && activeRoom?.id && studentAlias) {
