@@ -3,36 +3,42 @@ import React from 'react';
 /**
  * ProbabilityTree handles the rendering of:
  * 1. Standard Probability Trees (Top-down)
- * 2. Combinatorial Pathways (A to B)
- * 3. Constrained Pathways (A to B with obstacles)
+ * 2. Combinatorial Pathways (A -> B)
+ * Refactored to be container-responsive.
  */
-const ProbabilityTree = ({ data }) => {
+const ProbabilityTree = ({ data, width = "100%", height = "auto" }) => {
     if (!data) return null;
 
     const { subtype, layers, groups, initialCounts, targetBranch, obstacles = [] } = data;
 
     // --- MODE: PATHWAYS (Combinatorics A -> B) ---
     if (subtype === 'pathway') {
-        const width = 400;
-        const height = 220;
+        // Internal coordinate math based on fixed logic size
+        const baseWidth = 400;
+        const baseHeight = 220;
         const padding = 50;
         
-        // Define layers for the network
         const layerCounts = layers || [1, 2, 3, 1];
-        const stepX = (width - padding * 2) / (layerCounts.length - 1);
+        const stepX = (baseWidth - padding * 2) / (layerCounts.length - 1);
 
         const getPos = (lIdx, nIdx, count) => {
             const x = padding + lIdx * stepX;
             const layerHeight = 140;
-            const startY = (height - layerHeight) / 2;
+            const startY = (baseHeight - layerHeight) / 2;
             const spacing = layerHeight / (count > 1 ? count - 1 : 1);
-            const y = count === 1 ? height / 2 : startY + nIdx * spacing;
+            const y = count === 1 ? baseHeight / 2 : startY + nIdx * spacing;
             return { x, y };
         };
 
         return (
-            <div className="flex justify-center w-full py-6 bg-slate-50 rounded-xl border border-slate-200 shadow-inner overflow-x-auto">
-                <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+            <div className="flex justify-center w-full py-2 overflow-hidden">
+                <svg 
+                    width={width} 
+                    height={height} 
+                    viewBox={`0 0 ${baseWidth} ${baseHeight}`}
+                    preserveAspectRatio="xMidYMid meet"
+                    className="block overflow-visible drop-shadow-sm"
+                >
                     <defs>
                         <filter id="nodeShadow">
                             <feDropShadow dx="0" dy="1" stdDeviation="1" floodOpacity="0.1"/>
@@ -48,8 +54,6 @@ const ProbabilityTree = ({ data }) => {
                             const start = getPos(lIdx, nIdx, count);
                             return Array.from({ length: nextCount }).map((__, nextNIdx) => {
                                 const end = getPos(lIdx + 1, nextNIdx, nextCount);
-                                
-                                // Obstacle Logic: Only check if obstacles exist in data
                                 const isBlocked = obstacles.some(o => 
                                     o.layer === lIdx && o.from === nIdx && o.to === nextNIdx
                                 );
@@ -63,7 +67,6 @@ const ProbabilityTree = ({ data }) => {
                                             strokeDasharray={isBlocked ? "4 2" : "0"}
                                             strokeLinecap="round"
                                         />
-                                        {/* Visual Block Marker */}
                                         {isBlocked && (
                                             <g transform={`translate(${(start.x + end.x)/2}, ${(start.y + end.y)/2})`}>
                                                 <circle r="9" fill="white" stroke="#ef4444" strokeWidth="1" />
@@ -108,11 +111,11 @@ const ProbabilityTree = ({ data }) => {
     }
 
     // --- MODE: STANDARD TREE (Probability L5) ---
-    const width = 400;
-    const height = 320;
+    const baseWidth = 400;
+    const baseHeight = 320;
     const nodeRadius = 6;
     const total = initialCounts[0] + initialCounts[1];
-    const centerX = width / 2;
+    const centerX = baseWidth / 2;
 
     const root = { x: centerX, y: 40 };
     const s1 = [
@@ -131,7 +134,7 @@ const ProbabilityTree = ({ data }) => {
         const my = (y1 + y2) / 2;
         const isT = targetBranch === bId;
         return (
-            <g>
+            <g key={bId}>
                 <rect x={mx - 22} y={my - 16} width="44" height="32" fill="white" stroke={isT ? "#6366f1" : "#e2e8f0"} strokeWidth={isT ? "2" : "1"} rx="6" />
                 <text x={mx} y={my + 5} textAnchor="middle" className={`text-sm font-bold ${isT ? 'fill-indigo-600 animate-pulse' : 'fill-slate-600'}`}>
                     {isT ? 'x' : `${num}/${den}`}
@@ -141,8 +144,14 @@ const ProbabilityTree = ({ data }) => {
     };
 
     return (
-        <div className="flex justify-center w-full py-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
-            <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+        <div className="flex justify-center w-full py-2 overflow-hidden">
+            <svg 
+                width={width} 
+                height={height} 
+                viewBox={`0 0 ${baseWidth} ${baseHeight}`}
+                preserveAspectRatio="xMidYMid meet"
+                className="block overflow-visible drop-shadow-sm"
+            >
                 {s1.map((n, i) => (
                     <g key={`l1-${i}`}>
                         <line x1={root.x} y1={root.y} x2={n.x} y2={n.y} stroke="#e2e8f0" strokeWidth="2.5" />

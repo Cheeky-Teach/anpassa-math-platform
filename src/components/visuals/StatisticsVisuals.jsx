@@ -1,23 +1,27 @@
 import React from 'react';
 
 /**
- * FrequencyTable - High Density Refactor
- * Optimized for grid-based projections where vertical space is scarce.
+ * FrequencyTable - Refactored for fluid containers.
+ * Optimized for high-density grids in both Digital Studio and Print formats.
  */
-export const FrequencyTable = ({ data }) => {
+export const FrequencyTable = ({ data, width = "100%", height = "auto" }) => {
+    if (!data?.headers || !data?.rows) return null;
     const { headers, rows } = data;
     
-    // Calculate size based on number of rows to remain legible but compact
+    // Adjust row padding based on data density to maintain professional look
     const isLargeTable = rows.length > 5;
     
     return (
-        <div className="flex justify-center items-center w-full h-full max-h-full overflow-hidden p-1">
+        <div 
+            className="flex justify-center items-center overflow-hidden p-1"
+            style={{ width, height }}
+        >
             <div className="border border-slate-200 rounded-md bg-white w-full overflow-hidden shadow-sm">
                 <table className="w-full table-auto border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
                             {headers.map((h, i) => (
-                                <th key={i} className="px-2 py-1 text-[10px] sm:text-xs font-black uppercase text-slate-500 text-center tracking-tighter">
+                                <th key={i} className="px-2 py-1.5 text-[9px] sm:text-xs font-black uppercase text-slate-500 text-center tracking-tighter">
                                     {h}
                                 </th>
                             ))}
@@ -27,7 +31,7 @@ export const FrequencyTable = ({ data }) => {
                         {rows.map((row, rI) => (
                             <tr key={rI} className="bg-white">
                                 {row.map((cell, cI) => (
-                                    <td key={cI} className={`px-2 ${isLargeTable ? 'py-0.5' : 'py-1'} text-center font-mono font-bold text-slate-700 text-[11px] sm:text-sm`}>
+                                    <td key={cI} className={`px-2 ${isLargeTable ? 'py-0.5' : 'py-1.5'} text-center font-mono font-bold text-slate-700 text-[10px] sm:text-sm whitespace-nowrap`}>
                                         {cell}
                                     </td>
                                 ))}
@@ -40,8 +44,15 @@ export const FrequencyTable = ({ data }) => {
     );
 };
 
-export const PercentGrid = ({ data }) => {
+/**
+ * PercentGrid - Refactored for fluid containers.
+ * Visualizes percentages on a 10x10 grid using internal coordinate math.
+ */
+export const PercentGrid = ({ data, width = "100%", height = "auto" }) => {
+    if (!data) return null;
     const { colored = 0 } = data;
+    
+    // Internal coordinate system (Logic Layer)
     const internalSize = 100;
     const cellSize = internalSize / 10;
     const cells = [];
@@ -65,10 +76,15 @@ export const PercentGrid = ({ data }) => {
     }
 
     return (
-        <div className="flex justify-center items-center w-full h-full p-1 overflow-hidden">
+        <div className="flex justify-center items-center p-1 overflow-hidden" style={{ width, height }}>
+            {/* viewBox preserves the 10x10 grid logic while 
+                preserveAspectRatio ensures squares stay square on printouts.
+            */}
             <svg 
+                width="100%"
+                height="100%"
                 viewBox={`0 0 ${internalSize} ${internalSize}`} 
-                className="max-w-full max-h-full aspect-square drop-shadow-sm"
+                className="aspect-square drop-shadow-sm block overflow-visible"
                 preserveAspectRatio="xMidYMid meet"
             >
                 {cells}

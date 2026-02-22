@@ -3,13 +3,14 @@ import React from 'react';
 // =====================================================================
 // ANGLE VISUALIZATION COMPONENT
 // Handles drawing rays, arcs, and labels for angle geometry problems.
+// Refactored to be container-responsive.
 // =====================================================================
 
-const AngleVisual = ({ data }) => {
+const AngleVisual = ({ data, width = "100%", height = "auto" }) => {
     // Data expected structure:
     // {
     //   type: 'angle',
-    //   lines: [[p1, p2], ...],
+    //   lines: [{x1, y1, x2, y2}, ...],
     //   arcs: [{center, startAngle, endAngle, radius, label, color}],
     //   labels: [{x, y, text}],
     //   polygons: [{points: "x1,y1 x2,y2..."}]
@@ -18,8 +19,10 @@ const AngleVisual = ({ data }) => {
     if (!data) return null;
 
     const { lines = [], arcs = [], labels = [], polygons = [] } = data;
-    const width = 300;
-    const height = 250;
+    
+    // Internal coordinate system (The "Logic" canvas size)
+    const baseWidth = 300;
+    const baseHeight = 250;
     
     // Helper to draw an arc
     const drawArc = (arc, i) => {
@@ -60,7 +63,13 @@ const AngleVisual = ({ data }) => {
     };
 
     return (
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="mx-auto bg-white rounded-lg shadow-sm border border-slate-100">
+        <svg 
+            width={width} 
+            height={height} 
+            viewBox={`0 0 ${baseWidth} ${baseHeight}`} 
+            preserveAspectRatio="xMidYMid meet"
+            className="mx-auto block overflow-visible drop-shadow-sm"
+        >
             {/* Draw Polygons (if any) */}
             {polygons.map((poly, i) => (
                 <polygon 
