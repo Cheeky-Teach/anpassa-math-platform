@@ -270,7 +270,7 @@ export class BasicArithmeticGen {
 
         const p1 = Math.floor(a / 10) * 10, p2 = a % 10;
         return {
-            renderData: { description: lang === 'sv' ? `Beräkna: (${p1}·${b})+(${p2}·${b})` : `Calculate: (${p1}·${b})+(${p2}·${b})`, answerType: 'numeric' },
+            renderData: { description: lang === 'sv' ? `Beräkna ${p1+p2}·${b} genom att göra så här: (${p1}·${b})+(${p2}·${b})` : `Calculate ${p1+p2}·${b} by splitting the factors like this: (${p1}·${b})+(${p2}·${b})`, answerType: 'numeric' },
             token: this.toBase64((a * b).toString()), variationKey: v, type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? "Steg 1: Detta kallas den distributiva lagen. Räkna ut parenteserna först." : "Step 1: This is the distributive law. Solve the parentheses first." },

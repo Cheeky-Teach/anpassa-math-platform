@@ -4,7 +4,8 @@ import {
   FileText, Grid3X3, RefreshCcw, Loader2, Maximize2, AlertTriangle, 
   Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock,
   PanelLeftClose, PanelLeftOpen, X, Globe, Building2, Lock, Copy, Check, Filter,
-  MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical
+  MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical, Brain, Calculator, Target, 
+  Image as ImageIcon, FileText as TextIcon
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents.jsx';
@@ -34,7 +35,6 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
 };
 
-// --- NEW: SHARED BACKGROUND COMPONENT ---
 const BackgroundWave = () => (
     <div className="fixed bottom-0 left-0 w-full leading-[0] pointer-events-none z-[-1] overflow-hidden opacity-40">
         <svg className="relative block w-full h-[300px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
@@ -61,7 +61,6 @@ export default function QuestionStudio({
     answerKeyStyle,
     setAnswerKeyStyle
 }) {
-  // --- TRANSLATIONS ---
   const t = {
     sv: {
       studio: "Studio", library_title: "Bibliotek", donow_title: "Do Now Grid", worksheet_title: "Arbetsblad",
@@ -79,7 +78,8 @@ export default function QuestionStudio({
       visibility_label: "Delning", vis_private: "Privat", vis_school: "Skola", vis_public: "Global",
       tab_mine: "Mina sparade", tab_school: "Min Skola", tab_global: "Globalt",
       clone_btn: "Kopiera", clone_success: "Kopierad!", peek_title: "Snabbkoll",
-      mode_header: "Som rubrik", mode_inline: "Inuti kortet", mode_hidden: "Dölj text"
+      mode_header: "Som rubrik", mode_inline: "Inuti kortet", mode_hidden: "Dölj text",
+      hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Räkna"
     },
     en: {
       studio: "Studio", library_title: "Library", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
@@ -97,7 +97,8 @@ export default function QuestionStudio({
       visibility_label: "Sharing", vis_private: "Private", vis_school: "School", vis_public: "Global",
       tab_mine: "My Saved", tab_school: "School", tab_global: "Global",
       clone_btn: "Clone", clone_success: "Cloned!", peek_title: "Quick Peek",
-      mode_header: "As Header", mode_inline: "Inside Card", mode_hidden: "Hide Text"
+      mode_header: "As Header", mode_inline: "Inside Card", mode_hidden: "Hide Text",
+      hide_extra: "Hide Concepts & MCQ", type_calc: "Calculate", type_concept: "Concept", type_logic: "Logic", type_visual: "Image", type_text: "Text"
     }
   }[lang];
 
@@ -122,6 +123,9 @@ export default function QuestionStudio({
   const [peekSheet, setPeekSheet] = useState(null);
   const [draggedIdx, setDraggedIdx] = useState(null);
   const [filterTopic, setFilterTopic] = useState('all');
+
+  // --- NEW: FILTER STATE ---
+  const [hideExtra, setHideExtra] = useState(false);
 
   // --- EFFECTS ---
   useEffect(() => { 
@@ -185,6 +189,37 @@ export default function QuestionStudio({
     return null;
   };
 
+  // --- NEW: CATEGORIZATION & SORTING HELPERS ---
+  const getVariationCategory = (key) => {
+    const k = key.toLowerCase();
+    // Prioritize Visual check for "Bild" badge
+    const isVisual = ['graph', 'plot', 'geom', 'volume', 'shape', 'area', 'perimeter', 'angle', 'pattern', 'table', 'marbles', 'spinner', 'tree'].some(kw => k.includes(kw));
+    if (isVisual) return 'visual';
+    if (['calc', 'std', 'solve'].some(kw => k.includes(kw))) return 'calculate';
+    if (['concept', 'theory', 'foundations', 'id', 'inverse'].some(kw => k.includes(kw))) return 'conceptual';
+    if (['lie', 'spot', 'error', 'check'].some(kw => k.includes(kw))) return 'logic';
+    return 'default'; // results in "Text" badge
+  };
+
+  const getCategoryStyles = (type) => {
+    const styles = {
+        visual: { border: 'border-indigo-200', bg: 'bg-indigo-50/20', text: 'text-indigo-700', icon: <ImageIcon size={10} />, label: t.type_visual },
+        calculate: { border: 'border-emerald-200', bg: 'bg-emerald-50/20', text: 'text-emerald-700', icon: <Calculator size={10} />, label: t.type_calc },
+        conceptual: { border: 'border-amber-200', bg: 'bg-amber-50/20', text: 'text-amber-700', icon: <Brain size={10} />, label: t.type_concept },
+        logic: { border: 'border-rose-200', bg: 'bg-rose-50/20', text: 'text-rose-700', icon: <Target size={10} />, label: t.type_logic },
+        default: { border: 'border-slate-200', bg: 'bg-slate-50/20', text: 'text-slate-500', icon: <TextIcon size={10} />, label: t.type_text }
+    };
+    return styles[type] || styles.default;
+  };
+
+  const getDifficultyScore = (key) => {
+    const k = key.toLowerCase();
+    if (k.includes('basic') || k.includes('foundations') || k.includes('onestep') || k.includes('intro')) return 1;
+    if (k.includes('complex') || k.includes('twostep') || k.includes('twoterm')) return 3;
+    if (k.includes('powers') || k.includes('chain') || k.includes('advanced')) return 4;
+    return 2; 
+  };
+
   // --- LIBRARY & STORAGE ---
   const fetchLibrary = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -242,7 +277,6 @@ export default function QuestionStudio({
       if (sheet.config?.showWorkArea !== undefined) setShowWorkArea(sheet.config.showWorkArea);
   };
 
-  // --- ACTION HANDLERS ---
   const handleLaunchGrid = () => { if (!isSaved && !window.confirm(t.unsaved_warning)) return; onDoNowGenerate({ title: sheetTitle }, packet); };
   const handleLaunchPrint = () => { if (!isSaved && !window.confirm(t.unsaved_warning)) return; onWorksheetGenerate(packet); };
   
@@ -315,14 +349,24 @@ export default function QuestionStudio({
     } catch (err) { alert("Kunde inte radera."); }
   };
 
-  // --- TRANSFORMS ---
   const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name[lang], categoryId: cat.id, ...data })));
   const currentTopic = allTopics.find(tp => tp.id === selectedTopicId) || allTopics[0];
   const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
   const filteredLibrary = savedSheets.filter(sheet => sheet.title.toLowerCase().includes(searchTerm.toLowerCase()) && (filterTopic === 'all' || sheet.auto_topics?.includes(filterTopic)));
   const availableTopics = [...new Set(savedSheets.flatMap(s => s.auto_topics || []))];
 
-  // --- RENDER: LIBRARY ---
+  // AGGRESSIVE FILTERING & SORTING
+  const visibleVariations = (currentTopic?.variations || [])
+    .filter(v => {
+      if (!hideExtra) return true;
+      const k = v.key.toLowerCase();
+      // Aggressive check for MCQ or Conceptual items
+      const isMCQ = ['lie', 'spot', 'choice', 'mcq', 'check', 'select', 'which', 'error', 'inverse', 'begrepp'].some(kw => k.includes(kw));
+      const isConcept = ['concept', 'theory', 'foundations', 'id'].some(kw => k.includes(kw));
+      return !isMCQ && !isConcept;
+    })
+    .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
+
   if (!setupMode) {
     return (
       <div className="flex-1 bg-slate-50 flex flex-col p-12 overflow-y-auto relative custom-scrollbar">
@@ -370,7 +414,7 @@ export default function QuestionStudio({
                 </div>
             </div>
         </div>
-        <BackgroundWave /> {/* Background added to Library View */}
+        <BackgroundWave /> 
         {peekSheet && (
             <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-sm">
                 <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
@@ -388,7 +432,7 @@ export default function QuestionStudio({
     );
   }
 
-  // --- RENDER: MAIN STUDIO ---
+  // --- MAIN STUDIO RENDER ---
   return (
     <div className="flex flex-col h-screen bg-slate-200 font-sans overflow-hidden relative">
       <header className="bg-white border-b border-slate-300 px-6 py-3 flex items-center justify-between shadow-md z-50">
@@ -420,19 +464,64 @@ export default function QuestionStudio({
           </div>
         </div>
 
+        {/* PANE 2: REFACTORED VARIATIONS LIST */}
         <div className="w-[340px] bg-slate-50/80 backdrop-blur-sm border-r border-slate-300 flex flex-col shrink-0">
-          <div className="p-6 border-b bg-white shrink-0 shadow-sm"><h1 className="text-lg font-black text-slate-900 uppercase italic truncate">{currentTopic?.name[lang]}</h1></div>
+          <div className="p-6 border-b bg-white shrink-0 shadow-sm space-y-4">
+              <h1 className="text-lg font-black text-slate-900 uppercase italic truncate leading-none">{currentTopic?.name[lang]}</h1>
+              {/* Aggressive Conceptual/MCQ Filter Toggle */}
+              <div className="flex items-center justify-between bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
+                  <span className="text-[9px] font-black uppercase text-slate-500 ml-2 tracking-tighter">{t.hide_extra}</span>
+                  <button 
+                      onClick={() => setHideExtra(!hideExtra)} 
+                      className={`w-10 h-5 rounded-full transition-all relative p-1 ${hideExtra ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                  >
+                      <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${hideExtra ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+              </div>
+          </div>
           <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-              {currentTopic?.variations.map(v => (
-                  <div key={v.key} onClick={() => triggerPreview(v.key)} className={`p-5 rounded-[2rem] border-2 transition-all bg-white ${activePreviewKey === v.key ? 'border-indigo-500 shadow-xl' : 'border-transparent shadow-sm hover:border-slate-200 cursor-pointer'}`}>
-                      <h4 className="font-bold text-sm mb-1">{v.name[lang]}</h4>
-                      <p className="text-[11px] text-slate-400 line-clamp-2 mb-4 italic">{v.desc[lang]}</p>
-                      <div className="flex items-center gap-2">
-                          <div className="flex items-center bg-slate-100 rounded-xl p-1"><button onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} className="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-all"><Minus size={12}/></button><span className="w-8 text-center text-xs font-black">{pendingQuantity}</span><button onClick={(e) => { e.stopPropagation(); setPendingQuantity(pendingQuantity + 1); }} className="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-all"><Plus size={12}/></button></div>
-                          <button disabled={isPreviewLoading} onClick={(e) => { e.stopPropagation(); addToPacket(v, pendingQuantity); }} className={`flex-1 py-3 text-white rounded-xl text-[10px] font-black uppercase transition-all shadow-md active:scale-95 disabled:opacity-50 ${setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>{isPreviewLoading ? '...' : `Lägg till ${pendingQuantity}`}</button>
-                      </div>
-                  </div>
-              ))}
+              {visibleVariations.map(v => {
+                  const cat = getVariationCategory(v.key);
+                  const styles = getCategoryStyles(cat);
+                  const isPreviewed = activePreviewKey === v.key;
+
+                  return (
+                    <div 
+                        key={v.key} 
+                        onClick={() => triggerPreview(v.key)} 
+                        className={`group p-5 rounded-[2rem] border-2 transition-all bg-white relative overflow-hidden
+                            ${isPreviewed ? 'border-indigo-500 shadow-xl ring-4 ring-indigo-500/5' : 'border-transparent shadow-sm hover:border-slate-200 cursor-pointer'}
+                        `}
+                    >
+                        <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg.replace('/20', '')}`} />
+
+                        <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-black text-xs uppercase tracking-tight text-slate-800 leading-tight pr-4">{v.name[lang]}</h4>
+                            {/* Color Coded Descriptive Badges */}
+                            <div className={`shrink-0 px-2 py-0.5 rounded-md border ${styles.border} ${styles.bg} ${styles.text} text-[8px] font-black uppercase flex items-center gap-1`}>
+                                {styles.icon} {styles.label}
+                            </div>
+                        </div>
+                        
+                        <p className="text-[10px] font-medium text-slate-400 line-clamp-2 mb-4 italic leading-relaxed">{v.desc[lang]}</p>
+                        
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center bg-slate-100 rounded-xl p-1">
+                                <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} className="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-all text-slate-400 hover:text-indigo-600"><Minus size={12}/></button>
+                                <span className="w-8 text-center text-xs font-black text-slate-700">{pendingQuantity}</span>
+                                <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(pendingQuantity + 1); }} className="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-all text-slate-400 hover:text-indigo-600"><Plus size={12}/></button>
+                            </div>
+                            <button 
+                                disabled={isPreviewLoading} 
+                                onClick={(e) => { e.stopPropagation(); addToPacket(v, pendingQuantity); }} 
+                                className={`flex-1 py-3 text-white rounded-xl text-[10px] font-black uppercase transition-all shadow-md active:scale-95 disabled:opacity-50 ${setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                            >
+                                {isPreviewLoading && isPreviewed ? '...' : `Lägg till ${pendingQuantity}`}
+                            </button>
+                        </div>
+                    </div>
+                  );
+              })}
           </div>
         </div>
 
@@ -508,7 +597,7 @@ export default function QuestionStudio({
           )}
         </div>
       </div>
-      <BackgroundWave /> {/* Background added to Editor View */}
+      <BackgroundWave /> 
     </div>
   );
 }
