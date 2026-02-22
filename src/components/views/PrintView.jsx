@@ -1,6 +1,14 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Printer, ChevronLeft, X, ChevronRight, Maximize2 } from 'lucide-react';
+// --- COMPREHENSIVE VISUAL IMPORTS ---
 import { GeometryVisual, GraphCanvas } from '../visuals/GeometryComponents.jsx';
+import { VolumeVisualization } from '../visuals/VolumeVisualization.jsx';
+import PatternVisual from '../visuals/PatternComponents.jsx';
+import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals.jsx';
+import ProbabilityTree from '../visuals/ProbabilityTree.jsx';
+import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals.jsx';
+import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals.jsx';
+import AngleVisual from '../visuals/AngleComponents.jsx';
 
 // --- MATH RENDERING ENGINE ---
 const MathDisplay = ({ content, className = "" }) => {
@@ -49,8 +57,69 @@ export default function PrintView({
         }
     }[lang];
 
+    // --- SHARED VISUAL DETECTION HELPER ---
+    const hasVisual = (rd) => {
+        return !!(rd?.graph || rd?.geometry || rd?.pattern || rd?.marbles || rd?.spinner || 
+                 rd?.freqTable || rd?.percentGrid || rd?.scale || rd?.similarity || 
+                 rd?.compareArea || rd?.tree);
+    };
+
+    // --- UNIFIED VISUAL RENDERER ---
+    const renderVisual = (rd) => {
+        if (!rd) return null;
+
+        // 1. Graphs
+        if (rd.graph) return <GraphCanvas data={rd.graph} />;
+        
+        // 2. Patterns & Sequences
+        if (rd.pattern || rd.geometry?.subtype === 'matchsticks' || rd.geometry?.subtype === 'sequence') {
+            return <PatternVisual data={rd.pattern || rd.geometry} />;
+        }
+        
+        // 3. Probability Marbles & Spinners
+        if (rd.marbles || rd.geometry?.type === 'marbles' || rd.geometry?.items) {
+            return <ProbabilityMarbles data={rd.marbles || rd.geometry} />;
+        }
+        if (rd.spinner || rd.geometry?.type === 'spinner') {
+            return <ProbabilitySpinner data={rd.spinner || rd.geometry} />;
+        }
+        
+        // 4. Statistics Tables & Grids
+        if (rd.freqTable || rd.geometry?.type === 'frequency_table' || rd.geometry?.headers) {
+            return <FrequencyTable data={rd.freqTable || rd.geometry} />;
+        }
+        if (rd.percentGrid || rd.geometry?.type === 'percent_grid') {
+            return <PercentGrid data={rd.percentGrid || rd.geometry} />;
+        }
+
+        // 5. Volume Visuals (Explicit Height Container for Print)
+        if (rd.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'].includes(rd.geometry.type)) {
+            return (
+                <div style={{ width: '220px', height: '180px' }}>
+                    <VolumeVisualization data={rd.geometry} />
+                </div>
+            );
+        }
+        
+        // 6. Geometry: Angles, Scale, Similarity, Area Comparison
+        if (rd.geometry?.type === 'angle') return <AngleVisual data={rd.geometry} />;
+        if (rd.scale || rd.geometry?.type === 'scale') return <ScaleVisual data={rd.scale || rd.geometry} />;
+        if (rd.similarity || rd.geometry?.type === 'similarity') return <SimilarityCompare data={rd.similarity || rd.geometry} />;
+        if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
+        
+        // 7. Probability Trees & Pathways
+        if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
+
+        // 8. General 2D Geometry (Standard & Composite/Portal)
+        // REFACTOR: We now pass the full 'data' object to ensure 'subtype' and 'dims' are preserved.
+        if (rd.geometry) {
+            return <GeometryVisual data={rd.geometry} width={220} height={180} />;
+        }
+        
+        return null;
+    };
+
     // --- PHASE 6: GRID-AWARE PAGINATION ENGINE ---
-    // Tracks current row width and instruction modes to accurately predict page breaks
     const paginatedPages = useMemo(() => {
         const MAX_HEIGHT_PER_PAGE = 960; 
         const pages = [];
@@ -63,26 +132,26 @@ export default function PrintView({
             const colSpan = item.columnSpan || 6;
             const isHeaderMode = item.instructionMode === 'header' || !item.instructionMode;
             
-            // 1. Estimate vertical height of item components
             let itemHeight = 40; 
             if (isHeaderMode) itemHeight += 40;
             if (item.instructionMode === 'inline') itemHeight += 30;
             if (item.resolvedData?.renderData?.latex) itemHeight += 100;
-            if (item.resolvedData?.renderData?.graph || item.resolvedData?.renderData?.geometry) itemHeight += 180;
+            
+            // Aggressively check for any visual type
+            if (hasVisual(item.resolvedData?.renderData)) itemHeight += 180;
+
             if (item.resolvedData?.renderData?.options) itemHeight += (item.resolvedData.renderData.options.length * 15);
             if (showWorkArea) {
                 const workAreaHeights = { compact: 70, normal: 130, spacious: 260 };
                 itemHeight += workAreaHeights[density];
             }
 
-            // 2. Commit previous row if this item is a Header or exceeds 6 columns
             if (isHeaderMode || (currentRowWidth + colSpan > 6)) {
                 currentHeight += maxHeightInCurrentRow; 
                 currentRowWidth = 0;
                 maxHeightInCurrentRow = 0;
             }
 
-            // 3. Page Break Decision
             if (currentHeight + itemHeight > MAX_HEIGHT_PER_PAGE && currentPage.length > 0) {
                 pages.push(currentPage);
                 currentPage = [];
@@ -100,22 +169,11 @@ export default function PrintView({
         return pages;
     }, [packet, showWorkArea, density]);
 
-    // SECURITY: REFACTORED TO HANDLE SCRUBBED PAYLOAD
     const getFinalAnswer = (data) => {
-        // 1. Check for legacy answer property (un-scrubbed fallback)
         if (data?.answer && data.answer !== "Se lösning") return data.answer;
-        
-        // 2. Decode the Base64 token to retrieve the answer for the teacher's key
         if (data?.token) {
-            try {
-                return atob(data.token);
-            } catch (e) {
-                console.warn("PrintView: Could not decode answer token.");
-                return "---";
-            }
+            try { return atob(data.token); } catch (e) { return "---"; }
         }
-
-        // 3. Fallback to the last clue if available
         if (data?.clues && data.clues.length > 0) {
             const lastClue = data.clues[data.clues.length - 1];
             return lastClue.latex ? `$${lastClue.latex}$` : lastClue.text;
@@ -184,11 +242,14 @@ export default function PrintView({
                                                 {item.resolvedData?.renderData.latex && (
                                                     <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className="text-xl text-slate-900" /></div>
                                                 )}
-                                                {(item.resolvedData?.renderData.graph || item.resolvedData?.renderData.geometry) && (
-                                                    <div className="flex justify-center p-4 bg-slate-50/30 rounded-2xl border border-slate-50">
-                                                        {item.resolvedData.renderData.graph ? <GraphCanvas data={item.resolvedData.renderData.graph} /> : <GeometryVisual type={item.resolvedData.renderData.geometry.type} labels={item.resolvedData.renderData.geometry.labels} width={220} height={180} />}
+                                                
+                                                {/* DYNAMIC VISUAL RENDERER */}
+                                                {hasVisual(item.resolvedData?.renderData) && (
+                                                    <div className="flex justify-center p-4 bg-slate-50/30 rounded-2xl border border-slate-50 overflow-hidden">
+                                                        {renderVisual(item.resolvedData.renderData)}
                                                     </div>
                                                 )}
+
                                                 {item.resolvedData?.renderData?.options && (
                                                     <div className="grid grid-cols-1 gap-2 border-l-2 border-slate-100 pl-4 mb-2">
                                                         {item.resolvedData.renderData.options.map((opt, i) => (

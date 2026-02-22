@@ -8,7 +8,15 @@ import {
   Image as ImageIcon, FileText as TextIcon
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
-import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents.jsx';
+// --- COMPREHENSIVE VISUAL IMPORTS ---
+import { GeometryVisual, GraphCanvas } from '../visuals/GeometryComponents.jsx';
+import { VolumeVisualization } from '../visuals/VolumeVisualization.jsx';
+import PatternVisual from '../visuals/PatternComponents.jsx';
+import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals.jsx';
+import ProbabilityTree from '../visuals/ProbabilityTree.jsx';
+import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals.jsx';
+import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals.jsx';
+import AngleVisual from '../visuals/AngleComponents.jsx';
 import { supabase } from '../../lib/supabaseClient'; 
 
 const MathDisplay = ({ content, className = "" }) => {
@@ -69,7 +77,7 @@ export default function QuestionStudio({
       create_donow: "Grid", publish: "Skriv ut", title_placeholder: "Namnge ditt arbete...",
       save_success: "Sparad!", unsaved_warning: "Du har osparade ändringar. Fortsätt ändå?",
       width_label: "Bredd", work_area_toggle: "Arbetsyta", section_label: "Instruktion:",
-      regenerate: "Slumpa ny", load_btn: "Öppna", delete_confirm: "Radera permanent?",
+      regenerate: "Slumpa ny", regenerate_all: "Slumpa alla", load_btn: "Öppna", delete_confirm: "Radera permanent?",
       compact: "Kompakt", spacious: "Gott om plats",
       answer_key_toggle: "Inkludera facit", answer_style_label: "Facit stil",
       style_compact: "Bara svar", style_detailed: "Steg",
@@ -79,7 +87,7 @@ export default function QuestionStudio({
       tab_mine: "Mina sparade", tab_school: "Min Skola", tab_global: "Globalt",
       clone_btn: "Kopiera", clone_success: "Kopierad!", peek_title: "Snabbkoll",
       mode_header: "Som rubrik", mode_inline: "Inuti kortet", mode_hidden: "Dölj text",
-      hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Räkna"
+      hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Text"
     },
     en: {
       studio: "Studio", library_title: "Library", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
@@ -88,7 +96,7 @@ export default function QuestionStudio({
       create_donow: "Grid", publish: "Print", title_placeholder: "Enter title...",
       save_success: "Saved!", unsaved_warning: "Unsaved work! Proceed anyway?",
       width_label: "Width", work_area_toggle: "Work Area", section_label: "Instruction:",
-      regenerate: "Randomize new", load_btn: "Open", delete_confirm: "Delete permanently?",
+      regenerate: "Randomize new", regenerate_all: "Randomize all", load_btn: "Open", delete_confirm: "Delete permanently?",
       compact: "Compact", spacious: "Spacious",
       answer_key_toggle: "Include answer key", answer_style_label: "Style",
       style_compact: "Answers", style_detailed: "Steps",
@@ -124,7 +132,7 @@ export default function QuestionStudio({
   const [draggedIdx, setDraggedIdx] = useState(null);
   const [filterTopic, setFilterTopic] = useState('all');
 
-  // --- NEW: FILTER STATE ---
+  const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
   const [hideExtra, setHideExtra] = useState(false);
 
   // --- EFFECTS ---
@@ -160,7 +168,6 @@ export default function QuestionStudio({
 
   const handleDragEnd = () => setDraggedIdx(null);
 
-  // --- RENDERING HELPERS ---
   const renderOptions = (options, inline = false) => {
     if (!options || options.length === 0) return null;
     const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -176,29 +183,59 @@ export default function QuestionStudio({
     );
   };
 
-  const renderVisual = (data) => {
-    if (!data?.renderData) return null;
-    const rd = data.renderData;
+  // --- UNIFIED VISUAL RENDERER ---
+  const renderVisual = (rd) => {
+    if (!rd) return null;
+
     if (rd.graph) return <GraphCanvas data={rd.graph} />;
-    if (rd.geometry) {
-        if (['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid'].includes(rd.geometry.type)) {
-            return <VolumeVisualization data={rd.geometry} width={250} height={200} />;
-        }
-        return <GeometryVisual data={rd.geometry} />;
+    
+    if (rd.pattern || rd.geometry?.subtype === 'matchsticks' || rd.geometry?.subtype === 'sequence') {
+        return <PatternVisual data={rd.pattern || rd.geometry} />;
     }
+    
+    if (rd.marbles || rd.geometry?.type === 'marbles' || rd.geometry?.items) {
+        return <ProbabilityMarbles data={rd.marbles || rd.geometry} />;
+    }
+    if (rd.spinner || rd.geometry?.type === 'spinner') {
+        return <ProbabilitySpinner data={rd.spinner || rd.geometry} />;
+    }
+    
+    if (rd.freqTable || rd.geometry?.type === 'frequency_table' || rd.geometry?.headers) {
+        return <FrequencyTable data={rd.freqTable || rd.geometry} />;
+    }
+    if (rd.percentGrid || rd.geometry?.type === 'percent_grid') {
+        return <PercentGrid data={rd.percentGrid || rd.geometry} />;
+    }
+
+    // Wrap VolumeVisualization to prevent observer collapse
+    if (rd.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'].includes(rd.geometry.type)) {
+        return (
+            <div style={{ width: '220px', height: '180px', display: 'flex', justifyContent: 'center' }}>
+                <VolumeVisualization data={rd.geometry} />
+            </div>
+        );
+    }
+    
+    if (rd.geometry?.type === 'angle') return <AngleVisual data={rd.geometry} />;
+    if (rd.scale || rd.geometry?.type === 'scale') return <ScaleVisual data={rd.scale || rd.geometry} />;
+    if (rd.similarity || rd.geometry?.type === 'similarity') return <SimilarityCompare data={rd.similarity || rd.geometry} />;
+    if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
+    if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
+
+    // Fallback: pass full geometry data object
+    if (rd.geometry) return <GeometryVisual data={rd.geometry} width={220} height={180} />;
+    
     return null;
   };
 
-  // --- NEW: CATEGORIZATION & SORTING HELPERS ---
   const getVariationCategory = (key) => {
     const k = key.toLowerCase();
-    // Prioritize Visual check for "Bild" badge
     const isVisual = ['graph', 'plot', 'geom', 'volume', 'shape', 'area', 'perimeter', 'angle', 'pattern', 'table', 'marbles', 'spinner', 'tree'].some(kw => k.includes(kw));
     if (isVisual) return 'visual';
     if (['calc', 'std', 'solve'].some(kw => k.includes(kw))) return 'calculate';
     if (['concept', 'theory', 'foundations', 'id', 'inverse'].some(kw => k.includes(kw))) return 'conceptual';
     if (['lie', 'spot', 'error', 'check'].some(kw => k.includes(kw))) return 'logic';
-    return 'default'; // results in "Text" badge
+    return 'default';
   };
 
   const getCategoryStyles = (type) => {
@@ -220,7 +257,6 @@ export default function QuestionStudio({
     return 2; 
   };
 
-  // --- LIBRARY & STORAGE ---
   const fetchLibrary = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -339,6 +375,25 @@ export default function QuestionStudio({
     } catch (err) { console.error(err); }
   };
 
+  const handleRegenerateAll = async () => {
+    if (packet.length === 0 || isRegeneratingAll) return;
+    setIsRegeneratingAll(true);
+    try {
+        const updatedPacket = await Promise.all(packet.map(async (item) => {
+            if (!item.topicId || !item.variationKey) return item;
+            const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}`);
+            const data = await res.json();
+            return { ...item, resolvedData: data };
+        }));
+        setPacket(updatedPacket);
+        setIsSaved(false);
+    } catch (err) {
+        console.error("Batch regeneration failed:", err);
+    } finally {
+        setIsRegeneratingAll(false);
+    }
+  };
+
   const updatePacketItem = (id, key, val) => { setPacket(packet.map(p => p.id === id ? { ...p, [key]: val } : p)); setIsSaved(false); };
   const deleteSheet = async (e, id) => {
     e.stopPropagation(); if (!window.confirm(t.delete_confirm)) return;
@@ -355,14 +410,12 @@ export default function QuestionStudio({
   const filteredLibrary = savedSheets.filter(sheet => sheet.title.toLowerCase().includes(searchTerm.toLowerCase()) && (filterTopic === 'all' || sheet.auto_topics?.includes(filterTopic)));
   const availableTopics = [...new Set(savedSheets.flatMap(s => s.auto_topics || []))];
 
-  // AGGRESSIVE FILTERING & SORTING
   const visibleVariations = (currentTopic?.variations || [])
     .filter(v => {
       if (!hideExtra) return true;
       const k = v.key.toLowerCase();
-      // Aggressive check for MCQ or Conceptual items
-      const isMCQ = ['lie', 'spot', 'choice', 'mcq', 'check', 'select', 'which', 'error', 'inverse', 'begrepp'].some(kw => k.includes(kw));
-      const isConcept = ['concept', 'theory', 'foundations', 'id'].some(kw => k.includes(kw));
+      const isMCQ = ['lie', 'spot', 'choice', 'mcq', 'check', 'select', 'which', 'error', 'inverse'].some(kw => k.includes(kw));
+      const isConcept = ['concept', 'theory', 'foundations', 'id', 'begrepp'].some(kw => k.includes(kw));
       return !isMCQ && !isConcept;
     })
     .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
@@ -421,7 +474,7 @@ export default function QuestionStudio({
                     <div className="p-8 border-b flex justify-between items-center bg-slate-900 text-white"><div><h3 className="text-xl font-black uppercase italic tracking-tighter leading-none">{peekSheet.title}</h3><p className="text-[10px] font-bold text-slate-400 uppercase mt-2 tracking-widest">{peekSheet.packet?.length || 0} Uppgifter</p></div><button onClick={() => setPeekSheet(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X size={24}/></button></div>
                     <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
                         {peekSheet.packet.map((q, i) => (
-                            <div key={i} className="border-b border-slate-100 pb-8 last:border-0"><div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4">Uppgift {i+1}</div><div className="flex justify-center mb-4 scale-75 origin-top">{renderVisual(q.resolvedData)}</div><div className="text-sm font-bold text-slate-700 leading-relaxed"><MathDisplay content={q.resolvedData?.renderData?.description} /></div>{q.resolvedData?.renderData?.latex && <div className="mt-4 p-4 bg-slate-50 rounded-2xl text-center font-serif"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>}{renderOptions(q.resolvedData?.renderData?.options)}</div>
+                            <div key={i} className="border-b border-slate-100 pb-8 last:border-0"><div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4">Uppgift {i+1}</div><div className="flex justify-center mb-4 scale-75 origin-top">{renderVisual(q.resolvedData?.renderData)}</div><div className="text-sm font-bold text-slate-700 leading-relaxed"><MathDisplay content={q.resolvedData?.renderData?.description} /></div>{q.resolvedData?.renderData?.latex && <div className="mt-4 p-4 bg-slate-50 rounded-2xl text-center font-serif"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>}{renderOptions(q.resolvedData?.renderData?.options)}</div>
                         ))}
                     </div>
                     <div className="p-8 border-t bg-slate-50">{libraryTab === 'private' ? (<button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all">Redigera detta blad</button>) : (<button onClick={() => { handleClone(peekSheet.id); setPeekSheet(null); }} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3"><Copy size={20}/> Kopiera till mitt arkiv</button>)}</div>
@@ -432,7 +485,6 @@ export default function QuestionStudio({
     );
   }
 
-  // --- MAIN STUDIO RENDER ---
   return (
     <div className="flex flex-col h-screen bg-slate-200 font-sans overflow-hidden relative">
       <header className="bg-white border-b border-slate-300 px-6 py-3 flex items-center justify-between shadow-md z-50">
@@ -464,11 +516,9 @@ export default function QuestionStudio({
           </div>
         </div>
 
-        {/* PANE 2: REFACTORED VARIATIONS LIST */}
         <div className="w-[340px] bg-slate-50/80 backdrop-blur-sm border-r border-slate-300 flex flex-col shrink-0">
           <div className="p-6 border-b bg-white shrink-0 shadow-sm space-y-4">
               <h1 className="text-lg font-black text-slate-900 uppercase italic truncate leading-none">{currentTopic?.name[lang]}</h1>
-              {/* Aggressive Conceptual/MCQ Filter Toggle */}
               <div className="flex items-center justify-between bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
                   <span className="text-[9px] font-black uppercase text-slate-500 ml-2 tracking-tighter">{t.hide_extra}</span>
                   <button 
@@ -497,7 +547,6 @@ export default function QuestionStudio({
 
                         <div className="flex justify-between items-start mb-2">
                             <h4 className="font-black text-xs uppercase tracking-tight text-slate-800 leading-tight pr-4">{v.name[lang]}</h4>
-                            {/* Color Coded Descriptive Badges */}
                             <div className={`shrink-0 px-2 py-0.5 rounded-md border ${styles.border} ${styles.bg} ${styles.text} text-[8px] font-black uppercase flex items-center gap-1`}>
                                 {styles.icon} {styles.label}
                             </div>
@@ -531,13 +580,29 @@ export default function QuestionStudio({
                   <button onClick={() => setCanvasMode('studio')} className={`px-8 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'studio' ? 'bg-slate-900 text-white' : 'text-slate-400'}`}><Zap size={14}/> Studio</button>
                   {setupMode === 'worksheet' && <button onClick={() => setCanvasMode('layout')} className={`px-8 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'layout' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}><LayoutGrid size={14}/> Layout</button>}
               </div>
-              {canvasMode === 'layout' && (<button onClick={() => setShowWorkArea(!showWorkArea)} className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all text-[10px] font-black uppercase shadow-lg ${showWorkArea ? 'bg-white border-indigo-600 text-indigo-600' : 'bg-slate-800 border-slate-800 text-white'}`}><Square size={14} fill={showWorkArea ? "currentColor" : "none"} /> {showWorkArea ? t.spacious : t.compact}</button>)}
+              
+              {canvasMode === 'layout' && (
+                <div className="flex gap-2">
+                    <button 
+                        disabled={isRegeneratingAll || packet.length === 0}
+                        onClick={handleRegenerateAll} 
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-slate-800 bg-slate-800 text-white transition-all text-[10px] font-black uppercase shadow-lg hover:bg-slate-700 disabled:opacity-50 active:scale-95"
+                        title={t.regenerate_all}
+                    >
+                        {isRegeneratingAll ? <Loader2 size={14} className="animate-spin" /> : <Shuffle size={14} />} 
+                        {t.regenerate_all}
+                    </button>
+                    <button onClick={() => setShowWorkArea(!showWorkArea)} className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all text-[10px] font-black uppercase shadow-lg ${showWorkArea ? 'bg-white border-indigo-600 text-indigo-600' : 'bg-slate-800 border-slate-800 text-white'}`}>
+                        <Square size={14} fill={showWorkArea ? "currentColor" : "none"} /> {showWorkArea ? t.spacious : t.compact}
+                    </button>
+                </div>
+              )}
           </div>
 
           {canvasMode === 'studio' ? (
               <div className="flex-1 bg-white rounded-[3rem] shadow-2xl border border-slate-300 overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300">
                   <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">{t.board_label}</span>{activePreviewKey && <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-white/10 hover:bg-white/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all"><RefreshCcw size={12}/> {t.new_example}</button>}</div>
-                  <div className="p-12 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">{isPreviewLoading ? <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" size={48} /></div> : !previewData ? <div className="h-full flex items-center justify-center text-slate-200 uppercase font-black tracking-widest italic">{t.select_hint}</div> : <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500"><div className="w-full flex justify-center drop-shadow-md">{renderVisual(previewData)}</div><div className="text-2xl text-slate-800 font-bold text-center px-10 leading-relaxed"><MathDisplay content={previewData.renderData.description} /></div>{previewData.renderData.latex && <div className="text-4xl text-indigo-600 bg-indigo-50/50 p-10 rounded-[2.5rem] border-2 border-indigo-100 shadow-inner text-center font-serif"><MathDisplay content={`$$${previewData.renderData.latex}$$`} /></div>}{renderOptions(previewData.renderData?.options)}</div>}</div>
+                  <div className="p-12 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">{isPreviewLoading ? <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" size={48} /></div> : !previewData ? <div className="h-full flex items-center justify-center text-slate-200 uppercase font-black tracking-widest italic">{t.select_hint}</div> : <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500"><div className="w-full flex justify-center drop-shadow-md">{renderVisual(previewData?.renderData)}</div><div className="text-2xl text-slate-800 font-bold text-center px-10 leading-relaxed"><MathDisplay content={previewData.renderData.description} /></div>{previewData.renderData.latex && <div className="text-4xl text-indigo-600 bg-indigo-50/50 p-10 rounded-[2.5rem] border-2 border-indigo-100 shadow-inner text-center font-serif"><MathDisplay content={`$$${previewData.renderData.latex}$$`} /></div>}{renderOptions(previewData.renderData?.options)}</div>}</div>
               </div>
           ) : (
               <div className="flex-1 overflow-y-auto custom-scrollbar pb-24">
@@ -564,7 +629,7 @@ export default function QuestionStudio({
                                           {item.instructionMode === 'inline' && (<div className="text-[11px] font-bold text-slate-800 mb-2 leading-tight border-b border-slate-100 pb-2"><MathDisplay content={item.resolvedData?.renderData.description || item.name} /></div>)}
                                           {item.resolvedData?.renderData.latex && (<div className={`${showWorkArea ? 'py-4' : 'py-1'} text-center font-serif text-lg`}><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} /></div>)}
                                           {renderOptions(item.resolvedData?.renderData?.options, true)}
-                                          <div className="flex justify-center scale-90 origin-top mt-2">{renderVisual(item.resolvedData)}</div>
+                                          <div className="flex justify-center scale-90 origin-top mt-2">{renderVisual(item.resolvedData?.renderData)}</div>
                                           <div className="mt-auto pt-4">{showWorkArea ? <div className="min-h-[100px] border-b-2 border-dotted border-slate-100" /> : <div className="h-0" />}</div>
                                       </div>
                                   </div>
