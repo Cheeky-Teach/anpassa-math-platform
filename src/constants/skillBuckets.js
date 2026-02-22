@@ -54,7 +54,6 @@ export const SKILL_BUCKETS = {
           { key: 'sub_block_minus', name: { sv: 'Minusparentes (-)', en: 'Minus parentheses (-)' }, desc: { sv: '-(ax - b)', en: '-(ax - b)' } },
           { key: 'word_candy', name: { sv: 'Uttryck: Godispåsar', en: 'Expressions: Candy bags' }, desc: { sv: 'Teckna uttryck', en: 'Formulate expression' } },
           { key: 'word_combined_age_tri', name: { sv: 'Uttryck: Åldrar', en: 'Expressions: Ages' }, desc: { sv: 'Tre personers ålder', en: 'Ages of three people' } },
-          { key: 'word_rect_perimeter', name: { sv: 'Uttryck: Omkrets', en: 'Expressions: Perimeter' }, desc: { sv: 'Rektangel med x', en: 'Rectangle with x' } },
           { key: 'word_passengers', name: { sv: 'Uttryck: Passagerare', en: 'Expressions: Passengers' }, desc: { sv: 'Förändring på buss', en: 'Changes on a bus' } }
         ]
       },
@@ -101,11 +100,11 @@ export const SKILL_BUCKETS = {
         name: { sv: 'De 4 Räknesätten', en: 'The 4 Operations' },
         variations: [
           { key: 'add_std_vertical', name: { sv: 'Addition: Uppställning', en: 'Addition: Column Method' }, desc: { sv: 'Stora tal', en: 'Large numbers' } },
-          { key: 'add_std_horizontal', name: { sv: 'Addition: Huvudräkning', en: 'Addition: Mental Math' }, desc: { sv: 'Strategier', en: 'Strategies' } },
+          { key: 'add_std_horizontal', name: { sv: 'Addition: Horisontell', en: 'Addition: Horizontal' }, desc: { sv: 'Strategier', en: 'Strategies' } },
           { key: 'add_missing_variable', name: { sv: 'Addition: Hitta termen', en: 'Addition: Find the term' }, desc: { sv: 'a + x = b', en: 'a + x = b' } },
           { key: 'add_spot_the_lie', name: { sv: 'Hitta felet: Addition', en: 'Find error: Addition' }, desc: { sv: 'Felsökning', en: 'Troubleshooting' } },
           { key: 'sub_std_vertical', name: { sv: 'Subtraktion: Uppställning', en: 'Subtraction: Column Method' }, desc: { sv: 'Växling', en: 'Borrowing' } },
-          { key: 'sub_std_horizontal', name: { sv: 'Subtraktion: Huvudräkning', en: 'Subtraction: Mental Math' }, desc: { sv: 'Strategier', en: 'Strategies' } },
+          { key: 'sub_std_horizontal', name: { sv: 'Subtraktion: Horisontell', en: 'Subtraction: Horizontal' }, desc: { sv: 'Strategier', en: 'Strategies' } },
           { key: 'sub_missing_variable', name: { sv: 'Subtraktion: Hitta termen', en: 'Subtraction: Find the term' }, desc: { sv: 'a - x = b', en: 'a - x = b' } },
           { key: 'dec_add_vertical', name: { sv: 'Decimaler: Addition', en: 'Decimals: Addition' }, desc: { sv: 'Passa kommatecknet', en: 'Align decimal point' } },
           { key: 'dec_sub_vertical', name: { sv: 'Decimaler: Subtraktion', en: 'Decimals: Subtraction' }, desc: { sv: 'Passa kommatecknet', en: 'Align decimal point' } },

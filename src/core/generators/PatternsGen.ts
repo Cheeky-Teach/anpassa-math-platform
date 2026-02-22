@@ -195,19 +195,33 @@ export class PatternsGen {
         ];
         const v = variationKey || this.getVariation(pool, options);
         
-        const config = MathUtils.randomChoice([
-            { type: 'squares', diff: 3, base: 1 },
-            { type: 'triangles', diff: 2, base: 1 },
-            { type: 'houses', diff: 5, base: 1 }
-        ]);
-        
-        const a = config.diff, b = config.base;
-        const figs = [
-            this.generateMatchstickData(config.type as any, 1),
-            this.generateMatchstickData(config.type as any, 2),
-            this.generateMatchstickData(config.type as any, 3)
+        // Configuration map for shapes and their "per-unit" stick costs
+        const shapeConfigs = [
+            { type: 'squares', diff: 3, unitBase: 1 },
+            { type: 'triangles', diff: 2, unitBase: 1 },
+            { type: 'houses', diff: 5, unitBase: 1 }
         ];
-        const counts = [a*1+b, a*2+b, a*3+b];
+        const config = MathUtils.randomChoice(shapeConfigs);
+        
+        // REFACTOR: Randomize the starting number of shapes (1, 2, or 3)
+        const startShapes = MathUtils.randomInt(1, 3);
+        
+        // Calculate the an + b formula parameters
+        // a = increase per figure (constant)
+        // b = startShapes calculation: V = a(n + startShapes - 1) + unitBase
+        // This simplifies to V = an + (a * (startShapes - 1) + unitBase)
+        const a = config.diff;
+        const b = (a * (startShapes - 1)) + config.unitBase;
+
+        // Generate visual data for Figures 1, 2, and 3
+        const figs = [
+            this.generateMatchstickData(config.type as any, startShapes),
+            this.generateMatchstickData(config.type as any, startShapes + 1),
+            this.generateMatchstickData(config.type as any, startShapes + 2)
+        ];
+
+        // Actual stick counts for clues
+        const counts = [a*1 + b, a*2 + b, a*3 + b];
 
         if (v === 'visual_calc') {
             const target = MathUtils.randomInt(5, 12);
