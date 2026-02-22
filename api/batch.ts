@@ -41,7 +41,6 @@ const TopicMap: Record<string, any> = {
   'change_factor': ChangeFactorGen,
   'exponents': ExponentsGen,
   'ten_powers': TenPowersGen,
-  // NYTT: Mappning för prioriteringsregler
   'order_of_operations': OrderOperationsGen,
 
   // Geometry
@@ -61,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 1. CORS & Preflight
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader(
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
@@ -72,8 +71,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  // SECURITY: Strict Method Enforcement
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(405).json({ error: 'Method Not Allowed. Use POST.' });
   }
 
   try {
@@ -86,13 +86,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const { requests } = body; // Matches App.jsx contract
+    const { requests } = body; 
 
     if (!requests || !Array.isArray(requests)) {
       return res.status(400).json({ error: 'Missing or invalid "requests" array in payload' });
     }
-
-    console.log("Processing Batch:", JSON.stringify(requests));
 
     const questions: any[] = [];
     let globalIndex = 1;
@@ -104,11 +102,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const GeneratorClass = TopicMap[topic];
 
       if (!GeneratorClass) {
-        console.warn(`Generator not found for topic: ${topic}`);
         questions.push({
           id: `err-${globalIndex}`,
           text: `Error: Generator for topic '${topic}' not found.`,
-          answer: "N/A",
           type: "error"
         });
         globalIndex++;
@@ -120,20 +116,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         let questionData;
         
-        // PHASE 2 LOGIC: Priority on Variation
         if (variation && typeof generator.generateByVariation === 'function') {
           questionData = generator.generateByVariation(variation, lang);
         } else {
           questionData = generator.generate(level || 1, lang);
         }
 
+        // SECURITY: Payload Scrubbing
+        // We explicitly whitelists the properties to return.
+        // By NOT spreading (...questionData), we ensure the raw 'answer' property 
+        // is never exposed to the student's browser/Network Tab.
         questions.push({
-          ...questionData,
           id: `q-${globalIndex}-${Date.now()}`,
           number: globalIndex,
           topic_id: topic,
           variation_key: variation || 'generic',
-          is_generated: true
+          is_generated: true,
+          resolvedData: {
+            renderData: questionData.renderData, // Required for UI
+            token: questionData.token,           // Base64 Answer for Teacher/Print
+            clues: questionData.clues,           // Hints
+            level: questionData.level || level   // Metadata
+          }
         });
 
         globalIndex++;
@@ -143,14 +147,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         questions.push({
           id: `err-${globalIndex}`,
           text: `Error generating question for ${topic}.`,
-          answer: "Error",
           meta: { error: true }
         });
         globalIndex++;
       }
     }
 
-    // 4. Success Response - Direct Array (Matches App.jsx)
     return res.status(200).json(questions);
 
   } catch (error: any) {

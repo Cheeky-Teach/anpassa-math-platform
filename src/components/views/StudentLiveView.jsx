@@ -75,14 +75,23 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         return str.replace(/[^0-9.,\-xy=/: ]/gi, '');
     };
 
+    // SECURITY: Refactored to handle scrubbed payloads
     const handleSolve = async () => {
         const val = answers[currentIndex];
         if (!val || isSubmitting || !roomActive) return;
         
         const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.');
+        
+        // 1. Attempt to get the answer from the scrubbed payload pattern
         let correctAnswer = packet[currentIndex].resolvedData?.answer;
+        
+        // 2. Decode the Base64 token if the raw answer is missing
         if (!correctAnswer && packet[currentIndex].resolvedData?.token) {
-            try { correctAnswer = atob(packet[currentIndex].resolvedData.token); } catch (e) {}
+            try { 
+                correctAnswer = atob(packet[currentIndex].resolvedData.token); 
+            } catch (e) {
+                console.warn("StudentLiveView: Could not decode solution token.");
+            }
         }
         
         const isCorrect = normalize(val) === normalize(correctAnswer);
@@ -91,9 +100,9 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         try {
             const { error } = await supabase.from('responses').insert([{
                 room_id: session.id,
-                student_alias: studentAlias || "Anonym",
+                student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), // Sanitize Alias
                 question_index: currentIndex,
-                answer: String(val),
+                answer: String(val).substring(0, 20), // Enforce 20-char limit
                 is_correct: isCorrect
             }]);
             if (error) throw error;
@@ -176,6 +185,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 shadow-inner"
                         placeholder="Ditt svar..."
                         value={value}
+                        maxLength={20}
                         onChange={(e) => handleWrappedChange(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSolve()}
                     />

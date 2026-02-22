@@ -30,10 +30,28 @@ const MathDisplay = ({ content, className = "" }) => {
 const TEXT_SIZES = ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'text-3xl'];
 
 const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, lang, textSizeClass, isFocused = false }) => {
-    const decode = (str) => { try { return atob(str); } catch { return str; } };
+    
+    // SECURITY: Updated answer retrieval to handle scrubbed payloads
+    const getFinalAnswer = () => {
+        const rd = q.resolvedData;
+        if (!rd) return "---";
+
+        // 1. Check for legacy answer property (un-scrubbed fallback)
+        if (rd.answer && rd.answer !== "Se lösning") return rd.answer;
+        
+        // 2. Decode the Base64 token to retrieve the answer for the classroom board
+        if (rd.token) {
+            try {
+                return atob(rd.token);
+            } catch (e) {
+                return "---";
+            }
+        }
+        
+        return "---";
+    };
     
     const data = q.resolvedData?.renderData;
-    const token = q.resolvedData?.token;
 
     const renderVisualContent = () => {
         if (!data) return null;
@@ -77,7 +95,7 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
             <div className={`flex-1 flex flex-col items-center text-center relative overflow-hidden transition-all duration-300 
                 ${isFocused ? 'p-10' : 'p-3'}`}>
                 
-                {/* Visual Area: Height increased from 180px to 220px for better vertical breathing room */}
+                {/* Visual Area */}
                 {hasVisual && (
                     <div className={`w-full flex justify-center items-center shrink-0 overflow-hidden
                         ${isFocused ? 'h-[440px] mb-6' : 'h-[220px] mb-2'}`}>
@@ -132,7 +150,7 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
                 <div className={`bg-emerald-500 text-white py-3 text-center shrink-0 animate-in slide-in-from-bottom duration-300`}>
                     <div className="text-[10px] font-black uppercase tracking-widest opacity-80">FACIT</div>
                     <div className={`${isFocused ? 'text-6xl' : 'text-3xl'} font-black tracking-tighter`}>
-                        <MathDisplay content={decode(token)} />
+                        <MathDisplay content={getFinalAnswer()} />
                         {data?.suffix && <span className="ml-1 text-sm opacity-90">{data.suffix}</span>}
                     </div>
                 </div>
@@ -249,4 +267,4 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
             </main>
         </div>
     );
-}
+};
