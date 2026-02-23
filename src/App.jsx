@@ -511,16 +511,18 @@ function App() {
                 onBack={() => setView('landing')} 
                 onSuccess={(data) => {
                     if (data.role === 'student') {
+                        // PRACTICE MODE
                         setActiveClass(data.class);
-                        setProfile({ role: 'student', subscription_status: 'active' });
+                        setProfile({ role: 'student', subscription_status: 'active' }); // Mock profile
                         setView('dashboard');
                     } else if (data.role === 'live') {
+                        // LIVE SESSION MODE
                         setActiveRoom(data.room);
                         setStudentAlias(data.student_name);
                         localStorage.setItem('anpassa_alias', data.student_name);
                         setView('live_session');
                     } else if (data.role === 'teacher') {
-                        // After manual onboarding/selection, refresh the profile to clear the gatekeeper.
+                        // TEACHER MODE
                         fetchProfile(data.user.id);
                     }
                 }}
