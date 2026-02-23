@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents.jsx';
-import { X, Maximize, Minimize, ZoomIn, ZoomOut, RefreshCw, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { 
+    X, Maximize, Minimize, ZoomIn, ZoomOut, RefreshCw, 
+    Eye, EyeOff, Loader2, Play, Pause, RotateCcw, ChevronUp, ChevronDown 
+} from 'lucide-react';
 
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
@@ -33,13 +36,11 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
     
     // SECURITY: Updated answer retrieval to handle scrubbed payloads
     const getFinalAnswer = () => {
-        const rd = q.resolvedData;
+        const rd = q?.resolvedData;
         if (!rd) return "---";
 
-        // 1. Check for legacy answer property (un-scrubbed fallback)
         if (rd.answer && rd.answer !== "Se lösning") return rd.answer;
         
-        // 2. Decode the Base64 token to retrieve the answer for the classroom board
         if (rd.token) {
             try {
                 return atob(rd.token);
@@ -51,12 +52,19 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
         return "---";
     };
     
-    const data = q.resolvedData?.renderData;
+    const data = q?.resolvedData?.renderData;
+
+    // Loading State for individual cards (Prevents blanking during single refresh)
+    if (!data) {
+        return (
+            <div className="h-full w-full rounded-[1.5rem] border-2 border-slate-100 bg-white flex flex-col items-center justify-center gap-3">
+                <Loader2 className="animate-spin text-indigo-300" size={32} />
+                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Laddar...</span>
+            </div>
+        );
+    }
 
     const renderVisualContent = () => {
-        if (!data) return null;
-
-        // Increased height dimensions for grid (220px) and focused (420px) states
         const vW = isFocused ? 600 : 300;
         const vH = isFocused ? 420 : 220;
 
@@ -95,7 +103,6 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
             <div className={`flex-1 flex flex-col items-center text-center relative overflow-hidden transition-all duration-300 
                 ${isFocused ? 'p-10' : 'p-3'}`}>
                 
-                {/* Visual Area */}
                 {hasVisual && (
                     <div className={`w-full flex justify-center items-center shrink-0 overflow-hidden
                         ${isFocused ? 'h-[440px] mb-6' : 'h-[220px] mb-2'}`}>
@@ -167,6 +174,24 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
     const [textSizeIndex, setTextSizeIndex] = useState(2);
     const [isGlobalRefreshing, setIsGlobalRefreshing] = useState(false);
 
+    // --- TIMER STATE ---
+    const [timerSeconds, setTimerSeconds] = useState(300); // Set by teacher (default 5m)
+    const [timeLeft, setTimeLeft] = useState(300);
+    const [isTimerActive, setIsTimerActive] = useState(false);
+
+    useEffect(() => {
+        let interval = null;
+        if (isTimerActive && timeLeft > 0) {
+            interval = setInterval(() => {
+                setTimeLeft((prev) => prev - 1);
+            }, 1000);
+        } else if (timeLeft === 0) {
+            setIsTimerActive(false);
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [isTimerActive, timeLeft]);
+
     useEffect(() => {
         const handleEsc = (e) => { if (e.key === 'Escape') setFocusedIndex(null); };
         window.addEventListener('keydown', handleEsc);
@@ -197,14 +222,35 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
         setShowAll(!showAll);
     };
 
-    const adjustText = (delta) => {
-        setTextSizeIndex(prev => Math.max(0, Math.min(prev + delta, TEXT_SIZES.length - 1)));
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const adjustTimer = (amount) => {
+        const newTime = Math.max(0, timerSeconds + amount);
+        setTimerSeconds(newTime);
+        setTimeLeft(newTime);
     };
 
     const handleGlobalRefresh = async () => {
+        if (isGlobalRefreshing) return;
         setIsGlobalRefreshing(true);
-        await onRefreshAll();
-        setIsGlobalRefreshing(false);
+        // Clear local UI states before fetching
+        setRevealed({});
+        setShowAll(false);
+        try {
+            await onRefreshAll();
+        } catch (e) {
+            console.error("Global Refresh Error", e);
+        } finally {
+            setIsGlobalRefreshing(false);
+        }
+    };
+
+    const adjustText = (delta) => {
+        setTextSizeIndex(prev => Math.max(0, Math.min(prev + delta, TEXT_SIZES.length - 1)));
     };
 
     return (
@@ -231,6 +277,36 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                         <span className="text-[9px] font-bold text-slate-500 tracking-widest uppercase">Classroom Session</span>
                     </div>
                 </div>
+
+                {/* --- HEADER TIMER CONTROLS --- */}
+                <div className={`flex items-center gap-3 px-4 py-1.5 rounded-2xl border transition-all duration-500
+                    ${timeLeft === 0 ? 'bg-rose-600 border-white ring-4 ring-rose-500/20' : 'bg-white/5 border-white/10'}`}>
+                    <div className="flex flex-col items-center mr-1">
+                        <button onClick={() => adjustTimer(60)} className="hover:text-indigo-400 transition-colors">
+                            <ChevronUp size={14}/>
+                        </button>
+                        <span className={`text-xs font-black tabular-nums tracking-widest ${timeLeft === 0 ? 'text-white animate-pulse' : 'text-indigo-400'}`}>
+                            {formatTime(timeLeft)}
+                        </span>
+                        <button onClick={() => adjustTimer(-60)} className="hover:text-indigo-400 transition-colors">
+                            <ChevronDown size={14}/>
+                        </button>
+                    </div>
+                    <div className="flex gap-1.5">
+                        <button 
+                            onClick={() => setIsTimerActive(!isTimerActive)}
+                            className={`p-2 rounded-xl transition-all shadow-lg ${isTimerActive ? 'bg-amber-500 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-500'}`}
+                        >
+                            {isTimerActive ? <Pause size={18} /> : <Play size={18} />}
+                        </button>
+                        <button 
+                            onClick={() => { setIsTimerActive(false); setTimeLeft(timerSeconds); }}
+                            className="p-2 hover:bg-white/10 rounded-xl text-slate-400 transition-colors"
+                        >
+                            <RotateCcw size={18} />
+                        </button>
+                    </div>
+                </div>
                 
                 <div className="flex items-center gap-3">
                     <div className="flex items-center bg-white/10 rounded-xl p-1 border border-white/10 mr-4">
@@ -243,8 +319,22 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                         </button>
                     </div>
 
-                    <button onClick={handleGlobalRefresh} disabled={isGlobalRefreshing} className="px-5 py-2.5 bg-indigo-400/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl text-xs font-black transition-all uppercase tracking-wider border border-indigo-500/30 flex items-center gap-2 disabled:opacity-70">
-                        {isGlobalRefreshing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} NYTT SET
+                    <button 
+                        onClick={handleGlobalRefresh} 
+                        disabled={isGlobalRefreshing} 
+                        className="px-5 py-2.5 bg-indigo-400/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl text-xs font-black transition-all uppercase tracking-wider border border-indigo-500/30 flex items-center gap-2 disabled:opacity-70"
+                    >
+                        {isGlobalRefreshing ? (
+                            <>
+                                <Loader2 size={14} className="animate-spin" />
+                                <span>SLUMPAR...</span>
+                            </>
+                        ) : (
+                            <>
+                                <RefreshCw size={14} />
+                                <span>NYTT SET</span>
+                            </>
+                        )}
                     </button>
                     <button onClick={toggleAll} className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest ${showAll ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`}>
                         <span>{showAll ? '🙈' : '👁️'}</span> FACIT
@@ -256,11 +346,30 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                 </div>
             </header>
 
-            <main className="flex-1 p-6 overflow-hidden">
+            <main className="flex-1 p-6 overflow-hidden relative">
+                {/* Global Refresh Overlay */}
+                {isGlobalRefreshing && (
+                    <div className="absolute inset-0 z-50 bg-slate-200/40 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
+                        <div className="bg-white p-8 rounded-[3rem] shadow-2xl flex flex-col items-center gap-4">
+                            <Loader2 size={40} className="animate-spin text-indigo-600" />
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Uppdaterar Grid...</span>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 grid-rows-2 gap-6 h-full w-full max-w-[1800px] mx-auto">
                     {questions.slice(0, 6).map((q, i) => (
-                        <div key={i} className="min-h-0 min-w-0">
-                            <DoNowCard index={i} q={q} showAnswer={!!revealed[i]} onToggleAnswer={() => toggleOne(i)} onRefresh={() => onRefreshOne(i)} onFocus={() => setFocusedIndex(i)} lang={lang} textSizeClass={TEXT_SIZES[textSizeIndex]} />
+                        <div key={q.id || `q-${i}`} className="min-h-0 min-w-0">
+                            <DoNowCard 
+                                index={i} 
+                                q={q} 
+                                showAnswer={!!revealed[i]} 
+                                onToggleAnswer={() => toggleOne(i)} 
+                                onRefresh={() => onRefreshOne(i)} 
+                                onFocus={() => setFocusedIndex(i)} 
+                                lang={lang} 
+                                textSizeClass={TEXT_SIZES[textSizeIndex]} 
+                            />
                         </div>
                     ))}
                 </div>

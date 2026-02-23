@@ -156,15 +156,15 @@ export class GeometryGenerator {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'area_square', type: 'calculate' },
             { key: 'area_rect', type: 'calculate' },
-            { key: 'area_trap', type: 'calculate' }
+            { key: 'area_parallel', type: 'calculate' }
         ];
         const v = variationKey || this.getVariation(pool, options);
         const b = MathUtils.randomInt(5, 12), h = MathUtils.randomInt(3, 8);
 
         return {
             renderData: {
-                geometry: { type: v === 'area_trap' ? 'parallelogram' : 'rectangle', width: b, height: h, labels: { b, h } },
-                description: lang === 'sv' ? "Beräkna figurens area (avrunda till en decimal)." : "Calculate the area of the figure.",
+                geometry: { type: v === 'area_parallel' ? 'parallelogram' : 'rectangle', width: b, height: h, labels: { b, h } },
+                description: lang === 'sv' ? "Beräkna figurens area." : "Calculate the area of the figure.",
                 answerType: 'numeric'
             },
             token: this.toBase64((b * h).toString()), variationKey: v, type: 'calculate',
@@ -186,7 +186,7 @@ export class GeometryGenerator {
         const v = variationKey || this.getVariation(pool, options);
 
         if (v === 'perimeter_triangle_right') {
-            // Randomize sides using Pythagorean Triple Logic (non-hardcoded)
+            // pythagorean triple logic
             const m = MathUtils.randomInt(2, 5), n = 1;
             const a = m*m - n*n, b = 2*m*n, c = m*m + n*n;
             const ans = a + b + c;
@@ -278,17 +278,65 @@ export class GeometryGenerator {
         };
     }
 
-    // --- LEVEL 5: CIRCLES ---
+    // --- LEVEL 5: CIRCLES (REFACTORED & FIXED) ---
     private level5_Circles(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'circle_area', type: 'calculate' },
+            { key: 'circle_perimeter', type: 'calculate' },
             { key: 'semicircle_area', type: 'calculate' },
             { key: 'semicircle_perimeter', type: 'calculate' },
+            { key: 'area_quarter', type: 'calculate' },
             { key: 'perimeter_quarter', type: 'calculate' }
         ];
         const v = variationKey || this.getVariation(pool, options);
-        const r = MathUtils.randomInt(5, 12);
+        const r = MathUtils.randomInt(4, 12);
+        const d = 2 * r;
         const pi = 3.14;
+
+        // --- FULL CIRCLE AREA ---
+        if (v === 'circle_area') {
+            // FIX: Use Math.random for boolean to avoid missing MathUtils method
+            const isDiameter = Math.random() < 0.5;
+            const ans = Math.round((pi * r * r) * 100) / 100;
+            return {
+                renderData: {
+                    geometry: { type: 'circle', radius: r, labels: isDiameter ? { diameter: d } : { r }, show: isDiameter ? 'diameter' : 'radius' },
+                    description: lang === 'sv' ? "Beräkna cirkelns area (använd pi = 3,14)." : "Calculate the area of the circle (use pi = 3.14).",
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+                clues: isDiameter ? [
+                    { text: lang === 'sv' ? `Diametern är ${d}. Radien (r) är hälften.` : `The diameter is ${d}. The radius (r) is half.`, latex: `r = \\frac{${d}}{2} = ${r}` },
+                    { text: lang === 'sv' ? `Area = pi · r²` : `Area = pi · r²`, latex: `3,14 · ${r}^2 = ${ans}` },
+                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                ] : [
+                    { text: lang === 'sv' ? "Använd formeln pi gånger radien i kvadrat." : "Use the formula pi times the radius squared.", latex: `3,14 · ${r}^2 = ${ans}` },
+                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                ]
+            };
+        }
+
+        // --- FULL CIRCLE PERIMETER (CIRCUMFERENCE) ---
+        if (v === 'circle_perimeter') {
+            const isDiameter = Math.random() < 0.5;
+            const ans = Math.round((pi * d) * 100) / 100;
+            return {
+                renderData: {
+                    geometry: { type: 'circle', radius: r, labels: isDiameter ? { diameter: d } : { r }, show: isDiameter ? 'diameter' : 'radius' },
+                    description: lang === 'sv' ? "Beräkna cirkelns omkrets (använd pi = 3,14)." : "Calculate the circumference of the circle (use pi = 3.14).",
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+                clues: isDiameter ? [
+                    { text: lang === 'sv' ? "Omkretsen är diametern gånger pi." : "The circumference is the diameter times pi.", latex: `3,14 · ${d} = ${ans}` },
+                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                ] : [
+                    { text: lang === 'sv' ? `Diametern är dubbla radien: ${d}.` : `The diameter is twice the radius: ${d}.` },
+                    { text: lang === 'sv' ? "Omkretsen är diametern gånger pi." : "The circumference is the diameter times pi.", latex: `3,14 · ${d} = ${ans}` },
+                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                ]
+            };
+        }
 
         if (v === 'semicircle_area') {
             const fullArea = pi * r * r;
@@ -302,35 +350,52 @@ export class GeometryGenerator {
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { text: lang === 'sv' ? "En halvcirkel är hälften av en hel cirkel." : "A semicircle is half of a full circle." },
-                    { text: lang === 'sv' ? "Steg 1: Räkna ut arean för en hel cirkel med radien " + r + " cm." : "Step 1: Calculate the area of a full circle with radius " + r + " cm.", latex: `3,14 · ${r}^2 = ${fullArea}` },
-                    { text: lang === 'sv' ? "Steg 2: Dela hela cirkelns area med 2 för att få halvcirkeln." : "Step 2: Divide the full circle's area by 2 to get the semicircle.", latex: `\\frac{${fullArea}}{2} = ${ans}` },
+                    { text: lang === 'sv' ? `Hela cirkelns area: 3,14 · ${r}² = ${fullArea}` : `Full circle area: 3.14 · ${r}² = ${fullArea}` },
+                    { text: lang === 'sv' ? `Halvera: ${fullArea} / 2 = ${ans}` : `Halve: ${fullArea} / 2 = ${ans}` },
                     { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
                 ]
             };
         }
 
         if (v === 'semicircle_perimeter') {
-            const diameter = 2 * r;
-            const arc = (pi * diameter) / 2;
-            const ans = Math.round((arc + diameter) * 100) / 100;
+            const arc = (pi * d) / 2;
+            const ans = Math.round((arc + d) * 100) / 100;
             return {
                 renderData: {
-                    geometry: { type: 'semicircle', radius: r, labels: { diameter }, show: 'diameter' },
+                    geometry: { type: 'semicircle', radius: r, labels: { diameter: d }, show: 'diameter' },
                     description: lang === 'sv' ? "Beräkna halvcirkelns omkrets." : "Calculate the perimeter of the semicircle.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Omkretsen runt en halvcirkel består av två delar: den runda bågen och den raka diametern." : "The perimeter around a semicircle consists of two parts: the curved arc and the straight diameter." },
-                    { text: lang === 'sv' ? "Steg 1: Beräkna halva omkretsen av en hel cirkel (bågen)." : "Step 1: Calculate half the circumference of a full circle (the arc).", latex: `\\frac{3,14 · ${diameter}}{2} = ${arc}` },
-                    { text: lang === 'sv' ? "Steg 2: För att stänga figuren måste vi lägga till den raka diametern." : "Step 2: To close the figure, we must add the straight diameter.", latex: `${arc} + ${diameter} = ${ans}` },
+                    { text: lang === 'sv' ? "Omkretsen är bågen plus den raka diametern." : "The perimeter is the arc plus the straight diameter." },
+                    { text: lang === 'sv' ? `Bågen (halv omkrets): (3,14 · ${d})/2 = ${arc}` : `Arc (half circumference): (3.14 · ${d})/2 = ${arc}` },
+                    { text: lang === 'sv' ? `Total: ${arc} + ${d} = ${ans}` : `Total: ${arc} + ${d} = ${ans}` },
+                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                ]
+            };
+        }
+
+        if (v === 'area_quarter') {
+            const fullArea = pi * r * r;
+            const ans = Math.round((fullArea / 4) * 100) / 100;
+            return {
+                renderData: {
+                    geometry: { type: 'quarter_circle', radius: r, labels: { r } },
+                    description: lang === 'sv' ? "Beräkna kvartscirkelns area." : "Calculate the area of the quarter circle.",
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+                clues: [
+                    { text: lang === 'sv' ? `Hela cirkelns area: 3,14 · ${r}² = ${fullArea}` : `Full circle area: 3.14 · ${r}² = ${fullArea}` },
+                    { text: lang === 'sv' ? `Dela på fyra: ${fullArea} / 4 = ${ans}` : `Divide by four: ${fullArea} / 4 = ${ans}` },
                     { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
                 ]
             };
         }
 
         if (v === 'perimeter_quarter') {
-            const arc = (2 * pi * r) / 4;
+            const arc = (pi * d) / 4;
             const ans = Math.round((arc + r + r) * 100) / 100;
             return {
                 renderData: {
@@ -340,28 +405,15 @@ export class GeometryGenerator {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Omkretsen på en kvartscirkel består av bågen plus de två raka radierna." : "The perimeter of a quarter circle consists of the arc plus the two straight radii." },
-                    { text: lang === 'sv' ? "Steg 1: Räkna ut bågens längd (en fjärdedel av en hel cirkels omkrets)." : "Step 1: Calculate the arc length (one fourth of a full circle's circumference).", latex: `\\frac{2 · 3,14 · ${r}}{4} = ${arc}` },
-                    { text: lang === 'sv' ? "Steg 2: Addera de två radierna för att få hela sträckan runt figuren." : "Step 2: Add the two radii to get the total distance around the figure.", latex: `${arc} + ${r} + ${r} = ${ans}` },
+                    { text: lang === 'sv' ? "Kvartscirkeln har en båge plus två raka radier." : "The quarter circle has one arc plus two straight radii." },
+                    { text: lang === 'sv' ? `Bågen: (3,14 · ${d})/4 = ${arc}` : `Arc: (3.14 · ${d})/4 = ${arc}` },
+                    { text: lang === 'sv' ? `Total: ${arc} + ${r} + ${r} = ${ans}` : `Total: ${arc} + ${r} + ${r} = ${ans}` },
                     { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
                 ]
             };
         }
 
-        const fullArea = Math.round((pi * r * r) * 100) / 100;
-        return {
-            renderData: {
-                geometry: { type: 'circle', radius: r, labels: { r }, show: 'radius' },
-                description: lang === 'sv' ? "Beräkna cirkelns area." : "Calculate the area of the circle.",
-                answerType: 'numeric'
-            },
-            token: this.toBase64(fullArea.toString()), variationKey: v, type: 'calculate',
-            clues: [
-                { text: lang === 'sv' ? "Formeln för en cirkels area är pi multiplicerat med radien i kvadrat." : "The formula for a circle's area is pi multiplied by the radius squared.", latex: "A = \\pi · r^2" },
-                { text: lang === 'sv' ? "Uträkning: 3,14 · " + r + " · " + r : "Calculation: 3.14 · " + r + " · " + r, latex: `3,14 · ${r * r} = ${fullArea}` },
-                { text: lang === 'sv' ? `Svar: ${fullArea}` : `Answer: ${fullArea}` }
-            ]
-        };
+        return this.level1_PerimeterBasic(lang); // fallback
     }
 
     // --- LEVEL 6: COMPOSITE ADVANCED ---

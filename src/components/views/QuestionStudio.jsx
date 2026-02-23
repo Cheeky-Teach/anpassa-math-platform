@@ -3,7 +3,7 @@ import {
   ChevronRight, ChevronLeft, Plus, Trash2, Layout, Send, Info, Layers, Search, Zap, 
   FileText, Grid3X3, RefreshCcw, Loader2, Maximize2, AlertTriangle, 
   Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock,
-  PanelLeftClose, PanelLeftOpen, X, Globe, Building2, Lock, Copy, Check, Filter,
+  PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, X, Globe, Building2, Lock, Copy, Check, Filter,
   MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical, Brain, Calculator, Target, 
   Image as ImageIcon, FileText as TextIcon
 } from 'lucide-react';
@@ -112,6 +112,7 @@ export default function QuestionStudio({
 
   // --- STATE ---
   const [isPane1Collapsed, setIsPane1Collapsed] = useState(false); 
+  const [isPane4Collapsed, setIsPane4Collapsed] = useState(false);
   const [setupMode, setSetupMode] = useState(studioMode); 
   const [activeSheetId, setActiveSheetId] = useState(null); 
   const [savedSheets, setSavedSheets] = useState([]);
@@ -207,7 +208,6 @@ export default function QuestionStudio({
         return <PercentGrid data={rd.percentGrid || rd.geometry} />;
     }
 
-    // Wrap VolumeVisualization to prevent observer collapse
     if (rd.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'].includes(rd.geometry.type)) {
         return (
             <div style={{ width: '220px', height: '180px', display: 'flex', justifyContent: 'center' }}>
@@ -222,7 +222,6 @@ export default function QuestionStudio({
     if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
     if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
 
-    // Fallback: pass full geometry data object
     if (rd.geometry) return <GeometryVisual data={rd.geometry} width={220} height={180} />;
     
     return null;
@@ -383,7 +382,11 @@ export default function QuestionStudio({
             if (!item.topicId || !item.variationKey) return item;
             const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}`);
             const data = await res.json();
-            return { ...item, resolvedData: data };
+            return { 
+                ...item, 
+                id: crypto.randomUUID(), 
+                resolvedData: data 
+            };
         }));
         setPacket(updatedPacket);
         setIsSaved(false);
@@ -509,6 +512,7 @@ export default function QuestionStudio({
       </header>
 
       <div className="flex flex-1 overflow-hidden relative z-10">
+        {/* PANE 1: Topics */}
         <div className={`bg-white border-r border-slate-300 flex flex-col shrink-0 transition-all duration-300 ${isPane1Collapsed ? 'w-16' : 'w-72'}`}>
           <div className={`p-4 border-b flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-end'}`}><button onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">{isPane1Collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}</button></div>
           <div className={`flex-1 overflow-y-auto custom-scrollbar transition-opacity duration-200 ${isPane1Collapsed ? 'opacity-0 invisible' : 'opacity-100 p-4 space-y-6'}`}>
@@ -516,6 +520,7 @@ export default function QuestionStudio({
           </div>
         </div>
 
+        {/* PANE 2: Variations */}
         <div className="w-[340px] bg-slate-50/80 backdrop-blur-sm border-r border-slate-300 flex flex-col shrink-0">
           <div className="p-6 border-b bg-white shrink-0 shadow-sm space-y-4">
               <h1 className="text-lg font-black text-slate-900 uppercase italic truncate leading-none">{currentTopic?.name[lang]}</h1>
@@ -525,7 +530,7 @@ export default function QuestionStudio({
                       onClick={() => setHideExtra(!hideExtra)} 
                       className={`w-10 h-5 rounded-full transition-all relative p-1 ${hideExtra ? 'bg-indigo-600' : 'bg-slate-300'}`}
                   >
-                      <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${hideExtra ? 'translate-x-5' : 'translate-x-0'}`} />
+                    <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${hideExtra ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
               </div>
           </div>
@@ -544,16 +549,13 @@ export default function QuestionStudio({
                         `}
                     >
                         <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg.replace('/20', '')}`} />
-
                         <div className="flex justify-between items-start mb-2">
                             <h4 className="font-black text-xs uppercase tracking-tight text-slate-800 leading-tight pr-4">{v.name[lang]}</h4>
                             <div className={`shrink-0 px-2 py-0.5 rounded-md border ${styles.border} ${styles.bg} ${styles.text} text-[8px] font-black uppercase flex items-center gap-1`}>
                                 {styles.icon} {styles.label}
                             </div>
                         </div>
-                        
                         <p className="text-[10px] font-medium text-slate-400 line-clamp-2 mb-4 italic leading-relaxed">{v.desc[lang]}</p>
-                        
                         <div className="flex items-center gap-2">
                             <div className="flex items-center bg-slate-100 rounded-xl p-1">
                                 <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} className="w-8 h-8 flex items-center justify-center hover:bg-white rounded-lg transition-all text-slate-400 hover:text-indigo-600"><Minus size={12}/></button>
@@ -574,6 +576,7 @@ export default function QuestionStudio({
           </div>
         </div>
 
+        {/* PANE 3: Workspace */}
         <div className="flex-1 p-8 flex flex-col overflow-hidden relative">
           <div className="flex justify-center mb-6 gap-4">
               <div className="bg-white/80 backdrop-blur-md p-1 rounded-2xl shadow-xl flex gap-1 border border-white">
@@ -605,8 +608,12 @@ export default function QuestionStudio({
                   <div className="p-12 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">{isPreviewLoading ? <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" size={48} /></div> : !previewData ? <div className="h-full flex items-center justify-center text-slate-200 uppercase font-black tracking-widest italic">{t.select_hint}</div> : <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500"><div className="w-full flex justify-center drop-shadow-md">{renderVisual(previewData?.renderData)}</div><div className="text-2xl text-slate-800 font-bold text-center px-10 leading-relaxed"><MathDisplay content={previewData.renderData.description} /></div>{previewData.renderData.latex && <div className="text-4xl text-indigo-600 bg-indigo-50/50 p-10 rounded-[2.5rem] border-2 border-indigo-100 shadow-inner text-center font-serif"><MathDisplay content={`$$${previewData.renderData.latex}$$`} /></div>}{renderOptions(previewData.renderData?.options)}</div>}</div>
               </div>
           ) : (
-              <div className="flex-1 overflow-y-auto custom-scrollbar pb-24">
-                  <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] mx-auto p-[15mm] flex flex-col animate-in slide-in-from-bottom-6">
+              /* WORKSHEET ZOOMED OUT VIEW */
+              <div className="flex-1 overflow-auto custom-scrollbar pb-24 flex justify-center items-start bg-slate-200/50 p-4 rounded-[3rem]">
+                  <div 
+                    className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-[15mm] flex flex-col animate-in slide-in-from-bottom-6 origin-top"
+                    style={{ transform: 'scale(0.85)', transformOrigin: 'top center' }}
+                  >
                       <header className="border-b-2 border-black pb-2 mb-4 flex items-end justify-between"><h1 className="text-lg font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1><div className="flex gap-6 w-2/3 justify-end text-[10px] font-black uppercase tracking-widest"><div className="border-b-2 border-slate-100 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div><div className="border-b-2 border-slate-100 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div></div></header>
                       <div className={`grid grid-cols-6 gap-x-8 ${showWorkArea ? 'gap-y-6' : 'gap-y-1'} items-start content-start`}>
                           {packet.map((item, idx) => (
@@ -641,24 +648,47 @@ export default function QuestionStudio({
           )}
         </div>
 
-        <div className={`bg-white/90 backdrop-blur-sm border-l border-slate-300 flex flex-col shadow-2xl shrink-0 w-80 transition-all`}>
-          <div className="p-6 border-b flex items-center justify-between bg-slate-50/80">
-              <div className="flex items-center gap-2"><Layers size={16} className="text-slate-400" /><h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 italic">{t.selected_questions}</h2><div className="bg-slate-900 text-white px-2 py-0.5 rounded-lg text-[10px] font-black">{packet.length}</div></div>
-              <button onClick={() => { if(window.confirm(t.clear_all + "?")) setPacket([]); }} className="text-slate-300 hover:text-rose-500 transition-colors flex items-center gap-1 text-[9px] font-black uppercase tracking-widest"><Eraser size={14}/> {t.clear_all}</button>
+        {/* PANE 4: Selected Questions (Refactored to be collapsible and narrower) */}
+        <div className={`bg-white/90 backdrop-blur-sm border-l border-slate-300 flex flex-col shadow-2xl shrink-0 transition-all duration-300 ${isPane4Collapsed ? 'w-16' : 'w-72'}`}>
+          <div className={`p-4 border-b flex items-center ${isPane4Collapsed ? 'justify-center' : 'justify-between'} bg-slate-50/80`}>
+              {!isPane4Collapsed && (
+                <div className="flex items-center gap-2">
+                    <Layers size={14} className="text-slate-400" />
+                    <h2 className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.selected_questions}</h2>
+                    <div className="bg-slate-900 text-white px-2 py-0.5 rounded-lg text-[9px] font-black">{packet.length}</div>
+                </div>
+              )}
+              <button onClick={() => setIsPane4Collapsed(!isPane4Collapsed)} className="p-1 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">
+                {isPane4Collapsed ? <PanelRightOpen size={20} /> : <PanelRightClose size={20} />}
+              </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-slate-50/30">
-              {packet.map((item, idx) => (
-                  <div key={item.id} className="p-4 bg-white border border-slate-200 rounded-2xl flex justify-between items-center group shadow-sm hover:shadow-md transition-all">
-                      <div className="min-w-0"><div className="flex items-center gap-2 mb-1"><span className="text-[9px] font-black text-slate-300">#{idx + 1}</span><span className={`w-2 h-2 rounded-full ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-slate-200'}`} /></div><div className="text-[11px] font-black text-slate-800 truncate pr-4">{item.name}</div></div>
-                      <button onClick={() => setPacket(packet.filter(p => p.id !== item.id))} className="p-1.5 text-slate-200 hover:text-rose-500 rounded-lg transition-all"><Trash2 size={16}/></button>
-                  </div>
-              ))}
-          </div>
-          {setupMode === 'worksheet' && (
-              <div className="p-6 border-t bg-white space-y-6">
-                  <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t.answer_key_toggle}</span><button onClick={() => setIncludeAnswerKey(!includeAnswerKey)} className={`w-12 h-6 rounded-full transition-all relative p-1 ${includeAnswerKey ? 'bg-emerald-500' : 'bg-slate-200'}`}><div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${includeAnswerKey ? 'translate-x-6' : 'translate-x-0'}`} /></button></div>
-                  {includeAnswerKey && (<div className="animate-in fade-in slide-in-from-bottom-2 space-y-2"><label className="text-[9px] font-black uppercase text-slate-400 block">{t.answer_style_label}</label><div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200"><button onClick={() => setAnswerKeyStyle('compact')} className={`py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${answerKeyStyle === 'compact' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Kompakt</button><button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Steg</button></div></div>)}
-              </div>
+
+          {!isPane4Collapsed && (
+            <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-200">
+                <div className="p-3 border-b flex justify-end">
+                    <button onClick={() => { if(window.confirm(t.clear_all + "?")) setPacket([]); }} className="text-slate-300 hover:text-rose-500 transition-colors flex items-center gap-1 text-[9px] font-black uppercase tracking-widest"><Eraser size={12}/> {t.clear_all}</button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-slate-50/30">
+                    {packet.map((item, idx) => (
+                        <div key={item.id} className="p-3 bg-white border border-slate-200 rounded-xl flex justify-between items-center group shadow-sm hover:shadow-md transition-all">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[9px] font-black text-slate-300">#{idx + 1}</span>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-slate-200'}`} />
+                                </div>
+                                <div className="text-[10px] font-bold text-slate-700 truncate pr-4 uppercase">{item.name}</div>
+                            </div>
+                            <button onClick={() => setPacket(packet.filter(p => p.id !== item.id))} className="p-1 text-slate-200 hover:text-rose-500 rounded-lg transition-all"><Trash2 size={14}/></button>
+                        </div>
+                    ))}
+                </div>
+                {setupMode === 'worksheet' && (
+                    <div className="p-4 border-t bg-white space-y-4">
+                        <div className="flex items-center justify-between"><span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{t.answer_key_toggle}</span><button onClick={() => setIncludeAnswerKey(!includeAnswerKey)} className={`w-10 h-5 rounded-full transition-all relative p-1 ${includeAnswerKey ? 'bg-emerald-500' : 'bg-slate-200'}`}><div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${includeAnswerKey ? 'translate-x-5' : 'translate-x-0'}`} /></button></div>
+                        {includeAnswerKey && (<div className="animate-in fade-in slide-in-from-bottom-2 space-y-2"><label className="text-[8px] font-black uppercase text-slate-400 block">{t.answer_style_label}</label><div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg border border-slate-200"><button onClick={() => setAnswerKeyStyle('compact')} className={`py-1 rounded-md text-[8px] font-black uppercase transition-all ${answerKeyStyle === 'compact' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Kompakt</button><button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-md text-[8px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Steg</button></div></div>)}
+                    </div>
+                )}
+            </div>
           )}
         </div>
       </div>
