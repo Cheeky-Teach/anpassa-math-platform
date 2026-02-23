@@ -50,7 +50,8 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
             trial_btn: "Börja 30 dagars testperiod",
             login_link: "Logga in istället",
             signup_link: "Skapa konto här",
-            btn_continue: "Fortsätt"
+            btn_continue: "Fortsätt",
+            signup_success: "Konto skapat! Vidare till verifiering..."
         },
         en: { 
             student_h: studentMode === 'live' ? "Live Room" : "Your Class",
@@ -71,11 +72,12 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
             trial_btn: "Start 30-day free trial",
             login_link: "Login instead",
             signup_link: "Create account here",
-            btn_continue: "Continue"
+            btn_continue: "Continue",
+            signup_success: "Account created! Proceeding to verification..."
         }
     }[lang];
 
-    // --- ESCAPE HATCH: Breaks the Onboarding Loop ---
+    // --- ESCAPE HATCH ---
     const handleAbort = async () => {
         setLoading(true);
         await supabase.auth.signOut();
@@ -90,21 +92,30 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         return res.slice(0,3) + "-" + res.slice(3);
     };
 
-    // --- OAUTH HANDSHAKE INTERCEPTOR ---
+    // --- ENHANCED AUTH LISTENER (FIXED FEEDBACK LOOP) ---
     useEffect(() => {
-        const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (session?.user) {
                 const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+                
                 if (!profile || !profile.subscription_status || !profile.class_code) {
                     setPendingUser(session.user);
-                    setFullName(session.user.user_metadata.full_name || '');
+                    
+                    // FIX: Only auto-populate name if current state is empty
+                    // This prevents the "spamming" bug where typing is overwritten by metadata
+                    setFullName(prev => {
+                        if (prev !== '') return prev; 
+                        return session.user.user_metadata?.full_name || '';
+                    });
+
                     setShowOnboarding(true);
+                    setLoading(false);
                 }
             }
-        };
-        checkSession();
-    }, []);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []); // Empty dependency array is critical here
 
     // --- SCHOOL SEARCH ---
     useEffect(() => {
@@ -135,59 +146,55 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         setMessage(null);
         try {
             if (authMode === 'signup') {
-                const { data, error } = await supabase.auth.signUp({ email, password });
+                const { data, error } = await supabase.auth.signUp({ 
+                    email, 
+                    password,
+                    options: { data: { full_name: fullName } }
+                });
+                
                 if (error) throw error;
-                if (data.user) { setPendingUser(data.user); setShowOnboarding(true); }
+                if (data.user) {
+                    setPendingUser(data.user);
+                    setMessage({ type: 'success', text: t.signup_success });
+                }
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
                 onSuccess({ role: 'teacher', user: data.user });
             }
-        } catch (err) { setMessage({ type: 'error', text: err.message }); }
-        finally { setLoading(false); }
+        } catch (err) { 
+            setMessage({ type: 'error', text: err.message }); 
+            setLoading(false);
+        }
     };
 
-    // --- VERIFIED ONBOARDING SUBMIT ---
     const handleOnboardingSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setMessage(null);
 
         try {
-            // 1. Verify Invite Code via API
             const verifyRes = await fetch('/api/verify-invite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ inviteCode: inviteCodeInput })
             });
 
-            const contentType = verifyRes.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                throw new Error(t.error_api);
-            }
+            if (!verifyRes.ok) throw new Error(t.error_invite);
 
-            const verifyData = await verifyRes.json();
-            if (!verifyRes.ok || !verifyData.valid) throw new Error(t.error_invite);
-
-            // 2. Handle School Logic
             let schoolId = null;
             let schoolName = isIndividual ? "Individual Account" : schoolInput.trim();
 
             if (!isIndividual) {
                 if (!schoolName) throw new Error(t.error_school);
-                
-                // Check if school already exists or create new one
                 const { data: exactMatch } = await supabase.from('schools').select('id').eq('name', schoolName).maybeSingle();
-                if (exactMatch) {
-                    schoolId = exactMatch.id;
-                } else {
-                    const { data: newS, error: sErr } = await supabase.from('schools').insert([{ name: schoolName }]).select().single();
-                    if (sErr) throw sErr;
+                if (exactMatch) schoolId = exactMatch.id;
+                else {
+                    const { data: newS } = await supabase.from('schools').insert([{ name: schoolName }]).select().single();
                     schoolId = newS?.id;
                 }
             }
 
-            // 3. Update Profile
             const { error: upErr } = await supabase.from('profiles').update({
                 full_name: fullName,
                 school_name: schoolName,
@@ -196,14 +203,10 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
             }).eq('id', pendingUser.id);
 
             if (upErr) throw upErr;
-
             setShowOnboarding(false);
             setShowPlanPicker(true);
-        } catch (err) {
-            setMessage({ type: 'error', text: err.message });
-        } finally {
-            setLoading(false);
-        }
+        } catch (err) { setMessage({ type: 'error', text: err.message }); }
+        finally { setLoading(false); }
     };
 
     const startTrial = async () => {
@@ -217,76 +220,48 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                 subscription_end_date: endDate.toISOString(),
                 class_code: classCode 
             }).eq('id', pendingUser.id);
-            
             if (error) throw error;
             onSuccess({ role: 'teacher', user: pendingUser });
         } catch (err) { setMessage({ type: 'error', text: err.message }); }
         finally { setLoading(false); }
     };
 
-    // --- RENDER ORCHESTRATION ---
+    // --- RENDERING ---
 
-    // View 1: Plan Picker
-if (showPlanPicker) {
+    if (showPlanPicker) {
         return (
-            <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans overflow-y-auto">
+            <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans">
                 <button onClick={handleAbort} className="absolute top-10 left-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700 hover:text-emerald-900 transition-all z-20">
                     <ChevronLeft size={18} /> {t.back}
                 </button>
-                
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl font-bold uppercase italic tracking-tighter text-slate-900">{t.plan_h}</h2>
-                    <p className="text-slate-500 font-medium">Välj den nivå som passar din undervisning bäst.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
-                    
-                    {/* TIER 1: FREE TRIAL (Your current logic) */}
-                    <div className="bg-white p-8 rounded-[3rem] shadow-xl border-4 border-emerald-50 flex flex-col items-center text-center transition-all hover:scale-[1.02]">
-                        <Zap className="text-emerald-500 mb-4" size={40} />
-                        <h3 className="text-lg font-black uppercase mb-1 text-slate-800">Testperiod</h3>
-                        <div className="text-3xl font-black mb-6 text-slate-800">0 kr<span className="text-xs text-slate-400 font-medium"> / 30 dgr</span></div>
-                        <ul className="text-left text-xs space-y-3 mb-8 text-slate-600 font-bold uppercase tracking-tight">
-                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-emerald-500"/> Alla funktioner ingår</li>
-                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-emerald-500"/> Ingen bindningstid</li>
-                        </ul>
-                        <button onClick={startTrial} className="mt-auto w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all">
+                <h2 className="text-4xl font-bold uppercase italic mb-12 tracking-tighter text-slate-900">{t.plan_h}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full">
+                    <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-emerald-50 flex flex-col items-center">
+                        <Zap className="text-emerald-500 mb-4" size={32} />
+                        <h3 className="text-lg font-bold uppercase mb-2">Testperiod</h3>
+                        <div className="text-3xl font-black mb-6">0 kr<span className="text-xs text-slate-400 font-medium"> / 30 dgr</span></div>
+                        <button onClick={startTrial} className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:bg-emerald-700 shadow-lg">
                             {loading ? <Loader2 className="animate-spin mx-auto" /> : t.trial_btn}
                         </button>
                     </div>
-
-                    {/* TIER 2: PRO TEACHER (Placeholder) */}
-                    <div className="bg-slate-900 p-8 rounded-[3rem] shadow-2xl border-4 border-indigo-500/20 flex flex-col items-center text-center relative overflow-hidden transition-all hover:scale-[1.02]">
-                        <div className="absolute top-4 right-8 bg-indigo-500 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Populär</div>
-                        <Star className="text-indigo-400 mb-4" size={40} />
-                        <h3 className="text-lg font-black uppercase mb-1 text-white">Pro Lärare</h3>
+                    <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl border-4 border-indigo-500/30 flex flex-col items-center relative">
+                        <div className="absolute -top-3 bg-indigo-500 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase">Mest populär</div>
+                        <Star className="text-indigo-400 mb-4" size={32} />
+                        <h3 className="text-lg font-bold uppercase mb-2 text-white">Pro Lärare</h3>
                         <div className="text-3xl font-black mb-6 text-white">99 kr<span className="text-xs text-slate-400 font-medium"> / mån</span></div>
-                        <ul className="text-left text-xs space-y-3 mb-8 text-slate-300 font-bold uppercase tracking-tight">
-                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-indigo-400"/> Obegränsade Live-rum</li>
-                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-indigo-400"/> Fullständig historik</li>
-                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-indigo-400"/> Prioriterad support</li>
-                        </ul>
-                        <button disabled className="mt-auto w-full py-4 bg-indigo-600/50 text-white/50 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-not-allowed">Kommer Snart</button>
+                        <button disabled className="w-full py-4 bg-slate-800 text-slate-500 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Kommer snart</button>
                     </div>
-
-                    {/* TIER 3: SCHOOL / MUNICIPALITY (Placeholder) */}
-                    <div className="bg-white p-8 rounded-[3rem] shadow-xl border-4 border-slate-50 flex flex-col items-center text-center transition-all hover:scale-[1.02]">
-                        <Building2 className="text-slate-400 mb-4" size={40} />
-                        <h3 className="text-lg font-black uppercase mb-1 text-slate-800">Skola / Kommun</h3>
-                        <div className="text-2xl font-black mb-6 text-slate-800 italic uppercase">Offert</div>
-                        <ul className="text-left text-xs space-y-3 mb-8 text-slate-600 font-bold uppercase tracking-tight">
-                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-slate-400"/> Central administration</li>
-                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-slate-400"/> SSO / Skolfederation</li>
-                        </ul>
-                        <button disabled className="mt-auto w-full py-4 bg-slate-100 text-slate-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-not-allowed text-center">Kontakta oss</button>
+                    <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-slate-50 flex flex-col items-center">
+                        <Building2 className="text-slate-400 mb-4" size={32} />
+                        <h3 className="text-lg font-bold uppercase mb-2">Skola</h3>
+                        <div className="text-xl font-black mb-6 uppercase italic text-slate-400">Offert</div>
+                        <button disabled className="w-full py-4 bg-slate-100 text-slate-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Kontakta oss</button>
                     </div>
-
                 </div>
             </div>
         );
     }
 
-    // View 2: Onboarding Fields
     if (showOnboarding) {
         return (
             <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans">
@@ -328,13 +303,18 @@ if (showPlanPicker) {
                         )}
                         <button disabled={loading} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto" /> : t.btn_continue}</button>
                     </form>
-                    {message && <div className="mt-8 p-5 rounded-2xl text-xs font-bold text-center flex items-center justify-center gap-3 border animate-in fade-in slide-in-from-top-2 bg-rose-50 text-rose-600 border-rose-100"><AlertCircle size={16}/> {message.text}</div>}
+                    {message && (
+                        <div className={`mt-8 p-5 rounded-2xl text-xs font-bold text-center flex items-center justify-center gap-3 border animate-in fade-in slide-in-from-top-2 ${
+                            message.type === 'error' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                        }`}>
+                            <AlertCircle size={16}/> {message.text}
+                        </div>
+                    )}
                 </div>
             </div>
         );
     }
 
-    // View 3: Initial Login/Signup/Student Code
     return (
         <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 relative font-sans overflow-hidden">
             <button onClick={onBack} className="absolute top-10 left-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700 hover:text-emerald-900 transition-all z-20">
@@ -344,27 +324,29 @@ if (showPlanPicker) {
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold uppercase italic tracking-tighter text-slate-800 leading-none">{studentMode ? t.student_h : t.teacher_h}</h2>
                 </div>
-                {studentMode ? (
-                    <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-6">
-                        <input type="text" maxLength={12} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="w-full p-6 rounded-[2rem] text-center text-3xl font-bold uppercase tracking-[0.2em] outline-none transition-all border-4 bg-amber-50/30 border-amber-50 focus:border-amber-500 focus:bg-white" placeholder="KOD" required />
-                        <button className="w-full py-6 text-white rounded-[2rem] font-bold text-xl uppercase tracking-widest shadow-xl hover:bg-amber-600 active:scale-95 transition-all">{t.btn_join}</button>
+                <div className="space-y-8">
+                    <button onClick={handleGoogleLogin} className="w-full py-4 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-4 font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-[0.98]">
+                        <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Google
+                    </button>
+                    <div className="relative py-2 flex items-center"><div className="flex-grow border-t border-slate-100"></div><span className="px-4 text-[9px] font-bold text-slate-300 uppercase tracking-widest">Eller</span><div className="flex-grow border-t border-slate-100"></div></div>
+                    <form onSubmit={handleEmailAuth} className="space-y-4">
+                        <div className="relative"><Mail className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="email" placeholder="E-post" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>
+                        <div className="relative"><Lock className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="password" placeholder="Lösenord" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>
+                        <button className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto" /> : authMode === 'signup' ? "Skapa konto" : "Logga in"}</button>
                     </form>
-                ) : (
-                    <div className="space-y-8">
-                        <button onClick={handleGoogleLogin} className="w-full py-4 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-4 font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-[0.98]">
-                            <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Google
-                        </button>
-                        <div className="relative py-2 flex items-center"><div className="flex-grow border-t border-slate-100"></div><span className="px-4 text-[9px] font-bold text-slate-300 uppercase tracking-widest">Eller</span><div className="flex-grow border-t border-slate-100"></div></div>
-                        <form onSubmit={handleEmailAuth} className="space-y-4">
-                            <div className="relative"><Mail className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="email" placeholder="E-post" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>
-                            {authMode !== 'forgot' && <div className="relative"><Lock className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="password" placeholder="Lösenord" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>}
-                            <button className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto" /> : authMode === 'signup' ? "Skapa konto" : "Logga in"}</button>
-                        </form>
-                        <div className="flex flex-col items-center gap-3 pt-2">
-                            <button onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setMessage(null); }} className="text-xs font-bold text-emerald-700 hover:text-emerald-900 uppercase tracking-widest transition-colors">{authMode === 'login' ? t.signup_link : t.login_link}</button>
+                    
+                    {message && (
+                        <div className={`mt-4 p-4 rounded-2xl text-xs font-bold text-center flex items-center justify-center gap-3 border animate-in fade-in slide-in-from-top-2 ${
+                            message.type === 'error' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                        }`}>
+                            <AlertCircle size={16}/> {message.text}
                         </div>
+                    )}
+
+                    <div className="flex flex-col items-center gap-3 pt-2">
+                        <button onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setMessage(null); }} className="text-xs font-bold text-emerald-700 hover:text-emerald-900 uppercase tracking-widest transition-colors">{authMode === 'login' ? t.signup_link : t.login_link}</button>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );
