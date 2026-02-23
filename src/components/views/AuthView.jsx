@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { 
-    Chrome, Mail, ArrowRight, GraduationCap, Users, 
-    Lock, User, ChevronLeft, Zap, Star, CreditCard, 
-    CheckCircle2, Loader2, AlertCircle, Building2, Search 
+    Mail, Lock, User, ChevronLeft, Zap, 
+    CheckCircle2, Loader2, AlertCircle, Building2, 
+    ShieldCheck, Star
 } from 'lucide-react';
 
 export default function AuthView({ lang, studentMode, onSuccess, onBack, initialCode }) {
@@ -15,156 +15,182 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
     const [pendingUser, setPendingUser] = useState(null);
     const [authMode, setAuthMode] = useState('login'); 
 
-    // --- 2. STUDENT STATE ---
-    const [code, setCode] = useState(initialCode || '');
-
-    // --- 3. TEACHER STATE ---
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    // --- 2. TEACHER ONBOARDING STATE ---
     const [fullName, setFullName] = useState('');
     const [schoolInput, setSchoolInput] = useState('');
     const [schoolSuggestions, setSchoolSuggestions] = useState([]);
     const [selectedSchool, setSelectedSchool] = useState(null);
+    const [inviteCodeInput, setInviteCodeInput] = useState(''); 
+    const [isIndividual, setIsIndividual] = useState(false); 
+
+    // --- 3. STUDENT STATE ---
+    const [code, setCode] = useState(initialCode || '');
+
+    // --- 4. MANUAL AUTH STATE ---
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
     const t = {
         sv: { 
             student_h: studentMode === 'live' ? "Live-rum" : "Ditt Klassrum",
             code_placeholder: "Skriv kod...", 
-            teacher_h: authMode === 'signup' ? "Skapa lärarkonto" : authMode === 'forgot' ? "Återställ lösenord" : "Logga in", 
-            onboarding_h: "Slutför din profil",
-            onboarding_sub: "Berätta lite mer om var du undervisar.",
+            teacher_h: authMode === 'signup' ? "Skapa lärarkonto" : authMode === 'forgot' ? "Återställ" : "Logga in", 
+            onboarding_h: "Verifiera lärarkonto",
+            onboarding_sub: "Ange inbjudningskod och skola för att fortsätta.",
+            invite_label: "Lärarkod (Invite Code)",
+            school_placeholder: "Sök efter din skola...",
+            individual_label: "Jag är en privatlärare (ingen skola)",
             btn_join: "Gå med",
-            error_code: "Ogiltig kod. Kontrollera med din lärare.",
-            error_full: "Rummet är fullt (Max 35 elever).",
-            error_sub: "Lärarens konto har gått ut.",
-            name_prompt: "Vad heter du?",
+            error_code: "Ogiltig kod.",
+            error_invite: "Felaktig lärarkod. Vänligen kontakta support.",
+            error_api: "API-anslutningsfel. Kör 'vercel dev' lokalt.",
+            error_school: "Vänligen välj en skola eller välj 'Privatlärare'.",
             back: "Tillbaka",
             plan_h: "Välj din plan",
-            plan_sub: "Börja använda Anpassa idag.",
-            trial_btn: "Börja 30 dagars gratis period",
-            coming_soon: "Kommer snart",
-            school_label: "Skola / Organisation",
-            school_hint: "Sök på din skola (t.ex. 'Vittra')...",
-            forgot_pw: "Glömt lösenord?",
-            reset_btn: "Skicka återställningslänk",
+            trial_btn: "Börja 30 dagars testperiod",
             login_link: "Logga in istället",
-            signup_link: "Inget konto? Skapa här",
-            error_school: "Vänligen ange din skola.",
-            btn_continue: "Fortsätt till planer"
+            signup_link: "Skapa konto här",
+            btn_continue: "Fortsätt"
         },
         en: { 
             student_h: studentMode === 'live' ? "Live Room" : "Your Class",
             code_placeholder: "Enter code...", 
-            teacher_h: authMode === 'signup' ? "Create Account" : authMode === 'forgot' ? "Reset Password" : "Teacher Login", 
-            onboarding_h: "Complete your profile",
-            onboarding_sub: "Tell us a bit more about where you teach.",
+            teacher_h: authMode === 'signup' ? "Create Account" : authMode === 'forgot' ? "Reset" : "Teacher Login", 
+            onboarding_h: "Verify Teacher Account",
+            onboarding_sub: "Enter your invite code and school to continue.",
+            invite_label: "Teacher Invite Code",
+            school_placeholder: "Search for your school...",
+            individual_label: "I am an individual teacher (no school)",
             btn_join: "Join",
             error_code: "Invalid code.",
-            error_full: "Room is full (Max 35 students).",
-            error_sub: "Teacher subscription expired.",
-            name_prompt: "What is your name?",
+            error_invite: "Invalid teacher code. Please contact support.",
+            error_api: "API connection error. Run 'vercel dev' locally.",
+            error_school: "Please select a school or choose 'Individual'.",
             back: "Back",
             plan_h: "Choose your plan",
-            plan_sub: "Start using Anpassa today.",
             trial_btn: "Start 30-day free trial",
-            coming_soon: "Coming soon",
-            school_label: "School / Organization",
-            school_hint: "Search for your school (e.g. 'Global High')...",
-            forgot_pw: "Forgot password?",
-            reset_btn: "Send reset link",
             login_link: "Login instead",
-            signup_link: "No account? Create here",
-            error_school: "Please provide your school.",
-            btn_continue: "Continue to plans"
+            signup_link: "Create account here",
+            btn_continue: "Continue"
         }
     }[lang];
 
-    // --- 4. HELPERS ---
-    
-    /**
-     * Generates a unique Class Code for the teacher.
-     * Format: 3 random letters - 3 random numbers (e.g., ABC-123)
-     */
-    const generateClassCode = () => {
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const numbers = "0123456789";
-        let res = "";
-        for (let i = 0; i < 3; i++) res += letters.charAt(Math.floor(Math.random() * letters.length));
-        res += "-";
-        for (let i = 0; i < 3; i++) res += numbers.charAt(Math.floor(Math.random() * numbers.length));
-        return res;
+    // --- ESCAPE HATCH: Breaks the Onboarding Loop ---
+    const handleAbort = async () => {
+        setLoading(true);
+        await supabase.auth.signOut();
+        setLoading(false);
+        onBack();
     };
 
-    // --- 5. OAUTH HANDSHAKE INTERCEPTOR ---
+    const generateClassCode = () => {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let res = "";
+        for (let i = 0; i < 6; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+        return res.slice(0,3) + "-" + res.slice(3);
+    };
+
+    // --- OAUTH HANDSHAKE INTERCEPTOR ---
     useEffect(() => {
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', session.user.id)
-                    .maybeSingle();
-
-                // Intercept if profile is incomplete (new Google user)
-                if (!profile || !profile.subscription_status) {
+                const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+                if (!profile || !profile.subscription_status || !profile.class_code) {
                     setPendingUser(session.user);
                     setFullName(session.user.user_metadata.full_name || '');
-                    
-                    if (!profile?.school_id) {
-                        setShowOnboarding(true);
-                    } else {
-                        setShowPlanPicker(true);
-                    }
+                    setShowOnboarding(true);
                 }
             }
         };
         checkSession();
     }, []);
 
-    // --- 6. SCHOOL SEARCH LOGIC ---
+    // --- SCHOOL SEARCH ---
     useEffect(() => {
         const fetchSuggestions = async () => {
-            if (schoolInput.length < 3 || (selectedSchool && selectedSchool.name === schoolInput)) {
+            if (isIndividual || schoolInput.length < 3 || (selectedSchool && selectedSchool.name === schoolInput)) {
                 setSchoolSuggestions([]);
                 return;
             }
-            const { data } = await supabase
-                .from('schools')
-                .select('id, name')
-                .ilike('name', `%${schoolInput}%`)
-                .limit(5);
+            const { data } = await supabase.from('schools').select('id, name').ilike('name', `%${schoolInput}%`).limit(5);
             setSchoolSuggestions(data || []);
         };
         const timer = setTimeout(fetchSuggestions, 300);
         return () => clearTimeout(timer);
-    }, [schoolInput]);
+    }, [schoolInput, isIndividual, selectedSchool]);
 
-    // --- 7. AUTH HANDLERS ---
+    // --- AUTH HANDLERS ---
+    const handleGoogleLogin = async () => {
+        setLoading(true);
+        await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin }
+        });
+    };
 
+    const handleEmailAuth = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setMessage(null);
+        try {
+            if (authMode === 'signup') {
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                if (error) throw error;
+                if (data.user) { setPendingUser(data.user); setShowOnboarding(true); }
+            } else {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                onSuccess({ role: 'teacher', user: data.user });
+            }
+        } catch (err) { setMessage({ type: 'error', text: err.message }); }
+        finally { setLoading(false); }
+    };
+
+    // --- VERIFIED ONBOARDING SUBMIT ---
     const handleOnboardingSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setMessage(null);
+
         try {
-            if (!schoolInput.trim()) throw new Error(t.error_school);
+            // 1. Verify Invite Code via API
+            const verifyRes = await fetch('/api/verify-invite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inviteCode: inviteCodeInput })
+            });
 
-            let schoolId = selectedSchool?.id;
-            let finalSchoolName = schoolInput.trim();
-
-            const { data: exactMatch } = await supabase.from('schools').select('id').eq('name', finalSchoolName).maybeSingle();
-            
-            if (exactMatch) {
-                schoolId = exactMatch.id;
-            } else if (!schoolId) {
-                const { data: newS, error: sErr } = await supabase.from('schools').insert([{ name: finalSchoolName }]).select().single();
-                if (sErr) throw sErr;
-                schoolId = newS.id;
+            const contentType = verifyRes.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error(t.error_api);
             }
 
-            // Update profile with required metadata and school link
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok || !verifyData.valid) throw new Error(t.error_invite);
+
+            // 2. Handle School Logic
+            let schoolId = null;
+            let schoolName = isIndividual ? "Individual Account" : schoolInput.trim();
+
+            if (!isIndividual) {
+                if (!schoolName) throw new Error(t.error_school);
+                
+                // Check if school already exists or create new one
+                const { data: exactMatch } = await supabase.from('schools').select('id').eq('name', schoolName).maybeSingle();
+                if (exactMatch) {
+                    schoolId = exactMatch.id;
+                } else {
+                    const { data: newS, error: sErr } = await supabase.from('schools').insert([{ name: schoolName }]).select().single();
+                    if (sErr) throw sErr;
+                    schoolId = newS?.id;
+                }
+            }
+
+            // 3. Update Profile
             const { error: upErr } = await supabase.from('profiles').update({
                 full_name: fullName,
-                school_name: finalSchoolName,
+                school_name: schoolName,
                 school_id: schoolId,
                 role: 'teacher'
             }).eq('id', pendingUser.id);
@@ -180,223 +206,165 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         }
     };
 
-    const handleEmailAuth = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setMessage(null);
-
-        try {
-            if (authMode === 'signup') {
-                if (!schoolInput.trim()) throw new Error(t.error_school);
-                let schoolId = selectedSchool?.id;
-                let finalSchoolName = schoolInput.trim();
-
-                const { data: exactMatch } = await supabase.from('schools').select('id').eq('name', finalSchoolName).maybeSingle();
-                if (exactMatch) schoolId = exactMatch.id;
-                else if (!schoolId) {
-                    const { data: newS, error: sErr } = await supabase.from('schools').insert([{ name: finalSchoolName }]).select().single();
-                    if (sErr) throw sErr;
-                    schoolId = newS.id;
-                }
-
-                const { data, error } = await supabase.auth.signUp({
-                    email, password,
-                    options: { 
-                        data: { 
-                            full_name: fullName, 
-                            school_name: finalSchoolName,
-                            school_id: schoolId,
-                            role: 'teacher' 
-                        } 
-                    }
-                });
-                if (error) throw error;
-                if (data.user) { setPendingUser(data.user); setShowPlanPicker(true); }
-            } else {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
-                onSuccess({ role: 'teacher', user: data.user });
-            }
-        } catch (err) { setMessage({ type: 'error', text: err.message }); setLoading(false); }
-    };
-
-    const handleGoogleLogin = async () => {
-        setLoading(true);
-        const redirectTo = window.location.origin.endsWith('/') ? window.location.origin : `${window.location.origin}/`;
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: { redirectTo: redirectTo }
-        });
-        if (error) {
-            setMessage({ type: 'error', text: error.message });
-            setLoading(false);
-        }
-    };
-
     const startTrial = async () => {
         setLoading(true);
         const endDate = new Date();
         endDate.setDate(endDate.getDate() + 30);
-        
-        // Generate a Class Code now that they've chosen a plan
         const classCode = generateClassCode();
-
         try {
             const { error } = await supabase.from('profiles').update({ 
                 subscription_status: 'trial',
-                subscription_tier: 0,
                 subscription_end_date: endDate.toISOString(),
-                class_code: classCode // IMPORTANT: Link the teacher to their new code
+                class_code: classCode 
             }).eq('id', pendingUser.id);
-
-            if (error) throw error;
             
+            if (error) throw error;
             onSuccess({ role: 'teacher', user: pendingUser });
-        } catch (err) { 
-            setMessage({ type: 'error', text: err.message }); 
-            setLoading(false); 
-        }
+        } catch (err) { setMessage({ type: 'error', text: err.message }); }
+        finally { setLoading(false); }
     };
 
-    const handlePasswordReset = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + '/profile',
-        });
-        if (error) setMessage({ type: 'error', text: error.message });
-        else setMessage({ type: 'success', text: lang === 'sv' ? "Återställningslänk skickad!" : "Reset link sent!" });
-        setLoading(false);
-    };
+    // --- RENDER ORCHESTRATION ---
 
-    const handleCodeJoin = async (e) => {
-        e.preventDefault();
-        const cleanCode = code.trim().toUpperCase();
-        setLoading(true);
-        setMessage(null);
-        try {
-            if (studentMode === 'live') {
-                const { data: room, error: roomError } = await supabase.from('rooms').select('*').eq('class_code', cleanCode).eq('status', 'active').single();
-                if (roomError || !room) throw new Error(t.error_code);
-                let studentName = localStorage.getItem('anpassa_alias') || prompt(t.name_prompt);
-                if (studentName) {
-                    localStorage.setItem('anpassa_alias', studentName);
-                    onSuccess({ role: 'live', room, student_name: studentName });
-                } else setLoading(false);
-            } else {
-                const { data: teacher, error: teacherError } = await supabase.from('teacher_public_info').select('*').eq('class_code', cleanCode).single();
-                if (teacherError || !teacher) throw new Error(t.error_code);
-                onSuccess({ role: 'student', class: { teacher_id: teacher.id, class_name: teacher.full_name } });
-            }
-        } catch (err) { setMessage({ type: 'error', text: err.message }); setLoading(false); }
-    };
-
-    // --- 8. RENDER LOGIC ---
-
-    if (showPlanPicker) {
+    // View 1: Plan Picker
+if (showPlanPicker) {
         return (
-            <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans">
-                <div className="w-full max-w-4xl text-center mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
-                    <h2 className="text-4xl font-bold text-slate-900 uppercase italic tracking-tighter mb-2">{t.plan_h}</h2>
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-600/60">{t.plan_sub}</p>
+            <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans overflow-y-auto">
+                <button onClick={handleAbort} className="absolute top-10 left-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700 hover:text-emerald-900 transition-all z-20">
+                    <ChevronLeft size={18} /> {t.back}
+                </button>
+                
+                <div className="text-center mb-12">
+                    <h2 className="text-4xl font-bold uppercase italic tracking-tighter text-slate-900">{t.plan_h}</h2>
+                    <p className="text-slate-500 font-medium">Välj den nivå som passar din undervisning bäst.</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
-                    <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-4 border-emerald-500 flex flex-col items-center text-center relative overflow-hidden transition-all hover:scale-[1.02]">
-                        <div className="bg-emerald-500 text-white px-8 py-1 absolute top-4 -right-8 rotate-45 text-[9px] font-black uppercase tracking-widest shadow-lg">Populär</div>
-                        <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 shadow-inner"><Zap size={32} /></div>
-                        <h3 className="text-xl font-bold uppercase mb-2">Testperiod</h3>
-                        <div className="text-4xl font-black mb-8 text-slate-800">0 kr<span className="text-xs text-slate-400 font-medium"> / 30 dgr</span></div>
-                        <button onClick={startTrial} className="mt-auto w-full py-5 bg-emerald-600 text-white rounded-[2rem] font-bold uppercase text-xs tracking-widest hover:bg-emerald-700 transition-all shadow-xl active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto" /> : t.trial_btn}</button>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
+                    
+                    {/* TIER 1: FREE TRIAL (Your current logic) */}
+                    <div className="bg-white p-8 rounded-[3rem] shadow-xl border-4 border-emerald-50 flex flex-col items-center text-center transition-all hover:scale-[1.02]">
+                        <Zap className="text-emerald-500 mb-4" size={40} />
+                        <h3 className="text-lg font-black uppercase mb-1 text-slate-800">Testperiod</h3>
+                        <div className="text-3xl font-black mb-6 text-slate-800">0 kr<span className="text-xs text-slate-400 font-medium"> / 30 dgr</span></div>
+                        <ul className="text-left text-xs space-y-3 mb-8 text-slate-600 font-bold uppercase tracking-tight">
+                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-emerald-500"/> Alla funktioner ingår</li>
+                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-emerald-500"/> Ingen bindningstid</li>
+                        </ul>
+                        <button onClick={startTrial} className="mt-auto w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all">
+                            {loading ? <Loader2 className="animate-spin mx-auto" /> : t.trial_btn}
+                        </button>
                     </div>
-                    <div className="bg-white p-10 rounded-[3rem] border border-emerald-50 flex flex-col items-center text-center opacity-40 grayscale"><div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mb-6"><Star size={32} /></div><h3 className="text-xl font-bold uppercase mb-2 text-slate-700">Pro-Lärare</h3><button disabled className="mt-auto w-full py-4 bg-slate-50 text-slate-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest">{t.coming_soon}</button></div>
-                    <div className="bg-white p-10 rounded-[3rem] border border-emerald-50 flex flex-col items-center text-center opacity-40 grayscale"><div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mb-6"><CreditCard size={32} /></div><h3 className="text-xl font-bold uppercase mb-2 text-slate-700">Hela Skolan</h3><button disabled className="mt-auto w-full py-4 bg-slate-50 text-slate-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest">{t.coming_soon}</button></div>
+
+                    {/* TIER 2: PRO TEACHER (Placeholder) */}
+                    <div className="bg-slate-900 p-8 rounded-[3rem] shadow-2xl border-4 border-indigo-500/20 flex flex-col items-center text-center relative overflow-hidden transition-all hover:scale-[1.02]">
+                        <div className="absolute top-4 right-8 bg-indigo-500 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Populär</div>
+                        <Star className="text-indigo-400 mb-4" size={40} />
+                        <h3 className="text-lg font-black uppercase mb-1 text-white">Pro Lärare</h3>
+                        <div className="text-3xl font-black mb-6 text-white">99 kr<span className="text-xs text-slate-400 font-medium"> / mån</span></div>
+                        <ul className="text-left text-xs space-y-3 mb-8 text-slate-300 font-bold uppercase tracking-tight">
+                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-indigo-400"/> Obegränsade Live-rum</li>
+                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-indigo-400"/> Fullständig historik</li>
+                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-indigo-400"/> Prioriterad support</li>
+                        </ul>
+                        <button disabled className="mt-auto w-full py-4 bg-indigo-600/50 text-white/50 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-not-allowed">Kommer Snart</button>
+                    </div>
+
+                    {/* TIER 3: SCHOOL / MUNICIPALITY (Placeholder) */}
+                    <div className="bg-white p-8 rounded-[3rem] shadow-xl border-4 border-slate-50 flex flex-col items-center text-center transition-all hover:scale-[1.02]">
+                        <Building2 className="text-slate-400 mb-4" size={40} />
+                        <h3 className="text-lg font-black uppercase mb-1 text-slate-800">Skola / Kommun</h3>
+                        <div className="text-2xl font-black mb-6 text-slate-800 italic uppercase">Offert</div>
+                        <ul className="text-left text-xs space-y-3 mb-8 text-slate-600 font-bold uppercase tracking-tight">
+                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-slate-400"/> Central administration</li>
+                            <li className="flex gap-2"><CheckCircle2 size={14} className="text-slate-400"/> SSO / Skolfederation</li>
+                        </ul>
+                        <button disabled className="mt-auto w-full py-4 bg-slate-100 text-slate-400 rounded-2xl font-bold uppercase text-[10px] tracking-widest cursor-not-allowed text-center">Kontakta oss</button>
+                    </div>
+
                 </div>
             </div>
         );
     }
 
+    // View 2: Onboarding Fields
     if (showOnboarding) {
         return (
             <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans">
+                <button onClick={handleAbort} className="absolute top-10 left-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700 hover:text-emerald-900 transition-all z-20">
+                    <ChevronLeft size={18} /> {t.back}
+                </button>
                 <div className="w-full max-w-md bg-white rounded-[3.5rem] shadow-2xl p-12 border border-emerald-50 animate-in fade-in zoom-in-95 duration-500">
-                    <div className="text-center mb-8">
+                    <div className="text-center mb-10 leading-none">
                         <h2 className="text-3xl font-bold uppercase italic tracking-tighter text-slate-800">{t.onboarding_h}</h2>
-                        <p className="text-xs font-medium text-slate-400 mt-2">{t.onboarding_sub}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-3 uppercase tracking-widest leading-relaxed">{t.onboarding_sub}</p>
                     </div>
                     <form onSubmit={handleOnboardingSubmit} className="space-y-4">
                         <div className="relative">
                             <User className="absolute left-5 top-5 text-emerald-200" size={18} />
-                            <input type="text" placeholder="Ditt för- och efternamn" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required />
+                            <input type="text" placeholder="Ditt namn" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required />
                         </div>
                         <div className="relative">
-                            <Building2 className="absolute left-5 top-5 text-emerald-200" size={18} />
-                            <input type="text" placeholder={t.school_hint} value={schoolInput} onChange={(e) => setSchoolInput(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required />
-                            {schoolSuggestions.length > 0 && (
-                                <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-emerald-100 rounded-2xl shadow-2xl z-50 overflow-hidden">
-                                    {schoolSuggestions.map(s => (
-                                        <button key={s.id} type="button" onClick={() => { setSelectedSchool(s); setSchoolInput(s.name); setSchoolSuggestions([]); }} className="w-full p-4 text-left hover:bg-emerald-50 text-sm font-bold text-slate-600 flex items-center gap-3 border-b last:border-0 border-slate-50">
-                                            <CheckCircle2 size={14} className="text-emerald-500" /> {s.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                            <ShieldCheck className="absolute left-5 top-5 text-amber-300" size={18} />
+                            <input type="text" placeholder={t.invite_label} value={inviteCodeInput} onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())} className="w-full pl-14 pr-6 py-5 bg-amber-50/20 rounded-2xl border-2 border-amber-100 outline-none focus:ring-2 focus:ring-amber-400 font-black text-slate-800 tracking-widest text-center" required />
                         </div>
-                        <button disabled={loading} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl active:scale-95">
-                            {loading ? <Loader2 className="animate-spin mx-auto" /> : t.btn_continue}
-                        </button>
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-2">
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${isIndividual ? 'text-indigo-900' : 'text-slate-400'}`}>{t.individual_label}</span>
+                            <button type="button" onClick={() => setIsIndividual(!isIndividual)} className={`w-12 h-6 rounded-full transition-all relative p-1 ${isIndividual ? 'bg-indigo-600' : 'bg-slate-200'}`}>
+                                <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${isIndividual ? 'translate-x-6' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+                        {!isIndividual && (
+                            <div className="relative animate-in slide-in-from-top-2 duration-300">
+                                <Building2 className="absolute left-5 top-5 text-emerald-200" size={18} />
+                                <input type="text" placeholder={t.school_placeholder} value={schoolInput} onChange={(e) => setSchoolInput(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required />
+                                {schoolSuggestions.length > 0 && (
+                                    <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-emerald-100 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                                        {schoolSuggestions.map(s => (
+                                            <button key={s.id} type="button" onClick={() => { setSelectedSchool(s); setSchoolInput(s.name); setSchoolSuggestions([]); }} className="w-full p-4 text-left hover:bg-emerald-50 text-sm font-bold text-slate-600 flex items-center gap-3 border-b border-slate-50 last:border-0"><CheckCircle2 size={14} className="text-emerald-500" /> {s.name}</button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        <button disabled={loading} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto" /> : t.btn_continue}</button>
                     </form>
+                    {message && <div className="mt-8 p-5 rounded-2xl text-xs font-bold text-center flex items-center justify-center gap-3 border animate-in fade-in slide-in-from-top-2 bg-rose-50 text-rose-600 border-rose-100"><AlertCircle size={16}/> {message.text}</div>}
                 </div>
             </div>
         );
     }
 
+    // View 3: Initial Login/Signup/Student Code
     return (
-        <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
+        <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 relative font-sans overflow-hidden">
             <button onClick={onBack} className="absolute top-10 left-10 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-700 hover:text-emerald-900 transition-all z-20">
                 <ChevronLeft size={18} /> {t.back}
             </button>
             <div className="w-full max-w-md bg-white rounded-[3.5rem] shadow-2xl p-12 border border-emerald-50 relative z-10 animate-in fade-in zoom-in-95 duration-500">
+                <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold uppercase italic tracking-tighter text-slate-800 leading-none">{studentMode ? t.student_h : t.teacher_h}</h2>
+                </div>
                 {studentMode ? (
-                    <div className="space-y-10 text-center">
-                        <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner ${studentMode === 'live' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-500'}`}>
-                            {studentMode === 'live' ? <Users size={48} /> : <GraduationCap size={48} />}
-                        </div>
-                        <h2 className="text-3xl font-bold uppercase tracking-tighter italic text-slate-800 leading-tight">{t.student_h}</h2>
-                        <form onSubmit={handleCodeJoin} className="space-y-6">
-                            <input type="text" maxLength={12} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className={`w-full p-6 rounded-[2rem] text-center text-3xl font-bold uppercase tracking-[0.2em] outline-none transition-all border-4 ${studentMode === 'live' ? 'bg-emerald-50/30 border-emerald-50 focus:border-emerald-500 focus:bg-white' : 'bg-amber-50/30 border-amber-50 focus:border-amber-500 focus:bg-white'}`} placeholder="KOD" required />
-                            <button disabled={loading} className={`w-full py-6 text-white rounded-[2rem] font-bold text-xl uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${studentMode === 'live' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/10' : 'bg-amber-500 hover:bg-amber-600 shadow-amber-900/10'}`}>
-                                {loading ? <Loader2 className="animate-spin" /> : t.btn_join} <ArrowRight />
-                            </button>
-                        </form>
-                    </div>
+                    <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-6">
+                        <input type="text" maxLength={12} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} className="w-full p-6 rounded-[2rem] text-center text-3xl font-bold uppercase tracking-[0.2em] outline-none transition-all border-4 bg-amber-50/30 border-amber-50 focus:border-amber-500 focus:bg-white" placeholder="KOD" required />
+                        <button className="w-full py-6 text-white rounded-[2rem] font-bold text-xl uppercase tracking-widest shadow-xl hover:bg-amber-600 active:scale-95 transition-all">{t.btn_join}</button>
+                    </form>
                 ) : (
                     <div className="space-y-8">
-                        <div className="text-center"><h2 className="text-3xl font-bold uppercase italic tracking-tighter text-slate-800">{t.teacher_h}</h2></div>
-                        {authMode !== 'forgot' && (
-                            <button onClick={handleGoogleLogin} className="w-full py-4 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-4 font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
-                                <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                                Google
-                            </button>
-                        )}
+                        <button onClick={handleGoogleLogin} className="w-full py-4 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-4 font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-[0.98]">
+                            <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Google
+                        </button>
                         <div className="relative py-2 flex items-center"><div className="flex-grow border-t border-slate-100"></div><span className="px-4 text-[9px] font-bold text-slate-300 uppercase tracking-widest">Eller</span><div className="flex-grow border-t border-slate-100"></div></div>
-                        <form onSubmit={authMode === 'forgot' ? handlePasswordReset : handleEmailAuth} className="space-y-4">
-                            {authMode === 'signup' && (
-                                <>
-                                    <div className="relative"><User className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="text" placeholder="Ditt för- och efternamn" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>
-                                    <div className="relative"><Building2 className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="text" placeholder={t.school_hint} value={schoolInput} onChange={(e) => setSchoolInput(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>
-                                </>
-                            )}
+                        <form onSubmit={handleEmailAuth} className="space-y-4">
                             <div className="relative"><Mail className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="email" placeholder="E-post" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>
-                            {authMode !== 'forgot' && (<div className="relative"><Lock className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="password" placeholder="Lösenord" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>)}
-                            <button className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto" /> : authMode === 'signup' ? "Skapa konto" : authMode === 'forgot' ? t.reset_btn : "Logga in"}</button>
+                            {authMode !== 'forgot' && <div className="relative"><Lock className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="password" placeholder="Lösenord" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>}
+                            <button className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto" /> : authMode === 'signup' ? "Skapa konto" : "Logga in"}</button>
                         </form>
                         <div className="flex flex-col items-center gap-3 pt-2">
-                            {authMode === 'login' && (<button onClick={() => setAuthMode('forgot')} className="text-[10px] font-black text-slate-400 hover:text-emerald-700 uppercase tracking-widest">{t.forgot_pw}</button>)}
                             <button onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setMessage(null); }} className="text-xs font-bold text-emerald-700 hover:text-emerald-900 uppercase tracking-widest transition-colors">{authMode === 'login' ? t.signup_link : t.login_link}</button>
                         </div>
                     </div>
                 )}
-                {message && <div className={`mt-8 p-5 rounded-2xl text-xs font-bold text-center flex items-center justify-center gap-3 border animate-in fade-in slide-in-from-top-2 ${message.type === 'error' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}><AlertCircle size={16}/> {message.text}</div>}
             </div>
         </div>
     );
