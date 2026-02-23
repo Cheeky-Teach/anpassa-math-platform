@@ -217,21 +217,30 @@ function App() {
             const requests = savedPacket.map(item => ({
                 topic: item.topicId,
                 variation: item.variationKey,
-                lang: lang
+                lang: lang,
+                level: item.resolvedData?.level || 1
             }));
+
             const res = await fetch('/api/batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ requests })
             });
+
+            if (!res.ok) throw new Error("Batch refresh failed");
             const newResults = await res.json();
+            
+            // Fix: Map results[idx].resolvedData directly to item.resolvedData
             const updatedPacket = savedPacket.map((item, idx) => ({
                 ...item,
-                resolvedData: newResults[idx]
+                id: `dn-batch-${Date.now()}-${idx}`, // Force remount with new ID
+                resolvedData: newResults[idx].resolvedData 
             }));
+            
             setSavedPacket(updatedPacket);
         } catch (e) {
-            alert("Kunde inte ladda nya uppgifter.");
+            console.error("Batch refresh error:", e);
+            alert(lang === 'sv' ? "Kunde inte ladda nya uppgifter." : "Failed to load new questions.");
         }
     };
 
@@ -241,14 +250,19 @@ function App() {
         try {
             const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}`);
             const newData = await res.json();
+            
             const updatedPacket = [...savedPacket];
-            updatedPacket[idx] = { ...item, resolvedData: newData };
+            // The single question API returns resolvedData at the root
+            updatedPacket[idx] = { 
+                ...item, 
+                id: `dn-single-${Date.now()}-${idx}`,
+                resolvedData: newData 
+            };
             setSavedPacket(updatedPacket);
         } catch (e) {
             console.error("Single refresh failed:", e);
         }
     };
-
     // --- AUTH EFFECTS ---
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session: s } }) => {
