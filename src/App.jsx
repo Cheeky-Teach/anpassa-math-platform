@@ -280,31 +280,29 @@ function App() {
     }, []);
 
     // --- REFACTORED PROFILE GATEKEEPER ---
-    // This is the core "Lock" that ensures Google signups from skipping onboarding.
     const fetchProfile = async (uid) => {
         setLoadingProfile(true);
         const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
         setProfile(data);
         
-        // STRICT CHECK: Does user have a subscription AND a class code?
-        // New Google signups will have neither, and will be blocked here.
         const isSetupIncomplete = !data || !data.subscription_status || !data.class_code;
 
         setView(currentView => {
             if (currentView === 'profile') return 'profile';
-            
-            // If setup is missing, force redirect to 'auth' for onboarding.
-            if (isSetupIncomplete) {
-                console.log("Onboarding required: Missing subscription or class code.");
-                return 'auth';
-            }
-
-            // If setup is complete and user is on login/landing, go to dashboard.
+            if (isSetupIncomplete) return 'auth';
             if (currentView === 'landing' || currentView === 'auth') return 'dashboard';
             return currentView;
         });
 
         setLoadingProfile(false);
+    };
+
+    // --- SECURITY FIX: NEW STUDENT EXIT HANDLER ---
+    const handleStudentExitLive = () => {
+        setActiveRoom(null);
+        setStudentAlias('');
+        localStorage.removeItem('anpassa_alias');
+        setView('landing'); // Redirect to Landing instead of Dashboard
     };
 
     const quitPractice = () => { 
@@ -511,18 +509,15 @@ function App() {
                 onBack={() => setView('landing')} 
                 onSuccess={(data) => {
                     if (data.role === 'student') {
-                        // PRACTICE MODE
                         setActiveClass(data.class);
                         setProfile({ role: 'student', subscription_status: 'active' }); // Mock profile
                         setView('dashboard');
                     } else if (data.role === 'live') {
-                        // LIVE SESSION MODE
                         setActiveRoom(data.room);
                         setStudentAlias(data.student_name);
                         localStorage.setItem('anpassa_alias', data.student_name);
                         setView('live_session');
                     } else if (data.role === 'teacher') {
-                        // TEACHER MODE
                         fetchProfile(data.user.id);
                     }
                 }}
@@ -555,8 +550,14 @@ function App() {
                 {view === 'dashboard' ? (
                     <Dashboard 
                         profile={profile} 
-                        lang={lang} selectedTopic={topic} selectedLevel={level} userRole={profile?.role || 'teacher'} 
-                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} onStart={startPractice} ui={ui} 
+                        lang={lang} 
+                        selectedTopic={topic} 
+                        selectedLevel={level} 
+                        // SAFETY DEFAULT FIX: Default to 'student' so unauthenticated users see nothing sensitive
+                        userRole={profile?.role || 'student'} 
+                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
+                        onStart={startPractice} 
+                        ui={ui} 
                         onStudioOpen={() => setView('question_studio')} 
                         onProfileOpen={() => setView('profile')} 
                         onRelaunch={handleRelaunchSession} 
@@ -566,7 +567,9 @@ function App() {
                         onLgrOpen={() => setLgrOpen(true)}
                         onAboutOpen={() => setAboutOpen(true)}
                         onContentOpen={() => setContentOpen(true)}
-                        timerSettings={timerSettings} toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
+                        timerSettings={timerSettings} 
+                        toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} 
+                        resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
                     />
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />
@@ -587,7 +590,14 @@ function App() {
                 ) : view === 'do_now' ? (
                     <DoNowGrid questions={savedPacket} ui={ui} lang={lang} onBack={() => setView('question_studio')} onClose={() => setView('dashboard')} onRefreshAll={handleRefreshAllDoNow} onRefreshOne={handleRefreshOneDoNow} />
                 ) : view === 'live_session' && activeRoom ? (
-                    <StudentLiveView session={activeRoom} packet={activeRoom.active_question_data?.packet || []} lang={lang} studentAlias={studentAlias} onBack={quitPractice} />
+                    <StudentLiveView 
+                        session={activeRoom} 
+                        packet={activeRoom.active_question_data?.packet || []} 
+                        lang={lang} 
+                        studentAlias={studentAlias} 
+                        // UPDATED PROP: Use new handler to prevent Dashboard breach
+                        onBack={handleStudentExitLive} 
+                    />
                 ) : view === 'teacher_live' && activeRoom ? (
                     <TeacherLiveView session={activeRoom} packet={savedPacket} lang={lang} onEnd={handleEndSession} onKick={handleKick} onCreateReport={(res) => { setReportData(res); setView('live_report'); }} />
                 ) : view === 'live_report' && activeRoom && reportData ? (
