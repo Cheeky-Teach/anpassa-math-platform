@@ -248,7 +248,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                         <div className="absolute -top-3 bg-indigo-500 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase">Mest populär</div>
                         <Star className="text-indigo-400 mb-4" size={32} />
                         <h3 className="text-lg font-bold uppercase mb-2 text-white">Pro Lärare</h3>
-                        <div className="text-3xl font-black mb-6 text-white">99 kr<span className="text-xs text-slate-400 font-medium"> / mån</span></div>
+                        <div className="text-3xl font-black mb-6 text-white">--- kr<span className="text-xs text-slate-400 font-medium"> / mån</span></div>
                         <button disabled className="w-full py-4 bg-slate-800 text-slate-500 rounded-2xl font-bold uppercase text-[10px] tracking-widest">Kommer snart</button>
                     </div>
                     <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border-4 border-slate-50 flex flex-col items-center">
