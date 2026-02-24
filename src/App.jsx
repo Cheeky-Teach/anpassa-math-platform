@@ -14,6 +14,7 @@ import TeacherLiveView from './components/views/TeacherLiveView';
 import DoNowGrid from './components/views/DoNowGrid'; 
 import SessionReportView from './components/views/SessionReportView';
 import ProfileView from './components/views/ProfileView';
+import TimesTable from './components/views/TimesTable'; // <--- NEW IMPORT
 
 // Modals
 import AboutModal from './components/modals/AboutModal';
@@ -202,7 +203,7 @@ function App() {
         };
     }, []);
 
-    // --- REFRESH HANDLERS (DoNowGrid Functionality) ---
+    // --- REFRESH HANDLERS ---
     const handleRefreshAllDoNow = async () => {
         if (!savedPacket.length) return;
         try {
@@ -279,7 +280,7 @@ function App() {
         return () => subscription.unsubscribe();
     }, []);
 
-    // --- REFACTORED PROFILE GATEKEEPER ---
+    // --- PROFILE GATEKEEPER ---
     const fetchProfile = async (uid) => {
         setLoadingProfile(true);
         const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
@@ -297,12 +298,11 @@ function App() {
         setLoadingProfile(false);
     };
 
-    // --- SECURITY FIX: NEW STUDENT EXIT HANDLER ---
     const handleStudentExitLive = () => {
         setActiveRoom(null);
         setStudentAlias('');
         localStorage.removeItem('anpassa_alias');
-        setView('landing'); // Redirect to Landing instead of Dashboard
+        setView('landing'); 
     };
 
     const quitPractice = () => { 
@@ -312,7 +312,7 @@ function App() {
         setTimerSettings(prev => ({ ...prev, isActive: false })); 
     };
 
-    // --- ENHANCED SUBMIT LOGIC ---
+    // --- SUBMIT LOGIC ---
     const handleSubmit = async (e, directInput) => {
         if (e) e.preventDefault();
         if (feedback === 'correct') return;
@@ -471,7 +471,7 @@ function App() {
         setView('question_studio');
     };
 
-    // --- CONTEXT-AWARE TIMER ENGINE ---
+    // --- TIMER ENGINE ---
     useEffect(() => {
         let interval;
         if (view === 'practice' && isFocused && timerSettings.isActive && timerSettings.remaining > 0) {
@@ -510,7 +510,7 @@ function App() {
                 onSuccess={(data) => {
                     if (data.role === 'student') {
                         setActiveClass(data.class);
-                        setProfile({ role: 'student', subscription_status: 'active' }); // Mock profile
+                        setProfile({ role: 'student', subscription_status: 'active' }); 
                         setView('dashboard');
                     } else if (data.role === 'live') {
                         setActiveRoom(data.room);
@@ -533,7 +533,7 @@ function App() {
             <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
             <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
             
-            {(view === 'dashboard' || view === 'practice') && (
+            {(view === 'dashboard' || view === 'practice' || view === 'times_table') && (
                 <header className="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-emerald-100 px-4 py-3 flex justify-between items-center shadow-sm">
                     <h1 className="text-xl font-black text-emerald-800 tracking-tighter cursor-pointer uppercase italic" onClick={quitPractice}>ANPASSA</h1>
                     <div className="flex items-center gap-3">
@@ -553,13 +553,13 @@ function App() {
                         lang={lang} 
                         selectedTopic={topic} 
                         selectedLevel={level} 
-                        // SAFETY DEFAULT FIX: Default to 'student' so unauthenticated users see nothing sensitive
                         userRole={profile?.role || 'student'} 
                         onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
                         onStart={startPractice} 
                         ui={ui} 
                         onStudioOpen={() => setView('question_studio')} 
                         onProfileOpen={() => setView('profile')} 
+                        onTimesTableOpen={() => setView('times_table')} // <--- NEW PROP MAPPING
                         onRelaunch={handleRelaunchSession} 
                         onViewReport={handleViewArchiveReport} 
                         onEdit={handleEditArchivedPacket}
@@ -573,6 +573,11 @@ function App() {
                     />
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />
+                ) : view === 'times_table' ? ( // <--- NEW VIEW ORCHESTRATION
+                    <TimesTable 
+                        lang={lang} 
+                        onBack={() => setView('dashboard')} 
+                    />
                 ) : view === 'practice' ? (
                     <PracticeView
                         lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} 
@@ -595,7 +600,6 @@ function App() {
                         packet={activeRoom.active_question_data?.packet || []} 
                         lang={lang} 
                         studentAlias={studentAlias} 
-                        // UPDATED PROP: Use new handler to prevent Dashboard breach
                         onBack={handleStudentExitLive} 
                     />
                 ) : view === 'teacher_live' && activeRoom ? (

@@ -4,7 +4,7 @@ import {
   ChevronDown, ChevronUp, ChevronRight, Zap, Play, Clock, Book, Map, Info, 
   Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, User, 
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet, MoreHorizontal,
-  PlayCircle, CheckCircle2, AlertCircle // Icons for metrics
+  PlayCircle, CheckCircle2, AlertCircle, Grid3X3
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
@@ -21,6 +21,7 @@ const Dashboard = ({
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
     timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen,
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, 
+    onTimesTableOpen, // New prop for the Multiplication tool
     onRelaunch, onViewReport, onEdit, 
     userRole = 'teacher'
 }) => {
@@ -44,7 +45,8 @@ const Dashboard = ({
             archive_empty: "Inga avslutade lektioner de senaste 48 timmarna.", relaunch_btn: "Kör igen",
             view_report: "Visa rapport", resume_h: "Lektion pågår", resume_btn: "Återuppta",
             accuracy_label: "Träffsäkerhet", edit_btn: "Öppna i Studio",
-            type_donow: "Do Now Grid", type_worksheet: "Arbetsblad"
+            type_donow: "Do Now Grid", type_worksheet: "Arbetsblad",
+            times_table_title: "Tabeller", times_table_desc: "Multiplikation"
         },
         en: {
             tools_section: "Tools", class_code_label: "Your Class Code", connected_code_label: "Connected to code",
@@ -59,7 +61,8 @@ const Dashboard = ({
             archive_empty: "No finished sessions in the last 48 hours.", relaunch_btn: "Relaunch",
             view_report: "View Report", resume_h: "Session in Progress", resume_btn: "Resume",
             accuracy_label: "Accuracy", edit_btn: "Open in Studio",
-            type_donow: "Do Now Grid", type_worksheet: "Worksheet"
+            type_donow: "Do Now Grid", type_worksheet: "Worksheet",
+            times_table_title: "Tables", times_table_desc: "Multiplication"
         }
     };
 
@@ -148,7 +151,7 @@ const Dashboard = ({
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-slate-800 leading-none mb-1">
-                                {userRole === 'teacher' ? (profile?.full_name || "Lärare") : "Elev"}
+                                {userRole === 'teacher' ? (profile?.full_name || "Lärare") : (profile?.full_name || "Elev")}
                             </h1>
                             <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/60 flex items-center gap-2">
                                 <Target size={12}/> {profile?.school_name || "Anpassa Math Platform"}
@@ -166,12 +169,15 @@ const Dashboard = ({
                     </div>
                 </header>
 
+                {/* --- TOOLS SECTION --- */}
                 <section className="mb-12">
                     <div className="flex items-center gap-3 mb-6 px-4">
                         <Zap size={18} className="text-orange-400" />
                         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.tools_section}</h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        
+                        {/* Question Studio - Teacher Only */}
                         {userRole === 'teacher' && (
                             <button onClick={onStudioOpen} className="group p-6 bg-emerald-900 text-white rounded-[2.5rem] hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-900/10 text-left relative overflow-hidden">
                                 <div className="absolute -bottom-4 -right-4 opacity-10 group-hover:scale-110 transition-transform"><PenTool size={80} /></div>
@@ -180,12 +186,26 @@ const Dashboard = ({
                                 <span className="text-[9px] font-medium text-emerald-300 uppercase tracking-widest">{t.studio_desc}</span>
                             </button>
                         )}
-                        <button onClick={onStatsOpen} className="group p-6 bg-amber-50 border border-amber-100 rounded-[2.5rem] hover:bg-amber-100 transition-all text-left">
+                        
+                        {/* Multiplication Tables Tool - Accessible to all */}
+                        <button onClick={onTimesTableOpen} className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-emerald-600 transition-all text-left shadow-sm">
+                            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
+                                <Grid3X3 size={20} />
+                            </div>
+                            <span className="block font-bold text-sm uppercase text-slate-700 mb-1">{t.times_table_title}</span>
+                            <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">{t.times_table_desc}</span>
+                        </button>
+
+
+                        {/* Statistics Tool - Accessible to all */}
+                        <button onClick={onStatsOpen} className="group p-6 bg-amber-50 border border-amber-100 rounded-[2.5rem] hover:bg-amber-100 transition-all text-left shadow-sm">
                             <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white mb-4 shadow-lg shadow-amber-200"><BarChart3 size={20} /></div>
                             <span className="block font-bold text-sm uppercase text-amber-900 mb-1">{t.stats_title}</span>
                             <span className="text-[9px] font-medium text-amber-600 uppercase tracking-widest">{t.stats_desc}</span>
                         </button>
-                        <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-[2.5rem] flex flex-col justify-between">
+
+                        {/* Timer Tool - Accessible to all */}
+                        <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-[2.5rem] flex flex-col justify-between shadow-sm">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-md"><Clock size={16} /></div>
                                 <span className="font-bold text-[10px] uppercase tracking-widest text-emerald-800">{t.timer_title}</span>
@@ -195,9 +215,11 @@ const Dashboard = ({
                                     <option value="0">{t.timer_off}</option>
                                     {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
                                 </select>
-                                {timerSettings.duration > 0 && <button onClick={resetTimer} className="p-2 text-rose-500 bg-white rounded-xl shadow-sm border border-rose-100 hover:bg-rose-50"><History size={16} /></button>}
+                                {timerSettings.duration > 0 && <button onClick={resetTimer} className="p-2 text-rose-500 bg-white rounded-xl shadow-sm border border-rose-100 hover:bg-rose-50 transition-colors"><RotateCcw size={16} /></button>}
                             </div>
                         </div>
+
+                        {/* Profile Settings - Teacher Only */}
                         {userRole === 'teacher' && (
                             <button onClick={onProfileOpen} className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-emerald-600 transition-all text-left shadow-sm">
                                 <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm"><Settings size={20} /></div>
@@ -208,6 +230,7 @@ const Dashboard = ({
                     </div>
                 </section>
 
+                {/* --- CONTENT TABS --- */}
                 <div className="flex gap-1 p-1 bg-emerald-950/5 rounded-2xl w-fit mb-8 mx-2">
                     <button onClick={() => setActiveTab('curriculum')} className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'curriculum' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}>
                         <div className="flex items-center gap-2"><Book size={14}/> {t.curriculum_title}</div>
@@ -219,6 +242,7 @@ const Dashboard = ({
                     )}
                 </div>
 
+                {/* --- TAB CONTENT --- */}
                 {activeTab === 'curriculum' ? (
                     <section className="flex flex-col gap-6 animate-in slide-in-from-left-4 duration-500">
                         {Object.entries(CATEGORIES).map(([catKey, category]) => {
@@ -247,7 +271,11 @@ const Dashboard = ({
                                                     <div className="relative">
                                                         <select value={selectedTopic === topic.id ? selectedLevel : 0} onChange={(e) => onSelect(topic.id, Number(e.target.value))} className={`w-full p-4 pl-5 bg-[#f9fbf7] border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 appearance-none transition-all ${selectedTopic === topic.id ? `ring-2 ring-emerald-500 border-transparent shadow-lg bg-white` : ''}`}>
                                                             <option value={0} disabled>{t.select_level}</option>
-                                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl] && (<option key={lvl} value={lvl} className="text-base">{lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} — {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}</option>))}
+                                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl] && (
+                                                                <option key={lvl} value={lvl} className="text-base">
+                                                                    {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} — {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
+                                                                </option>
+                                                            ))}
                                                         </select>
                                                         <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-300"><ChevronDown size={18} /></div>
                                                     </div>
@@ -270,13 +298,11 @@ const Dashboard = ({
                             </div>
                         ) : (
                             archivedSessions.map(session => {
-                                // --- DETECTION LOGIC: Detect if session was a Do Now ---
                                 const isDoNow = session.active_question_data?.mode === 'donow';
 
                                 return (
                                     <div key={session.id} className="bg-white p-6 rounded-[2.5rem] border border-emerald-50 shadow-sm hover:shadow-xl transition-all flex flex-col lg:flex-row items-center justify-between gap-6 group">
                                         <div className="flex items-center gap-6 flex-1 min-w-0">
-                                            {/* Dynamic Icon & Color Based on Mode */}
                                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner group-hover:text-white transition-all ${
                                                 isDoNow 
                                                 ? 'bg-indigo-50 text-indigo-500 group-hover:bg-indigo-600' 
@@ -308,14 +334,11 @@ const Dashboard = ({
                                         
                                         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                                             <button onClick={() => onViewReport(session)} className="flex-1 lg:flex-none px-5 py-4 bg-slate-50 text-slate-600 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100">{t.view_report}</button>
-                                            
-                                            {/* Edit Button: Launches correct Studio mode */}
                                             <button onClick={() => onEdit(session)} className={`p-4 rounded-2xl transition-all border group/edit ${
                                                 isDoNow ? 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-600 hover:text-white' : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white'
                                             }`} title={t.edit_btn}>
                                                 <PenTool size={18} />
                                             </button>
-
                                             <button onClick={() => onRelaunch(session)} className="flex-1 lg:flex-none px-6 py-4 bg-emerald-900 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95">
                                                 <RotateCcw size={14}/> {t.relaunch_btn}
                                             </button>
@@ -328,6 +351,7 @@ const Dashboard = ({
                     </section>
                 )}
 
+                {/* --- START PRACTICE FLOATING ACTION BUTTON --- */}
                 {activeTab === 'curriculum' && (
                     <div className={`fixed bottom-12 left-0 right-0 flex justify-center pointer-events-none z-30 transition-all duration-500 ${selectedTopic ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
                         <button onClick={onStart} className="px-14 py-6 rounded-[2.5rem] font-bold text-2xl shadow-[0_20px_50px_rgba(249,115,22,0.3)] bg-orange-500 text-white pointer-events-auto flex items-center gap-6 hover:scale-105 hover:bg-orange-600 active:scale-95 transition-all tracking-tight border-b-8 border-orange-700">
@@ -336,6 +360,7 @@ const Dashboard = ({
                     </div>
                 )}
 
+                {/* --- FOOTER --- */}
                 <footer className="mt-24 py-16 grid grid-cols-1 md:grid-cols-3 gap-12 px-4 relative z-10 border-t border-emerald-900/5">
                     <div className="space-y-6 text-center md:text-left">
                         <h4 className="text-[10px] font-bold text-emerald-800/30 uppercase tracking-[0.3em]">{t.resources}</h4>
@@ -356,6 +381,8 @@ const Dashboard = ({
                     </div>
                 </footer>
             </div>
+
+            {/* BACKGROUND DECORATION */}
             <div className="absolute bottom-0 left-0 w-full leading-[0] pointer-events-none z-0 overflow-hidden">
                 <svg className="relative block w-full h-[400px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
                     <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-emerald-100/40"></path>
