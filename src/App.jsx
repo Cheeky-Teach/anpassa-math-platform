@@ -14,7 +14,8 @@ import TeacherLiveView from './components/views/TeacherLiveView';
 import DoNowGrid from './components/views/DoNowGrid'; 
 import SessionReportView from './components/views/SessionReportView';
 import ProfileView from './components/views/ProfileView';
-import TimesTable from './components/views/TimesTable'; // <--- NEW IMPORT
+import TimesTable from './components/views/TimesTable';
+import WhiteboardView from './components/whiteboard/WhiteboardView';
 
 // Modals
 import AboutModal from './components/modals/AboutModal';
@@ -559,7 +560,8 @@ function App() {
                         ui={ui} 
                         onStudioOpen={() => setView('question_studio')} 
                         onProfileOpen={() => setView('profile')} 
-                        onTimesTableOpen={() => setView('times_table')} // <--- NEW PROP MAPPING
+                        onTimesTableOpen={() => setView('times_table')}
+                        onWhiteboardOpen={() => setView('whiteboard')}
                         onRelaunch={handleRelaunchSession} 
                         onViewReport={handleViewArchiveReport} 
                         onEdit={handleEditArchivedPacket}
@@ -573,7 +575,9 @@ function App() {
                     />
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />
-                ) : view === 'times_table' ? ( // <--- NEW VIEW ORCHESTRATION
+                ) : view === 'whiteboard' ? ( 
+                        <WhiteboardView onBack={() => setView('dashboard')} />
+                ) : view === 'times_table' ? ( 
                     <TimesTable 
                         lang={lang} 
                         onBack={() => setView('dashboard')} 

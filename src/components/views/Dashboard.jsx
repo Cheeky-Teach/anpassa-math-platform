@@ -4,7 +4,7 @@ import {
   ChevronDown, ChevronUp, ChevronRight, Zap, Play, Clock, Book, Map, Info, 
   Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, User, 
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet, MoreHorizontal,
-  PlayCircle, CheckCircle2, AlertCircle, Grid3X3
+  PlayCircle, CheckCircle2, AlertCircle, Grid3X3, Monitor
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
@@ -21,7 +21,7 @@ const Dashboard = ({
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
     timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen,
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, 
-    onTimesTableOpen, // New prop for the Multiplication tool
+    onTimesTableOpen, onWhiteboardOpen,
     onRelaunch, onViewReport, onEdit, 
     userRole = 'teacher'
 }) => {
@@ -186,7 +186,24 @@ const Dashboard = ({
                                 <span className="text-[9px] font-medium text-emerald-300 uppercase tracking-widest">{t.studio_desc}</span>
                             </button>
                         )}
-                        
+
+                        {/* Whiteboard - Teacher Only */}
+                        {userRole === 'teacher' && (
+                            <button 
+                                onClick={onWhiteboardOpen} 
+                                className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-emerald-600 transition-all text-left shadow-sm relative overflow-hidden">
+                                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-emerald-600 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
+                                    <Monitor size={20} />
+                                </div>
+                                <span className="block font-bold text-sm uppercase text-slate-700 mb-1">
+                                    {lang === 'sv' ? 'Whiteboard' : 'Whiteboard'}
+                                </span>
+                                <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">
+                                    {lang === 'sv' ? 'Genomgång' : 'Presentation'}
+                                </span>
+                            </button>
+                        )}
+                                                
                         {/* Multiplication Tables Tool - Accessible to all */}
                         <button onClick={onTimesTableOpen} className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-emerald-600 transition-all text-left shadow-sm">
                             <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
