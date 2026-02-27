@@ -125,15 +125,18 @@ const WhiteboardView = ({ onBack, lang }) => {
     const rollDice = (id) => {
         let iterations = 0;
         const interval = setInterval(() => {
-            setElements(prev => prev.map(el => 
-                el.id === id ? { ...el, value: Math.floor(Math.random() * 6) + 1, isRolling: true } : el
-            ));
+            setElements(prev => prev.map(el => {
+                if (el.id !== id) return el;
+                const newDice = (el.diceData || [{ value: 1, color: '#ffffff' }]).map(d => ({
+                    ...d,
+                    value: Math.floor(Math.random() * (parseInt(el.sides) || 6)) + 1
+                }));
+                return { ...el, diceData: newDice, isRolling: true };
+            }));
             iterations++;
             if (iterations > 12) {
                 clearInterval(interval);
-                setElements(prev => prev.map(el => 
-                    el.id === id ? { ...el, isRolling: false } : el
-                ));
+                setElements(prev => prev.map(el => el.id === id ? { ...el, isRolling: false } : el));
             }
         }, 60);
     };
@@ -359,14 +362,45 @@ const WhiteboardView = ({ onBack, lang }) => {
 
         if (el.type === 'tchart') {
             const tableW = el.width * 0.4, graphW = el.width * 0.55, graphH = el.height - 130;
-            const maxVal = Math.max(...el.rows.map(r => r.value), 10);
+            
+            // 1. Calculate Logical "Nice" Max and Steps
+            const dataValues = el.rows.map(r => parseFloat(r.value) || 0);
+            const rawMax = Math.max(...dataValues, 5); // Minimum max of 5
+            
+            const getNiceStep = (max) => {
+                const targetSteps = 5;
+                const rawStep = max / targetSteps;
+                const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+                const residual = rawStep / magnitude;
+                let niceResidual;
+                if (residual < 1.5) niceResidual = 1;
+                else if (residual < 3.5) niceResidual = 2;
+                else if (residual < 7.5) niceResidual = 5;
+                else niceResidual = 10;
+                return niceResidual * magnitude;
+            };
+
+            const stepSize = getNiceStep(rawMax);
+            const tickCount = Math.ceil(rawMax / stepSize);
+            const niceMax = tickCount * stepSize;
+
             const barColors = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
             const yTicks = [];
-            for (let j = 0; j <= 5; j++) {
-                const val = Math.round((maxVal / 5) * j);
-                const py = -(val / maxVal) * graphH;
-                yTicks.push(<g key={j}><line x1="-5" y1={py} x2="0" y2={py} stroke="black" strokeWidth="1" /><text x="-10" y={py} textAnchor="end" alignmentBaseline="middle" fontSize="14" fontWeight="bold" fill="black">{val}</text></g>);
+            
+            // 2. Generate Ticks based on the Nice Step
+            for (let j = 0; j <= tickCount; j++) {
+                const val = j * stepSize;
+                const py = -(val / niceMax) * graphH;
+                yTicks.push(
+                    <g key={j}>
+                        <line x1="-5" y1={py} x2="0" y2={py} stroke="black" strokeWidth="1" />
+                        <text x="-10" y={py} textAnchor="end" alignmentBaseline="middle" fontSize="14" fontWeight="bold" fill="black">
+                            {val}
+                        </text>
+                    </g>
+                );
             }
+
             return (
                 <g key={el.id} transform={transform} onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}>
                     <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.95" stroke="black" strokeWidth="3" rx="8" />
@@ -376,7 +410,10 @@ const WhiteboardView = ({ onBack, lang }) => {
                         <text x={tableW/4} y="35" textAnchor="middle" fontWeight="bold" fontSize="22" fill="black">{el.xLabel}</text>
                         <text x={3*tableW/4} y="35" textAnchor="middle" fontWeight="bold" fontSize="22" fill="black">{el.yLabel}</text>
                         {el.rows.map((row, i) => (
-                            <g key={i} transform={`translate(0, ${85 + i*40})`}><text x={tableW/4} y="20" textAnchor="middle" fontSize="18" fill="black">{row.label}</text><text x={3*tableW/4} y="20" textAnchor="middle" fontSize="18" fill="black">{row.value}</text></g>
+                            <g key={i} transform={`translate(0, ${85 + i*40})`}>
+                                <text x={tableW/4} y="20" textAnchor="middle" fontSize="18" fill="black">{row.label}</text>
+                                <text x={3*tableW/4} y="20" textAnchor="middle" fontSize="18" fill="black">{row.value}</text>
+                            </g>
                         ))}
                     </g>
                     {el.showGraph && (
@@ -385,11 +422,36 @@ const WhiteboardView = ({ onBack, lang }) => {
                             <line x1="0" y1="0" x2="0" y2={-graphH} stroke="black" strokeWidth="2" />
                             {yTicks}
                             {el.rows.map((row, i) => {
-                                const barWidth = (graphW / el.rows.length) * 0.7, barH = (row.value / maxVal) * graphH, px = i * (graphW / el.rows.length) + (graphW / el.rows.length) / 2;
+                                const numVal = parseFloat(row.value) || 0;
+                                const barWidth = (graphW / el.rows.length) * 0.7;
+                                // Scale relative to niceMax instead of raw max
+                                const barH = (numVal / niceMax) * graphH;
+                                const px = i * (graphW / el.rows.length) + (graphW / el.rows.length) / 2;
                                 return (
                                     <g key={i}>
-                                        {el.chartType === 'bar' ? <rect x={px - barWidth/2} y={-barH} width={barWidth} height={barH} fill={barColors[i % barColors.length]} fillOpacity="0.7" stroke="black" strokeWidth="1" /> : (i < el.rows.length - 1 && <line x1={px} y1={-barH} x2={(i+1)*(graphW/el.rows.length)+graphW/el.rows.length/2} y2={-(el.rows[i+1].value/maxVal)*graphH} stroke={el.stroke} strokeWidth="4" />)}
-                                        <g transform={`translate(${px}, 15) rotate(45)`}><text x="0" y="0" textAnchor="end" fontSize="14" fontWeight="900" fill="black">{row.label}</text></g>
+                                        {el.chartType === 'bar' ? (
+                                            <rect x={px - barWidth/2} y={-barH} width={barWidth} height={barH} fill={barColors[i % barColors.length]} fillOpacity="0.7" stroke="black" strokeWidth="1" />
+                                        ) : (
+                                            i < el.rows.length - 1 && (
+                                                <line 
+                                                    x1={px} 
+                                                    y1={-(numVal/niceMax)*graphH} 
+                                                    x2={(i+1)*(graphW/el.rows.length)+graphW/el.rows.length/2} 
+                                                    y2={-(parseFloat(el.rows[i+1].value || 0)/niceMax)*graphH} 
+                                                    stroke={el.stroke} 
+                                                    strokeWidth="4" 
+                                                />
+                                            )
+                                        )}
+                                        <g transform={`translate(${px}, 20) rotate(-45)`}>
+                                            <text x="0" y="0" textAnchor="end" alignmentBaseline="right" 
+                                                fontSize="20" 
+                                                fontWeight="900" 
+                                                fill="black"
+                                            >
+                                                {row.label}
+                                            </text>
+                                        </g>
                                     </g>
                                 );
                             })}
@@ -598,29 +660,42 @@ const WhiteboardView = ({ onBack, lang }) => {
         }
 
         if (el.type === 'dice') {
-            const dotLayouts = {
-                1: [[50, 50]],
-                2: [[25, 25], [75, 75]],
-                3: [[25, 25], [50, 50], [75, 75]],
-                4: [[25, 25], [25, 75], [75, 25], [75, 75]],
-                5: [[25, 25], [25, 75], [50, 50], [75, 25], [75, 75]],
-                6: [[25, 25], [25, 50], [25, 75], [75, 25], [75, 50], [75, 75]]
-            };
-            const currentDots = dotLayouts[el.value] || [];
+            const dice = el.diceData || [];
+            const cols = Math.ceil(Math.sqrt(dice.length));
+            const cellSize = el.width / cols;
             
             return (
                 <React.Fragment key={el.id}>
                     <g transform={transform} onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }} onDoubleClick={() => rollDice(el.id)}>
-                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" stroke="black" strokeWidth="4" rx="20" 
-                              className={el.isRolling ? "animate-pulse" : ""} 
-                              style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }} />
-                        {currentDots.map(([dx, dy], i) => (
-                            <circle key={i} 
-                                    cx={el.x + (dx * el.width / 100)} 
-                                    cy={el.y + (dy * el.height / 100)} 
-                                    r={el.width / 12} 
-                                    fill={el.stroke} />
-                        ))}
+                        {dice.map((d, i) => {
+                            const r_idx = Math.floor(i / cols), c_idx = i % cols;
+                            const dx = el.x + c_idx * cellSize, dy = el.y + r_idx * cellSize;
+                            const dSize = cellSize * 0.85;
+                            const isSelectedDie = hoveredId === `${el.id}-${i}`;
+                            
+                            return (
+                                <g key={i} 
+                                   onMouseEnter={() => setHoveredId(`${el.id}-${i}`)} 
+                                   onMouseLeave={() => setHoveredId(null)}
+                                   onClick={(e) => { 
+                                       e.stopPropagation(); 
+                                       setElements(prev => prev.map(o => o.id === el.id ? {
+                                           ...o, 
+                                           diceData: o.diceData.map((dd, idx) => idx === i ? { ...dd, color: color } : dd) 
+                                       } : o));
+                                   }}
+                                >
+                                    <rect x={dx + cellSize * 0.075} y={dy + cellSize * 0.075} width={dSize} height={dSize} 
+                                          fill={d.color || 'white'} stroke="black" strokeWidth="3" rx={dSize * 0.2} 
+                                          style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} 
+                                          className={el.isRolling ? "animate-pulse" : "cursor-pointer"} />
+                                    <text x={dx + cellSize/2} y={dy + cellSize/2 + (dSize*0.15)} textAnchor="middle" 
+                                          fontSize={dSize * 0.5} fontWeight="900" fill="black" className="select-none pointer-events-none">
+                                        {d.value}
+                                    </text>
+                                </g>
+                            );
+                        })}
                     </g>
                     {showUI && renderHandles(el, r)}
                 </React.Fragment>
@@ -645,7 +720,17 @@ const WhiteboardView = ({ onBack, lang }) => {
                     <foreignObject x={el.x} y={botY+20} width={600} height={300}>
                         <div className="flex flex-wrap gap-4 bg-white rounded-2xl shadow-2xl border-2 border-emerald-500 p-5 pointer-events-auto text-[20px] font-black uppercase items-center">
                             {el.type === 'coord' && (<>StepX:<input type="text" className="w-14 border-b text-center" value={el.stepX} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepX:e.target.value}:o))} />StepY:<input type="text" className="w-14 border-b text-center" value={el.stepY} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepY:e.target.value}:o))} /><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, isFirstQuadrant:!o.isFirstQuadrant}:o))} className={`px-2 py-1 rounded ${el.isFirstQuadrant?'bg-emerald-500 text-white':'bg-slate-100'}`}>1st Quad</button></>)}
-                            {el.type === 'tchart' && (<div className="flex flex-col gap-3 w-full"><div className="flex gap-2"><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: [...o.rows, {label:'?', value:0}]}:o))} className="px-3 py-2 bg-emerald-100 rounded-lg text-xs font-black uppercase">+ Rad</button><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, chartType: o.chartType==='bar'?'line':'bar'}:o))} className="px-3 py-2 bg-slate-100 rounded-lg">{el.chartType==='bar'?<BarChart2 size={18}/>:<List size={18}/>}</button><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showGraph:!o.showGraph}:o))} className={`px-3 py-2 rounded-lg text-xs ${el.showGraph ? 'bg-emerald-600 text-white':'bg-slate-100'}`}>Graf</button></div><div className="flex gap-2 text-xs">X:<input className="w-16 border-b" value={el.xLabel} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, xLabel:e.target.value}:o))} />Y:<input className="w-16 border-b" value={el.yLabel} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, yLabel:e.target.value}:o))} /></div></div>)}
+                            {el.type === 'tchart' && (
+                                <div className="flex flex-col gap-3 w-full">
+                                    <div className="flex gap-2">
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: [...o.rows, {label:'?', value:'0'}]}:o))} className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-xs font-black uppercase shadow-sm hover:bg-emerald-600 active:scale-95 transition-all">+ Lägg till rad</button>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: o.rows.length > 1 ? o.rows.slice(0, -1) : o.rows}:o))} className="px-3 py-2 bg-rose-100 text-rose-600 rounded-lg text-xs font-black uppercase hover:bg-rose-200 active:scale-95 transition-all">- Ta bort rad</button>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, chartType: o.chartType==='bar'?'line':'bar'}:o))} className="px-3 py-2 bg-slate-100 rounded-lg border border-slate-200">{el.chartType==='bar'?<BarChart2 size={18}/>:<List size={18}/>}</button>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showGraph:!o.showGraph}:o))} className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${el.showGraph ? 'bg-emerald-600 text-white shadow-inner':'bg-slate-100 text-slate-600'}`}>GRAF</button>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 italic font-medium">Skriv in värden direkt i tabellen ovan för att uppdatera grafen.</p>
+                                </div>
+                            )}
                             {el.type === 'line' && <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showEquation:!o.showEquation}:o))} className={`px-4 py-2 rounded-lg ${el.showEquation ? 'bg-emerald-600 text-white':'bg-slate-100'}`}>Ekvation</button>}
                             {el.type === 'triangle' && (<><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'right'}:o))} className="px-3 py-1 bg-slate-100 rounded text-xs">Rät</button><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'isosceles'}:o))} className="px-3 py-1 bg-slate-100 rounded text-xs">Liksid</button><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'scalene'}:o))} className="px-3 py-1 bg-slate-100 rounded text-xs">Olik</button></>)}
                             {el.type === 'ruler' && (<>Min:<input type="text" className="w-14 border-b text-center" value={el.min} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, min:e.target.value}:o))} />Max:<input type="text" className="w-14 border-b text-center" value={el.max} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, max:e.target.value}:o))} /><select className="bg-slate-100 rounded-lg p-2" value={el.unitType} onChange={e=>{const isF = e.target.value==='fraction';setElements(p=>p.map(o=>o.id===el.id?{...o, unitType:e.target.value, min:isF?0:o.min, max:isF?2:o.max}:o));}}><option value="whole">Whole</option><option value="decimal">Decimal</option><option value="fraction">Fraction</option></select>{el.unitType==='fraction' && (<select className="bg-slate-100 rounded-lg p-2" value={el.denom} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, denom:parseInt(e.target.value)}:o))}>{[2,3,4,5,6,7,8,9,10].map(d=><option key={d} value={d}>1/{d}</option>)}</select>)}</>)}
@@ -660,12 +745,25 @@ const WhiteboardView = ({ onBack, lang }) => {
                                 </div>
                             )}
                             {el.type === 'dice' && (
-                                <div className="flex items-center gap-4">
-                                    <span className="text-emerald-600 font-black">Tärning</span>
-                                    <button onClick={() => rollDice(el.id)} className="bg-emerald-500 text-white rounded-xl px-4 py-2 flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all font-black uppercase">
-                                        <RefreshCw size={18} className={el.isRolling ? "animate-spin" : ""} />
-                                        Slå
-                                    </button>
+                                <div className="flex flex-col gap-3 w-full">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            {/* Safety check added: (o.diceData || []) */}
+                                            <button onClick={() => setElements(p => p.map(o => o.id === el.id ? { ...o, diceData: (o.diceData || [{value: 1, color: '#ffffff'}]).slice(0, -1) } : o))} className="w-8 h-8 bg-slate-100 rounded-lg font-black">-</button>
+                                            <span className="text-[12px] font-black">{(el.diceData || []).length || 1} Tärningar</span>
+                                            <button onClick={() => setElements(p => p.map(o => o.id === el.id ? { ...o, diceData: [...(o.diceData || [{value: 1, color: '#ffffff'}]), { value: 1, color: '#ffffff' }] } : o))} className="w-8 h-8 bg-slate-100 rounded-lg font-black">+</button>
+                                        </div>
+                                        <div className="flex items-center gap-2 border-l pl-4">
+                                            <span className="text-[10px]">Sidor:</span>
+                                            <select className="bg-slate-50 border rounded p-1 text-xs font-black outline-none" value={el.sides || "6"} onChange={e => setElements(p => p.map(o => o.id === el.id ? { ...o, sides: e.target.value } : o))}>
+                                                {[4, 6, 8, 10, 12, 20].map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                        </div>
+                                        <button onClick={() => rollDice(el.id)} className="ml-auto bg-emerald-500 text-white rounded-xl px-4 py-2 flex items-center gap-2 shadow-lg font-black uppercase text-xs active:scale-95 transition-all hover:bg-emerald-600">
+                                            <RefreshCw size={14} className={el.isRolling ? "animate-spin" : ""} /> Slå alla
+                                        </button>
+                                    </div>
+                                    <p className="text-[9px] text-slate-400 italic">Klicka på en tärning för att färglägga den med vald färg.</p>
                                 </div>
                             )}
                         </div>
