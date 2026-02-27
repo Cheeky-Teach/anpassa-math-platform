@@ -135,7 +135,6 @@ const WhiteboardView = ({ onBack, lang }) => {
     const handleMouseDown = (e) => {
         if (e.target.closest('.ui-ignore')) return;
         const { x, y } = getCoordinates(e);
-
         if (selectedId && e.target.closest('foreignObject')) return;
 
         // --- INSTANT SPAWN TOOLS ---
@@ -144,11 +143,9 @@ const WhiteboardView = ({ onBack, lang }) => {
             const centerX = viewBox.x + (viewBox.w / zoom) / 2;
             const centerY = viewBox.y + (viewBox.h / zoom) / 2;
             let newEl = { id: newId, type: activeTool, x: centerX - 150, y: centerY - 150, width: 300, height: 300, stroke: color, rotation: 0, opacity: 1 };
-            
             if (activeTool === 'timer') { newEl.duration = 60; newEl.timeLeft = 60; newEl.isRunning = false; }
             else if (activeTool === 'clock') { newEl.hourRotation = 300; newEl.minRotation = 0; }
             else if (activeTool === 'ruler') { newEl.x = centerX-400; newEl.width = 800; newEl.height = 100; newEl.min = 0; newEl.max = 10; newEl.stepValue = 1; newEl.unitType = 'whole'; newEl.denom = 4; }
-
             const updated = [...elements, newEl];
             setElements(updated);
             commitToHistory(updated);
@@ -187,7 +184,7 @@ const WhiteboardView = ({ onBack, lang }) => {
         else if (activeTool.startsWith('3d_')) { newEl.type = 'shapes_3d'; newEl.shape3D = activeTool.replace('3d_', ''); newEl.showInternal = true; newEl.width = 200; newEl.height = 200; }
         else if (activeTool === 'pen' || activeTool === 'highlighter') { newEl.type = 'path'; newEl.points = [{ x, y }]; newEl.strokeWidth = activeTool === 'highlighter' ? 35 : 6; newEl.opacity = activeTool === 'highlighter' ? 0.4 : 1; }
         else if (activeTool.startsWith('frac_') || activeTool === 'spinner') { newEl.divisions = 4; newEl.filledIndices = []; newEl.showLabel = false; if (activeTool === 'spinner') newEl.arrowRotation = 0; }
-        else if (activeTool === 'node') { newEl.label = "?"; newEl.width = 80; newEl.height = 80; }
+        else if (activeTool === 'node') { newEl.label = ""; newEl.width = 80; newEl.height = 80; }
         
         setElements(prev => [...prev, newEl]); setSelectedId(newId);
     };
@@ -406,6 +403,17 @@ const WhiteboardView = ({ onBack, lang }) => {
                 </g>
             );
         }
+        
+        if (el.type === 'coord') {
+            const s = el.gridSize || 40, ox = el.isFirstQuadrant ? el.x : el.x + el.width/2, oy = el.isFirstQuadrant ? el.y+el.height : el.y+el.height/2;
+            const lns = [], lbs = [];
+            for (let i = -20; i <= 20; i++) {
+                const xp = ox + i*s, yp = oy - i*s;
+                if (xp >= el.x && xp <= el.x+el.width) { lns.push(<line key={`v-${i}`} x1={xp} y1={el.y} x2={xp} y2={el.y+el.height} stroke="#cbd5e1" strokeWidth="1" />); if (el.showLabels && i!==0) lbs.push(<text key={`tx-${i}`} x={xp} y={oy+25} textAnchor="middle" fontSize={el.fontSize} fontWeight="900" fill="black">{i * el.stepX}</text>); }
+                if (yp >= el.y && yp <= el.y+el.height) { lns.push(<line key={`h-${i}`} x1={el.x} y1={yp} x2={el.x+el.width} y2={yp} stroke="#cbd5e1" strokeWidth="1" />); if (el.showLabels && i !== 0) lbs.push(<text key={`ty-${i}`} x={ox-10} y={yp+5} textAnchor="end" fontSize={el.fontSize} fontWeight="900" fill="black">{i * el.stepY}</text>); }
+            }
+            return <g key={el.id} transform={transform} onClick={e=>{e.stopPropagation(); setSelectedId(el.id);}}><rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.9" stroke="black" strokeWidth="1" />{lns}<line x1={el.x} y1={oy} x2={el.x+el.width} y2={oy} stroke="black" strokeWidth="3" /><line x1={ox} y1={el.y} x2={ox} y2={el.y+el.height} stroke="black" strokeWidth="3" />{lbs}<text x={ox-10} y={oy+25} fontSize={el.fontSize} fontWeight="900" fill="black">0</text>{showUI && renderHandles(el)}</g>;
+        }
 
         if (el.type === 'protractor') {
             const r = el.width / 2; const ticks = [];
@@ -422,6 +430,7 @@ const WhiteboardView = ({ onBack, lang }) => {
             let faces = [], lines = [];
             const common = { fill: el.stroke, fillOpacity: 0.15, stroke: el.stroke, strokeWidth: 2 };
             const dotted = { stroke: el.stroke, strokeWidth: 2, strokeDasharray: "6" };
+            
             if (el.shape3D === 'cube' || el.shape3D === 'prism') {
                 faces.push(<path key="f1" d={`M ${el.x} ${el.y+d} L ${el.x+w} ${el.y+d} L ${el.x+w} ${el.y+d+h} L ${el.x} ${el.y+d+h} Z`} {...common} />);
                 faces.push(<path key="f2" d={`M ${el.x} ${el.y+d} L ${el.x+d} ${el.y} L ${el.x+w+d} ${el.y} L ${el.x+w} ${el.y+d} Z`} {...common} />);
@@ -440,7 +449,6 @@ const WhiteboardView = ({ onBack, lang }) => {
                 faces.push(<path key="h2" d={`M ${el.x+w} ${el.y+h/2} L ${el.x+w+d} ${el.y+h/2-d} L ${el.x+w+d} ${el.y+h-d} L ${el.x+w} ${el.y+h} Z`} {...common} />);
                 faces.push(<path key="hr" d={`M ${el.x} ${el.y+h/2} L ${el.x+w/2} ${el.y} L ${el.x+w} ${el.y+h/2} Z`} {...common} fillOpacity={0.4} />);
                 faces.push(<path key="hr2" d={`M ${el.x+w/2} ${el.y} L ${el.x+w/2+d} ${el.y-d} L ${el.x+w+d} ${el.y+h/2-d} L ${el.x+w} ${el.y+h/2} Z`} {...common} fillOpacity={0.4} />);
-                if (el.showInternal) lines.push(<line key="h" x1={el.x+w/2} y1={el.y} x2={el.x+w/2} y2={el.y+h} {...dotted} />);
             } else if (el.shape3D === 'cylinder' || el.shape3D === 'silo' || el.shape3D === 'tube') {
                 faces.push(<ellipse key="e1" cx={el.x+w/2} cy={el.y+h} rx={w/2} ry={d/2} {...common} />);
                 faces.push(<rect key="r1" x={el.x} y={el.y+d/2} width={w} height={h-d/2} {...common} stroke="none" />);
@@ -454,9 +462,8 @@ const WhiteboardView = ({ onBack, lang }) => {
                 if (isIce) faces.push(<path key="scoop" d={`M ${el.x} ${baseY} A ${w/2} ${w/2} 0 0 1 ${el.x+w} ${baseY}`} {...common} fillOpacity={0.4} />);
                 if (el.showInternal) lines.push(<line key="h" x1={el.x+w/2} y1={apexY} x2={el.x+w/2} y2={baseY} {...dotted} />);
             } else if (el.shape3D === 'sphere' || el.shape3D === 'hemi') {
-                if (el.shape3D === 'hemi') {
-                    faces.push(<ellipse key="b" cx={el.x+w/2} cy={el.y+w/2} rx={w/2} ry={w/6} {...common} />, <path key="d" d={`M ${el.x} ${el.y+w/2} A ${w/2} ${w/2} 0 0 1 ${el.x+w} ${el.y+w/2}`} {...common} fillOpacity={0.3} transform={`rotate(180, ${el.x+w/2}, ${el.y+w/2})`}/>);
-                } else faces.push(<circle key="s1" cx={el.x+w/2} cy={el.y+w/2} r={w/2} {...common} fillOpacity={0.2} />, <ellipse key="eq" cx={el.x+w/2} cy={el.y+w/2} rx={w/2} ry={w/6} {...common} fill="none" strokeDasharray="4" />);
+                if (el.shape3D === 'hemi') faces.push(<ellipse key="b" cx={el.x+w/2} cy={el.y+w/2} rx={w/2} ry={w/6} {...common} />, <path key="d" d={`M ${el.x} ${el.y+w/2} A ${w/2} ${w/2} 0 0 1 ${el.x+w} ${el.y+w/2}`} {...common} fillOpacity={0.3} transform={`rotate(180, ${el.x+w/2}, ${el.y+w/2})`}/>);
+                else faces.push(<circle key="s1" cx={el.x+w/2} cy={el.y+w/2} r={w/2} {...common} fillOpacity={0.2} />, <ellipse key="eq" cx={el.x+w/2} cy={el.y+w/2} rx={w/2} ry={w/6} {...common} fill="none" strokeDasharray="4" />);
             }
             return <g key={el.id} transform={transform} onMouseEnter={()=>setHoveredId(el.id)} onMouseLeave={()=>setHoveredId(null)} onClick={e=>{e.stopPropagation(); setSelectedId(el.id);}}>{faces}{lines}{showUI && renderHandles(el)}</g>;
         }
