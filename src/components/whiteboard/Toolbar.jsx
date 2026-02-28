@@ -17,34 +17,101 @@ const Toolbar = ({
 
     const colors = ['#0f172a', '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
 
-    const t = {
+    // --- TRANSLATION MAPPING ---
+    const translations = {
         sv: {
-            cat_writing: "Skriva", cat_geometry: "Geometri", cat_analysis: "Graf", cat_system: "System",
-            undo: "Ångra", redo: "Gör om", select: "Markera", text: "Text (T)",
-            math: "Matte", pen: "Penna", highlighter: "Markör", line: "Linje",
-            ruler: "Linjal", rect: "Fyrkant", circle: "Cirkel", triangle: "Triangel",
-            frac_rect: "Bråk Fyr", frac_circle: "Bråk Cirk", shapes_3d: "3D Former", protractor: "Gradskiva",
-            coord: "Koordsystem", tchart: "Tabell", dice: "Tärning", spinner: "Snurra", node: "Nod",
-            timer: "Timer", clock: "Klocka", color: "Färg", clear: "Rensa",
+            cat_writing: "Skriva",
+            cat_geometry: "Geometri",
+            cat_analysis: "Statistik",
+            cat_system: "System",
+            undo: "Ångra",
+            redo: "Gör om",
+            select: "Markera",
+            text: "Text (T)",
+            math: "Matte",
+            pen: "Penna",
+            highlighter: "Markör",
+            line: "Linje",
+            ruler: "Tallinje",
+            rect: "Fyrkant",
+            circle: "Cirkel",
+            triangle: "Triangel",
+            frac_rect: "Bråk Fyr",
+            frac_circle: "Bråk Cirk",
+            shapes_3d: "3D Former",
+            protractor: "Gradskiva",
+            coord: "Koordsystem",
+            tchart: "Tabell",
+            dice: "Tärning",
+            spinner: "Snurra",
+            node: "Nod",
+            timer: "Timer",
+            clock: "Klocka",
+            color: "Färg",
+            clear: "Rensa",
             // 3D Labels
-            cube: "Kub", prism: "Rätblock", cylinder: "Cylinder", sphere: "Klot", cone: "Kon",
-            pyramid: "Pyramid", icecream: "Glass-strut", silo: "Silo", house: "Hus", tube: "Rör",
-            frustum: "Stympad kon", hemi: "Halvklot", triprism: "Tri-Prisma"
+            cube: "Kub",
+            prism: "Rätblock",
+            cylinder: "Cylinder",
+            sphere: "Klot",
+            cone: "Kon",
+            pyramid: "Pyramid",
+            icecream: "Glass-strut",
+            silo: "Silo",
+            house: "Hus",
+            tube: "Rör",
+            frustum: "Stympad kon",
+            hemi: "Halvklot",
+            triprism: "Tri-Prisma"
         },
         en: {
-            cat_writing: "Write", cat_geometry: "Geometry", cat_analysis: "Analysis", cat_system: "System",
-            undo: "Undo", redo: "Redo", select: "Select", text: "Text (T)",
-            math: "Math", pen: "Pen", highlighter: "Highlighter", line: "Line",
-            ruler: "Number Line", rect: "Rectangle", circle: "Circle", triangle: "Triangle",
-            frac_rect: "Frac Rect", frac_circle: "Frac Circle", shapes_3d: "3D Shapes", protractor: "Protractor",
-            coord: "Coordinate System", tchart: "Table", dice: "Dice", spinner: "Spinner", node: "Node",
-            timer: "Timer", clock: "Clock", color: "Color", clear: "Clear",
+            cat_writing: "Write",
+            cat_geometry: "Geometry",
+            cat_analysis: "Statistics",
+            cat_system: "System",
+            undo: "Undo",
+            redo: "Redo",
+            select: "Select",
+            text: "Text (T)",
+            math: "Math",
+            pen: "Pen",
+            highlighter: "Highlighter",
+            line: "Line",
+            ruler: "Number Line",
+            rect: "Rectangle",
+            circle: "Circle",
+            triangle: "Triangle",
+            frac_rect: "Frac Rect",
+            frac_circle: "Frac Circle",
+            shapes_3d: "3D Shapes",
+            protractor: "Protractor",
+            coord: "Coordinate System",
+            tchart: "Table",
+            dice: "Dice",
+            spinner: "Spinner",
+            node: "Node",
+            timer: "Timer",
+            clock: "Clock",
+            color: "Color",
+            clear: "Clear",
             // 3D Labels
-            cube: "Cube", prism: "Prism", cylinder: "Cylinder", sphere: "Sphere", cone: "Cone",
-            pyramid: "Pyramid", icecream: "Ice Cream", silo: "Silo", house: "House", tube: "Tube",
-            frustum: "Frustum", hemi: "Hemisphere", triprism: "Tri-Prism"
+            cube: "Cube",
+            prism: "Prism",
+            cylinder: "Cylinder",
+            sphere: "Sphere",
+            cone: "Cone",
+            pyramid: "Pyramid",
+            icecream: "Ice Cream",
+            silo: "Silo",
+            house: "House",
+            tube: "Tube",
+            frustum: "Frustum",
+            hemi: "Hemisphere",
+            triprism: "Tri-Prism"
         }
-    }[lang];
+    };
+
+    const t = translations[lang] || translations.sv;
 
     const shapes3D = [
         { id: '3d_cube', label: t.cube, icon: Box },
@@ -93,7 +160,6 @@ const Toolbar = ({
                         <button key={s.id} onClick={() => { setActiveTool(s.id); setShow3DMenu(false); }}
                             className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all ${activeTool === s.id ? 'bg-emerald-600 text-white shadow-lg scale-105' : 'hover:bg-emerald-50 text-slate-600'}`}>
                             <s.icon size={22} />
-                            {/* Shape Label Text String */}
                             <span className="text-[10px] mt-1.5 font-black uppercase text-center leading-tight">{s.label}</span>
                         </button>
                     ))}

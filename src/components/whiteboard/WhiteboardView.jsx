@@ -2,15 +2,81 @@ import React, { useState, useRef, useEffect } from 'react';
 import Toolbar from './Toolbar';
 import 'mathlive';
 import { MathfieldElement } from 'mathlive';
+import * as htmlToImage from 'html-to-image';
 import { 
     ChevronLeft, Hash, Plus, Minus, Grid3X3, 
     CircleDot, Square as SquareIcon, RotateCw, 
     Play, Share2, RefreshCw, LayoutTemplate, Type, Trash2, Triangle,
-    BarChart2, List, Clock as ClockIcon, Timer as TimerIcon, Pause
+    BarChart2, List, Clock as ClockIcon, Timer as TimerIcon, Pause, Printer,
+    Disc2, Save, Copy
 } from 'lucide-react';
 
 
 const WhiteboardView = ({ onBack, lang }) => {
+    // --- 0. TRANSLATIONS ---
+    const t = {
+        sv: {
+            stepX: "Steg X:",
+            stepY: "Steg Y:",
+            quad1: "1:a Kvadr.",
+            addRow: "+ Rad",
+            remRow: "- Rad",
+            graph: "GRAF",
+            equation: "Ekvation",
+            right: "Rät",
+            isosceles: "Liksid",
+            whole: "Heltal",
+            decimal: "Decimal",
+            fraction: "Bråk",
+            parts: "Delar",
+            size: "Storlek:",
+            dice: "Tärningar",
+            sides: "Sidor",
+            rollAll: "SLÅ ALLA",
+            diceHelp: "Klicka på en tärning för att färglägga den med vald färg.",
+            min: "Min:",
+            max: "Max:",
+            calc: "Räkna:",
+            eg: "t.ex. 10-3",
+            subnotches: "Visa delstreck",
+            headerTitle: "Anpassa",
+            headerSub: "Whiteboard",
+            saveImage: "Spara som bild",
+            copyImage: "Kopiera bild",
+            printCanvas: "Skriv ut (Landskap)"
+        },
+        en: {
+            stepX: "Step X:",
+            stepY: "Step Y:",
+            quad1: "1st Quad",
+            addRow: "+ Row",
+            remRow: "- Row",
+            graph: "GRAPH",
+            equation: "Equation",
+            right: "Right",
+            isosceles: "Isosceles",
+            whole: "Whole",
+            decimal: "Decimal",
+            fraction: "Fraction",
+            parts: "Parts",
+            size: "Size:",
+            dice: "Dice",
+            sides: "Sides",
+            rollAll: "ROLL ALL",
+            diceHelp: "Click a die to color it with the selected color.",
+            min: "Min:",
+            max: "Max:",
+            calc: "Calc:",
+            eg: "e.g. 10-3",
+            subnotches: "Show subnotches",
+            headerTitle: "Anpassa",
+            headerSub: "Whiteboard",
+            saveImage: "Save as image",
+            copyImage: "Copy to clipboard",
+            printCanvas: "Print (Landscape)",
+        }
+    }[lang || 'sv'];
+
     // --- 1. STATE MANAGEMENT ---
     const [elements, setElements] = useState(() => {
         const saved = localStorage.getItem('anpassa_whiteboard_elements');
@@ -75,7 +141,9 @@ const WhiteboardView = ({ onBack, lang }) => {
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         let x = (clientX - rect.left) * (viewBox.w / zoom / rect.width) + viewBox.x;
         let y = (clientY - rect.top) * (viewBox.h / zoom / rect.height) + viewBox.y;
-        if (shouldSnap && !['pen', 'highlighter'].includes(activeTool)) {
+        
+        // Disable snapping for measuring tools to allow precision
+        if (shouldSnap && !['pen', 'highlighter', 'protractor', 'ruler'].includes(activeTool)) {
             x = Math.round(x / 20) * 20; y = Math.round(y / 20) * 20;
         }
         return { x, y };
@@ -150,25 +218,199 @@ const WhiteboardView = ({ onBack, lang }) => {
             }
             return el;
         }));
+    }    
+    
+    const copySelectedObject = async (id) => {
+        const el = elements.find(item => item.id === id);
+        if (!el || !containerRef.current) return;
+
+        try {
+            // 1. Find the actual DOM element for this object inside the SVG
+            // We use a query selector to find the group/path by its index or position
+            const svgItems = containerRef.current.querySelectorAll('g, path, line, rect, circle, polygon');
+            const targetNode = Array.from(svgItems).find(node => 
+                !node.classList.contains('ui-ignore') && 
+                node.getAttribute('key') === id.toString()
+            ) || document.querySelector(`[key="${id}"]`); 
+            
+            // If the key search fails, we'll clone the whole SVG and filter it (fallback)
+            const clone = containerRef.current.cloneNode(true);
+            const children = Array.from(clone.childNodes);
+            
+            // 2. Remove UI and everything EXCEPT the selected element
+            children.forEach((child, idx) => {
+                // Keep defs (for patterns) but remove other elements
+                if (child.tagName === 'defs') return;
+                // Simple logic: if it's the selected one, keep it. 
+                // We identify it by matching the data we have.
+                if (elements[idx-1]?.id !== id) child.remove();
+            });
+
+            // 3. Setup dimensions for the "Crop"
+            // We use the element's own width/height or bounding box
+            const padding = 20;
+            const width = (el.width || 200) + padding * 2;
+            const height = (el.height || 200) + padding * 2;
+
+            // 4. Create a specialized data URL for just this object
+            const svgData = new XMLSerializer().serializeToString(clone);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(svgBlob);
+            reader.onloadend = () => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const qm = 2; // High quality multiplier
+                    canvas.width = width * qm;
+                    canvas.height = height * qm;
+                    const ctx = canvas.getContext('2d');
+                    ctx.scale(qm, qm);
+                    
+                    // Draw transparent background (good for pasting into slides)
+                    ctx.clearRect(0, 0, width, height);
+                    
+                    // Shift the drawing so the object is centered in our "crop"
+                    // We calculate the offset based on the object's x/y
+                    ctx.drawImage(img, -el.x + padding, -el.y + padding);
+
+                    canvas.toBlob(async (blob) => {
+                        const item = new ClipboardItem({ "image/png": blob });
+                        await navigator.clipboard.write([item]);
+                        alert(lang === 'sv' ? "Objekt kopierat!" : "Object copied!");
+                    }, 'image/png');
+                };
+                img.src = reader.result;
+            };
+        } catch (err) {
+            console.error("Smart Copy Error:", err);
+        }
+    };
+
+    const exportCanvas = async (mode) => {
+        const svgElement = containerRef.current;
+        if (!svgElement) return;
+
+        if (mode === 'print') {
+            window.print();
+            return;
+        }
+
+        try {
+            // 1. Clone and clean UI
+            const clone = svgElement.cloneNode(true);
+            const uiElements = clone.querySelectorAll('.ui-ignore');
+            uiElements.forEach(el => el.remove());
+
+            // 2. Serialize SVG to XML string
+            const svgData = new XMLSerializer().serializeToString(clone);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+
+            // 3. Convert Blob to Data URI (Bypasses CSP blob restriction)
+            const reader = new FileReader();
+            reader.readAsDataURL(svgBlob);
+            reader.onloadend = () => {
+                const base64data = reader.result; // This is a "data:..." URL
+                
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const rect = svgElement.getBoundingClientRect();
+                    
+                    // --- ADJUST QUALITY HERE ---
+                    // 1 = Standard 1:1, 2 = Double size/quality, 3 = Triple, etc.
+                    const qualityMultiplier = 3; 
+                    const scale = (window.devicePixelRatio || 1) * qualityMultiplier;
+
+                    // Set the canvas size (The physical resolution of the file)
+                    canvas.width = rect.width * scale;
+                    canvas.height = rect.height * scale;
+                    
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Enable high-quality image smoothing
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    
+                    // Scale the coordinate system so drawImage fills the large canvas
+                    ctx.scale(scale, scale);
+                    
+                    // Background (using rect dimensions)
+                    ctx.fillStyle = bgType === 'blank' ? '#ffffff' : '#f8fafc';
+                    ctx.fillRect(0, 0, rect.width, rect.height);
+                    
+                    // Draw the SVG capture
+                    ctx.drawImage(img, 0, 0, rect.width, rect.height);
+
+                    if (mode === 'image') {
+                        const link = document.createElement('a');
+                        link.download = `whiteboard-highres-${Date.now()}.png`;
+                        // Export at max quality
+                        link.href = canvas.toDataURL('image/png', 1.0);
+                        link.click();
+                    } else if (mode === 'copy') {
+                        canvas.toBlob(async (blob) => {
+                            try {
+                                const item = new ClipboardItem({ "image/png": blob });
+                                await navigator.clipboard.write([item]);
+                                alert(lang === 'sv' ? "Högupplöst bild kopierad!" : "High-resolution image copied!");
+                            } catch (e) {
+                                alert(lang === 'sv' ? "Kunde inte kopiera. Prova ladda ner." : "Copy failed. Try downloading.");
+                            }
+                        }, 'image/png', 1.0);
+                    }
+                };
+                img.src = base64data; // Loads the Data URI allowed by your CSP
+            };
+        } catch (err) {
+            console.error("Export Error:", err);
+            alert("Export failed.");
+        }
     };
 
     // --- 4. INTERACTION HANDLERS ---
     const handleMouseDown = (e) => {
-        if (e.target.closest('.ui-ignore')) return;
         const { x, y } = getCoordinates(e);
-        if (selectedId && e.target.closest('foreignObject')) return;
+        const hit = [...elements].reverse().find(el => isPointInElement(x, y, el));
 
-        if (['timer', 'clock', 'ruler', 'coord', 'dice'].includes(activeTool)) {
+        // 1. If we hit a foreignObject (T-Chart cell or Math field), 
+        // we must select the element but then RETURN to let the input focus.
+        if (e.target.closest('foreignObject')) {
+            if (hit) setSelectedId(hit.id);
+            return; 
+        }
+
+        // 2. Ignore clicks on standard UI (like the Toolbar) if we didn't hit an element
+        if (e.target.closest('.ui-ignore') && !hit) return;
+
+        // 3. Prevent starting a "Drawing" if we are clicking a context menu
+        if (selectedId && e.target.closest('.ui-ignore')) return;
+        // --- INSTANT SPAWN TOOLS ---
+        if (['timer', 'clock', 'ruler', 'coord', 'dice', 'math'].includes(activeTool)) {
             const newId = Date.now();
             const centerX = viewBox.x + (viewBox.w / zoom) / 2;
             const centerY = viewBox.y + (viewBox.h / zoom) / 2;
-            let newEl = { id: newId, type: activeTool, x: centerX - 150, y: centerY - 150, width: 200, height: 200, stroke: color, rotation: 0, opacity: 1 };
+            let newEl = { id: newId, type: activeTool, x: centerX - 150, y: centerY - 150, width: activeTool === 'math' ? 300 : 200, height: activeTool === 'math' ? 80 : 200, stroke: color, rotation: 0, opacity: 1 };
             
             if (activeTool === 'timer') { newEl.duration = 60; newEl.timeLeft = 60; newEl.isRunning = false; }
             else if (activeTool === 'clock') { newEl.hourRotation = 300; newEl.minRotation = 0; }
-            else if (activeTool === 'ruler') { newEl.x = centerX-400; newEl.width = 800; newEl.height = 100; newEl.min = "0"; newEl.max = "10"; newEl.stepValue = 1; newEl.unitType = 'whole'; newEl.denom = 4; }
+            else if (activeTool === 'ruler') { 
+                newEl.x = centerX-400; 
+                newEl.width = 800; 
+                newEl.height = 100; 
+                newEl.min = "0"; 
+                newEl.max = "10"; 
+                newEl.stepValue = 1; 
+                newEl.unitType = 'whole'; 
+                newEl.denom = 4; 
+                newEl.showSubnotches = true;
+                newEl.equation = "";
+            }
             else if (activeTool === 'coord') { newEl.stepX = "1"; newEl.stepY = "1"; newEl.gridSize = 40; newEl.isFirstQuadrant = false; newEl.showLabels = true; newEl.fontSize = 20; }
-            else if (activeTool === 'dice') { newEl.value = 1; newEl.isRolling = false; newEl.width = 120; newEl.height = 120; }
+            else if (activeTool === 'dice') { newEl.sides = "6"; newEl.diceData = [{ value: 1, color: '#ffffff' }]; newEl.isRolling = false; }
+            else if (activeTool === 'math') { newEl.label = ""; newEl.fontSize = 32; }
+            
 
             const updated = [...elements, newEl];
             setElements(updated);
@@ -282,7 +524,7 @@ const WhiteboardView = ({ onBack, lang }) => {
     const isPointInElement = (x, y, el) => {
         if (el.type === 'path' && el.points && el.points.length > 0) return Math.abs(x - el.points[0].x) < 30 && Math.abs(y - el.points[0].y) < 30;
         const r = el.width / 2;
-        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart'];
+        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart','math','dice'];
         if (bounds.some(b => el.type.includes(b))) return x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height;
         if (el.type.includes('circle') || ['spinner', 'node', 'protractor', 'clock', 'timer'].includes(el.type)) return Math.sqrt((x - (el.x + r))**2 + (y - (el.y + r))**2) <= r;
         if (el.type === 'line') {
@@ -349,15 +591,65 @@ const WhiteboardView = ({ onBack, lang }) => {
 
         if (el.type === 'ruler') {
             const ticks = [], rng = el.max - el.min, pxU = el.width / rng;
-            const step = el.unitType === 'fraction' ? 1/el.denom : el.stepValue;
-            for (let i = 0; i <= rng + 0.01; i += step) {
-                const val = parseFloat(el.min) + i, xp = el.x + i * pxU;
-                const isWhole = Math.abs(val % 1) < 0.01;
-                ticks.push(<line key={i} x1={xp} y1={el.y + 35} x2={xp} y2={el.y + 65} stroke="black" strokeWidth={isWhole ? 4:2} />);
-                let lbl = el.unitType === 'decimal' ? val.toFixed(1) : (el.unitType === 'fraction' ? (isWhole ? Math.round(val) : `${Math.round((val%1)*el.denom)}/${el.denom}`) : Math.round(val));
-                if (lbl !== "" && (isWhole || el.unitType !== 'whole')) ticks.push(<text key={`l-${i}`} x={xp} y={el.y + 105} textAnchor="middle" fontSize="24" fontWeight="900" fill="black">{lbl}</text>);
+            const subStep = el.unitType === 'fraction' ? 1/el.denom : (el.unitType === 'decimal' ? 0.1 : 0.5);
+            const labelStep = (el.unitType === 'fraction' || el.unitType === 'whole') ? 1 : (el.stepValue || 1);
+
+            for (let i = 0; i <= rng + 0.001; i += subStep) {
+                const val = parseFloat(el.min) + i;
+                const xp = el.x + i * pxU;
+                const isLabelTick = Math.abs(i % labelStep) < 0.001 || Math.abs((i % labelStep) - labelStep) < 0.001;
+                if (isLabelTick) {
+                    ticks.push(<line key={`m-${i}`} x1={xp} y1={el.y + 30} x2={xp} y2={el.y + 70} stroke="black" strokeWidth="4" />);
+                    const lbl = el.unitType === 'decimal' ? val.toFixed(1) : Math.round(val).toString();
+                    ticks.push(<text key={`l-${i}`} x={xp} y={el.y + 105} textAnchor="middle" fontSize="24" fontWeight="900" fill="black">{lbl}</text>);
+                } else if (el.showSubnotches) {
+                    ticks.push(<line key={`s-${i}`} x1={xp} y1={el.y + 40} x2={xp} y2={el.y + 60} stroke="black" strokeWidth="2" opacity="0.5" />);
+                }
             }
-            return <g key={el.id} onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}><line x1={el.x} y1={el.y+50} x2={el.x+el.width} y2={el.y+50} stroke="black" strokeWidth="5" />{ticks}{showUI && renderHandles(el)}</g>;
+
+            // --- Calculation Hops Logic ---
+            const hops = [];
+            const match = el.equation?.match(/(\d+)\s*([+-])\s*(\d+)/);
+            if (match) {
+                const startVal = parseInt(match[1]), op = match[2], count = parseInt(match[3]);
+                const dir = op === '+' ? 1 : -1;
+                const totalWidth = count * pxU;
+                const startX = el.x + (startVal - el.min) * pxU;
+                
+                for (let j = 0; j < count; j++) {
+                    const x1 = startX + (j * dir * pxU);
+                    const x2 = x1 + (dir * pxU);
+                    const midX = (x1 + x2) / 2;
+                    const h = 40; // Arc height
+                    const d = `M ${x1} ${el.y + 30} Q ${midX} ${el.y - h} ${x2} ${el.y + 30}`;
+                    hops.push(<path key={j} d={d} fill="none" stroke={el.stroke} strokeWidth="3" strokeDasharray="6,4" />);
+                    
+                    // Add arrow to final hop
+                    if (j === count - 1) {
+                        hops.push(<path key="arrow" d={`M ${x2-5*dir} ${el.y+20} L ${x2} ${el.y+30} L ${x2-5*dir} ${el.y+40}`} fill="none" stroke={el.stroke} strokeWidth="3" />);
+                    }
+                }
+                
+                // Centered Equation Label
+                const labelX = startX + (totalWidth / 2) * dir;
+                hops.push(
+                    <g key="lbl">
+                        <rect x={labelX - 25} y={el.y - 75} width="50" height="35" fill="white" rx="4" />
+                        <text x={labelX} y={el.y - 50} textAnchor="middle" fontSize="22" fontWeight="black" fill={el.stroke}>{op}{count}</text>
+                    </g>
+                );
+            }
+
+            return (
+                <React.Fragment key={el.id}>
+                    <g transform={transform} onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}>
+                        <line x1={el.x} y1={el.y+50} x2={el.x+el.width} y2={el.y+50} stroke="black" strokeWidth="5" />
+                        {ticks}
+                        {hops}
+                    </g>
+                    {showUI && renderHandles(el)}
+                </React.Fragment>
+            );
         }
 
         if (el.type === 'tchart') {
@@ -365,7 +657,7 @@ const WhiteboardView = ({ onBack, lang }) => {
             
             // 1. Calculate Logical "Nice" Max and Steps
             const dataValues = el.rows.map(r => parseFloat(r.value) || 0);
-            const rawMax = Math.max(...dataValues, 5); // Minimum max of 5
+            const rawMax = Math.max(...dataValues, 5);
             
             const getNiceStep = (max) => {
                 const targetSteps = 5;
@@ -383,99 +675,164 @@ const WhiteboardView = ({ onBack, lang }) => {
             const stepSize = getNiceStep(rawMax);
             const tickCount = Math.ceil(rawMax / stepSize);
             const niceMax = tickCount * stepSize;
-
             const barColors = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
             const yTicks = [];
             
-            // 2. Generate Ticks based on the Nice Step
             for (let j = 0; j <= tickCount; j++) {
                 const val = j * stepSize;
                 const py = -(val / niceMax) * graphH;
                 yTicks.push(
                     <g key={j}>
                         <line x1="-5" y1={py} x2="0" y2={py} stroke="black" strokeWidth="1" />
-                        <text x="-10" y={py} textAnchor="end" alignmentBaseline="middle" fontSize="14" fontWeight="bold" fill="black">
-                            {val}
-                        </text>
+                        <text x="-10" y={py} textAnchor="end" alignmentBaseline="middle" fontSize="14" fontWeight="bold" fill="black">{val}</text>
                     </g>
                 );
             }
 
             return (
-                <g key={el.id} transform={transform} onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}>
-                    <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.95" stroke="black" strokeWidth="3" rx="8" />
-                    <g transform={`translate(${el.x + 10}, ${el.y + 10})`}>
-                        <line x1={tableW/2} y1="0" x2={tableW/2} y2={el.height - 20} stroke="black" strokeWidth="4" />
-                        <line x1="0" y1="50" x2={tableW} y2="50" stroke="black" strokeWidth="4" />
-                        <text x={tableW/4} y="35" textAnchor="middle" fontWeight="bold" fontSize="22" fill="black">{el.xLabel}</text>
-                        <text x={3*tableW/4} y="35" textAnchor="middle" fontWeight="bold" fontSize="22" fill="black">{el.yLabel}</text>
-                        {el.rows.map((row, i) => (
-                            <g key={i} transform={`translate(0, ${85 + i*40})`}>
-                                <text x={tableW/4} y="20" textAnchor="middle" fontSize="18" fill="black">{row.label}</text>
-                                <text x={3*tableW/4} y="20" textAnchor="middle" fontSize="18" fill="black">{row.value}</text>
-                            </g>
-                        ))}
-                    </g>
-                    {el.showGraph && (
-                        <g transform={`translate(${el.x + tableW + 60}, ${el.y + el.height - 90})`}>
-                            <line x1="0" y1="0" x2={graphW} y2="0" stroke="black" strokeWidth="2" />
-                            <line x1="0" y1="0" x2="0" y2={-graphH} stroke="black" strokeWidth="2" />
-                            {yTicks}
-                            {el.rows.map((row, i) => {
-                                const numVal = parseFloat(row.value) || 0;
-                                const barWidth = (graphW / el.rows.length) * 0.7;
-                                // Scale relative to niceMax instead of raw max
-                                const barH = (numVal / niceMax) * graphH;
-                                const px = i * (graphW / el.rows.length) + (graphW / el.rows.length) / 2;
-                                return (
-                                    <g key={i}>
-                                        {el.chartType === 'bar' ? (
-                                            <rect x={px - barWidth/2} y={-barH} width={barWidth} height={barH} fill={barColors[i % barColors.length]} fillOpacity="0.7" stroke="black" strokeWidth="1" />
-                                        ) : (
-                                            i < el.rows.length - 1 && (
-                                                <line 
-                                                    x1={px} 
-                                                    y1={-(numVal/niceMax)*graphH} 
-                                                    x2={(i+1)*(graphW/el.rows.length)+graphW/el.rows.length/2} 
-                                                    y2={-(parseFloat(el.rows[i+1].value || 0)/niceMax)*graphH} 
-                                                    stroke={el.stroke} 
-                                                    strokeWidth="4" 
-                                                />
-                                            )
-                                        )}
-                                        <g transform={`translate(${px}, 20) rotate(-45)`}>
-                                            <text x="0" y="0" textAnchor="end" alignmentBaseline="right" 
-                                                fontSize="20" 
-                                                fontWeight="900" 
-                                                fill="black"
-                                            >
-                                                {row.label}
-                                            </text>
-                                        </g>
-                                    </g>
-                                );
-                            })}
+                <React.Fragment key={el.id}>
+                    <g transform={transform} onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}>
+                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.95" stroke="black" strokeWidth="3" rx="8" />
+                        
+                        {/* Interactive Table Container */}
+                        <g transform={`translate(${el.x + 10}, ${el.y + 10})`}>
+                            {/* Static Table Lines */}
+                            <line x1={tableW/2} y1="0" x2={tableW/2} y2={el.height - 20} stroke="black" strokeWidth="4" />
+                            <line x1="0" y1="50" x2={tableW} y2="50" stroke="black" strokeWidth="4" />
+
+                            {/* Header Inputs (X and Y Labels) */}
+                            <foreignObject x={0} y={0} width={tableW} height={50} className="ui-ignore">
+                                <div className="flex w-full h-full pointer-events-auto">
+                                    <input className="w-1/2 text-center font-black bg-transparent outline-none text-xl border-none" value={el.xLabel} onChange={e => setElements(p => p.map(o => o.id === el.id ? {...o, xLabel: e.target.value} : o))} />
+                                    <input className="w-1/2 text-center font-black bg-transparent outline-none text-xl border-none" value={el.yLabel} onChange={e => setElements(p => p.map(o => o.id === el.id ? {...o, yLabel: e.target.value} : o))} />
+                                </div>
+                            </foreignObject>
+
+                            {/* Row Data Inputs */}
+                            {el.rows.map((row, i) => (
+                                <foreignObject key={i} x={0} y={65 + i*40} width={tableW} height={40} className="ui-ignore">
+                                    <div className="flex w-full h-full border-b border-slate-100 hover:bg-slate-50 pointer-events-auto">
+                                        <input 
+                                            className="w-1/2 text-center text-m font-bold bg-transparent outline-none text-black border-none" 
+                                            value={row.label} 
+                                            onChange={e => {
+                                                const newRows = [...el.rows];
+                                                newRows[i].label = e.target.value;
+                                                setElements(p => p.map(o => o.id === el.id ? {...o, rows: newRows} : o));
+                                            }} 
+                                        />
+                                        <input 
+                                            className="w-1/2 text-center text-m font-black bg-transparent outline-none text-blue-600 border-none" 
+                                            value={row.value} 
+                                            onChange={e => {
+                                                const newRows = [...el.rows];
+                                                newRows[i].value = e.target.value;
+                                                setElements(p => p.map(o => o.id === el.id ? {...o, rows: newRows} : o));
+                                            }} 
+                                        />
+                                    </div>
+                                </foreignObject>
+                            ))}
                         </g>
-                    )}
+
+                        {/* Graph Section */}
+                        {el.showGraph && (
+                            <g transform={`translate(${el.x + tableW + 40}, ${el.y + el.height - 90})`}>
+                                <line x1="0" y1="0" x2={graphW} y2="0" stroke="black" strokeWidth="2" />
+                                <line x1="0" y1="0" x2="0" y2={-graphH} stroke="black" strokeWidth="2" />
+                                {yTicks}
+                                {el.rows.map((row, i) => {
+                                    const numVal = parseFloat(row.value) || 0;
+                                    const barWidth = (graphW / el.rows.length) * 0.7;
+                                    const barH = (numVal / niceMax) * graphH;
+                                    const px = i * (graphW / el.rows.length) + (graphW / el.rows.length) / 2;
+                                    return (
+                                        <g key={i}>
+                                            {el.chartType === 'bar' ? (
+                                                <rect x={px - barWidth/2} y={-barH} width={barWidth} height={barH} fill={barColors[i % barColors.length]} fillOpacity="0.7" stroke="black" strokeWidth="1" />
+                                            ) : (
+                                                i < el.rows.length - 1 && (
+                                                    <line x1={px} y1={-(numVal/niceMax)*graphH} x2={(i+1)*(graphW/el.rows.length)+graphW/el.rows.length/2} y2={-(parseFloat(el.rows[i+1].value || 0)/niceMax)*graphH} stroke={el.stroke} strokeWidth="4" />
+                                                )
+                                            )}
+                                            <g transform={`translate(${px}, 10) rotate(-45)`}>
+                                                <text x="0" y="0" textAnchor="end" alignmentBaseline="middle" fontSize="18" fontWeight="900" fill="black">{row.label}</text>
+                                            </g>
+                                        </g>
+                                    );
+                                })}
+                            </g>
+                        )}
+                    </g>
                     {showUI && renderHandles(el)}
-                </g>
+                </React.Fragment>
             );
         }
 
         if (el.type === 'clock') {
+            const r = el.width / 2, cx = el.x + r, cy = el.y + r;
+            const ticks = [];
+            
+            // Generate 60 notches (minutes) and 12 numbers
+            for (let i = 0; i < 60; i++) {
+                const angle = i * 6 * (Math.PI / 180);
+                const isHour = i % 5 === 0;
+                const tickLen = isHour ? 15 : 7;
+                const x1 = cx + (r - tickLen) * Math.sin(angle);
+                const y1 = cy - (r - tickLen) * Math.cos(angle);
+                const x2 = cx + r * Math.sin(angle);
+                const y2 = cy - r * Math.cos(angle);
+                
+                ticks.push(
+                    <line 
+                        key={`t-${i}`} 
+                        x1={x1} y1={y1} x2={x2} y2={y2} 
+                        stroke="black" 
+                        strokeWidth={isHour ? 3 : 1} 
+                    />
+                );
+
+                if (isHour) {
+                    const num = i === 0 ? 12 : i / 5;
+                    const tx = cx + (r - 40) * Math.sin(angle);
+                    const ty = cy - (r - 40) * Math.cos(angle) + 8;
+                    ticks.push(
+                        <text key={`n-${i}`} x={tx} y={ty} textAnchor="middle" fontSize="22" fontWeight="bold" fill="black" className="select-none pointer-events-none">
+                            {num}
+                        </text>
+                    );
+                }
+            }
+
             return (
                 <React.Fragment key={el.id}>
                     <g transform={transform} onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}>
                         <circle cx={cx} cy={cy} r={r} fill="white" stroke="black" strokeWidth="6" />
-                        {[...Array(12)].map((_, i) => {
-                            const a = (i+1) * 30 * (Math.PI / 180);
-                            return <g key={i}><line x1={cx + (r-20)*Math.sin(a)} y1={cy - (r-20)*Math.cos(a)} x2={cx + (r-5)*Math.sin(a)} y2={cy - (r-5)*Math.cos(a)} stroke="black" strokeWidth="4" /><text x={cx + (r-45)*Math.sin(a)} y={cy - (r-45)*Math.cos(a) + 8} textAnchor="middle" fontSize="24" fontWeight="bold" fill="black">{i+1}</text></g>;
-                        })}
-                        <line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.5} stroke="black" strokeWidth="12" strokeLinecap="round" transform={`rotate(${el.hourRotation}, ${cx}, ${cy})`} />
-                        <circle cx={cx} cy={cy - r * 0.5} r="15" fill="white" stroke="black" strokeWidth="3" transform={`rotate(${el.hourRotation}, ${cx}, ${cy})`} className="cursor-pointer ui-ignore" onMouseDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating-hour'); setIsDrawing(true);}} />
-                        <line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.8} stroke="#475569" strokeWidth="8" strokeLinecap="round" transform={`rotate(${el.minRotation}, ${cx}, ${cy})`} />
-                        <circle cx={cx} cy={cy - r * 0.8} r="12" fill="white" stroke="#475569" strokeWidth="3" transform={`rotate(${el.minRotation}, ${cx}, ${cy})`} className="cursor-pointer ui-ignore" onMouseDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating-min'); setIsDrawing(true);}} />
-                        <circle cx={cx} cy={cy} r="8" fill="black" />
+                        {ticks}
+                        
+                        {/* Hour Hand with Arrow Handle */}
+                        <g transform={`rotate(${el.hourRotation}, ${cx}, ${cy})`}>
+                            <line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.55} stroke="black" strokeWidth="10" strokeLinecap="round" />
+                            <path 
+                                d={`M ${cx - 10} ${cy - r * 0.55} L ${cx} ${cy - r * 0.65} L ${cx + 10} ${cy - r * 0.55} Z`} 
+                                fill="black" 
+                                className="cursor-pointer ui-ignore"
+                                onMouseDown={(e) => { e.stopPropagation(); setInteractionMode('rotating-hour'); setIsDrawing(true); }}
+                            />
+                        </g>
+
+                        {/* Minute Hand with Arrow Handle */}
+                        <g transform={`rotate(${el.minRotation}, ${cx}, ${cy})`}>
+                            <line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.8} stroke="#475569" strokeWidth="6" strokeLinecap="round" />
+                            <path 
+                                d={`M ${cx - 8} ${cy - r * 0.8} L ${cx} ${cy - r * 0.9} L ${cx + 8} ${cy - r * 0.8} Z`} 
+                                fill="#475569" 
+                                className="cursor-pointer ui-ignore"
+                                onMouseDown={(e) => { e.stopPropagation(); setInteractionMode('rotating-min'); setIsDrawing(true); }}
+                            />
+                        </g>
+                        
+                        <circle cx={cx} cy={cy} r="6" fill="black" />
                     </g>
                     {showUI && renderHandles(el, r)}
                 </React.Fragment>
@@ -511,7 +868,16 @@ const WhiteboardView = ({ onBack, lang }) => {
                 ticks.push(<line key={i} x1={cx + (r-l)*Math.cos(-a)} y1={cy + (r-l)*Math.sin(-a)} x2={cx + r*Math.cos(-a)} y2={cy + r*Math.sin(-a)} stroke="black" strokeWidth={i % 10 === 0 ? 3 : 1} />);
                 if (i % 10 === 0) ticks.push(<text key={`t-${i}`} x={cx+(r-45)*Math.cos(-a)} y={cy+(r-45)*Math.sin(-a)} textAnchor="middle" fontSize="16" fontWeight="900" fill="black">{i}</text>);
             }
-            return <g key={el.id} transform={transform} onClick={e=>{e.stopPropagation(); setSelectedId(el.id);}}><path d={`M ${el.x} ${cy} A ${r} ${r} 0 0 1 ${el.x+el.width} ${cy} Z`} fill="white" fillOpacity="0.5" stroke="black" strokeWidth="2" />{ticks}<circle cx={cx} cy={cy} r="5" fill="black" />{showUI && renderHandles(el, r)}</g>;
+            return (
+                <React.Fragment key={el.id}>
+                    <g transform={transform} onClick={e=>{e.stopPropagation(); setSelectedId(el.id);}}>
+                        <path d={`M ${el.x} ${cy} A ${r} ${r} 0 0 1 ${el.x+el.width} ${cy} Z`} fill="white" fillOpacity="0.5" stroke="black" strokeWidth="2" />
+                        {ticks}
+                        <circle cx={cx} cy={cy} r="5" fill="black" />
+                    </g>
+                    {showUI && renderHandles(el, r)}
+                </React.Fragment>
+            );
         }
 
         if (el.type === 'shapes_3d') {
@@ -589,13 +955,20 @@ const WhiteboardView = ({ onBack, lang }) => {
         }
 
         if (el.type === 'math') {
+            const isEditing = editingId === el.id;
             return (
                 <React.Fragment key={el.id}>
-                    <g transform={transform} onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}>
+                    <g transform={transform} 
+                       onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}
+                       onDoubleClick={() => setEditingId(el.id)}>
+                        {/* Background Rect - This is what you actually "grab" to move */}
                         <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.9" stroke={isSelected ? "#3b82f6" : "transparent"} strokeWidth="2" rx="8" />
                         
-                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height} className="ui-ignore">
-                            {/* MathLive WYSIWYG Editor */}
+                        <foreignObject 
+                            x={el.x} y={el.y} width={el.width} height={el.height} 
+                            className="ui-ignore"
+                            style={{ pointerEvents: isEditing ? 'auto' : 'none' }} // Pass-through when not editing
+                        >
                             <math-field
                                 style={{
                                     width: '100%',
@@ -603,18 +976,10 @@ const WhiteboardView = ({ onBack, lang }) => {
                                     background: 'transparent',
                                     fontSize: `${el.fontSize}px`,
                                     border: 'none',
-                                    padding: '10px'
+                                    color: 'black'
                                 }}
-                                onInput={e => {
-                                    const newValue = e.target.value;
-                                    setElements(prev => prev.map(n => n.id === el.id ? {...n, label: newValue} : n));
-                                }}
-                                // This ensures the teacher sees the visual math immediately
-                                ref={(elDom) => {
-                                    if (elDom && elDom.value !== el.label) {
-                                        elDom.value = el.label;
-                                    }
-                                }}
+                                onInput={e => setElements(prev => prev.map(n => n.id === el.id ? {...n, label: e.target.value} : n))}
+                                ref={(elDom) => { if (elDom && elDom.value !== el.label) elDom.value = el.label; }}
                             >
                                 {el.label}
                             </math-field>
@@ -706,65 +1071,148 @@ const WhiteboardView = ({ onBack, lang }) => {
     };
 
     const renderHandles = (el, radius = 0) => {
-        const isC = ['circle', 'frac_circle', 'spinner', 'node', 'protractor', 'clock', 'timer'].includes(el.type);
-        const botY = isC ? el.y + radius*2 : el.y + el.height, rigX = isC ? el.x + radius*2 : el.x + el.width, cx = isC ? el.x + radius : el.x + el.width/2;
-        const hasOptions = ['ruler', 'shapes_3d', 'triangle', 'line', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'coord','math','dice'].includes(el.type);
+        const isC = ['circle', 'frac_circle', 'spinner', 'node', 'clock', 'timer'].includes(el.type);
+        const isP = el.type === 'protractor';
+        
+        // --- 1. COORDINATE CALCULATION ---
+        // For protractor, the height is just the radius (semi-circle)
+        const botY = isP ? el.y + radius : (isC ? el.y + radius*2 : el.y + el.height);
+        const cx = (isC || isP) ? el.x + radius : el.x + el.width/2;
+        const rigX = (isC || isP) ? el.x + radius*2 : el.x + el.width;
+
+        // --- 2. CONTEXT MENU VISIBILITY ---
+        // Defines which tools should show the emerald context bar
+        const hasOptions = ['ruler', 'shapes_3d', 'triangle', 'line', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'coord', 'math', 'dice'].includes(el.type);
 
         return (
             <g className="ui-ignore">
-                <rect x={el.x-5} y={el.y-5} width={(isC ? radius*2 : el.width)+10} height={(isC ? radius*2 : el.height)+10} fill="none" stroke="#3b82f6" strokeDasharray="5" opacity="0.4" />
-                <foreignObject x={el.x-45} y={el.y-45} width={45} height={45}><button onClick={()=>deleteElement(el.id)} className="text-rose-500 bg-white border-2 border-rose-500 rounded-xl shadow-lg w-10 h-10 flex items-center justify-center hover:bg-rose-50"><Trash2 size={22}/></button></foreignObject>
+                {/* Selection Bounding Box */}
+                <rect x={el.x-5} y={el.y-5} width={(isC || isP ? radius*2 : el.width)+10} height={(isP ? radius : (isC ? radius*2 : el.height))+10} fill="none" stroke="#3b82f6" strokeDasharray="5" opacity="0.4" />
+                
+                {/* Action Buttons (Delete & Smart Copy) */}
+                <foreignObject x={el.x - 95} y={el.y - 45} width={100} height={45}>
+                    <div className="flex gap-2">
+                        {/* Smart Copy Button */}
+                        <button 
+                            onClick={() => copySelectedObject(el.id)} 
+                            className="text-blue-500 bg-white border-2 border-blue-500 rounded-xl shadow-lg w-10 h-10 flex items-center justify-center hover:bg-blue-50 transition-transform active:scale-90"
+                            title={lang === 'sv' ? "Kopiera detta objekt" : "Copy this object"}
+                        >
+                            <Copy size={20}/>
+                        </button>
+
+                        {/* Delete Button */}
+                        <button 
+                            onClick={() => deleteElement(el.id)} 
+                            className="text-rose-500 bg-white border-2 border-rose-500 rounded-xl shadow-lg w-10 h-10 flex items-center justify-center hover:bg-rose-50 transition-transform active:scale-90"
+                        >
+                            <Trash2 size={22}/>
+                        </button>
+                    </div>
+                </foreignObject>
+                
+                {/* Rotation & Resizing Handles */}
                 <circle cx={cx} cy={el.y-55} r={12} fill="white" stroke="#3b82f6" strokeWidth="2" className="cursor-alias" onMouseDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating'); setIsDrawing(true);}} />
                 <rect x={rigX-5} y={botY-5} width={20} height={20} fill="white" stroke="#3b82f6" strokeWidth={2} className="cursor-nwse-resize" onMouseDown={(e)=>{e.stopPropagation(); setInteractionMode('resizing'); setIsDrawing(true);}} />
+                
+                {/* Tool-Specific Context Menus */}
                 {hasOptions && (
-                    <foreignObject x={el.x} y={botY+20} width={600} height={300}>
-                        <div className="flex flex-wrap gap-4 bg-white rounded-2xl shadow-2xl border-2 border-emerald-500 p-5 pointer-events-auto text-[20px] font-black uppercase items-center">
-                            {el.type === 'coord' && (<>StepX:<input type="text" className="w-14 border-b text-center" value={el.stepX} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepX:e.target.value}:o))} />StepY:<input type="text" className="w-14 border-b text-center" value={el.stepY} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepY:e.target.value}:o))} /><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, isFirstQuadrant:!o.isFirstQuadrant}:o))} className={`px-2 py-1 rounded ${el.isFirstQuadrant?'bg-emerald-500 text-white':'bg-slate-100'}`}>1st Quad</button></>)}
+                    <foreignObject x={el.x} y={botY+20} width={600} height={350}>
+                        <div className="flex flex-wrap gap-4 bg-white rounded-2xl shadow-2xl border-2 border-emerald-500 p-5 pointer-events-auto text-[14px] font-black uppercase items-center">
+                            
+                            {/* Coordinate Plane */}
+                            {el.type === 'coord' && (<>{t.stepX}<input type="text" className="w-14 border-b text-center outline-none" value={el.stepX} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepX:e.target.value}:o))} />{t.stepY}<input type="text" className="w-14 border-b text-center outline-none" value={el.stepY} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepY:e.target.value}:o))} /><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, isFirstQuadrant:!o.isFirstQuadrant}:o))} className={`px-2 py-1 rounded ${el.isFirstQuadrant?'bg-emerald-500 text-white':'bg-slate-100'}`}>{t.quad1}</button></>)}
+
+                            {/* T-Chart (Manual Data Entry) */}
                             {el.type === 'tchart' && (
                                 <div className="flex flex-col gap-3 w-full">
                                     <div className="flex gap-2">
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: [...o.rows, {label:'?', value:'0'}]}:o))} className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-xs font-black uppercase shadow-sm hover:bg-emerald-600 active:scale-95 transition-all">+ Lägg till rad</button>
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: o.rows.length > 1 ? o.rows.slice(0, -1) : o.rows}:o))} className="px-3 py-2 bg-rose-100 text-rose-600 rounded-lg text-xs font-black uppercase hover:bg-rose-200 active:scale-95 transition-all">- Ta bort rad</button>
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, chartType: o.chartType==='bar'?'line':'bar'}:o))} className="px-3 py-2 bg-slate-100 rounded-lg border border-slate-200">{el.chartType==='bar'?<BarChart2 size={18}/>:<List size={18}/>}</button>
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showGraph:!o.showGraph}:o))} className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${el.showGraph ? 'bg-emerald-600 text-white shadow-inner':'bg-slate-100 text-slate-600'}`}>GRAF</button>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: [...o.rows, {label:'?', value:'0'}]}:o))} className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-xs font-black uppercase shadow-sm hover:bg-emerald-600 active:scale-95 transition-all">{t.addRow}</button>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: o.rows.length > 1 ? o.rows.slice(0, -1) : o.rows}:o))} className="px-3 py-2 bg-rose-100 text-rose-600 rounded-lg text-xs font-black uppercase hover:bg-rose-200 active:scale-95 transition-all">{t.remRow}</button>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, chartType: o.chartType==='bar'?'line':'bar'}:o))} className="px-3 py-2 bg-slate-100 rounded-lg">{el.chartType==='bar'?<BarChart2 size={18}/>:<List size={18}/>}</button>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showGraph:!o.showGraph}:o))} className={`px-4 py-2 rounded-lg text-xs font-black ${el.showGraph ? 'bg-emerald-600 text-white':'bg-slate-100'}`}>{t.graph}</button>
                                     </div>
-                                    <p className="text-[10px] text-slate-400 italic font-medium">Skriv in värden direkt i tabellen ovan för att uppdatera grafen.</p>
                                 </div>
                             )}
-                            {el.type === 'line' && <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showEquation:!o.showEquation}:o))} className={`px-4 py-2 rounded-lg ${el.showEquation ? 'bg-emerald-600 text-white':'bg-slate-100'}`}>Ekvation</button>}
-                            {el.type === 'triangle' && (<><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'right'}:o))} className="px-3 py-1 bg-slate-100 rounded text-xs">Rät</button><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'isosceles'}:o))} className="px-3 py-1 bg-slate-100 rounded text-xs">Liksid</button><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'scalene'}:o))} className="px-3 py-1 bg-slate-100 rounded text-xs">Olik</button></>)}
-                            {el.type === 'ruler' && (<>Min:<input type="text" className="w-14 border-b text-center" value={el.min} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, min:e.target.value}:o))} />Max:<input type="text" className="w-14 border-b text-center" value={el.max} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, max:e.target.value}:o))} /><select className="bg-slate-100 rounded-lg p-2" value={el.unitType} onChange={e=>{const isF = e.target.value==='fraction';setElements(p=>p.map(o=>o.id===el.id?{...o, unitType:e.target.value, min:isF?0:o.min, max:isF?2:o.max}:o));}}><option value="whole">Whole</option><option value="decimal">Decimal</option><option value="fraction">Fraction</option></select>{el.unitType==='fraction' && (<select className="bg-slate-100 rounded-lg p-2" value={el.denom} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, denom:parseInt(e.target.value)}:o))}>{[2,3,4,5,6,7,8,9,10].map(d=><option key={d} value={d}>1/{d}</option>)}</select>)}</>)}
-                            {el.type === 'shapes_3d' && (<><span className="text-emerald-600 px-2 font-black">{el.shape3D}</span><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showInternal:!o.showInternal}:o))} className={`p-3 rounded-lg border-2 ${el.showInternal?'bg-emerald-500 text-white border-emerald-600':'bg-slate-50 border-slate-200'}`}><Hash size={20}/></button></>)}
-                            {(el.divisions || el.type === 'spinner') && (<><button onClick={()=>updateDivisions(el.id, -1)} className="w-12 h-12 bg-slate-100 rounded-xl font-black text-2xl shadow-sm">-</button><span className="px-3 text-lg">{el.divisions} Delar</span><button onClick={()=>updateDivisions(el.id, 1)} className="w-12 h-12 bg-slate-100 rounded-xl font-black text-2xl shadow-sm">+</button>{el.type==='spinner'&&<button onClick={()=>spinSpinner(el.id)} className="bg-emerald-500 text-white rounded-xl p-4 shadow-lg ml-2 hover:scale-110 transition-transform"><Play size={24} fill="white"/></button>}<button onClick={()=>setElements(prev=>prev.map(i=>i.id===el.id?{...i, showLabel:!i.showLabel}:i))} className={`p-2 rounded-xl ml-2 border-2 ${el.showLabel ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-100 border-slate-200'}`}><Hash size={20}/></button></>)}
+
+                            {/* Math Symbol Palette */}
                             {el.type === 'math' && (
                                 <div className="flex flex-col gap-3 w-full">
+                                    <div className="flex flex-wrap gap-2">
+                                        {(() => {
+                                            const insert = (latex) => {
+                                                const field = document.querySelector('math-field');
+                                                if (field) { field.insert(latex); field.focus(); }
+                                            };
+                                            
+                                        })()}
+                                    </div>
                                     <div className="flex items-center gap-3 text-xs font-black uppercase text-slate-500">
-                                        Storlek:
-                                        <input type="text" className="w-16 border-b-2 border-emerald-500 text-center bg-transparent outline-none text-emerald-700" value={el.fontSize} onChange={e => setElements(p => p.map(o => o.id === el.id ? { ...o, fontSize: e.target.value } : o))} />
+                                        {t.size} <input type="text" className="w-16 border-b-2 border-emerald-500 text-center outline-none" value={el.fontSize} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, fontSize: e.target.value}:o))} />
                                     </div>
                                 </div>
                             )}
+
+                            {/* Dice Controls */}
                             {el.type === 'dice' && (
                                 <div className="flex flex-col gap-3 w-full">
                                     <div className="flex items-center gap-4">
-                                        <div className="flex items-center gap-2">
-                                            {/* Safety check added: (o.diceData || []) */}
-                                            <button onClick={() => setElements(p => p.map(o => o.id === el.id ? { ...o, diceData: (o.diceData || [{value: 1, color: '#ffffff'}]).slice(0, -1) } : o))} className="w-8 h-8 bg-slate-100 rounded-lg font-black">-</button>
-                                            <span className="text-[12px] font-black">{(el.diceData || []).length || 1} Tärningar</span>
-                                            <button onClick={() => setElements(p => p.map(o => o.id === el.id ? { ...o, diceData: [...(o.diceData || [{value: 1, color: '#ffffff'}]), { value: 1, color: '#ffffff' }] } : o))} className="w-8 h-8 bg-slate-100 rounded-lg font-black">+</button>
-                                        </div>
-                                        <div className="flex items-center gap-2 border-l pl-4">
-                                            <span className="text-[10px]">Sidor:</span>
-                                            <select className="bg-slate-50 border rounded p-1 text-xs font-black outline-none" value={el.sides || "6"} onChange={e => setElements(p => p.map(o => o.id === el.id ? { ...o, sides: e.target.value } : o))}>
-                                                {[4, 6, 8, 10, 12, 20].map(s => <option key={s} value={s}>{s}</option>)}
-                                            </select>
-                                        </div>
-                                        <button onClick={() => rollDice(el.id)} className="ml-auto bg-emerald-500 text-white rounded-xl px-4 py-2 flex items-center gap-2 shadow-lg font-black uppercase text-xs active:scale-95 transition-all hover:bg-emerald-600">
-                                            <RefreshCw size={14} className={el.isRolling ? "animate-spin" : ""} /> Slå alla
-                                        </button>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, diceData: (o.diceData||[]).slice(0,-1)}:o))} className="w-8 h-8 bg-slate-100 rounded-lg font-black">-</button>
+                                        <span className="text-[12px] font-black">{(el.diceData||[]).length} {t.dice}</span>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, diceData: [...(o.diceData||[]), {value:1, color:'#ffffff'}]}:o))} className="w-8 h-8 bg-slate-100 rounded-lg font-black">+</button>
+                                        <select className="ml-4 bg-slate-50 border rounded p-1 text-xs" value={el.sides||"6"} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, sides:e.target.value}:o))}>
+                                            {[4,6,8,10,12,20].map(s=><option key={s} value={s}>{s} {t.sides}</option>)}
+                                        </select>
+                                        <button onClick={()=>rollDice(el.id)} className="ml-auto bg-emerald-500 text-white rounded-xl px-4 py-2 font-black text-xs active:scale-95 transition-all">{t.rollAll}</button>
                                     </div>
-                                    <p className="text-[9px] text-slate-400 italic">Klicka på en tärning för att färglägga den med vald färg.</p>
+                                    <p className="text-[9px] text-slate-400 italic">{t.diceHelp}</p>
                                 </div>
+                            )}
+                            
+                            {/* Ruler Controls */}
+                            {el.type === 'ruler' && (<div className="flex flex-wrap gap-4 w-full items-center">
+                                <div className="flex items-center gap-2">
+                                    {t.min}<input type="text" className="w-14 border-b text-center outline-none" value={el.min} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, min:e.target.value}:o))} />
+                                    {t.max}<input type="text" className="w-14 border-b text-center outline-none" value={el.max} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, max:e.target.value}:o))} />
+                                </div>
+                                <div className="flex items-center gap-2 border-l pl-4 border-slate-200">
+                                    {t.calc}<input type="text" placeholder={t.eg} className="w-24 border-b border-emerald-500 text-center outline-none font-bold text-emerald-700 placeholder:text-slate-300 placeholder:font-normal" value={el.equation} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, equation:e.target.value}:o))} />
+                                </div>
+                                <select className="bg-slate-100 rounded-lg p-2 outline-none text-xs font-bold" value={el.unitType} onChange={e=>{const isF = e.target.value==='fraction';setElements(p=>p.map(o=>o.id===el.id?{...o, unitType:e.target.value, min:isF?"0":o.min, max:isF?"2":o.max}:o));}}>
+                                    <option value="whole">{t.whole}</option>
+                                    <option value="decimal">{t.decimal}</option>
+                                    <option value="fraction">{t.fraction}</option>
+                                </select>
+                                <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showSubnotches: !o.showSubnotches}:o))} className={`p-2 rounded-lg border-2 transition-colors ${el.showSubnotches ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`} title={t.subnotches}>
+                                    <Hash size={20}/>
+                                </button>
+                                </div>
+                            )}
+
+                            {/* Standard Geometry (3D, Triangle, Ruler, etc.) */}
+                            {el.type === 'line' && <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showEquation:!o.showEquation}:o))} className={`px-4 py-2 rounded-lg ${el.showEquation ? 'bg-emerald-600 text-white':'bg-slate-100'}`}>{t.equation}</button>}
+                            {el.type === 'triangle' && (<><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'right'}:o))} className="px-3 py-1 bg-slate-100 rounded text-xs">{t.right}</button><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'isosceles'}:o))} className="px-3 py-1 bg-slate-100 rounded text-xs">{t.isosceles}</button></>)}
+                            {el.type === 'shapes_3d' && (<><span className="text-emerald-600 font-black">{el.shape3D}</span><button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showInternal:!o.showInternal}:o))} className={`p-2 rounded border ${el.showInternal?'bg-emerald-500 text-white':'bg-slate-50'}`}><Hash size={18}/></button></>)}
+                            {(el.divisions || el.type === 'spinner') && (
+                                <>
+                                    <button onClick={()=>updateDivisions(el.id, -1)} className="w-10 h-10 bg-slate-100 rounded font-black">-</button>
+                                    <span className="px-2">{el.divisions} {t.parts}</span>
+                                    <button onClick={()=>updateDivisions(el.id, 1)} className="w-10 h-10 bg-slate-100 rounded font-black">+</button>
+                                    
+                                    {/* RESTORED TOGGLE BUTTON BELOW */}
+                                    <button 
+                                        onClick={()=>setElements(prev=>prev.map(i=>i.id===el.id?{...i, showLabel:!i.showLabel}:i))} 
+                                        className={`p-2 rounded-xl ml-2 border-2 ${el.showLabel ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-100 border-slate-200'}`}
+                                    >
+                                        <Hash size={20}/>
+                                    </button>
+
+                                    {el.type==='spinner' && (
+                                        <button onClick={()=>spinSpinner(el.id)} className="bg-emerald-500 text-white rounded-xl p-2 ml-2 hover:scale-110 transition-transform">
+                                            <Play size={18} fill="white"/>
+                                        </button>
+                                    )}
+                                </>
                             )}
                         </div>
                     </foreignObject>
@@ -775,11 +1223,41 @@ const WhiteboardView = ({ onBack, lang }) => {
 
     return (
         <div className="fixed inset-0 bg-[#f8fafc] flex flex-col overflow-hidden z-[100] font-sans">
+            {/* --- PRINT & EXPORT STYLES --- */}
+            <style>{`
+                @media print {
+                    @page { size: landscape; margin: 0; }
+                    
+                    /* Hide EVERYTHING on the page first */
+                    body > * { display: none !important; }
+                    
+                    /* Resurrect only the Whiteboard div and the 'main' content */
+                    .fixed.inset-0 { 
+                        display: block !important; 
+                        position: static !important; 
+                        background: white !important;
+                    }
+                    
+                    main { 
+                        display: block !important; 
+                        position: absolute !important;
+                        top: 0; left: 0;
+                        width: 100% !important; 
+                        height: 100% !important; 
+                        background: white !important;
+                    }
+
+                    header, .Toolbar-container, .ui-ignore { 
+                        display: none !important; 
+                    }
+                }
+            `}</style>
             <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 shadow-sm z-[150]">
                 <div className="flex items-center gap-4">
                     <button onClick={onBack} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-rose-500 transition-colors"><ChevronLeft size={24} /></button>
-                    <h1 className="text-sm font-black uppercase italic tracking-tighter text-slate-800">Anpassa <span className="text-emerald-600">Whiteboard</span></h1>
+                    <h1 className="text-sm font-black uppercase italic tracking-tighter text-slate-800">{t.headerTitle} <span className="text-emerald-600">{t.headerSub}</span></h1>
                 </div>
+                
                 <div className="flex items-center gap-2">
                     <div className="flex items-center bg-slate-100 rounded-lg p-1 mr-4">
                         <button onClick={() => setBgType('grid')} className={`p-1.5 rounded-md transition-all ${bgType === 'grid' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}><Grid3X3 size={18} /></button>
@@ -791,6 +1269,17 @@ const WhiteboardView = ({ onBack, lang }) => {
                         <span className="px-2 text-[10px] font-black text-slate-400 w-12 text-center">{Math.round(zoom * 100)}%</span>
                         <button onClick={() => setZoom(prev => Math.min(5, prev + 0.1))} className="px-3 py-1 text-xs font-bold text-slate-500">+</button>
                     </div>
+                    <div className="flex items-center gap-2 border-l pl-4 ml-2 border-slate-200 ui-ignore">
+                        <button onClick={() => exportCanvas('image')} title={t.saveImage} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-emerald-600 transition-colors">
+                            <Save size={18} />
+                        </button>
+                        <button onClick={() => exportCanvas('copy')} title={t.copyImage} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-blue-600 transition-colors">
+                            <Copy size={18} />
+                        </button>
+                        <button onClick={() => exportCanvas('print')} title={t.printCanvas} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-orange-600 transition-colors">
+                            <Printer size={18} />
+                    </button>
+                </div>
                 </div>
             </header>
             <div className="flex-1 relative flex overflow-visible">
