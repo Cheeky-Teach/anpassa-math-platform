@@ -221,70 +221,57 @@ const WhiteboardView = ({ onBack, lang }) => {
     }    
     
     const copySelectedObject = async (id) => {
-        const el = elements.find(item => item.id === id);
-        if (!el || !containerRef.current) return;
+        if (!containerRef.current) return;
 
         try {
-            // 1. Find the actual DOM element for this object inside the SVG
-            // We use a query selector to find the group/path by its index or position
-            const svgItems = containerRef.current.querySelectorAll('g, path, line, rect, circle, polygon');
-            const targetNode = Array.from(svgItems).find(node => 
-                !node.classList.contains('ui-ignore') && 
-                node.getAttribute('key') === id.toString()
-            ) || document.querySelector(`[key="${id}"]`); 
-            
-            // If the key search fails, we'll clone the whole SVG and filter it (fallback)
-            const clone = containerRef.current.cloneNode(true);
-            const children = Array.from(clone.childNodes);
-            
-            // 2. Remove UI and everything EXCEPT the selected element
-            children.forEach((child, idx) => {
-                // Keep defs (for patterns) but remove other elements
-                if (child.tagName === 'defs') return;
-                // Simple logic: if it's the selected one, keep it. 
-                // We identify it by matching the data we have.
-                if (elements[idx-1]?.id !== id) child.remove();
-            });
+            const targetNode = containerRef.current.querySelector(`[data-id="${id}"]`);
+            if (!targetNode) return;
 
-            // 3. Setup dimensions for the "Crop"
-            // We use the element's own width/height or bounding box
-            const padding = 20;
-            const width = (el.width || 200) + padding * 2;
-            const height = (el.height || 200) + padding * 2;
-
-            // 4. Create a specialized data URL for just this object
-            const svgData = new XMLSerializer().serializeToString(clone);
-            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            // 1. Get dimensions
+            const bbox = targetNode.getBBox();
+            const padding = 15;
             
-            const reader = new FileReader();
-            reader.readAsDataURL(svgBlob);
-            reader.onloadend = () => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const qm = 2; // High quality multiplier
-                    canvas.width = width * qm;
-                    canvas.height = height * qm;
-                    const ctx = canvas.getContext('2d');
-                    ctx.scale(qm, qm);
-                    
-                    // Draw transparent background (good for pasting into slides)
-                    ctx.clearRect(0, 0, width, height);
-                    
-                    // Shift the drawing so the object is centered in our "crop"
-                    // We calculate the offset based on the object's x/y
-                    ctx.drawImage(img, -el.x + padding, -el.y + padding);
-
-                    canvas.toBlob(async (blob) => {
-                        const item = new ClipboardItem({ "image/png": blob });
-                        await navigator.clipboard.write([item]);
-                        alert(lang === 'sv' ? "Objekt kopierat!" : "Object copied!");
-                    }, 'image/png');
-                };
-                img.src = reader.result;
+            // 2. Options that FORCIBLY ignore fonts and external CSS
+            const options = {
+                backgroundColor: null,
+                width: bbox.width + (padding * 2),
+                height: bbox.height + (padding * 2),
+                // CRITICAL: Prevent the library from even LOOKING at your fonts/CSS
+                skipFonts: true,
+                fontEmbedCSS: '', 
+                includeQueryParams: false,
+                style: {
+                    transform: `translate(${-bbox.x + padding}px, ${-bbox.y + padding}px)`,
+                },
+                // Only capture the actual element, ignore UI
+                filter: (node) => !node.classList?.contains('ui-ignore'),
             };
+
+            // 3. Generate Canvas (bypass toBlob/toPng library logic)
+            const canvas = await htmlToImage.toCanvas(targetNode, options);
+            
+            // 4. Use native browser canvas conversion (Bypasses CSP connect-src)
+            canvas.toBlob(async (blob) => {
+                if (!blob) throw new Error("Canvas to Blob failed");
+
+                try {
+                    const data = [new ClipboardItem({ [blob.type]: blob })];
+                    await navigator.clipboard.write(data);
+                    
+                    // Optional: Custom success notification (Toast) logic here
+                    alert(lang === 'sv' ? "Objekt kopierat!" : "Object copied!");
+                } catch (clipErr) {
+                    console.error("Clipboard blocked:", clipErr);
+                    alert(lang === 'sv' ? "Webbläsaren nekade urklipp." : "Clipboard access denied.");
+                }
+            }, 'image/png');
+
         } catch (err) {
-            console.error("Smart Copy Error:", err);
+            console.error("Smart Copy Failed:", err);
+            // If fonts still cause a crash, we alert the user
+            if (err.message.includes('trim')) {
+                 alert(lang === 'sv' ? "Font-fel! Prova ladda ner istället." : "Font error! Try downloading instead.");
+            }
         }
     };
 
@@ -1290,7 +1277,11 @@ const WhiteboardView = ({ onBack, lang }) => {
                             <pattern id="dot" width={40} height={40} patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.5" fill="#cbd5e1" /></pattern>
                         </defs>
                         {bgType !== 'blank' && <rect width="1000%" height="1000%" x="-500%" y="-500%" fill={`url(#${bgType})`} />}
-                        {elements.map(renderElement)}
+                        {elements.map(el => (
+                            <g key={el.id} data-id={el.id}>
+                                {renderElement(el)}
+                            </g>
+                        ))}
                     </svg>
                 </main>
                 <Toolbar lang={lang} activeTool={activeTool} setActiveTool={setActiveTool} color={color} setColor={setColor} onUndo={undo} onRedo={redo} canUndo={historyIndex > 0} canRedo={historyIndex < history.length - 1} onClear={() => { commitToHistory([]); setSelectedId(null); }} />
