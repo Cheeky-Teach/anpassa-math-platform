@@ -155,8 +155,8 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Hitta Hypotenusan", en: "Find Hypotenuse" },
         3: { sv: "Hitta Kateten", en: "Find Leg" },
         4: { sv: "Problemlösning", en: "Word Problems" },
-        5: { sv: "Avstånd (Koordinater)", en: "Distance (Coordinates)" },
-        6: { sv: "Är den rätvinklig?", en: "Is it Right-Angled?" }
+        5: { sv: "Är den rätvinklig", en: "Is it a right triangle?" },
+        6: { sv: "Blandad (1-5)", en: "Mixed (1-5)" }
     },
     LinearGraphGenerator: {
         1: { sv: "Hitta m (skärning)", en: "Find y-intercept (m)" },
@@ -169,11 +169,10 @@ export const LEVEL_DESCRIPTIONS = {
         1: { sv: "Visuell Sannolikhet", en: "Visual Probability" },
         2: { sv: "Tärning & Slump", en: "Dice & Chance" },
         3: { sv: "Sannolikhet som Procent", en: "Probability as Percent" },
-        4: { sv: "Komplementhändelse", en: "Complementary Events" },
-        5: { sv: "Träddiagram", en: "Probability tree" },
-        6: { sv: "Oberoende Händelser", en: "Independent Events" },
-        7: { sv: "Kombinatorik", en: "Combinatorics" },
-        8: { sv: "Kombinatorik (Svår)", en: "Combinatorics (Hard)" }
+        4: { sv: "Träddiagram", en: "Probability tree" },
+        5: { sv: "Oberoende Händelser", en: "Independent Events" },
+        6: { sv: "Kombinatorik", en: "Combinatorics" },
+        7: { sv: "Kombinatorik (Svår)", en: "Combinatorics (Hard)" }
     },
     StatisticsGen: { 
         1: { sv: "Typvärde & Variationsbredd", en: "Mode & Range" },
