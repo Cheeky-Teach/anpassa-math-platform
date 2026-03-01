@@ -539,6 +539,7 @@ const WhiteboardView = ({ onBack, lang }) => {
     const handleMouseMove = (e) => {
         if (!isDrawing) return;
         const { x, y } = getCoordinates(e);
+
         if (interactionMode === 'panning') {
             const dx = (e.clientX - panStart.x) * (viewBox.w / zoom / containerRef.current.clientWidth);
             const dy = (e.clientY - panStart.y) * (viewBox.h / zoom / containerRef.current.clientHeight);
@@ -546,48 +547,81 @@ const WhiteboardView = ({ onBack, lang }) => {
             setPanStart({ x: e.clientX, y: e.clientY });
             return;
         }
+
         setElements(prev => {
             const updated = [...prev];
             const el = updated.find(item => item.id === (selectedId || updated[updated.length - 1].id));
             if (!el) return prev;
+
+            // 1. Clock Rotations
             if (interactionMode === 'rotating-hour' || interactionMode === 'rotating-min') {
-                const cx = el.x + el.width/2, cy = el.y + el.height/2;
+                const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
                 const angle = Math.atan2(y - cy, x - cx) * (180 / Math.PI) + 90;
                 if (interactionMode === 'rotating-hour') el.hourRotation = angle; else el.minRotation = angle;
-            } else if (interactionMode === 'rotating') {
-                const cx = el.x + el.width/2, cy = el.y + el.height/2;
+            } 
+            // 2. Standard Rotation
+            else if (interactionMode === 'rotating') {
+                const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
                 el.rotation = Math.atan2(y - cy, x - cx) * (180 / Math.PI) + 90;
-            } else if (interactionMode === 'moving') {
-                const dx = x - (el.x + dragOffset.x); const dy = y - (el.y + dragOffset.y);
-                if (el.type === 'path') el.points = el.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
-                if (el.type === 'line') { el.x2 += dx; el.y2 += dy; }
-                el.x = x - dragOffset.x; el.y = y - dragOffset.y;
-            } else if (interactionMode === 'scaling') {
-                // Scaling affects the internal density (gridSize)
-                // We calculate the distance from the origin to the mouse
-                const dx = x - el.x;
-                const dy = (el.y + el.height) - y; // distance from bottom-left origin
+            } 
+            
+            // --- 3. NEW: LINE POINT ADJUSTMENTS ---
+            else if (interactionMode === 'move-start') {
+                el.x = x;
+                el.y = y;
+            } 
+            else if (interactionMode === 'move-end') {
+                el.x2 = x;
+                el.y2 = y;
+            } 
+
+            // 4. Moving Elements
+            else if (interactionMode === 'moving') {
+                const dx = x - (el.x + dragOffset.x); 
+                const dy = y - (el.y + dragOffset.y);
                 
-                // We use the larger of the two to determine the new grid density
-                // Adjust the divisor (10) to change the sensitivity
+                if (el.type === 'path') el.points = el.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
+                
+                // For the line, we update the second point by the same delta 
+                // so the whole line moves as one piece when dragged from the middle.
+                if (el.type === 'line') { el.x2 += dx; el.y2 += dy; }
+                
+                el.x = x - dragOffset.x; 
+                el.y = y - dragOffset.y;
+            } 
+            
+            // 5. Scaling (Coordinate Plane / T-Chart)
+            else if (interactionMode === 'scaling') {
+                const dx = x - el.x;
+                const dy = (el.y + el.height) - y;
                 const newGridSize = Math.max(20, Math.min(100, Math.max(dx, dy) / 10));
                 el.gridSize = newGridSize;
-            } else if (interactionMode === 'resizing') {
+            } 
+            
+            // 6. Resizing (Rectangles / Boxes)
+            else if (interactionMode === 'resizing') {
                 el.width = Math.max(50, x - el.x);
                 el.height = (el.shape3D === 'cube') ? el.width : Math.max(50, y - el.y);
-                if (el.type === 'line') { el.x2 = x; el.y2 = y; }
-            } else if (interactionMode === 'drawing') {
+                // Removed old line logic from here to avoid conflicts
+            } 
+            
+            // 7. Initial Drawing
+            else if (interactionMode === 'drawing') {
                 if (el.type === 'path') el.points.push({ x, y });
+                // This remains so the initial "click and drag" to create a line works
                 else if (el.type === 'line') { el.x2 = x; el.y2 = y; }
                 else if (['node', 'spinner'].includes(el.type)) {
-                    const r = Math.sqrt((x - el.startX)**2 + (y - el.startY)**2);
+                    const r = Math.sqrt((x - el.startX) ** 2 + (y - el.startY) ** 2);
                     el.width = r * 2; el.height = r * 2; el.x = el.startX - r; el.y = el.startY - r;
                 } else {
-                    el.x = Math.min(x, el.startX); el.y = Math.min(y, el.startY);
-                    el.width = Math.abs(x - el.startX); el.height = Math.abs(y - el.startY);
+                    el.x = Math.min(x, el.startX); 
+                    el.y = Math.min(y, el.startY);
+                    el.width = Math.abs(x - el.startX); 
+                    el.height = Math.abs(y - el.startY);
                     if (el.shape3D === 'cube') el.height = el.width;
                 }
-            }
+            } 
+
             return updated;
         });
     };
@@ -692,18 +726,58 @@ const WhiteboardView = ({ onBack, lang }) => {
         }
 
         if (el.type === 'line') {
-            const parent = elements.find(g => g.type === 'coord' && el.x >= g.x && el.x <= g.x + g.width);
-            let eq = "";
-            if (parent && el.showEquation) {
-                const s = parent.gridSize, ox = parent.isFirstQuadrant ? parent.x : parent.x + parent.width/2, oy = parent.isFirstQuadrant ? parent.y + parent.height : parent.y + parent.height/2;
-                const x1 = (el.x-ox)/s*(parseFloat(parent.stepX)||1), y1 = (oy-el.y)/s*(parseFloat(parent.stepY)||1), x2 = (el.x2-ox)/s*(parseFloat(parent.stepX)||1), y2 = (oy-el.y2)/s*(parseFloat(parent.stepY)||1);
-                const m = (y2-y1)/(x2-x1||0.001); const c = y1 - m*x1;
-                eq = `y = ${m.toFixed(1)}x ${c >= 0 ? '+' : ''} ${c.toFixed(1)}`;
-            }
+            const isSelected = selectedId === el.id;
+
             return (
                 <g key={el.id} onClick={(e) => { e.stopPropagation(); setSelectedId(el.id); }}>
-                    <line x1={el.x} y1={el.y} x2={el.x2} y2={el.y2} stroke={el.stroke} strokeWidth={el.strokeWidth} strokeLinecap="round" />
-                    {el.showEquation && <g transform={`translate(${el.x2+15}, ${el.y2})`}><rect x="-5" y="-18" width="140" height="28" fill="white" fillOpacity="0.9" rx="4"/><text fontSize="18" fontWeight="bold" fill={el.stroke}>{eq}</text></g>}
+                    {/* The Main Line */}
+                    <line 
+                        x1={el.x} 
+                        y1={el.y} 
+                        x2={el.x2} 
+                        y2={el.y2} 
+                        stroke={el.stroke} // Uses current picker color
+                        strokeWidth={el.strokeWidth || 4} 
+                        strokeLinecap="round" 
+                    />
+                    
+                    {/* Start and End Handles - Only visible when selected */}
+                    {isSelected && (
+                        <g className="ui-ignore">
+                            {/* Start Point Handle */}
+                            <circle 
+                                cx={el.x} 
+                                cy={el.y} 
+                                r={10} 
+                                fill="white" 
+                                stroke="#3b82f6" 
+                                strokeWidth={2} 
+                                className="cursor-crosshair"
+                                onMouseDown={(e) => { 
+                                    e.stopPropagation(); 
+                                    setInteractionMode('move-start'); 
+                                    setIsDrawing(true); 
+                                }}
+                            />
+                            {/* End Point Handle */}
+                            <circle 
+                                cx={el.x2} 
+                                cy={el.y2} 
+                                r={10} 
+                                fill="white" 
+                                stroke="#3b82f6" 
+                                strokeWidth={2} 
+                                className="cursor-crosshair"
+                                onMouseDown={(e) => { 
+                                    e.stopPropagation(); 
+                                    setInteractionMode('move-end'); 
+                                    setIsDrawing(true); 
+                                }}
+                            />
+                        </g>
+                    )}
+
+                    {/* Render Context UI (Delete/Copy) */}
                     {showUI && renderHandles(el)}
                 </g>
             );
@@ -1395,7 +1469,7 @@ const WhiteboardView = ({ onBack, lang }) => {
         const rigX = (isC || isP) ? el.x + radius*2 : el.x + el.width;
 
         // --- 2. CONTEXT MENU VISIBILITY ---
-        const hasOptions = ['ruler', 'shapes_3d', 'triangle', 'line', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'coord', 'math', 'dice'].includes(el.type);
+        const hasOptions = ['ruler', 'shapes_3d', 'triangle', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'coord', 'math', 'dice'].includes(el.type);
 
         return (
             <g className="ui-ignore">
@@ -1479,12 +1553,7 @@ const WhiteboardView = ({ onBack, lang }) => {
                                 </div>
                             )}
 
-                            {/* 3. Line Tool (RESTORED) */}
-                            {el.type === 'line' && (
-                                <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showEquation:!o.showEquation}:o))} className={`px-4 py-2 rounded-lg font-black text-xs ${el.showEquation ? 'bg-emerald-600 text-white':'bg-slate-100'}`}>{t.equation}</button>
-                            )}
-
-                            {/* 4. Ruler / Number Line (RESTORED) */}
+                            {/* 3. Ruler / Number Line (RESTORED) */}
                             {el.type === 'ruler' && (
                                 <div className="flex flex-wrap gap-4 items-center">
                                     {t.min}<input type="text" className="w-14 border-b text-center outline-none" value={el.min} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, min:e.target.value}:o))} />
@@ -1497,7 +1566,7 @@ const WhiteboardView = ({ onBack, lang }) => {
                                 </div>
                             )}
 
-                            {/* 5. Dice (RESTORED) */}
+                            {/* 4. Dice (RESTORED) */}
                             {el.type === 'dice' && (
                                 <div className="flex items-center gap-4">
                                     <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, diceData: (o.diceData||[]).slice(0,-1)}:o))} className="w-8 h-8 bg-slate-100 rounded-lg font-black">-</button>
@@ -1510,14 +1579,14 @@ const WhiteboardView = ({ onBack, lang }) => {
                                 </div>
                             )}
 
-                            {/* 6. Math Tool */}
+                            {/* 5. Math Tool */}
                             {el.type === 'math' && (
                                 <div className="flex items-center gap-3 text-xs font-black uppercase text-slate-500">
                                     {t.size} <input type="text" className="w-16 border-b-2 border-emerald-500 text-center outline-none" value={el.fontSize} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, fontSize: e.target.value}:o))} />
                                 </div>
                             )}
 
-                            {/* 7. Triangle (RESTORED) */}
+                            {/* 6. Triangle (RESTORED) */}
                             {el.type === 'triangle' && (
                                 <>
                                     <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'right'}:o))} className={`px-3 py-1 rounded text-xs ${el.triangleType==='right'?'bg-emerald-500 text-white':'bg-slate-100'}`}>{t.right}</button>
@@ -1525,7 +1594,7 @@ const WhiteboardView = ({ onBack, lang }) => {
                                 </>
                             )}
 
-                            {/* 8. 3D Shapes (RESTORED) */}
+                            {/* 7. 3D Shapes (RESTORED) */}
                             {el.type === 'shapes_3d' && (
                                 <>
                                     <span className="text-emerald-600 font-black">{el.shape3D}</span>
@@ -1533,7 +1602,7 @@ const WhiteboardView = ({ onBack, lang }) => {
                                 </>
                             )}
 
-                            {/* 9. Divisions / Fractions / Spinner */}
+                            {/* 8. Divisions / Fractions / Spinner */}
                             {(el.divisions || el.type === 'spinner') && (
                                 <>
                                     <button onClick={()=>updateDivisions(el.id, -1)} className="w-8 h-8 bg-slate-100 rounded font-black">-</button>

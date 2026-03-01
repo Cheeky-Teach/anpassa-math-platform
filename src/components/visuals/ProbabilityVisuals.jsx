@@ -1,36 +1,32 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 /**
  * ProbabilityMarbles - Container-Responsive Refactor
- * Visualizes a "jar" of marbles that scales to its container.
  */
 export const ProbabilityMarbles = ({ data }) => {
     if (!data?.items) return null;
-    const { red = 0, blue = 0, green = 0 } = data.items;
+    const { red = 0, blue = 0, green = 0, yellow = 0 } = data.items;
     
-    // Flatten marble counts into a single color array
     const colors = [];
     for(let i=0; i<red; i++) colors.push('#ef4444');
     for(let i=0; i<blue; i++) colors.push('#3b82f6');
     for(let i=0; i<green; i++) colors.push('#22c55e');
+    for(let i=0; i<yellow; i++) colors.push('#eab308');
     
-    // Stable "mixed" array to prevent jitter during re-renders
     const mixed = [...colors];
 
     return (
         <div className="w-full h-full flex items-center justify-center p-2 min-h-[140px]">
-            {/* The wrapper ensures the jar remains a square and doesn't exceed a reasonable size */}
             <div className="relative w-full h-full max-w-[180px] max-h-[180px] sm:max-w-[200px] sm:max-h-[200px] aspect-square flex items-center justify-center">
                 <svg 
                     viewBox="0 0 200 200" 
                     preserveAspectRatio="xMidYMid meet"
-                    className="bg-slate-100 rounded-full border-4 border-slate-300 shadow-inner block overflow-visible w-full h-full"
+                    className="bg-slate-50 rounded-full border-4 border-slate-300 shadow-inner block overflow-visible w-full h-full"
                 >
                     {mixed.map((c, i) => {
-                        // Spiral distribution constrained to stay inside the jar (viewBox 200x200)
                         const angle = i * 2.3; 
-                        const maxRadius = 75; // Keeps marbles away from the border
-                        const dist = 12 + (i / mixed.length) * maxRadius; 
+                        const maxRadius = 75; 
+                        const dist = 12 + (i / Math.max(1, mixed.length)) * maxRadius; 
                         const x = 100 + dist * Math.cos(angle);
                         const y = 100 + dist * Math.sin(angle);
                         
@@ -54,19 +50,59 @@ export const ProbabilityMarbles = ({ data }) => {
 };
 
 /**
- * ProbabilitySpinner - Container-Responsive Refactor
- * Randomized spinner with numbers for clarity.
+ * ProbabilitySpinner - Carnival Style Refactor
+ * Fills rest of sections with random colors and shuffles them to spread target colors.
  */
 export const ProbabilitySpinner = ({ data }) => {
     if (!data?.sections) return null;
+    
     const sections = Math.max(1, Number(data.sections)); 
     const radius = 88; 
     const cx = 100; 
     const cy = 100;
     const step = (2 * Math.PI) / sections;
-    const colors = ['#3b82f6', '#ef4444', '#22c55e', '#eab308', '#a855f7', '#ec4899', '#06b6d4', '#f97316']; 
-    const slices = [];
 
+    // We use useMemo to ensure the shuffle remains stable and doesn't "jitter" on every re-render
+    const colorSequence = useMemo(() => {
+        const sequence = [];
+        const targetColors = [
+            { key: 'red', hex: '#ef4444' },
+            { key: 'blue', hex: '#3b82f6' },
+            { key: 'green', hex: '#22c55e' },
+            { key: 'yellow', hex: '#eab308' }
+        ];
+
+        // 1. Add target colors from the generator
+        targetColors.forEach(conf => {
+            const count = data.counts?.[conf.key] || 0;
+            for(let i = 0; i < count; i++) {
+                if (sequence.length < sections) sequence.push(conf.hex);
+            }
+        });
+
+        // 2. Fill remaining sections with vibrant random colors from a pool
+        const fillerPool = [
+            '#a855f7', '#ec4899', '#06b6d4', '#f97316', 
+            '#8b5cf6', '#d946ef', '#10b981', '#f59e0b',
+            '#6366f1', '#f43f5e', '#14b8a6', '#fbbf24'
+        ];
+        
+        let fillerIdx = 0;
+        while (sequence.length < sections) {
+            sequence.push(fillerPool[fillerIdx % fillerPool.length]);
+            fillerIdx++;
+        }
+
+        // 3. Shuffle the array to spread colors out (Fisher-Yates Shuffle)
+        for (let i = sequence.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [sequence[i], sequence[j]] = [sequence[j], sequence[i]];
+        }
+        
+        return sequence;
+    }, [data.counts, sections]); // Only re-calculate if counts or section number changes
+
+    const slices = [];
     for (let i = 0; i < sections; i++) {
         const startAngle = i * step - Math.PI/2; 
         const endAngle = (i + 1) * step - Math.PI/2;
@@ -81,28 +117,27 @@ export const ProbabilitySpinner = ({ data }) => {
             <path 
                 key={i} 
                 d={pathData} 
-                fill={colors[i % colors.length]} 
+                fill={colorSequence[i]} 
                 stroke="white" 
-                strokeWidth="2.5" 
+                strokeWidth="1.5" 
             />
         );
 
-        // Add number labels to slices if the count is manageable
-        if (sections <= 12) {
+        if (sections <= 16) {
             const labelAngle = startAngle + step / 2;
-            const lx = cx + (radius * 0.6) * Math.cos(labelAngle);
-            const ly = cy + (radius * 0.6) * Math.sin(labelAngle);
+            const lx = cx + (radius * 0.7) * Math.cos(labelAngle);
+            const ly = cy + (radius * 0.7) * Math.sin(labelAngle);
             slices.push(
                 <text 
                     key={`label-${i}`} 
                     x={lx} 
                     y={ly} 
                     fill="white" 
-                    fontSize="18" 
+                    fontSize="14" 
                     fontWeight="900" 
                     textAnchor="middle" 
                     dominantBaseline="middle"
-                    className="select-none pointer-events-none drop-shadow-md font-sans"
+                    className="select-none pointer-events-none drop-shadow-sm font-sans"
                 >
                     {i + 1}
                 </text>
@@ -118,12 +153,11 @@ export const ProbabilitySpinner = ({ data }) => {
                     preserveAspectRatio="xMidYMid meet"
                     className="block overflow-visible drop-shadow-xl w-full h-full"
                 >
-                    {/* Outer border rim */}
-                    <circle cx="100" cy="100" r={radius + 3} fill="#cbd5e1" />
+                    
+                    <circle cx="100" cy="100" r={radius + 3} fill="#94a3b8" />
                     {slices}
-                    {/* Pointer Needle */}
-                    <path d="M 100 12 L 91 42 L 109 42 Z" fill="#0f172a" stroke="white" strokeWidth="1.5" />
-                    <circle cx="100" cy="100" r="7" fill="#0f172a" stroke="white" strokeWidth="2" />
+                    <path d="M 100 12 L 91 42 L 109 42 Z" fill="#1e293b" stroke="white" strokeWidth="1.5" />
+                    <circle cx="100" cy="100" r="7" fill="#1e293b" stroke="white" strokeWidth="2" />
                 </svg>
             </div>
         </div>
