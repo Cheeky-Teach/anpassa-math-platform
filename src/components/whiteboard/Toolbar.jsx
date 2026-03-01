@@ -5,7 +5,8 @@ import {
     Hash, MousePointer2, Box, Dices, Timer, 
     LineChart, Ruler, Compass, Table, Clock,
     Undo2, Redo2, RefreshCw, Share2, Triangle,
-    Cone, Cylinder, Pyramid, Orbit, Home
+    Cone, Cylinder, Pyramid, Orbit, Home,
+    FileText // New icon for the Wordpad tool
 } from 'lucide-react';
 
 const Toolbar = ({ 
@@ -17,7 +18,6 @@ const Toolbar = ({
 
     const colors = ['#0f172a', '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
 
-    // --- TRANSLATION MAPPING ---
     const translations = {
         sv: {
             cat_writing: "Skriva",
@@ -27,7 +27,8 @@ const Toolbar = ({
             undo: "Ångra",
             redo: "Gör om",
             select: "Markera",
-            text: "Text (T)",
+            text: "Enkel Text",
+            richText: "Dokument", // Added translation
             math: "Matte",
             pen: "Penna",
             highlighter: "Markör",
@@ -49,20 +50,10 @@ const Toolbar = ({
             clock: "Klocka",
             color: "Färg",
             clear: "Rensa",
-            // 3D Labels
-            cube: "Kub",
-            prism: "Rätblock",
-            cylinder: "Cylinder",
-            sphere: "Klot",
-            cone: "Kon",
-            pyramid: "Pyramid",
-            icecream: "Glass-strut",
-            silo: "Silo",
-            house: "Hus",
-            tube: "Rör",
-            frustum: "Stympad kon",
-            hemi: "Halvklot",
-            triprism: "Tri-Prisma"
+            cube: "Kub", prism: "Rätblock", cylinder: "Cylinder", sphere: "Klot",
+            cone: "Kon", pyramid: "Pyramid", icecream: "Glass-strut",
+            silo: "Silo", house: "Hus", tube: "Rör", frustum: "Stympad kon",
+            hemi: "Halvklot", triprism: "Tri-Prisma"
         },
         en: {
             cat_writing: "Write",
@@ -72,7 +63,8 @@ const Toolbar = ({
             undo: "Undo",
             redo: "Redo",
             select: "Select",
-            text: "Text (T)",
+            text: "Simple Text",
+            richText: "Document", // Added translation
             math: "Math",
             pen: "Pen",
             highlighter: "Highlighter",
@@ -94,20 +86,10 @@ const Toolbar = ({
             clock: "Clock",
             color: "Color",
             clear: "Clear",
-            // 3D Labels
-            cube: "Cube",
-            prism: "Prism",
-            cylinder: "Cylinder",
-            sphere: "Sphere",
-            cone: "Cone",
-            pyramid: "Pyramid",
-            icecream: "Ice Cream",
-            silo: "Silo",
-            house: "House",
-            tube: "Tube",
-            frustum: "Frustum",
-            hemi: "Hemisphere",
-            triprism: "Tri-Prism"
+            cube: "Cube", prism: "Prism", cylinder: "Cylinder", sphere: "Sphere",
+            cone: "Cone", pyramid: "Pyramid", icecream: "Ice Cream",
+            silo: "Silo", house: "House", tube: "Tube", frustum: "Frustum",
+            hemi: "Hemisphere", triprism: "Tri-Prism"
         }
     };
 
@@ -153,9 +135,8 @@ const Toolbar = ({
     return (
         <div className="flex flex-col h-full bg-white border-l border-slate-200 w-[94px] shrink-0 shadow-2xl z-[500] relative select-none">
             
-            {/* SUBMENUS ARE FIXED TO ESCAPE ALL CLIPPING CONTEXTS */}
             {show3DMenu && (
-                <div className="fixed right-[100px] top-20 p-4 bg-white rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.4)] border-2 border-emerald-100 w-[300px] grid grid-cols-3 gap-3 z-[1000] animate-in slide-in-from-right-4">
+                <div className="fixed right-[100px] top-20 p-4 bg-white rounded-3xl shadow-[0_20px_80px_rgba(0,0_0,0.4)] border-2 border-emerald-100 w-[300px] grid grid-cols-3 gap-3 z-[1000] animate-in slide-in-from-right-4">
                     {shapes3D.map(s => (
                         <button key={s.id} onClick={() => { setActiveTool(s.id); setShow3DMenu(false); }}
                             className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all ${activeTool === s.id ? 'bg-emerald-600 text-white shadow-lg scale-105' : 'hover:bg-emerald-50 text-slate-600'}`}>
@@ -180,6 +161,7 @@ const Toolbar = ({
                         <ToolButton id="undo" icon={Undo2} label={t.undo} onClick={onUndo} disabled={!canUndo} />
                         <ToolButton id="redo" icon={Redo2} label={t.redo} onClick={onRedo} disabled={!canRedo} />
                         <ToolButton id="select" icon={MousePointer2} label={t.select} />
+                        <ToolButton id="richText" icon={FileText} label={t.richText} /> {/* New Rich Text Button */}
                         <ToolButton id="text" icon={Type} label={t.text} />
                         <ToolButton id="math" icon={Hash} label={t.math} />
                         <ToolButton id="pen" icon={PenTool} label={t.pen} />
@@ -217,7 +199,6 @@ const Toolbar = ({
                     </div>
                 </div>
 
-                {/* Utilities */}
                 <div className="flex flex-col gap-1 border-t border-slate-100 pt-2 pb-10">
                     <div className="grid grid-cols-2 gap-1">
                         <ToolButton id="color_picker" label={t.color} category="system" icon={Palette} onClick={() => { setShowColors(!showColors); setShow3DMenu(false); }}>

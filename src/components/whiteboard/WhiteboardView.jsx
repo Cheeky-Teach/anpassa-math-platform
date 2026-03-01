@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import Toolbar from './Toolbar';
 import 'mathlive';
 import { MathfieldElement } from 'mathlive';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; // The Wordpad-style theme
 import * as htmlToImage from 'html-to-image';
 import { 
     ChevronLeft, Hash, Plus, Minus, Grid3X3, 
@@ -227,51 +229,93 @@ const WhiteboardView = ({ onBack, lang }) => {
             const targetNode = containerRef.current.querySelector(`[data-id="${id}"]`);
             if (!targetNode) return;
 
-            // 1. Get dimensions
             const bbox = targetNode.getBBox();
-            const padding = 15;
+            const padding = 20;
+            const width = bbox.width + (padding * 2);
+            const height = bbox.height + (padding * 2);
+            const svgMatrix = containerRef.current.getScreenCTM().inverse();
+            const nodeClone = targetNode.cloneNode(true);
             
-            // 2. Options that FORCIBLY ignore fonts and external CSS
-            const options = {
-                backgroundColor: null,
-                width: bbox.width + (padding * 2),
-                height: bbox.height + (padding * 2),
-                // CRITICAL: Prevent the library from even LOOKING at your fonts/CSS
-                skipFonts: true,
-                fontEmbedCSS: '', 
-                includeQueryParams: false,
-                style: {
-                    transform: `translate(${-bbox.x + padding}px, ${-bbox.y + padding}px)`,
-                },
-                // Only capture the actual element, ignore UI
-                filter: (node) => !node.classList?.contains('ui-ignore'),
-            };
-
-            // 3. Generate Canvas (bypass toBlob/toPng library logic)
-            const canvas = await htmlToImage.toCanvas(targetNode, options);
-            
-            // 4. Use native browser canvas conversion (Bypasses CSP connect-src)
-            canvas.toBlob(async (blob) => {
-                if (!blob) throw new Error("Canvas to Blob failed");
-
-                try {
-                    const data = [new ClipboardItem({ [blob.type]: blob })];
-                    await navigator.clipboard.write(data);
+            // --- SURGICAL MAPPING (T-Chart & Rich Text) ---
+            const allForeignObjects = nodeClone.querySelectorAll('foreignObject');
+            allForeignObjects.forEach((fo, idx) => {
+                const realFo = targetNode.querySelectorAll('foreignObject')[idx];
+                
+                // 1. Handle Rich Text (Quill)
+                const quillEditor = realFo.querySelector('.ql-editor');
+                if (quillEditor) {
+                    const richTextDiv = document.createElement('div');
+                    richTextDiv.className = "ql-editor"; // Preserve styling
+                    richTextDiv.innerHTML = quillEditor.innerHTML;
+                    richTextDiv.style.cssText = "color:black; background:transparent; font-family:sans-serif;";
                     
-                    // Optional: Custom success notification (Toast) logic here
-                    alert(lang === 'sv' ? "Objekt kopierat!" : "Object copied!");
-                } catch (clipErr) {
-                    console.error("Clipboard blocked:", clipErr);
-                    alert(lang === 'sv' ? "Webbläsaren nekade urklipp." : "Clipboard access denied.");
+                    // We keep the foreignObject but swap its contents for static HTML
+                    fo.innerHTML = '';
+                    fo.appendChild(richTextDiv);
+                } 
+                // 2. Handle T-Chart Inputs
+                else {
+                    const realInputs = realFo.querySelectorAll('input');
+                    const targetRect = targetNode.getBoundingClientRect();
+
+                    realInputs.forEach((input) => {
+                        if (!input.value) return;
+                        const iRect = input.getBoundingClientRect();
+                        const screenCenterX = iRect.left + iRect.width / 2;
+                        const screenCenterY = iRect.top + iRect.height / 2;
+
+                        const pt = containerRef.current.createSVGPoint();
+                        pt.x = screenCenterX; pt.y = screenCenterY;
+                        const svgPt = pt.matrixTransform(svgMatrix);
+
+                        const svgText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                        svgText.setAttribute("x", (svgPt.x + 2).toString());
+                        svgText.setAttribute("y", (svgPt.y + 4).toString());
+                        svgText.setAttribute("text-anchor", "middle");
+                        svgText.setAttribute("dominant-baseline", "central");
+                        svgText.setAttribute("font-family", "sans-serif");
+                        svgText.setAttribute("font-weight", "900");
+                        svgText.setAttribute("font-size", "16px");
+                        
+                        const isBlue = input.classList.contains('text-blue-600');
+                        svgText.setAttribute("fill", isBlue ? '#2563eb' : '#000000');
+                        svgText.textContent = input.value;
+                        nodeClone.appendChild(svgText);
+                    });
+                    fo.remove(); // Remove T-Chart HTML container
                 }
-            }, 'image/png');
+            });
+
+            nodeClone.querySelectorAll('.ui-ignore').forEach(el => el.remove());
+
+            const booth = document.createElement('div');
+            booth.style.cssText = `position: fixed; top: 0; left: -10000px; width: ${width}px; height: ${height}px;`;
+            const tempSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            tempSvg.setAttribute("width", width.toString());
+            tempSvg.setAttribute("height", height.toString());
+            tempSvg.setAttribute("viewBox", `${bbox.x - padding} ${bbox.y - padding} ${width} ${height}`);
+            
+            if (containerRef.current.querySelector('defs')) {
+                tempSvg.appendChild(containerRef.current.querySelector('defs').cloneNode(true));
+            }
+            
+            tempSvg.appendChild(nodeClone);
+            booth.appendChild(tempSvg);
+            document.body.appendChild(booth);
+
+            await new Promise(r => setTimeout(r, 60));
+            const dataUrl = await htmlToImage.toPng(tempSvg, {
+                pixelRatio: 3, backgroundColor: null, skipFonts: true, copyDefaultStyles: true
+            });
+            document.body.removeChild(booth);
+
+            const parts = dataUrl.split(';base64,');
+            const blob = new Blob([new Uint8Array(window.atob(parts[1]).split('').map(c => c.charCodeAt(0)))], { type: 'image/png' });
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+            alert(lang === 'sv' ? "Kopierat!" : "Copied!");
 
         } catch (err) {
             console.error("Smart Copy Failed:", err);
-            // If fonts still cause a crash, we alert the user
-            if (err.message.includes('trim')) {
-                 alert(lang === 'sv' ? "Font-fel! Prova ladda ner istället." : "Font error! Try downloading instead.");
-            }
         }
     };
 
@@ -279,80 +323,105 @@ const WhiteboardView = ({ onBack, lang }) => {
         const svgElement = containerRef.current;
         if (!svgElement) return;
 
-        if (mode === 'print') {
-            window.print();
-            return;
-        }
-
         try {
-            // 1. Clone and clean UI
-            const clone = svgElement.cloneNode(true);
-            const uiElements = clone.querySelectorAll('.ui-ignore');
-            uiElements.forEach(el => el.remove());
+            const rect = svgElement.getBoundingClientRect();
+            const vbW = viewBox.w / zoom;
+            const vbH = viewBox.h / zoom;
+            const ctm = svgElement.getScreenCTM().inverse();
+            const boardClone = svgElement.cloneNode(true);
 
-            // 2. Serialize SVG to XML string
-            const svgData = new XMLSerializer().serializeToString(clone);
-            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-
-            // 3. Convert Blob to Data URI (Bypasses CSP blob restriction)
-            const reader = new FileReader();
-            reader.readAsDataURL(svgBlob);
-            reader.onloadend = () => {
-                const base64data = reader.result; // This is a "data:..." URL
+            // --- SURGICAL MAPPING (T-Chart & Rich Text) ---
+            const allForeignObjects = boardClone.querySelectorAll('foreignObject');
+            allForeignObjects.forEach((fo, index) => {
+                const realFo = svgElement.querySelectorAll('foreignObject')[index];
                 
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const rect = svgElement.getBoundingClientRect();
-                    
-                    // --- ADJUST QUALITY HERE ---
-                    // 1 = Standard 1:1, 2 = Double size/quality, 3 = Triple, etc.
-                    const qualityMultiplier = 3; 
-                    const scale = (window.devicePixelRatio || 1) * qualityMultiplier;
+                // 1. Handle Rich Text (Quill)
+                const quillEditor = realFo.querySelector('.ql-editor');
+                if (quillEditor) {
+                    const richTextDiv = document.createElement('div');
+                    richTextDiv.className = "ql-editor";
+                    richTextDiv.innerHTML = quillEditor.innerHTML;
+                    richTextDiv.style.cssText = "color:black; background:transparent; font-family:sans-serif;";
+                    fo.innerHTML = '';
+                    fo.appendChild(richTextDiv);
+                } 
+                // 2. Handle T-Chart Inputs
+                else {
+                    const realInputs = realFo.querySelectorAll('input');
+                    realInputs.forEach((input) => {
+                        if (!input.value) return;
+                        const iRect = input.getBoundingClientRect();
+                        const screenCenterX = iRect.left + iRect.width / 2;
+                        const screenCenterY = iRect.top + iRect.height / 2;
+                        const pt = svgElement.createSVGPoint();
+                        pt.x = screenCenterX; pt.y = screenCenterY;
+                        const svgPt = pt.matrixTransform(ctm);
 
-                    // Set the canvas size (The physical resolution of the file)
-                    canvas.width = rect.width * scale;
-                    canvas.height = rect.height * scale;
-                    
-                    const ctx = canvas.getContext('2d');
-                    
-                    // Enable high-quality image smoothing
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = 'high';
-                    
-                    // Scale the coordinate system so drawImage fills the large canvas
-                    ctx.scale(scale, scale);
-                    
-                    // Background (using rect dimensions)
-                    ctx.fillStyle = bgType === 'blank' ? '#ffffff' : '#f8fafc';
-                    ctx.fillRect(0, 0, rect.width, rect.height);
-                    
-                    // Draw the SVG capture
-                    ctx.drawImage(img, 0, 0, rect.width, rect.height);
+                        const svgText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                        svgText.setAttribute("x", (svgPt.x + 2).toString());
+                        svgText.setAttribute("y", (svgPt.y + 4).toString());
+                        svgText.setAttribute("text-anchor", "middle");
+                        svgText.setAttribute("dominant-baseline", "central");
+                        svgText.setAttribute("font-family", "sans-serif");
+                        svgText.setAttribute("font-weight", "900");
+                        svgText.setAttribute("font-size", "16px");
+                        
+                        const isBlue = input.classList.contains('text-blue-600');
+                        svgText.setAttribute("fill", isBlue ? '#2563eb' : '#000000');
+                        svgText.textContent = input.value;
+                        boardClone.appendChild(svgText);
+                    });
+                    fo.remove();
+                }
+            });
 
-                    if (mode === 'image') {
-                        const link = document.createElement('a');
-                        link.download = `whiteboard-highres-${Date.now()}.png`;
-                        // Export at max quality
-                        link.href = canvas.toDataURL('image/png', 1.0);
-                        link.click();
-                    } else if (mode === 'copy') {
-                        canvas.toBlob(async (blob) => {
-                            try {
-                                const item = new ClipboardItem({ "image/png": blob });
-                                await navigator.clipboard.write([item]);
-                                alert(lang === 'sv' ? "Högupplöst bild kopierad!" : "High-resolution image copied!");
-                            } catch (e) {
-                                alert(lang === 'sv' ? "Kunde inte kopiera. Prova ladda ner." : "Copy failed. Try downloading.");
-                            }
-                        }, 'image/png', 1.0);
-                    }
-                };
-                img.src = base64data; // Loads the Data URI allowed by your CSP
-            };
+            boardClone.querySelectorAll('.ui-ignore').forEach(el => el.remove());
+
+            const booth = document.createElement('div');
+            booth.style.cssText = `position: fixed; top: 0; left: -10000px; width: ${rect.width}px; height: ${rect.height}px;`;
+            const tempSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            tempSvg.setAttribute("width", rect.width);
+            tempSvg.setAttribute("height", rect.height);
+            tempSvg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${vbW} ${vbH}`);
+            
+            const bgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            bgRect.setAttribute("width", "1000%"); bgRect.setAttribute("height", "1000%");
+            bgRect.setAttribute("x", "-500%"); bgRect.setAttribute("y", "-500%");
+            bgRect.setAttribute("fill", bgType === 'blank' ? '#ffffff' : (bgType === 'grid' ? 'url(#grid)' : 'url(#dot)'));
+            
+            const defs = svgElement.querySelector('defs')?.cloneNode(true);
+            if (defs) tempSvg.appendChild(defs);
+            tempSvg.appendChild(bgRect);
+            tempSvg.appendChild(boardClone);
+            booth.appendChild(tempSvg);
+            document.body.appendChild(booth);
+
+            await new Promise(r => setTimeout(r, 100));
+            const dataUrl = await htmlToImage.toPng(tempSvg, {
+                pixelRatio: 2, backgroundColor: bgType === 'blank' ? '#ffffff' : '#f8fafc',
+                skipFonts: true, copyDefaultStyles: true
+            });
+            document.body.removeChild(booth);
+
+            const parts = dataUrl.split(';base64,');
+            const blob = new Blob([new Uint8Array(window.atob(parts[1]).split('').map(c => c.charCodeAt(0)))], { type: 'image/png' });
+
+            if (mode === 'image') {
+                const link = document.createElement('a');
+                link.download = `whiteboard-export-${Date.now()}.png`;
+                link.href = dataUrl;
+                link.click();
+            } else if (mode === 'copy') {
+                await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+                alert(lang === 'sv' ? "Tavlan kopierad!" : "Board copied!");
+            } else if (mode === 'print') {
+                const printWin = window.open('', '_blank');
+                printWin.document.write(`<html><body style="margin:0;display:flex;justify-content:center;"><img src="${dataUrl}" style="max-width:100%;height:auto;"></body></html>`);
+                printWin.document.close();
+                setTimeout(() => { printWin.print(); printWin.close(); }, 300);
+            }
         } catch (err) {
-            console.error("Export Error:", err);
-            alert("Export failed.");
+            console.error("Export Failed:", err);
         }
     };
 
@@ -361,11 +430,19 @@ const WhiteboardView = ({ onBack, lang }) => {
         const { x, y } = getCoordinates(e);
         const hit = [...elements].reverse().find(el => isPointInElement(x, y, el));
 
-        // 1. If we hit a foreignObject (T-Chart cell or Math field), 
-        // we must select the element but then RETURN to let the input focus.
+        // 1. SURGICAL FOREIGN OBJECT CHECK
+        // This allows T-Charts/Math to focus instantly, but lets Rich Text boxes be dragged.
         if (e.target.closest('foreignObject')) {
-            if (hit) setSelectedId(hit.id);
-            return; 
+            if (hit) {
+                setSelectedId(hit.id);
+                
+                // Only 'return' (to let the input/editor take focus) if:
+                // A) We are already editing this specific richText box.
+                // B) It is a T-Chart or Math element (which don't need dragging via the center).
+                if (editingId === hit.id || hit.type !== 'richText') {
+                    return; 
+                }
+            }
         }
 
         // 2. Ignore clicks on standard UI (like the Toolbar) if we didn't hit an element
@@ -373,31 +450,37 @@ const WhiteboardView = ({ onBack, lang }) => {
 
         // 3. Prevent starting a "Drawing" if we are clicking a context menu
         if (selectedId && e.target.closest('.ui-ignore')) return;
+
         // --- INSTANT SPAWN TOOLS ---
-        if (['timer', 'clock', 'ruler', 'coord', 'dice', 'math'].includes(activeTool)) {
+        if (['timer', 'clock', 'ruler', 'coord', 'dice', 'math', 'richText'].includes(activeTool)) {
             const newId = Date.now();
             const centerX = viewBox.x + (viewBox.w / zoom) / 2;
             const centerY = viewBox.y + (viewBox.h / zoom) / 2;
-            let newEl = { id: newId, type: activeTool, x: centerX - 150, y: centerY - 150, width: activeTool === 'math' ? 300 : 200, height: activeTool === 'math' ? 80 : 200, stroke: color, rotation: 0, opacity: 1 };
+            
+            let newEl = { 
+                id: newId, 
+                type: activeTool, 
+                x: centerX - 150, 
+                y: centerY - 150, 
+                width: activeTool === 'math' ? 300 : (activeTool === 'richText' ? 500 : 200), 
+                height: activeTool === 'math' ? 80 : (activeTool === 'richText' ? 300 : 200), 
+                stroke: color, 
+                rotation: 0, 
+                opacity: 1 
+            };
             
             if (activeTool === 'timer') { newEl.duration = 60; newEl.timeLeft = 60; newEl.isRunning = false; }
             else if (activeTool === 'clock') { newEl.hourRotation = 300; newEl.minRotation = 0; }
             else if (activeTool === 'ruler') { 
-                newEl.x = centerX-400; 
-                newEl.width = 800; 
-                newEl.height = 100; 
-                newEl.min = "0"; 
-                newEl.max = "10"; 
-                newEl.stepValue = 1; 
-                newEl.unitType = 'whole'; 
-                newEl.denom = 4; 
-                newEl.showSubnotches = true;
+                newEl.x = centerX-400; newEl.width = 800; newEl.height = 100; 
+                newEl.min = "0"; newEl.max = "10"; newEl.stepValue = 1; 
+                newEl.unitType = 'whole'; newEl.denom = 4; newEl.showSubnotches = true;
                 newEl.equation = "";
             }
             else if (activeTool === 'coord') { newEl.stepX = "1"; newEl.stepY = "1"; newEl.gridSize = 40; newEl.isFirstQuadrant = false; newEl.showLabels = true; newEl.fontSize = 20; }
             else if (activeTool === 'dice') { newEl.sides = "6"; newEl.diceData = [{ value: 1, color: '#ffffff' }]; newEl.isRolling = false; }
             else if (activeTool === 'math') { newEl.label = ""; newEl.fontSize = 32; }
-            
+            else if (activeTool === 'richText') { newEl.content = "<p>Skriv här...</p>"; }
 
             const updated = [...elements, newEl];
             setElements(updated);
@@ -408,22 +491,29 @@ const WhiteboardView = ({ onBack, lang }) => {
         }
 
         if (activeTool === 'select') {
-            const hit = [...elements].reverse().find(el => isPointInElement(x, y, el));
             if (hit) {
-                setSelectedId(hit.id); setInteractionMode('moving'); setIsDrawing(true);
+                setSelectedId(hit.id); 
+                setInteractionMode('moving'); 
+                setIsDrawing(true);
                 const startX = hit.x || (hit.points ? hit.points[0].x : 0);
                 const startY = hit.y || (hit.points ? hit.points[0].y : 0);
                 setDragOffset({ x: x - startX, y: y - startY });
             } else { 
-                setSelectedId(null); setInteractionMode('panning'); setIsDrawing(true);
+                setSelectedId(null); 
+                setEditingId(null); // Click background to exit editing mode
+                setInteractionMode('panning'); 
+                setIsDrawing(true);
                 setPanStart({ x: e.clientX, y: e.clientY });
             }
             return;
         }
 
-        setIsDrawing(true); setInteractionMode('drawing');
+        // --- DRAWING TOOLS ---
+        setIsDrawing(true); 
+        setInteractionMode('drawing');
         const newId = Date.now();
         let newEl = { id: newId, type: activeTool, x, y, startX: x, startY: y, width: 0, height: 0, stroke: color, fill: 'none', rotation: 0, strokeWidth: 4, opacity: 1 };
+        
         if (activeTool === 'line') { newEl.x2 = x; newEl.y2 = y; newEl.showEquation = false; }
         else if (activeTool === 'triangle') { newEl.triangleType = 'right'; }
         else if (activeTool === 'protractor') { newEl.width = 400; newEl.height = 200; }
@@ -436,13 +526,9 @@ const WhiteboardView = ({ onBack, lang }) => {
         else if (activeTool === 'pen' || activeTool === 'highlighter') { newEl.type = 'path'; newEl.points = [{ x, y }]; newEl.strokeWidth = activeTool === 'highlighter' ? 35 : 6; newEl.opacity = activeTool === 'highlighter' ? 0.4 : 1; }
         else if (activeTool.startsWith('frac_') || activeTool === 'spinner') { newEl.divisions = 4; newEl.sliceColors = {}; newEl.showLabel = false; if (activeTool === 'spinner') newEl.arrowRotation = 0; }
         else if (activeTool === 'node') { newEl.label = ""; newEl.width = 80; newEl.height = 80; }
-        else if (activeTool === 'math') { 
-            newEl.label = "x = "; 
-            newEl.width = 300; 
-            newEl.height = 80; 
-            newEl.fontSize = 32;
-        }
-        setElements(prev => [...prev, newEl]); setSelectedId(newId);
+        
+        setElements(prev => [...prev, newEl]); 
+        setSelectedId(newId);
     };
 
     const handleMouseMove = (e) => {
@@ -509,15 +595,31 @@ const WhiteboardView = ({ onBack, lang }) => {
     };
 
     const isPointInElement = (x, y, el) => {
-        if (el.type === 'path' && el.points && el.points.length > 0) return Math.abs(x - el.points[0].x) < 30 && Math.abs(y - el.points[0].y) < 30;
+        // 1. Path detection (for pen/highlighter)
+        if (el.type === 'path' && el.points && el.points.length > 0) {
+            return Math.abs(x - el.points[0].x) < 30 && Math.abs(y - el.points[0].y) < 30;
+        }
+
         const r = el.width / 2;
-        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart','math','dice'];
-        if (bounds.some(b => el.type.includes(b))) return x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height;
-        if (el.type.includes('circle') || ['spinner', 'node', 'protractor', 'clock', 'timer'].includes(el.type)) return Math.sqrt((x - (el.x + r))**2 + (y - (el.y + r))**2) <= r;
+
+        // 2. Rectangular bounds detection
+        // Added 'richText' to this list to allow selection of the Wordpad box
+        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart', 'math', 'dice', 'richText'];
+        if (bounds.some(b => el.type.includes(b))) {
+            return x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height;
+        }
+
+        // 3. Circular/Radial detection
+        if (el.type.includes('circle') || ['spinner', 'node', 'protractor', 'clock', 'timer'].includes(el.type)) {
+            return Math.sqrt((x - (el.x + r))**2 + (y - (el.y + r))**2) <= r;
+        }
+
+        // 4. Line detection
         if (el.type === 'line') {
             const d = Math.abs((el.y2-el.y)*x - (el.x2-el.x)*y + el.x2*el.y - el.y2*el.x) / Math.sqrt((el.y2-el.y)**2 + (el.x2-el.x)**2);
             return d < 15;
         }
+
         return false;
     };
 
@@ -574,6 +676,63 @@ const WhiteboardView = ({ onBack, lang }) => {
                 if (yp >= el.y && yp <= el.y+el.height) { lns.push(<line key={`h-${i}`} x1={el.x} y1={yp} x2={el.x+el.width} y2={yp} stroke="#cbd5e1" strokeWidth="1" />); if (el.showLabels && i !== 0) lbs.push(<text key={`ty-${i}`} x={ox-10} y={yp+5} textAnchor="end" fontSize={el.fontSize} fontWeight="900" fill="black">{(i * stepY).toLocaleString()}</text>); }
             }
             return <g key={el.id} transform={transform} onClick={e=>{e.stopPropagation(); setSelectedId(el.id);}}><rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.9" stroke="black" strokeWidth="1" />{lns}<line x1={el.x} y1={oy} x2={el.x+el.width} y2={oy} stroke="black" strokeWidth="3" /><line x1={ox} y1={el.y} x2={ox} y2={el.y+el.height} stroke="black" strokeWidth="3" />{lbs}<text x={ox-10} y={oy+25} fontSize={el.fontSize} fontWeight="900" fill="black">0</text>{showUI && renderHandles(el)}</g>;
+        }
+
+        if (el.type === 'richText') {
+            const isEditing = editingId === el.id;
+            const isSelected = selectedId === el.id;
+
+            return (
+                <g 
+                    key={el.id} 
+                    transform={transform}
+                    // Double-click on the group to start editing
+                    onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        setEditingId(el.id);
+                    }}
+                >
+                    {/* Background Rect - Purely visual, events bubble to main handler */}
+                    <rect 
+                        x={el.x} y={el.y} 
+                        width={el.width} height={el.height} 
+                        fill="white" 
+                        fillOpacity={isEditing ? 1 : 0.8} 
+                        stroke={isSelected ? "#3b82f6" : "#e2e8f0"} 
+                        strokeWidth={isSelected ? 3 : 1}
+                        rx="8"
+                        style={{ cursor: isEditing ? 'text' : 'move' }}
+                    />
+
+                    <foreignObject 
+                        x={el.x} y={el.y} 
+                        width={el.width} height={el.height}
+                        // Clicks pass through to the board for moving unless editing
+                        style={{ pointerEvents: isEditing ? 'auto' : 'none' }}
+                    >
+                        <div className="w-full h-full bg-transparent overflow-hidden rich-text-container">
+                            <ReactQuill 
+                                theme="snow" 
+                                value={el.content || ''} 
+                                readOnly={!isEditing}
+                                modules={{
+                                    toolbar: isEditing ? [
+                                        [{ 'header': [1, 2, false] }],
+                                        ['bold', 'italic', 'underline'],
+                                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                        ['clean']
+                                    ] : false
+                                }}
+                                onChange={(val) => setElements(prev => prev.map(item => item.id === el.id ? { ...item, content: val } : item))}
+                                placeholder="Dubbelklicka för att skriva..."
+                            />
+                        </div>
+                    </foreignObject>
+                    
+                    {/* Show handles for resizing/deleting only when NOT typing */}
+                    {isSelected && !isEditing && renderHandles(el)}
+                </g>
+            );
         }
 
         if (el.type === 'ruler') {
@@ -1237,6 +1396,22 @@ const WhiteboardView = ({ onBack, lang }) => {
                     header, .Toolbar-container, .ui-ignore { 
                         display: none !important; 
                     }
+                }
+                
+                .rich-text-container .ql-toolbar.ql-snow {
+                    border: none;
+                    border-bottom: 1px solid #e2e8f0;
+                    background: #f8fafc;
+                    padding: 4px;
+                }
+                .rich-text-container .ql-container.ql-snow {
+                    border: none;
+                    font-size: 16px;
+                    height: calc(100% - 42px); /* Leaves room for the toolbar */
+                }
+                /* Ensure the editor is always visible */
+                .rich-text-container .ql-editor {
+                    min-height: 100%;
                 }
             `}</style>
             <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 shadow-sm z-[150]">
