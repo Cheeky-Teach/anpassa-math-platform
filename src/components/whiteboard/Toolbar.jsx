@@ -162,7 +162,6 @@ const Toolbar = ({
                         <ToolButton id="redo" icon={Redo2} label={t.redo} onClick={onRedo} disabled={!canRedo} />
                         <ToolButton id="select" icon={MousePointer2} label={t.select} />
                         <ToolButton id="richText" icon={FileText} label={t.richText} /> {/* New Rich Text Button */}
-                        <ToolButton id="text" icon={Type} label={t.text} />
                         <ToolButton id="math" icon={Hash} label={t.math} />
                         <ToolButton id="pen" icon={PenTool} label={t.pen} />
                         <ToolButton id="highlighter" icon={Highlighter} label={t.highlighter} />
