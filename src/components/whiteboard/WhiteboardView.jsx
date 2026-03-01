@@ -103,9 +103,26 @@ const WhiteboardView = ({ onBack, lang }) => {
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [panStart, setPanStart] = useState({ x: 0, y: 0 });
     const [currentTime, setCurrentTime] = useState(new Date());
+    
 
     const containerRef = useRef(null);
     const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 1920, h: 1080 });
+
+        
+    const [toast, setToast] = useState({ show: false, message: '' });
+    const toastTimeoutRef = useRef(null);
+
+    const showNotification = (message) => {
+        // Clear any existing timer so they don't overlap
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+        
+        setToast({ show: true, message });
+
+        toastTimeoutRef.current = setTimeout(() => {
+            setToast({ show: false, message: '' });
+            toastTimeoutRef.current = null;
+        }, 3000);
+    };
 
     // --- 2. PERSISTENCE & TIMERS ---
     useEffect(() => {
@@ -318,7 +335,7 @@ const WhiteboardView = ({ onBack, lang }) => {
             const parts = dataUrl.split(';base64,');
             const blob = new Blob([new Uint8Array(window.atob(parts[1]).split('').map(c => c.charCodeAt(0)))], { type: 'image/png' });
             await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-            alert(lang === 'sv' ? "Objekt kopierat!" : "Object copied!");
+            showNotification(lang === 'sv' ? "Objekt kopierat!" : "Object copied!");
 
         } catch (err) {
             console.error("Smart Copy Failed:", err);
@@ -419,7 +436,7 @@ const WhiteboardView = ({ onBack, lang }) => {
                 link.click();
             } else if (mode === 'copy') {
                 await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-                alert(lang === 'sv' ? "Tavlan kopierad!" : "Board copied!");
+                showNotification(lang === 'sv' ? "Tavlan kopierad!" : "Board copied!");
             } else if (mode === 'print') {
                 const printWin = window.open('', '_blank');
                 printWin.document.write(`<html><body style="margin:0;display:flex;justify-content:center;"><img src="${dataUrl}" style="max-width:100%;height:auto;"></body></html>`);
@@ -1665,6 +1682,16 @@ const WhiteboardView = ({ onBack, lang }) => {
                 .rich-text-container .ql-editor {
                     min-height: 100%;
                 }
+
+                @keyframes toast-in-out {
+                    0% { transform: translate(-50%, 20px); opacity: 0; }
+                    10% { transform: translate(-50%, 0); opacity: 1; }
+                    80% { transform: translate(-50%, 0); opacity: 1; }
+                    100% { transform: translate(-50%, -10px); opacity: 0; }
+                }
+                .animate-toast {
+                    animation: toast-in-out 3s ease-in-out forwards;
+                }
             `}</style>
             <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 shadow-sm z-[150]">
                 <div className="flex items-center gap-4">
@@ -1713,6 +1740,22 @@ const WhiteboardView = ({ onBack, lang }) => {
                 </main>
                 <Toolbar lang={lang} activeTool={activeTool} setActiveTool={setActiveTool} color={color} setColor={setColor} onUndo={undo} onRedo={redo} canUndo={historyIndex > 0} canRedo={historyIndex < history.length - 1} onClear={() => { commitToHistory([]); setSelectedId(null); }} />
             </div>
+            {/* --- TOAST NOTIFICATION --- */}
+            {toast.show && (
+                <div 
+                    key={toast.message} // Use the message string, not Date.now()
+                    className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] pointer-events-none animate-toast"
+                >
+                    <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
+                        <div className="bg-emerald-500 p-1 rounded-full">
+                            <Copy size={16} className="text-white" />
+                        </div>
+                        <span className="font-black uppercase tracking-wider text-sm">
+                            {toast.message}
+                        </span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
