@@ -413,27 +413,39 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
             </main>
             {/* --- ZOOM-IN QUESTION OVERLAY --- */}
             {zoomIndex !== null && (
-                <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center p-4 lg:p-12 animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-7xl h-full max-h-[90vh] rounded-[4rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+                // REPLACE: Lines 308 - 309 in TeacherLiveView.jsx
+                <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center animate-in fade-in duration-300">
+                    <div className="bg-white w-screen h-screen flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
                         
                         {/* 1. Header Row */}
                         <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <div className="flex items-center gap-6">
-                                <div className="bg-slate-900 text-white px-6 py-2 rounded-2xl font-black italic tracking-tighter uppercase">Uppgift {zoomIndex + 1}</div>
-                                <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                            <div className="flex items-center gap-4">
+                                {/* Room Code (Matching the main dashboard style) */}
+                                <div className="bg-slate-900 text-white px-4 py-1.5 rounded-xl flex flex-col items-center shadow-md">
+                                    <span className="text-[7px] font-black uppercase opacity-50 leading-none">KOD</span>
+                                    <span className="text-xl font-black italic leading-none">{session.class_code}</span>
+                                </div>
+                                
+                                {/* Updated Uppgift Bar (Changed to Indigo for visual hierarchy) */}
+                                <div className="bg-indigo-600 text-white px-6 py-2 rounded-2xl font-black italic tracking-tighter uppercase shadow-sm">
+                                    Uppgift {zoomIndex + 1}
+                                </div>
+
+                                <div className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-2">
                                     {responses.filter(r => r.question_index === zoomIndex).length} av {students.length} Svar Inkomna
                                 </div>
                             </div>
+                            
                             <div className="flex items-center gap-4">
                                 <button 
                                     onClick={() => setZoomIndex(prev => Math.max(0, prev - 1))}
                                     disabled={zoomIndex === 0}
-                                    className="p-3 hover:bg-slate-200 rounded-full disabled:opacity-20 transition-all"
+                                    className="p-3 hover:bg-slate-200 rounded-full disabled:opacity-20 transition-all text-slate-600"
                                 ><ChevronLeft size={32}/></button>
                                 <button 
                                     onClick={() => setZoomIndex(prev => Math.min(packet.length - 1, prev + 1))}
                                     disabled={zoomIndex === packet.length - 1}
-                                    className="p-3 hover:bg-slate-200 rounded-full disabled:opacity-20 transition-all"
+                                    className="p-3 hover:bg-slate-200 rounded-full disabled:opacity-20 transition-all text-slate-600"
                                 ><ChevronRight size={32}/></button>
                                 <div className="w-px h-8 bg-slate-200 mx-2" />
                                 <button onClick={() => setZoomIndex(null)} className="p-4 hover:bg-rose-50 text-rose-500 rounded-full transition-all"><X size={32}/></button>
@@ -456,11 +468,11 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                         </div>
 
                         {/* 3. Main Content Split (3/4 Visual | 1/4 Cards) */}
-                        <div className="flex-1 flex overflow-hidden">
+                        <div className="flex-1 flex overflow-hidden w-full h-full">
                             
                             {/* LEFT COLUMN: The Visual (3/4) */}
                             <div className="w-3/4 p-12 flex items-center justify-center bg-white overflow-hidden border-r border-slate-50">
-                                <div className="w-full h-full flex items-center justify-center transform scale-110 drop-shadow-2xl">
+                                <div className="w-full h-full flex items-center justify-center transform scale-150 drop-shadow-2xl">
                                     {renderVisual(packet[zoomIndex])}
                                 </div>
                             </div>
