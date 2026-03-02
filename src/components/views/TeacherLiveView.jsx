@@ -44,8 +44,8 @@ const MathDisplay = ({ content, className = "" }) => {
 
 export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, onCreateReport }) {
     const [responses, setResponses] = useState([]);
-    const [isAnonymous, setIsAnonymous] = useState(false);
-    const [hideCorrectness, setHideCorrectness] = useState(false);
+    const [isAnonymous, setIsAnonymous] = useState(true);
+    const [hideCorrectness, setHideCorrectness] = useState(true);
     const [isClosing, setIsClosing] = useState(false);
     const [connStatus, setConnStatus] = useState('CONNECTING');
     const [isSyncing, setIsSyncing] = useState(false);
