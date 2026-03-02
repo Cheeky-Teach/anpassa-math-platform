@@ -227,23 +227,80 @@ export class LinearEquationGen {
             };
         }
 
-        const x = MathUtils.randomInt(2, 10), a = MathUtils.randomInt(2, 6), b = MathUtils.randomInt(1, 15);
-        const isPlus = Math.random() > 0.5;
-        const c = isPlus ? a * x + b : a * x - b;
-        const intermediate = isPlus ? c - b : c + b;
+        // Calculation Logic for 4 types: ax+b=c, ax-b=c, x/a+b=c, x/a-b=c
+        const isMultiplication = Math.random() > 0.5; // Toggle between multiplication (ax) and division (x/a)
+        const isPlus = Math.random() > 0.5; // Toggle between +b and -b
+        
+        const a = MathUtils.randomInt(2, 6);
+        const b = MathUtils.randomInt(1, 15);
+        let x: number, c: number, intermediate: number;
+        let equationLatex: string;
+
+        if (isMultiplication) {
+            x = MathUtils.randomInt(2, 12);
+            intermediate = a * x;
+            c = isPlus ? intermediate + b : intermediate - b;
+            equationLatex = `${a}x ${isPlus ? '+' : '-'} ${b} = ${c}`;
+        } else {
+            // Ensure integer results: c must be integer, so result of x/a must be integer
+            const k = MathUtils.randomInt(2, 10); // Result of x/a
+            x = k * a;
+            intermediate = k;
+            c = isPlus ? intermediate + b : intermediate - b;
+            equationLatex = `\\frac{x}{${a}} ${isPlus ? '+' : '-'} ${b} = ${c}`;
+        }
+
+        const clues = [
+            { text: lang === 'sv' ? "En tvåstegsekvation löses i två tydliga steg." : "A two-step equation is solved in two clear steps." },
+            { 
+                text: lang === 'sv' 
+                    ? `Steg 1: Flytta siffertermen ${b} genom att utföra motsatsen på båda sidor.` 
+                    : `Step 1: Move the constant term ${b} by performing the opposite on both sides.` 
+            },
+            { 
+                text: lang === 'sv' ? "Uträkning steg 1:" : "Step 1 calculation:", 
+                latex: isPlus ? `${c} - ${b} = ${intermediate}` : `${c} + ${b} = ${intermediate}` 
+            },
+            { 
+                text: lang === 'sv' ? `Nu har vi ekvationen:` : `Now we have the equation:`, 
+                latex: isMultiplication ? `${a}x = ${intermediate}` : `\\frac{x}{${a}} = ${intermediate}` 
+            }
+        ];
+
+        if (isMultiplication) {
+            clues.push(
+                { 
+                    text: lang === 'sv' ? `Steg 2: Eftersom x är multiplicerat med ${a}, dividerar vi båda sidor med ${a} för att få fram x.` : `Step 2: Since x is multiplied by ${a}, we divide both sides by ${a} to isolate x.` 
+                },
+                { 
+                    text: lang === 'sv' ? "Uträkning steg 2:" : "Step 2 calculation:", 
+                    latex: `\\frac{${intermediate}}{${a}} = ${x}` 
+                }
+            );
+        } else {
+            clues.push(
+                { 
+                    text: lang === 'sv' ? `Steg 2: Eftersom x är dividerat med ${a}, multiplicerar vi båda sidor med ${a} för att få fram x.` : `Step 2: Since x is divided by ${a}, we multiply both sides by ${a} to isolate x.` 
+                },
+                { 
+                    text: lang === 'sv' ? "Uträkning steg 2:" : "Step 2 calculation:", 
+                    latex: `${intermediate} \\cdot ${a} = ${x}` 
+                }
+            );
+        }
+
+        clues.push({ text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}` });
 
         return {
-            renderData: { latex: `${a}x ${isPlus ? '+' : '-'} ${b} = ${c}`, description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.", answerType: 'text' },
-            token: this.toBase64(x.toString()), variationKey: v, type: 'calculate',
-            clues: [
-                { text: lang === 'sv' ? "En tvåstegsekvation löses i två tydliga steg." : "A two-step equation is solved in two clear steps." },
-                { text: lang === 'sv' ? `Steg 1: Flytta siffran ${b} genom att utföra motsatsen på båda sidor.` : `Step 1: Move the number ${b} by performing the opposite on both sides.` },
-                { text: lang === 'sv' ? "Uträkning steg 1:" : "Step 1 calculation:", latex: isPlus ? `${c} - ${b} = ${intermediate}` : `${c} + ${b} = ${intermediate}` },
-                { text: lang === 'sv' ? `Nu har vi: ${a}x = ${intermediate}` : `Now we have: ${a}x = ${intermediate}`, latex: `${a}x = ${intermediate}` },
-                { text: lang === 'sv' ? `Steg 2: Dela båda sidor med ${a} för att få fram x.` : `Step 2: Divide both sides by ${a} to find x.` },
-                { text: lang === 'sv' ? "Uträkning steg 2:" : "Step 2 calculation:", latex: `\\frac{${intermediate}}{${a}} = ${x}` },
-                { text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}` }
-            ],
+            renderData: { 
+                latex: equationLatex, 
+                description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.", 
+                answerType: 'text' 
+            },
+            token: this.toBase64(x.toString()), 
+            variationKey: v, 
+            type: 'calculate',
+            clues: clues,
             metadata: { variation_key: v, difficulty: 2 }
         };
     }

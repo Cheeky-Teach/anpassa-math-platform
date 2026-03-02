@@ -107,13 +107,21 @@ function App() {
     const handleKick = async (alias) => {
         if (!activeRoom?.id) return;
         try {
+            // 1. Delete their existing responses from the database
+            await supabase.from('responses').delete().eq('room_id', activeRoom.id).eq('student_alias', alias);
+            
+            // 2. Add them to the room's blacklist array
+            // Note: Ensure you have a 'kicked_students' column (type: text[]) in your 'rooms' table
+            const currentKicked = activeRoom.kicked_students || [];
             const { error } = await supabase
-                .from('responses')
-                .delete()
-                .eq('room_id', activeRoom.id)
-                .eq('student_alias', alias);
+                .from('rooms')
+                .update({ kicked_students: [...currentKicked, alias] })
+                .eq('id', activeRoom.id);
             
             if (error) throw error;
+
+            // Update local state so the teacher's UI knows who is kicked
+            setActiveRoom(prev => ({ ...prev, kicked_students: [...currentKicked, alias] }));
         } catch (err) {
             console.error("Error kicking student:", err);
         }
@@ -138,29 +146,30 @@ function App() {
         }
     };
     
-    // --- STUDENT REAL-TIME KICK LISTENER ---
+    // --- REFINED STUDENT REAL-TIME KICK LISTENER ---
     useEffect(() => {
+        // We only need this if we are currently a student in a live session
         if (view === 'live_session' && activeRoom?.id && studentAlias) {
-            const channel = supabase.channel(`room_kick_${studentAlias}`)
+            const channel = supabase.channel(`room_kick_global`)
                 .on('postgres_changes', { 
                     event: 'DELETE', 
                     schema: 'public', 
-                    table: 'responses',
-                    filter: `room_id=eq.${activeRoom.id}`
+                    table: 'responses'
                 }, (payload) => {
-                    if (payload.old && payload.old.student_alias === studentAlias) {
-                        alert(lang === 'sv' ? "Du har blivit borttagen från sessionen av läraren." : "You have been removed from the session by the teacher.");
-                        setActiveRoom(null);
-                        setStudentAlias('');
-                        localStorage.removeItem('anpassa_alias');
-                        setView('landing');
+                    // Because of how some DBs handle DELETE, we check the 'old' record
+                    // handleKick in App.jsx targets room_id and student_alias
+                    if (
+                        payload.old && 
+                        payload.old.student_alias === studentAlias && 
+                        payload.old.room_id === activeRoom.id
+                    ) {
+                        alert(lang === 'sv' ? "Sessionen avslutad för din del." : "Session ended for you.");
+                        handleStudentExitLive();
                     }
                 })
                 .subscribe();
 
-            return () => {
-                supabase.removeChannel(channel);
-            };
+            return () => { supabase.removeChannel(channel); };
         }
     }, [view, activeRoom?.id, studentAlias, lang]);
 

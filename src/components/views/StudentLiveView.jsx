@@ -65,6 +65,29 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         return () => { supabase.removeChannel(roomChannel); };
     }, [session?.id, onBack]);
 
+    // --- 1b. THE BLACKLIST WATCHER ---
+    useEffect(() => {
+        if (!session?.id || !studentAlias) return;
+
+        const kickChannel = supabase.channel(`kick_status_${session.id}`)
+            .on('postgres_changes', { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'rooms', 
+                filter: `id=eq.${session.id}` 
+            }, (payload) => {
+                // Check if the student's name is in the newly updated kicked list
+                const kickedList = payload.new.kicked_students || [];
+                if (kickedList.includes(studentAlias)) {
+                    alert(lang === 'sv' ? "Du har blivit borttagen från sessionen." : "You have been removed from the session.");
+                    onBack(); // Redirects to landing page
+                }
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(kickChannel); };
+    }, [session?.id, studentAlias, onBack, lang]);
+
     // --- 2. RELAXED INPUT SHIELDING ---
     const sanitizeInput = (val, type) => {
         let str = String(val).replace(/<[^>]*>?/gm, ''); // Protect against scripts
@@ -79,6 +102,13 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     const handleSolve = async () => {
         const val = answers[currentIndex];
         if (!val || isSubmitting || !roomActive) return;
+
+        //Verify student isn't blacklisted before sending
+        const { data: roomCheck } = await supabase.from('rooms').select('kicked_students').eq('id', session.id).single();
+        if (roomCheck?.kicked_students?.includes(studentAlias)) {
+            onBack();
+            return;
+        }
         
         const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.');
         

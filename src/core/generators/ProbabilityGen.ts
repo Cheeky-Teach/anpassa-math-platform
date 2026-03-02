@@ -42,7 +42,7 @@ export class ProbabilityGen {
             { container: { sv: "en utfart", en: "an exit" }, items: [{ sv: ["motorcykel", "motorcyklar"], en: ["motorcycle", "motorcycles"] }, { sv: ["lastbil", "lastbilar"], en: ["truck", "trucks"] }] },
             { container: { sv: "en meny", en: "a menu" }, items: [{ sv: ["vegetarisk rätt", "vegetariska rätter"], en: ["vegetarian dish", "vegetarian dishes"] }, { sv: ["köttbi-rätt", "köttbi-rätter"], en: ["meat dish", "meat dishes"] }] },
             { container: { sv: "en påse", en: "a bag" }, items: [{ sv: ["grön paprika", "gröna paprikor"], en: ["green pepper", "green peppers"] }, { sv: ["gul paprika", "gula paprikor"], en: ["yellow pepper", "yellow peppers"] }] },
-            { container: { sv: "ett etui", en: "a case" }, items: [{ sv: ["blyertspenna", "blyertspennor"], en: ["pencil", "pencils"] }, { sv: ["tuschpenna", "tuschpennor"], en: ["marker", "markers"] }] }
+            { container: { sv: "en pennfodral", en: "a case" }, items: [{ sv: ["blyertspenna", "blyertspennor"], en: ["pencil", "pencils"] }, { sv: ["tuschpenna", "tuschpennor"], en: ["marker", "markers"] }] }
         ],
         items: [
             { sv: ["röda", "blåa", "gröna"], en: ["red", "blue", "green"], type: "marbles" },
