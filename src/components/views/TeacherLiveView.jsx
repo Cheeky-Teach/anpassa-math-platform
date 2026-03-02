@@ -2,9 +2,45 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { 
     Users, Eye, EyeOff, Shield, BarChart3, Loader2, 
-    RefreshCw, Download, Printer, Copy, Save, X, UserX 
+    RefreshCw, Download, Printer, Copy, Save, X, UserX,
+    ChevronLeft, ChevronRight, CheckCircle2, XCircle 
 } from 'lucide-react';
 import { UI_TEXT } from '../../constants/localization';
+
+// --- VISUAL & INPUT IMPORTS (Ported from Student View) ---
+import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
+import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry';
+import PatternVisual from '../visuals/PatternComponents';
+import ProbabilityTree from '../visuals/ProbabilityTree';
+import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
+import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
+import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
+import AngleVisual from '../visuals/AngleComponents';
+
+// --- MATH DISPLAY COMPONENT ---
+const MathDisplay = ({ content, className = "" }) => {
+    const containerRef = useRef(null);
+    useEffect(() => {
+        if (!content || !containerRef.current) return;
+        const renderMath = () => {
+            containerRef.current.innerText = content;
+            if (window.renderMathInElement) {
+                window.renderMathInElement(containerRef.current, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
+                    ],
+                    throwOnError: false, trust: true
+                });
+            }
+        };
+        const timer = setTimeout(renderMath, 30);
+        return () => clearTimeout(timer);
+    }, [content]);
+    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
+};
 
 export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, onCreateReport }) {
     const [responses, setResponses] = useState([]);
@@ -15,6 +51,28 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const [isSyncing, setIsSyncing] = useState(false);
     const [showWrapUp, setShowWrapUp] = useState(false); 
     
+    const [zoomIndex, setZoomIndex] = useState(null); // Track which question is zoomed in
+
+    // --- RENDER VISUAL HELPER (Ported from StudentLiveView) ---
+    const renderVisual = (item) => {
+        const data = item.resolvedData?.renderData;
+        if (!data) return null;
+        if (data.graph) return <GraphCanvas data={data.graph} />;
+        if (data.pattern || data.geometry?.subtype === 'matchsticks' || data.geometry?.subtype === 'sequence') return <PatternVisual data={data.pattern || data.geometry} />;
+        if (data.marbles || data.geometry?.type === 'marbles' || data.geometry?.items) return <ProbabilityMarbles data={data.marbles || data.geometry} />;
+        if (data.spinner || data.geometry?.type === 'spinner') return <ProbabilitySpinner data={data.spinner || data.geometry} />;
+        if (data.freqTable || data.geometry?.type === 'frequency_table' || data.geometry?.headers) return <FrequencyTable data={data.freqTable || data.geometry} />;
+        if (data.percentGrid || data.geometry?.type === 'percent_grid') return <PercentGrid data={data.percentGrid || data.geometry} />;
+        if (data.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism'].includes(data.geometry.type)) return <VolumeVisualization data={data.geometry} width={400} height={300} />;
+        if (data.geometry?.type === 'transversal') return <TransversalVisual data={data.geometry} />;
+        if (data.geometry?.type === 'composite') return <CompositeVisual data={data.geometry} />;
+        if (data.geometry?.type === 'angle') return <AngleVisual data={data.geometry} />;
+        if (data.scale || data.geometry?.type === 'scale') return <ScaleVisual data={data.scale || data.geometry} />;
+        if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
+        if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
+        return null;
+    };
+
     const ui = UI_TEXT[lang];
     const isMounted = useRef(true);
     const channelRef = useRef(null);
@@ -303,7 +361,13 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                     <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-white/10">Elev</th>
                                     <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-white/10">Klar</th>
                                     {packet.map((_, i) => (
-                                        <th key={i} className="p-3 text-[9px] font-black uppercase tracking-widest text-center border-r border-white/10">U {i + 1}</th>
+                                        <th key={i} className="p-0 border-r border-white/10">
+                                            <button onClick={() => setZoomIndex(i)}
+                                                className="w-full h-full p-3 text-[9px] font-black uppercase tracking-widest text-center hover:bg-white/10 transition-colors"
+                                            >
+                                                U {i + 1}
+                                            </button>
+                                        </th>
                                     ))}
                                 </tr>
                             </thead>
@@ -347,6 +411,118 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     </div>
                 </div>
             </main>
+            {/* --- ZOOM-IN QUESTION OVERLAY --- */}
+            {zoomIndex !== null && (
+                <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center p-4 lg:p-12 animate-in fade-in duration-300">
+                    <div className="bg-white w-full max-w-7xl h-full max-h-[90vh] rounded-[4rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+                        
+                        {/* 1. Header Row */}
+                        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div className="flex items-center gap-6">
+                                <div className="bg-slate-900 text-white px-6 py-2 rounded-2xl font-black italic tracking-tighter uppercase">Uppgift {zoomIndex + 1}</div>
+                                <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                                    {responses.filter(r => r.question_index === zoomIndex).length} av {students.length} Svar Inkomna
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <button 
+                                    onClick={() => setZoomIndex(prev => Math.max(0, prev - 1))}
+                                    disabled={zoomIndex === 0}
+                                    className="p-3 hover:bg-slate-200 rounded-full disabled:opacity-20 transition-all"
+                                ><ChevronLeft size={32}/></button>
+                                <button 
+                                    onClick={() => setZoomIndex(prev => Math.min(packet.length - 1, prev + 1))}
+                                    disabled={zoomIndex === packet.length - 1}
+                                    className="p-3 hover:bg-slate-200 rounded-full disabled:opacity-20 transition-all"
+                                ><ChevronRight size={32}/></button>
+                                <div className="w-px h-8 bg-slate-200 mx-2" />
+                                <button onClick={() => setZoomIndex(null)} className="p-4 hover:bg-rose-50 text-rose-500 rounded-full transition-all"><X size={32}/></button>
+                            </div>
+                        </div>
+
+                        {/* 2. Question Text Zone (Full Width) */}
+                        <div className="px-12 py-8 bg-indigo-50/30 border-b border-indigo-50 flex flex-col items-center">
+                            <div className="text-2xl font-bold text-slate-800 leading-relaxed text-center max-w-3xl">
+                                {/* Render the main description */}
+                                <MathDisplay content={packet[zoomIndex].resolvedData?.renderData?.description} />
+                                
+                                {/* ADDED: Render the separate large LaTeX block if it exists */}
+                                {packet[zoomIndex].resolvedData?.renderData?.latex && (
+                                    <div className="mt-6 text-4xl text-indigo-600 font-serif border-t border-indigo-100/50 pt-6">
+                                        <MathDisplay content={`$$${packet[zoomIndex].resolvedData.renderData.latex}$$`} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 3. Main Content Split (3/4 Visual | 1/4 Cards) */}
+                        <div className="flex-1 flex overflow-hidden">
+                            
+                            {/* LEFT COLUMN: The Visual (3/4) */}
+                            <div className="w-3/4 p-12 flex items-center justify-center bg-white overflow-hidden border-r border-slate-50">
+                                <div className="w-full h-full flex items-center justify-center transform scale-110 drop-shadow-2xl">
+                                    {renderVisual(packet[zoomIndex])}
+                                </div>
+                            </div>
+
+                            {/* RIGHT COLUMN: Power Cards (1/4) */}
+                            <div className="w-1/4 bg-slate-50/50 p-6 flex flex-col gap-4 overflow-y-auto">
+                                
+                                {/* GREEN CARD: Correct Answers */}
+                                <div className="bg-emerald-500 rounded-[2.5rem] p-6 text-white shadow-lg shadow-emerald-500/20">
+                                    <div className="flex items-center gap-2 mb-4 opacity-80">
+                                        <CheckCircle2 size={16} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Rätta Svar</span>
+                                    </div>
+                                    <div className="text-4xl font-black mb-4">
+                                        {responses.filter(r => r.question_index === zoomIndex && r.is_correct).length}
+                                    </div>
+                                    <div className="max-h-32 overflow-y-auto space-y-1 pr-2">
+                                        {responses.filter(r => r.question_index === zoomIndex && r.is_correct).map((r, idx) => (
+                                            <div key={idx} className="text-[11px] font-bold py-1 border-b border-white/10">
+                                                {isAnonymous ? `Elev ${idx + 1}` : r.student_alias}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* RED CARD: Common Wrong Answers */}
+                                <div className="bg-rose-500 rounded-[2.5rem] p-6 text-white shadow-lg shadow-rose-500/20">
+                                    <div className="flex items-center gap-2 mb-4 opacity-80">
+                                        <XCircle size={16} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Vanliga Fel</span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {(() => {
+                                            const wrongAnswers = responses.filter(r => r.question_index === zoomIndex && !r.is_correct).map(r => r.answer);
+                                            const freq = wrongAnswers.reduce((acc, curr) => { acc[curr] = (acc[curr] || 0) + 1; return acc; }, {});
+                                            const sorted = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0, 3);
+                                            
+                                            return sorted.length > 0 ? sorted.map(([ans, count]) => (
+                                                <div key={ans} className="flex justify-between items-center bg-white/10 p-2 px-4 rounded-xl">
+                                                    <span className="font-black italic">"{ans}"</span>
+                                                    <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">{count} st</span>
+                                                </div>
+                                            )) : <span className="text-xs opacity-60">Inga felaktiga svar än.</span>;
+                                        })()}
+                                    </div>
+                                </div>
+
+                                {/* SLATE CARD: Remaining */}
+                                <div className="bg-slate-800 rounded-[2.5rem] p-6 text-white shadow-lg shadow-slate-800/20">
+                                    <div className="flex items-center gap-2 mb-4 opacity-80">
+                                        <Users size={16} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Ej besvarade</span>
+                                    </div>
+                                    <div className="text-2xl font-black opacity-80">
+                                        {students.length - responses.filter(r => r.question_index === zoomIndex).length} kvar
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
