@@ -160,6 +160,20 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
 
     const students = [...new Set(responses.map(r => r.student_alias))].sort();
     
+    // --- NEW: SUCCESS RATE CALCULATION ---
+    const questionStats = packet.map((_, qIdx) => {
+        const questionResponses = responses.filter(r => r.question_index === qIdx);
+        const total = students.length || 0;
+        const correct = questionResponses.filter(r => r.is_correct).length;
+        const wrong = questionResponses.filter(r => !r.is_correct).length;
+        
+        return {
+            correctPct: total > 0 ? (correct / total) * 100 : 0,
+            wrongPct: total > 0 ? (wrong / total) * 100 : 0,
+            remaining: total - questionResponses.length
+        };
+    });
+
     const getStatusColor = (isCorrect, answered) => {
         if (!answered) return 'bg-slate-100 opacity-30';
         if (hideCorrectness) return 'bg-indigo-300';
@@ -262,6 +276,29 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
                             <thead className="sticky top-0 z-10 shadow-sm">
+                                {/* ROW 1: Diagnostic Success Bars */}
+                                <tr className="bg-slate-50 border-b border-slate-200">
+                                    <th className="p-3 w-48 bg-slate-100 border-r border-slate-200">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Klassens Resultat</span>
+                                    </th>
+                                    <th className="p-3 w-20 border-r border-slate-200 bg-slate-100"></th>
+                                    {questionStats.map((stats, i) => (
+                                        <th key={`stat-${i}`} className="p-1.5 border-r border-slate-200 align-bottom">
+                                            <div className="w-full h-12 bg-slate-200 rounded-lg overflow-hidden flex flex-col-reverse relative group cursor-help">
+                                                {/* Correct Bar (Green) */}
+                                                <div style={{ height: `${stats.correctPct}%` }} className="bg-emerald-500 transition-all duration-500" />
+                                                {/* Wrong Bar (Red) */}
+                                                <div style={{ height: `${stats.wrongPct}%` }} className="bg-rose-500 transition-all duration-500" />
+                                                
+                                                {/* Tooltip on Hover */}
+                                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-slate-900/90 flex items-center justify-center transition-opacity">
+                                                    <span className="text-[9px] text-white font-black">{Math.round(stats.correctPct)}%</span>
+                                                </div>
+                                            </div>
+                                        </th>
+                                    ))}
+                                </tr>
+                                {/* ROW 2: Your Original Labels */}
                                 <tr className="bg-slate-900 text-white">
                                     <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-white/10">Elev</th>
                                     <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-white/10">Klar</th>
