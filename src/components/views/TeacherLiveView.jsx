@@ -211,7 +211,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
             await onEnd(); 
         } catch (err) {
             console.error("Error ending session:", err);
-            alert("Kunde inte avsluta sessionen. Försök igen.");
+            alert(lang === 'sv' ? "Kunde inte avsluta sessionen. Försök igen." : "Could not end session. Please try again.");
             setIsClosing(false);
         }
     };
@@ -245,7 +245,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                 <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
                     <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300 border-b-8 border-indigo-100">
                         <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                            <h2 className="text-2xl font-black uppercase tracking-tight italic">Avsluta Session</h2>
+                            <h2 className="text-2xl font-black uppercase tracking-tight italic">{lang === 'sv' ? "Avsluta Session" : "End Session"}</h2>
                             <button onClick={() => setShowWrapUp(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><X /></button>
                         </div>
                         
@@ -253,17 +253,17 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             <button onClick={() => onCreateReport(responses)} className="w-full group p-6 bg-indigo-50 border-2 border-indigo-100 hover:border-indigo-600 rounded-3xl text-left transition-all">
                                 <div className="flex items-center gap-4 mb-2">
                                     <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg"><Printer size={20}/></div>
-                                    <span className="font-black uppercase tracking-tight text-indigo-900 text-lg">Utskriftsvänlig Rapport</span>
+                                    <span className="font-black uppercase tracking-tight text-indigo-900 text-lg">{lang === 'sv' ? "Utskriftsvänlig Rapport" : "Printable Report"}</span>
                                 </div>
-                                <p className="text-indigo-600/60 text-xs font-bold leading-relaxed ml-14">Genererar en kompakt A4-översikt för din betygsmapp.</p>
+                                <p className="text-indigo-600/60 text-xs font-bold leading-relaxed ml-14">{lang === 'sv' ? "Genererar en kompakt A4-översikt för din betygsmapp." : "Generates a compact A4 overview for your grading records."}</p>
                             </button>
 
                             <button onClick={copyToClipboard} className="w-full group p-6 bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-600 rounded-3xl text-left transition-all">
                                 <div className="flex items-center gap-4 mb-2">
                                     <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-lg"><Copy size={20}/></div>
-                                    <span className="font-black uppercase tracking-tight text-emerald-900 text-lg">Kopiera Tabell</span>
+                                    <span className="font-black uppercase tracking-tight text-emerald-900 text-lg">{lang === 'sv' ? "Kopiera Tabell" : "Copy Table"}</span>
                                 </div>
-                                <p className="text-emerald-600/60 text-xs font-bold leading-relaxed ml-14">Klistra in resultatet direkt i Word eller Excel.</p>
+                                <p className="text-emerald-600/60 text-xs font-bold leading-relaxed ml-14">{lang === 'sv' ? "Klistra in resultatet direkt i Word eller Excel." : "Paste the result directly into Word or Excel."}</p>
                             </button>
 
                             <button onClick={handleEndSession} disabled={isClosing} className="w-full group p-6 bg-slate-50 border-2 border-slate-100 hover:border-slate-900 rounded-3xl text-left transition-all disabled:opacity-50">
@@ -271,14 +271,14 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                     <div className="p-3 bg-slate-900 text-white rounded-2xl shadow-lg">
                                         {isClosing ? <Loader2 className="animate-spin" size={20}/> : <Save size={20}/>}
                                     </div>
-                                    <span className="font-black uppercase tracking-tight text-slate-900 text-lg">Stäng & Arkivera (48h)</span>
+                                    <span className="font-black uppercase tracking-tight text-slate-900 text-lg">{lang === 'sv' ? "Stäng & Arkivera (48h)" : "Close & Archive (48h)"}</span>
                                 </div>
-                                <p className="text-slate-400 text-xs font-bold leading-relaxed ml-14">Rensas automatiskt efter 48 timmar (GDPR).</p>
+                                <p className="text-slate-400 text-xs font-bold leading-relaxed ml-14">{lang === 'sv' ? "Rensas automatiskt efter 48 timmar." : "Automatically cleared after 48 hours."}</p>
                             </button>
                         </div>
 
                         <div className="p-6 bg-slate-50 flex justify-end items-center border-t border-slate-100">
-                             <button onClick={() => setShowWrapUp(false)} className="px-6 py-2 bg-slate-200 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-300 transition-colors">Avbryt</button>
+                             <button onClick={() => setShowWrapUp(false)} className="px-6 py-2 bg-slate-200 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-300 transition-colors">{lang === 'sv' ? "Avbryt" : "Cancel"}</button>
                         </div>
                     </div>
                 </div>
@@ -287,12 +287,12 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
             <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-40 shadow-sm flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl flex flex-col items-center shadow-md">
-                        <span className="text-[7px] font-black uppercase opacity-50 leading-none">KOD</span>
+                        <span className="text-[7px] font-black uppercase opacity-50 leading-none">{lang === 'sv' ? "KOD" : "CODE"}</span>
                         <span className="text-xl font-black italic leading-none">{session.class_code}</span>
                     </div>
                     <div className="hidden sm:block">
                         <h1 className="text-xs font-black uppercase tracking-tight text-slate-900 leading-none truncate max-w-[150px]">{session.title}</h1>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Live Klassrum</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{lang === 'sv' ? "Live Lektion" : "Live Lesson"}</p>
                     </div>
                 </div>
 
@@ -328,7 +328,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             <BarChart3 className="text-indigo-600" size={18} />
                             <h2 className="text-sm font-black uppercase italic tracking-tighter text-slate-900 leading-none">{session.title}</h2>
                         </div>
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{students.length} Elever anslutna</div>
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{students.length} {lang === 'sv' ? "Elever anslutna" : "Students connected"}</div>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -337,7 +337,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 {/* ROW 1: Diagnostic Success Bars */}
                                 <tr className="bg-slate-50 border-b border-slate-200">
                                     <th className="p-3 w-48 bg-slate-100 border-r border-slate-200">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Klassens Resultat</span>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lang === 'sv' ? "Klassens resultat" : "Class results"}</span>
                                     </th>
                                     <th className="p-3 w-20 border-r border-slate-200 bg-slate-100"></th>
                                     {questionStats.map((stats, i) => (
@@ -358,8 +358,8 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 </tr>
                                 {/* ROW 2: Your Original Labels */}
                                 <tr className="bg-slate-900 text-white">
-                                    <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-white/10">Elev</th>
-                                    <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-white/10">Klar</th>
+                                    <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-white/10">{lang === 'sv' ? "Elev" : "Student"}</th>
+                                    <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-white/10">{lang === 'sv' ? "Klar" : "Done"}</th>
                                     {packet.map((_, i) => (
                                         <th key={i} className="p-0 border-r border-white/10">
                                             <button onClick={() => setZoomIndex(i)}
@@ -422,17 +422,17 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             <div className="flex items-center gap-4">
                                 {/* Room Code (Matching the main dashboard style) */}
                                 <div className="bg-slate-900 text-white px-4 py-1.5 rounded-xl flex flex-col items-center shadow-md">
-                                    <span className="text-[7px] font-black uppercase opacity-50 leading-none">KOD</span>
+                                    <span className="text-[7px] font-black uppercase opacity-50 leading-none">{lang === 'sv' ? "KOD" : "CODE"}</span>
                                     <span className="text-xl font-black italic leading-none">{session.class_code}</span>
                                 </div>
                                 
                                 {/* Updated Uppgift Bar (Changed to Indigo for visual hierarchy) */}
                                 <div className="bg-indigo-600 text-white px-6 py-2 rounded-2xl font-black italic tracking-tighter uppercase shadow-sm">
-                                    Uppgift {zoomIndex + 1}
+                                    {lang === 'sv' ? "Uppgift" : "Question"} {zoomIndex + 1}
                                 </div>
 
                                 <div className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-2">
-                                    {responses.filter(r => r.question_index === zoomIndex).length} av {students.length} Svar Inkomna
+                                    {responses.filter(r => r.question_index === zoomIndex).length} av {students.length} {lang === 'sv' ? "Inkomna svar" : "Incoming answers"}
                                 </div>
                             </div>
                             
@@ -484,7 +484,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 <div className="bg-emerald-500 rounded-[2.5rem] p-6 text-white shadow-lg shadow-emerald-500/20">
                                     <div className="flex items-center gap-2 mb-4 opacity-80">
                                         <CheckCircle2 size={16} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Rätta Svar</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{lang === 'sv' ? "Antal Rätt" : "Correct answers"}</span>
                                     </div>
                                     <div className="text-4xl font-black mb-4">
                                         {responses.filter(r => r.question_index === zoomIndex && r.is_correct).length}
@@ -502,7 +502,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 <div className="bg-rose-500 rounded-[2.5rem] p-6 text-white shadow-lg shadow-rose-500/20">
                                     <div className="flex items-center gap-2 mb-4 opacity-80">
                                         <XCircle size={16} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Vanliga Fel</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{lang === 'sv' ? "Vanliga fel" : "Wrong answers"}</span>
                                     </div>
                                     <div className="space-y-3">
                                         {(() => {
@@ -515,7 +515,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                                     <span className="font-black italic">"{ans}"</span>
                                                     <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">{count} st</span>
                                                 </div>
-                                            )) : <span className="text-xs opacity-60">Inga felaktiga svar än.</span>;
+                                            )) : <span className="text-xs opacity-60">{lang === 'sv' ? "Inga fel svar än" : "No wrong answers yet"}</span>;
                                         })()}
                                     </div>
                                 </div>
@@ -524,10 +524,10 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 <div className="bg-slate-800 rounded-[2.5rem] p-6 text-white shadow-lg shadow-slate-800/20">
                                     <div className="flex items-center gap-2 mb-4 opacity-80">
                                         <Users size={16} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Ej besvarade</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{lang === 'sv' ? "Ej besvarade" : "Not answered"}</span>
                                     </div>
                                     <div className="text-2xl font-black opacity-80">
-                                        {students.length - responses.filter(r => r.question_index === zoomIndex).length} kvar
+                                        {students.length - responses.filter(r => r.question_index === zoomIndex).length} {lang === 'sv' ? "kvar" : "left"}
                                     </div>
                                 </div>
                             </div>

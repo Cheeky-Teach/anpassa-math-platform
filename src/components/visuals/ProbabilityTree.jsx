@@ -4,7 +4,7 @@ import React from 'react';
  * ProbabilityTree handles the rendering of:
  * 1. Standard Probability Trees (Top-down)
  * 2. Combinatorial Pathways (A -> B)
- * Refactored to be container-responsive.
+ * Refactored to utilize 100% of parent container space.
  */
 const ProbabilityTree = ({ data }) => {
     if (!data) return null;
@@ -61,12 +61,15 @@ const ProbabilityTree = ({ data }) => {
         };
 
         return (
-            <div className="w-full h-full flex items-center justify-center p-2 min-h-[140px]">
-                <div className="relative w-full h-full max-w-[320px] max-h-[180px] flex items-center justify-center">
+            // Outer wrapper fills 100% of the parent flex/grid cell
+            <div className="w-full h-full flex items-center justify-center p-4">
+                {/* Inner wrapper: Removed max-width/max-height to allow full expansion */}
+                <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                     <svg 
                         viewBox={`0 0 ${baseWidth} ${baseHeight}`}
                         preserveAspectRatio="xMidYMid meet"
-                        className="block overflow-visible drop-shadow-sm w-full h-full"
+                        // svg fills the relative container entirely
+                        className="w-full h-full block overflow-visible drop-shadow-sm"
                     >
                         <defs>
                             <filter id="nodeShadow">
@@ -143,28 +146,31 @@ const ProbabilityTree = ({ data }) => {
     const baseWidth = 400;
     const baseHeight = 320;
     const nodeRadius = 6;
-    const total = initialCounts[0] + initialCounts[1];
+    const totalCount = initialCounts[0] + initialCounts[1];
     const centerX = baseWidth / 2;
 
     const root = { x: centerX, y: 40 };
     const s1 = [
-        { x: centerX - 100, y: 140, label: groups[0], count: initialCounts[0], total: total },
-        { x: centerX + 100, y: 140, label: groups[1], count: initialCounts[1], total: total }
+        { x: centerX - 100, y: 140, label: groups[0], count: initialCounts[0], total: totalCount },
+        { x: centerX + 100, y: 140, label: groups[1], count: initialCounts[1], total: totalCount }
     ];
     const s2 = [
-        { x: centerX - 145, y: 270, parent: 0, label: groups[0], c: initialCounts[0] - 1, t: total - 1 },
-        { x: centerX - 55, y: 270, parent: 0, label: groups[1], c: initialCounts[1], t: total - 1 },
-        { x: centerX + 55, y: 270, parent: 1, label: groups[0], c: initialCounts[0], t: total - 1 },
-        { x: centerX + 145, y: 270, parent: 1, label: groups[1], c: initialCounts[1] - 1, t: total - 1 }
+        { x: centerX - 145, y: 270, parent: 0, label: groups[0], c: initialCounts[0] - 1, t: totalCount - 1 },
+        { x: centerX - 55, y: 270, parent: 0, label: groups[1], c: initialCounts[1], t: totalCount - 1 },
+        { x: centerX + 55, y: 270, parent: 1, label: groups[0], c: initialCounts[0], t: totalCount - 1 },
+        { x: centerX + 145, y: 270, parent: 1, label: groups[1], c: initialCounts[1] - 1, t: totalCount - 1 }
     ];
 
     return (
-        <div className="w-full h-full flex items-center justify-center p-2 min-h-[140px]">
-            <div className="relative w-full h-full max-w-[300px] max-h-[220px] flex items-center justify-center">
+        // Outer wrapper fills 100% of the parent flex/grid cell
+        <div className="w-full h-full flex items-center justify-center p-4">
+            {/* Inner wrapper: Removed max-width/max-height to allow full expansion */}
+            <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                 <svg 
                     viewBox={`0 0 ${baseWidth} ${baseHeight}`}
                     preserveAspectRatio="xMidYMid meet"
-                    className="block overflow-visible drop-shadow-sm w-full h-full"
+                    // svg fills the relative container entirely
+                    className="w-full h-full block overflow-visible drop-shadow-sm"
                 >
                     {/* Level 1 Connections */}
                     {s1.map((n, i) => (
