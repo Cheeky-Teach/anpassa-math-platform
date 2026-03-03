@@ -450,6 +450,17 @@ const WhiteboardView = ({ onBack, lang }) => {
 
     // --- 4. INTERACTION HANDLERS ---
     const handleMouseDown = (e) => {
+
+        // 1. Capture the pointer so the line doesn't "break" if you move the pen too fast
+        if (e.target instanceof Element) {
+            e.target.setPointerCapture(e.pointerId);
+        }
+        
+        // 2. AUTO-PEN DETECTION: If a pen touches the board, force the pen tool
+        if (e.pointerType === 'pen' && activeTool === 'select') {
+            setActiveTool('pen');
+        }
+
         // 1. If we are clicking inside the Wordpad area or its toolbar, stop board logic immediately
         if (e.target.closest('[contenteditable="true"], .ui-ignore')) {
             return; 
@@ -643,7 +654,11 @@ const WhiteboardView = ({ onBack, lang }) => {
         });
     };
 
-    const handleMouseUp = () => { 
+    const handleMouseUp = (e) => { 
+        // Release the pointer capture
+        if (e && e.target instanceof Element) {
+            try { e.target.releasePointerCapture(e.pointerId); } catch(err) {}
+        }
         if (!isDrawing) return; 
         setIsDrawing(false); setInteractionMode(null); 
         setElements(current => {
@@ -1724,7 +1739,14 @@ const WhiteboardView = ({ onBack, lang }) => {
                 </div>
             </header>
             <div className="flex-1 relative flex overflow-visible">
-                <main className={`flex-1 relative bg-slate-50 overflow-hidden cursor-crosshair z-10`} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+                    <main 
+                        className={`flex-1 relative bg-slate-50 overflow-hidden cursor-crosshair z-10`} 
+                        style={{ touchAction: 'none' }} // PREVENTS PEN GESTURES FROM SCROLLING THE PAGE
+                        onPointerDown={handleMouseDown} 
+                        onPointerMove={handleMouseMove} 
+                        onPointerUp={handleMouseUp} 
+                        onPointerLeave={handleMouseUp}
+                    >
                     <svg ref={containerRef} className="w-full h-full touch-none select-none" viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w / zoom} ${viewBox.h / zoom}`}>
                         <defs>
                             <pattern id="grid" width={40} height={40} patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" strokeWidth="1" /></pattern>
