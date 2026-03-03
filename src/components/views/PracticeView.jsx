@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MathText from '../ui/MathText';
-import { GraphCanvas, VolumeVisualization, GeometryVisual, StaticGeometryVisual } from '../visuals/GeometryComponents';
+import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
+import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry';
+import PatternVisual from '../visuals/PatternComponents';
+import ProbabilityTree from '../visuals/ProbabilityTree';
+import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
+import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
+import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
+import AngleVisual from '../visuals/AngleComponents';
 import CluePanel from '../practice/CluePanel';
 import HistoryList from '../practice/HistoryList';
 import LevelUpModal from '../modals/LevelUpModal';
@@ -38,6 +45,18 @@ const PracticeView = ({
             topicLabel: topicData?.label[lang] || uiState.topic
         };
     };
+
+    // --- 3. MASTERY BAR CALCULATION
+    const total = uiState.history.length;
+    const stats = {
+        skipped: uiState.history.filter(h => h.skipped).length,
+        wrong: uiState.history.filter(h => !h.correct && !h.skipped).length,
+        help: uiState.history.filter(h => h.correct && (h.clueUsed || h.solutionUsed)).length,
+        correct: uiState.history.filter(h => h.correct && !h.clueUsed && !h.solutionUsed).length
+    };
+    
+    // Helper to calculate percentage width for the progress bar segments
+    const getPct = (val) => total > 0 ? (val / total) * 100 : 0;
 
     const theme = getCategoryContext();
     const maxLevels = Object.keys(LEVEL_DESCRIPTIONS[uiState.topic] || {}).length;
@@ -100,24 +119,21 @@ const PracticeView = ({
         if (!question?.renderData) return null;
         
         return (
-            <div className="w-full h-full max-h-[160px] sm:max-h-[220px] flex items-center justify-center overflow-hidden [&>svg]:max-h-full [&>svg]:w-auto [&>canvas]:max-h-full [&>canvas]:w-auto [&_table]:scale-90 sm:[&_table]:scale-100">
+            <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden [&>svg]:max-h-full [&>svg]:w-auto [&>canvas]:max-h-full [&>canvas]:w-auto">
                 {question.renderData.graph && <GraphCanvas data={question.renderData.graph} />}
                 {question.renderData.geometry && (
-                    <>
-                        {question.renderData.geometry.type === 'frequency_table' ? (
-                            <GeometryVisual data={question.renderData.geometry} />
-                        ) : ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(question.renderData.geometry.type) ? (
-                            <VolumeVisualization data={question.renderData.geometry} />
-                        ) : (
-                            <GeometryVisual data={question.renderData.geometry} />
-                        )}
-                    </>
+                    ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(question.renderData.geometry.type) ? (
+                        <VolumeVisualization data={question.renderData.geometry} />
+                    ) : (
+                        <GeometryVisual data={question.renderData.geometry} />
+                    )
                 )}
                 {!question.renderData.graph && !question.renderData.geometry && uiState.topic === 'geometry' && (
                     <StaticGeometryVisual description={descriptionText} />
                 )}
+                {/* Fixed LaTeX rendering for non-visual questions */}
                 {!question.renderData.graph && !question.renderData.geometry && question.renderData.latex && (
-                    <div className="text-xl sm:text-2xl font-serif text-indigo-600 my-1 text-center overflow-x-auto py-1">
+                    <div className="text-2xl sm:text-5xl font-serif text-indigo-600 text-center py-4">
                         <MathText text={`$$${question.renderData.latex}$$`} large={true} />
                     </div>
                 )}
@@ -133,6 +149,7 @@ const PracticeView = ({
 
     return (
         <div className="max-w-6xl mx-auto w-full p-2 sm:p-4 fade-in min-h-screen pb-10 relative z-10 font-sans">
+            
             <LevelUpModal visible={levelUpAvailable} ui={ui} onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }} onStay={() => { setLevelUpAvailable(false); actions.retry(true); }} lang={lang} />
             
             {/* MASTERY TOAST OVERLAY */}
@@ -153,7 +170,7 @@ const PracticeView = ({
             {/* HEADER ANCHOR BAR */}
             <header className={`mb-3 ${activeTheme.bg} rounded-[2rem] shadow-sm border-2 ${activeTheme.border} p-3 sm:p-4 sticky top-2 z-20`}>
                 <div className="flex justify-between items-center mb-2 px-2">
-                    <button onClick={actions.goBack} className="flex items-center gap-2 text-slate-400 hover:text-slate-800 font-black text-[10px] uppercase tracking-widest transition-all group">
+                    <button onClick={actions.goBack} className="flex items-center gap-2 text-slate-800 hover:text-slate-800 font-black text-[10px] uppercase tracking-widest transition-all group">
                         <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center border border-slate-100 group-hover:shadow-md"><ChevronLeft size={14}/></div>
                         {ui.backBtn}
                     </button>
@@ -188,11 +205,11 @@ const PracticeView = ({
                                     className={`snap-center shrink-0 min-w-[110px] p-1.5 rounded-lg border-2 transition-all flex flex-col items-center gap-0
                                         ${isActive 
                                             ? `active-pill ${activeTheme.accent} border-black/10 text-white shadow-md translate-y-[-1px]` 
-                                            : `bg-white border-transparent text-slate-400 hover:border-slate-200 shadow-sm`
+                                            : `bg-white border-transparent text-slate-600 hover:border-slate-200 shadow-sm`
                                         }`}
                                 >
                                     <span className="text-[10px] font-black uppercase tracking-tighter">Lvl {lNum}</span>
-                                    <span className={`text-[9px] font-bold uppercase truncate w-full text-center px-1 ${isActive ? 'text-white/80' : 'text-slate-300'}`}>
+                                    <span className={`text-[9px] font-bold uppercase truncate w-full text-center px-1 ${isActive ? 'text-white/80' : 'text-slate-500'}`}>
                                         {desc[lang]}
                                     </span>
                                 </button>
@@ -212,7 +229,7 @@ const PracticeView = ({
                     ) : (
                         <div className="p-3 sm:p-5 lg:p-6">
                             {/* VISUAL CONTAINER */}
-                            <div className="mb-4 flex justify-center bg-slate-50/50 rounded-[2rem] p-4 min-h-[160px] h-[200px] sm:h-[240px] items-center border border-slate-100 shadow-inner relative overflow-hidden">
+                            <div className="mb-4 flex justify-center bg-slate-50/50 rounded-[2rem] p-4 min-h-[160px] h-[200px] sm:h-[350px] items-center border border-slate-100 shadow-inner relative overflow-hidden">
                                 {renderVisual()}
                                 <div className="absolute top-3 left-6 flex items-center gap-2">
                                     <div className={`w-1.5 h-1.5 rounded-full ${activeTheme.accent} animate-pulse`}></div>

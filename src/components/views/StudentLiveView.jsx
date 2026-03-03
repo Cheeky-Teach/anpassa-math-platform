@@ -150,12 +150,12 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         }
     };
 
-    // --- 3. HARDENED VISUAL RENDERING ---
+    // --- 3. HARDENED VISUAL RENDERING (OPTIMIZED FOR 2-COLUMNS) ---
     const renderVisual = (item) => {
         const data = item.resolvedData?.renderData;
         if (!data) return null;
 
-        // Visual mapping: Expanded to handle nested geometry data
+        // Visual mapping: Adjusted dimensions for horizontal space efficiency
         if (data.graph) return <GraphCanvas data={data.graph} />;
         
         // Patterns (Matchsticks and Sequences)
@@ -179,10 +179,11 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             return <PercentGrid data={data.percentGrid || data.geometry} />;
         }
 
-        // Geometry & Volume
+        // Geometry & Volume - REDUCED DIMENSIONS to fit 2-column sidebar logic
         if (data.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism'].includes(data.geometry.type)) {
-            return <VolumeVisualization data={data.geometry} width={280} height={220} />;
+            return <VolumeVisualization data={data.geometry} width={240} height={200} />;
         }
+        
         if (data.geometry?.type === 'transversal') return <TransversalVisual data={data.geometry} />;
         if (data.geometry?.type === 'composite') return <CompositeVisual data={data.geometry} />;
         if (data.geometry?.type === 'angle') return <AngleVisual data={data.geometry} />;
@@ -230,7 +231,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 <header className="max-w-6xl mx-auto flex justify-between items-center mb-8">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white"><LayoutGrid size={20} /></div>
-                        <h2 className="text-xl font-black uppercase italic tracking-tighter text-slate-900">Resultatöversikt</h2>
+                        <h2 className="text-xl font-black uppercase italic tracking-tighter text-slate-900">{lang === 'sv' ? "Resultatsöversikt" : "Result overview"}</h2>
                     </div>
                     <button onClick={onBack} className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-indigo-600 transition-all">Stäng</button>
                 </header>
@@ -238,7 +239,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     {packet.map((item, idx) => (
                         <div key={item.id} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-xl flex flex-col ${completed[idx] === 'correct' ? 'border-emerald-500 shadow-emerald-50/50' : 'border-rose-400 shadow-rose-50/50'}`}>
                             <div className="flex justify-between items-center mb-6">
-                                <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">Uppgift {idx + 1}</span>
+                                <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">{lang === 'sv' ? "Uppgift" : "Question"} {idx + 1}</span>
                                 {completed[idx] === 'correct' ? <CheckCircle2 className="text-emerald-500" size={24} /> : <XCircle className="text-rose-400" size={24} />}
                             </div>
                             <div className="flex-1 flex flex-col items-center justify-center space-y-6">
@@ -266,11 +267,11 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
                         <ListChecks size={40} className="text-indigo-600" />
                     </div>
-                    <h2 className="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2 italic">Aktivitet klar</h2>
-                    <p className="text-slate-500 font-medium leading-relaxed mb-10">Alla svar har skickats till din lärare. Bra jobbat med dina insatser!</p>
+                    <h2 className="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2 italic">{lang === 'sv' ? "Aktivitet klar" : "Activity done"}</h2>
+                    <p className="text-slate-500 font-medium leading-relaxed mb-10">{lang === 'sv' ? "Alla svar skickades in." : "All answers have been submitted."}</p>
                     
                     <button onClick={() => setShowFinalReview(true)} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-[0.15em] hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-xl">
-                        <LayoutGrid size={20} /> Granska resultat
+                        <LayoutGrid size={20} /> {lang === 'sv' ? "Granska resultat" : "Preview results"}
                     </button>
                 </div>
             </div>
@@ -283,99 +284,149 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center animate-in fade-in duration-500">
                 <div className="max-w-md bg-white rounded-[3rem] p-10 shadow-2xl border-4 border-rose-500">
                     <div className="w-20 h-20 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-6"><LogOut size={40} className="text-rose-600 ml-1" /></div>
-                    <h2 className="text-2xl font-black uppercase text-slate-900 mb-2 tracking-tighter">Sessionen avslutad</h2>
-                    <p className="text-slate-500 font-medium leading-relaxed">Läraren har stängt rummet. Du skickas strax vidare.</p>
+                    <h2 className="text-2xl font-black uppercase text-slate-900 mb-2 tracking-tighter">{lang === 'sv' ? "Session avslutad." : "Session ended."}</h2>
+                    <p className="text-slate-500 font-medium leading-relaxed">{lang === 'sv' ? "Läraren har stängt rummet. Du skickas strax vidare." : "The teacher has closed the room. You will be redirected shortly."}</p>
                 </div>
             </div>
         );
     }
 
+    // --- EXIT CONFIRMATION HANDLER ---
+    const handleExitRequest = () => {
+        const msg = lang === 'sv' 
+            ? "Är du säker på att du vill lämna sessionen? Du kan inte fortsätta där du var sist om du lämnar nu." 
+            : "Are you sure you want to leave the session? You cannot continue where you left off if you leave before finishing.";
+        
+        if (window.confirm(msg)) {
+            onBack();
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
-            <header className="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-20 shadow-sm">
-                <div className="max-w-3xl mx-auto flex justify-between items-center mb-4">
-                    <button onClick={onBack} className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 transition-colors"><ChevronLeft size={24} /></button>
-                    <div className="text-center">
-                        <h1 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-1 leading-none">{session.title}</h1>
-                        <div className="bg-slate-900 text-white px-3 py-1 rounded-lg text-[10px] font-black tracking-widest inline-block uppercase italic">KOD: {session.class_code}</div>
+        <div className="min-h-screen bg-slate-50 font-sans flex flex-col overflow-hidden">
+                        <style>{`
+                @media (max-width: 450px) {
+                    .xs-hide { display: none !important; }
+                }
+            `}</style>
+
+            <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-20 shadow-sm">
+                <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
+                    
+                    {/* LEFT SHOULDER: Previous Button */}
+                    <button 
+                        onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+                        disabled={currentIndex === 0}
+                        className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 disabled:opacity-0 transition-all shrink-0"
+                    >
+                        <ChevronLeft size={28} />
+                    </button>
+
+                    {/* CENTER: Title and Code (Title hides on small mobile) */}
+                    <div className="flex flex-col items-center overflow-hidden flex-1">
+                        <h1 className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none truncate mb-1 xs-hide">
+                            {session.title}
+                        </h1>
+                        <div className="bg-slate-900 text-white px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase italic shrink-0">
+                            {lang === 'sv' ? "KOD:" : "CODE:"} {session.class_code}
+                        </div>
                     </div>
-                    <div className="w-10" />
+
+                    {/* RIGHT SHOULDER: Next & Close Buttons */}
+                    <div className="flex items-center gap-1 shrink-0">
+                        <button 
+                            onClick={() => setCurrentIndex(prev => Math.min(packet.length - 1, prev + 1))}
+                            disabled={currentIndex === packet.length - 1}
+                            className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 disabled:opacity-0 transition-all"
+                        >
+                            <ChevronRight size={28} />
+                        </button>
+                        
+                        <button 
+                            onClick={handleExitRequest} 
+                            className="ml-1 p-2 hover:bg-rose-50 rounded-xl text-slate-300 hover:text-rose-500 transition-colors border border-slate-100"
+                        >
+                            <LogOut size={18} />
+                        </button>
+                    </div>
                 </div>
-                {/* Visual Progress Bar */}
-                <div className="max-w-3xl mx-auto h-2 bg-slate-100 rounded-full flex gap-1.5 p-0.5">
+
+                {/* Progress Bar (Desktop only, moved below title to save width) */}
+                <div className="hidden sm:flex max-w-xs mx-auto h-1 bg-slate-100 rounded-full gap-1 p-0 mt-2">
                     {packet.map((_, i) => (
-                        <div key={i} className={`flex-1 rounded-full transition-all duration-700 ${i === currentIndex ? 'bg-indigo-500 ring-4 ring-indigo-50' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
+                        <div key={i} className={`flex-1 rounded-full transition-all duration-700 ${i === currentIndex ? 'bg-indigo-500 ring-2 ring-indigo-50' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
                     ))}
                 </div>
             </header>
 
-            <main className="flex-1 max-w-3xl w-full mx-auto p-4 flex flex-col justify-center pb-32">
-                <div className={`bg-white rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-hidden transition-all duration-300 ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
-                    <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.25em]">Uppgift {currentIndex + 1} / {packet.length}</span>
-                        {!!completed[currentIndex] && <CheckCircle2 className="text-emerald-500" size={24} />}
-                    </div>
-
-                    <div className="p-8 space-y-8 flex flex-col items-center min-h-[420px] justify-center">
-                        <div className="w-full flex justify-center py-4 drop-shadow-sm">{renderVisual(packet[currentIndex])}</div>
-                        <div className="text-2xl font-bold text-slate-800 text-center leading-relaxed max-w-lg">
-                            <MathDisplay content={packet[currentIndex].resolvedData?.renderData?.description} />
-                            {packet[currentIndex].resolvedData?.renderData?.latex && (
-                                <div className="mt-8 text-4xl text-indigo-600 font-serif">
-                                    <MathDisplay content={`$$${packet[currentIndex].resolvedData.renderData.latex}$$`} />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="p-10 bg-slate-50/50 border-t border-slate-100">
-                        {!!completed[currentIndex] ? (
-                            <div className="py-6 text-center flex flex-col items-center gap-2">
-                                <span className="text-xs font-black uppercase tracking-[0.3em] text-emerald-600 italic">Svar mottaget</span>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Fortsätt med nästa pil</p>
-                            </div>
-                        ) : (
-                            <div className="max-w-md mx-auto space-y-6">
-                                {renderInput()}
-                                <button 
-                                    onClick={handleSolve} 
-                                    disabled={isSubmitting || !answers[currentIndex]} 
-                                    className="w-full bg-slate-900 text-white py-5 rounded-[2.5rem] font-black uppercase text-xs tracking-[0.25em] shadow-[0_15px_30px_rgba(15,23,42,0.15)] active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 transition-all"
-                                >
-                                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} /> Skicka Svar</>}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Footer Navigation Controls */}
-                <div className="mt-12 flex justify-between items-center px-6">
-                    <button 
-                        onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
-                        disabled={currentIndex === 0}
-                        className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 disabled:opacity-0 transition-all"
-                    >
-                        <ChevronLeft size={24} /> Föregående
-                    </button>
+            <main className="flex-1 max-w-6xl w-full mx-auto p-3 lg:p-6 overflow-hidden flex flex-col">
+                <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-hidden transition-all duration-300 flex flex-col ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
                     
-                    <div className="flex gap-2.5">
+                    {/* Mobile Progress Bar (Stays at the very top of the card) */}
+                    <div className="sm:hidden h-1 bg-slate-100 flex shrink-0">
                         {packet.map((_, i) => (
-                            <button 
-                                key={i} 
-                                onClick={() => setCurrentIndex(i)} 
-                                className={`w-3 h-3 rounded-full transition-all duration-300 ${i === currentIndex ? 'bg-slate-900 w-8 shadow-md shadow-slate-200' : 'bg-slate-200'}`} 
-                            />
+                            <div key={i} className={`flex-1 ${i === currentIndex ? 'bg-indigo-500' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
                         ))}
                     </div>
 
-                    <button 
-                        onClick={() => setCurrentIndex(prev => Math.min(packet.length - 1, prev + 1))}
-                        disabled={currentIndex === packet.length - 1}
-                        className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 disabled:opacity-0 transition-all"
-                    >
-                        Nästa <ChevronRight size={24} />
-                    </button>
+                    {/* Top Meta Info (Shrink-0 ensures this doesn't get compressed) */}
+                    <div className="px-8 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 shrink-0">
+                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.25em]">{lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} / {packet.length}</span>
+                        {!!completed[currentIndex] && <div className="flex items-center gap-2"><span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">{lang === 'sv' ? "Svar mottaget" : "Answer received"}</span><CheckCircle2 className="text-emerald-500" size={20} /></div>}
+                    </div>
+
+                    {/* THE MAIN GRID: Now uses flex-1 to fill the card height */}
+                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-slate-50 min-h-0">
+                        
+                        {/* Description & Input Section */}
+                        <div className="flex flex-col order-1 lg:order-2 h-full overflow-hidden">
+                            <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6 overflow-y-auto">
+                                <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
+                                    <MathDisplay content={packet[currentIndex].resolvedData?.renderData?.description} />
+                                    
+                                    {packet[currentIndex].resolvedData?.renderData?.latex && (
+                                        <div className="mt-6 text-3xl lg:text-5xl text-indigo-600 font-serif border-t border-slate-100 pt-6">
+                                            <MathDisplay content={`$$${packet[currentIndex].resolvedData.renderData.latex}$$`} />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Submit Area (Pinned to bottom of the card) */}
+                            <div className="p-6 lg:p-10 bg-slate-50/30 border-t border-slate-100 shrink-0">
+                                {!completed[currentIndex] ? (
+                                    <div className="max-w-md mx-auto space-y-4">
+                                        {renderInput()}
+                                        <button 
+                                            onClick={handleSolve} 
+                                            disabled={isSubmitting || !answers[currentIndex]} 
+                                            className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.25em] shadow-xl active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 transition-all"
+                                        >
+                                            {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} /> {lang === 'sv' ? "Skicka svar" : "Submit answer"}</>}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="py-4 text-center">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] animate-pulse italic">
+                                            {lang === 'sv' ? "Fortsätt med pilen i menyn" : "Continue using navigation arrows"}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Visual Renderer - Centered in its half of the tall card */}
+                        {packet[currentIndex].resolvedData?.renderData && 
+                        (packet[currentIndex].resolvedData.renderData.graph || 
+                        packet[currentIndex].resolvedData.renderData.geometry || 
+                        packet[currentIndex].resolvedData.renderData.pattern) ? (
+                            <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 lg:order-1 h-full border-t lg:border-t-0 border-slate-50">
+                                <div className="w-full h-full flex items-center justify-center drop-shadow-md transform scale-90 lg:scale-125">
+                                    {renderVisual(packet[currentIndex])}
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
                 </div>
             </main>
         </div>
