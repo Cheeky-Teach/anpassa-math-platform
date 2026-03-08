@@ -16,6 +16,7 @@ import SessionReportView from './components/views/SessionReportView';
 import ProfileView from './components/views/ProfileView';
 import TimesTable from './components/views/TimesTable';
 import WhiteboardView from './components/whiteboard/WhiteboardView';
+import PracticeLabView from './components/views/PracticeLabView';
 
 // Modals
 import AboutModal from './components/modals/AboutModal';
@@ -82,6 +83,10 @@ function App() {
 
     // --- 8. BROWSER & FOCUS CONTEXT ---
     const [isFocused, setIsFocused] = useState(true);
+
+    // --- 9. PRACTICE LAB PRE CONFIGS ---
+    const [pendingLabConfig, setPendingLabConfig] = useState(null);
+    const [labConfig, setLabConfig] = useState(null); // The active "Source of Truth"
 
     const ui = UI_TEXT[lang];
 
@@ -173,13 +178,25 @@ function App() {
         }
     }, [view, activeRoom?.id, studentAlias, lang]);
 
-    // --- SMART NAVIGATION ENGINE (URL Deep-linking) ---
+    // --- SMART NAVIGATION ENGINE (URL Deep-linking and NP-Lab config) ---
     useEffect(() => {
         const handleUrlNavigation = () => {
             const path = window.location.pathname.replace('/', '');
             const params = new URLSearchParams(window.location.search);
             
-            if (path) setView(path);
+            // 1. Capture Practice Lab Configs (Buffered)
+            if (params.has('config')) {
+                setPendingLabConfig(params.get('config'));
+            }
+
+            // 2. Standard deep-linking logic
+            // FIX: Map the short URL path 'lab' to the internal view 'practice_lab'
+            if (path === 'lab') {
+                setView('practice_lab');
+            } else if (path) {
+                setView(path);
+            }
+            
             if (params.has('topic')) setTopic(params.get('topic'));
             if (params.has('level')) setLevel(parseInt(params.get('level')));
         };
@@ -301,6 +318,12 @@ function App() {
         setView(currentView => {
             if (currentView === 'profile') return 'profile';
             if (isSetupIncomplete) return 'auth';
+
+            // --- NEW: AUTO-LAUNCH LAB IF CONFIG PENDING ---
+            if (pendingLabConfig) {
+                return 'practice_lab';
+            }
+
             if (currentView === 'landing' || currentView === 'auth') return 'dashboard';
             return currentView;
         });
@@ -521,7 +544,11 @@ function App() {
                     if (data.role === 'student') {
                         setActiveClass(data.class);
                         setProfile({ role: 'student', subscription_status: 'active' }); 
+                        if (pendingLabConfig) {
+                        setView('practice_lab');
+                    } else {
                         setView('dashboard');
+                        }
                     } else if (data.role === 'live') {
                         setActiveRoom(data.room);
                         setStudentAlias(data.student_name);
@@ -568,6 +595,7 @@ function App() {
                         onStart={startPractice} 
                         ui={ui} 
                         onStudioOpen={() => setView('question_studio')} 
+                        onLabOpen={() => setView('practice_lab')}
                         onProfileOpen={() => setView('profile')} 
                         onTimesTableOpen={() => setView('times_table')}
                         onWhiteboardOpen={() => setView('whiteboard')}
@@ -607,6 +635,16 @@ function App() {
                     <PrintView packet={savedPacket} title={sheetTitle} lang={lang} onBack={() => setView('question_studio')} includeAnswerKey={includeAnswerKey} answerKeyStyle={answerKeyStyle} />
                 ) : view === 'do_now' ? (
                     <DoNowGrid questions={savedPacket} ui={ui} lang={lang} onBack={() => setView('question_studio')} onClose={() => setView('dashboard')} onRefreshAll={handleRefreshAllDoNow} onRefreshOne={handleRefreshOneDoNow} />
+                ) : view === 'practice_lab' ? (
+                    <PracticeLabView 
+                        configCode={pendingLabConfig} 
+                        profile={profile}
+                        lang={lang}
+                        onBack={() => {
+                            setPendingLabConfig(null);
+                            setView('dashboard');
+                        }}
+                    />
                 ) : view === 'live_session' && activeRoom ? (
                     <StudentLiveView 
                         session={activeRoom} 
