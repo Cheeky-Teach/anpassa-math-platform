@@ -222,7 +222,7 @@ const Dashboard = ({
                                 <Beaker size={20} />
                             </div>
                             <span className="block font-bold text-sm uppercase text-slate-700 mb-1">
-                                {lang === 'sv' ? 'Practice Lab' : 'Practice Lab'}
+                                {lang === 'sv' ? 'Test Lab' : 'Test Lab'}
                             </span>
                             <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest leading-tight">
                                 {lang === 'sv' ? 'Skapa anpassade prov' : 'Create custom tests'}

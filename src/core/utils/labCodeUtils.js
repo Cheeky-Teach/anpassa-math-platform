@@ -34,10 +34,11 @@ export const TOPIC_INDEX = [
 // 2. NATIONAL TEST BUNDLE PRESETS
 // These are hardcoded < 10 character codes for curriculum categories.
 export const BUNDLE_PRESETS = {
-    'NPTS': { category: 'arithmetic', title: 'NP: Taluppfattning' }, //
-    'NPAL': { category: 'algebra', title: 'NP: Algebra & Mönster' },  //
-    'NPGE': { category: 'geometry', title: 'NP: Geometri' },          //
-    'NPDA': { category: 'statistics', title: 'NP: Sannolikhet & Data' } //
+    'NP-TAL': { category: 'arithmetic', title: 'Taluppfattning' },
+    'NP-ALG': { category: 'algebra', title: 'Algebra & Mönster' },
+    'NP-GEO': { category: 'geometry', title: 'Geometri' },
+    'NP-STA': { category: 'statistics', title: 'Sannolikhet & Statistik' },
+    'NP-ALL': { category: 'all', title: 'Alla områden' }
 };
 
 /**
@@ -46,8 +47,6 @@ export const BUNDLE_PRESETS = {
  */
 export const encodeConfig = (config) => {
     const { meta, selection } = config;
-
-    // Check if it's a National Test preset
     if (meta.isNationalTest && meta.bundleId) {
         return `${meta.bundleId}_${meta.globalMaxLevel}${meta.mode === 'exam' ? 'E' : 'P'}${meta.limit}`;
     }
@@ -72,14 +71,13 @@ export const encodeConfig = (config) => {
  */
 export const decodeConfig = (code) => {
     if (!code) return null;
-
     try {
         const [topicPart, settingsPart] = code.split('_');
         
-        // Initial Meta Setup
         const meta = {
             mode: settingsPart.includes('E') ? 'exam' : 'practice',
-            limit: parseInt(settingsPart.slice(2)) || 50,
+            // Default to 0 (infinite) if limit is missing or 0
+            limit: parseInt(settingsPart.slice(2)) || 0,
             globalMaxLevel: parseInt(settingsPart[0]) || 9,
             isNationalTest: false,
             bundleId: null
@@ -87,24 +85,23 @@ export const decodeConfig = (code) => {
 
         const selection = {};
 
-        // Handle Presets (e.g., NPAL)
         if (BUNDLE_PRESETS[topicPart]) {
             meta.isNationalTest = true;
             meta.bundleId = topicPart;
-            // Preset enables all topics in that curriculum category
-            // This logic will be handled by the View to ensure accuracy.
+            // Expansion handled in TestLabView.jsx to access CATEGORIES data
         } else {
-            // Handle Custom (e.g., 0911)
-            // Split string into 2-digit chunks
+            // CUSTOM CODES: Fill the 'levels' array for the new toggle UI
             for (let i = 0; i < topicPart.length; i += 2) {
                 const idx = parseInt(topicPart.slice(i, i + 2));
                 const topicId = TOPIC_INDEX[idx];
                 if (topicId) {
-                    selection[topicId] = { enabled: true, min: 1, max: meta.globalMaxLevel };
+                    selection[topicId] = { 
+                        enabled: true, 
+                        levels: Array.from({length: meta.globalMaxLevel}, (_, i) => i + 1) 
+                    };
                 }
             }
         }
-
         return { meta, selection };
     } catch (e) {
         console.error("Lab Code Decoding Error:", e);

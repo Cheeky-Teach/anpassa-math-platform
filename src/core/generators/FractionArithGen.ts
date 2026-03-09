@@ -201,7 +201,7 @@ export class FractionArithGen {
 
         return {
             renderData: { 
-                description: lang === 'sv' ? `Beräkna ${isSub ? 'differensen' : 'summan'}.` : `Calculate the ${isSub ? 'difference' : 'sum'}.`, 
+                description: lang === 'sv' ? `Beräkna ${isSub ? 'differensen. Svara i bråkform.' : 'summan. Svara i bråkform.'}.` : `Calculate the ${isSub ? 'difference. Answer as an improper fraction.' : 'sum. Answer with an improper fraction.'}.`, 
                 latex: `\\frac{${startN1}}{${d1}} ${op} \\frac{${startN2}}{${d2}}`, 
                 answerType: 'fraction' 
             },
@@ -230,7 +230,7 @@ export class FractionArithGen {
         const finalW = Math.floor(resN / lcd);
         const finalRemN = resN % lcd;
         const simp = this.simplify(finalRemN, lcd);
-        const finalAnsStr = simp.n === 0 ? `${finalW}` : `${finalW} ${simp.n}/${simp.d}`;
+        const finalAnsStr = simp.n === 0 ? `${finalW}` : `${finalW}\\ ${simp.n}/${simp.d}`;
         const op = isSub ? '-' : '+';
 
         const clues = [
@@ -357,7 +357,7 @@ export class FractionArithGen {
         });
 
         return {
-            renderData: { description: lang === 'sv' ? "Beräkna kvoten." : "Calculate the quotient.", latex: `\\frac{${n1}}{${d1}} \\div \\frac{${n2}}{${d2}}`, answerType: 'fraction' },
+            renderData: { description: lang === 'sv' ? "Beräkna kvoten. Svara i bråkform." : "Calculate the quotient.", latex: `\\frac{${n1}}{${d1}} \\div \\frac{${n2}}{${d2}}`, answerType: 'fraction' },
             token: this.toBase64(`${simp.n}/${simp.d}`), variationKey: v, clues
         };
     }

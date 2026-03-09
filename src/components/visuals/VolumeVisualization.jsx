@@ -37,11 +37,11 @@ export const VolumeVisualization = ({ data }) => {
         ctx.clearRect(0, 0, w, h);
         ctx.strokeStyle = '#1f2937'; 
         ctx.fillStyle = '#f3f4f6';
-        ctx.lineWidth = 3; 
+        ctx.lineWidth = 5; 
         ctx.lineJoin = 'round'; 
 
         // High visibility font settings
-        const fontSize = 28; 
+        const fontSize = 40; 
         ctx.font = `bold ${fontSize}px Inter, system-ui, sans-serif`; 
         ctx.textAlign = "center"; 
         ctx.textBaseline = "middle";
@@ -114,7 +114,7 @@ export const VolumeVisualization = ({ data }) => {
 
         // Scaling remains identical, now using dynamic dimensions
         const scale = (Math.min(w, h) * 0.52) / Math.max(logicalW, logicalH);
-        const labelGap = 42; 
+        const labelGap = 50; 
 
         // --- DRAWING FUNCTIONS ---
         if (type === 'cuboid') {
@@ -138,7 +138,7 @@ export const VolumeVisualization = ({ data }) => {
 
             drawLabel(labels.w, x0 + dw/2, y0 + labelGap);
             drawLabel(labels.h, x0 - labelGap - 10, y0 - dh/2);
-            drawLabel(labels.d, x0 + dw + dd + 25, y0 - dh/2 - dd/2);
+            drawLabel(labels.d, x0 + dw + dd + 10, y0 - dh/20 - dd/8);
         } 
         else if (type === 'triangular_prism') {
             const b = valW * scale;
