@@ -92,10 +92,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     const sanitizeInput = (val, type) => {
         let str = String(val).replace(/<[^>]*>?/gm, ''); // Protect against scripts
         if (type === 'fraction') return str.replace(/[^0-9\s/]/g, '');
-        if (type === 'scientific' || type === 'exponent') return str.replace(/[^0-9.,\-*^x]/g, '');
+        if (type === 'scientific' || type === 'exponent') return str.replace(/[^0-9.,+\-*^x]/g, '');
         
         // UPDATED: Now allows / for k-values and : for ratios
-        return str.replace(/[^0-9.,\-xy=/: ]/gi, '');
+        return str.replace(/[^0-9.,*+\-xy=/: ]/gi, '');
     };
 
     // SECURITY: Refactored to handle scrubbed payloads
