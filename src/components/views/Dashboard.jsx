@@ -187,6 +187,22 @@ const Dashboard = ({
                             </button>
                         )}
 
+                        {/* Test Lab / NP-Mode - Accessible to all */}
+                        <button onClick={onLabOpen} className="group p-6 bg-indigo-500 border border-slate-200 rounded-[2.5rem] hover:border-indigo-600 transition-all text-left shadow-sm relative overflow-hidden">
+                            <div className="absolute -bottom-3 -right-3 opacity-30 group-hover:scale-110 transition-transform text-slate-50">
+                                <Beaker size={80} />
+                            </div>
+                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                                <Beaker size={20} />
+                            </div>
+                            <span className="block font-bold text-sm uppercase text-slate-100 mb-1">
+                                {lang === 'sv' ? 'Test Lab' : 'Test Lab'}
+                            </span>
+                            <span className="text-[9px] font-medium text-indigo-100 uppercase tracking-widest leading-tight">
+                                {lang === 'sv' ? 'Skapa anpassade prov' : 'Create custom tests'}
+                            </span>
+                        </button>
+
                         {/* Whiteboard - Teacher Only */}
                         {userRole === 'teacher' && (
                             <button 
@@ -213,21 +229,6 @@ const Dashboard = ({
                             <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">{t.times_table_desc}</span>
                         </button>
 
-                        {/* Practice Lab / NP-Mode - Accessible to all */}
-                        <button onClick={onLabOpen} className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-indigo-600 transition-all text-left shadow-sm relative overflow-hidden">
-                            <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:scale-110 transition-transform text-indigo-900">
-                                <Beaker size={80} />
-                            </div>
-                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                                <Beaker size={20} />
-                            </div>
-                            <span className="block font-bold text-sm uppercase text-slate-700 mb-1">
-                                {lang === 'sv' ? 'Test Lab' : 'Test Lab'}
-                            </span>
-                            <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest leading-tight">
-                                {lang === 'sv' ? 'Skapa anpassade prov' : 'Create custom tests'}
-                            </span>
-                        </button>
 
                         {/* Statistics Tool - Accessible to all */}
                         <button onClick={onStatsOpen} className="group p-6 bg-amber-50 border border-amber-100 rounded-[2.5rem] hover:bg-amber-100 transition-all text-left shadow-sm">
