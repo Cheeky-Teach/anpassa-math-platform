@@ -8,37 +8,43 @@ export const FractionInput = ({ value, onChange, allowMixed = false, autoFocus =
     const numRef = useRef(null);
     const denRef = useRef(null);
 
-    // Safe parsing of the value
     let w = "", n = "", d = "";
     const strVal = value || "";
 
+    // IMPROVED PARSING: Use the space as the definitive anchor for mixed fractions
     if (strVal.includes(' ')) {
         const parts = strVal.split(' ');
         w = parts[0];
-        if (parts[1] && parts[1].includes('/')) {
-            [n, d] = parts[1].split('/');
+        const fracPart = parts[1] || "";
+        if (fracPart.includes('/')) {
+            [n, d] = fracPart.split('/');
         } else {
-            n = parts[1] || "";
+            n = fracPart;
         }
     } else if (strVal.includes('/')) {
         [n, d] = strVal.split('/');
     } else {
-        n = strVal;
+        // If mixed is allowed, we treat a single number without a space/slash as the whole number
+        // This prevents the "jumping" to the numerator box.
+        if (allowMixed) w = strVal;
+        else n = strVal;
     }
 
     const update = (newW, newN, newD) => {
         let res = "";
-        if (newW) {
-            res += newW;
-            if (newN || newD) res += " ";
+        // If a whole number is present, we MUST add a space to anchor the format
+        if (newW !== "") {
+            res = newW + " "; 
         }
-        if (newN || newD) {
+        
+        if (newN !== "" || newD !== "") {
             res += `${newN}/${newD}`;
         }
+        
+        // We do NOT trim here because the trailing space is our data marker
         onChange(res);
     };
 
-    // Auto-focus logic
     useEffect(() => {
         if (autoFocus) {
             if (allowMixed) wholeRef.current?.focus();
@@ -47,31 +53,40 @@ export const FractionInput = ({ value, onChange, allowMixed = false, autoFocus =
     }, [autoFocus, allowMixed]);
 
     return (
-        <div className="inline-flex items-center gap-2 font-mono text-xl text-slate-800">
+        <div className="inline-flex items-center gap-3 font-mono text-slate-800">
             {allowMixed && (
-                <input
-                    ref={wholeRef}
-                    className="w-12 h-14 text-center border-2 border-slate-300 rounded focus:border-blue-500 focus:outline-none bg-white text-2xl"
-                    value={w}
-                    onChange={(e) => update(e.target.value, n, d)}
-                    placeholder="0"
-                />
+                <div className="flex flex-col items-center">
+                    <span className="text-[12px] font-black uppercase text-slate-400 mb-1">Heltal</span>
+                    <input
+                        ref={wholeRef}
+                        type="text"
+                        inputMode="numeric"
+                        className="w-14 h-14 text-center border-2 border-slate-300 rounded-xl focus:border-indigo-500 focus:outline-none bg-white text-2xl font-bold shadow-sm"
+                        value={w}
+                        onChange={(e) => update(e.target.value, n, d)}
+                        placeholder="0"
+                    />
+                </div>
             )}
             <div className="flex flex-col items-center gap-1">
                 <input
                     ref={numRef}
-                    className="w-12 h-10 text-center border-2 border-slate-300 rounded focus:border-blue-500 focus:outline-none bg-white"
+                    type="text"
+                    inputMode="numeric"
+                    className="w-14 h-10 text-center border-2 border-slate-300 rounded-lg focus:border-indigo-500 focus:outline-none bg-white font-bold"
                     value={n}
                     onChange={(e) => update(w, e.target.value, d)}
-                    placeholder="n"
+                    placeholder="t"
                 />
-                <div className="w-full h-0.5 bg-slate-800 rounded-full"></div>
+                <div className="w-full h-1 bg-slate-800 rounded-full"></div>
                 <input
                     ref={denRef}
-                    className="w-12 h-10 text-center border-2 border-slate-300 rounded focus:border-blue-500 focus:outline-none bg-white"
+                    type="text"
+                    inputMode="numeric"
+                    className="w-14 h-10 text-center border-2 border-slate-300 rounded-lg focus:border-indigo-500 focus:outline-none bg-white font-bold"
                     value={d}
                     onChange={(e) => update(w, n, e.target.value)}
-                    placeholder="d"
+                    placeholder="n"
                 />
             </div>
         </div>

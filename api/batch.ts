@@ -26,6 +26,7 @@ import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js
 // COMPLETE TOPIC MAP (Aligned with skillBuckets.js)
 const TopicMap: Record<string, any> = {
   // Algebra & Patterns
+  'equation': LinearEquationGen,
   'equations': LinearEquationGen,
   'equations_word': LinearEquationGen, // Delegated internally
   'algebra': LinearEquationGen,
@@ -37,7 +38,9 @@ const TopicMap: Record<string, any> = {
   'basic_arithmetic': BasicArithmeticGen,
   'arithmetic': BasicArithmeticGen,
   'negatives': NegativeNumbersGen,
+  'negative': NegativeNumbersGen,
   'fractions_basics': FractionBasicsGen,
+  'fraction_basics': FractionBasicsGen,
   'fraction_arith': FractionArithGen,
   'percent': PercentGen,
   'change_factor': ChangeFactorGen,

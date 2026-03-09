@@ -16,7 +16,7 @@ import SessionReportView from './components/views/SessionReportView';
 import ProfileView from './components/views/ProfileView';
 import TimesTable from './components/views/TimesTable';
 import WhiteboardView from './components/whiteboard/WhiteboardView';
-import PracticeLabView from './components/views/PracticeLabView';
+import TestLabView from './components/views/TestLabView';
 
 // Modals
 import AboutModal from './components/modals/AboutModal';
@@ -636,7 +636,7 @@ function App() {
                 ) : view === 'do_now' ? (
                     <DoNowGrid questions={savedPacket} ui={ui} lang={lang} onBack={() => setView('question_studio')} onClose={() => setView('dashboard')} onRefreshAll={handleRefreshAllDoNow} onRefreshOne={handleRefreshOneDoNow} />
                 ) : view === 'practice_lab' ? (
-                    <PracticeLabView 
+                    <TestLabView 
                         configCode={pendingLabConfig} 
                         profile={profile}
                         lang={lang}
