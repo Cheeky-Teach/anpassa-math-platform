@@ -199,7 +199,7 @@ const Dashboard = ({
                                 {lang === 'sv' ? 'Test Lab' : 'Test Lab'}
                             </span>
                             <span className="text-[9px] font-medium text-indigo-100 uppercase tracking-widest leading-tight">
-                                {lang === 'sv' ? 'Skapa anpassade prov' : 'Create custom tests'}
+                                {lang === 'sv' ? 'Skapa övningsprov' : 'Create practice tests'}
                             </span>
                         </button>
 
