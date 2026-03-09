@@ -28,12 +28,14 @@ const TopicMap: Record<string, any> = {
   // Algebra & Patterns
   'equations': LinearEquationGen,
   'equations_word': LinearEquationGen, // Delegated internally
+  'algebra': LinearEquationGen,
   'expressions': ExpressionSimplificationGen,
   'patterns': PatternsGen,
   'graphs': LinearGraphGenerator,
 
   // Arithmetic
   'basic_arithmetic': BasicArithmeticGen,
+  'arithmetic': BasicArithmeticGen,
   'negatives': NegativeNumbersGen,
   'fractions_basics': FractionBasicsGen,
   'fraction_arith': FractionArithGen,
