@@ -70,10 +70,10 @@ const LAB_TEXT = {
         backToLab: "Till Labbet",
         guideTitle: "Så fungerar Testlabbet (Custom övergripande mängdträningsuppgifter)",
         guidePreset: "Välj ett färdigt paket (t.ex. NP-GEO) för att automatiskt välja alla nivåer i den kategorin ELLER välj ämnen manuellt i listan nedan och klicka på nivå-bubblorna (1-9) för att anpassa svårighetsgraden. ",
-        guideCustom: "Ange hur många frågor ska inkluderas. Om Antal Frågor står tom då skapas ett prov med 50 frågor med en rapport varje 15 frågor.",
-        guideModes: "Övningsläge ger dig direkt feedback på varje svar. Provläge döljer alla resultat fram tills varje rapport. Du får en kort rapport halvvägs genom testet där du kan se frågor, svar, och ett steg-för-steg lösning och en fullständig diagnosrapport när du är klar.",
+        guideCustom: "Ange hur många frågor ska inkluderas. Om Antal Frågor står tom då skapas ett prov med 50 frågor med en rapport varje 15 frågor. Om man skriver in manuellt hur många frågor övningsprovet ska innehålla då kan man se en rapport halvvägs genom testet där man ser de sista frågorna som svarades, facit, och ett steg-för-steg lösning till alla frågor. En fullständig diagnosrapport visas upp när man är klar.",
+        guideModes: "Övningsläge ger dig direkt feedback på varje svar. Provläge döljer alla resultat fram tills varje rapport.",
         guideReview: "KOPIERA LÄNKEN efter du har valt vilka område du vill lägga in i övningsprovet och dela med dina elever.",
-        guideControls: "ELEVERNA KOMMER ÅT ÖVNINGSPROVET GENOM ATT KLICKA PÅ LÄNKEN DU DELADE OCH SEN BEHÖVER SKRIVA IN EN GILTIG KLASSKOD TILL 'EGEN ÖVNING' på startsidan. OBS: LÄNKARNA ÄR GILTIGA UNDER HELA BETA-TEST PERIODEN OCH KAN ÅTERANVÄNDAS. Det kan vara så i framtiden att appen uppdateras och nya länker behöver skapas."
+        guideControls: "ELEVERNA KOMMER ÅT ÖVNINGSPROVET GENOM ATT KLICKA PÅ LÄNKEN DU DELADE OCH SEN BEHÖVER SKRIVA IN EN GILTIG KLASSKOD TILL 'EGEN ÖVNING' på startsidan. OBS: LÄNKARNA ÄR GILTIGA UNDER HELA BETA-TEST PERIODEN OCH KAN ÅTERANVÄNDAS. Det kan vara så i framtiden att appen uppdateras och nya länkar behöver skapas."
     },
     en: {
         title: "Test Lab", testCode: "Test Code", modeExam: "Exam Mode", modePractice: "Practice Mode",
@@ -86,8 +86,8 @@ const LAB_TEXT = {
         backToLab: "Back to Lab",
         guideTitle: "How the Test Lab Works (Custom repetition practice tests spanning multiple topics)",
         guidePreset: "Select a preset (e.g., NP-GEO) to automatically enable all topics and levels in that category OR Toggle topics manually below and click level bubbles (N1-N9) to customize difficulty.",
-        guideCustom: "Enter how many questions should be included. If it is blank, then it will be an infinite test with a report summary every 15 questions.",
-        guideModes: "Practice Mode gives instant feedback. Exam Mode hides results until the very end. Review your progress at the halfway point by reviewing questions, answers, and step-by-step solutions and see a full diagnostic report when finished.",
+        guideCustom: "Enter how many questions should be included. If it is blank, then it will be an infinite test with a report summary every 15 questions. If you manually enter a maximum number of questions, a short report will show to review your progress at the halfway point where you can see previous questions, answers, and step-by-step solutions. A full progress report is shown when finishing a practice test.",
+        guideModes: "Practice Mode gives instant feedback. Exam Mode hides results until the very end. ",
         guideReview: "Copy and share the practice test when you have selected all of your topics.",
         guideControls: "WHEN STUDENTS CLICK THE LINK, THEY JUST NEED TO ENTER A VALID CLASS CODE ON THE START SITE and will be instantly launched into the practice test. THERE IS NO TIME LIMIT FOR HOW LONG LINKS ARE VALID, BUT MAY NOT WORK AFTER THIS BETA-TEST PERIOD BECAUSE OF APP UPDATES."
     }
