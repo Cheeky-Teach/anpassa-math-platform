@@ -15,8 +15,8 @@ export const TOPIC_INDEX = [
     'ten_powers',           // 05
     'exponents',            // 06
     'percent',              // 07
-    'expressions',          // 08
-    'equations',            // 09
+    'simplify',             // 08
+    'equation',             // 09
     'equations_word',       // 10
     'patterns',             // 11
     'graphs',               // 12

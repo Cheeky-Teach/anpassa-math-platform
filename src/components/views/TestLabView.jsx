@@ -870,27 +870,151 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         )}
                     </div>
 
-                    {/* GRID-BASED MILESTONE REVIEW (Harmonized with StudentLiveView) --- */}
+                    {/* GRID-BASED MILESTONE REVIEW (Harmonized with Summary Review) */}
                     {showMilestone && (
                         <div className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 rounded-[2rem] lg:rounded-[3.5rem]">
                             <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
-                                <div className="p-10 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
-                                    <div><h2 className="text-4xl font-black text-slate-900 italic tracking-tight uppercase mb-2">{t.milestoneTitle}</h2><p className="text-slate-500 font-medium">{lang === 'sv' ? 'Granska dina senaste 15 svar innan du går vidare.' : 'Review your last 15 answers before continuing.'}</p></div>
-                                    <div className="flex items-center gap-4"><button onClick={() => setInternalMode('SUMMARY')} className="px-6 py-3 bg-rose-100 text-rose-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-600 hover:text-white transition-all">{t.finish}</button><button onClick={() => setRevealMilestoneAnswers(!revealMilestoneAnswers)} className="flex items-center gap-2 px-4 py-3 bg-indigo-50 text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-indigo-100"><Eye size={14} /> {t.showAnswers}</button></div>
+                                
+                                {/* 1. Header Area */}
+                                <div className="p-8 lg:p-10 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
+                                    <div>
+                                        <h2 className="text-3xl lg:text-4xl font-black text-slate-900 italic tracking-tight uppercase mb-2">
+                                            {t.milestoneTitle}
+                                        </h2>
+                                        <p className="text-slate-500 font-medium text-xs lg:text-sm">
+                                            {lang === 'sv' ? 'Granska dina senaste svar innan du går vidare.' : 'Review your recent answers before continuing.'}
+                                        </p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setInternalMode('SUMMARY')} 
+                                        className="px-6 py-3 bg-rose-100 text-rose-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                    >
+                                        {t.finish}
+                                    </button>
                                 </div>
-                                <div className="flex-1 overflow-y-auto p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50/30">
-                                    {Object.keys(responses).filter(idx => idx >= currentIndex - 14 && idx <= currentIndex).map(idx => {
-                                        const qItem = packet[idx]; const res = responses[idx];
-                                        return (
-                                            <div key={idx} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-sm flex flex-col ${res.isCorrect ? 'border-emerald-500 shadow-emerald-50/50' : 'border-rose-400 shadow-rose-50/50'}`}>
-                                                <div className="flex justify-between items-center mb-4"><span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">{lang === 'sv' ? "Uppgift" : "Question"} {parseInt(idx) + 1}</span>{res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-400" size={20} />}</div>
-                                                <div className="flex-1 flex flex-col items-center justify-center space-y-4 mb-4"><div className="scale-75 origin-center">{renderVisual(qItem)}</div><div className="text-center font-bold text-slate-700 text-[11px] px-2 leading-snug truncate w-full">{qItem.resolvedData.renderData.description}</div></div>
-                                                {revealMilestoneAnswers && <div className="p-3 bg-indigo-50 rounded-xl text-center"><span className="text-[9px] font-black text-indigo-400 uppercase block mb-1">Rätt Svar</span><span className="font-bold text-indigo-700">{atob(qItem.resolvedData.token)}</span></div>}
-                                            </div>
-                                        );
-                                    })}
+
+                                {/* 2. Review Grid */}
+                                <div className="flex-1 overflow-y-auto p-6 lg:p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50/30 custom-scrollbar">
+                                    {Object.keys(responses)
+                                        .filter(idx => idx >= currentIndex - 14 && idx <= currentIndex)
+                                        .map(idx => {
+                                            const qItem = packet[idx];
+                                            const res = responses[idx];
+                                            const rd = qItem.resolvedData?.renderData;
+                                            const hasVisual = rd?.graph || rd?.geometry || rd?.pattern;
+                                            const clues = qItem.clues || qItem.resolvedData?.clues || [];
+
+                                            return (
+                                                <div key={idx} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-sm flex flex-col relative transition-all ${res.isCorrect ? 'border-emerald-500 shadow-emerald-50/30' : 'border-rose-400 shadow-rose-50/30'}`}>
+                                                    
+                                                    {/* Card Header */}
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                                                            {lang === 'sv' ? "Uppgift" : "Question"} {parseInt(idx) + 1}
+                                                        </span>
+                                                        {res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-400" size={20} />}
+                                                    </div>
+
+                                                    {/* Mini Visual Render */}
+                                                    {hasVisual && (
+                                                        <div className="w-full h-28 flex items-center justify-center bg-slate-50 rounded-2xl mb-4 border border-slate-100 overflow-hidden relative">
+                                                            <div className="scale-[0.5] transform origin-center">
+                                                                {renderVisual(qItem)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Question Description & LaTeX */}
+                                                    <div className="flex-1 space-y-2 mb-6">
+                                                        <div className="text-center font-bold text-slate-700 text-[11px] leading-tight">
+                                                            <MathDisplay content={typeof rd?.description === 'object' ? rd.description[lang] : rd?.description} />
+                                                        </div>
+                                                        {rd?.latex && (
+                                                            <div className="py-1.5 bg-indigo-50/30 rounded-xl border border-indigo-100/50 text-center">
+                                                                <MathDisplay content={`$$${rd.latex}$$`} className="text-indigo-600 scale-75" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Answer & Solution Controls */}
+                                                    <div className="space-y-2 mt-auto">
+                                                        {/* The Correct Answer Box */}
+                                                        <div className={`p-3 rounded-2xl text-center shadow-inner ${res.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                                                            <span className="text-[8px] font-black text-white/60 uppercase block mb-0.5">
+                                                                {lang === 'sv' ? "Rätt Svar" : "Correct Answer"}
+                                                            </span>
+                                                            <span className="font-black text-white text-xs">
+                                                                {atob(qItem.resolvedData.token)}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Solution Toggle Button */}
+                                                        {clues.length > 0 && (
+                                                            <div className="space-y-2">
+                                                                <button 
+                                                                    onClick={() => setVisibleClues(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                                                                    className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2
+                                                                        ${visibleClues[idx] 
+                                                                            ? 'bg-amber-500 border-amber-600 text-white shadow-md' 
+                                                                            : 'bg-white border-amber-100 text-amber-500 hover:bg-amber-50'}`}
+                                                                >
+                                                                    <Zap size={12} fill={visibleClues[idx] ? "currentColor" : "none"} />
+                                                                    {visibleClues[idx] ? (lang === 'sv' ? "Dölj lösning" : "Hide Solution") : (lang === 'sv' ? "Visa lösning" : "Show Solution")}
+                                                                </button>
+
+                                                                {/* Full Solution Steps (Matching Summary Logic) */}
+                                                                {visibleClues[idx] && (
+                                                                    <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-100 animate-in slide-in-from-top-2 duration-200">
+                                                                        <div className="space-y-4">
+                                                                            {clues.map((step, sIdx) => {
+                                                                                const stepText = typeof step === 'object' && step !== null
+                                                                                    ? step[lang] || step.text || Object.values(step)[0]
+                                                                                    : step;
+                                                                                const stepLatex = typeof step === 'object' && step !== null 
+                                                                                    ? step.latex || step.math 
+                                                                                    : null;
+
+                                                                                return (
+                                                                                    <div key={sIdx} className="flex gap-2 items-start border-l-2 border-amber-200 pl-2">
+                                                                                        <div className="flex-1 space-y-1">
+                                                                                            <div className="text-[10px] font-bold text-amber-900 leading-tight">
+                                                                                                <MathDisplay content={stepText} />
+                                                                                            </div>
+                                                                                            {stepLatex && (
+                                                                                                <div className="py-1 px-2 bg-white/60 rounded border border-amber-200/50 inline-block">
+                                                                                                    <MathDisplay content={`$$${stepLatex}$$`} className="text-indigo-600 scale-[0.8] origin-left" />
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                 </div>
-                                <div className="p-8 bg-white border-t border-slate-100 flex justify-center"><button disabled={cooldown > 0} onClick={() => { setShowMilestone(false); setCurrentIndex(currentIndex + 1); setInputValue(''); setRevealMilestoneAnswers(false); }} className="px-16 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 disabled:opacity-50 transition-all flex items-center gap-4">{cooldown > 0 ? `${t.cooldown} (${cooldown}s)` : t.continueBtn} <ChevronRight size={20}/></button></div>
+
+                                {/* 3. Footer Action */}
+                                <div className="p-8 bg-white border-t border-slate-100 flex justify-center">
+                                    <button 
+                                        disabled={cooldown > 0} 
+                                        onClick={() => { 
+                                            setShowMilestone(false); 
+                                            setCurrentIndex(currentIndex + 1); 
+                                            setInputValue(''); 
+                                            setRevealMilestoneAnswers(false); 
+                                        }} 
+                                        className="px-16 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 disabled:opacity-50 transition-all flex items-center gap-4 active:scale-95"
+                                    >
+                                        {cooldown > 0 ? `${t.cooldown} (${cooldown}s)` : t.continueBtn} <ChevronRight size={20}/>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
