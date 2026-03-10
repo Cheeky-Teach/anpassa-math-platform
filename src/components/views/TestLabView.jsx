@@ -68,12 +68,12 @@ const LAB_TEXT = {
         summaryTitle: "Testrapport", recoveryTitle: "Rekommenderad träning", recoveryDesc: "Fokusera på dina svagaste områden.",
         copyLink: "Kopiera länk", linkCopied: "Länk kopierad till urklipp!", toDashboard: "Lämna",
         backToLab: "Till Labbet",
-        guideTitle: "Så fungerar Testlabbet",
-        guidePreset: "Välj ett färdigt paket (t.ex. NP-GEO) för att automatiskt välja alla nivåer i den kategorin. Ange hur många frågor ska inkluderas. Om Antal Frågor står tom då skapas ett prov med 50 frågor med en rapport varje 15 frågor.",
-        guideCustom: "ELLER välj ämnen manuellt i listan nedan och klicka på nivå-bubblorna (N1-N9) för att anpassa svårighetsgraden.",
-        guideModes: "KOMMER SNART: Övningsläge ger dig direkt feedback på varje svar. Provläge döljer alla resultat fram till slutet.",
-        guideReview: "Du får en kort rapport halvvägs genom testet där du kan se frågor, svar, och ett steg-för-steg lösning och en fullständig diagnosrapport när du är klar.",
-        guideControls: "Ställ in ett antal frågor eller lämna tomt för oändlig träning. Använd 'Rensa allt' för att nollställa labbet."
+        guideTitle: "Så fungerar Testlabbet (Custom övergripande mängdträningsuppgifter)",
+        guidePreset: "Välj ett färdigt paket (t.ex. NP-GEO) för att automatiskt välja alla nivåer i den kategorin ELLER välj ämnen manuellt i listan nedan och klicka på nivå-bubblorna (1-9) för att anpassa svårighetsgraden. ",
+        guideCustom: "Ange hur många frågor ska inkluderas. Om Antal Frågor står tom då skapas ett prov med 50 frågor med en rapport varje 15 frågor.",
+        guideModes: "Övningsläge ger dig direkt feedback på varje svar. Provläge döljer alla resultat fram tills varje rapport. Du får en kort rapport halvvägs genom testet där du kan se frågor, svar, och ett steg-för-steg lösning och en fullständig diagnosrapport när du är klar.",
+        guideReview: "KOPIERA LÄNKEN efter du har valt vilka område du vill lägga in i övningsprovet och dela med dina elever.",
+        guideControls: "ELEVERNA KOMMER ÅT ÖVNINGSPROVET GENOM ATT KLICKA PÅ LÄNKEN DU DELADE OCH SEN BEHÖVER SKRIVA IN EN GILTIG KLASSKOD TILL 'EGEN ÖVNING' på startsidan. OBS: LÄNKARNA ÄR GILTIGA UNDER HELA BETA-TEST PERIODEN OCH KAN ÅTERANVÄNDAS. Det kan vara så i framtiden att appen uppdateras och nya länker behöver skapas."
     },
     en: {
         title: "Test Lab", testCode: "Test Code", modeExam: "Exam Mode", modePractice: "Practice Mode",
@@ -84,12 +84,12 @@ const LAB_TEXT = {
         summaryTitle: "Test Report", recoveryTitle: "Recommended Practice", recoveryDesc: "Focus on your weakest areas.",
         copyLink: "Copy Link", linkCopied: "Link copied to clipboard!", toDashboard: "Exit",
         backToLab: "Back to Lab",
-        guideTitle: "How the Test Lab Works",
-        guidePreset: "Select a preset (e.g., NP-GEO) to automatically enable all topics and levels in that category. Enter how many questions should be included. If it is blank, then it will be an infinite test with a report summary every 15 questions.",
-        guideCustom: "Toggle topics manually below and click level bubbles (N1-N9) to customize difficulty.",
-        guideModes: "COMING SOON: Practice Mode gives instant feedback. Exam Mode hides results until the very end.",
-        guideReview: "Review your progress at the halfway point by reviewing questions, answers, and step-by-step solutions and see a full diagnostic report when finished.",
-        guideControls: "Set a question limit or leave empty for infinite mode. Use 'Reset all' to clear your setup."
+        guideTitle: "How the Test Lab Works (Custom repetition practice tests spanning multiple topics)",
+        guidePreset: "Select a preset (e.g., NP-GEO) to automatically enable all topics and levels in that category OR Toggle topics manually below and click level bubbles (N1-N9) to customize difficulty.",
+        guideCustom: "Enter how many questions should be included. If it is blank, then it will be an infinite test with a report summary every 15 questions.",
+        guideModes: "Practice Mode gives instant feedback. Exam Mode hides results until the very end. Review your progress at the halfway point by reviewing questions, answers, and step-by-step solutions and see a full diagnostic report when finished.",
+        guideReview: "Copy and share the practice test when you have selected all of your topics.",
+        guideControls: "WHEN STUDENTS CLICK THE LINK, THEY JUST NEED TO ENTER A VALID CLASS CODE ON THE START SITE and will be instantly launched into the practice test. THERE IS NO TIME LIMIT FOR HOW LONG LINKS ARE VALID, BUT MAY NOT WORK AFTER THIS BETA-TEST PERIOD BECAUSE OF APP UPDATES."
     }
 };
 
@@ -489,7 +489,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     </button>
 
                     {showGuide && (
-                        <div className="px-8 pb-8 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2">
+                        <div className="px-8 pb-8 grid grid-cols-1 md:grid-cols-1 gap-6 animate-in slide-in-from-top-2">
                             {/* Guide Item: Presets */}
                             <div className="flex gap-4">
                                 <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm border border-indigo-100 text-indigo-600 font-black text-xs">1</div>
@@ -509,6 +509,11 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             <div className="flex gap-4">
                                 <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm border border-indigo-100 text-indigo-600 font-black text-xs">4</div>
                                 <p className="text-[14px] font-medium text-slate-800 leading-relaxed">{t.guideReview}</p>
+                            </div>
+                            {/* Guide Item: CONTROLS */}
+                            <div className="flex gap-4">
+                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm border border-indigo-100 text-indigo-600 font-black text-xs">4</div>
+                                <p className="text-[14px] font-medium text-slate-800 leading-relaxed">{t.guideControls}</p>
                             </div>
                         </div>
                     )}
