@@ -31,6 +31,8 @@ const TopicMap: Record<string, any> = {
   'equations_word': LinearEquationGen, // Delegated internally
   'algebra': LinearEquationGen,
   'expressions': ExpressionSimplificationGen,
+  'simplify': ExpressionSimplificationGen,
+  'expression_simplification': ExpressionSimplificationGen,
   'patterns': PatternsGen,
   'graphs': LinearGraphGenerator,
 
