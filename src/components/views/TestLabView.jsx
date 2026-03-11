@@ -622,6 +622,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                             const selectedLevels = selection[topic.id]?.levels || [];
 
                                             const toggleLevel = (lvl) => {
+                                                setMeta(p => ({ ...p, isNationalTest: false, bundleId: null })); // NEW: Clear preset flag on manual change
                                                 setSelection(p => {
                                                     const currentLevels = p[topic.id]?.levels || [];
                                                     const newLevels = currentLevels.includes(lvl)
@@ -651,13 +652,16 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                                         </div>
                                                         {/* Master Toggle to select/deselect everything */}
                                                         <button 
-                                                            onClick={() => setSelection(p => ({ 
-                                                                ...p, 
-                                                                [topic.id]: { 
-                                                                    enabled: !isEnabled, 
-                                                                    levels: !isEnabled ? topicLevels : [] 
-                                                                } 
-                                                            }))} 
+                                                            onClick={() => {
+                                                                setMeta(p => ({ ...p, isNationalTest: false, bundleId: null })); // NEW: Clear preset flag
+                                                                setSelection(p => ({ 
+                                                                    ...p, 
+                                                                    [topic.id]: { 
+                                                                        enabled: !isEnabled, 
+                                                                        levels: !isEnabled ? topicLevels : [] 
+                                                                    } 
+                                                                }));
+                                                            }}
                                                             className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${isEnabled ? styles.bgDark + ' text-white shadow-lg' : 'bg-white text-transparent border border-slate-600'}`}
                                                         >
                                                             <Check size={18} strokeWidth={4}/>
