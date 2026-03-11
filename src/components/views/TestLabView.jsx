@@ -579,7 +579,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                 onChange={(e) => applyPresetSelection(e.target.value)}
                                 className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 font-bold text-sm focus:border-indigo-500 focus:bg-white outline-none transition-all cursor-pointer"
                             >
-                                <option value="">{lang === 'sv' ? "-- Allt i området --" : "-- All "}</option>
+                                <option value="">{lang === 'sv' ? "-- Välj snabbval --" : "-- Choose a preset --- "}</option>
                                 {Object.entries(BUNDLE_PRESETS).map(([id, data]) => (
                                     <option key={id} value={id}>{data.title} ({id})</option>
                                 ))}
