@@ -137,23 +137,37 @@ export class FractionArithGen {
         const v = variationKey || this.getVariation(pool, options);
         const isSub = v === 'sub_diff_denom';
 
-        const d1 = MathUtils.randomInt(2, 6);
+        let d1 = MathUtils.randomInt(2, 6);
         let d2 = MathUtils.randomInt(2, 8);
         while (d1 === d2) d2 = MathUtils.randomInt(2, 8);
 
         const lcd = this.lcm(d1, d2);
-        const f1 = lcd / d1;
-        const f2 = lcd / d2;
+        let f1 = lcd / d1;
+        let f2 = lcd / d2;
         
-        const n1 = MathUtils.randomInt(1, 3);
-        const n2 = MathUtils.randomInt(1, 3);
+        let n1 = MathUtils.randomInt(1, 3);
+        let n2 = MathUtils.randomInt(1, 3);
         
-        // Ensure positive subtraction
-        let startN1 = n1, startN2 = n2;
-        if (isSub && (n1 * f1 <= n2 * f2)) { startN1 = n2 + 1; startN2 = n1; }
+        // --- IMPROVED LOGIC: Ensure positive subtraction ---
+        // We compare the value of the expanded numerators (n * f)
+        if (isSub) {
+            // If the second fraction is larger or equal, swap the components
+            if (n1 * f1 <= n2 * f2) {
+                // Swap numerators
+                [n1, n2] = [n2, n1];
+                // Swap denominators
+                [d1, d2] = [d2, d1];
+                // Swap expansion factors
+                [f1, f2] = [f2, f1];
+                
+                // Final safety: if they are exactly equal (e.g. 1/2 - 1/2), 
+                // increment the first numerator to ensure a positive (not zero) result.
+                if (n1 * f1 === n2 * f2) n1++;
+            }
+        }
         
-        const ext1 = startN1 * f1;
-        const ext2 = startN2 * f2;
+        const ext1 = n1 * f1;
+        const ext2 = n2 * f2;
         const op = isSub ? '-' : '+';
         const rawRes = isSub ? ext1 - ext2 : ext1 + ext2;
         const simp = this.simplify(rawRes, lcd);
@@ -167,20 +181,20 @@ export class FractionArithGen {
             },
             {
                 text: lang === 'sv'
-                    ? `Steg 2: Förläng det första bråket med ${f1} så att nämnaren blir ${lcd}. Just nu har vi:`
-                    : `Step 2: Extend the first fraction by ${f1} so the denominator becomes ${lcd}. Right now we have:`,
-                latex: `\\frac{${startN1} \\cdot ${f1}}{${d1} \\cdot ${f1}} = \\frac{${ext1}}{${lcd}}`
+                    ? `Steg 2: Förläng det första bråket med ${f1} så att nämnaren blir ${lcd}.`
+                    : `Step 2: Extend the first fraction by ${f1} so the denominator becomes ${lcd}.`,
+                latex: `\\frac{${n1} \\cdot ${f1}}{${d1} \\cdot ${f1}} = \\frac{${ext1}}{${lcd}}`
             },
             {
                 text: lang === 'sv'
-                    ? `Steg 3: Förläng det andra bråket med ${f2} så att nämnaren blir ${lcd}. Just nu har vi:`
-                    : `Step 3: Extend the second fraction by ${f2} so the denominator becomes ${lcd}. Right now we have:`,
-                latex: `\\frac{${startN2} \\cdot ${f2}}{${d2} \\cdot ${f2}} = \\frac{${ext2}}{${lcd}}`
+                    ? `Steg 3: Förläng det andra bråket med ${f2} så att nämnaren blir ${lcd}.`
+                    : `Step 3: Extend the second fraction by ${f2} so the denominator becomes ${lcd}.`,
+                latex: `\\frac{${n2} \\cdot ${f2}}{${d2} \\cdot ${f2}} = \\frac{${ext2}}{${lcd}}`
             },
             {
                 text: lang === 'sv'
-                    ? `Steg 4: Nu när nämnarna är lika kan vi ${isSub ? 'subtrahera' : 'addera'} täljarna. Just nu har vi:`
-                    : `Step 4: Now that the denominators are equal, we can ${isSub ? 'subtract' : 'add'} the numerators. Right now we have:`,
+                    ? `Steg 4: Nu när nämnarna är lika kan vi ${isSub ? 'subtrahera' : 'addera'} täljarna.`
+                    : `Step 4: Now that the denominators are equal, we can ${isSub ? 'subtract' : 'add'} the numerators.`,
                 latex: `\\frac{${ext1}}{${lcd}} ${op} \\frac{${ext2}}{${lcd}} = \\frac{${rawRes}}{${lcd}}`
             }
         ];
@@ -188,8 +202,8 @@ export class FractionArithGen {
         if (simp.gcd > 1) {
             clues.push({
                 text: lang === 'sv'
-                    ? `Steg 5: Förenkla bråket genom att dividera med ${simp.gcd}. Just nu har vi:`
-                    : `Step 5: Simplify the fraction by dividing by ${simp.gcd}. Right now we have:`,
+                    ? `Steg 5: Förenkla bråket genom att dividera med ${simp.gcd}.`
+                    : `Step 5: Simplify the fraction by dividing by ${simp.gcd}.`,
                 latex: `\\frac{${rawRes} \\div ${simp.gcd}}{${lcd} \\div ${simp.gcd}} = \\frac{${simp.n}}{${simp.d}}`
             });
         }
@@ -201,8 +215,8 @@ export class FractionArithGen {
 
         return {
             renderData: { 
-                description: lang === 'sv' ? `Beräkna ${isSub ? 'differensen. Svara i bråkform.' : 'summan. Svara i bråkform.'}.` : `Calculate the ${isSub ? 'difference. Answer as an improper fraction.' : 'sum. Answer with an improper fraction.'}.`, 
-                latex: `\\frac{${startN1}}{${d1}} ${op} \\frac{${startN2}}{${d2}}`, 
+                description: lang === 'sv' ? `Beräkna ${isSub ? 'differensen' : 'summan'}. Svara i bråkform.` : `Calculate the ${isSub ? 'difference' : 'sum'}. Answer as an improper fraction.`, 
+                latex: `\\frac{${n1}}{${d1}} ${op} \\frac{${n2}}{${d2}}`, 
                 answerType: 'fraction' 
             },
             token: this.toBase64(`${simp.n}/${simp.d}`), variationKey: v, clues
