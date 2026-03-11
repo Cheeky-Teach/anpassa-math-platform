@@ -41,33 +41,43 @@ export const BUNDLE_PRESETS = {
     'NP-ALL': { category: 'all', title: 'Alla områden' }
 };
 
+
 /**
  * Encodes a config object into a short string.
- * Format: [indices]_[maxLevel][mode][limit]
+ * NEW Format: [Index(2)Mask(3)]_[maxLevel][mode][limit]
  */
 export const encodeConfig = (config) => {
     const { meta, selection } = config;
+    
+    // If it's a pure, unmodified preset, keep the short readable code
     if (meta.isNationalTest && meta.bundleId) {
         return `${meta.bundleId}_${meta.globalMaxLevel}${meta.mode === 'exam' ? 'E' : 'P'}${meta.limit}`;
     }
 
-    // Build topic indices (2-digit per topic)
-    const indices = Object.keys(selection)
+    // Build custom string: Each topic gets a 5-char block
+    const topicPart = Object.keys(selection)
         .filter(topicId => selection[topicId].enabled)
         .map(topicId => {
             const idx = TOPIC_INDEX.indexOf(topicId);
-            return idx !== -1 ? idx.toString().padStart(2, '0') : null;
+            if (idx === -1) return null;
+            
+            // 1. Generate bitmask for levels 1-9
+            // Level 1 = 2^0, Level 2 = 2^1... Level 9 = 2^8
+            const levels = selection[topicId].levels || [];
+            const mask = levels.reduce((acc, lvl) => acc + Math.pow(2, lvl - 1), 0);
+            
+            // 2. Format: 2-digit Index + 3-digit Hex Mask (max 511 is '1ff')
+            return idx.toString().padStart(2, '0') + mask.toString(16).padStart(3, '0');
         })
         .filter(Boolean)
         .join('');
 
-    // Suffix: maxLevel (1-9), Mode (E/P), Limit (0-50)
     const modeChar = meta.mode === 'exam' ? 'E' : 'P';
-    return `${indices}_${meta.globalMaxLevel}${modeChar}${meta.limit}`;
+    return `${topicPart}_${meta.globalMaxLevel}${modeChar}${meta.limit}`;
 };
 
 /**
- * Decodes a short string back into a full config object.
+ * Decodes a string back into a config object with individual levels.
  */
 export const decodeConfig = (code) => {
     if (!code) return null;
@@ -76,7 +86,6 @@ export const decodeConfig = (code) => {
         
         const meta = {
             mode: settingsPart.includes('E') ? 'exam' : 'practice',
-            // Default to 0 (infinite) if limit is missing or 0
             limit: parseInt(settingsPart.slice(2)) || 0,
             globalMaxLevel: parseInt(settingsPart[0]) || 9,
             isNationalTest: false,
@@ -88,23 +97,29 @@ export const decodeConfig = (code) => {
         if (BUNDLE_PRESETS[topicPart]) {
             meta.isNationalTest = true;
             meta.bundleId = topicPart;
-            // Expansion handled in TestLabView.jsx to access CATEGORIES data
         } else {
-            // CUSTOM CODES: Fill the 'levels' array for the new toggle UI
-            for (let i = 0; i < topicPart.length; i += 2) {
-                const idx = parseInt(topicPart.slice(i, i + 2));
-                const topicId = TOPIC_INDEX[idx];
+            // Process 5-character blocks: Index(2) + Mask(3)
+            for (let i = 0; i < topicPart.length; i += 5) {
+                const topicIdx = parseInt(topicPart.slice(i, i + 2));
+                const hexMask = topicPart.slice(i + 2, i + 5);
+                const topicId = TOPIC_INDEX[topicIdx];
+                
                 if (topicId) {
-                    selection[topicId] = { 
-                        enabled: true, 
-                        levels: Array.from({length: meta.globalMaxLevel}, (_, i) => i + 1) 
-                    };
+                    const mask = parseInt(hexMask, 16);
+                    const selectedLevels = [];
+                    // Check bits 0 through 8 (Levels 1-9)
+                    for (let bit = 0; bit < 9; bit++) {
+                        if ((mask >> bit) & 1) {
+                            selectedLevels.push(bit + 1);
+                        }
+                    }
+                    selection[topicId] = { enabled: true, levels: selectedLevels };
                 }
             }
         }
         return { meta, selection };
     } catch (e) {
-        console.error("Lab Code Decoding Error:", e);
+        console.error("Decoding Error:", e);
         return null;
     }
 };
