@@ -120,7 +120,7 @@ export class FractionArithGen {
 
         return {
             renderData: { 
-                description: lang === 'sv' ? `Beräkna ${isSub ? 'differensen' : 'summan'}.` : `Calculate the ${isSub ? 'difference' : 'sum'}.`, 
+                description: lang === 'sv' ? `Beräkna ${isSub ? 'differensen' : 'summan'} och svara i enklaste form.` : `Calculate the ${isSub ? 'difference' : 'sum'} and answer in simplest form.`, 
                 latex: `\\frac{${n1}}{${d}} ${op} \\frac{${n2}}{${d}}`, 
                 answerType: 'fraction' 
             },
@@ -215,7 +215,7 @@ export class FractionArithGen {
 
         return {
             renderData: { 
-                description: lang === 'sv' ? `Beräkna ${isSub ? 'differensen' : 'summan'}. Svara i bråkform.` : `Calculate the ${isSub ? 'difference' : 'sum'}. Answer as an improper fraction.`, 
+                description: lang === 'sv' ? `Beräkna ${isSub ? 'differensen' : 'summan'}. Svara i bråkform och i enklaste form.` : `Calculate the ${isSub ? 'difference' : 'sum'}. Answer as an improper fraction and in simplest form.`, 
                 latex: `\\frac{${n1}}{${d1}} ${op} \\frac{${n2}}{${d2}}`, 
                 answerType: 'fraction' 
             },
