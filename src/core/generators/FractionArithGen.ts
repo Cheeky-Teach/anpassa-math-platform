@@ -326,7 +326,7 @@ export class FractionArithGen {
         });
 
         return {
-            renderData: { description: lang === 'sv' ? "Multiplicera bråken. Svara i enklaste form." : "Multiply the fractions. Answer in simplest form.", latex: `\\frac{${n1}}{${d1}} \\cdot \\frac{${n2}}{${d2}}`, answerType: 'fraction' },
+            renderData: { description: lang === 'sv' ? "Multiplicera bråken. Svara i bråkform OCH i enklaste form." : "Multiply the fractions. Answer as an improper fraction and in simplest form.", latex: `\\frac{${n1}}{${d1}} \\cdot \\frac{${n2}}{${d2}}`, answerType: 'fraction' },
             token: this.toBase64(`${simp.n}/${simp.d}`), variationKey: v, clues
         };
     }
