@@ -1,40 +1,98 @@
 import React from 'react';
 
-// Helper for text generation
+/**
+ * mkTxt - Responsive Label Helper
+ * Font size 14-16 is optimized for a 300x250 coordinate system.
+ */
 export const mkTxt = (x, y, txt, anchor = "middle", baseline = "middle", color = "#374151") =>
-    <text key={`${x}-${y}-${txt}`} x={x} y={y} textAnchor={anchor} dominantBaseline={baseline} fontWeight="bold" fill={color} fontSize="20">{txt}</text>;
+    <text 
+        key={`${x}-${y}-${txt}`} 
+        x={x} 
+        y={y} 
+        textAnchor={anchor} 
+        dominantBaseline={baseline} 
+        fontWeight="bold" 
+        fill={color} 
+        fontSize="16"
+        className="font-sans drop-shadow-sm select-none"
+    >
+        {txt}
+    </text>;
+
+/**
+ * GeometryVisual - The Responsive Shell
+ * This component mirrors the logic of ProbabilityTree.jsx to ensure 
+ * the shape fills 100% of its container.
+ */
+export const GeometryVisual = ({ data }) => {
+    if (!data) return null;
+
+    // We define a base coordinate space of 300x250.
+    // Everything drawn in RenderShape will be relative to this box.
+    const baseWidth = 300;
+    const baseHeight = 250;
+
+    return (
+        <div className="w-full h-full flex items-center justify-center p-2">
+            <div className="relative w-full h-full flex items-center justify-center overflow-visible">
+                <svg 
+                    viewBox={`0 0 ${baseWidth} ${baseHeight}`}
+                    preserveAspectRatio="xMidYMid meet"
+                    className="w-full h-full block overflow-visible drop-shadow-md"
+                >
+                    <RenderShape 
+                        type={data.type} 
+                        dims={data.dims} 
+                        labels={data.labels} 
+                        areaText={data.areaText} 
+                    />
+                </svg>
+            </div>
+        </div>
+    );
+};
 
 export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
     const cx = 150 + offsetX;
     const cy = 125 + offsetY;
     const safeDims = dims || {};
-    // Ensure width and height have fallbacks to prevent NaN
-    const rawW = safeDims.width || safeDims.w || 10;
-    const rawH = safeDims.height || safeDims.h || 10;
+    const lab = labels || {};
+
+    // Determine the true total dimensions for scaling
+    let rawW = safeDims.width || safeDims.w || 10;
+    let rawH = safeDims.height || safeDims.h || 10;
     const rawR = safeDims.radius || safeDims.r || 5;
 
+    // Surgical Fix: Ensure maxDim accounts for the total footprint of composite shapes
+    if (type === 'composite') {
+        if (safeDims.subtype === 'rect_right_tri') rawW = (lab.w || 10) + (lab.tri_b || 5);
+        if (safeDims.subtype === 'l_shape') {
+            rawW = (lab.vW || 3) + (lab.hW || 6);
+            rawH = rawH * 1.35; 
+        }
+        // ADDED: Portal logic. Total height = height + radius (which is width/2)
+        if (safeDims.subtype === 'house') rawH = (lab.h || 10) + (lab.h_roof || 5);
+        if (safeDims.subtype === 'portal') rawH = (lab.h || 10) + ((lab.w || 10) / 2);
+    }
+
     const maxDim = Math.max(rawW, rawH, rawR * 2) || 10;
-    const baseScale = (120 / maxDim) * scale;
+    // Reduced factor from 180 to 160 to provide safer margins for labels
+    const baseScale = (170 / maxDim) * scale;
     
     const sw = rawW * baseScale;
     const sh = rawH * baseScale;
     const sr = rawR * baseScale;
 
-    // Use passed labels or fallback to dimension values if no label object exists
     const safeLabels = labels || {};
     const l_b = safeLabels.b || safeLabels.base || safeLabels.width || safeLabels.w;
     const l_h = safeLabels.h || safeLabels.height;
     const l_hyp = safeLabels.hyp || safeLabels.hypotenuse || safeLabels.c || safeLabels.diagonal;
-    const l_slant = safeLabels.slant || safeLabels.s; // For parallelogram slant side
+    const l_slant = safeLabels.slant || safeLabels.s; 
     
-    // Angle Labels
-    const l_a1 = safeLabels.a1;
-    const l_a2 = safeLabels.a2;
-
-    // Side Labels for Similarity (s1, s2)
     const l_s1 = safeLabels.s1;
     const l_s2 = safeLabels.s2;
 
+    // --- RECTANGLE / SQUARE ---
     if (type === 'rectangle' || type === 'square') {
         return (
             <g>
@@ -46,45 +104,34 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
         );
     }
 
+    // --- PARALLELOGRAM ---
     if (type === 'parallelogram') {
-        const skew = sw * 0.25; // fixed skew amount for visual
-        // Points: BottomLeft, BottomRight, TopRight, TopLeft
-        const xBL = cx - sw / 2 - skew/2;
-        const xBR = cx + sw / 2 - skew/2;
-        const xTR = cx + sw / 2 + skew/2;
-        const xTL = cx - sw / 2 + skew/2;
-        
+        const skew = sw * 0.25;
+        const xBL = cx - sw / 2 - skew / 2;
+        const xBR = cx + sw / 2 - skew / 2;
+        const xTR = cx + sw / 2 + skew / 2;
+        const xTL = cx - sw / 2 + skew / 2;
         const yTop = cy - sh / 2;
         const yBot = cy + sh / 2;
-
         const path = `${xBL},${yBot} ${xBR},${yBot} ${xTR},${yTop} ${xTL},${yTop}`;
 
         return (
             <g>
-                {/* Dotted Height Line */}
-                <line x1={xTL} y1={yTop} x2={xTL} y2={yBot} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
-                {/* Main Shape */}
-                <polygon points={path} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
-                
-                {/* Base Label */}
-                {l_b && mkTxt((xBL + xBR)/2, yBot + 25, l_b)}
-                
-                {/* Height Label (Internal) */}
-                {l_h && mkTxt(xTL + 10, (yTop+yBot)/2, l_h, "start")}
-                
-                {/* Slant Side Label (Right Side) for Perimeter */}
-                {l_slant && mkTxt((xBR+xTR)/2 + 10, (yBot+yTop)/2, l_slant, "start")}
-
-                {areaText && mkTxt(cx, cy, `${areaText} cm²`, "middle", "middle", "#064e3b")}
+                {/* Dotted height line */}
+                <line x1={xTL} y1={yTop} x2={xTL} y2={yBot} stroke="#6b7280" strokeWidth="1" strokeDasharray="2" />
+                <polygon points={path} fill="#ecfdf5" stroke="#10b981" strokeWidth="1.5" fillOpacity="0.5" />
+                {l_b && mkTxt((xBL + xBR) / 2, yBot + 10, l_b)}
+                {l_h && mkTxt(xTL + 4, (yTop + yBot) / 2, l_h, "start")}
+                {/* Slant side label for perimeter questions */}
+                {l_slant && mkTxt((xBR + xTR) / 2 + 6, (yBot + yTop) / 2, l_slant, "start")}
             </g>
         );
     }
 
+    // --- TRIANGLE ---
     if (type === 'triangle') {
-        const L = cx - sw / 2; 
-        const R = cx + sw / 2;
-        const T = cy - sh / 2; 
-        const B = cy + sh / 2;
+        const L = cx - sw / 2; const R = cx + sw / 2;
+        const T = cy - sh / 2; const B = cy + sh / 2;
         
         if (safeDims.subtype === 'right') {
             const p1 = { x: L, y: T }; const p2 = { x: L, y: B }; const p3 = { x: R, y: B };
@@ -98,7 +145,6 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
                 </g>
             );
         } else {
-            // Isosceles / Generic Triangle
             const points = `${L},${B} ${R},${B} ${cx},${T}`;
             return (
                 <g>
@@ -106,27 +152,14 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
                     <polygon points={points} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
                     {l_b && mkTxt(cx, B + 25, l_b)}
                     {l_h && mkTxt(cx + 5, cy, l_h, "start")}
-                    
                     {l_s1 && mkTxt(L - 10, cy, l_s1, "end")}
                     {l_s2 && mkTxt(R + 10, cy, l_s2, "start")}
-
-                    {l_a1 && (
-                        <>
-                            <path d={`M ${L + 15} ${B} A 15 15 0 0 0 ${L + 8} ${B - 13}`} fill="none" stroke="#374151" strokeWidth="2" />
-                            <text x={L - 10} y={B - 5} fontSize="16" fontWeight="bold" fill="#374151">{l_a1}</text>
-                        </>
-                    )}
-                    
-                    {l_a2 && (
-                        <>
-                            <path d={`M ${R - 15} ${B} A 15 15 0 0 1 ${R - 8} ${B - 13}`} fill="none" stroke="#374151" strokeWidth="2" />
-                            <text x={R + 10} y={B - 5} fontSize="16" fontWeight="bold" fill="#374151">{l_a2}</text>
-                        </>
-                    )}
                 </g>
             );
         }
     }
+
+    // --- CIRCLE ---
     if (type === 'circle') {
         const isDiameter = safeDims.show === 'diameter';
         const labelTxt = safeLabels.val || (safeLabels.r ? `r=${safeLabels.r}` : (safeLabels.diameter ? `d=${safeLabels.diameter}` : null));
@@ -149,7 +182,7 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
         );
     }
 
-    // --- NEW: Semicircle ---
+    // --- SEMICIRCLE ---
     if (type === 'semicircle') {
         const isDiameter = safeDims.show === 'diameter';
         const rVal = safeLabels.r;
@@ -161,7 +194,7 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
                 <path d={dPath} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
                 {isDiameter ? (
                     <>
-                        <line x1={cx - sr} y1={cy + 15} x2={cx + sr} y2={cy + 15} stroke="#374151" strokeWidth="2" markerEnd="url(#arrow)" markerStart="url(#arrow)" />
+                        <line x1={cx - sr} y1={cy + 15} x2={cx + sr} y2={cy + 15} stroke="#374151" strokeWidth="2" />
                         <text x={cx} y={cy + 35} textAnchor="middle" fontWeight="bold" fill="#374151" fontSize="20">{dVal ? `d=${dVal}` : ''}</text>
                     </>
                 ) : (
@@ -175,12 +208,11 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
         );
     }
 
-    // --- NEW: Quarter Circle ---
+    // --- QUARTER CIRCLE ---
     if (type === 'quarter_circle') {
         const rVal = safeLabels.r;
         const originX = cx - sr/2;
         const originY = cy + sr/2;
-        
         const dPath = `M ${originX} ${originY} L ${originX + sr} ${originY} A ${sr} ${sr} 0 0 0 ${originX} ${originY - sr} Z`;
 
         return (
@@ -192,7 +224,7 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
         );
     }
     
-    // --- COMBINED SHAPES (Level 4) ---
+    // --- COMPOSITE ---
     if (type === 'composite') {
         const lab = labels || {};
         
@@ -208,9 +240,9 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
                 <g>
                     <rect x={startX} y={startY - hRect} width={wRect} height={hRect} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
                     <polygon points={`${startX + wRect},${startY} ${startX + wRect + wTri},${startY} ${startX + wRect},${startY - hRect}`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                    {mkTxt(startX + wRect/2, startY + 20, lab.w)} 
-                    {mkTxt(startX - 15, startY - hRect/2, lab.h)} 
-                    {mkTxt(startX + wRect + wTri/2, startY + 20, lab.tri_b)} 
+                    {mkTxt(startX + wRect/2, startY + 25, lab.w)} 
+                    {mkTxt(startX - 20, startY - hRect/2, lab.h, "end")} 
+                    {mkTxt(startX + wRect + wTri/2, startY + 25, lab.tri_b)} 
                 </g>
             );
         }
@@ -218,36 +250,24 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
         if (dims.subtype === 'l_shape') {
             const vW = (lab.vW || 3) * baseScale;
             const vH = (lab.vH || 8) * baseScale;
-            const hW = (lab.hW || 6) * baseScale; // This is the extension width
+            const hW = (lab.hW || 6) * baseScale;
             const hH = (lab.hH || 3) * baseScale;
-            
-            const showTotal = !!lab.totalW;
-            
             const totW = vW + hW; 
             const totH = Math.max(vH, hH);
             const startX = cx - totW / 2;
             const startY = cy + totH / 2; 
-            const p = `${startX},${startY} ${startX + vW + hW},${startY} ${startX + vW + hW},${startY - hH} ${startX + vW},${startY - hH} ${startX + vW},${startY - vH} ${startX},${startY - vH}`;
+            const p = `${startX},${startY} ${startX + totW},${startY} ${startX + totW},${startY - hH} ${startX + vW},${startY - hH} ${startX + vW},${startY - vH} ${startX},${startY - vH}`;
             return (
                 <g>
                     <polygon points={p} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
                     {mkTxt(startX + vW/2, startY - vH - 15, lab.vW)}
                     {mkTxt(startX - 15, startY - vH/2, lab.vH)}
-                    
-                    {/* Right Side Label */}
                     {mkTxt(startX + vW + hW + 15, startY - hH/2, lab.hH)}
-
-                    {/* Bottom Label logic */}
-                    {showTotal ? (
+                    {!!lab.totalW && (
                         <>
-                            {/* Draw a dimension line for total width */}
                             <line x1={startX} y1={startY + 25} x2={startX + totW} y2={startY + 25} stroke="#374151" strokeWidth="1" />
-                            <line x1={startX} y1={startY + 20} x2={startX} y2={startY + 30} stroke="#374151" strokeWidth="1" />
-                            <line x1={startX + totW} y1={startY + 20} x2={startX + totW} y2={startY + 30} stroke="#374151" strokeWidth="1" />
                             {mkTxt(startX + totW/2, startY + 45, lab.totalW)}
                         </>
-                    ) : (
-                        mkTxt(startX + vW + hW/2, startY + 20, lab.hW) // Fallback to extension label
                     )}
                 </g>
             );
@@ -256,7 +276,6 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
         if (dims.subtype === 'house_area') {
             const s = (lab.s || 10) * baseScale;
             const hTri = (lab.h_tri || 5) * baseScale;
-            
             const startX = cx - s/2;
             const startY = cy + s/2; 
 
@@ -265,7 +284,6 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
                     <rect x={startX} y={startY - s} width={s} height={s} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
                     <polygon points={`${startX},${startY - s} ${startX + s},${startY - s} ${cx},${startY - s - hTri}`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
                     <line x1={cx} y1={startY - s} x2={cx} y2={startY - s - hTri} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
-
                     {mkTxt(cx, startY + 20, lab.s)} 
                     {mkTxt(startX - 15, startY - s/2, lab.s)} 
                     {mkTxt(cx + 15, startY - s - hTri/2, lab.h_tri, "start")} 
@@ -274,22 +292,34 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
         }
         
         if (dims.subtype === 'house' || dims.subtype === 'portal') {
+             const hBase = (lab.h || 10) * baseScale;
+             const wBase = (lab.w || 10) * baseScale;
+             
+             // The house uses a custom roof height; the portal uses half its width
+             const hTop = dims.subtype === 'house' ? (lab.h_roof || 5) * baseScale : (wBase / 2);
+             const totalH = hBase + hTop;
+             
+             const startX = cx - wBase / 2;
+             const startY = cy + totalH / 2;
+
              return (
                 <g>
                     {dims.subtype === 'house' ? (
                         <>
-                            <rect x={cx - 50} y={cy - 20} width={100} height={80} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            <polygon points={`${cx - 50},${cy - 20} ${cx + 50},${cy - 20} ${cx},${cy - 80}`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            {mkTxt(cx + 60, cy + 20, lab.h)}
-                            {mkTxt(cx, cy + 80, lab.w)}
-                            {mkTxt(cx + 30, cy - 40, lab.h_roof)}
+                            <rect x={startX} y={startY - hBase} width={wBase} height={hBase} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            <line x1={cx} y1={startY - hBase} x2={cx} y2={startY - totalH} stroke="#6b7280" strokeWidth="2" strokeDasharray="4" />
+                            <polygon points={`${startX},${startY - hBase} ${startX + wBase},${startY - hBase} ${cx},${startY - totalH}`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" fillOpacity="0.5" />
+                            {mkTxt(startX + wBase + 15, startY - hBase/2, lab.h, "start")}
+                            {mkTxt(cx, startY + 25, lab.w)}
+                            {mkTxt(cx + 10, startY - hBase - hTop/2, lab.h_roof, "start")}
                         </>
                     ) : (
                         <>
-                            <rect x={cx - 50} y={cy - 50} width={100} height={100} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            <path d={`M ${cx - 50} ${cy - 50} A 50 50 0 0 1 ${cx + 50} ${cy - 50}`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
-                            {mkTxt(cx, cy + 70, lab.w)}
-                            {mkTxt(cx + 60, cy, lab.h, "start")}
+                            <rect x={startX} y={startY - hBase} width={wBase} height={hBase} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            {/* The arc now uses hTop (wBase/2) to ensure it stays connected and centered */}
+                            <path d={`M ${startX} ${startY - hBase} A ${wBase/2} ${wBase/2} 0 0 1 ${startX + wBase} ${startY - hBase}`} fill="#ecfdf5" stroke="#10b981" strokeWidth="3" />
+                            {mkTxt(cx, startY + 25, lab.w)}
+                            {mkTxt(startX + wBase + 15, startY - hBase/2, lab.h, "start")}
                         </>
                     )}
                 </g>

@@ -135,9 +135,16 @@ export class GeometryGenerator {
         const b = MathUtils.randomInt(6, 12), h = MathUtils.randomInt(3, 8);
         const isParallel = v === 'perimeter_parallel';
         const ans = 2 * (b + h);
+
         return {
             renderData: {
-                geometry: { type: isParallel ? 'parallelogram' : 'rectangle', width: b, height: h, labels: { b, h } },
+                geometry: { 
+                    type: isParallel ? 'parallelogram' : 'rectangle', 
+                    width: b, 
+                    height: h, 
+                    // Map 'h' to 's' for parallelograms so GeometryShapes.jsx labels the slant side
+                    labels: isParallel ? { b, s: h } : { b, h } 
+                },
                 description: lang === 'sv' ? "Beräkna omkretsen." : "Calculate the perimeter.",
                 answerType: 'numeric'
             },
