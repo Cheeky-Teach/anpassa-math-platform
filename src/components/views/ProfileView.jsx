@@ -245,12 +245,12 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                         <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white">
                             <Zap size={20} />
                         </div>
-                        <h2 className="font-bold uppercase text-xs tracking-widest text-orange-900">Permanent Övningskod</h2>
+                        <h1 className="font-bold uppercase text-xs tracking-widest text-orange-900">Uppdatera Övningskod</h1>
                     </div>
                     <div className="p-8 flex flex-col md:flex-row gap-10 items-start">
                         <div className="flex-1">
-                            <p className="text-sm text-slate-500 mb-6 leading-relaxed font-medium">
-                                Denna kod används för att dina elever ska kunna logga in på din dashboard och öva på egen hand.
+                            <p className="text-m text-slate-500 mb-6 leading-relaxed font-medium">
+                                Denna kod används för att dina elever ska kunna logga in på din dashboard och öva på egen hand. Du kan skriva din egen kod så länge att den är unik och tillgänglig.
                             </p>
                             <div className="relative max-w-sm">
                                 <input 
