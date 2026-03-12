@@ -209,7 +209,7 @@ const PracticeView = ({
                                         }`}
                                 >
                                     <span className="text-[10px] font-black uppercase tracking-tighter">Lvl {lNum}</span>
-                                    <span className={`text-[9px] font-bold uppercase truncate w-full text-center px-1 ${isActive ? 'text-white/80' : 'text-slate-500'}`}>
+                                    <span className={`text-[10px] font-bold uppercase truncate w-full text-center px-1 ${isActive ? 'text-white/80' : 'text-slate-500'}`}>
                                         {desc[lang]}
                                     </span>
                                 </button>
