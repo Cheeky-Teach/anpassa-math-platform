@@ -34,7 +34,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         sv: { 
             student_h: studentMode === 'live' ? "Live-rum" : "Ditt Klassrum",
             code_placeholder: "Skriv kod...", 
-            teacher_h: authMode === 'signup' ? "Skapa lärarkonto" : authMode === 'forgot' ? "Återställ" : "Logga in", 
+            teacher_h: authMode === 'signup' ? "Skapa lärarkonto" : authMode === 'forgot' ? "Återställ lösenord" : "Logga in", 
             onboarding_h: "Verifiera lärarkonto",
             onboarding_sub: "Ange inbjudningskod och skola för att fortsätta.",
             invite_label: "Lärarkod (Invite Code)",
@@ -53,12 +53,14 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
             btn_continue: "Fortsätt",
             signup_success: "Konto skapat! Vidare till verifiering...",
             name_label: "Ditt namn",
-            name_placeholder: "Skriv ditt namn..."
+            name_placeholder: "Skriv ditt namn...",
+            btn_reset: "Skicka återställningslänk",
+            forgot_link: "Glömt lösenord?"
         },
         en: { 
             student_h: studentMode === 'live' ? "Live Room" : "Your Class",
             code_placeholder: "Enter code...", 
-            teacher_h: authMode === 'signup' ? "Create Account" : authMode === 'forgot' ? "Reset" : "Teacher Login", 
+            teacher_h: authMode === 'signup' ? "Create Account" : authMode === 'forgot' ? "Reset Password" : "Teacher Login", 
             onboarding_h: "Verify Teacher Account",
             onboarding_sub: "Enter your invite code and school to continue.",
             invite_label: "Teacher Invite Code",
@@ -77,7 +79,9 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
             btn_continue: "Continue",
             signup_success: "Account created! Proceeding to verification...",
             name_label: "Your Name",
-            name_placeholder: "Type your name..."
+            name_placeholder: "Type your name...",
+            btn_reset: "Send reset link",
+            forgot_link: "Forgot password?"
         }
     }[lang];
 
@@ -119,18 +123,14 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         setMessage(null);
 
         try {
-            // 1. Normalize Input
             const cleanInput = code.trim().toUpperCase();
             const rawNoHyphens = cleanInput.replace(/-/g, '');
-            
-            // Generate list of potential matches to maximize success
             const potentialMatches = [cleanInput, rawNoHyphens];
             if (rawNoHyphens.length === 6) {
                 potentialMatches.push(`${rawNoHyphens.slice(0, 3)}-${rawNoHyphens.slice(3)}`);
             }
 
             if (studentMode === 'live') {
-                // LIVE MODE: Check against rooms table
                 const { data: room, error } = await supabase
                     .from('rooms')
                     .select('*')
@@ -144,7 +144,6 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                 onSuccess({ role: 'live', room, student_name: fullName.trim() });
 
             } else {
-                // PRACTICE MODE: Check against profiles table
                 const { data: teacher, error } = await supabase
                     .from('teacher_lookup')
                     .select('*')
@@ -191,11 +190,22 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         setMessage(null);
         try {
             if (authMode === 'signup') {
+                // 1. GATEKEEPER: Verify the master invite code BEFORE creating the Auth record
+                const verifyRes = await fetch('/api/verify-invite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ inviteCode: inviteCodeInput })
+                });
+
+                if (!verifyRes.ok) throw new Error(t.error_invite);
+
+                // 2. Only proceed to Auth if the code is verified
                 const { data, error } = await supabase.auth.signUp({ 
                     email, 
                     password,
                     options: { data: { full_name: fullName } }
                 });
+                
                 if (error) throw error;
                 if (data.user) {
                     setPendingUser(data.user);
@@ -208,6 +218,26 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
             }
         } catch (err) { 
             setMessage({ type: 'error', text: err.message }); 
+            setLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setMessage(null);
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/profile`, 
+            });
+            if (error) throw error;
+            setMessage({ 
+                type: 'success', 
+                text: lang === 'sv' ? "Återställningslänk skickad till din e-post!" : "Reset link sent to your email!" 
+            });
+        } catch (err) {
+            setMessage({ type: 'error', text: err.message });
+        } finally {
             setLoading(false);
         }
     };
@@ -417,10 +447,74 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                             <svg className="w-6 h-6" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg> Google
                         </button>
                         <div className="relative py-2 flex items-center"><div className="flex-grow border-t border-slate-100"></div><span className="px-4 text-[9px] font-bold text-slate-300 uppercase tracking-widest">Eller</span><div className="flex-grow border-t border-slate-100"></div></div>
-                        <form onSubmit={handleEmailAuth} className="space-y-4">
-                            <div className="relative"><Mail className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="email" placeholder="E-post" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>
-                            <div className="relative"><Lock className="absolute left-5 top-5 text-emerald-200" size={18} /><input type="password" placeholder="Lösenord" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700" required /></div>
-                            <button className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto" /> : authMode === 'signup' ? "Skapa konto" : "Logga in"}</button>
+                        <form onSubmit={authMode === 'forgot' ? handleForgotPassword : handleEmailAuth} className="space-y-4">
+                            {authMode === 'signup' && (
+                                <>
+                                    <div className="relative animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <User className="absolute left-5 top-5 text-emerald-200" size={18} />
+                                        <input 
+                                            type="text" 
+                                            placeholder={t.name_label} 
+                                            value={fullName} 
+                                            onChange={(e) => setFullName(e.target.value)} 
+                                            className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700 transition-all" 
+                                            required 
+                                        />
+                                    </div>
+                                    <div className="relative animate-in fade-in slide-in-from-top-2 duration-400">
+                                        <ShieldCheck className="absolute left-5 top-5 text-emerald-200" size={18} />
+                                        <input 
+                                            type="text" 
+                                            placeholder={t.invite_label} 
+                                            value={inviteCodeInput} 
+                                            onChange={(e) => setInviteCodeInput(e.target.value.toUpperCase())} 
+                                            className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-black text-slate-800 tracking-widest text-center transition-all" 
+                                            required 
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            <div className="relative">
+                                <Mail className="absolute left-5 top-5 text-emerald-200" size={18} />
+                                <input 
+                                    type="email" 
+                                    placeholder="E-post" 
+                                    value={email} 
+                                    onChange={(e) => setEmail(e.target.value)} 
+                                    className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700 transition-all" 
+                                    required 
+                                />
+                            </div>
+                            {authMode !== 'forgot' && (
+                                <div className={`relative ${authMode === 'login' ? 'mb-6' : ''}`}>
+                                    <Lock className="absolute left-5 top-5 text-emerald-200" size={18} />
+                                    <input 
+                                        type="password" 
+                                        placeholder="Lösenord" 
+                                        value={password} 
+                                        onChange={(e) => setPassword(e.target.value)} 
+                                        className="w-full pl-14 pr-6 py-5 bg-[#f9fbf7] rounded-2xl border-2 border-emerald-50 outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-slate-700 transition-all" 
+                                        required 
+                                    />
+                                    {authMode === 'login' && (
+                                        <button 
+                                            type="button"
+                                            onClick={() => setAuthMode('forgot')}
+                                            className="absolute right-0 -bottom-6 text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors"
+                                        >
+                                            {t.forgot_link}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                            <button 
+                                disabled={loading} 
+                                className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-l active:scale-80 disabled:opacity-50"
+                            >
+                                {loading ? <Loader2 className="animate-spin mx-auto" /> : 
+                                 authMode === 'signup' ? "Skapa konto" : 
+                                 authMode === 'forgot' ? t.btn_reset : "Logga in"}
+                            </button>
                         </form>
                         
                         {message && (
@@ -431,8 +525,17 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                             </div>
                         )}
 
-                        <div className="flex flex-col items-center gap-3 pt-2">
-                            <button onClick={() => { setAuthMode(authMode === 'login' ? 'signup' : 'login'); setMessage(null); }} className="text-xs font-bold text-emerald-700 hover:text-emerald-900 uppercase tracking-widest transition-colors">{authMode === 'login' ? t.signup_link : t.login_link}</button>
+                        <div className="flex flex-col items-center gap-3 pt-3">
+                            <button 
+                                onClick={() => { 
+                                    if (authMode === 'forgot') setAuthMode('login');
+                                    else setAuthMode(authMode === 'login' ? 'signup' : 'login'); 
+                                    setMessage(null); 
+                                }} 
+                                className="text-xs font-bold text-emerald-700 hover:text-emerald-900 uppercase tracking-widest transition-colors"
+                            >
+                                {authMode === 'forgot' ? t.login_link : (authMode === 'login' ? t.signup_link : t.login_link)}
+                            </button>
                         </div>
                     </div>
                 )}
