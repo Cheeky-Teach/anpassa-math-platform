@@ -191,6 +191,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
         if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
         
+        // --- ADDED FIX: Render Probability Trees and Standard Geometry ---
+        if (data.tree || data.geometry?.type === 'pathway') return <ProbabilityTree data={data.tree || data.geometry} />;
+        if (data.geometry) return <GeometryVisual data={data.geometry} />;
+        
         return null;
     };
 

@@ -70,6 +70,9 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         if (data.scale || data.geometry?.type === 'scale') return <ScaleVisual data={data.scale || data.geometry} />;
         if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
         if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
+        // --- ADDED FIX: Render Probability Trees and Standard Geometry ---
+        if (data.tree || data.geometry?.type === 'pathway') return <ProbabilityTree data={data.tree || data.geometry} />;
+        if (data.geometry) return <GeometryVisual data={data.geometry} />;
         return null;
     };
 
