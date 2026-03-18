@@ -308,7 +308,7 @@ export class GeometryGenerator {
             return {
                 renderData: {
                     geometry: { type: 'circle', radius: r, labels: isDiameter ? { diameter: d } : { r }, show: isDiameter ? 'diameter' : 'radius' },
-                    description: lang === 'sv' ? "Beräkna cirkelns area (använd pi = 3,14)." : "Calculate the area of the circle (use pi = 3.14).",
+                    description: lang === 'sv' ? "Beräkna cirkelns area (använd pi = 3,14). Avrunda svaret till två decimaler." : "Calculate the area of the circle (use pi = 3.14).",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -330,7 +330,7 @@ export class GeometryGenerator {
             return {
                 renderData: {
                     geometry: { type: 'circle', radius: r, labels: isDiameter ? { diameter: d } : { r }, show: isDiameter ? 'diameter' : 'radius' },
-                    description: lang === 'sv' ? "Beräkna cirkelns omkrets (använd pi = 3,14)." : "Calculate the circumference of the circle (use pi = 3.14).",
+                    description: lang === 'sv' ? "Beräkna cirkelns omkrets (använd pi = 3,14). Avrunda svaret till två decimaler." : "Calculate the circumference of the circle (use pi = 3.14). Round answer to two decimals.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -351,7 +351,7 @@ export class GeometryGenerator {
             return {
                 renderData: {
                     geometry: { type: 'semicircle', radius: r, labels: { r }, show: 'radius' },
-                    description: lang === 'sv' ? "Beräkna halvcirkelns area." : "Calculate the area of the semicircle.",
+                    description: lang === 'sv' ? "Beräkna halvcirkelns area. Avrunda svaret till två decimaler." : "Calculate the area of the semicircle. Round answer to two decimals.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -370,7 +370,7 @@ export class GeometryGenerator {
             return {
                 renderData: {
                     geometry: { type: 'semicircle', radius: r, labels: { diameter: d }, show: 'diameter' },
-                    description: lang === 'sv' ? "Beräkna halvcirkelns omkrets." : "Calculate the perimeter of the semicircle.",
+                    description: lang === 'sv' ? "Beräkna halvcirkelns omkrets. Avrunda svaret till två decimaler." : "Calculate the perimeter of the semicircle. Round answer to two decimals.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -389,7 +389,7 @@ export class GeometryGenerator {
             return {
                 renderData: {
                     geometry: { type: 'quarter_circle', radius: r, labels: { r } },
-                    description: lang === 'sv' ? "Beräkna kvartscirkelns area." : "Calculate the area of the quarter circle.",
+                    description: lang === 'sv' ? "Beräkna kvartscirkelns area. Avrunda svaret till två decimaler." : "Calculate the area of the quarter circle. Round answer to two decimals.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -407,7 +407,7 @@ export class GeometryGenerator {
             return {
                 renderData: {
                     geometry: { type: 'quarter_circle', radius: r, labels: { r } },
-                    description: lang === 'sv' ? "Beräkna kvartscirkelns omkrets." : "Calculate the perimeter of the quarter circle.",
+                    description: lang === 'sv' ? "Beräkna kvartscirkelns omkrets. Avrunda svaret till två decimaler." : "Calculate the perimeter of the quarter circle. Round answer to two decimals.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
