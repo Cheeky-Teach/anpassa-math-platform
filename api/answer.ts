@@ -78,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!isCorrect && !isNaN(userNum) && !isNaN(correctNum)) {
             // Check if the absolute difference is less than or equal to 1.0
             // This allows the "correct whole number" to pass even if decimals differ
-            if (Math.abs(userNum - correctNum) < 0.5) {
+            if (Math.abs(userNum - correctNum) < 0.99) {
                 isCorrect = true;
             }
         }
