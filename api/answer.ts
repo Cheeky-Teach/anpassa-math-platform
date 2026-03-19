@@ -64,8 +64,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const correctAnswer = Buffer.from(token, 'base64').toString('utf-8');
         const normalize = (str: any) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.');
         
-        const isCorrect = normalize(answer) === normalize(correctAnswer);
+        const normUserAns = normalize(answer);
+        const normCorrectAns = normalize(correctAnswer);
 
+        // Standard strict string comparison (for algebra like "2x+5" or multiple choice)
+        let isCorrect = normUserAns === normCorrectAns;
+
+        // --- NEW: NUMERIC FORGIVENESS LOGIC ---
+        const userNum = parseFloat(normUserAns);
+        const correctNum = parseFloat(normCorrectAns);
+
+        // If both are valid numbers and the string match failed, apply tolerance
+        if (!isCorrect && !isNaN(userNum) && !isNaN(correctNum)) {
+            // Check if the absolute difference is less than or equal to 1.0
+            // This allows the "correct whole number" to pass even if decimals differ
+            if (Math.abs(userNum - correctNum) <= 1.0) {
+                isCorrect = true;
+            }
+        }
+        
         // 3. Calculate Practice Progress (Required for App.jsx)
         let newStreak = isCorrect ? streak + 1 : 0;
         let levelUp = isCorrect && newStreak > 0 && newStreak % 8 === 0;

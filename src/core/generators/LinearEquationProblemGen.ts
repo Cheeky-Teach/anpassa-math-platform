@@ -148,7 +148,19 @@ export class LinearEquationProblemGen {
 
     // --- Scenario C: Compare Sum (x + (x+a) = c) ---
     private scenarioC_CompareSum(lang: string, mode: 'write' | 'solve') {
-        const names = MathUtils.shuffle(lang === 'sv' ? ["Lukas", "Maja", "Sam", "Linnea"] : ["Lucas", "Maya", "Sam", "Lily"]);
+        // 1. Expanded lists of 20 names for variety
+        const namesSv = [
+            "Lukas", "Maja", "Sam", "Linnea", "Elias", "Sara", "Leo", "Maya", "Hugo", "Alice",
+            "Liam", "Emma", "Noah", "Olivia", "William", "Ebba", "Oscar", "Astrid", "Lucas", "Ella"
+        ];
+        const namesEn = [
+            "Lucas", "Maya", "Sam", "Lily", "Oliver", "Sophia", "James", "Isabella", "Harry", "Charlotte",
+            "George", "Amelia", "Arthur", "Mia", "Freddie", "Ava", "Archie", "Isla", "Leo", "Rosie"
+        ];
+
+        // 2. Select names based on language
+        const names = MathUtils.shuffle(lang === 'sv' ? namesSv : namesEn);
+        
         const diff = MathUtils.randomInt(5, 20);
         const x = MathUtils.randomInt(10, 50);
         const total = 2 * x + diff;
