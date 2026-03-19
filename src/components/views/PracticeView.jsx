@@ -168,7 +168,7 @@ const PracticeView = ({
             )}
 
             {/* HEADER ANCHOR BAR */}
-            <header className={`mb-3 ${activeTheme.bg} rounded-[2rem] shadow-sm border-2 ${activeTheme.border} p-3 sm:p-4 sticky top-2 z-20`}>
+            <header className={`mb-1 ${activeTheme.bg} rounded-[2rem] shadow-sm border-2 ${activeTheme.border} p-1 sm:p-2 sticky top-2 z-20`}>
                 <div className="flex justify-between items-center mb-2 px-2">
                     <button onClick={actions.goBack} className="flex items-center gap-2 text-slate-800 hover:text-slate-800 font-black text-[10px] uppercase tracking-widest transition-all group">
                         <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center border border-slate-100 group-hover:shadow-md"><ChevronLeft size={14}/></div>
@@ -227,7 +227,7 @@ const PracticeView = ({
                             <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Laddar...</span>
                         </div>
                     ) : (
-                        <div className="p-3 sm:p-5 lg:p-6">
+                        <div className="p-1 sm:p-2 lg:p-2">
                             {/* VISUAL CONTAINER */}
                             <div className="mb-4 flex justify-center bg-slate-50/50 rounded-[2rem] p-4 min-h-[160px] h-[200px] sm:h-[350px] items-center border border-slate-100 shadow-inner relative overflow-hidden">
                                 {renderVisual()}
@@ -237,12 +237,14 @@ const PracticeView = ({
                                 </div>
                             </div>
                             
+                            {/* DESCRIPTION TEXT */}
                             <div className="mb-4 text-center max-w-xl mx-auto">
-                                <h2 className="text-base sm:text-lg font-bold text-slate-800 leading-snug px-4">
+                                <h2 className="text-base sm:text-lg font-bold text-slate-800 leading-snug px-3">
                                     <MathText text={descriptionText} />
                                 </h2>
                             </div>
                             
+                            {/* ANSWER FIELD */}
                             <div className="max-w-md mx-auto">
                                 {question.renderData.answerType === 'multiple_choice' ? (
                                     <div className="grid grid-cols-1 gap-2">
@@ -254,7 +256,7 @@ const PracticeView = ({
                                                 <button 
                                                     key={idx} 
                                                     onClick={() => handleChoiceClick(choice)} 
-                                                    className={`p-3 rounded-xl font-bold text-base transition-all border-b-4 text-left flex items-center gap-3 active:translate-y-0.5 active:border-b-0
+                                                    className={`p-3 rounded-xl font-bold text-base transition-all border-b-4 text-left flex items-center gap-1 active:translate-y-0.5 active:border-b-0
                                                         ${isCorrect ? 'bg-emerald-500 border-emerald-700 text-white' : 
                                                           isIncorrect ? 'bg-rose-500 border-rose-700 text-white animate-shake' : 
                                                           'bg-slate-50 border-slate-200 text-slate-600 hover:bg-white hover:border-indigo-400'}`} 
@@ -319,7 +321,9 @@ const PracticeView = ({
                                     </form>
                                 )}
                             </div>
+                            
 
+                            {/* CLUE SOLUTION SKIP BUTTONS */}
                             <div className="mt-6 flex gap-2 justify-center">
                                 <button onClick={handleHint} disabled={!question.clues || revealedClues.length >= question.clues.length} className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-white text-amber-500 border-2 border-amber-100 disabled:opacity-30 transition-all shadow-sm">
                                     <Zap size={12}/> {ui.btnHint}
