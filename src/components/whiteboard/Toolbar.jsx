@@ -16,7 +16,7 @@ const Toolbar = ({
     const [showColors, setShowColors] = useState(false);
     const [show3DMenu, setShow3DMenu] = useState(false);
 
-    const colors = ['#0f172a', '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
+    const colors = ['#06b6d4', '#0f172a', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
 
     const translations = {
         sv: {
