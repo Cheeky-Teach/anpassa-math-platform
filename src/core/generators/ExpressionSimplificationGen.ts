@@ -325,16 +325,51 @@ export class ExpressionSimplificationGen {
                 { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
             ];
         } else if (v === 'word_combined_age_tri') {
-            const d = MathUtils.randomInt(2, 6);
-            desc = lang === 'sv' ? `Elias är x år gammal. Hans syster är ${d} år äldre. Pappa är 3 gånger så gammal som Elias. Uttryck deras sammanlagda ålder.` : `Elias is x years old. His sister is ${d} years older. His father is 3 times as old as Elias. Express their total age.`;
-            ans = `5x + ${d}`;
+            // 1. Define list of 20 names for variety
+            const names = [
+                "Elias", "Sara", "Leo", "Maya", "Hugo", "Alice", "Liam", "Emma", 
+                "Noah", "Olivia", "William", "Ebba", "Oscar", "Astrid", "Lucas", 
+                "Ella", "Filip", "Alma", "Nils", "Vera"
+            ];
+            const name = MathUtils.randomChoice(names);
+            
+            // 2. Randomize parameters
+            const d = MathUtils.randomInt(2, 6); // Years older
+            const m = MathUtils.randomInt(3, 9); // Father multiplier (3 to 9)
+            
+            // 3. Calculate result: Child (x) + Sister (x + d) + Father (mx) = (m + 2)x + d
+            const totalX = m + 2;
+            
+            desc = lang === 'sv' 
+                ? `${name} är x år gammal. Systern är ${d} år äldre. Pappa är ${m} gånger så gammal som ${name}. Skriv ett uttryck till deras sammanlagda ålder.` 
+                : `${name} is x years old. The sister is ${d} years older. The father is ${m} times as old as ${name}. Write an expression describing their combined ages.`;
+            
+            ans = `${totalX}x + ${d}`;
+            
             steps = [
-                { text: lang === 'sv' ? "Steg 1: Skriv Elias ålder som ett uttryck." : "Step 1: Write Elias's age as an expression.", latex: "x" },
-                { text: lang === 'sv' ? "Steg 2: Skriv systerns ålder (Elias ålder + " + d + ")." : "Step 2: Write the sister's age (Elias's age + " + d + ").", latex: "x + " + d },
-                { text: lang === 'sv' ? "Steg 3: Skriv pappans ålder (3 gånger Elias ålder)." : "Step 3: Write the father's age (3 times Elias's age).", latex: "3x" },
-                { text: lang === 'sv' ? "Steg 4: Ställ upp summan av alla åldrar." : "Step 4: Set up the sum of all ages.", latex: `x + (x + ${d}) + 3x` },
-                { text: lang === 'sv' ? "Steg 5: Förenkla genom att addera alla x-termer: 1x + 1x + 3x." : "Step 5: Simplify by adding all x-terms: 1x + 1x + 3x.", latex: `5x + ${d}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? `Steg 1: Skriv ${name}s ålder som ett uttryck.` : `Step 1: Write ${name}'s age as an expression.`, 
+                    latex: "x" 
+                },
+                { 
+                    text: lang === 'sv' ? `Steg 2: Skriv systerns ålder (${name}s ålder + ${d}).` : `Step 2: Write the sister's age (${name}'s age + ${d}).`, 
+                    latex: `x + ${d}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Steg 3: Skriv pappans ålder (${m} gånger ${name}s ålder).` : `Step 3: Write the father's age (${m} times ${name}'s age).`, 
+                    latex: `${m}x` 
+                },
+                { 
+                    text: lang === 'sv' ? "Steg 4: Ställ upp summan av alla åldrar." : "Step 4: Set up the sum of all ages.", 
+                    latex: `x + (x + ${d}) + ${m}x` 
+                },
+                { 
+                    text: lang === 'sv' ? `Steg 5: Förenkla genom att addera alla x-termer: 1x + 1x + ${m}x.` : `Step 5: Simplify by adding all x-terms: 1x + 1x + ${m}x.`, 
+                    latex: `${totalX}x + ${d}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` 
+                }
             ];
         } else {
             // Default generic word problem (Passengers)
