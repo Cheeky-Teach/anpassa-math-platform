@@ -93,7 +93,7 @@ const WhiteboardView = ({ onBack, lang }) => {
     const [bgType, setBgType] = useState(() => localStorage.getItem('anpassa_whiteboard_bg') || 'grid');
 
     const [activeTool, setActiveTool] = useState('select');
-    const [color, setColor] = useState('#0f172a');
+    const [color, setColor] = useState('#06b6d4');
     const [zoom, setZoom] = useState(1);
     const [isDrawing, setIsDrawing] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
