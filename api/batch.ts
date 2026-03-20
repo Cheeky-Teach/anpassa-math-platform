@@ -22,6 +22,7 @@ import { VolumeGen } from '../src/core/generators/VolumeGen.js';
 import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
 import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
 import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js';
+import { UnitConversionGen } from '../src/core/generators/UnitConversionGen.js';
 
 // COMPLETE TOPIC MAP (Aligned with skillBuckets.js)
 const TopicMap: Record<string, any> = {
@@ -57,6 +58,7 @@ const TopicMap: Record<string, any> = {
   'scale': ScaleGen,
   'similarity': SimilarityGen,
   'volume': VolumeGen,
+  'unit_conversion': UnitConversionGen,
 
   // Data
   'statistics': StatisticsGen,

@@ -23,6 +23,7 @@ import { ChangeFactorGen } from '../src/core/generators/ChangeFactorGen.js';
 import { AnglesGen } from '../src/core/generators/AnglesGen.js';
 import { PatternsGen } from '../src/core/generators/PatternsGen.js';
 import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js';
+import { UnitConversionGen } from '../src/core/generators/UnitConversionGen.js';
 
 interface VercelRequest extends IncomingMessage {
     query: Record<string, string | string[]>;
@@ -87,7 +88,8 @@ const TopicMap: Record<string, any> = {
   'statistics': StatisticsGen,
   'stats': StatisticsGen,
   'data': StatisticsGen,
-  'probability': ProbabilityGen
+  'probability': ProbabilityGen,
+  'unit_conversion': UnitConversionGen
 };
 
 export default function handler(req: VercelRequest, res: VercelResponse) {

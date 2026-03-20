@@ -28,6 +28,7 @@ export const CATEGORIES = {
         label: { en: 'Geometry', sv: 'Geometri' },
         color: 'emerald',
         generators: [
+            { id: 'UnitConversionGen', api: 'unit_conversion', label: { sv: "Enhetsomvandling", en: "Unit Conversion" } },
             { id: 'GeometryGenerator', api: 'geometry', label: { sv: "Area & Omkrets", en: "Area & Perimeter" } },
             { id: 'ScaleGenerator', api: 'scale', label: { sv: "Skala", en: "Scale" } },
             { id: 'VolumeGenerator', api: 'volume', label: { sv: "Volym", en: "Volume" } },
