@@ -35,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { 
             answer, 
             token, 
+            topic,
             streak = 0, 
             roomId, 
             studentAlias, 
@@ -60,27 +61,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(400).json({ error: "Säkerhetstoken saknas." });
         }
 
-        // 2. Decode & Validate (Base64 Mode)
+        /// 2. Decode & Validate (Base64 Mode)
         const correctAnswer = Buffer.from(token, 'base64').toString('utf-8');
         const normalize = (str: any) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.');
         
         const normUserAns = normalize(answer);
         const normCorrectAns = normalize(correctAnswer);
 
-        // Standard strict string comparison (for algebra like "2x+5" or multiple choice)
+        // Standard strict string comparison (Required for Algebra, MCQ, and exact Arithmetic)
         let isCorrect = normUserAns === normCorrectAns;
 
-        // --- NEW: NUMERIC FORGIVENESS LOGIC ---
+        // --- NEW: SMART NUMERIC TOLERANCE LOGIC ---
         const userNum = parseFloat(normUserAns);
         const correctNum = parseFloat(normCorrectAns);
 
-        // If both are valid numbers and the string match failed, apply tolerance
+        // Only apply numeric tolerance if strict string match failed
         if (!isCorrect && !isNaN(userNum) && !isNaN(correctNum)) {
-            // Check if the absolute difference is less than or equal to 1.0
-            // This allows the "correct whole number" to pass even if decimals differ
-            if (Math.abs(userNum - correctNum) < 0.09) {
+            
+            // Define which topics allow for rounding errors
+            const fuzzyKeywords = ['geometry', 'volume', 'circle', 'area', 'prism', 'sphere', 'cylinder','cone','pyramid', 'omkrets','perimeter'];
+            const isFuzzyTopic = fuzzyKeywords.some(kw => topic?.toLowerCase().includes(kw));
+
+            // Only apply the 0.99 tolerance if it's a fuzzy topic
+            if (isFuzzyTopic && Math.abs(userNum - correctNum) < 0.5) {
                 isCorrect = true;
             }
+            // If it's basic arithmetic, isCorrect stays false because it missed the exact string match
         }
         
         // 3. Calculate Practice Progress (Required for App.jsx)
