@@ -83,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const isFuzzyTopic = fuzzyKeywords.some(kw => topic?.toLowerCase().includes(kw));
 
             // Only apply the 0.99 tolerance if it's a fuzzy topic
-            if (isFuzzyTopic && Math.abs(userNum - correctNum) < 0.5) {
+            if (isFuzzyTopic && Math.abs(userNum - correctNum) < 0.09) {
                 isCorrect = true;
             }
             // If it's basic arithmetic, isCorrect stays false because it missed the exact string match
