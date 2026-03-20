@@ -30,21 +30,19 @@ export class UnitConversionGen {
         return MathUtils.randomChoice(filtered);
     }
 
-    /**
-     * Helper to generate more varied starting values (whole or decimal)
-     */
     private generateSmartValue(): number {
         const type = MathUtils.randomInt(1, 3);
-        if (type === 1) return MathUtils.randomInt(1, 500); // Simple whole number
-        if (type === 2) return MathUtils.randomInt(1, 200) / 10; // One decimal (e.g. 1.2)
-        return MathUtils.randomInt(5, 500) * 10; // Tens/Hundreds (e.g. 450)
+        if (type === 1) return MathUtils.randomInt(1, 500); 
+        if (type === 2) return MathUtils.randomInt(1, 999) / 10; // e.g. 19.8
+        return MathUtils.randomInt(1, 95) * 10; 
     }
 
     // --- LEVEL 1: LENGTH ---
     private level1_Length(lang: string, variationKey?: string, options: any = {}): any {
-        const pool = ['len_km_m', 'len_m_dm', 'len_dm_cm', 'len_cm_mm', 'len_dm_mm', 'len_m_cm', 'len_mm_m'];
+        // Standardized: Always define as Big -> Small
+        const pool = ['len_km_m', 'len_m_dm', 'len_dm_cm', 'len_cm_mm', 'len_dm_mm', 'len_m_cm', 'len_m_mm'];
         const v = variationKey || this.getVariation(pool, options);
-        const forward = Math.random() > 0.5;
+        const isFlipped = Math.random() > 0.5;
         
         let from = "", to = "", factor = 1;
         switch (v) {
@@ -54,20 +52,17 @@ export class UnitConversionGen {
             case 'len_cm_mm': from = "cm"; to = "mm"; factor = 10; break;
             case 'len_dm_mm': from = "dm"; to = "mm"; factor = 100; break;
             case 'len_m_cm': from = "m"; to = "cm"; factor = 100; break;
-            case 'len_mm_m': from = "mm"; to = "m"; factor = 1000; break;
+            case 'len_m_mm': from = "m"; to = "mm"; factor = 1000; break;
         }
 
-        if (!forward) [from, to] = [to, from];
-        const val = this.generateSmartValue();
-        const ans = forward ? val * factor : val / factor;
-        return this.formatResponse(lang, v, from, to, val, ans, factor, forward);
+        return this.processConversion(lang, v, from, to, factor, isFlipped);
     }
 
     // --- LEVEL 2: WEIGHT ---
     private level2_Weight(lang: string, variationKey?: string, options: any = {}): any {
         const pool = ['weight_t_kg', 'weight_kg_hg', 'weight_kg_g', 'weight_hg_g', 'weight_g_mg'];
         const v = variationKey || this.getVariation(pool, options);
-        const forward = Math.random() > 0.5;
+        const isFlipped = Math.random() > 0.5;
         let from = "", to = "", factor = 1;
 
         switch (v) {
@@ -78,17 +73,14 @@ export class UnitConversionGen {
             case 'weight_g_mg': from = "g"; to = "mg"; factor = 1000; break;
         }
 
-        if (!forward) [from, to] = [to, from];
-        const val = this.generateSmartValue();
-        const ans = forward ? val * factor : val / factor;
-        return this.formatResponse(lang, v, from, to, val, ans, factor, forward);
+        return this.processConversion(lang, v, from, to, factor, isFlipped);
     }
 
     // --- LEVEL 3: VOLUME ---
     private level3_Volume(lang: string, variationKey?: string, options: any = {}): any {
         const pool = ['vol_l_dl', 'vol_l_cl', 'vol_l_ml', 'vol_dl_cl', 'vol_dl_ml', 'vol_cl_ml'];
         const v = variationKey || this.getVariation(pool, options);
-        const forward = Math.random() > 0.5;
+        const isFlipped = Math.random() > 0.5;
         let from = "", to = "", factor = 1;
 
         switch (v) {
@@ -100,54 +92,67 @@ export class UnitConversionGen {
             case 'vol_cl_ml': from = "cl"; to = "ml"; factor = 10; break;
         }
 
-        if (!forward) [from, to] = [to, from];
-        const val = this.generateSmartValue();
-        const ans = forward ? val * factor : val / factor;
-        return this.formatResponse(lang, v, from, to, val, ans, factor, forward);
+        return this.processConversion(lang, v, from, to, factor, isFlipped);
     }
 
     private level4_Mixed(lang: string, options: any): any {
-        const level = MathUtils.randomInt(1, 3);
-        return this.generate(level, lang, options);
+        return this.generate(MathUtils.randomInt(1, 3), lang, options);
     }
 
-    // --- FORMATTER & STRATEGY ENGINE ---
-    private formatResponse(lang: string, v: string, from: string, to: string, val: number, ans: number, factor: number, forward: boolean) {
-        // Rounding result to max 3 decimals for clean tokens
-        const finalAns = Math.round(ans * 1000) / 1000;
+    /**
+     * Core logic handler to prevent "backwards" math and "rounding" bugs
+     */
+    private processConversion(lang: string, v: string, bigUnit: string, smallUnit: string, factor: number, isFlipped: boolean) {
+        let from = bigUnit;
+        let to = smallUnit;
+        let isMultiplying = true;
+
+        // If flipped, we go from Small -> Big (Division)
+        if (isFlipped) {
+            from = smallUnit;
+            to = bigUnit;
+            isMultiplying = false;
+        }
+
+        const val = this.generateSmartValue();
         
-        // Strategy Data
+        // Use precision-safe math (Number.EPSILON or toPrecision) to avoid float bugs like 0.0000000001
+        const rawAns = isMultiplying ? val * factor : val / factor;
+        const ans = Number(rawAns.toPrecision(12)); // Keeps decimals but trims float noise
+
+        return this.formatResponse(lang, v, from, to, val, ans, factor, isMultiplying);
+    }
+
+    private formatResponse(lang: string, v: string, from: string, to: string, val: number, ans: number, factor: number, isMultiplying: boolean) {
         const steps = factor === 10 ? 1 : factor === 100 ? 2 : 3;
-        const direction = forward ? (lang === 'sv' ? "höger" : "right") : (lang === 'sv' ? "vänster" : "left");
+        const direction = isMultiplying ? (lang === 'sv' ? "höger" : "right") : (lang === 'sv' ? "vänster" : "left");
         
+        const valStr = val.toString().replace('.', ',');
+        const ansStr = ans.toString().replace('.', ',');
+
         const desc = lang === 'sv' 
             ? `Omvandla från ${this.getUnitName(from, 'sv')} till ${this.getUnitName(to, 'sv')}.`
             : `Convert from ${this.getUnitName(from, 'en')} to ${this.getUnitName(to, 'en')}.`;
 
         const factorText = lang === 'sv'
-            ? `Det går ${factor} ${this.getUnitName(to, 'sv')} på varje ${this.getUnitName(from, 'sv')}.`
-            : `There are ${factor} ${this.getUnitName(to, 'en')} in every ${this.getUnitName(from, 'en')}.`;
+            ? `Det går ${factor} ${this.getUnitName(isMultiplying ? to : from, 'sv')} på varje ${this.getUnitName(isMultiplying ? from : to, 'sv')}.`
+            : `There are ${factor} ${this.getUnitName(isMultiplying ? to : from, 'en')} in every ${this.getUnitName(isMultiplying ? from : to, 'en')}.`;
 
         const moveText = lang === 'sv'
-            ? `Eftersom vi omvandlar till en ${forward ? 'mindre' : 'större'} enhet ska decimaltecknet flyttas ${steps} steg åt ${direction}.`
-            : `Since we are converting to a ${forward ? 'smaller' : 'larger'} unit, the decimal point should move ${steps} ${steps === 1 ? 'step' : 'steps'} to the ${direction}.`;
+            ? `Vid omvandling till en ${isMultiplying ? 'mindre' : 'större'} enhet ska decimaltecknet flyttas ${steps} steg åt ${direction}.`
+            : `When converting to a ${isMultiplying ? 'smaller' : 'larger'} unit, the decimal point should move ${steps} ${steps === 1 ? 'step' : 'steps'} to the ${direction}.`;
 
-        // ALIGNMENT FIX 1: Use the literal · character instead of \\cdot
-        const valStr = val.toString().replace('.', ',');
-        const ansStr = finalAns.toString().replace('.', ',');
-        const mathOp = forward 
+        const mathOp = isMultiplying 
             ? `${valStr} · ${factor} = ${ansStr}` 
             : `\\frac{${valStr}}{${factor}} = ${ansStr}`;
 
         return {
             renderData: {
                 description: desc,
-                // ALIGNMENT FIX 2: Replace ___ with ? to avoid subscript errors
-                // ALIGNMENT FIX 3: Simplify unit formatting to standard math characters
                 latex: `${valStr} \\text{ ${from}} = ? \\text{ ${to}}`,
                 answerType: 'numeric'
             },
-            token: this.toBase64(finalAns.toString()),
+            token: this.toBase64(ans.toString()),
             variationKey: v,
             type: 'calculate',
             clues: [
