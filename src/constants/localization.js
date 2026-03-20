@@ -33,6 +33,7 @@ export const CATEGORIES = {
         color: "emerald",
         levels: 7,
         topics: [
+            { id: 'unit_conversion', label: { sv: "Enhetsomvandling", en: "Unit Conversions" } },
             { id: 'geometry', label: { sv: "Area & Omkrets", en: "Area & Perimeter" } },
             { id: 'scale', label: { sv: "Skala", en: "Scale" } },
             { id: 'volume', label: { sv: "Volym", en: "Volume" } },
@@ -246,6 +247,12 @@ export const LEVEL_DESCRIPTIONS = {
         4: { sv: "Sammansatta (Rekt+Tri)", en: "Composite Shapes (Rect+Tri)" },
         5: { sv: "Cirkelns Area & Omkrets", en: "Circle Area & Perimeter" },
         6: { sv: "Sammansatta (Alla)", en: "Composite Shapes (All)" }
+    },
+    unit_conversion: {
+        1: { sv: "Längd", en: "Length" },
+        2: { sv: "Vikt", en: "Weight" },
+        3: { sv: "Volym (L)", en: "Volume (L)" },
+        4: { sv: "Blandad (1-3)", en: "Mixed (1-3)" },
     },
     scale: {
         1: { sv: "Förstå Skala", en: "Understand Scale" },

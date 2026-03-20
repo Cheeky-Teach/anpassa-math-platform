@@ -184,6 +184,16 @@ export const CONTENT_MAP = [
         color: "amber",
         topics: [
             {
+                id: "unit_conversion",
+                name: { sv: "Enhetsomvandling", en: "Unit Conversion" },
+                levels: [
+                    { lvl: 1, desc: { sv: "Längd", en: "Length" }, ex: "km -> m -> mm" },
+                    { lvl: 2, desc: { sv: "Vikt", en: "Weight" }, ex: "kg, hg, g, mg" },
+                    { lvl: 3, desc: { sv: "Volym", en: "Volume" }, ex: "L, dl, cl, ml" },
+                    { lvl: 4, desc: { sv: "Blandad", en: "Mixed" }, ex: "(1-3)" }
+                ]
+            },
+            {
                 id: "geometry",
                 name: { sv: "Area & Omkrets", en: "Area & Perimeter" },
                 levels: [
