@@ -76,11 +76,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 table: 'rooms', 
                 filter: `id=eq.${session.id}` 
             }, (payload) => {
-                // Check if the student's name is in the newly updated kicked list
                 const kickedList = payload.new.kicked_students || [];
                 if (kickedList.includes(studentAlias)) {
                     alert(lang === 'sv' ? "Du har blivit borttagen från sessionen." : "You have been removed from the session.");
-                    onBack(); // Redirects to landing page
+                    onBack(); 
                 }
             })
             .subscribe();
@@ -90,20 +89,17 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
     // --- 2. RELAXED INPUT SHIELDING ---
     const sanitizeInput = (val, type) => {
-        let str = String(val).replace(/<[^>]*>?/gm, ''); // Protect against scripts
+        let str = String(val).replace(/<[^>]*>?/gm, ''); 
         if (type === 'fraction') return str.replace(/[^0-9\s/]/g, '');
         if (type === 'scientific' || type === 'exponent') return str.replace(/[^0-9.,+\-*^x]/g, '');
-        
-        // UPDATED: Now allows / for k-values and : for ratios
         return str.replace(/[^0-9.,*+\-xy=/: ]/gi, '');
     };
 
-    // SECURITY: Refactored to handle scrubbed payloads
-    const handleSolve = async () => {
-        const val = answers[currentIndex];
+    // SECURITY: Refactored to handle manual values (Multiple Choice)
+    const handleSolve = async (manualValue = null) => {
+        const val = manualValue || answers[currentIndex];
         if (!val || isSubmitting || !roomActive) return;
 
-        //Verify student isn't blacklisted before sending
         const { data: roomCheck } = await supabase.from('rooms').select('kicked_students').eq('id', session.id).single();
         if (roomCheck?.kicked_students?.includes(studentAlias)) {
             onBack();
@@ -112,10 +108,8 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         
         const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.');
         
-        // 1. Attempt to get the answer from the scrubbed payload pattern
         let correctAnswer = packet[currentIndex].resolvedData?.answer;
         
-        // 2. Decode the Base64 token if the raw answer is missing
         if (!correctAnswer && packet[currentIndex].resolvedData?.token) {
             try { 
                 correctAnswer = atob(packet[currentIndex].resolvedData.token); 
@@ -130,16 +124,15 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         try {
             const { error } = await supabase.from('responses').insert([{
                 room_id: session.id,
-                student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), // Sanitize Alias
+                student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
                 question_index: currentIndex,
-                answer: String(val).substring(0, 20), // Enforce 20-char limit
+                answer: String(val).substring(0, 20), 
                 is_correct: isCorrect
             }]);
             if (error) throw error;
             
             setCompleted(prev => ({ ...prev, [currentIndex]: isCorrect ? 'correct' : 'wrong' }));
             
-            // Advance automatically after a short delay
             if (currentIndex < packet.length - 1) {
                 setTimeout(() => setCurrentIndex(prev => prev + 1), 600);
             }
@@ -150,40 +143,18 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         }
     };
 
-    // --- 3. HARDENED VISUAL RENDERING (OPTIMIZED FOR 2-COLUMNS) ---
+    // --- 3. HARDENED VISUAL RENDERING ---
     const renderVisual = (item) => {
         const data = item.resolvedData?.renderData;
         if (!data) return null;
 
-        // Visual mapping: Adjusted dimensions for horizontal space efficiency
         if (data.graph) return <GraphCanvas data={data.graph} />;
-        
-        // Patterns (Matchsticks and Sequences)
-        if (data.pattern || data.geometry?.subtype === 'matchsticks' || data.geometry?.subtype === 'sequence') {
-            return <PatternVisual data={data.pattern || data.geometry} />;
-        }
-        
-        // Probability (Marbles and Spinners)
-        if (data.marbles || data.geometry?.type === 'marbles' || data.geometry?.items) {
-            return <ProbabilityMarbles data={data.marbles || data.geometry} />;
-        }
-        if (data.spinner || data.geometry?.type === 'spinner') {
-            return <ProbabilitySpinner data={data.spinner || data.geometry} />;
-        }
-        
-        // Statistics (Tables and Grids)
-        if (data.freqTable || data.geometry?.type === 'frequency_table' || data.geometry?.headers) {
-            return <FrequencyTable data={data.freqTable || data.geometry} />;
-        }
-        if (data.percentGrid || data.geometry?.type === 'percent_grid') {
-            return <PercentGrid data={data.percentGrid || data.geometry} />;
-        }
-
-        // Geometry & Volume - REDUCED DIMENSIONS to fit 2-column sidebar logic
-        if (data.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism'].includes(data.geometry.type)) {
-            return <VolumeVisualization data={data.geometry} width={240} height={200} />;
-        }
-        
+        if (data.pattern || data.geometry?.subtype === 'matchsticks' || data.geometry?.subtype === 'sequence') return <PatternVisual data={data.pattern || data.geometry} />;
+        if (data.marbles || data.geometry?.type === 'marbles' || data.geometry?.items) return <ProbabilityMarbles data={data.marbles || data.geometry} />;
+        if (data.spinner || data.geometry?.type === 'spinner') return <ProbabilitySpinner data={data.spinner || data.geometry} />;
+        if (data.freqTable || data.geometry?.type === 'frequency_table' || data.geometry?.headers) return <FrequencyTable data={data.freqTable || data.geometry} />;
+        if (data.percentGrid || data.geometry?.type === 'percent_grid') return <PercentGrid data={data.percentGrid || data.geometry} />;
+        if (data.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism'].includes(data.geometry.type)) return <VolumeVisualization data={data.geometry} width={240} height={200} />;
         if (data.geometry?.type === 'transversal') return <TransversalVisual data={data.geometry} />;
         if (data.geometry?.type === 'composite') return <CompositeVisual data={data.geometry} />;
         if (data.geometry?.type === 'angle') return <AngleVisual data={data.geometry} />;
@@ -191,7 +162,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
         if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
         
-        // --- ADDED FIX: Render Probability Trees and Standard Geometry ---
         if (data.tree || data.geometry?.type === 'pathway') return <ProbabilityTree data={data.tree || data.geometry} />;
         if (data.geometry) return <GeometryVisual data={data.geometry} />;
         
@@ -201,6 +171,24 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     const renderInput = (idx = currentIndex) => {
         const item = packet[idx];
         const rd = item.resolvedData?.renderData;
+
+        // Ported Multiple Choice logic from TestLabView
+        if (rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options))) {
+            return (
+                <div className="grid grid-cols-1 gap-3 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {(rd.options || []).map((opt, i) => (
+                        <button
+                            key={i}
+                            onClick={() => handleSolve(opt)}
+                            className="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-700 hover:border-indigo-600 hover:bg-indigo-50 transition-all shadow-sm text-center active:scale-95"
+                        >
+                            <MathDisplay content={String(opt)} />
+                        </button>
+                    ))}
+                </div>
+            );
+        }
+
         const inputType = rd?.answerType || rd?.inputType || item.resolvedData?.inputType || 'text';
         const value = answers[idx] || '';
 
@@ -308,7 +296,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans flex flex-col overflow-hidden">
-                        <style>{`
+            <style>{`
                 @media (max-width: 450px) {
                     .xs-hide { display: none !important; }
                 }
@@ -316,8 +304,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
             <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-20 shadow-sm">
                 <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
-                    
-                    {/* LEFT SHOULDER: Previous Button */}
                     <button 
                         onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                         disabled={currentIndex === 0}
@@ -326,7 +312,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         <ChevronLeft size={28} />
                     </button>
 
-                    {/* CENTER: Title and Code (Title hides on small mobile) */}
                     <div className="flex flex-col items-center overflow-hidden flex-1">
                         <h1 className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none truncate mb-1 xs-hide">
                             {session.title}
@@ -336,7 +321,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         </div>
                     </div>
 
-                    {/* RIGHT SHOULDER: Next & Close Buttons */}
                     <div className="flex items-center gap-1 shrink-0">
                         <button 
                             onClick={() => setCurrentIndex(prev => Math.min(packet.length - 1, prev + 1))}
@@ -355,7 +339,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     </div>
                 </div>
 
-                {/* Progress Bar (Desktop only, moved below title to save width) */}
                 <div className="hidden sm:flex max-w-xs mx-auto h-1 bg-slate-100 rounded-full gap-1 p-0 mt-2">
                     {packet.map((_, i) => (
                         <div key={i} className={`flex-1 rounded-full transition-all duration-700 ${i === currentIndex ? 'bg-indigo-500 ring-2 ring-indigo-50' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
@@ -366,23 +349,18 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             <main className="flex-1 max-w-6xl w-full mx-auto p-3 lg:p-6 overflow-hidden flex flex-col">
                 <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-hidden transition-all duration-300 flex flex-col ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
                     
-                    {/* Mobile Progress Bar (Stays at the very top of the card) */}
                     <div className="sm:hidden h-1 bg-slate-100 flex shrink-0">
                         {packet.map((_, i) => (
                             <div key={i} className={`flex-1 ${i === currentIndex ? 'bg-indigo-500' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
                         ))}
                     </div>
 
-                    {/* Top Meta Info (Shrink-0 ensures this doesn't get compressed) */}
                     <div className="px-8 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 shrink-0">
                         <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.25em]">{lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} / {packet.length}</span>
                         {!!completed[currentIndex] && <div className="flex items-center gap-2"><span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">{lang === 'sv' ? "Svar mottaget" : "Answer received"}</span><CheckCircle2 className="text-emerald-500" size={20} /></div>}
                     </div>
 
-                    {/* THE MAIN GRID: Now uses flex-1 to fill the card height */}
                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-slate-50 min-h-0">
-                        
-                        {/* Description & Input Section */}
                         <div className="flex flex-col order-1 lg:order-2 h-full overflow-hidden">
                             <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6 overflow-y-auto">
                                 <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
@@ -396,18 +374,21 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 </div>
                             </div>
 
-                            {/* Submit Area (Pinned to bottom of the card) */}
                             <div className="p-6 lg:p-10 bg-slate-50/30 border-t border-slate-100 shrink-0">
                                 {!completed[currentIndex] ? (
                                     <div className="max-w-md mx-auto space-y-4">
                                         {renderInput()}
-                                        <button 
-                                            onClick={handleSolve} 
-                                            disabled={isSubmitting || !answers[currentIndex]} 
-                                            className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.25em] shadow-xl active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 transition-all"
-                                        >
-                                            {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} /> {lang === 'sv' ? "Skicka svar" : "Submit answer"}</>}
-                                        </button>
+                                        
+                                        {/* Ported Conditional Submit logic */}
+                                        {!(packet[currentIndex]?.resolvedData?.renderData?.options) && (
+                                            <button 
+                                                onClick={() => handleSolve()} 
+                                                disabled={isSubmitting || !answers[currentIndex]} 
+                                                className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.25em] shadow-xl active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 transition-all"
+                                            >
+                                                {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} /> {lang === 'sv' ? "Skicka svar" : "Submit answer"}</>}
+                                            </button>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="py-4 text-center">
@@ -419,7 +400,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                             </div>
                         </div>
 
-                        {/* Visual Renderer - Centered in its half of the tall card */}
                         {packet[currentIndex].resolvedData?.renderData && 
                         (packet[currentIndex].resolvedData.renderData.graph || 
                         packet[currentIndex].resolvedData.renderData.geometry || 
