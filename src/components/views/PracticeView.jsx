@@ -193,8 +193,8 @@ const PracticeView = ({
                     </div>
                 </div>
 
-                <div className="relative flex items-center bg-white/40 rounded-xl p-1 border border-black/5">
-                    <div ref={scrollContainerRef} className="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-0.5 px-1 snap-x">
+                <div className="relative flex items-center bg-white/40 rounded-xl p-1 py-0 border border-black/5">
+                    <div ref={scrollContainerRef} className="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-0 px-1 snap-x">
                         {Object.entries(LEVEL_DESCRIPTIONS[uiState.topic] || {}).map(([lvl, desc]) => {
                             const lNum = parseInt(lvl);
                             const isActive = uiState.level === lNum;
@@ -202,7 +202,7 @@ const PracticeView = ({
                                 <button
                                     key={lvl}
                                     onClick={() => !isActive && handleChangeLevel(lNum - uiState.level)}
-                                    className={`snap-center shrink-0 min-w-[110px] p-1.5 rounded-lg border-2 transition-all flex flex-col items-center gap-0
+                                    className={`snap-center shrink-0 min-w-[110px] p-1 py-0 rounded-lg border-2 transition-all flex flex-col items-center gap-0
                                         ${isActive 
                                             ? `active-pill ${activeTheme.accent} border-black/10 text-white shadow-md translate-y-[-1px]` 
                                             : `bg-white border-transparent text-slate-600 hover:border-slate-200 shadow-sm`
@@ -381,7 +381,9 @@ const PracticeView = ({
                                                 <span className="text-[9px] font-black text-orange-900/40 uppercase tracking-widest">Lv {entry.level}</span>
                                                 <Icon size={10} className={statusColor.replace('bg-', 'text-')}/>
                                             </div>
-                                            <div className="text-[11px] font-bold text-slate-700 truncate font-serif leading-none">{entry.text}</div>
+                                            <div className="text-[11px] font-bold text-slate-700 font-serif leading-tight">
+                                                <MathText text={entry.text} />
+                                            </div>
                                         </div>
                                     </div>
                                 );

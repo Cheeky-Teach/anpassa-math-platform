@@ -85,8 +85,8 @@ export class BasicArithmeticGen {
         const v = variationKey || this.getVariation(pool, options);
 
         if (v === 'add_std_vertical' || v === 'add_std_horizontal') {
-            const a = MathUtils.randomInt(10, 999);
-            const b = MathUtils.randomInt(10, 999);
+            const a = MathUtils.randomInt(10, 200);
+            const b = MathUtils.randomInt(10, 200);
             const isVertical = v === 'add_std_vertical';
             const ans = a + b;
             
@@ -113,7 +113,7 @@ export class BasicArithmeticGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? "Vilket tal saknas för att summan ska stämma?" : "What number is missing to make the sum correct?",
-                    latex: `${a} + ? = ${sum}`, answerType: 'numeric'
+                    latex: `${a} + \\text{\\_\\_\\_} = ${sum}`, answerType: 'numeric'
                 },
                 token: this.toBase64(x.toString()),
                 variationKey: v, type: 'calculate',
@@ -153,7 +153,7 @@ export class BasicArithmeticGen {
             { key: 'sub_missing_variable', type: 'calculate' }
         ];
         const v = variationKey || this.getVariation(pool, options);
-        const a = MathUtils.randomInt(50, 999), b = MathUtils.randomInt(10, a - 1), ans = a - b;
+        const a = MathUtils.randomInt(50, 200), b = MathUtils.randomInt(10, a - 1), ans = a - b;
 
         if (v === 'sub_std_vertical' || v === 'sub_std_horizontal') {
             return {
@@ -173,7 +173,7 @@ export class BasicArithmeticGen {
 
         const x = MathUtils.randomInt(20, 80), start = x + MathUtils.randomInt(20, 100);
         return {
-            renderData: { description: lang === 'sv' ? "Hitta det saknade talet." : "Find the missing number.", latex: `${start} - ? = ${start - x}`, answerType: 'numeric' },
+            renderData: { description: lang === 'sv' ? "Vilket tal saknas?" : "Find the missing number.", latex: `${start} - \\text{\\_\\_\\_} = ${start - x}`, answerType: 'numeric' },
             token: this.toBase64(x.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? "Steg 1: Talet som saknas är skillnaden mellan starttalet och resultatet." : "Step 1: The missing number is the difference between the starting value and the result." },
