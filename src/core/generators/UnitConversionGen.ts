@@ -149,7 +149,7 @@ export class UnitConversionGen {
         return {
             renderData: {
                 description: desc,
-                latex: `${valStr} \\text{ ${from}} = ? \\text{ ${to}}`,
+                latex: `${valStr} \\text{ ${from}} = \\text{\\_\\_\\_} \\text{ ${to}}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()),

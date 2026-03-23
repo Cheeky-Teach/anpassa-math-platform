@@ -271,6 +271,34 @@ export const SKILL_BUCKETS = {
     id: 'geometry_cat',
     name: { sv: 'Geometri', en: 'Geometry' },
     topics: {
+      unit_conversion: {
+        name: { sv: 'Enhetsomvandling', en: 'Unit Conversion' },
+        variations: [
+          // LEVEL 1: Längd (Length)
+          { key: 'len_km_m', name: { sv: 'Längd: km ↔ m', en: 'Length: km ↔ m' }, desc: { sv: 'Omvandla mellan kilometer och meter', en: 'Convert between km and m' } },
+          { key: 'len_m_dm', name: { sv: 'Längd: m ↔ dm', en: 'Length: m ↔ dm' }, desc: { sv: 'Omvandla mellan meter och decimeter', en: 'Convert between m and dm' } },
+          { key: 'len_dm_cm', name: { sv: 'Längd: dm ↔ cm', en: 'Length: dm ↔ cm' }, desc: { sv: 'Omvandla mellan decimeter och centimeter', en: 'Convert between dm and cm' } },
+          { key: 'len_cm_mm', name: { sv: 'Längd: cm ↔ mm', en: 'Length: cm ↔ mm' }, desc: { sv: 'Omvandla mellan centimeter och millimeter', en: 'Convert between cm and mm' } },
+          { key: 'len_dm_mm', name: { sv: 'Längd: dm ↔ mm', en: 'Length: dm ↔ mm' }, desc: { sv: 'Hoppa över cm: dm till mm', en: 'Skip cm: dm to mm' } },
+          { key: 'len_m_cm', name: { sv: 'Längd: m ↔ cm', en: 'Length: m ↔ cm' }, desc: { sv: 'Hoppa över dm: m till cm', en: 'Skip dm: m to cm' } },
+          { key: 'len_m_mm', name: { sv: 'Längd: m ↔ mm', en: 'Length: m ↔ mm' }, desc: { sv: 'Stora hopp: m till mm', en: 'Big jumps: m to mm' } },
+
+          // LEVEL 2: Vikt (Weight)
+          { key: 'weight_t_kg', name: { sv: 'Vikt: ton ↔ kg', en: 'Weight: tonne ↔ kg' }, desc: { sv: 'Omvandla mellan ton och kilogram', en: 'Convert between tonnes and kg' } },
+          { key: 'weight_kg_hg', name: { sv: 'Vikt: kg ↔ hg', en: 'Weight: kg ↔ hg' }, desc: { sv: 'Omvandla mellan kilogram och hekto', en: 'Convert between kg and hg' } },
+          { key: 'weight_kg_g', name: { sv: 'Vikt: kg ↔ g', en: 'Weight: kg ↔ g' }, desc: { sv: 'Omvandla mellan kilogram och gram', en: 'Convert between kg and g' } },
+          { key: 'weight_hg_g', name: { sv: 'Vikt: hg ↔ g', en: 'Weight: hg ↔ g' }, desc: { sv: 'Omvandla mellan hekto och gram', en: 'Convert between hg and g' } },
+          { key: 'weight_g_mg', name: { sv: 'Vikt: g ↔ mg', en: 'Weight: g ↔ mg' }, desc: { sv: 'Omvandla mellan gram och milligram', en: 'Convert between g and mg' } },
+
+          // LEVEL 3: Volym (Volume)
+          { key: 'vol_l_dl', name: { sv: 'Volym: l ↔ dl', en: 'Volume: l ↔ dl' }, desc: { sv: 'Omvandla mellan liter och deciliter', en: 'Convert between l and dl' } },
+          { key: 'vol_l_cl', name: { sv: 'Volym: l ↔ cl', en: 'Volume: l ↔ cl' }, desc: { sv: 'Omvandla mellan liter och centiliter', en: 'Convert between l and cl' } },
+          { key: 'vol_l_ml', name: { sv: 'Volym: l ↔ ml', en: 'Volume: l ↔ ml' }, desc: { sv: 'Omvandla mellan liter och milliliter', en: 'Convert between l and ml' } },
+          { key: 'vol_dl_cl', name: { sv: 'Volym: dl ↔ cl', en: 'Volume: dl ↔ cl' }, desc: { sv: 'Omvandla mellan deciliter och centiliter', en: 'Convert between dl and cl' } },
+          { key: 'vol_dl_ml', name: { sv: 'Volym: dl ↔ ml', en: 'Volume: dl ↔ ml' }, desc: { sv: 'Omvandla mellan deciliter och milliliter', en: 'Convert between dl and ml' } },
+          { key: 'vol_cl_ml', name: { sv: 'Volym: cl ↔ ml', en: 'Volume: cl ↔ ml' }, desc: { sv: 'Omvandla mellan centiliter och milliliter', en: 'Convert between cl and ml' } }
+        ]
+      },
       geometry: {
         name: { sv: 'Area & Omkrets', en: 'Area & Perimeter' },
         variations: [

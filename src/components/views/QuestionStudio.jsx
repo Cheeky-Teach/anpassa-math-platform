@@ -71,7 +71,7 @@ export default function QuestionStudio({
 }) {
   const t = {
     sv: {
-      studio: "Studio", library_title: "Bibliotek", donow_title: "Do Now Grid", worksheet_title: "Arbetsblad",
+      studio: "Question Studio", library_title: "Bibliotek", donow_title: "Do Now Grid", worksheet_title: "Arbetsblad",
       change_mode: "Byt läge", search_placeholder: "Sök område...", board_label: "Tavlan", new_example: "Nytt exempel",
       select_hint: "Välj en variant för att förhandsgranska", selected_questions: "Valda frågor", clear_all: "Rensa",
       create_donow: "Grid", publish: "Skriv ut", title_placeholder: "Namnge ditt arbete...",
@@ -90,7 +90,7 @@ export default function QuestionStudio({
       hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Text"
     },
     en: {
-      studio: "Studio", library_title: "Library", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
+      studio: "Question Studio", library_title: "Library", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
       change_mode: "Change mode", search_placeholder: "Search topics...", board_label: "The Board", new_example: "New Example",
       select_hint: "Select a variation to preview", selected_questions: "Questions", clear_all: "Clear",
       create_donow: "Grid", publish: "Print", title_placeholder: "Enter title...",
@@ -168,6 +168,23 @@ export default function QuestionStudio({
   };
 
   const handleDragEnd = () => setDraggedIdx(null);
+
+  // Helper to find the translated name for a topic ID
+  const getTopicLabel = (topicId) => {
+      if (!topicId || topicId === 'all') return lang === 'sv' ? "Alla ämnen" : "All topics";
+      
+      // Iterate through categories (algebra, arithmetic, etc.)
+      for (const catKey in SKILL_BUCKETS) {
+          const category = SKILL_BUCKETS[catKey];
+          // Check if the topic exists in this category
+          if (category.topics && category.topics[topicId]) {
+              return category.topics[topicId].name[lang] || topicId;
+          }
+      }
+    
+      // Fallback to capitalize the ID if not found in skillBuckets
+      return topicId.charAt(0).toUpperCase() + topicId.slice(1).replace('_', ' ');
+  };
 
   const renderOptions = (options, inline = false) => {
     if (!options || options.length === 0) return null;
@@ -429,13 +446,13 @@ export default function QuestionStudio({
         <button onClick={onClose} className="absolute top-8 right-8 p-3 bg-slate-900 text-white hover:bg-rose-600 rounded-2xl shadow-xl transition-all flex items-center gap-2 font-black text-[10px] uppercase tracking-widest z-50"><X size={18}/> {t.btn_close}</button>
         <div className="max-w-6xl w-full mx-auto space-y-12 relative z-10">
             <div className="text-center">
-                <h2 className="text-6xl font-black text-slate-900 tracking-tighter uppercase italic mb-8">{t.studio}</h2>
+                <h2 className="text-5xl font-black text-emerald-900 tracking-tighter uppercase italic mb-8">{t.studio}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                     <button onClick={() => { setSetupMode('donow'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); }} className="group p-10 bg-white border-2 border-slate-100 rounded-[3rem] hover:border-indigo-600 transition-all text-left shadow-sm hover:shadow-xl active:scale-[0.98]"><Grid3X3 size={40} className="text-indigo-600 mb-6" /><h3 className="text-3xl font-black text-slate-800 uppercase leading-none mb-2">{t.donow_title}</h3><p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Digital Grid för tavlan</p></button>
                     <button onClick={() => { setSetupMode('worksheet'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); }} className="group p-10 bg-white border-2 border-slate-100 rounded-[3rem] hover:border-emerald-600 transition-all text-left shadow-sm hover:shadow-xl active:scale-[0.98]"><FileText size={40} className="text-emerald-600 mb-6" /><h3 className="text-3xl font-black text-slate-800 uppercase leading-none mb-2">{t.worksheet_title}</h3><p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Klassiska pappersblad</p></button>
                 </div>
             </div>
-            <div className="bg-white rounded-[3rem] shadow-xl border border-slate-200 overflow-hidden min-h-[600px] flex flex-col">
+            <div className="bg-emerald rounded-[2rem] shadow-xl border border-slate-600 overflow-hidden min-h-[600px] flex flex-col">
                 <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 bg-slate-50/50">
                     <div className="flex gap-2 p-1 bg-slate-200/50 rounded-2xl">
                         <button onClick={() => setLibraryTab('private')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${libraryTab === 'private' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{t.tab_mine}</button>
@@ -443,13 +460,27 @@ export default function QuestionStudio({
                         <button onClick={() => setLibraryTab('public')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${libraryTab === 'public' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{t.tab_global}</button>
                     </div>
                     <div className="flex gap-3 items-center">
-                        <div className="relative"><Search className="absolute left-3 top-2.5 text-slate-400" size={14} /><input type="text" placeholder="Sök..." className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none w-40" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
-                        <select value={filterTopic} onChange={(e) => setFilterTopic(e.target.value)} className="bg-white border border-slate-200 px-4 py-2 rounded-xl text-[10px] font-black uppercase outline-none"><option value="all">Alla Områden</option>{availableTopics.map(topic => <option key={topic} value={topic}>{topic}</option>)}</select>
+                        <div className="relative"><Search className="absolute left-3 top-2.5 text-slate-400" size={16} /><input type="text" placeholder="Sök..." className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none w-40" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
+                        
+                        <select 
+                            value={filterTopic} 
+                            onChange={(e) => setFilterTopic(e.target.value)}
+                            className="text-[16px] font-bold bg-slate-50 border-none rounded-lg focus:ring-0 outline-none"
+                        >
+                            <option value="all">{lang === 'sv' ? "Välj område" : "Filter topics"}</option>
+                            {/* Change: Map over availableTopics instead of sheet.type */}
+                            {availableTopics.map(tId => (
+                                <option key={tId} value={tId}>
+                                    {getTopicLabel(tId)}
+                                </option>
+                            ))}
+                        </select>
+
                     </div>
                 </div>
                 <div className="flex-1 overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <thead><tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest"><th className="p-6">Titel</th><th className="p-6">Innehåll</th><th className="p-6 text-center">Uppgifter</th><th className="p-6 text-center">Senast ändrad</th><th className="p-6 text-right">Åtgärder</th></tr></thead>
+                        <thead><tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest"><th className="p-6">Titel</th><th className="p-6">Innehåll</th><th className="p-6 text-center">Uppgifter</th><th className="p-6 text-center">Senast ändrad</th><th className="p-6 text-center">Åtgärder</th></tr></thead>
                         <tbody className="divide-y divide-slate-50">
                             {filteredLibrary.map(sheet => (
                                 <tr key={sheet.id} className="hover:bg-indigo-50/30 transition-colors group">

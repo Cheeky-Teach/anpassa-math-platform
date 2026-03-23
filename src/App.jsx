@@ -571,7 +571,7 @@ function App() {
             <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
             
             {(view === 'dashboard' || view === 'practice' || view === 'times_table') && (
-                <header className="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-emerald-100 px-4 py-3 flex justify-between items-center shadow-sm">
+                <header className="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-emerald-100 px-4 py-0 flex justify-between items-center shadow-sm">
                     <h1 className="text-xl font-black text-emerald-800 tracking-tighter cursor-pointer uppercase italic" onClick={quitPractice}>ANPASSA</h1>
                     <div className="flex items-center gap-3">
                         <button onClick={() => setLang(lang === 'sv' ? 'en' : 'sv')} className="text-2xl hover:scale-110 transition-transform">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</button>
