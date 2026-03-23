@@ -171,7 +171,7 @@ export class VolumeGen {
         return {
             renderData: {
                 geometry: { type: 'cylinder', show: useDiameter ? 'diameter' : 'radius', labels: useDiameter ? { d: displayVal, h } : { r: displayVal, h } },
-                description: lang === 'sv' ? "Beräkna cylinderns volym ($\\pi \\approx 3,14$). Avrunda ditt svar till heltal." : "Calculate the volume of the cylinder ($\\pi \\approx 3.14$). Round your answer to the nearest whole number.",
+                description: lang === 'sv' ? "Beräkna cylinderns volym ($\\pi \\approx 3,14$)." : "Calculate the volume of the cylinder ($\\pi \\approx 3.14$).",
                 answerType: 'numeric', suffix: 'cm³'
             },
             token: this.toBase64(vol.toString()), variationKey: 'vol_cyl_std', type: 'calculate',
@@ -197,7 +197,7 @@ export class VolumeGen {
             return {
                 renderData: {
                     geometry: { type: 'pyramid', labels: { s, h } },
-                    description: lang === 'sv' ? "Pyramiden har en kvadratisk basyta. Beräkna pyramidens volym. Avrunda ditt svar till heltal." : "Calculate the volume of the pyramid with a square base. Round your answer to the nearest whole number.",
+                    description: lang === 'sv' ? "Pyramiden har en kvadratisk basyta. Beräkna pyramidens volym." : "Calculate the volume of the pyramid with a square base.",
                     answerType: 'numeric', suffix: 'cm³'
                 },
                 token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',
@@ -216,7 +216,7 @@ export class VolumeGen {
         return {
             renderData: {
                 geometry: { type: 'cone', labels: { r, h } },
-                description: lang === 'sv' ? "Beräkna konens volym ($\\pi \\approx 3,14$). Avrunda ditt svar till heltal." : "Calculate the volume of the cone ($\\pi \\approx 3.14$). Round your answer to the nearest whole number.",
+                description: lang === 'sv' ? "Beräkna konens volym ($\\pi \\approx 3,14$)." : "Calculate the volume of the cone ($\\pi \\approx 3.14$).",
                 answerType: 'numeric', suffix: 'cm³'
             },
             token: this.toBase64(vol.toString()), variationKey: 'vol_cone_std', type: 'calculate',
@@ -240,7 +240,7 @@ export class VolumeGen {
             return {
                 renderData: {
                     geometry: { type: 'sphere', labels: { r } },
-                    description: lang === 'sv' ? `Beräkna klotets volym med radien ${r} cm. Avrunda ditt svar till heltal.` : `Calculate the volume of the sphere with radius ${r} cm. Round your answer to the nearest whole number.`,
+                    description: lang === 'sv' ? `Beräkna klotets volym med radien ${r} cm.` : `Calculate the volume of the sphere with radius ${r} cm.`,
                     answerType: 'numeric', suffix: 'cm³'
                 },
                 token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',
@@ -343,7 +343,7 @@ export class VolumeGen {
         return {
             renderData: {
                 geometry: { type: 'sphere', labels: { r } },
-                description: lang === 'sv' ? `Beräkna ytarean (begränsningsarean) för ett klot med radien ${r} cm. Avrunda ditt svar till heltal.` : `Calculate the surface area for a sphere with radius ${r} cm. Round your answer to the nearest whole number.`,
+                description: lang === 'sv' ? `Beräkna ytarean (begränsningsarean) för ett klot med radien ${r} cm.` : `Calculate the surface area for a sphere with radius ${r} cm.`,
                 answerType: 'numeric', suffix: 'cm²'
             },
             token: this.toBase64(sa.toString()), variationKey: 'sa_sphere', type: 'calculate',
