@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { UI_TEXT } from '../../constants/localization';
 
-// --- VISUAL & INPUT IMPORTS (Ported from Student View) ---
+// --- VISUAL & INPUT IMPORTS ---
 import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
 import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry';
 import PatternVisual from '../visuals/PatternComponents';
@@ -42,6 +42,59 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
 };
 
+// --- LANDSCAPE PRINT & COMPACTNESS STYLES ---
+const printStyles = `
+    @media screen {
+        .landscape-report-preview {
+            width: 297mm;
+            min-height: 210mm;
+            padding: 20mm;
+            margin: 20px auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.15);
+            transform-origin: top center;
+        }
+    }
+
+    @media print {
+        @page { 
+            size: landscape; 
+            margin: 10mm; 
+        }
+        body { 
+            background: white !important; 
+            padding: 0 !important;
+        }
+        .no-print { 
+            display: none !important; 
+        }
+        .landscape-report-preview {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+        /* CRITICAL: Prevent student rows from being cut between pages */
+        tr { 
+            page-break-inside: avoid !important; 
+            break-inside: avoid !important; 
+        }
+        thead { 
+            display: table-header-group; 
+        }
+        table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+        }
+        th, td {
+            border: 1px solid #e2e8f0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+`;
+
 export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, onCreateReport }) {
     const [responses, setResponses] = useState([]);
     const [isAnonymous, setIsAnonymous] = useState(true);
@@ -50,10 +103,14 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const [connStatus, setConnStatus] = useState('CONNECTING');
     const [isSyncing, setIsSyncing] = useState(false);
     const [showWrapUp, setShowWrapUp] = useState(false); 
-    
-    const [zoomIndex, setZoomIndex] = useState(null); // Track which question is zoomed in
+    const [showPrintPreview, setShowPrintPreview] = useState(false); // Added for landscape preview
+    const [zoomIndex, setZoomIndex] = useState(null);
 
-    // --- RENDER VISUAL HELPER (Ported from StudentLiveView) ---
+    const ui = UI_TEXT[lang];
+    const isMounted = useRef(true);
+    const channelRef = useRef(null);
+
+    // --- RENDER VISUAL HELPER ---
     const renderVisual = (item) => {
         const data = item.resolvedData?.renderData;
         if (!data) return null;
@@ -70,15 +127,10 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         if (data.scale || data.geometry?.type === 'scale') return <ScaleVisual data={data.scale || data.geometry} />;
         if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
         if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
-        // --- ADDED FIX: Render Probability Trees and Standard Geometry ---
         if (data.tree || data.geometry?.type === 'pathway') return <ProbabilityTree data={data.tree || data.geometry} />;
         if (data.geometry) return <GeometryVisual data={data.geometry} />;
         return null;
     };
-
-    const ui = UI_TEXT[lang];
-    const isMounted = useRef(true);
-    const channelRef = useRef(null);
 
     const syncData = async () => {
         if (!session?.id || !isMounted.current) return;
@@ -88,7 +140,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                 .from('responses')
                 .select('*')
                 .eq('room_id', session.id);
-            
             if (!error && data && isMounted.current) {
                 setResponses(data);
             }
@@ -99,18 +150,12 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         }
     };
 
-    /**
-     * REFINED KICK HANDLER:
-     * Simply confirms the action and passes the alias up to App.jsx
-     */
     const handleKickStudent = (alias) => {
         const confirmMsg = lang === 'sv' 
             ? `Vill du verkligen ta bort ${alias} från sessionen? All data raderas.` 
             : `Are you sure you want to kick ${alias}? All data for this student will be deleted.`;
-        
         if (window.confirm(confirmMsg)) {
             onKick(alias);
-            // Local optimistic update so the teacher sees the change instantly
             setResponses(prev => prev.filter(r => r.student_alias !== alias));
         }
     };
@@ -118,20 +163,12 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     useEffect(() => {
         isMounted.current = true;
         if (!session?.id) return;
-
         syncData();
-
         const setupRealtime = () => {
-            if (channelRef.current) {
-                supabase.removeChannel(channelRef.current);
-            }
-
+            if (channelRef.current) supabase.removeChannel(channelRef.current);
             const channel = supabase.channel(`room_${session.id.slice(0,8)}`)
                 .on('postgres_changes', { 
-                    event: 'INSERT', 
-                    schema: 'public', 
-                    table: 'responses', 
-                    filter: `room_id=eq.${session.id}` 
+                    event: 'INSERT', schema: 'public', table: 'responses', filter: `room_id=eq.${session.id}` 
                 }, (payload) => {
                     if (isMounted.current) {
                         setResponses(prev => {
@@ -141,57 +178,41 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     }
                 })
                 .on('postgres_changes', {
-                    event: 'DELETE',
-                    schema: 'public',
-                    table: 'responses'
-                }, () => {
-                    // Sync data if a deletion happens (e.g. from handleKick)
-                    syncData();
-                })
+                    event: 'DELETE', schema: 'public', table: 'responses'
+                }, () => { syncData(); })
                 .subscribe(async (status) => {
                     if (!isMounted.current) return;
                     setConnStatus(status);
-                    
-                    if (status === 'SUBSCRIBED') {
-                        syncData();
-                    }
-
+                    if (status === 'SUBSCRIBED') syncData();
                     if (status === 'TIMED_OUT' || status === 'CLOSED') {
-                        setTimeout(() => {
-                            if (isMounted.current) setupRealtime();
-                        }, 5000);
+                        setTimeout(() => { if (isMounted.current) setupRealtime(); }, 5000);
                     }
                 });
-
             channelRef.current = channel;
         };
-
         setupRealtime();
-
         return () => {
             isMounted.current = false;
-            if (channelRef.current) {
-                supabase.removeChannel(channelRef.current);
-            }
+            if (channelRef.current) supabase.removeChannel(channelRef.current);
         };
     }, [session?.id]);
 
     const copyToClipboard = async () => {
         const studentList = [...new Set(responses.map(r => r.student_alias))].sort();
-        let tableHTML = `<table border="1" style="border-collapse: collapse; font-family: sans-serif;">
+        let tableHTML = `<table border="1" style="border-collapse: collapse; font-family: sans-serif; font-size: 11px;">
             <thead style="background: #f1f5f9;">
-                <tr><th style="padding: 8px;">Elev</th><th style="padding: 8px;">Resultat</th>`;
-        packet.forEach((_, i) => tableHTML += `<th style="padding: 8px;">U${i+1}</th>`);
+                <tr><th style="padding: 6px; text-align: left;">Elev</th><th style="padding: 6px;">Resultat</th>`;
+        packet.forEach((_, i) => tableHTML += `<th style="padding: 4px; width: 25px; text-align: center;">${i+1}</th>`);
         tableHTML += `</tr></thead><tbody>`;
 
         studentList.forEach(student => {
             const studentResps = packet.map((_, qIdx) => responses.find(r => r.student_alias === student && r.question_index === qIdx));
             const score = studentResps.filter(r => r?.is_correct).length;
-            tableHTML += `<tr><td style="padding: 8px; font-weight: bold;">${student}</td><td style="padding: 8px;">${score}/${packet.length}</td>`;
+            tableHTML += `<tr><td style="padding: 6px; font-weight: bold;">${student}</td><td style="padding: 6px; text-align: center;">${score}/${packet.length}</td>`;
             studentResps.forEach(r => {
-                const text = r ? (r.is_correct ? 'Rätt' : 'Fel') : '-';
+                const symbol = r ? (r.is_correct ? '✓' : '✕') : '-';
                 const color = r ? (r.is_correct ? '#10b981' : '#f43f5e') : '#94a3b8';
-                tableHTML += `<td style="padding: 8px; color: ${color}; text-align: center;">${text}</td>`;
+                tableHTML += `<td style="padding: 4px; color: ${color}; text-align: center; font-weight: bold;">${symbol}</td>`;
             });
             tableHTML += `</tr>`;
         });
@@ -201,7 +222,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
             const blob = new Blob([tableHTML], { type: 'text/html' });
             const item = new ClipboardItem({ 'text/html': blob });
             await navigator.clipboard.write([item]);
-            alert(lang === 'sv' ? "Tabellen har kopierats!" : "Table copied!");
+            alert(lang === 'sv' ? "Kompakt tabell har kopierats!" : "Compact table copied!");
         } catch (err) {
             alert("Kunde inte kopiera.");
         }
@@ -210,24 +231,19 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const handleEndSession = async () => {
         if (isClosing) return;
         setIsClosing(true);
-        try {
-            await onEnd(); 
-        } catch (err) {
-            console.error("Error ending session:", err);
-            alert(lang === 'sv' ? "Kunde inte avsluta sessionen. Försök igen." : "Could not end session. Please try again.");
+        try { await onEnd(); } catch (err) {
+            alert(lang === 'sv' ? "Kunde inte avsluta sessionen." : "Could not end session.");
             setIsClosing(false);
         }
     };
 
     const students = [...new Set(responses.map(r => r.student_alias))].sort();
     
-    // --- NEW: SUCCESS RATE CALCULATION ---
     const questionStats = packet.map((_, qIdx) => {
         const questionResponses = responses.filter(r => r.question_index === qIdx);
         const total = students.length || 0;
         const correct = questionResponses.filter(r => r.is_correct).length;
         const wrong = questionResponses.filter(r => !r.is_correct).length;
-        
         return {
             correctPct: total > 0 ? (correct / total) * 100 : 0,
             wrongPct: total > 0 ? (wrong / total) * 100 : 0,
@@ -243,24 +259,24 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
 
     return (
         <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+            <style>{printStyles}</style>
             
+            {/* 1. WRAP-UP SELECTION MODAL */}
             {showWrapUp && (
-                <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300 no-print">
                     <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-300 border-b-8 border-indigo-100">
                         <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
                             <h2 className="text-2xl font-black uppercase tracking-tight italic">{lang === 'sv' ? "Avsluta Session" : "End Session"}</h2>
                             <button onClick={() => setShowWrapUp(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><X /></button>
                         </div>
-                        
                         <div className="p-8 space-y-4">
-                            <button onClick={() => onCreateReport(responses)} className="w-full group p-6 bg-indigo-50 border-2 border-indigo-100 hover:border-indigo-600 rounded-3xl text-left transition-all">
+                            <button onClick={() => { setShowPrintPreview(true); setShowWrapUp(false); }} className="w-full group p-6 bg-indigo-50 border-2 border-indigo-100 hover:border-indigo-600 rounded-3xl text-left transition-all">
                                 <div className="flex items-center gap-4 mb-2">
                                     <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg"><Printer size={20}/></div>
                                     <span className="font-black uppercase tracking-tight text-indigo-900 text-lg">{lang === 'sv' ? "Utskriftsvänlig Rapport" : "Printable Report"}</span>
                                 </div>
-                                <p className="text-indigo-600/60 text-xs font-bold leading-relaxed ml-14">{lang === 'sv' ? "Genererar en kompakt A4-översikt för din betygsmapp." : "Generates a compact A4 overview for your grading records."}</p>
+                                <p className="text-indigo-600/60 text-xs font-bold leading-relaxed ml-14">{lang === 'sv' ? "Genererar en kompakt A4-översikt i liggande format." : "Generates a compact A4 overview in landscape format."}</p>
                             </button>
-
                             <button onClick={copyToClipboard} className="w-full group p-6 bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-600 rounded-3xl text-left transition-all">
                                 <div className="flex items-center gap-4 mb-2">
                                     <div className="p-3 bg-emerald-600 text-white rounded-2xl shadow-lg"><Copy size={20}/></div>
@@ -268,7 +284,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 </div>
                                 <p className="text-emerald-600/60 text-xs font-bold leading-relaxed ml-14">{lang === 'sv' ? "Klistra in resultatet direkt i Word eller Excel." : "Paste the result directly into Word or Excel."}</p>
                             </button>
-
                             <button onClick={handleEndSession} disabled={isClosing} className="w-full group p-6 bg-slate-50 border-2 border-slate-100 hover:border-slate-900 rounded-3xl text-left transition-all disabled:opacity-50">
                                 <div className="flex items-center gap-4 mb-2">
                                     <div className="p-3 bg-slate-900 text-white rounded-2xl shadow-lg">
@@ -279,7 +294,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 <p className="text-slate-400 text-xs font-bold leading-relaxed ml-14">{lang === 'sv' ? "Rensas automatiskt efter 48 timmar." : "Automatically cleared after 48 hours."}</p>
                             </button>
                         </div>
-
                         <div className="p-6 bg-slate-50 flex justify-end items-center border-t border-slate-100">
                              <button onClick={() => setShowWrapUp(false)} className="px-6 py-2 bg-slate-200 text-slate-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-300 transition-colors">{lang === 'sv' ? "Avbryt" : "Cancel"}</button>
                         </div>
@@ -287,7 +301,83 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                 </div>
             )}
 
-            <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-40 shadow-sm flex items-center justify-between gap-4">
+            {/* 2. LANDSCAPE REPORT PREVIEW OVERLAY */}
+            {showPrintPreview && (
+                <div className="fixed inset-0 z-[150] bg-slate-100 overflow-y-auto no-scrollbar">
+                    <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center z-50 no-print">
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => setShowPrintPreview(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><ChevronLeft size={24}/></button>
+                            <h3 className="font-black uppercase italic tracking-tighter">{lang === 'sv' ? "Förhandsgranskning" : "Print Preview"}</h3>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={() => window.print()} className="bg-indigo-600 text-white px-8 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-indigo-700 flex items-center gap-2">
+                                <Printer size={16}/> {lang === 'sv' ? "Skriv ut" : "Print"}
+                            </button>
+                            <button onClick={() => setShowPrintPreview(false)} className="bg-slate-900 text-white px-8 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">
+                                {lang === 'sv' ? "Stäng" : "Close"}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="landscape-report-preview">
+                        <header className="flex justify-between items-end mb-8 border-b-2 border-slate-900 pb-6">
+                            <div>
+                                <h1 className="text-3xl font-black uppercase italic tracking-tight leading-none mb-2">{session.title}</h1>
+                                <p className="text-[10px] font-black uppercase text-indigo-600 tracking-[0.2em]">Resultatrapport • Live Lektion</p>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-xl font-black italic mb-1">KOD: {session.class_code}</div>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date().toLocaleDateString()}</p>
+                            </div>
+                        </header>
+
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-slate-100">
+                                    <th className="p-2 text-left text-[10px] font-black uppercase w-48 border-r border-slate-300">Elev</th>
+                                    <th className="p-2 text-center text-[10px] font-black uppercase w-16 border-r border-slate-300">Res.</th>
+                                    {packet.map((_, i) => (
+                                        <th key={i} className="w-[28px] p-1 text-center text-[9px] font-black bg-slate-50 border-r border-slate-200">
+                                            {i + 1}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {students.map(student => {
+                                    const studentResps = packet.map((_, qIdx) => responses.find(r => r.student_alias === student && r.question_index === qIdx));
+                                    const score = studentResps.filter(r => r?.is_correct).length;
+                                    return (
+                                        <tr key={student} className="border-b border-slate-100">
+                                            <td className="p-2 font-bold text-[11px] truncate border-r border-slate-100">{student}</td>
+                                            <td className="p-2 text-center text-[10px] font-black border-r border-slate-100 bg-slate-50/50">
+                                                {score}/{packet.length}
+                                            </td>
+                                            {studentResps.map((r, idx) => (
+                                                <td key={idx} className="p-0 text-center border-r border-slate-50">
+                                                    <div className={`w-full h-8 flex items-center justify-center font-bold text-sm
+                                                        ${r ? (r.is_correct ? 'text-emerald-600 bg-emerald-50/50' : 'text-rose-600 bg-rose-50/50') : 'text-slate-200'}
+                                                    `}>
+                                                        {r ? (r.is_correct ? '✓' : '✕') : '-'}
+                                                    </div>
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                        
+                        <footer className="mt-12 pt-6 border-t border-slate-100 flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                            <div>Anpassa Math Platform</div>
+                            <div>{students.length} {lang === 'sv' ? "elever" : "students"} • {packet.length} {lang === 'sv' ? "uppgifter" : "questions"}</div>
+                        </footer>
+                    </div>
+                </div>
+            )}
+
+            {/* 3. MAIN DASHBOARD UI (Live Stream) */}
+            <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-40 shadow-sm flex items-center justify-between gap-4 no-print">
                 <div className="flex items-center gap-3">
                     <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl flex flex-col items-center shadow-md">
                         <span className="text-[7px] font-black uppercase opacity-50 leading-none">{lang === 'sv' ? "KOD" : "CODE"}</span>
@@ -305,26 +395,22 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     }`}>
                         {connStatus === 'SUBSCRIBED' ? 'Live' : connStatus}
                     </div>
-
                     <button onClick={syncData} disabled={isSyncing} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 transition-all shadow-sm">
                         <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
                     </button>
-                    
                     <button onClick={() => setIsAnonymous(!isAnonymous)} title="Namn" className={`p-2 rounded-lg border transition-all shadow-sm ${isAnonymous ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'}`}>
                         {isAnonymous ? <Shield size={14} /> : <Users size={14} />}
                     </button>
-                    
                     <button onClick={() => setHideCorrectness(!hideCorrectness)} title="Resultat" className={`p-2 rounded-lg border transition-all shadow-sm ${hideCorrectness ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-200'}`}>
                         {hideCorrectness ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
-
                     <button onClick={() => setShowWrapUp(true)} className="bg-rose-500 text-white px-5 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 transition-all shadow-md">
                          Avsluta
                     </button>
                 </div>
             </header>
 
-            <main className="flex-1 overflow-auto p-4 lg:p-6">
+            <main className="flex-1 overflow-auto p-4 lg:p-6 no-print">
                 <div className="max-w-[1600px] mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col h-full min-h-[600px]">
                     <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                         <div className="flex items-center gap-3">
@@ -337,7 +423,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
                             <thead className="sticky top-0 z-10 shadow-sm">
-                                {/* ROW 1: Diagnostic Success Bars */}
                                 <tr className="bg-slate-50 border-b border-slate-200">
                                     <th className="p-3 w-48 bg-slate-100 border-r border-slate-200">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lang === 'sv' ? "Klassens resultat" : "Class results"}</span>
@@ -346,12 +431,8 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                     {questionStats.map((stats, i) => (
                                         <th key={`stat-${i}`} className="p-1.5 border-r border-slate-200 align-bottom">
                                             <div className="w-full h-12 bg-slate-200 rounded-lg overflow-hidden flex flex-col-reverse relative group cursor-help">
-                                                {/* Correct Bar (Green) */}
                                                 <div style={{ height: `${stats.correctPct}%` }} className="bg-emerald-500 transition-all duration-500" />
-                                                {/* Wrong Bar (Red) */}
                                                 <div style={{ height: `${stats.wrongPct}%` }} className="bg-rose-500 transition-all duration-500" />
-                                                
-                                                {/* Tooltip on Hover */}
                                                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-slate-900/90 flex items-center justify-center transition-opacity">
                                                     <span className="text-[9px] text-white font-black">{Math.round(stats.correctPct)}%</span>
                                                 </div>
@@ -359,7 +440,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                         </th>
                                     ))}
                                 </tr>
-                                {/* ROW 2: Your Original Labels */}
                                 <tr className="bg-slate-900 text-white">
                                     <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-white/10">{lang === 'sv' ? "Elev" : "Student"}</th>
                                     <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-white/10">{lang === 'sv' ? "Klar" : "Done"}</th>
@@ -382,13 +462,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                         <tr key={student} className="hover:bg-slate-50 transition-colors group/row">
                                             <td className="p-2 border-r border-slate-100 font-bold text-slate-700 text-xs truncate flex items-center justify-between">
                                                 <span>{isAnonymous ? `Elev ${sIdx + 1}` : student}</span>
-                                                <button 
-                                                    onClick={() => handleKickStudent(student)}
-                                                    className="opacity-0 group-hover/row:opacity-100 p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all"
-                                                    title="Kick"
-                                                >
-                                                    <UserX size={14} />
-                                                </button>
+                                                <button onClick={() => handleKickStudent(student)} className="opacity-0 group-hover/row:opacity-100 p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all"><UserX size={14} /></button>
                                             </td>
                                             <td className="p-2 border-r border-slate-100 text-center">
                                                 <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${progress === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
@@ -399,10 +473,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                                 const resp = responses.find(r => r.student_alias === student && r.question_index === qIdx);
                                                 return (
                                                     <td key={qIdx} className="p-1.5 border-r border-slate-50">
-                                                        <div 
-                                                            title={resp ? `Svar: ${resp.answer}` : 'Inget svar'}
-                                                            className={`w-full h-8 rounded-md transition-all duration-500 cursor-help ${getStatusColor(resp?.is_correct, !!resp)}`} 
-                                                        />
+                                                        <div title={resp ? `Svar: ${resp.answer}` : 'Inget svar'} className={`w-full h-8 rounded-md transition-all duration-500 cursor-help ${getStatusColor(resp?.is_correct, !!resp)}`} />
                                                     </td>
                                                 );
                                             })}
@@ -414,123 +485,119 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     </div>
                 </div>
             </main>
-            {/* --- ZOOM-IN QUESTION OVERLAY --- */}
+
+            {/* --- COMPACT ZOOM-IN QUESTION OVERLAY --- */}
             {zoomIndex !== null && (
-                // REPLACE: Lines 308 - 309 in TeacherLiveView.jsx
-                <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center animate-in fade-in duration-300">
-                    <div className="bg-white w-screen h-screen flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+                <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 no-print">
+                    <div className="bg-white w-full h-full max-w-7xl rounded-[2rem] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20 shadow-2xl">
                         
-                        {/* 1. Header Row */}
-                        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                            <div className="flex items-center gap-4">
-                                {/* Room Code (Matching the main dashboard style) */}
-                                <div className="bg-slate-900 text-white px-4 py-1.5 rounded-xl flex flex-col items-center shadow-md">
-                                    <span className="text-[7px] font-black uppercase opacity-50 leading-none">{lang === 'sv' ? "KOD" : "CODE"}</span>
-                                    <span className="text-xl font-black italic leading-none">{session.class_code}</span>
+                        {/* 1. COMPACT HEADER */}
+                        <div className="px-6 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-slate-900 text-white px-3 py-1 rounded-lg flex flex-col items-center shadow-sm">
+                                    <span className="text-[6px] font-black uppercase opacity-50 leading-none">KOD</span>
+                                    <span className="text-sm font-black italic leading-none">{session.class_code}</span>
                                 </div>
                                 
-                                {/* Updated Uppgift Bar (Changed to Indigo for visual hierarchy) */}
-                                <div className="bg-indigo-600 text-white px-6 py-2 rounded-2xl font-black italic tracking-tighter uppercase shadow-sm">
+                                <div className="bg-indigo-600 text-white px-4 py-1.5 rounded-xl font-black italic text-xs tracking-tighter uppercase">
                                     {lang === 'sv' ? "Uppgift" : "Question"} {zoomIndex + 1}
                                 </div>
 
-                                <div className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-2">
-                                    {responses.filter(r => r.question_index === zoomIndex).length} av {students.length} {lang === 'sv' ? "Inkomna svar" : "Incoming answers"}
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                                    {responses.filter(r => r.question_index === zoomIndex).length}/{students.length} {lang === 'sv' ? "Svar" : "Answers"}
                                 </div>
                             </div>
                             
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
                                 <button 
                                     onClick={() => setZoomIndex(prev => Math.max(0, prev - 1))}
                                     disabled={zoomIndex === 0}
-                                    className="p-3 hover:bg-slate-200 rounded-full disabled:opacity-20 transition-all text-slate-600"
-                                ><ChevronLeft size={32}/></button>
+                                    className="p-2 hover:bg-slate-200 rounded-full disabled:opacity-10 transition-all text-slate-600"
+                                ><ChevronLeft size={24}/></button>
                                 <button 
                                     onClick={() => setZoomIndex(prev => Math.min(packet.length - 1, prev + 1))}
                                     disabled={zoomIndex === packet.length - 1}
-                                    className="p-3 hover:bg-slate-200 rounded-full disabled:opacity-20 transition-all text-slate-600"
-                                ><ChevronRight size={32}/></button>
-                                <div className="w-px h-8 bg-slate-200 mx-2" />
-                                <button onClick={() => setZoomIndex(null)} className="p-4 hover:bg-rose-50 text-rose-500 rounded-full transition-all"><X size={32}/></button>
+                                    className="p-2 hover:bg-slate-200 rounded-full disabled:opacity-10 transition-all text-slate-600"
+                                ><ChevronRight size={24}/></button>
+                                <div className="w-px h-6 bg-slate-200 mx-1" />
+                                <button onClick={() => setZoomIndex(null)} className="p-2 hover:bg-rose-50 text-rose-500 rounded-full transition-all"><X size={24}/></button>
                             </div>
                         </div>
 
-                        {/* 2. Question Text Zone (Full Width) */}
-                        <div className="px-12 py-8 bg-indigo-50/30 border-b border-indigo-50 flex flex-col items-center">
-                            <div className="text-2xl font-bold text-slate-800 leading-relaxed text-center max-w-3xl">
-                                {/* Render the main description */}
+                        {/* 2. COMPACT QUESTION ZONE */}
+                        <div className="px-8 py-4 bg-indigo-50/20 border-b border-indigo-50 shrink-0">
+                            <div className="text-lg font-bold text-slate-800 leading-snug text-center max-w-3xl mx-auto">
                                 <MathDisplay content={packet[zoomIndex].resolvedData?.renderData?.description} />
                                 
-                                {/* ADDED: Render the separate large LaTeX block if it exists */}
                                 {packet[zoomIndex].resolvedData?.renderData?.latex && (
-                                    <div className="mt-6 text-4xl text-indigo-600 font-serif border-t border-indigo-100/50 pt-6">
+                                    <div className="mt-2 text-2xl text-indigo-600 font-serif border-t border-indigo-100/50 pt-2">
                                         <MathDisplay content={`$$${packet[zoomIndex].resolvedData.renderData.latex}$$`} />
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        {/* 3. Main Content Split (3/4 Visual | 1/4 Cards) */}
-                        <div className="flex-1 flex overflow-hidden w-full h-full">
+                        {/* 3. MAIN CONTENT SPLIT (Optimized for window height) */}
+                        <div className="flex-1 flex overflow-hidden w-full">
                             
-                            {/* LEFT COLUMN: The Visual (3/4) */}
-                            <div className="w-3/4 p-12 flex items-center justify-center bg-white overflow-hidden border-r border-slate-50">
-                                <div className="w-full h-full flex items-center justify-center transform scale-150 drop-shadow-2xl">
+                            {/* LEFT COLUMN: Visual (Scaled to contain) */}
+                            <div className="flex-1 p-6 flex items-center justify-center bg-white overflow-hidden border-r border-slate-50">
+                                <div className="w-full h-full flex items-center justify-center transform scale-110 drop-shadow-xl">
                                     {renderVisual(packet[zoomIndex])}
                                 </div>
                             </div>
 
-                            {/* RIGHT COLUMN: Power Cards (1/4) */}
-                            <div className="w-1/4 bg-slate-50/50 p-6 flex flex-col gap-4 overflow-y-auto">
+                            {/* RIGHT COLUMN: Compact Power Cards */}
+                            <div className="w-64 sm:w-72 bg-slate-50/50 p-4 flex flex-col gap-3 overflow-y-auto shrink-0">
                                 
-                                {/* GREEN CARD: Correct Answers */}
-                                <div className="bg-emerald-500 rounded-[2.5rem] p-6 text-white shadow-lg shadow-emerald-500/20">
-                                    <div className="flex items-center gap-2 mb-4 opacity-80">
-                                        <CheckCircle2 size={16} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{lang === 'sv' ? "Antal Rätt" : "Correct answers"}</span>
+                                {/* GREEN CARD */}
+                                <div className="bg-emerald-500 rounded-[1.5rem] p-4 text-white shadow-md">
+                                    <div className="flex items-center gap-2 mb-2 opacity-90">
+                                        <CheckCircle2 size={14} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">{lang === 'sv' ? "Antal Rätt" : "Correct"}</span>
                                     </div>
-                                    <div className="text-4xl font-black mb-4">
+                                    <div className="text-2xl font-black mb-2">
                                         {responses.filter(r => r.question_index === zoomIndex && r.is_correct).length}
                                     </div>
-                                    <div className="max-h-32 overflow-y-auto space-y-1 pr-2">
+                                    <div className="max-h-24 overflow-y-auto space-y-1 pr-1 custom-scrollbar text-[10px]">
                                         {responses.filter(r => r.question_index === zoomIndex && r.is_correct).map((r, idx) => (
-                                            <div key={idx} className="text-[11px] font-bold py-1 border-b border-white/10">
+                                            <div key={idx} className="py-1 border-b border-white/10 truncate font-bold">
                                                 {isAnonymous ? `Elev ${idx + 1}` : r.student_alias}
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* RED CARD: Common Wrong Answers */}
-                                <div className="bg-rose-500 rounded-[2.5rem] p-6 text-white shadow-lg shadow-rose-500/20">
-                                    <div className="flex items-center gap-2 mb-4 opacity-80">
-                                        <XCircle size={16} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{lang === 'sv' ? "Vanliga fel" : "Wrong answers"}</span>
+                                {/* RED CARD */}
+                                <div className="bg-rose-500 rounded-[1.5rem] p-4 text-white shadow-md">
+                                    <div className="flex items-center gap-2 mb-2 opacity-90">
+                                        <XCircle size={14} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">{lang === 'sv' ? "Vanliga fel" : "Errors"}</span>
                                     </div>
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         {(() => {
                                             const wrongAnswers = responses.filter(r => r.question_index === zoomIndex && !r.is_correct).map(r => r.answer);
                                             const freq = wrongAnswers.reduce((acc, curr) => { acc[curr] = (acc[curr] || 0) + 1; return acc; }, {});
-                                            const sorted = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0, 3);
+                                            const sorted = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0, 2);
                                             
                                             return sorted.length > 0 ? sorted.map(([ans, count]) => (
-                                                <div key={ans} className="flex justify-between items-center bg-white/10 p-2 px-4 rounded-xl">
-                                                    <span className="font-black italic">"{ans}"</span>
-                                                    <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">{count} st</span>
+                                                <div key={ans} className="flex justify-between items-center bg-white/10 p-1.5 px-3 rounded-lg text-[10px]">
+                                                    <span className="font-black italic truncate mr-2">"{ans}"</span>
+                                                    <span className="font-bold opacity-80 shrink-0">{count} st</span>
                                                 </div>
-                                            )) : <span className="text-xs opacity-60">{lang === 'sv' ? "Inga fel svar än" : "No wrong answers yet"}</span>;
+                                            )) : <span className="text-[10px] opacity-60 italic">{lang === 'sv' ? "Inga fel än" : "No errors"}</span>;
                                         })()}
                                     </div>
                                 </div>
 
-                                {/* SLATE CARD: Remaining */}
-                                <div className="bg-slate-800 rounded-[2.5rem] p-6 text-white shadow-lg shadow-slate-800/20">
-                                    <div className="flex items-center gap-2 mb-4 opacity-80">
-                                        <Users size={16} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{lang === 'sv' ? "Ej besvarade" : "Not answered"}</span>
+                                {/* SLATE CARD */}
+                                <div className="bg-slate-800 rounded-[1.5rem] p-4 text-white shadow-md">
+                                    <div className="flex items-center gap-2 mb-1 opacity-80">
+                                        <Users size={14} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">{lang === 'sv' ? "Ej klara" : "Remaining"}</span>
                                     </div>
-                                    <div className="text-2xl font-black opacity-80">
-                                        {students.length - responses.filter(r => r.question_index === zoomIndex).length} {lang === 'sv' ? "kvar" : "left"}
+                                    <div className="text-xl font-black">
+                                        {students.length - responses.filter(r => r.question_index === zoomIndex).length}
                                     </div>
                                 </div>
                             </div>
