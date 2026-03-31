@@ -399,7 +399,9 @@ export const SKILL_BUCKETS = {
           { key: 'vol_units_liter', name: { sv: 'Enheter: Liter', en: 'Units: Liter' }, desc: { sv: 'dm3 = liter', en: 'dm3 = liter' } },
           { key: 'vol_units_m3', name: { sv: 'Enheter: Kubikmeter', en: 'Units: Cubic meter' }, desc: { sv: 'm3 till liter', en: 'm3 to liter' } },
           { key: 'sa_cuboid', name: { sv: 'Begränsningsyta: Rätbl.', en: 'Surface area: Cuboid' }, desc: { sv: 'Alla sex sidor', en: 'All six sides' } },
-          { key: 'sa_sphere', name: { sv: 'Begränsningsyta: Klot', en: 'Surface area: Sphere' }, desc: { sv: '4 * pi * r^2', en: '4 * pi * r^2' } }
+          { key: 'sa_sphere', name: { sv: 'Begränsningsyta: Klot', en: 'Surface area: Sphere' }, desc: { sv: '4 * pi * r^2', en: '4 * pi * r^2' } },
+          { key: 'vol_unit_conv', name: { sv: 'Volym: Enheter', en: 'Volume: Units' }, desc: { sv: 'Omvandla mellan dm³, cm³, liter och ml', en: 'Convert between dm³, cm³, liters and ml' } },
+          { key: 'vol_word_unit', name: { sv: 'Volym: Vardagsproblem', en: 'Volume: Word Problems' }, desc: { sv: 'Beräkna volym och svara i liter/ml (med bild)', en: 'Calculate volume and answer in liters/ml (with image)' } }
         ]
       }
     }
