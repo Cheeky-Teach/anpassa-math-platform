@@ -261,7 +261,7 @@ export const CONTENT_MAP = [
     // ==========================================
     {
         id: 'data',
-        title: { sv: "Data & Sannolikhet", en: "Data & Probability" },
+        title: { sv: "Sannolikhet & Statistik", en: "Probability and Statistics" },
         color: "rose",
         topics: [
             {
