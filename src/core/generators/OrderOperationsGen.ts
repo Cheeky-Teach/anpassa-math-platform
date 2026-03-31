@@ -127,7 +127,7 @@ export class OrderOperationsGen {
         }
 
         return {
-            renderData: { latex, description: lang === 'sv' ? "Beräkna värdet med rätt räkneordning." : "Calculate the value using the correct order of operations.", answerType: 'numeric' },
+            renderData: { latex, description: lang === 'sv' ? "Beräkna värdet. Följ prioriteringsreglerna." : "Calculate the value using the correct order of operations.", answerType: 'numeric' },
             token: this.toBase64(result.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? `Steg 1: Identifiera prioriterade operationer. ${useMult ? 'Multiplikation' : 'Division'} går alltid före ${usePlus ? 'addition' : 'subtraktion'}.` : `Step 1: Identify prioritized operations. ${useMult ? 'Multiplication' : 'Division'} always comes before ${usePlus ? 'addition' : 'subtraction'}.` },
@@ -194,7 +194,7 @@ export class OrderOperationsGen {
         const latex = `${constant} + \\frac{${n1} + ${n2}}{${div}} - ${m1} · ${m2}`;
 
         return {
-            renderData: { latex, description: lang === 'sv' ? "Följ räkneordningen för att lösa uttrycket." : "Follow the order of operations to solve the expression.", answerType: 'numeric' },
+            renderData: { latex, description: lang === 'sv' ? "Beräkna värdet. Följ prioriteringsreglerna." : "Follow the order of operations to solve the expression.", answerType: 'numeric' },
             token: this.toBase64(ans.toString()), variationKey: 'order_fraction', type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? "Steg 1: Bråkstrecket fungerar som en parentes. Vi måste räkna ut täljaren först." : "Step 1: The fraction bar acts like parentheses. We must calculate the numerator first.", latex: `${n1} + ${n2} = ${numTotal}` },
