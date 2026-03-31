@@ -180,7 +180,8 @@ const Dashboard = ({
                 </header>
 
                 {/* --- NEWS / UPDATES SECTION  --- */}
-                <section className="mb-6 px-2">
+                {userRole === 'teacher' && (
+                    <section className="mb-6 px-2">
                     <button 
                         onClick={() => setShowUpdateLog(true)}
                         className="w-full flex items-center justify-between p-4 bg-white border border-emerald-100 rounded-3xl hover:border-emerald-500 hover:shadow-lg transition-all group"
@@ -202,7 +203,8 @@ const Dashboard = ({
                             <ArrowUpRight size={16} />
                         </div>
                     </button>
-                </section>
+                    </section>
+                )}
 
                 {/* --- TOOLS SECTION --- */}
                 <section className="mb-12">
