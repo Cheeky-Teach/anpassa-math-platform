@@ -4,10 +4,12 @@ import {
   ChevronDown, ChevronUp, ChevronRight, Zap, Play, Clock, Book, Map, Info, 
   Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, User, 
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet, MoreHorizontal,
-  PlayCircle, CheckCircle2, AlertCircle, Grid3X3, Monitor, Beaker
+  PlayCircle, CheckCircle2, AlertCircle, Grid3X3, Monitor, Beaker, Newspaper, X, 
+  ArrowUpRight
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
+import { APP_UPDATES } from '@/constants/updates';
 
 const COLOR_VARIANTS = {
     pink: { bgLight: 'bg-pink-50', bgDark: 'bg-pink-500', border: 'border-pink-100', text: 'text-pink-700', ring: 'ring-pink-500', borderSolid: 'border-pink-500', icon: 'text-pink-500' },
@@ -30,6 +32,7 @@ const Dashboard = ({
     const [archivedSessions, setArchivedSessions] = useState([]);
     const [isLoadingArchive, setIsLoadingArchive] = useState(false);
     const [activeSession, setActiveSession] = useState(null);
+    const [showUpdateLog, setShowUpdateLog] = useState(false);
 
     const TEXT = {
         sv: {
@@ -46,7 +49,8 @@ const Dashboard = ({
             view_report: "Visa rapport", resume_h: "Lektion pågår", resume_btn: "Återuppta",
             accuracy_label: "Träffsäkerhet", edit_btn: "Öppna i Studio",
             type_donow: "Do Now Grid", type_worksheet: "Arbetsblad",
-            times_table_title: "Tabeller", times_table_desc: "Multiplikation"
+            times_table_title: "Tabeller", times_table_desc: "Multiplikation",
+            news_title: "Senaste uppdatering", view_all: "Visa ändringslogg"
         },
         en: {
             tools_section: "Tools", class_code_label: "Your Class Code", connected_code_label: "Connected to code",
@@ -62,11 +66,17 @@ const Dashboard = ({
             view_report: "View Report", resume_h: "Session in Progress", resume_btn: "Resume",
             accuracy_label: "Accuracy", edit_btn: "Open in Studio",
             type_donow: "Do Now Grid", type_worksheet: "Worksheet",
-            times_table_title: "Tables", times_table_desc: "Multiplication"
+            times_table_title: "Tables", times_table_desc: "Multiplication",
+            news_title: "Latest Update", view_all: "View Changelog"
         }
     };
 
+    const updateLabels = {
+        sv: { news_title: "Senaste uppdatering", view_all: "Visa ändringslogg" },
+        en: { news_title: "Latest Update", view_all: "View Changelog" }
+    }[lang];
     const t = TEXT[lang] || TEXT.sv;
+    const latestUpdate = APP_UPDATES[0];
 
     useEffect(() => {
         fetchActiveSession();
@@ -169,6 +179,31 @@ const Dashboard = ({
                     </div>
                 </header>
 
+                {/* --- NEWS / UPDATES SECTION  --- */}
+                <section className="mb-6 px-2">
+                    <button 
+                        onClick={() => setShowUpdateLog(true)}
+                        className="w-full flex items-center justify-between p-4 bg-white border border-emerald-100 rounded-3xl hover:border-emerald-500 hover:shadow-lg transition-all group"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
+                                <Sparkles size={20} fill="currentColor" />
+                            </div>
+                            <div className="text-left">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black uppercase text-emerald-800/40 tracking-widest">{updateLabels.news_title}</span>
+                                    <span className="bg-emerald-100 text-emerald-700 text-[8px] font-black px-2 py-0.5 rounded-full">v.{latestUpdate.version}</span>
+                                </div>
+                                <h4 className="text-sm font-bold text-slate-700">{latestUpdate.title[lang]}</h4>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-emerald-600 font-bold text-[10px] uppercase tracking-widest">
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity">{updateLabels.view_all}</span>
+                            <ArrowUpRight size={16} />
+                        </div>
+                    </button>
+                </section>
+
                 {/* --- TOOLS SECTION --- */}
                 <section className="mb-12">
                     <div className="flex items-center gap-3 mb-6 px-4">
@@ -263,16 +298,35 @@ const Dashboard = ({
                     </div>
                 </section>
 
-                {/* --- CONTENT TABS --- */}
-                <div className="flex gap-1 p-1 bg-emerald-950/5 rounded-2xl w-fit mb-8 mx-2">
-                    <button onClick={() => setActiveTab('curriculum')} className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'curriculum' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}>
-                        <div className="flex items-center gap-2"><Book size={14}/> {t.curriculum_title}</div>
-                    </button>
-                    {userRole === 'teacher' && (
-                        <button onClick={() => setActiveTab('archive')} className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'archive' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}>
-                            <div className="flex items-center gap-2"><History size={14}/> {t.archive_title}</div>
+                {/* --- CONTENT TABS & CONTENT MAP ROW --- */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 mx-2">
+                    {/* Left Side: The existing toggles */}
+                    <div className="flex gap-1 p-1 bg-emerald-950/5 rounded-2xl w-fit">
+                        <button 
+                            onClick={() => setActiveTab('curriculum')} 
+                            className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'curriculum' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}
+                        >
+                            <div className="flex items-center gap-2"><Book size={14}/> {t.curriculum_title}</div>
                         </button>
-                    )}
+                        {userRole === 'teacher' && (
+                            <button 
+                                onClick={() => setActiveTab('archive')} 
+                                className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'archive' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}
+                            >
+                                <div className="flex items-center gap-2"><History size={14}/> {t.archive_title}</div>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Right Side: The relocated Content Map Button */}
+                    <button 
+                        onClick={onContentOpen} 
+                        className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border border-emerald-100 text-emerald-600 hover:text-white hover:bg-emerald-600 hover:border-emerald-600 font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm group"
+                    >
+                        <Map size={16} className="group-hover:scale-110 transition-transform" /> 
+                        {t.content_map}
+                        <ChevronRight size={14} className="opacity-40" />
+                    </button>
                 </div>
 
                 {/* --- TAB CONTENT --- */}
@@ -398,7 +452,6 @@ const Dashboard = ({
                     <div className="space-y-6 text-center md:text-left">
                         <h4 className="text-[10px] font-bold text-emerald-800/30 uppercase tracking-[0.3em]">{t.resources}</h4>
                         <div className="flex flex-col gap-4">
-                            <button onClick={onContentOpen} className="flex items-center justify-center md:justify-start gap-3 text-slate-500 hover:text-emerald-700 font-bold text-sm transition-colors"><Map size={18} /> {t.content_map}</button>
                             <button onClick={onLgrOpen} className="flex items-center justify-center md:justify-start gap-3 text-slate-500 hover:text-emerald-700 font-bold text-sm transition-colors"><Book size={18} /> {t.lgr_link}</button>
                         </div>
                     </div>
@@ -413,6 +466,42 @@ const Dashboard = ({
                         <p className="text-[10px] text-emerald-800 font-bold uppercase tracking-widest">{t.brand_motto}</p>
                     </div>
                 </footer>
+
+                {/* --- 4. UPDATE LOG MODAL OVERLAY --- */}
+                {showUpdateLog && (
+                    <div className="fixed inset-0 z-[100] bg-emerald-950/40 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
+                        <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95">
+                            <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-emerald-900 text-white rounded-2xl shadow-lg"><Newspaper size={24}/></div>
+                                    <h2 className="text-2xl font-black uppercase tracking-tight italic">Ändringslogg</h2>
+                                </div>
+                                <button onClick={() => setShowUpdateLog(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"><X /></button>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+                                {APP_UPDATES.map((update) => (
+                                    <div key={update.id} className="relative pl-8 border-l-2 border-emerald-100 pb-2">
+                                        <div className="absolute -left-[9px] top-0 w-4 h-4 bg-white border-2 border-emerald-500 rounded-full" />
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">{update.date}</span>
+                                            <span className="text-[10px] font-black text-slate-400">VERSION {update.version}</span>
+                                        </div>
+                                        <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight mb-4">{update.title[lang]}</h3>
+                                        <ul className="space-y-3">
+                                            {update.changes[lang].map((change, i) => (
+                                                <li key={i} className="flex gap-3 text-sm text-slate-600 leading-relaxed">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 shrink-0" />
+                                                    {change}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* BACKGROUND DECORATION */}
