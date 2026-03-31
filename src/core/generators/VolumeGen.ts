@@ -51,6 +51,8 @@ export class VolumeGen {
             case 'vol_units_liter':
             case 'vol_units_m3':
                 return this.level7_Units(lang, key);
+            case 'vol_unit_conv': return this.generateDirectConversion(lang);
+            case 'vol_word_unit': return this.generateGeometricWordProblem(lang);
             case 'sa_cuboid':
             case 'sa_cylinder':
             case 'sa_cone':
@@ -275,42 +277,121 @@ export class VolumeGen {
         };
     }
 
-    // --- LEVEL 7: UNITS ---
+    // --- LEVEL 7: UNITS & CONVERSIONS ---
     private level7_Units(lang: string, variationKey?: string, options: any = {}): any {
-        const v = variationKey || MathUtils.randomChoice(['vol_units_liter', 'vol_units_m3']);
-        
-        if (v === 'vol_units_m3') {
-            const w = MathUtils.randomInt(3, 5), d = MathUtils.randomInt(4, 6), h = 2;
-            const m3 = w * d * h;
-            const liters = m3 * 1000;
-            return {
-                renderData: {
-                    description: lang === 'sv' ? `En pool har måtten ${w} m, ${d} m och djupet ${h} m. Hur många liter vatten rymmer den?` : `A pool has dimensions ${w} m, ${d} m, and a depth of ${h} m. How many liters of water does it hold?`,
-                    answerType: 'numeric', suffix: 'liter'
-                },
-                token: this.toBase64(liters.toString()), variationKey: v, type: 'calculate',
-                clues: [
-                    { text: lang === 'sv' ? "Steg 1: Beräkna först volymen i kubikmeter ($m^3$)." : "Step 1: First calculate the volume in cubic meters ($m^3$).", latex: `${w} · ${d} · ${h} = ${m3}` },
-                    { text: lang === 'sv' ? "Steg 2: Omvandla kubikmeter till liter. Kom ihåg att $1 m^3 = 1000$ liter." : "Step 2: Convert cubic meters to liters. Remember that $1 m^3 = 1000$ liters." },
-                    { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${m3} · 1000 = ${liters}` },
-                    { text: lang === 'sv' ? `Svar: ${liters}` : `Answer: ${liters}` }
-                ]
-            };
-        }
+        const v = variationKey || (Math.random() > 0.5 ? 'vol_unit_conv' : 'vol_word_unit');
+        return v === 'vol_unit_conv' ? this.generateDirectConversion(lang) : this.generateGeometricWordProblem(lang);
+    }
 
-        const w = 50, d = 20, h = 30; // 30 Liters
-        const liters = (w * d * h) / 1000;
+    private generateDirectConversion(lang: string): any {
+        const pairs = [
+            { from: 'dm³', to: 'l', factor: 1, note: "1 dm³ = 1 l" },
+            { from: 'l', to: 'dm³', factor: 1, note: "1 l = 1 dm³" },
+            { from: 'cm³', to: 'ml', factor: 1, note: "1 cm³ = 1 ml" },
+            { from: 'ml', to: 'cm³', factor: 1, note: "1 ml = 1 cm³" },
+            { from: 'l', to: 'cm³', factor: 1000, note: "1 l = 1000 cm³" },
+            { from: 'cm³', to: 'l', factor: 0.001, note: "1000 cm³ = 1 l" },
+            { from: 'ml', to: 'dm³', factor: 0.001, note: "1000 ml = 1 dm³" }
+        ];
+
+        const p = MathUtils.randomChoice(pairs);
+        const val = p.factor === 1 ? MathUtils.randomInt(2, 500) : (p.factor < 1 ? MathUtils.randomChoice([500, 1500, 2500, 5000]) : MathUtils.randomChoice([0.5, 1.5, 2, 5]));
+        const ans = val * p.factor;
+
         return {
             renderData: {
-                description: lang === 'sv' ? `Ett akvarium har måtten ${w} cm, ${d} cm och ${h} cm. Hur många liter rymmer det?` : `An aquarium has dimensions ${w} cm, ${d} cm, and ${h} cm. How many liters does it hold?`,
-                answerType: 'numeric', suffix: 'liter'
+                description: lang === 'sv' ? `Omvandla ${val} ${p.from} till ${p.to}.` : `Convert ${val} ${p.from} to ${p.to}.`,
+                latex: `${val.toString().replace('.', ',')} \\text{ ${p.from}} = \\text{\\_\\_\\_} \\text{ ${p.to}}`,
+                answerType: 'numeric'
             },
-            token: this.toBase64(liters.toString()), variationKey: 'vol_units_liter', type: 'calculate',
+            token: this.toBase64(ans.toString()),
+            variationKey: 'vol_unit_conv',
+            type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Omvandla måtten från cm till dm för att få resultatet i liter direkt ($1 dm^3 = 1$ liter)." : "Step 1: Convert the measurements from cm to dm to get the result in liters directly ($1 dm^3 = 1$ liter)." },
-                { text: lang === 'sv' ? `Mått i dm: ${w/10} dm, ${d/10} dm och ${h/10} dm.` : `Measurements in dm: ${w/10} dm, ${d/10} dm, and ${h/10} dm.` },
-                { text: lang === 'sv' ? "Steg 2: Multiplicera de nya måtten." : "Step 2: Multiply the new measurements.", latex: `${w/10} · ${d/10} · ${h/10} = ${liters}` },
-                { text: lang === 'sv' ? `Svar: ${liters}` : `Answer: ${liters}` }
+                { text: lang === 'sv' ? `Kom ihåg: ${p.note}` : `Remember: ${p.note}` },
+                { text: lang === 'sv' ? `Svar: ${ans.toString().replace('.', ',')} ${p.to}` : `Answer: ${ans} ${p.to}` }
+            ]
+        };
+    }
+
+    private generateGeometricWordProblem(lang: string): any {
+        const objects: any = {
+            cuboid: [
+                { sv: "ett akvarium", en: "an aquarium" }, { sv: "en låda", en: "a box" }, { sv: "en tegelsten", en: "a brick" },
+                { sv: "en container", en: "a container" }, { sv: "en kista", en: "a chest" }, { sv: "en pool", en: "a pool" },
+                { sv: "ett suddgummi", en: "an eraser" }, { sv: "en chokladkaka", en: "a chocolate bar" }, { sv: "ett rum", en: "a room" }, { sv: "en resväska", en: "a suitcase" }
+            ],
+            cylinder: [
+                { sv: "en tunna", en: "a barrel" }, { sv: "en läskburk", en: "a soda can" }, { sv: "ett rör", en: "a pipe" },
+                { sv: "ett batteri", en: "a battery" }, { sv: "ett limstift", en: "a glue stick" }, { sv: "ett ljus", en: "a candle" },
+                { sv: "en vattentank", en: "a water tank" }, { sv: "en mugg", en: "a mug" }, { sv: "en silo", en: "a silo" }, { sv: "en kavel", en: "a rolling pin" }
+            ],
+            cone: [
+                { sv: "en glasstrut", en: "an ice cream cone" }, { sv: "en trafikkon", en: "a traffic cone" }, { sv: "en partytut", en: "a party hat" },
+                { sv: "en tratt", en: "a funnel" }, { sv: "en vulkanmodell", en: "a volcano model" }, { sv: "ett tipi-tält", en: "a teepee" },
+                { sv: "en pennvässartopp", en: "a pencil tip" }, { sv: "en pappersmugg", en: "a paper cup" }, { sv: "en sandhög", en: "a sand pile" }, { sv: "en megafon", en: "a megaphone" }
+            ]
+        };
+
+        const shape = MathUtils.randomChoice(['cuboid', 'cylinder', 'cone']);
+        const obj = MathUtils.randomChoice(objects[shape]);
+        const startUnit = MathUtils.randomChoice(['cm', 'dm']);
+        const targetUnit = MathUtils.randomChoice(['liter', 'milliliter']);
+
+        let vRaw = 0, labels: any = {}, latex = "";
+
+        if (shape === 'cuboid') {
+            const w = MathUtils.randomInt(2, 10), h = MathUtils.randomInt(2, 10), d = MathUtils.randomInt(2, 10);
+            vRaw = w * h * d;
+            labels = { w, h, d };
+            latex = `${w} · ${h} · ${d} = ${vRaw} ${startUnit}³`;
+        } else if (shape === 'cylinder') {
+            const r = MathUtils.randomInt(2, 6), h = MathUtils.randomInt(5, 15);
+            vRaw = 3.14 * r * r * h;
+            labels = { r, h };
+            latex = `3,14 · ${r}^2 · ${h} = ${vRaw.toFixed(1)} ${startUnit}³`;
+        } else {
+            const r = MathUtils.randomInt(3, 8), h = MathUtils.randomInt(5, 12);
+            vRaw = (3.14 * r * r * h) / 3;
+            labels = { r, h };
+            latex = `\\frac{3,14 · ${r}^2 · ${h}}{3} = ${vRaw.toFixed(1)} ${startUnit}³`;
+        }
+
+        // --- CONVERSION LOGIC [Requirement 1] ---
+        let finalAns = 0;
+        if (startUnit === 'dm') {
+            // dm³ -> l (1:1), dm³ -> ml (1:1000)
+            finalAns = targetUnit === 'liter' ? vRaw : vRaw * 1000;
+        } else {
+            // cm³ -> l (1:0.001), cm³ -> ml (1:1)
+            finalAns = targetUnit === 'liter' ? vRaw / 1000 : vRaw;
+        }
+
+        // Limit check for ml [Requirement 1]
+        if (targetUnit === 'milliliter' && finalAns > 70000) return this.generateGeometricWordProblem(lang);
+
+        const roundedAns = Number(finalAns.toFixed(1));
+        const dimDesc = shape === 'cuboid' 
+            ? (lang === 'sv' ? `med bredden ${labels.w} ${startUnit}, höjden ${labels.h} ${startUnit} och djupet ${labels.d} ${startUnit}` : `with width ${labels.w} ${startUnit}, height ${labels.h} ${startUnit} and depth ${labels.d} ${startUnit}`)
+            : (lang === 'sv' ? `med radien ${labels.r} ${startUnit} och höjden ${labels.h} ${startUnit}` : `with radius ${labels.r} ${startUnit} and height ${labels.h} ${startUnit}`);
+
+        return {
+            renderData: {
+                // FIXED: Dimensions are now passed in a 'labels' object [Requirement 2]
+                geometry: { type: shape, labels: labels },
+                description: lang === 'sv' 
+                    ? `${obj.sv.charAt(0).toUpperCase() + obj.sv.slice(1)} har formen av en ${shape === 'cuboid' ? 'rätblock' : shape === 'cylinder' ? 'cylinder' : 'kon'} ${dimDesc}. Vad är dess volym i ${targetUnit}?` 
+                    : `${obj.en.charAt(0).toUpperCase() + obj.en.slice(1)} is shaped like a ${shape} ${dimDesc}. What is its volume in ${targetUnit === 'liter' ? 'liters' : 'milliliters'}?`,
+                answerType: 'numeric',
+                suffix: targetUnit === 'liter' ? 'l' : 'ml'
+            },
+            token: this.toBase64(roundedAns.toString()),
+            variationKey: 'vol_word_unit',
+            type: 'calculate',
+            clues: [
+                { text: lang === 'sv' ? `Steg 1: Beräkna volymen i ${startUnit}³.` : `Step 1: Calculate the volume in ${startUnit}³.`, latex },
+                { text: lang === 'sv' ? `Steg 2: Omvandla till ${targetUnit}. (1 dm³ = 1 l, 1 cm³ = 1 ml)` : `Step 2: Convert to ${targetUnit}. (1 dm³ = 1 l, 1000 cm³ = 1 l)` },
+                { text: `${lang === 'sv' ? 'Svar' : 'Answer'}: ${roundedAns.toString().replace('.', ',')} ${targetUnit === 'liter' ? 'l' : 'ml'}` }
             ]
         };
     }
