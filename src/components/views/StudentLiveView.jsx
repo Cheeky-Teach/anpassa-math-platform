@@ -95,26 +95,38 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         return str.replace(/[^0-9.,*+\-xy=/: ]/gi, '');
     };
 
-    // SECURITY: Refactored to handle manual values (Multiple Choice)
+    // --- CONSISTENT & UTF-8 SAFE SUBMISSION ---
     const handleSolve = async (manualValue = null) => {
-        const val = manualValue || answers[currentIndex];
-        if (!val || isSubmitting || !roomActive) return;
-
-        const { data: roomCheck } = await supabase.from('rooms').select('kicked_students').eq('id', session.id).single();
-        if (roomCheck?.kicked_students?.includes(studentAlias)) {
-            onBack();
-            return;
-        }
+        // 1. Correctly handle numeric 0 (prevents 0 from being ignored)
+        const val = (manualValue !== null && manualValue !== undefined) ? manualValue : answers[currentIndex];
         
-        const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.');
+        if (val === undefined || val === "" || isSubmitting || !roomActive) return;
+
+        // 2. Enhanced Normalization (Matches answer.ts logic + Algebraic Support)
+        const normalize = (str) => {
+            return String(str)
+                .toLowerCase()
+                .replace(/\s+/g, '')       // Remove spaces
+                .replace(',', '.')         // Swedish comma to dot
+                .replace(/^[a-z]=/, '')    // Strip "x=" (e.g., student writes x=7)
+                .replace(/^svar:/, '')     // Strip "svar:"
+                .replace(/·/g, '*');       // Normalize dot to asterisk for safer comparison
+        };
         
         let correctAnswer = packet[currentIndex].resolvedData?.answer;
         
+        // 3. UTF-8 Safe Decoding (Mirroring server-side Buffer logic)
         if (!correctAnswer && packet[currentIndex].resolvedData?.token) {
             try { 
-                correctAnswer = atob(packet[currentIndex].resolvedData.token); 
+                const binaryString = atob(packet[currentIndex].resolvedData.token);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                correctAnswer = new TextDecoder().decode(bytes); // Decodes symbols like · and ³ correctly
             } catch (e) {
-                console.warn("StudentLiveView: Could not decode solution token.");
+                console.warn("Decoding failed, falling back to standard atob.");
+                correctAnswer = atob(packet[currentIndex].resolvedData.token);
             }
         }
         
@@ -122,6 +134,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         setIsSubmitting(true);
 
         try {
+            // Direct database update for the Teacher dashboard
             const { error } = await supabase.from('responses').insert([{
                 room_id: session.id,
                 student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
