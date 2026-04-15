@@ -2,6 +2,30 @@
 
 export const APP_UPDATES = [
   {
+    id: 'v113',
+    date: '2026-04-15',
+    version: '0.1.3',
+    title: { sv: "Live Lektion & Utskriftsfix", en: "Live Lesson & Print Fix" },
+    highlights: {
+      sv: "Manuell rättning, förbättrade rapporter och fix för stora utskrifter.",
+      en: "Manual grading, improved reports, and fixes for large printouts."
+    },
+    changes: {
+      sv: [
+        "Kritisk buggfix för utskrift: Rapporter renderar nu all data korrekt oavsett längd utan att klippas.",
+        "Manuell rättning: Lärare kan nu klicka direkt på en elevs svar i tabellen på live lektioenr för att ändra rättningen (t.ex. vid 'x=7').",
+        "Ny vy: Växla mellan status-ikoner och faktiska elevsvar direkt i live-översikten.",
+        "Buggfix till flervalsalternativ frågor där rätta svar markerades som fel."
+      ],
+      en: [
+        "Critical print fix: Reports now render all data correctly regardless of length without clipping.",
+        "Manual grading override: Teachers can now click directly on a student answer to manually correct it (e.g., for 'x=7').",
+        "New view mode: Toggle between status icons and actual student answers directly in the live overview.",
+        "Bug fix for multiple choice answers being marked incorrect when actually correct."
+      ]
+    }
+  },
+  {
     id: 'v111',
     date: '2024-03-21',
     version: '0.1.2',
