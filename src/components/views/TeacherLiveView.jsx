@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { 
     Users, Eye, EyeOff, Shield, BarChart3, Loader2, 
     RefreshCw, Download, Printer, Copy, Save, X, UserX,
-    ChevronLeft, ChevronRight, CheckCircle2, XCircle 
+    ChevronLeft, ChevronRight, CheckCircle2, XCircle, Type
 } from 'lucide-react';
 import { UI_TEXT } from '../../constants/localization';
 
@@ -42,13 +42,13 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
 };
 
-// --- LANDSCAPE PRINT & COMPACTNESS STYLES ---
+// --- REFACTORED LANDSCAPE PRINT STYLES ---
 const printStyles = `
     @media screen {
         .landscape-report-preview {
             width: 297mm;
             min-height: 210mm;
-            padding: 20mm;
+            padding: 15mm;
             margin: 20px auto;
             background: white;
             box-shadow: 0 0 20px rgba(0,0,0,0.15);
@@ -59,15 +59,35 @@ const printStyles = `
     @media print {
         @page { 
             size: landscape; 
-            margin: 10mm; 
+            margin: 8mm; 
         }
-        body { 
-            background: white !important; 
-            padding: 0 !important;
+        
+        /* 1. RESET BODY AND HTML FOR PRINT FLOW */
+        html, body {
+            height: auto !important;
+            overflow: visible !important;
+            background: white !important;
         }
-        .no-print { 
-            display: none !important; 
+
+        /* 2. FORCE MODAL TO NATURAL FLOW */
+        .print-modal-container {
+            position: relative !important;
+            height: auto !important;
+            width: 100% !important;
+            overflow: visible !important;
+            display: block !important;
+            background: white !important;
+            z-index: auto !important;
         }
+
+        /* 3. RESET FLEX PARENTS THAT CLIP CONTENT */
+        .min-h-screen {
+            height: auto !important;
+            display: block !important;
+        }
+
+        .no-print { display: none !important; }
+
         .landscape-report-preview {
             width: 100% !important;
             margin: 0 !important;
@@ -75,22 +95,30 @@ const printStyles = `
             box-shadow: none !important;
             transform: none !important;
         }
-        /* CRITICAL: Prevent student rows from being cut between pages */
-        tr { 
-            page-break-inside: avoid !important; 
-            break-inside: avoid !important; 
+
+        /* 4. ROBUST PAGE BREAK HANDLING */
+        .avoid-break {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            display: block;
+            position: relative;
         }
-        thead { 
-            display: table-header-group; 
-        }
+
         table {
             width: 100% !important;
             border-collapse: collapse !important;
+            table-layout: fixed !important;
+            page-break-inside: auto;
         }
+
+        tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
         th, td {
-            border: 1px solid #e2e8f0 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            border: 1px solid #cbd5e1 !important;
+            word-wrap: break-word !important;
         }
     }
 `;
@@ -109,6 +137,9 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const ui = UI_TEXT[lang];
     const isMounted = useRef(true);
     const channelRef = useRef(null);
+    
+    const [showActualAnswers, setShowActualAnswers] = useState(false); // Toggle between answer icons and text
+
 
     // --- RENDER VISUAL HELPER ---
     const renderVisual = (item) => {
@@ -257,6 +288,29 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         return isCorrect ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.2)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.2)]';
     };
 
+    const handleManualGrade = async (response) => {
+        if (!response || !response.id) return;
+
+        // 1. Optimistic local update for instant feedback
+        setResponses(prev => prev.map(r => 
+            r.id === response.id ? { ...r, is_correct: !r.is_correct } : r
+        ));
+
+        // 2. Persist to database
+        try {
+            const { error } = await supabase
+                .from('responses')
+                .update({ is_correct: !response.is_correct })
+                .eq('id', response.id);
+                
+            if (error) throw error;
+        } catch (err) {
+            console.error("Error updating grade:", err);
+            // Revert on error if necessary
+            syncData();
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
             <style>{printStyles}</style>
@@ -301,9 +355,9 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                 </div>
             )}
 
-            {/* 2. LANDSCAPE REPORT PREVIEW OVERLAY */}
+            {/* --- 2. LANDSCAPE REPORT PREVIEW (FIXED FLOW) --- */}
             {showPrintPreview && (
-                <div className="fixed inset-0 z-[150] bg-slate-100 overflow-y-auto no-scrollbar">
+                <div className="fixed inset-0 z-[150] bg-slate-100 overflow-y-auto no-scrollbar print-modal-container">
                     <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center z-50 no-print">
                         <div className="flex items-center gap-4">
                             <button onClick={() => setShowPrintPreview(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><ChevronLeft size={24}/></button>
@@ -320,57 +374,90 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     </div>
 
                     <div className="landscape-report-preview">
-                        <header className="flex justify-between items-end mb-8 border-b-2 border-slate-900 pb-6">
+                        <header className="flex justify-between items-end mb-6 border-b-2 border-slate-900 pb-4">
                             <div>
-                                <h1 className="text-3xl font-black uppercase italic tracking-tight leading-none mb-2">{session.title}</h1>
-                                <p className="text-[10px] font-black uppercase text-indigo-600 tracking-[0.2em]">Resultatrapport • Live Lektion</p>
+                                <h1 className="text-2xl font-black uppercase italic tracking-tight leading-none mb-1">{session.title}</h1>
+                                <p className="text-[9px] font-black uppercase text-indigo-600 tracking-[0.2em]">Resultatrapport • Live Lektion</p>
                             </div>
                             <div className="text-right">
-                                <div className="text-xl font-black italic mb-1">KOD: {session.class_code}</div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date().toLocaleDateString()}</p>
+                                <div className="text-lg font-black italic">KOD: {session.class_code}</div>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</p>
                             </div>
                         </header>
 
-                        <table className="w-full">
-                            <thead>
-                                <tr className="bg-slate-100">
-                                    <th className="p-2 text-left text-[10px] font-black uppercase w-48 border-r border-slate-300">Elev</th>
-                                    <th className="p-2 text-center text-[10px] font-black uppercase w-16 border-r border-slate-300">Res.</th>
-                                    {packet.map((_, i) => (
-                                        <th key={i} className="w-[28px] p-1 text-center text-[9px] font-black bg-slate-50 border-r border-slate-200">
-                                            {i + 1}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
+                        {/* SECTION 1: OVERVIEW */}
+                        <div className="mb-10 avoid-break">
+                            <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 text-slate-400 italic">1. Översikt (Klassnivå)</h3>
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-slate-100">
+                                        <th className="p-2 text-left text-[9px] font-black uppercase w-40 border-r border-slate-300">Elev</th>
+                                        <th className="p-2 text-center text-[9px] font-black uppercase w-14 border-r border-slate-300">Res.</th>
+                                        {packet.map((_, i) => (
+                                            <th key={i} className="w-[26px] p-1 text-center text-[8px] font-black bg-slate-50 border-r border-slate-200">{i + 1}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {students.map(student => {
+                                        const studentResps = packet.map((_, qIdx) => responses.find(r => r.student_alias === student && r.question_index === qIdx));
+                                        const score = studentResps.filter(r => r?.is_correct).length;
+                                        return (
+                                            <tr key={student} className="border-b border-slate-100">
+                                                <td className="p-1.5 font-bold text-[10px] truncate border-r border-slate-100">{student}</td>
+                                                <td className="p-1.5 text-center text-[9px] font-black border-r border-slate-100 bg-slate-50/50">{score}/{packet.length}</td>
+                                                {studentResps.map((r, idx) => (
+                                                    <td key={idx} className="p-0 text-center border-r border-slate-50">
+                                                        <div className={`w-full h-7 flex items-center justify-center font-bold text-xs ${r ? (r.is_correct ? 'text-emerald-600 bg-emerald-50/50' : 'text-rose-600 bg-rose-50/50') : 'text-slate-200'}`}>
+                                                            {r ? (r.is_correct ? '✓' : '✕') : '-'}
+                                                        </div>
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* SECTION 2: DETAILED ANSWERS */}
+                        <div className="mt-12">
+                            <h3 className="text-[10px] font-black uppercase tracking-widest mb-4 text-slate-400 italic">2. Individuella Svar (Detaljerat)</h3>
+                            <div className="grid grid-cols-2 gap-x-8 gap-y-10">
                                 {students.map(student => {
-                                    const studentResps = packet.map((_, qIdx) => responses.find(r => r.student_alias === student && r.question_index === qIdx));
-                                    const score = studentResps.filter(r => r?.is_correct).length;
+                                    const studentResps = packet.map((q, qIdx) => ({
+                                        question: q.resolvedData?.renderData?.description || `Uppgift ${qIdx + 1}`,
+                                        resp: responses.find(r => r.student_alias === student && r.question_index === qIdx)
+                                    }));
                                     return (
-                                        <tr key={student} className="border-b border-slate-100">
-                                            <td className="p-2 font-bold text-[11px] truncate border-r border-slate-100">{student}</td>
-                                            <td className="p-2 text-center text-[10px] font-black border-r border-slate-100 bg-slate-50/50">
-                                                {score}/{packet.length}
-                                            </td>
-                                            {studentResps.map((r, idx) => (
-                                                <td key={idx} className="p-0 text-center border-r border-slate-50">
-                                                    <div className={`w-full h-8 flex items-center justify-center font-bold text-sm
-                                                        ${r ? (r.is_correct ? 'text-emerald-600 bg-emerald-50/50' : 'text-rose-600 bg-rose-50/50') : 'text-slate-200'}
-                                                    `}>
-                                                        {r ? (r.is_correct ? '✓' : '✕') : '-'}
+                                        <div key={student} className="avoid-break bg-slate-50/30 p-4 rounded-2xl border border-slate-100">
+                                            <div className="flex justify-between items-center border-b border-slate-200 pb-2 mb-3">
+                                                <span className="font-black text-xs uppercase italic text-slate-800">{student}</span>
+                                                <span className="text-[9px] font-bold text-slate-400">{studentResps.filter(s => s.resp?.is_correct).length}/{packet.length} Rätt</span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {studentResps.map((item, idx) => (
+                                                    <div key={idx} className="flex gap-2 text-[9px] leading-tight">
+                                                        <span className="font-black text-slate-300 shrink-0">{idx + 1}.</span>
+                                                        <div className="flex-1">
+                                                            <div className="text-slate-500 italic mb-0.5 truncate opacity-60">
+                                                                <MathDisplay content={typeof item.question === 'string' ? item.question : 'Uppgift'} />
+                                                            </div>
+                                                            <div className={`font-bold ${item.resp ? (item.resp.is_correct ? 'text-emerald-600' : 'text-rose-600') : 'text-slate-300'}`}>
+                                                                Svar: {item.resp?.answer || '-'}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </td>
-                                            ))}
-                                        </tr>
+                                                ))}
+                                            </div>
+                                        </div>
                                     );
                                 })}
-                            </tbody>
-                        </table>
-                        
-                        <footer className="mt-12 pt-6 border-t border-slate-100 flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                            <div>Anpassa Math Platform</div>
-                            <div>{students.length} {lang === 'sv' ? "elever" : "students"} • {packet.length} {lang === 'sv' ? "uppgifter" : "questions"}</div>
+                            </div>
+                        </div>
+
+                        <footer className="mt-12 pt-6 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
+                            <div>Anpassa Math Platform • Systemgenererad Rapport</div>
                         </footer>
                     </div>
                 </div>
@@ -398,6 +485,13 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     <button onClick={syncData} disabled={isSyncing} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 transition-all shadow-sm">
                         <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
                     </button>
+                    <button 
+                        onClick={() => setShowActualAnswers(!showActualAnswers)} 
+                        title={showActualAnswers ? "Visa status" : "Visa svar"} 
+                        className={`p-2 rounded-lg border transition-all shadow-sm ${showActualAnswers ? 'bg-orange-500 text-white text-[10px] font-black uppercase border-orange-600' : 'bg-white text-[10px] font-black uppercase text-slate-800 border-slate-500'}`}
+                    >
+                        Visa Svar
+                    </button>
                     <button onClick={() => setIsAnonymous(!isAnonymous)} title="Namn" className={`p-2 rounded-lg border transition-all shadow-sm ${isAnonymous ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200'}`}>
                         {isAnonymous ? <Shield size={14} /> : <Users size={14} />}
                     </button>
@@ -407,6 +501,9 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     <button onClick={() => setShowWrapUp(true)} className="bg-rose-500 text-white px-5 py-2 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 transition-all shadow-md">
                          Avsluta
                     </button>
+                    
+                                        
+                    
                 </div>
             </header>
 
@@ -448,7 +545,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                             <button onClick={() => setZoomIndex(i)}
                                                 className="w-full h-full p-3 text-[9px] font-black uppercase tracking-widest text-center hover:bg-white/10 transition-colors"
                                             >
-                                                U {i + 1}
+                                                {i + 1}
                                             </button>
                                         </th>
                                     ))}
@@ -472,8 +569,22 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                             {packet.map((_, qIdx) => {
                                                 const resp = responses.find(r => r.student_alias === student && r.question_index === qIdx);
                                                 return (
-                                                    <td key={qIdx} className="p-1.5 border-r border-slate-50">
-                                                        <div title={resp ? `Svar: ${resp.answer}` : 'Inget svar'} className={`w-full h-8 rounded-md transition-all duration-500 cursor-help ${getStatusColor(resp?.is_correct, !!resp)}`} />
+                                                    <td 
+                                                        key={qIdx} 
+                                                        className="p-1 border-r border-slate-50"
+                                                        onClick={() => resp && handleManualGrade(resp)} // Trigger manual override
+                                                    >
+                                                        <div 
+                                                            title={resp ? `Svar: ${resp.answer} (Klicka för att ändra rättning)` : 'Inget svar'}
+                                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer ${getStatusColor(resp?.is_correct, !!resp)}`}
+                                                        >
+                                                            {/* Show actual answer text if toggle is active */}
+                                                            {showActualAnswers && resp && (
+                                                                <span className="text-[9px] font-black text-white px-1 truncate">
+                                                                    {resp.answer}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 );
                                             })}
@@ -572,7 +683,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 <div className="bg-rose-500 rounded-[1.5rem] p-4 text-white shadow-md">
                                     <div className="flex items-center gap-2 mb-2 opacity-90">
                                         <XCircle size={14} />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">{lang === 'sv' ? "Vanliga fel" : "Errors"}</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest">{lang === 'sv' ? "Fel Svar" : "Errors"}</span>
                                     </div>
                                     <div className="space-y-2">
                                         {(() => {

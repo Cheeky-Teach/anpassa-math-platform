@@ -181,7 +181,7 @@ const Dashboard = ({
 
                 {/* --- NEWS / UPDATES SECTION  --- */}
                 {userRole === 'teacher' && (
-                    <section className="mb-6 px-2">
+                    <section className="mb-6 px-2 bg-emerald">
                     <button 
                         onClick={() => setShowUpdateLog(true)}
                         className="w-full flex items-center justify-between p-4 bg-white border border-emerald-100 rounded-3xl hover:border-emerald-500 hover:shadow-lg transition-all group"
