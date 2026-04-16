@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { BarChart3, AlertCircle } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 // Views
 import LandingView from './components/views/LandingView';
@@ -659,6 +660,7 @@ function App() {
                     <SessionReportView session={activeRoom} packet={savedPacket} responses={reportData} onBack={() => { if (activeRoom.status === 'closed') { setView('dashboard'); setActiveRoom(null); setReportData(null); } else { setView('teacher_live'); } }} lang={lang} />
                 ) : null}
             </div>
+            <Analytics />
         </div>
     );
 }
