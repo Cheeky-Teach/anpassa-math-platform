@@ -359,8 +359,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 </div>
             </header>
 
+            // --- UPDATED LAYOUT FOR MOBILE SCROLLING ---
             <main className="flex-1 max-w-6xl w-full mx-auto p-3 lg:p-6 overflow-hidden flex flex-col">
-                <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-hidden transition-all duration-300 flex flex-col ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
+                {/* CHANGE 1: Added 'overflow-y-auto lg:overflow-hidden' to allow scrolling on mobile */}
+                <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-y-auto lg:overflow-hidden transition-all duration-300 flex flex-col ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
                     
                     <div className="sm:hidden h-1 bg-slate-100 flex shrink-0">
                         {packet.map((_, i) => (
@@ -373,9 +375,12 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         {!!completed[currentIndex] && <div className="flex items-center gap-2"><span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">{lang === 'sv' ? "Svar mottaget" : "Answer received"}</span><CheckCircle2 className="text-emerald-500" size={20} /></div>}
                     </div>
 
-                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-slate-50 min-h-0">
-                        <div className="flex flex-col order-1 lg:order-2 h-full overflow-hidden">
-                            <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6 overflow-y-auto">
+                    {/* CHANGE 2: Removed 'flex-1' and 'min-h-0' on mobile so the grid can grow naturally */}
+                    <div className="lg:flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-slate-50">
+                        
+                        {/* CHANGE 3: Changed 'h-full' to 'h-auto' on mobile so the question doesn't hog or limit space */}
+                        <div className="flex flex-col order-1 lg:order-2 lg:h-full lg:overflow-hidden border-b lg:border-b-0 border-slate-50">
+                            <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6">
                                 <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
                                     <MathDisplay content={packet[currentIndex].resolvedData?.renderData?.description} />
                                     
@@ -391,8 +396,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 {!completed[currentIndex] ? (
                                     <div className="max-w-md mx-auto space-y-4">
                                         {renderInput()}
-                                        
-                                        {/* Ported Conditional Submit logic */}
                                         {!(packet[currentIndex]?.resolvedData?.renderData?.options) && (
                                             <button 
                                                 onClick={() => handleSolve()} 
@@ -413,11 +416,13 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                             </div>
                         </div>
 
+                        {/* --- VISUAL SECTION --- */}
                         {packet[currentIndex].resolvedData?.renderData && 
                         (packet[currentIndex].resolvedData.renderData.graph || 
                         packet[currentIndex].resolvedData.renderData.geometry || 
                         packet[currentIndex].resolvedData.renderData.pattern) ? (
-                            <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 lg:order-1 h-full border-t lg:border-t-0 border-slate-50">
+                            /* CHANGE 4: Added 'min-h-[400px]' and 'pb-12' on mobile to ensure the image container is tall enough */
+                            <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 lg:order-1 min-h-[400px] lg:h-full border-t lg:border-t-0 border-slate-50 pb-12 lg:pb-12">
                                 <div className="w-full h-full flex items-center justify-center drop-shadow-md transform scale-90 lg:scale-125">
                                     {renderVisual(packet[currentIndex])}
                                 </div>
