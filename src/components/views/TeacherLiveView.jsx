@@ -343,9 +343,9 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                     <div className="p-3 bg-slate-900 text-white rounded-2xl shadow-lg">
                                         {isClosing ? <Loader2 className="animate-spin" size={20}/> : <Save size={20}/>}
                                     </div>
-                                    <span className="font-black uppercase tracking-tight text-slate-900 text-lg">{lang === 'sv' ? "Stäng & Arkivera (48h)" : "Close & Archive (48h)"}</span>
+                                    <span className="font-black uppercase tracking-tight text-slate-900 text-lg">{lang === 'sv' ? "Stäng & Arkivera (7 dagar)" : "Close & Archive (7 days)"}</span>
                                 </div>
-                                <p className="text-slate-400 text-xs font-bold leading-relaxed ml-14">{lang === 'sv' ? "Rensas automatiskt efter 48 timmar." : "Automatically cleared after 48 hours."}</p>
+                                <p className="text-slate-400 text-xs font-bold leading-relaxed ml-14">{lang === 'sv' ? "Rensas automatiskt efter 7 dagar." : "Automatically cleared after 7 days."}</p>
                             </button>
                         </div>
                         <div className="p-6 bg-slate-50 flex justify-end items-center border-t border-slate-100">
