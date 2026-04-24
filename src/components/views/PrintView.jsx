@@ -186,10 +186,10 @@ export default function PrintView({
             {/* TOOLBAR */}
             <div className="bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50 print:hidden">
                 <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold uppercase hover:text-indigo-400 transition-colors">
-                    <ChevronLeft size={18}/> Studio
+                    <ChevronLeft size={18}/> Question Studio
                 </button>
                 <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black uppercase text-slate-500 italic px-3 py-1 bg-white/5 rounded-lg border border-white/10">Grid Layout Engine v6.1</span>
+                    <span className="text-[10px] font-black uppercase text-slate-500 italic px-3 py-1 bg-white/5 rounded-lg border border-white/10">Förhandsgranskning</span>
                     <button onClick={() => window.print()} className="bg-indigo-600 px-6 py-2 rounded-xl text-sm font-black uppercase flex items-center gap-2 hover:bg-indigo-500 shadow-lg transition-all active:scale-95">
                         <Printer size={18}/> Skriv ut
                     </button>
@@ -198,13 +198,13 @@ export default function PrintView({
 
             {/* WORKSHEET PAGES */}
             {paginatedPages.map((pageItems, pageIdx) => (
-                <div key={pageIdx} className="max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[15mm] flex flex-col min-h-[297mm] print:shadow-none print:my-0 print:p-[12mm] relative break-after-page">
-                    <header className="border-b-2 border-black pb-4 mb-8 relative">
+                <div key={pageIdx} className="max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[8mm] flex flex-col min-h-[240mm] print:shadow-none print:my-0 print:p-[12mm] relative break-after-page">
+                    <header className="border-b-1 border-black pb-2 mb-4 relative">
                         <div className="mb-6">
-                            <div className="text-[8px] font-black uppercase text-slate-300 italic tracking-widest">{t.watermark}</div>
-                            <h1 className="text-2xl font-black uppercase tracking-tight leading-none">{title || "Matematik"}</h1>
+                            <div className="text-[6px] font-black uppercase text-slate-600 italic tracking-widest">{t.watermark}</div>
+                            <h1 className="text-[12] font-black uppercase tracking-tight leading-none">{title || "Matematik"}</h1>
                         </div>
-                        <div className="flex gap-8 text-[11px] font-bold uppercase">
+                        <div className="flex gap-8 text-[10px] font-bold uppercase">
                             <div className="flex-1 flex gap-2 items-baseline border-b border-black/10"><span>{t.name}</span><div className="flex-1" /></div>
                             <div className="w-32 flex gap-2 items-baseline border-b border-black/10"><span>{t.class}</span><div className="flex-1" /></div>
                             <div className="w-32 flex gap-2 items-baseline border-b border-black/10"><span>{t.date}</span><div className="flex-1" /></div>
@@ -230,12 +230,12 @@ export default function PrintView({
                                         item.columnSpan === 3 ? 'col-span-3' : 'col-span-6'
                                     }`}>
                                         <div className="relative pl-8" onClick={() => setZoomedIdx(item.originalIdx)}>
-                                            <div className="absolute left-0 top-0 font-black text-slate-300 text-lg italic">
-                                                {(item.originalIdx + 1).toString().padStart(2, '0')}
+                                            <div className="absolute left-0 top-0 font-black text-slate-900 text-xs">
+                                                {(item.originalIdx + 1).toString().padStart(2, '')}
                                             </div>
                                             <div className="space-y-4">
                                                 {isInlineMode && (
-                                                    <div className="text-[11px] font-bold text-slate-800 leading-tight border-b border-slate-100 pb-2">
+                                                    <div className="text-[12px] font-bold text-slate-800 leading-tight border-b border-slate-100 pb-2">
                                                         <MathDisplay content={item.resolvedData?.renderData.description || item.name} />
                                                     </div>
                                                 )}
