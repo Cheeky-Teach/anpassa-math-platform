@@ -2,7 +2,31 @@
 
 export const APP_UPDATES = [
   {
-    id: 'v113',
+    id: 'v014',
+    date: '2026-04-24',
+    version: '0.1.4',
+    title: { sv: "Arkiv- & Layoutförbättring", en: "Archive & Layout Improvements" },
+    highlights: {
+      sv: "Längre arkiveringstid och mer kompakta utskriftsformat.",
+      en: "Extended archive duration and more compact print layouts."
+    },
+    changes: {
+      sv: [
+        "Förlängd datalagring: Lektionsarkivet sparar nu resultat i 7 dagar istället för 48 timmar.",
+        "Kompakt utskriftslayout: Justerad textstorlek och marginaler på arbetsblad för att rymma fler frågor per sida.",
+        "Layoutfix för mobil: Förhindrar att bilder och grafer klipps bort på mindre skärmar i Live-vy och Test Lab.",
+        "Uppdaterad informationstext i verktygsfältet för tydligare tidsangivelser."
+      ],
+      en: [
+        "Extended data retention: Session Archive now stores results for 7 days instead of 48 hours.",
+        "Compact print layout: Adjusted text size and margins on worksheets to fit more questions per page.",
+        "Mobile layout fix: Prevents images and graphs from being clipped on smaller screens in Live view and Test Lab.",
+        "Updated information text in the toolbar for clearer timing references."
+      ]
+    }
+  },
+  {
+    id: 'v013',
     date: '2026-04-15',
     version: '0.1.3',
     title: { sv: "Live Lektion & Utskriftsfix", en: "Live Lesson & Print Fix" },
@@ -26,7 +50,7 @@ export const APP_UPDATES = [
     }
   },
   {
-    id: 'v111',
+    id: 'v012',
     date: '2024-03-21',
     version: '0.1.2',
     title: { sv: "Stora Geometri/Volym-uppdateringen", en: "The Big Geometry and Volume Update" },
@@ -52,7 +76,7 @@ export const APP_UPDATES = [
     }
   },
   {
-    id: 'v110',
+    id: 'v011',
     date: '2024-03-15',
     version: '0.1.1',
     title: { sv: "Question Studio Förbättringar", en: "Question Studio Enhancements" },
