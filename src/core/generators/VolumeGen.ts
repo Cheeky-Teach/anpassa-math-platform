@@ -165,7 +165,7 @@ export class VolumeGen {
 
     // --- LEVEL 3: CYLINDER (Cylinder) ---
     private level3_Cylinder(lang: string, variationKey?: string, options: any = {}): any {
-        const r = MathUtils.randomInt(2, 5), h = MathUtils.randomInt(8, 12);
+        const r = MathUtils.randomInt(2, 10), h = MathUtils.randomInt(8, 17);
         const useDiameter = Math.random() > 0.5;
         const displayVal = useDiameter ? r * 2 : r;
         const vol = Math.round(3.14 * r * r * h);
@@ -190,10 +190,10 @@ export class VolumeGen {
     // --- LEVEL 4: PYRAMID & CONE ---
     private level4_PyramidCone(lang: string, variationKey?: string, options: any = {}): any {
         const v = variationKey || MathUtils.randomChoice(['vol_pyramid_std', 'vol_cone_std']);
-        const h = MathUtils.randomChoice([9, 12, 15]);
+        const h = MathUtils.randomInt(14, 22);
 
         if (v === 'vol_pyramid_std') {
-            const s = MathUtils.randomInt(4, 6);
+            const s = MathUtils.randomInt(6, 12);
             const baseArea = s * s;
             const vol = (baseArea * h) / 3;
             return {

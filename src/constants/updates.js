@@ -1,6 +1,36 @@
 // src/constants/updates.js
 
 export const APP_UPDATES = [
+  // Add this to the top of the APP_UPDATES array in src/constants/updates.js
+
+  {
+    id: 'v015',
+    date: '2026-05-06',
+    version: '0.1.5',
+    title: { sv: "Smart Zoom, 3D-modeller, rättning, stabilitet", en: "Smart Zoom, 3D model updates, stability" },
+    highlights: {
+      sv: "Smart zoom i Do Now, tydligare 3D-modeller och förbättrad rättningslogik.",
+      en: "Smart zoom in Do Now, clearer 3D models, and improved grading logic."
+    },
+    changes: {
+      sv: [
+        "Silent Refresh: Fixade buggen där appen laddades om varje gång man bytte webbläsarflik.",
+        "Bild Zoom: I Do Now-grid kan bilder nu zoomas upp till 400% oberoende av containern, med automatisk förskjutning för att maximera synlig yta.",
+        "Förbättrad 3D-geometri: Höjdindikatorer med 'h=' och måttlinjer tillagda för koner, cylindrar, pyramider och prismor för ökad tydlighet.",
+        "Algebraisk Rättning: Systemet accepterar nu svar som 'x=7' (om svaret var 7) genom automatiskt borttagning av 'x=' från svaret",
+        "Layoutoptimering för koner: Etiketter för radie och diameter har flyttats under figurens bas för att inte skymma den 3D-modellen.",
+        "Smartare Pyramider: Renderingsmotorn ritar nu automatiskt kvadratiska baser som standard för att matcha aktuella beräkningsuppgifter."
+      ],
+      en: [
+        "Silent Refresh: Fixed the issue where the app would 'flicker' and reload when switching browser tabs.",
+        "Image Zoom: Do Now Grid images can now be zoomed up to 400% with a dynamic 'shifting' effect that re-centers the diagram to prevent clipping.",
+        "Enhanced 3D Visuals: Added height indicators (h=) and dimension lines for cones, cylinders, pyramids, and prisms to improve instructional clarity.",
+        "Algebra-Aware Grading: Support for answers like 'x=7' by automatically removing 'x=' from the submitted answer. If the answer is 7 and the user types 'x=7' both are correct.",
+        "Cone Labeling Refined: Radius and diameter labels moved beneath the cone base to provide an unobstructed view of the geometry.",
+        "Smarter Pyramids: The rendering engine now defaults to square bases to align accurately with current volume calculation generators."
+      ]
+    }
+  },
   {
     id: 'v014',
     date: '2026-04-24',

@@ -199,7 +199,7 @@ export class BasicArithmeticGen {
 
         return {
             renderData: {
-                description: lang === 'sv' ? "Beräkna (ställ upp på papper vid behov)." : "Calculate (set up on paper if needed).",
+                description: lang === 'sv' ? "Ställ upp och beräkna." : "Calculate.",
                 latex: `${val1} ${op} ${val2}`, answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',

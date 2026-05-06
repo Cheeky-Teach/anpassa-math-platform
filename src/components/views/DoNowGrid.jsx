@@ -52,6 +52,14 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
         return "---";
     };
     
+    const [visualScale, setVisualScale] = useState(1); // Default scale 100%
+
+    const adjustZoom = (e, delta) => {
+        e.stopPropagation();
+        // Increased constraints: 0.5x to 4.0x zoom to support the shifting effect
+        setVisualScale(prev => Math.max(0.5, Math.min(prev + delta, 4.0)));
+    };
+
     const data = q?.resolvedData?.renderData;
 
     // Loading State for individual cards (Prevents blanking during single refresh)
@@ -65,8 +73,9 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
     }
 
     const renderVisualContent = () => {
+        // Use fixed "Logical" dimensions so the canvas doesn't expand the card
         const vW = isFocused ? 600 : 300;
-        const vH = isFocused ? 420 : 220;
+        const vH = isFocused ? 320 : 150;
 
         if (data.graph) return <GraphCanvas data={data.graph} width={vW} height={vH} />;
         if (data.geometry) {
@@ -90,9 +99,14 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
             ${showAnswer && !isFocused ? 'bg-emerald-50 border-emerald-500 ring-4 ring-emerald-500/10' : ''}`}
         >
             <div className={`px-4 py-1.5 flex justify-between items-center border-b transition-colors ${showAnswer && !isFocused ? 'bg-emerald-100/50 border-emerald-200' : 'bg-slate-50 border-slate-100'}`}>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${showAnswer && !isFocused ? 'text-emerald-700' : 'text-slate-400'}`}>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${showAnswer && !isFocused ? 'text-emerald-700' : 'text-slate-800'}`}>
                     {lang === 'sv' ? 'Uppgift' : 'Task'} {index + 1}
                 </span>
+                {visualScale !== 1 && (
+                        <span className="bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded text-[8px] font-black">
+                            {Math.round(visualScale * 100)}%
+                        </span>
+                    )}
                 {q.topicId && (
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter bg-white px-2 py-0.5 rounded-full border border-slate-200">
                         {q.topicId.split('_')[0]}
@@ -104,12 +118,30 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
                 ${isFocused ? 'p-10' : 'p-3'}`}>
                 
                 {hasVisual && (
-                    <div className={`w-full flex justify-center items-center shrink-0 overflow-hidden
-                        ${isFocused ? 'h-[440px] mb-6' : 'h-[220px] mb-2'}`}>
-                        {renderVisualContent()}
+                    <div 
+                        className="w-full flex justify-center items-center shrink-0 overflow-hidden mb-2 border border-slate-50 rounded-xl bg-slate-50/30"
+                        style={{ height: isFocused ? '440px' : '220px' }} // Fixed "Frame"
+                    >
+                        <div style={{ 
+                            width: isFocused ? '600px' : '300px',
+                            height: isFocused ? '420px' : '220px',
+                            /* DYNAMIC SHIFT:
+                                1. scale(${visualScale}) - The primary zoom.
+                                2. translate(...) - Moves the image Up (-8%) and Left (-12%) for every 1.0 increase in scale.
+                                This offsets the expansion to utilize the empty "white space" usually found in geometry diagrams.
+                            */
+                            transform: `scale(${visualScale}) translate(${-15 * (visualScale - 1)}%, ${-2 * (visualScale - 1)}%)`, 
+                            transition: 'transform 0.3s cubic-bezier(0.2, 0, 0.2, 1)', // Smooth ease-out
+                            transformOrigin: 'center',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            {renderVisualContent()}
+                        </div>
                     </div>
                 )}
-
+                
                 <div className={`font-bold text-slate-800 leading-tight ${textSizeClass} flex-1 flex flex-col justify-center items-center transition-all w-full
                     ${isFocused ? 'px-8 pb-4' : 'px-1'}`}>
                     <MathDisplay content={data?.description} />
@@ -135,23 +167,58 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
                 )}
             </div>
 
-            {!isFocused && (
-                <div className="absolute top-10 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* ACTION OVERLAY */}
+            <div className={`absolute top-10 right-3 flex flex-col gap-2 transition-opacity duration-300 
+                ${isFocused ? 'opacity-100 z-50' : 'opacity-0 group-hover:opacity-100'}`}>
+                
+                {/* 1. GRID-ONLY TOOLS: Refresh (Only shown on the 6-grid cards) */}
+                {!isFocused && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); onRefresh(); }}
                         className="w-8 h-8 rounded-full flex items-center justify-center bg-white/90 text-slate-400 border border-slate-200 hover:text-indigo-600 shadow-sm"
+                        title="Refresh question"
                     >
                         <RefreshCw size={14} />
                     </button>
+                )}
+                
+                {/* 2. UNIVERSAL TOOLS: Zoom & Answer (Shown in both views) */}
+                <button 
+                    onClick={(e) => adjustZoom(e, 0.2)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center bg-white/95 text-indigo-600 border border-indigo-100 hover:bg-indigo-50 shadow-md"
+                    title="Zoom In"
+                >
+                    <ZoomIn size={14} />
+                </button>
+                <button 
+                    onClick={(e) => adjustZoom(e, -0.2)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center bg-white/95 text-indigo-600 border border-indigo-100 hover:bg-indigo-50 shadow-md"
+                    title="Zoom Out"
+                >
+                    <ZoomOut size={14} />
+                </button>
+
+                {/* Reset Zoom: Only appears when zoomed */}
+                {visualScale !== 1 && (
                     <button 
-                        onClick={(e) => { e.stopPropagation(); onToggleAnswer(); }}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm
-                        ${showAnswer ? 'bg-emerald-600 text-white' : 'bg-white/90 text-slate-400 border border-slate-200'}`}
+                        onClick={(e) => { e.stopPropagation(); setVisualScale(1); }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center bg-indigo-600 text-white shadow-md active:scale-95"
+                        title="Reset Zoom"
                     >
-                        {showAnswer ? <EyeOff size={14} /> : <Eye size={14} />}
+                        <RotateCcw size={12} />
                     </button>
-                </div>
-            )}
+                )}
+
+                {/* Facit Toggle */}
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onToggleAnswer(); }}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-all
+                    ${showAnswer ? 'bg-emerald-600 text-white' : 'bg-white/95 text-slate-400 border border-slate-200 hover:text-emerald-600'}`}
+                    title={showAnswer ? "Hide Answer" : "Show Answer"}
+                >
+                    {showAnswer ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+            </div>
 
             {showAnswer && (
                 <div className={`bg-emerald-500 text-white py-3 text-center shrink-0 animate-in slide-in-from-bottom duration-300`}>
