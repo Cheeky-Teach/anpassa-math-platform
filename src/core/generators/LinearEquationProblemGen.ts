@@ -50,8 +50,8 @@ export class LinearEquationProblemGen {
     private getTaskText(lang: string, mode: 'write' | 'solve'): string {
         if (mode === 'write') {
             return lang === 'sv' 
-                ? "Skriv en ekvation som beskriver detta problem (du behöver inte lösa ut x)." 
-                : "Write an equation that describes this problem (you do not need to solve for x).";
+                ? "Skriv en ekvation som beskriver denna uppgift." 
+                : "Write an equation that describes this problem.";
         }
         return lang === 'sv' 
             ? "Lös problemet och ta reda på vilket värde variabeln x har." 

@@ -284,6 +284,7 @@ function App() {
 
     // --- AUTH EFFECTS ---
     useEffect(() => {
+        // Initial Session Check
         supabase.auth.getSession().then(({ data: { session: s } }) => {
             setSession(s);
             if (s) fetchProfile(s.user.id);
@@ -291,44 +292,60 @@ function App() {
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+            const previousSession = session;
             setSession(s);
+
             if (s) {
+                // SILENT UPDATE: If we already have a session and the user hasn't changed,
+                // fetch the profile silently in the background to avoid the refresh flicker.
+                const isSameUser = previousSession?.user?.id === s.user.id;
+                
                 if (event === 'PASSWORD_RECOVERY') {
                     setView('profile');
-                    fetchProfile(s.user.id);
+                    fetchProfile(s.user.id); // Not silent for recovery
                 } else {
-                    fetchProfile(s.user.id);
+                    // Pass 'true' for isSilent if we are just re-verifying the same user
+                    fetchProfile(s.user.id, isSameUser); 
                 }
             } else {
                 setProfile(null);
                 setView('landing');
+                setLoadingProfile(false);
             }
         });
-        return () => subscription.unsubscribe();
-    }, []);
+
+    return () => subscription.unsubscribe();
+}, []); // Keep dependencies empty to manage internal state manually
 
     // --- PROFILE GATEKEEPER ---
-    const fetchProfile = async (uid) => {
-        setLoadingProfile(true);
-        const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
-        setProfile(data);
+    const fetchProfile = async (uid, isSilent = false) => {
+        // Only show the loading spinner if it's NOT a silent background update
+        if (!isSilent) setLoadingProfile(true);
         
-        const isSetupIncomplete = !data || !data.subscription_status || !data.class_code;
+        try {
+            const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).single();
+            if (error) throw error;
+            
+            setProfile(data);
+            
+            const isSetupIncomplete = !data || !data.subscription_status || !data.class_code;
 
-        setView(currentView => {
-            if (currentView === 'profile') return 'profile';
-            if (isSetupIncomplete) return 'auth';
-
-            // --- NEW: AUTO-LAUNCH LAB IF CONFIG PENDING ---
-            if (pendingLabConfig) {
-                return 'practice_lab';
-            }
-
-            if (currentView === 'landing' || currentView === 'auth') return 'dashboard';
-            return currentView;
-        });
-
-        setLoadingProfile(false);
+            setView(currentView => {
+                // Keep the user where they are if they are already in a specific view
+                if (currentView === 'profile') return 'profile';
+                if (isSetupIncomplete) return 'auth';
+                if (pendingLabConfig) return 'practice_lab';
+                
+                // If they are on a "guest" page, move them to the dashboard
+                if (currentView === 'landing' || currentView === 'auth') return 'dashboard';
+                
+                return currentView;
+            });
+        } catch (err) {
+            console.error("Profile fetch error:", err);
+        } finally {
+            if (!isSilent) setLoadingProfile(false);
+        }
     };
 
     const handleStudentExitLive = () => {

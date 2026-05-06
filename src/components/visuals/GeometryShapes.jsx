@@ -19,16 +19,10 @@ export const mkTxt = (x, y, txt, anchor = "middle", baseline = "middle", color =
         {txt}
     </text>;
 
-/**
- * GeometryVisual - The Responsive Shell
- * This component mirrors the logic of ProbabilityTree.jsx to ensure 
- * the shape fills 100% of its container.
- */
+
 export const GeometryVisual = ({ data }) => {
     if (!data) return null;
 
-    // We define a base coordinate space of 300x250.
-    // Everything drawn in RenderShape will be relative to this box.
     const baseWidth = 300;
     const baseHeight = 250;
 
