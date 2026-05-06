@@ -87,7 +87,7 @@ export class VolumeGen {
             { key: 'vol_cuboid_scaling', type: 'concept' }
         ];
         const v = variationKey || this.getVariation(pool, options);
-        const w = MathUtils.randomInt(3, 7), d = MathUtils.randomInt(4, 8), h = MathUtils.randomInt(3, 6);
+        const w = MathUtils.randomInt(3, 9), d = MathUtils.randomInt(3, 9), h = MathUtils.randomInt(3, 12);
         const baseArea = w * d;
         const vol = baseArea * h;
 
@@ -109,7 +109,7 @@ export class VolumeGen {
         }
 
         if (v === 'vol_cuboid_scaling') {
-            const factor = MathUtils.randomChoice([2, 3]);
+            const factor = MathUtils.randomChoice([2, 3, 4, 5, 6, 7]);
             const ansText = lang === 'sv' ? `Den blir ${factor} gånger större` : `It becomes ${factor} times larger`;
             return {
                 renderData: {
@@ -143,7 +143,7 @@ export class VolumeGen {
 
     // --- LEVEL 2: TRIANGULAR PRISM (Prisma) ---
     private level2_TriPrism(lang: string, variationKey?: string, options: any = {}): any {
-        const b = MathUtils.randomInt(4, 8), hTri = MathUtils.randomInt(4, 6), length = MathUtils.randomInt(10, 15);
+        const b = MathUtils.randomInt(4, 10), hTri = MathUtils.randomInt(5, 10), length = MathUtils.randomInt(10, 17);
         const baseArea = (b * hTri) / 2;
         const vol = baseArea * length;
 
@@ -255,7 +255,7 @@ export class VolumeGen {
             };
         }
 
-        const hComp = MathUtils.randomInt(10, 15);
+        const hComp = MathUtils.randomInt(8, 15);
         const vHemi = Math.round((2 * pi * Math.pow(r, 3)) / 3);
         const vMain = v === 'vol_silo_std' ? Math.round(pi * r * r * hComp) : Math.round((pi * r * r * hComp) / 3);
         const total = vHemi + vMain;
@@ -401,7 +401,7 @@ export class VolumeGen {
         const v = variationKey || MathUtils.randomChoice(['sa_cuboid', 'sa_sphere']);
         
         if (v === 'sa_cuboid') {
-            const w = MathUtils.randomInt(3, 5), d = MathUtils.randomInt(4, 6), h = MathUtils.randomInt(2, 4);
+            const w = MathUtils.randomInt(3, 8), d = MathUtils.randomInt(3, 10), h = MathUtils.randomInt(2, 8);
             const area = 2 * (w*d + w*h + d*h);
             return {
                 renderData: {
@@ -419,7 +419,7 @@ export class VolumeGen {
             };
         }
 
-        const r = MathUtils.randomInt(4, 8);
+        const r = MathUtils.randomInt(4, 20);
         const sa = Math.round(4 * 3.14 * r * r);
         return {
             renderData: {
