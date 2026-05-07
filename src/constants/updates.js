@@ -1,8 +1,32 @@
 // src/constants/updates.js
 
 export const APP_UPDATES = [
-  // Add this to the top of the APP_UPDATES array in src/constants/updates.js
-
+  {
+    id: 'v016',
+    date: '2026-05-07',
+    version: '0.1.6',
+    title: { sv: "Session-statistik & Generatorlyft", en: "Session Stats & Generator Boost" },
+    highlights: {
+      sv: "Integrerad statistik i övningsvyn, ökad svårighetsgrad.",
+      en: "Integrated stats in practice view, increased difficulty ranges."
+    },
+    changes: {
+      sv: [
+        "Session-statistik: Statistik-modalen har flyttat in i övningsvyn! Se dina framsteg direkt i historikpanelen med färgkodade staplar och resultatsammanfattning.",
+        "Ökade talområden: Flera generatorer har uppdaterats med bredare slumpmässiga intervall för att erbjuda mer utmanande uppgifter.",
+        "Variabilitet i Prioritering: Nivå 3 och 4 i Prioriteringsregler har gjorts om för att slumpa ordningen på termer och operatorer, vilket ger miljontals unika kombinationer.",
+        "Bråk vid Division: Tiopotens-uppgifter visar nu division som snygga bråk (\\frac{a}{b}) istället för snedstreck.",
+        "Layoutfix för 3D: Justerat positionering för glasstrutar och rätblock för att förhindra att bilder och höjd-etiketter klipps bort."
+      ],
+      en: [
+        "Integrated Session Stats: The stats modal metrics are now visible directly in the practice view's history panel with segmented progress bars and key metrics.",
+        "Expanded Number Ranges: Increased the random range values in multiple question generators to provide a wider variety of difficulty.",
+        "Priority Variability: Level 3 and 4 in Order of Operations now feature shuffled terms and randomized operators for near-limitless question combinations.",
+        "Fraction Division: Division in Powers of Ten is now rendered as vertical fractions (\\frac{a}{b}) instead of using slashes.",
+        "3D Geometry Polish: Refined the drawing coordinates for ice cream cones and triangular prisms to ensure visual clarity and prevent label clipping."
+      ]
+    }
+  },
   {
     id: 'v015',
     date: '2026-05-06',

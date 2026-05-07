@@ -182,55 +182,236 @@ export class OrderOperationsGen {
         };
     }
 
-    // --- LEVEL 3: Complex (Fraction Bars as Parentheses) ---
+    // --- LEVEL 3: Complex (Fractions & Parentheses Objects) ---
     private level3_Complex(lang: string, variationKey?: string, options: any = {}): any {
-        const div = MathUtils.randomInt(2, 4), quotient = MathUtils.randomInt(2, 5);
-        const numTotal = div * quotient;
-        const n1 = MathUtils.randomInt(1, numTotal - 1), n2 = numTotal - n1;
-        const m1 = MathUtils.randomInt(2, 4), m2 = MathUtils.randomInt(2, 3);
-        const constant = MathUtils.randomInt(15, 25); // Increased to ensure non-negative result
+        // Generate common components (Multiplication and Constant)
+        const m1 = MathUtils.randomInt(2, 10);
+        const m2 = MathUtils.randomInt(2, 10);
+        const product = m1 * m2;
+        const c = MathUtils.randomInt(10, 40);
+
+        // Helper to generate a Fraction term
+        const getFraction = () => {
+            const div = MathUtils.randomInt(2, 10);
+            const quotient = MathUtils.randomInt(2, 8);
+            const numTotal = div * quotient;
+            const n1 = MathUtils.randomInt(1, numTotal - 1);
+            const n2 = numTotal - n1;
+            return {
+                latex: `\\frac{${n1} + ${n2}}{${div}}`,
+                val: quotient,
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Steg 1: Bråkstrecket fungerar som en parentes. Vi måste räkna ut täljaren först." : "Step 1: The fraction bar acts like parentheses. We must calculate the numerator first.", 
+                        latex: `${n1} + ${n2} = ${numTotal}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Steg 2: Nu kan vi utföra divisionen." : "Step 2: Now we can perform the division.", 
+                        latex: `\\frac{${numTotal}}{${div}} = ${quotient}` 
+                    }
+                ]
+            };
+        };
+
+        // Helper to generate a Parentheses term
+        const getParentheses = () => {
+            const p1 = MathUtils.randomInt(2, 10);
+            const p2 = MathUtils.randomInt(2, 10);
+            const pSum = p1 + p2;
+            const pMult = MathUtils.randomInt(2, 6);
+            const pVal = pSum * pMult;
+            return {
+                latex: `(${p1} + ${p2}) · ${pMult}`,
+                val: pVal,
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Steg 1: Räkna ut värdet inom parentesen först." : "Step 1: Calculate the value inside the parentheses first.", 
+                        latex: `${p1} + ${p2} = ${pSum}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Steg 2: Multiplicera sedan resultatet med talet utanför." : "Step 2: Then multiply the result with the number outside.", 
+                        latex: `${pSum} · ${pMult} = ${pVal}` 
+                    }
+                ]
+            };
+        };
+
+        // Pick which complex term to use for this question
+        const complexTerm = Math.random() > 0.5 ? getFraction() : getParentheses();
+
+        // Define the three distinct terms to shuffle
+        const terms = [
+            { latex: complexTerm.latex, val: complexTerm.val },
+            { latex: `${m1} · ${m2}`, val: product },
+            { latex: `${c}`, val: c }
+        ];
+
+        // Randomize the order of the terms
+        const order = MathUtils.randomChoice([
+            [0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]
+        ]);
         
-        const ans = constant + quotient - (m1 * m2);
-        const latex = `${constant} + \\frac{${n1} + ${n2}}{${div}} - ${m1} · ${m2}`;
+        // Randomize the operators
+        const op1 = MathUtils.randomChoice(['+', '-']);
+        const op2 = MathUtils.randomChoice(['+', '-']);
+
+        const t1 = terms[order[0]];
+        const t2 = terms[order[1]];
+        const t3 = terms[order[2]];
+
+        const latex = `${t1.latex} ${op1} ${t2.latex} ${op2} ${t3.latex}`;
+
+        // Sequential evaluation for the final answer
+        let intermediate;
+        if (op1 === '+') intermediate = t1.val + t2.val;
+        else intermediate = t1.val - t2.val;
+
+        let ans;
+        if (op2 === '+') ans = intermediate + t3.val;
+        else ans = intermediate - t3.val;
+
+        // Safety: If the intermediate or final result is negative, re-generate
+        if (ans < 0 || intermediate < 0) return this.level3_Complex(lang, variationKey, options);
+
+        const rewriteLatex = `${t1.val} ${op1} ${t2.val} ${op2} ${t3.val}`;
 
         return {
-            renderData: { latex, description: lang === 'sv' ? "Beräkna värdet. Följ prioriteringsreglerna." : "Follow the order of operations to solve the expression.", answerType: 'numeric' },
-            token: this.toBase64(ans.toString()), variationKey: 'order_fraction', type: 'calculate',
+            renderData: { 
+                latex, 
+                description: lang === 'sv' ? "Beräkna värdet. Följ prioriteringsreglerna." : "Follow the order of operations to solve the expression.", 
+                answerType: 'numeric' 
+            },
+            token: this.toBase64(ans.toString()), 
+            variationKey: 'order_fraction', 
+            type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Bråkstrecket fungerar som en parentes. Vi måste räkna ut täljaren först." : "Step 1: The fraction bar acts like parentheses. We must calculate the numerator first.", latex: `${n1} + ${n2} = ${numTotal}` },
-                { text: lang === 'sv' ? "Steg 2: Nu kan vi utföra divisionen." : "Step 2: Now we can perform the division.", latex: `\\frac{${numTotal}}{${div}} = ${quotient}` },
-                { text: lang === 'sv' ? "Steg 3: Utför multiplikationen separat." : "Step 3: Perform the multiplication separately.", latex: `${m1} · ${m2} = ${m1 * m2}` },
-                { text: lang === 'sv' ? "Steg 4: Skriv om uttrycket med de nya värdena." : "Step 4: Rewrite the expression with the new values.", latex: `${constant} + ${quotient} - ${m1 * m2}` },
-                { text: lang === 'sv' ? "Steg 5: Slutför genom att addera och subtrahera från vänster till höger." : "Step 5: Finish by adding and subtracting from left to right.", latex: `${constant + quotient} - ${m1 * m2} = ${ans}` },
+                ...complexTerm.clues, // Dynamically insert Step 1 and 2 based on chosen term type
+                { 
+                    text: lang === 'sv' ? "Steg 3: Utför multiplikationen separat." : "Step 3: Perform the multiplication separately.", 
+                    latex: `${m1} · ${m2} = ${product}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Steg 4: Skriv om uttrycket med de nya värdena." : "Step 4: Rewrite the expression with the new values.", 
+                    latex: rewriteLatex 
+                },
+                { 
+                    text: lang === 'sv' ? "Steg 5: Slutför genom att addera och subtrahera från vänster till höger." : "Step 5: Finish by adding and subtracting from left to right.", 
+                    latex: `${rewriteLatex} \\rightarrow ${intermediate} ${op2} ${t3.val} = ${ans}` 
+                },
                 { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
             ],
             metadata: { variation_key: 'order_fraction', difficulty: 3 }
         };
     }
 
-    // --- LEVEL 4: Powers & Priority ---
+    // --- LEVEL 4: Powers, Priority & Optional Fractions ---
     private level4_Powers(lang: string, variationKey?: string, options: any = {}): any {
-        const base = MathUtils.randomInt(2, 4);
-        const exponent = 2;
-        const pVal = Math.pow(base, exponent);
+        // 1. Generate a Power Term (Mandatory for Level 4)
+        const base = MathUtils.randomInt(2, 7);
+        const exp = 2;
+        const pVal = Math.pow(base, exp);
+        const powerTerm = { 
+            latex: `${base}^{${exp}}`, 
+            val: pVal, 
+            type: 'power',
+            clue: { 
+                sv: `Beräkna potensen först: ${base}^{${exp}} = ${pVal}`, 
+                en: `Calculate the power first: ${base}^{${exp}} = ${pVal}` 
+            }
+        };
+
+        // 2. Generate either a Multiplication Term OR a Fraction Term
+        const useFraction = Math.random() > 0.5;
+        let secondTerm;
+        if (useFraction) {
+            const div = MathUtils.randomInt(2, 11);
+            const quotient = MathUtils.randomInt(2, 10);
+            const n1 = MathUtils.randomInt(1, (div * quotient) - 1);
+            const n2 = (div * quotient) - n1;
+            secondTerm = {
+                latex: `\\frac{${n1} + ${n2}}{${div}}`,
+                val: quotient,
+                type: 'fraction',
+                clue: {
+                    sv: `Räkna ut täljaren i bråket (parentesen): ${n1} + ${n2} = ${n1+n2}, sedan divisionen: \\frac{${n1+n2}}{${div}} = ${quotient}`,
+                    en: `Calculate the numerator in the fraction (parentheses): ${n1} + ${n2} = ${n1+n2}, then the division: \\frac{${n1+n2}}{${div}} = ${quotient}`
+                }
+            };
+        } else {
+            const m1 = MathUtils.randomInt(2, 9), m2 = MathUtils.randomInt(2, 9);
+            secondTerm = {
+                latex: `${m1} · ${m2}`,
+                val: m1 * m2,
+                type: 'mult',
+                clue: {
+                    sv: `Beräkna multiplikationen: ${m1} · ${m2} = ${m1 * m2}`,
+                    en: `Calculate the multiplication: ${m1} · ${m2} = ${m1 * m2}`
+                }
+            };
+        }
+
+        // 3. Generate a Constant Term
+        const c = MathUtils.randomInt(5, 25);
+        const constTerm = { latex: `${c}`, val: c, type: 'const' };
+
+        // 4. Shuffle the 3 terms
+        const terms = [powerTerm, secondTerm, constTerm];
+        const order = MathUtils.randomChoice([
+            [0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]
+        ]);
         
-        const m1 = MathUtils.randomInt(2, 4), m2 = MathUtils.randomInt(2, 3);
-        const constant = MathUtils.randomInt(10, 15); // Ensure high enough to avoid negatives
+        const op1 = MathUtils.randomChoice(['+', '-']);
+        const op2 = MathUtils.randomChoice(['+', '-']);
+
+        const t1 = terms[order[0]];
+        const t2 = terms[order[1]];
+        const t3 = terms[order[2]];
+
+        const latex = `${t1.latex} ${op1} ${t2.latex} ${op2} ${t3.latex}`;
+
+        // 5. Sequential Evaluation
+        let intermediate;
+        if (op1 === '+') intermediate = t1.val + t2.val;
+        else intermediate = t1.val - t2.val;
+
+        let ans;
+        if (op2 === '+') ans = intermediate + t3.val;
+        else ans = intermediate - t3.val;
+
+        // Safety: Prevent negative results for pedagogical simplicity
+        if (ans < 0 || intermediate < 0) return this.level4_Powers(lang, variationKey, options);
+
+        const rewriteLatex = `${t1.val} ${op1} ${t2.val} ${op2} ${t3.val}`;
+
+        // 6. Generate Priority-Ordered Clues
+        const clues = [];
+        clues.push({ text: lang === 'sv' ? "Steg 1: Följ prioriteringsreglerna. Räkna ut parenteser (bråkstreck) och potenser först." : "Step 1: Follow the order of operations. Calculate parentheses (fractions) and powers first." });
         
-        const ans = pVal + constant - (m1 * m2);
-        const latex = `${base}^{${exponent}} + ${constant} - ${m1} · ${m2}`;
+        // Always show fraction clue first if it exists, then power
+        if (useFraction) clues.push({ text: secondTerm.clue[lang], latex: secondTerm.latex + " = " + secondTerm.val });
+        clues.push({ text: powerTerm.clue[lang], latex: powerTerm.latex + " = " + powerTerm.val });
+        
+        if (!useFraction) {
+            clues.push({ text: lang === 'sv' ? "Steg 2: Gå vidare till multiplikation." : "Step 2: Proceed to multiplication." });
+            clues.push({ text: secondTerm.clue[lang], latex: secondTerm.latex + " = " + secondTerm.val });
+        }
+
+        clues.push({ 
+            text: lang === 'sv' ? "Steg 3: Skriv om uttrycket och räkna från vänster till höger." : "Step 3: Rewrite the expression and calculate from left to right.",
+            latex: `${rewriteLatex} \\rightarrow ${intermediate} ${op2} ${t3.val} = ${ans}`
+        });
+        clues.push({ text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` });
 
         return {
-            renderData: { latex, description: lang === 'sv' ? "Prioritera rätt operationer." : "Prioritize the correct operations.", answerType: 'numeric' },
-            token: this.toBase64(ans.toString()), variationKey: 'order_powers', type: 'calculate',
-            clues: [
-                { text: lang === 'sv' ? "Steg 1: Enligt prioriteringsreglerna räknar vi ut potenser först." : "Step 1: According to the priority rules, we calculate powers first." },
-                { text: lang === 'sv' ? `Beräkna ${base} upphöjt till ${exponent}:` : `Calculate ${base} to the power of ${exponent}:`, latex: `${base}^{${exponent}} = ${pVal}` },
-                { text: lang === 'sv' ? "Steg 2: Gå vidare till multiplikation och division." : "Step 2: Move on to multiplication and division.", latex: `${m1} · ${m2} = ${m1 * m2}` },
-                { text: lang === 'sv' ? "Steg 3: Utför nu addition och subtraktion från vänster till höger." : "Step 3: Now perform addition and subtraction from left to right." },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${pVal} + ${constant} - ${m1 * m2} \\rightarrow ${pVal + constant} - ${m1 * m2} = ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
-            ],
+            renderData: { 
+                latex, 
+                description: lang === 'sv' ? "Prioritera rätt operationer." : "Prioritize the correct operations.", 
+                answerType: 'numeric' 
+            },
+            token: this.toBase64(ans.toString()), 
+            variationKey: 'order_powers', 
+            type: 'calculate',
+            clues,
             metadata: { variation_key: 'order_powers', difficulty: 4 }
         };
     }

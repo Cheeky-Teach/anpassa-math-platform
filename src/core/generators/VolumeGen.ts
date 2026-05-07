@@ -143,7 +143,7 @@ export class VolumeGen {
 
     // --- LEVEL 2: TRIANGULAR PRISM (Prisma) ---
     private level2_TriPrism(lang: string, variationKey?: string, options: any = {}): any {
-        const b = MathUtils.randomInt(4, 10), hTri = MathUtils.randomInt(5, 10), length = MathUtils.randomInt(10, 17);
+        const b = MathUtils.randomInt(4, 12), hTri = MathUtils.randomInt(5, 12), length = MathUtils.randomInt(8, 17);
         const baseArea = (b * hTri) / 2;
         const vol = baseArea * length;
 
@@ -165,7 +165,7 @@ export class VolumeGen {
 
     // --- LEVEL 3: CYLINDER (Cylinder) ---
     private level3_Cylinder(lang: string, variationKey?: string, options: any = {}): any {
-        const r = MathUtils.randomInt(2, 10), h = MathUtils.randomInt(8, 17);
+        const r = MathUtils.randomInt(2, 10), h = MathUtils.randomInt(10, 20);
         const useDiameter = Math.random() > 0.5;
         const displayVal = useDiameter ? r * 2 : r;
         const vol = Math.round(3.14 * r * r * h);
@@ -193,7 +193,7 @@ export class VolumeGen {
         const h = MathUtils.randomInt(14, 22);
 
         if (v === 'vol_pyramid_std') {
-            const s = MathUtils.randomInt(6, 12);
+            const s = MathUtils.randomInt(4, 12);
             const baseArea = s * s;
             const vol = (baseArea * h) / 3;
             return {
@@ -212,7 +212,7 @@ export class VolumeGen {
             };
         }
 
-        const r = MathUtils.randomInt(3, 5);
+        const r = MathUtils.randomInt(3, 12);
         const baseArea = Math.round(3.14 * r * r * 10) / 10;
         const vol = Math.round((baseArea * h) / 3);
         return {
@@ -234,7 +234,7 @@ export class VolumeGen {
     // --- LEVEL 5: SPHERE & COMPOSITE ---
     private level5_SphereComposite(lang: string, variationKey?: string, options: any = {}): any {
         const v = variationKey || MathUtils.randomChoice(['vol_sphere_std', 'vol_silo_std', 'vol_icecream_std']);
-        const r = MathUtils.randomInt(3, 5);
+        const r = MathUtils.randomInt(3, 11);
         const pi = 3.14;
 
         if (v === 'vol_sphere_std') {
@@ -255,7 +255,7 @@ export class VolumeGen {
             };
         }
 
-        const hComp = MathUtils.randomInt(8, 15);
+        const hComp = MathUtils.randomInt(11, 18);
         const vHemi = Math.round((2 * pi * Math.pow(r, 3)) / 3);
         const vMain = v === 'vol_silo_std' ? Math.round(pi * r * r * hComp) : Math.round((pi * r * r * hComp) / 3);
         const total = vHemi + vMain;
@@ -346,12 +346,12 @@ export class VolumeGen {
             labels = { w, h, d };
             latex = `${w} · ${h} · ${d} = ${vRaw} ${startUnit}³`;
         } else if (shape === 'cylinder') {
-            const r = MathUtils.randomInt(2, 6), h = MathUtils.randomInt(5, 15);
+            const r = MathUtils.randomInt(2, 12), h = MathUtils.randomInt(5, 15);
             vRaw = 3.14 * r * r * h;
             labels = { r, h };
             latex = `3,14 · ${r}^2 · ${h} = ${vRaw.toFixed(1)} ${startUnit}³`;
         } else {
-            const r = MathUtils.randomInt(3, 8), h = MathUtils.randomInt(5, 12);
+            const r = MathUtils.randomInt(3, 10), h = MathUtils.randomInt(5, 12);
             vRaw = (3.14 * r * r * h) / 3;
             labels = { r, h };
             latex = `\\frac{3,14 · ${r}^2 · ${h}}{3} = ${vRaw.toFixed(1)} ${startUnit}³`;
@@ -401,7 +401,7 @@ export class VolumeGen {
         const v = variationKey || MathUtils.randomChoice(['sa_cuboid', 'sa_sphere']);
         
         if (v === 'sa_cuboid') {
-            const w = MathUtils.randomInt(3, 8), d = MathUtils.randomInt(3, 10), h = MathUtils.randomInt(2, 8);
+            const w = MathUtils.randomInt(3, 12), d = MathUtils.randomInt(3, 12), h = MathUtils.randomInt(2, 12);
             const area = 2 * (w*d + w*h + d*h);
             return {
                 renderData: {
