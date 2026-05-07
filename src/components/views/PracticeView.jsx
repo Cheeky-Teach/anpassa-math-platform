@@ -13,7 +13,7 @@ import HistoryList from '../practice/HistoryList';
 import LevelUpModal from '../modals/LevelUpModal';
 import { LEVEL_DESCRIPTIONS, CATEGORIES } from '../../constants/localization'; 
 import { FractionInput, ScientificInput, ExponentInput } from '../ui/InputComponents';
-import { ChevronLeft, Trophy, Zap, Clock, Info, CheckCircle2, XCircle, HelpCircle, MinusCircle, ChevronRight } from 'lucide-react';
+import { ChevronLeft, Trophy, Zap, Clock, Info, CheckCircle2, XCircle, HelpCircle, MinusCircle, ChevronRight, BarChart3, ChevronDown } from 'lucide-react';
 
 const PracticeView = ({ 
     lang, ui, question, loading, feedback, input, setInput, 
@@ -25,6 +25,7 @@ const PracticeView = ({
     const inputRef = useRef(null);
     const scrollContainerRef = useRef(null);
     const [shake, setShake] = useState(false);
+    const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); // NEW: Controls the history collapse
     const retryRef = useRef(actions.retry);
 
     // --- 1. EARLY DEFINITIONS (Prevents ReferenceErrors) ---
@@ -352,42 +353,93 @@ const PracticeView = ({
                         </div>
                     </div>
                     
-                    {/* HISTORY PANEL */}
-                    <div className="bg-orange-50 rounded-[2rem] p-4 shadow-lg h-[280px] flex flex-col border-2 border-orange-100 relative overflow-hidden">
-                        <div className="flex items-center justify-between mb-3 relative z-10">
+                    {/* --- INTEGRATED SESSION STATS & HISTORY PANEL --- */}
+                    <div className="bg-white rounded-[2rem] p-5 shadow-lg border border-slate-100 flex flex-col relative overflow-hidden transition-all duration-500">
+                        <div className="flex items-center justify-between mb-4 relative z-10">
                             <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-lg bg-orange-200/50 flex items-center justify-center text-orange-600 shadow-inner"><Clock size={12}/></div>
-                                <h3 className="text-[11px] font-black uppercase tracking-widest text-orange-800 italic">{historyLabel}</h3>
+                                <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-inner">
+                                    <BarChart3 size={12}/>
+                                </div>
+                                <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400 italic">
+                                    {lang === 'sv' ? "Session-statistik" : "Session Stats"}
+                                </h3>
+                            </div>
+                            {total > 0 && (
+                                <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                                    {total} {ui.stats_attempted}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* 1. SEGMENTED PROGRESS BAR */}
+                        <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex mb-6 border border-slate-50 shadow-inner">
+                            {stats.correct > 0 && <div style={{ width: `${getPct(stats.correct)}%` }} className="bg-emerald-500 h-full transition-all duration-1000" title={ui.stat_correct} />}
+                            {stats.help > 0 && <div style={{ width: `${getPct(stats.help)}%` }} className="bg-amber-400 h-full transition-all duration-1000" title={ui.stat_help} />}
+                            {stats.wrong > 0 && <div style={{ width: `${getPct(stats.wrong)}%` }} className="bg-rose-500 h-full transition-all duration-1000" title={ui.stat_wrong} />}
+                            {stats.skipped > 0 && <div style={{ width: `${getPct(stats.skipped)}%` }} className="bg-slate-400 h-full transition-all duration-1000" title={ui.stat_skip} />}
+                        </div>
+
+                        {/* 2. MAJOR STATS GRID */}
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                            <div className="bg-emerald-50/50 p-3 rounded-2xl border border-emerald-100/50">
+                                <span className="block text-[10px] font-black text-emerald-600 uppercase tracking-tighter mb-1">{ui.stat_correct}</span>
+                                <span className="text-lg font-black text-emerald-700 leading-none">{stats.correct}</span>
+                            </div>
+                            <div className="bg-amber-50/50 p-3 rounded-2xl border border-amber-100/50">
+                                <span className="block text-[10px] font-black text-amber-600 uppercase tracking-tighter mb-1">{ui.stat_help}</span>
+                                <span className="text-lg font-black text-amber-700 leading-none">{stats.help}</span>
+                            </div>
+                            <div className="bg-rose-50/50 p-3 rounded-2xl border border-rose-100/50">
+                                <span className="block text-[10px] font-black text-rose-600 uppercase tracking-tighter mb-1">{ui.stat_wrong}</span>
+                                <span className="text-lg font-black text-rose-700 leading-none">{stats.wrong}</span>
+                            </div>
+                            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/50">
+                                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-1">{ui.stat_skip}</span>
+                                <span className="text-lg font-black text-slate-500 leading-none">{stats.skipped}</span>
                             </div>
                         </div>
-                        
-                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 relative z-10">
-                            {uiState.history.map((entry, idx) => {
-                                const isCorrect = entry.correct;
-                                const usedHelp = entry.clueUsed || entry.solutionUsed;
-                                const isSkipped = entry.skipped;
-                                
-                                let statusColor = "bg-rose-500";
-                                let Icon = XCircle;
-                                if (isSkipped) { statusColor = "bg-slate-300"; Icon = MinusCircle; }
-                                else if (isCorrect && !usedHelp) { statusColor = "bg-emerald-500"; Icon = CheckCircle2; }
-                                else if (isCorrect && usedHelp) { statusColor = "bg-amber-400"; Icon = HelpCircle; }
 
-                                return (
-                                    <div key={idx} className="flex items-center gap-2 bg-white/50 p-2 rounded-xl border border-white transition-all shadow-sm">
-                                        <div className={`w-1 h-6 rounded-full ${statusColor} shrink-0`}></div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-center mb-0.5">
-                                                <span className="text-[9px] font-black text-orange-900/40 uppercase tracking-widest">Lv {entry.level}</span>
-                                                <Icon size={10} className={statusColor.replace('bg-', 'text-')}/>
-                                            </div>
-                                            <div className="text-[11px] font-bold text-slate-700 font-serif leading-tight">
-                                                <MathText text={entry.text} />
+                        {/* 3. EXPANDABLE HISTORY LIST */}
+                        <div className={`flex flex-col transition-all duration-500 overflow-hidden ${isHistoryExpanded ? 'flex-1' : 'h-12'}`}>
+                            <button 
+                                onClick={() => setIsHistoryExpanded(!isHistoryExpanded)}
+                                className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all border border-slate-100 group mb-2 shrink-0"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Clock size={12} className="text-slate-400" />
+                                    <span className="text-[10px] font-black uppercase text-slate-500">{historyLabel}</span>
+                                </div>
+                                {isHistoryExpanded ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400 group-hover:translate-x-0.5 transition-transform" />}
+                            </button>
+
+                            <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pr-1">
+                                {uiState.history.map((entry, idx) => {
+                                    const isCorrect = entry.correct;
+                                    const usedHelp = entry.clueUsed || entry.solutionUsed;
+                                    const isSkipped = entry.skipped;
+                                    
+                                    let statusColor = "bg-rose-500";
+                                    let Icon = XCircle;
+                                    if (isSkipped) { statusColor = "bg-slate-300"; Icon = MinusCircle; }
+                                    else if (isCorrect && !usedHelp) { statusColor = "bg-emerald-500"; Icon = CheckCircle2; }
+                                    else if (isCorrect && usedHelp) { statusColor = "bg-amber-400"; Icon = HelpCircle; }
+
+                                    return (
+                                        <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 transition-all shadow-sm">
+                                            <div className={`w-1 h-6 rounded-full ${statusColor} shrink-0`}></div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-center mb-0.5">
+                                                    <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Lv {entry.level}</span>
+                                                    <Icon size={10} className={statusColor.replace('bg-', 'text-')}/>
+                                                </div>
+                                                <div className="text-[11px] font-bold text-slate-700 font-serif leading-tight">
+                                                    <MathText text={entry.text} />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 </aside>

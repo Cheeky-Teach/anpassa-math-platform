@@ -99,7 +99,7 @@ export class TenPowersGen {
 
             return {
                 renderData: {
-                    latex: isMult ? `${numStr} · ${power}` : `${numStr} / ${power}`,
+                    latex: isMult ? `${numStr} · ${power}` : `\\frac{${numStr}}{${power}}`,
                     description: lang === 'sv' ? "Beräkna uttryckets värde." : "Calculate the value of the expression.",
                     answerType: 'numeric'
                 },
@@ -125,7 +125,7 @@ export class TenPowersGen {
 
             return {
                 renderData: {
-                    latex: isMult ? `${numStr} · ? = ${resStr}` : `${numStr} / ? = ${resStr}`,
+                    latex: isMult ? `${numStr} · ? = ${resStr}` : `\\frac{${numStr}}{?} = ${resStr}`,
                     description: lang === 'sv' ? "Vilken tiopotens (10, 100, 1000 eller 10000) saknas?" : "Which power of ten (10, 100, 1000, or 10000) is missing?",
                     answerType: 'numeric'
                 },
@@ -228,7 +228,7 @@ export class TenPowersGen {
 
         return {
             renderData: {
-                latex: isMult ? `${numStr} · ${factorStr}` : `${numStr} / ${factorStr}`,
+                latex: isMult ? `${numStr} · ${factorStr}` : `\\frac{${numStr}}{${factorStr}}`,
                 description: lang === 'sv' ? "Beräkna värdet." : "Calculate the value.",
                 answerType: 'numeric'
             },

@@ -107,8 +107,11 @@ export const VolumeVisualization = ({ data }) => {
 
         // --- DRAWING FUNCTIONS ---
         if (type === 'cuboid') {
-            const dw = valW * scale; const dh = valH * scale; const dd = valD * scale * 0.5;
-            const x0 = cx - (dw + dd) / 2; const y0 = cy + (dh - dd) / 2;
+            const dw = valW * scale; 
+            const dh = valH * scale * 0.8; 
+            const dd = valD * scale * 0.5;
+            const x0 = cx - (dw + dd) / 2; 
+            const y0 = cy + (dh - dd) / 2 + 60;
             drawDashed(x0 + dd, y0 - dd, x0 + dd, y0 - dh - dd);
             drawDashed(x0, y0, x0 + dd, y0 - dd);
             drawDashed(x0 + dd, y0 - dd, x0 + dw + dd, y0 - dd);
@@ -124,8 +127,12 @@ export const VolumeVisualization = ({ data }) => {
             drawLabel(labels.d, x0 + dw + dd + 10, y0 - dh/20 - dd/8);
         } 
         else if (type === 'triangular_prism') {
-            const b = valW * scale; const hTri = valH * scale; const l = valD * scale * 0.7;
-            const x0 = cx - (b + l) / 2; const y0 = cy + (hTri / 2);
+            const b = valW * scale; 
+            const hTri = valH * scale; 
+            const l = valD * scale * 0.7;
+            // Shift the starting X coordinate to the right to accommodate the left-side label (60)
+            const x0 = cx - (b + l) / 2 + 60; 
+            const y0 = cy + (hTri / 2);
             const apexY = y0 - hTri;
 
             // 1. Draw the Prism Shape
@@ -272,7 +279,8 @@ export const VolumeVisualization = ({ data }) => {
                 drawLabel(hLabel, hIndX + 25, cy);
             }
             else if (type === 'cone' || type === 'ice_cream') {
-                const yBase = type === 'cone' ? cy + vh/2 : cy - 20;
+                // Manually move the starting point up by half the height to center the cone
+                const yBase = type === 'cone' ? cy + vh/2 : cy - (vh / 2); 
                 const apexY = type === 'cone' ? yBase - vh : yBase + vh;
                 drawCircleBase(cx, yBase, r, type === 'cone');
                 ctx.beginPath();
