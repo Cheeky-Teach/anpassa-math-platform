@@ -133,17 +133,89 @@ export const SKILL_BUCKETS = {
           { key: 'theory_number_line', name: { sv: 'Tallinjen', en: 'Number line' }, desc: { sv: 'Positionering', en: 'Positioning' } },
           { key: 'theory_sign_dominance', name: { sv: 'Teckenregler', en: 'Sign rules' }, desc: { sv: 'Blir svaret plus eller minus?', en: 'Positive or negative result?' } },
           { key: 'theory_spot_lie', name: { sv: 'Hitta felet: Negativa', en: 'Find error: Negatives' }, desc: { sv: 'Vanliga missuppfattningar', en: 'Common misconceptions' } },
-          { key: 'fluency_chain_4', name: { sv: 'Add/Sub Kedja (4)', en: 'Add/Sub Chain (4)' }, desc: { sv: 'Flerstegsräkning', en: 'Multi-step calculation' } },
-          { key: 'fluency_chain_5', name: { sv: 'Add/Sub Kedja (5)', en: 'Add/Sub Chain (5)' }, desc: { sv: 'Långa uttryck', en: 'Long expressions' } },
-          { key: 'fluency_double_neg', name: { sv: 'Dubbla minustecken', en: 'Double negative signs' }, desc: { sv: '-(-a) = +a', en: '-(-a) = +a' } },
-          { key: 'fluency_plus_neg', name: { sv: 'Plus minus', en: 'Plus minus' }, desc: { sv: '+(-a) = -a', en: '+(-a) = -a' } },
+          
+          // --- UPDATED CALCULATIONS WITH PATTERN FILTERS ---
+          { 
+            key: 'fluency_chain_4', 
+            name: { sv: 'Add/Sub Kedja (4)', en: 'Add/Sub Chain (4)' }, 
+            desc: { sv: 'Flerstegsräkning', en: 'Multi-step calculation' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_add_sub_chain',
+            extractorPattern: /^(?<valA>\(-?\d+\)|-?\d+)\s*\+\s*(?<valB>\(-?\d+\)|-?\d+)\s*-\s*(?<valC>\(-?\d+\)|-?\d+)\s*\+\s*(?<valD>\(-?\d+\)|-?\d+)$/
+          },
+          { 
+            key: 'fluency_chain_5', 
+            name: { sv: 'Add/Sub Kedja (5)', en: 'Add/Sub Chain (5)' }, 
+            desc: { sv: 'Långa uttryck', en: 'Long expressions' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_double_minus',
+            extractorPattern: /^(?<valA>-?\d+)\s*-\s*\(-(?<valB>\d+)\)$/
+          },
+          { 
+            key: 'fluency_double_neg', 
+            name: { sv: 'Dubbla minustecken', en: 'Double negative signs' }, 
+            desc: { sv: '-(-a) = +a', en: '-(-a) = +a' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_double_minus',
+            extractorPattern: /^(?<valA>-?\d+)\s*-\s*\(-(?<valB>\d+)\)$/
+          },
+          { 
+            key: 'fluency_plus_neg', 
+            name: { sv: 'Plus minus', en: 'Plus minus' }, 
+            desc: { sv: '+(-a) = -a', en: '+(-a) = -a' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_double_minus',
+            extractorPattern: /^(?<valA>-?\d+)\s*-\s*\(-(?<valB>\d+)\)$/
+          },
           { key: 'fluency_transform_match', name: { sv: 'Matcha uttryck', en: 'Match expressions' }, desc: { sv: 'Olika skrivsätt', en: 'Different notations' } },
-          { key: 'mult_same_sign', name: { sv: 'Mult: Samma tecken', en: 'Mult: Same signs' }, desc: { sv: 'Minus * Minus = Plus', en: 'Minus * Minus = Plus' } },
-          { key: 'mult_diff_sign', name: { sv: 'Mult: Olika tecken', en: 'Mult: Different signs' }, desc: { sv: 'Minus * Plus = Minus', en: 'Minus * Plus = Minus' } },
-          { key: 'mult_chain', name: { sv: 'Mult: Kedja', en: 'Mult: Chain' }, desc: { sv: 'Jämnt/Udda antal minus', en: 'Even/Odd number of minuses' } },
-          { key: 'mult_inverse_missing', name: { sv: 'Mult: Saknad faktor', en: 'Mult: Missing factor' }, desc: { sv: 'a * ? = b', en: 'a * ? = b' } },
-          { key: 'div_same_sign', name: { sv: 'Division: Samma tecken', en: 'Division: Same signs' }, desc: { sv: 'Svaret blir positivt', en: 'Answer is positive' } },
-          { key: 'div_diff_sign', name: { sv: 'Division: Olika tecken', en: 'Division: Different signs' }, desc: { sv: 'Svaret blir negativt', en: 'Answer is negative' } },
+          { 
+            key: 'mult_same_sign', 
+            name: { sv: 'Mult: Samma tecken', en: 'Mult: Same signs' }, 
+            desc: { sv: 'Minus * Minus = Plus', en: 'Minus * Minus = Plus' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_multiplication',
+            extractorPattern: /^(?<valA>\(-?\d+\)|-?\d+)\s*·\s*(?<valB>\(-?\d+\)|-?\d+)$/
+          },
+          { 
+            key: 'mult_diff_sign', 
+            name: { sv: 'Mult: Olika tecken', en: 'Mult: Different signs' }, 
+            desc: { sv: 'Minus * Plus = Minus', en: 'Minus * Plus = Minus' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_multiplication',
+            extractorPattern: /^(?<valA>\(-?\d+\)|-?\d+)\s*·\s*(?<valB>\(-?\d+\)|-?\d+)$/
+          },
+          { 
+            key: 'mult_chain', 
+            name: { sv: 'Mult: Kedja', en: 'Mult: Chain' }, 
+            desc: { sv: 'Jämnt/Udda antal minus', en: 'Even/Odd number of minuses' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_mult_chain',
+            extractorPattern: /^(?<valA>\(-?\d+\)|-?\d+)\s*·\s*(?<valB>\(-?\d+\)|-?\d+)\s*·\s*(?<valC>\(-?\d+\)|-?\d+)$/
+          },
+          { 
+            key: 'mult_inverse_missing', 
+            name: { sv: 'Mult: Saknad faktor', en: 'Mult: Missing factor' }, 
+            desc: { sv: 'a * ? = b', en: 'a * ? = b' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_multiplication',
+            extractorPattern: /^(?<valA>\(-?\d+\)|-?\d+)\s*·\s*(?<valB>\(-?\d+\)|-?\d+)$/
+          },
+          { 
+            key: 'div_same_sign', 
+            name: { sv: 'Division: Samma tecken', en: 'Division: Same signs' }, 
+            desc: { sv: 'Svaret blir positivt', en: 'Answer is positive' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_division',
+            extractorPattern: /\\frac\{(?<valA>-?\d+)\}\{(?<valB>-?\d+)\}/
+          },
+          { 
+            key: 'div_diff_sign', 
+            name: { sv: 'Division: Olika tecken', en: 'Division: Different signs' }, 
+            desc: { sv: 'Svaret blir negativt', en: 'Answer is negative' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_division',
+            extractorPattern: /\\frac\{(?<valA>-?\d+)\}\{(?<valB>-?\d+)\}/
+          },
           { key: 'div_check_logic', name: { sv: 'Division: Kontroll', en: 'Division: Checking' }, desc: { sv: 'Använd multiplikation', en: 'Use multiplication' } }
         ]
       },
