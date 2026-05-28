@@ -56,6 +56,7 @@ function App() {
     const [revealedClues, setRevealedClues] = useState([]);
     const [isSolutionRevealed, setIsSolutionRevealed] = useState(false);
     const [usedHelp, setUsedHelp] = useState(false);
+    const [useWordProblems, setUseWordProblems] = useState(false);
 
     // --- 4. SESSION STATS & HISTORY ---
     const [sessionStats, setSessionStats] = useState({ attempted: 0, correctNoHelp: 0, correctHelp: 0, incorrect: 0, skipped: 0, maxStreak: 0 });
@@ -151,6 +152,14 @@ function App() {
         }
     };
     
+    // --- WORD PROBLEM TOGGLE ---
+    useEffect(() => {
+        if (view === 'practice' && topic && level && question) {
+            // Re-fetch with force=true to reload the active item instantly
+            fetchQuestion(topic, level, lang, true);
+        }
+    }, [useWordProblems]);
+
     // --- REFINED STUDENT REAL-TIME KICK LISTENER ---
     useEffect(() => {
         // We only need this if we are currently a student in a live session
@@ -452,8 +461,7 @@ function App() {
         if (!force && (showStreakModal || levelUpAvailable)) return;
         setLoading(true); setFeedback(null); setInput(''); setRevealedClues([]); setUsedHelp(false); setIsSolutionRevealed(false); setLevelUpAvailable(false);
         try {
-            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}${force ? `&force=true&t=${Date.now()}` : ''}`);
-            const data = await res.json();
+            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}&wordProblem=${useWordProblems}${force ? `&force=true&t=${Date.now()}` : ''}`);            const data = await res.json();
             setQuestion(data);
         } catch (e) { setQuestion(null); } finally { setLoading(false); }
     };
@@ -637,15 +645,18 @@ function App() {
                         onBack={() => setView('dashboard')} 
                     />
                 ) : view === 'practice' ? (
-                    <PracticeView
-                        lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} 
-                        handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip}
-                        handleChangeLevel={handleChangeLevel}
-                        revealedClues={revealedClues} uiState={{ history, topic, level }} 
-                        actions={{ retry: (f) => fetchQuestion(topic, level, lang, f), goBack: quitPractice }} 
-                        isSolutionRevealed={isSolutionRevealed} timerSettings={timerSettings} formatTime={formatTime}
-                        toast={toast}
-                    />
+                        <PracticeView
+                            lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} 
+                            handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip}
+                            handleChangeLevel={handleChangeLevel}
+                            revealedClues={revealedClues} uiState={{ history, topic, level }} 
+                            actions={{ retry: (f) => fetchQuestion(topic, level, lang, f), goBack: quitPractice }} 
+                            isSolutionRevealed={isSolutionRevealed} timerSettings={timerSettings} formatTime={formatTime}
+                            toast={toast}
+                            // --- ADD THE DYNAMIC PROPERTIES TO PASS TO PRACTICEVIEW ---
+                            useWordProblems={useWordProblems}
+                            setUseWordProblems={setUseWordProblems}
+                        />
                 ) : view === 'question_studio' ? (
                     <QuestionStudio profile={profile} ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} onWorksheetGenerate={(p) => { setSavedPacket(p); setView('print'); }} onDoNowGenerate={(conf, pack, liveData) => { if (liveData?.room) { setActiveRoom(liveData.room); setSavedPacket(liveData.packet); setView('teacher_live'); } else if (pack) { setSavedPacket(pack); if (conf?.title) setSheetTitle(conf.title); setView('do_now'); } }} />
                 ) : view === 'print' ? (

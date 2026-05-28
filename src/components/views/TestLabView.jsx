@@ -111,12 +111,15 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     const [revealMilestoneAnswers, setRevealMilestoneAnswers] = useState(false);
     const [visibleClues, setVisibleClues] = useState({});
     const [showGuide, setShowGuide] = useState(false);
+    const [useWordProblems, setUseWordProblems] = useState(false);
 
     // --- HELPERS ---
     const getStyles = (category) => COLOR_VARIANTS[category.color || 'indigo'] || COLOR_VARIANTS.indigo;
 
     const copyTestLink = () => {
-        const testCode = encodeConfig({ meta, selection });
+        // Append tracking flag to meta configuration state object bundle on the fly
+        const updatedMeta = { ...meta, wordProblem: useWordProblems };
+        const testCode = encodeConfig({ meta: updatedMeta, selection });
         const baseUrl = window.location.origin + "/lab";
         const fullUrl = `${baseUrl}?config=${testCode}`;
         navigator.clipboard.writeText(fullUrl);
@@ -200,7 +203,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 return { 
                     topic: topicId, 
                     level: randomLevel, 
-                    lang 
+                    lang,
+                    wordProblem: useWordProblems // Pass the word problem flag for each question 
                 };
             });
 
@@ -416,6 +420,12 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
                 setMeta(decoded.meta);
                 setSelection(finalSelection); 
+
+                // --- EXTRACT PARAMETER FROM LINK DECODE PASS FOR WORD PROBLEMS ---
+                if (decoded.meta?.wordProblem !== undefined) {
+                    setUseWordProblems(!!decoded.meta.wordProblem);
+                }
+
                 setInternalMode('ACTIVE'); 
             } else {
                 setInternalMode('SETUP');
@@ -585,6 +595,20 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                 ))}
                             </select>
                         </div>
+
+                        {/* --- NEW: WORD PROBLEM TOGGLE CONTROL SLIDER LINKED TO TESTPass --- */}
+                        <div className="flex items-center gap-3 bg-slate-50/80 p-2 px-4 rounded-2xl border border-slate-100 shadow-sm shrink-0 min-w-[200px] justify-between animate-in fade-in duration-200">
+                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-tight select-none">
+                                {lang === 'sv' ? '📝 Vardagsproblem' : '📝 Word Problems'}
+                            </span>
+                            <button 
+                                onClick={() => setUseWordProblems(!useWordProblems)} 
+                                className={`w-10 h-5 rounded-full transition-all relative p-1 ${useWordProblems ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                            >
+                                <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${useWordProblems ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+
                     </div>
 
                     <button 

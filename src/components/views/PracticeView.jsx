@@ -20,7 +20,7 @@ const PracticeView = ({
     handleSubmit, handleHint, handleSolution, handleSkip, 
     handleChangeLevel, revealedClues, uiState, actions, 
     levelUpAvailable, setLevelUpAvailable, isSolutionRevealed, 
-    timerSettings, formatTime, toast
+    timerSettings, formatTime, toast, useWordProblems, setUseWordProblems
 }) => {
     const inputRef = useRef(null);
     const scrollContainerRef = useRef(null);
@@ -229,6 +229,22 @@ const PracticeView = ({
                         </div>
                     ) : (
                         <div className="p-1 sm:p-2 lg:p-2">
+
+                            {/* --- WORD PROBLEM CONTROL SWITCH --- */}
+                            <div className="mb-2 flex justify-end px-2">
+                                <div className="flex items-center gap-2 bg-slate-50/80 p-1 px-3 rounded-full border border-slate-100 shadow-sm animate-in fade-in duration-200">
+                                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-tight select-none">
+                                        {lang === 'sv' ? '📝 Vardagsproblem' : '📝 Word Problems'}
+                                    </span>
+                                    <button 
+                                        onClick={() => setUseWordProblems(!useWordProblems)} 
+                                        className={`w-9 h-5 rounded-full transition-all relative p-1 ${useWordProblems ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                                    >
+                                        <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${useWordProblems ? 'translate-x-4' : 'translate-x-0'}`} />
+                                    </button>
+                                </div>
+                            </div>
+
                             {/* VISUAL CONTAINER */}
                             <div className="mb-4 flex justify-center bg-slate-50/50 rounded-[2rem] p-4 min-h-[160px] h-[200px] sm:h-[350px] items-center border border-slate-100 shadow-inner relative overflow-hidden">
                                 {renderVisual()}
