@@ -201,7 +201,14 @@ export const SKILL_BUCKETS = {
           { key: 'find_percent_test', name: { sv: 'Procentsats: Prov', en: 'Percent: Test' }, desc: { sv: 'Delen / Hela', en: 'Part / Whole' } },
           { key: 'find_percent_discount', name: { sv: 'Procentsats: Rabatt', en: 'Percent: Discount' }, desc: { sv: 'Beräkna andelen', en: 'Calculate share' } },
           { key: 'reverse_find_whole', name: { sv: 'Hitta 100%', en: 'Find 100%' }, desc: { sv: 'Beräkna hela summan', en: 'Calculate total sum' } },
-          { key: 'change_calc', name: { sv: 'Beräkna förändring', en: 'Calculate change' }, desc: { sv: 'Skillnad / Ursprung', en: 'Difference / Original' } },
+          { key: 'change_calc', 
+            name: { sv: 'Beräkna förändring', en: 'Calculate change' }, 
+            desc: { sv: 'Skillnad / Ursprung', en: 'Difference / Original' },
+            tags: ['word_problem_ready'],
+            contextType: 'value_delta',
+            // Captures the difference/change value (?<diff>) and the starting original baseline (?<oldV>)
+            extractorPattern: /\\frac\{(?<diff>\d+)\}\{(?<oldV>\d+)\}/
+          },
           { key: 'change_multiplier', name: { sv: 'Förändringsfaktor', en: 'Change Factor' }, desc: { sv: '1,0 +/- %', en: '1.0 +/- %' } }
         ]
       },
@@ -433,7 +440,14 @@ export const SKILL_BUCKETS = {
       probability: {
         name: { sv: 'Sannolikhet', en: 'Probability' },
         variations: [
-          { key: 'visual_calc', name: { sv: 'Beräkna Sannolikhet', en: 'Calculate Probability' }, desc: { sv: 'Gynsamma / Möjliga', en: 'Favorable / Possible' } },
+          { key: 'visual_calc', 
+            name: { sv: 'Beräkna Sannolikhet', en: 'Calculate Probability' }, 
+            desc: { sv: 'Gynsamma / Möjliga', en: 'Favorable / Possible' }, 
+            tags: ['word_problem_ready'],
+            contextType: 'discrete_pool',
+            // Captures the favorable target amount (?<match>) and the absolute total size (?<total>)
+            extractorPattern: /\\frac\{(?<match>\d+)\}\{(?<total>\d+)\}/
+          },
           { key: 'visual_not', name: { sv: 'Komplementhändelse', en: 'Complementary event' }, desc: { sv: 'Sannolikheten för "Inte"', en: 'Probability of "Not"' } },
           { key: 'visual_spinner', name: { sv: 'Lyckohjul', en: 'Lucky wheel' }, desc: { sv: 'Sektorernas andel', en: 'Sector share' } },
           { key: 'dice_single', name: { sv: 'Tärning: Enstaka tal', en: 'Dice: Single number' }, desc: { sv: 'Ex: Få en 5:a', en: 'Ex: Rolling a 5' } },

@@ -135,13 +135,21 @@ export default function QuestionStudio({
 
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
   const [hideExtra, setHideExtra] = useState(false);
-
+  const [useWordProblems, setUseWordProblems] = useState(false);
+  
   // --- EFFECTS ---
-  useEffect(() => { 
-    if (!setupMode) fetchLibrary(); 
-    setIsSaved(true); 
-  }, [setupMode, libraryTab]);
-
+  useEffect(() => {
+        // If the switch is toggled and our active preview item just got filtered out...
+        const stillVisible = visibleVariations.some(v => v.key === activePreviewKey);
+        
+        if (!stillVisible && visibleVariations.length > 0) {
+            // Automatically select and load the first available word problem variant card
+            triggerPreview(visibleVariations[0].key);
+        } else if (activePreviewKey) {
+            // Otherwise, simply reload the current card with its new word problem context active
+            triggerPreview(activePreviewKey);
+        }
+    }, [useWordProblems]);
   useEffect(() => { if (currentTopic?.variations?.[0]) triggerPreview(currentTopic.variations[0].key); }, [selectedTopicId]);
   useEffect(() => { setInitialPacket(packet); }, [packet]);
   useEffect(() => { setStudioMode(setupMode); }, [setupMode]);
@@ -354,7 +362,7 @@ export default function QuestionStudio({
   const triggerPreview = async (variationKey) => {
     setIsPreviewLoading(true); setActivePreviewKey(variationKey);
     try {
-        const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variationKey}&lang=${lang}`);
+        const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variationKey}&lang=${lang}&wordProblem=${useWordProblems}`);
         const data = await res.json(); setPreviewData(data);
     } catch (err) { console.error(err); } finally { setIsPreviewLoading(false); }
   };
@@ -364,8 +372,7 @@ export default function QuestionStudio({
     try {
         const newItems = [];
         for (let i = 0; i < qty; i++) {
-            const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variation.key}&lang=${lang}`);
-            const data = await res.json();
+            const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variation.key}&lang=${lang}&wordProblem=${useWordProblems}`);            const data = await res.json();
             const isFirstInBatch = i === 0;
             
             newItems.push({ 
@@ -385,7 +392,7 @@ export default function QuestionStudio({
 
   const regenerateItem = async (id, topicId, variationKey) => {
     try {
-        const res = await fetch(`/api/question?topic=${topicId}&variation=${variationKey}&lang=${lang}`);
+        const res = await fetch(`/api/question?topic=${topicId}&variation=${variationKey}&lang=${lang}&wordProblem=${useWordProblems}`);
         const data = await res.json();
         setPacket(prev => prev.map(item => item.id === id ? { ...item, resolvedData: data } : item)); setIsSaved(false);
     } catch (err) { console.error(err); }
@@ -397,8 +404,8 @@ export default function QuestionStudio({
     try {
         const updatedPacket = await Promise.all(packet.map(async (item) => {
             if (!item.topicId || !item.variationKey) return item;
-            const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}`);
-            const data = await res.json();
+                const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${useWordProblems}`);            
+                const data = await res.json();
             return { 
                 ...item, 
                 id: crypto.randomUUID(), 
@@ -431,14 +438,21 @@ export default function QuestionStudio({
   const availableTopics = [...new Set(savedSheets.flatMap(s => s.auto_topics || []))];
 
   const visibleVariations = (currentTopic?.variations || [])
-    .filter(v => {
-      if (!hideExtra) return true;
-      const k = v.key.toLowerCase();
-      const isMCQ = ['lie', 'spot', 'choice', 'mcq', 'check', 'select', 'which', 'error', 'inverse'].some(kw => k.includes(kw));
-      const isConcept = ['concept', 'theory', 'foundations', 'id', 'begrepp'].some(kw => k.includes(kw));
-      return !isMCQ && !isConcept;
-    })
-    .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
+  .filter(v => {
+    // --- NEW: Exclude items missing the word problem tag if the switch is ON ---
+    if (useWordProblems) {
+      const hasTag = v.tags?.includes('word_problem_ready');
+      if (!hasTag) return false; // Drops it from Pane 2 instantly
+    }
+
+    // Your existing filter constraints for hideExtra remain completely untouched
+    if (!hideExtra) return true;
+    const k = v.key.toLowerCase();
+    const isMCQ = ['lie', 'spot', 'choice', 'mcq', 'check', 'select', 'which', 'error', 'inverse'].some(kw => k.includes(kw));
+    const isConcept = ['concept', 'theory', 'foundations', 'id', 'begrepp'].some(kw => k.includes(kw));
+    return !isMCQ && !isConcept;
+  })
+  .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
 
   if (!setupMode) {
     return (
@@ -564,13 +578,25 @@ export default function QuestionStudio({
                     <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${hideExtra ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
               </div>
+              {/* --- NEW: WORD PROBLEMS SELECTOR SWITCH --- */}
+                <div className="flex items-center justify-between bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner animate-in fade-in duration-200">
+                    <span className="text-[9px] font-black uppercase text-slate-500 ml-2 tracking-tighter">
+                        {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
+                    </span>
+                    <button 
+                        onClick={() => setUseWordProblems(!useWordProblems)} 
+                        className={`w-10 h-5 rounded-full transition-all relative p-1 ${useWordProblems ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                    >
+                        <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${useWordProblems ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                </div>
           </div>
           <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
               {visibleVariations.map(v => {
                   const cat = getVariationCategory(v.key);
                   const styles = getCategoryStyles(cat);
                   const isPreviewed = activePreviewKey === v.key;
-
+                  const hasWordProblem = v.tags?.includes('word_problem_ready');
                   return (
                     <div 
                         key={v.key} 
@@ -585,6 +611,12 @@ export default function QuestionStudio({
                             <div className={`shrink-0 px-2 py-0.5 rounded-md border ${styles.border} ${styles.bg} ${styles.text} text-[8px] font-black uppercase flex items-center gap-1`}>
                                 {styles.icon} {styles.label}
                             </div>
+                            {/* WORD PROBLEM ELIGIBILITY BADGE */}
+                            {hasWordProblem && (
+                                <div className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[7px] font-black uppercase tracking-tight">
+                                    📝 {lang === 'sv' ? 'Kontext' : 'Story'}
+                                </div>
+                            )}
                         </div>
                         <p className="text-[10px] font-medium text-slate-400 line-clamp-2 mb-4 italic leading-relaxed">{v.desc[lang]}</p>
                         <div className="flex items-center gap-2">

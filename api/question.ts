@@ -1,6 +1,8 @@
 import { IncomingMessage, ServerResponse } from 'http';
 
-// IMPORTS
+import { WordProblemInterceptor } from '../src/core/utils/WordProblemInterceptor.js';
+import { SKILL_BUCKETS } from '../src/constants/skillBuckets.js';
+
 import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
 import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen.js';
 import { TenPowersGen } from '../src/core/generators/TenPowersGen.js';
@@ -157,7 +159,35 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
                 questionData = generator.generate(1, String(lang), options);
             }
         }
+        
+        // Word Problem Interceptor
+        const activateWordProblem = (query.wordProblem === 'true' || body.wordProblem === true);
 
+        if (activateWordProblem && variation) {
+            let foundVariationConfig = null;
+
+            // Deep search through SKILL_BUCKETS taxonomy to find our target metadata parameters
+            for (const catKey in SKILL_BUCKETS) {
+                const category = (SKILL_BUCKETS as any)[catKey];
+                if (category.topics) {
+                    for (const topicKey in category.topics) {
+                        const topicObj = category.topics[topicKey];
+                        const matchedVariant = topicObj.variations?.find((v: any) => v.key === variation);
+                        if (matchedVariant) {
+                            foundVariationConfig = matchedVariant;
+                            break;
+                        }
+                    }
+                }
+                if (foundVariationConfig) break;
+            }
+
+            // If a regex pattern signature is assigned to this key, pass it to the text compiler
+            if (foundVariationConfig) {
+                questionData = WordProblemInterceptor.process(questionData, foundVariationConfig, String(lang));
+            }
+        }
+        
         // SECURITY: Payload Scrubbing
         // Explicitly defining returned properties to ensure raw 'answer' is hidden.
         const scrubbedQuestion = {
