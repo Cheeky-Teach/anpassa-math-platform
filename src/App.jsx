@@ -461,9 +461,23 @@ function App() {
         if (!force && (showStreakModal || levelUpAvailable)) return;
         setLoading(true); setFeedback(null); setInput(''); setRevealedClues([]); setUsedHelp(false); setIsSolutionRevealed(false); setLevelUpAvailable(false);
         try {
-            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}&wordProblem=${useWordProblems}${force ? `&force=true&t=${Date.now()}` : ''}`);            const data = await res.json();
+            const res = await fetch(`/api/question?topic=${t}&level=${l}&lang=${lg}&wordProblem=${useWordProblems}${force ? `&force=true&t=${Date.now()}` : ''}`);
+            
+            // ADD THIS GUARD TO DETECT BACKEND CRASHES IMMEDIATELY
+            if (!res.ok) {
+                console.error(`Backend returned status ${res.status}`);
+                const text = await res.text();
+                console.error("Server Error Payload:", text);
+                setQuestion(null);
+                return;
+            }
+
+            const data = await res.json();
             setQuestion(data);
-        } catch (e) { setQuestion(null); } finally { setLoading(false); }
+        } catch (e) { 
+            console.error("CRITICAL CLIENT FETCH ERROR:", e); // <-- Uncover the swallowed error
+            setQuestion(null); 
+        } finally { setLoading(false); }
     };
 
     const startPractice = () => {
