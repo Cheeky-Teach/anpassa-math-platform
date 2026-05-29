@@ -204,7 +204,11 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         // SECURITY: Payload Scrubbing
         // Explicitly defining returned properties to ensure raw 'answer' is hidden.
         const scrubbedQuestion = {
-            renderData: questionData.renderData,
+            renderData: {
+                ...questionData.renderData,
+                // Ensure the metadata flag is cleanly attached directly onto the render data block
+                isWordProblemApplied: questionData.metadata?.isWordProblemApplied || false
+            },
             token: questionData.token,
             clues: questionData.clues,
             level: questionData.level || level

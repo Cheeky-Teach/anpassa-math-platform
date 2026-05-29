@@ -384,10 +384,8 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
                                     <MathDisplay content={packet[currentIndex].resolvedData?.renderData?.description} />
                                     
-                                    {packet[currentIndex].resolvedData?.renderData?.latex && (
-                                        <div className="mt-6 text-3xl lg:text-5xl text-indigo-600 font-serif border-t border-slate-100 pt-6">
-                                            <MathDisplay content={`$$${packet[currentIndex].resolvedData.renderData.latex}$$`} />
-                                        </div>
+                                    {packet[currentIndex].resolvedData?.renderData?.latex && !packet[currentIndex].resolvedData?.renderData?.isWordProblemApplied && (
+                                        <MathDisplay content={`$$${packet[currentIndex].resolvedData.renderData.latex}$$`} />
                                     )}
                                 </div>
                             </div>
