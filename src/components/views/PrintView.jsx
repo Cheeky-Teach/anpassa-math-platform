@@ -250,6 +250,12 @@ export default function PrintView({
                                                     </div>
                                                 )}
 
+                                                {item.resolvedData?.renderData?.latex && !item.resolvedData?.renderData?.isWordProblemApplied && (
+                                                    <div className="text-center py-4 font-serif text-lg my-auto select-all">
+                                                        <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} />
+                                                    </div>
+                                                )}
+
                                                 {item.resolvedData?.renderData?.options && (
                                                     <div className="grid grid-cols-1 gap-2 border-l-2 border-slate-100 pl-4 mb-2">
                                                         {item.resolvedData.renderData.options.map((opt, i) => (

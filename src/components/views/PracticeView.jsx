@@ -31,6 +31,7 @@ const PracticeView = ({
     // --- 1. EARLY DEFINITIONS (Prevents ReferenceErrors) ---
     const cluesLabel = ui.hintsTitle || (lang === 'sv' ? "Ledtrådar" : "Hints");
     const historyLabel = ui.historyTitle || (lang === 'sv' ? "Historik" : "History");
+    const [isEquationUnblurred, setIsEquationUnblurred] = useState(false);
     
     // --- 2. LOCALIZATION & THEME ENGINE ---
     const getCategoryContext = () => {
@@ -77,6 +78,11 @@ const PracticeView = ({
 
     useEffect(() => { retryRef.current = actions.retry; }, [actions.retry]);
     
+    // Reset blur overlay every time a brand new question is loaded
+    useEffect(() => {
+        setIsEquationUnblurred(false);
+    }, [question]);
+
     useEffect(() => {
         if (feedback === 'correct' && isSolutionRevealed) {
             const timer = setTimeout(() => { retryRef.current(); }, 1500);
@@ -117,29 +123,63 @@ const PracticeView = ({
 
     // --- 4. REFINED VISUAL SCALING LOGIC ---
     const renderVisual = () => {
-        if (!question?.renderData) return null;
-        
-        return (
-            <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden [&>svg]:max-h-full [&>svg]:w-auto [&>canvas]:max-h-full [&>canvas]:w-auto">
-                {question.renderData.graph && <GraphCanvas data={question.renderData.graph} />}
-                {question.renderData.geometry && (
-                    ['cuboid', 'triangular_prism', 'pyramid', 'sphere', 'hemisphere', 'ice_cream', 'cone', 'cylinder', 'silo'].includes(question.renderData.geometry.type) ? (
-                        <VolumeVisualization data={question.renderData.geometry} />
-                    ) : (
-                        <GeometryVisual data={question.renderData.geometry} />
-                    )
-                )}
-                {!question.renderData.graph && !question.renderData.geometry && uiState.topic === 'geometry' && (
-                    <StaticGeometryVisual description={descriptionText} />
-                )}
-                {/* Fixed LaTeX rendering for non-visual questions */}
-                {!question.renderData.graph && !question.renderData.geometry && question.renderData.latex && (
-                    <div className="text-2xl sm:text-5xl font-serif text-indigo-600 text-center py-4">
-                        <MathText text={`$$${question.renderData.latex}$$`} large={true} />
+        const rd = question?.renderData;
+        if (!rd) return null;
+
+        // 1. Dynamic Routing Channels for Interactive Graphical Canvas Components
+        if (rd.graph) return <GraphCanvas data={rd.graph} lang={lang} />;
+        if (rd.geometry) {
+            if (rd.geometry.type === 'transversal') return <TransversalVisual data={rd.geometry} />;
+            if (rd.geometry.type === 'composite') return <CompositeVisual data={rd.geometry} />;
+            return <GeometryVisual data={rd.geometry} />;
+        }
+        if (rd.volume) return <VolumeVisualization data={rd.volume} />;
+        if (rd.pattern) return <PatternVisual data={rd.pattern} />;
+        if (rd.probabilityTree) return <ProbabilityTree data={rd.probabilityTree} />;
+        if (rd.probabilityMarbles) return <ProbabilityMarbles data={rd.probabilityMarbles} />;
+        if (rd.probabilitySpinner) return <ProbabilitySpinner data={rd.probabilitySpinner} />;
+        if (rd.scale) return <ScaleVisual data={rd.scale} />;
+        if (rd.similarity) return <SimilarityCompare data={rd.similarity} />;
+        if (rd.compareShapesArea) return <CompareShapesArea data={rd.compareShapesArea} />;
+        if (rd.frequencyTable) return <FrequencyTable data={rd.frequencyTable} />;
+        if (rd.percentGrid) return <PercentGrid data={rd.percentGrid} />;
+        if (rd.angles) return <AngleVisual data={rd.angles} />;
+
+        // 2. Fallback Channel for Pure Numerical/Algebraic Expressions
+        if (rd.latex) {
+            const isWordProblem = rd.isWordProblemApplied;
+
+            // 🟡 Word Problem Intercept Action: Apply CSS Gaussian blur overlay until clicked
+            if (isWordProblem && !isEquationUnblurred) {
+                return (
+                    <div className="w-full h-full flex items-center justify-center p-4">
+                        <button
+                            type="button"
+                            onClick={() => setIsEquationUnblurred(true)}
+                            className="group relative px-10 py-6 rounded-[2rem] border-2 border-dashed border-slate-200 bg-white hover:bg-indigo-50/20 hover:border-indigo-400 transition-all flex flex-col items-center justify-center max-w-sm w-full shadow-sm cursor-pointer"
+                        >
+                            <div className="text-3xl font-serif text-slate-400/30 filter blur-[8px] group-hover:blur-[5px] transition-all duration-300 transform scale-105 select-none unselectable">
+                                X - (-Y) = Z
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-center bg-slate-50/10 rounded-[2rem]">
+                                <span className="bg-slate-900 text-white font-black uppercase text-[12px] tracking-widest px-4 py-2.5 rounded-xl shadow-md group-hover:bg-indigo-600 group-hover:scale-105 transition-all">
+                                    {lang === 'sv' ? "Ledtråd: Se uppställning" : "Hint: Show Equation"}
+                                </span>
+                            </div>
+                        </button>
                     </div>
-                )}
-            </div>
-        );
+                );
+            }
+
+            // 🟢 Standard Display: Unblurred math rendering
+            return (
+                <div className="text-2xl sm:text-5xl font-serif text-indigo-600 text-center py-4 animate-in fade-in duration-300">
+                    <MathText text={`$$${rd.latex}$$`} large={true} />
+                </div>
+            );
+        }
+
+        return null;
     };
 
     const getSubmitLabel = () => {
@@ -229,21 +269,6 @@ const PracticeView = ({
                         </div>
                     ) : (
                         <div className="p-1 sm:p-2 lg:p-2">
-
-                            {/* --- WORD PROBLEM CONTROL SWITCH --- */}
-                            <div className="mb-2 flex justify-end px-2">
-                                <div className="flex items-center gap-2 bg-slate-50/80 p-1 px-3 rounded-full border border-slate-100 shadow-sm animate-in fade-in duration-200">
-                                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-tight select-none">
-                                        {lang === 'sv' ? '📝 Vardagsproblem' : '📝 Word Problems'}
-                                    </span>
-                                    <button 
-                                        onClick={() => setUseWordProblems(!useWordProblems)} 
-                                        className={`w-9 h-5 rounded-full transition-all relative p-1 ${useWordProblems ? 'bg-emerald-600' : 'bg-slate-300'}`}
-                                    >
-                                        <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${useWordProblems ? 'translate-x-4' : 'translate-x-0'}`} />
-                                    </button>
-                                </div>
-                            </div>
 
                             {/* VISUAL CONTAINER */}
                             <div className="mb-4 flex justify-center bg-slate-50/50 rounded-[2rem] p-4 min-h-[160px] h-[200px] sm:h-[350px] items-center border border-slate-100 shadow-inner relative overflow-hidden">
@@ -342,13 +367,26 @@ const PracticeView = ({
 
                             {/* CLUE SOLUTION SKIP BUTTONS */}
                             <div className="mt-6 flex gap-2 justify-center">
-                                <button onClick={handleHint} disabled={!question.clues || revealedClues.length >= question.clues.length} className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-white text-amber-500 border-2 border-amber-100 disabled:opacity-30 transition-all shadow-sm">
+                                <button 
+                                    onClick={handleHint} 
+                                    disabled={!question.clues || revealedClues.length >= question.clues.length} 
+                                    className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-white text-amber-500 border-2 border-amber-100 disabled:opacity-30 transition-all shadow-sm"
+                                >
                                     <Zap size={12}/> {ui.btnHint}
                                 </button>
-                                <button onClick={handleSolution} disabled={!question.clues || isSolutionRevealed} className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-white text-slate-400 border-2 border-slate-100 disabled:opacity-30 transition-all shadow-sm">
+
+                                <button 
+                                    onClick={handleSolution} 
+                                    disabled={!question.clues || isSolutionRevealed} 
+                                    className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-white text-slate-400 border-2 border-slate-100 disabled:opacity-30 transition-all shadow-sm"
+                                >
                                     <Info size={12}/> {ui.btnSolution}
                                 </button>
-                                <button onClick={handleSkip} className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-white text-indigo-400 border-2 border-indigo-100 hover:bg-indigo-50 transition-all shadow-sm">
+
+                                <button 
+                                    onClick={handleSkip} 
+                                    className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-white text-indigo-400 border-2 border-indigo-100 hover:bg-indigo-50 transition-all shadow-sm"
+                                >
                                     Hoppa över <ChevronRight size={12} />
                                 </button>
                             </div>
@@ -357,6 +395,25 @@ const PracticeView = ({
                 </main>
 
                 <aside className="w-full lg:w-64 shrink-0 flex flex-col gap-4">
+    
+                    {/* 🟢 UNIFIED WORD PROBLEM COACHING BANNER (ABOVE CLUE PANEL) */}
+                    <div className="bg-teal-300 rounded-[1rem] p-4 shadow-lg border border-slate-100 flex-1 relative overflow-hidden mx-auto mb-4 px-3 animate-in fade-in duration-300">
+                                                {/* Prominent Multi-State Toggle Button */}
+                            <button 
+                                type="button"
+                                onClick={() => setUseWordProblems(!useWordProblems)} 
+                                className={`w-full flex items-center justify-center gap-2 px-6 py-3 text-[12px] font-black uppercase tracking-widest rounded-[1rem] transition-all shadow-md active:scale-95 border-2 ${
+                                    useWordProblems 
+                                        ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/10' 
+                                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                                }`}
+                            >
+                                <HelpCircle size={18} fill={useWordProblems ? "rgba(255, 255, 255, 0.2)" : "none"}/> 
+                                {lang === 'sv' ? 'Aktivera Problemlösning' : 'Activate Word Problems'}
+                            </button>
+                    </div>
+                    {/* ================================================================= */}
+                    
                     {/* CLUE PANEL */}
                     <div className="bg-white rounded-[2rem] p-4 shadow-lg border border-slate-100 flex-1 min-h-[140px] relative overflow-hidden">
                         <div className={`absolute top-0 left-0 w-1 h-full ${activeTheme.accent} opacity-20`}></div>

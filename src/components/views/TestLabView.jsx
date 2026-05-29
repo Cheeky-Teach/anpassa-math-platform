@@ -60,8 +60,8 @@ const MathDisplay = ({ content, className = "" }) => {
 
 const LAB_TEXT = {
     sv: {
-        title: "Test Lab", testCode: "Testkod", modeExam: "Provläge", modePractice: "Övningsläge",
-        startBtn: "Starta Test", selectedAreas: "valda områden", level: "Nivå", back: "Tillbaka",
+        title: "Test Lab", testCode: "Testkod", modeExam: "Provläge", modePractice: "Öva",
+        startBtn: "Starta", selectedAreas: "valda", level: "Nivå", back: "Tillbaka",
         loading: "Laddar...", milestoneTitle: "Dags för en paus!", continueBtn: "Nästa Etapp",
         cooldown: "Vänta...", showAnswers: "Visa rätt svar", quit: "Avbryt Passet",
         answerReceived: "Svar mottaget", nextArr: "Fortsätt med pilen", finish: "Avsluta & Se Resultat",
@@ -112,6 +112,14 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     const [visibleClues, setVisibleClues] = useState({});
     const [showGuide, setShowGuide] = useState(false);
     const [useWordProblems, setUseWordProblems] = useState(false);
+
+    // --- NEW: TEST LAB INLINE REVEAL CONTROLLER ---
+    const [isLabEquationUnblurred, setIsLabEquationUnblurred] = useState(false);
+
+    // Reset the blur window automatically whenever a student changes index tabs
+    useEffect(() => {
+        setIsLabEquationUnblurred(false);
+    }, [currentIndex]);
 
     // --- HELPERS ---
     const getStyles = (category) => COLOR_VARIANTS[category.color || 'indigo'] || COLOR_VARIANTS.indigo;
@@ -529,49 +537,93 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     )}
                 </div>
 
-                {/* GLOBAL CONTROLS (Share & Start) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-                    {/* Mode Toggle Button */}  
-                    <button onClick={() => setMeta(p => ({ ...p, mode: p.mode === 'exam' ? 'practice' : 'exam' }))} className={`p-6 rounded-[2.5rem] border-2 transition-all text-left flex items-center gap-5 ${meta.mode === 'exam' ? 'bg-rose-50 border-rose-200 shadow-lg' : 'bg-white border-slate-100 shadow-sm'}`}>
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${meta.mode === 'exam' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400'}`}>{meta.mode === 'exam' ? <Lock size={20}/> : <Zap size={20}/>}</div>
-                        <div><span className="block font-black text-sm uppercase text-slate-700">{meta.mode === 'exam' ? t.modeExam : t.modePractice}</span><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{meta.mode === 'exam' ? (lang === 'sv' ? 'Dolda resultat' : 'Hidden resultat') : (lang === 'sv' ? 'Direkt feedback' : 'Instant feedback')}</span></div>
-                    </button>
+                {/* REFACTORED: HIGH-CONTRAST LIGHT ACTION CONTROL STRIP */}
+                <div className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl p-3 flex flex-wrap lg:flex-row items-center justify-between gap-3 mb-6 shadow-sm select-none">
+                    
+                    {/* Left-Side: Distinct, Elevated Interactive Buttons */}
+                    <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                        
+                        {/* 1. Practice vs. Exam Mode Toggle Button */}
+                        <button
+                            type="button"
+                            onClick={() => setMeta(p => ({ ...p, mode: p.mode === 'exam' ? 'practice' : 'exam' }))}
+                            title={meta.mode === 'exam' ? (lang === 'sv' ? 'Dolda resultat' : 'Hidden results') : (lang === 'sv' ? 'Direkt feedback' : 'Instant feedback')}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all active:scale-95 border-2 shadow-sm cursor-pointer ${
+                                meta.mode === 'exam' 
+                                    ? 'bg-rose-600 border-rose-600 text-white shadow-rose-600/20' 
+                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100/70 hover:border-slate-300'
+                            }`}
+                        >
+                            {meta.mode === 'exam' ? <Lock size={15}/> : <Zap size={15}/>}
+                            {meta.mode === 'exam' ? t.modeExam : t.modePractice}
+                        </button>
 
-                    {/* Share Button */}
-                    <button onClick={copyTestLink} className="p-6 bg-white border border-slate-100 rounded-[2.5rem] flex items-center gap-5 shadow-sm hover:border-indigo-600 transition-all text-left">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600"><LayoutGrid size={20}/></div>
-                        <div><span className="block font-black text-sm uppercase text-slate-700">{t.copyLink}</span><span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{lang === 'sv' ? 'Dela testet externt' : 'Share test externally'}</span></div>
-                    </button>
+                        {/* 2. Word Problem Toggle Button */}
+                        <button
+                            type="button"
+                            onClick={() => setUseWordProblems(!useWordProblems)}
+                            title={useWordProblems ? (lang === 'sv' ? 'Läget är aktivt' : 'Mode is Active') : (lang === 'sv' ? 'Standard matte' : 'Standard math')}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all active:scale-95 border-2 shadow-sm cursor-pointer ${
+                                useWordProblems 
+                                    ? 'bg-emerald-600 border-emerald-600 text-white shadow-emerald-600/20' 
+                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100/70 hover:border-slate-300'
+                            }`}
+                        >
+                            <HelpCircle size={15} fill={useWordProblems ? "rgba(255, 255, 255, 0.2)" : "none"}/>
+                            {lang === 'sv' ? 'Problemlösning?' : 'Word Problems?'}
+                        </button>
 
-                    {/* Question Limit Input - Integrated into the grid */}
-                    <div className="p-6 bg-white border border-slate-100 rounded-[2.5rem] flex items-center gap-5 shadow-sm">
-                        <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600"><ListChecks size={20}/></div>
-                        <div className="flex-1">
-                            <span className="block font-black text-sm uppercase text-slate-700">{lang === 'sv' ? 'Antal frågor' : 'Questions'}</span>
+                        {/* 3. External Share Test Button */}
+                        <button
+                            type="button"
+                            onClick={copyTestLink}
+                            title={lang === 'sv' ? 'Dela testet externt' : 'Share test externally'}
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider bg-white text-slate-600 border-2 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm active:scale-95 cursor-pointer"
+                        >
+                            <LayoutGrid size={15}/>
+                            {t.copyLink}
+                        </button>
+                        
+                        {/* 4. Question Limit Numerical Field Item */}
+                        <div 
+                            title={lang === 'sv' ? 'Ange max antal frågor (Lämna tomt för oändligt)' : 'Enter max question count (Leave empty for infinite)'}
+                            className="flex items-center gap-2 bg-white border-2 border-slate-200 rounded-xl px-3 py-1.5 h-[42px] shadow-sm"
+                        >
+                            <ListChecks size={20} className="text-amber-500 shrink-0"/>
+                            <span className="text-s font-black uppercase tracking-wider text-slate-800 select-none">
+                                {lang === 'sv' ? 'Frågor:' : 'Qty:'}
+                            </span>
                             <input 
-                                type="number" min="1" max="100" value={meta.limit || ''} placeholder="∞" 
+                                type="number" 
+                                min="1" 
+                                max="100" 
+                                value={meta.limit || ''} 
+                                placeholder="∞" 
                                 onChange={(e) => setMeta(p => ({ ...p, limit: parseInt(e.target.value) || 0 }))}
-                                className="w-full mt-1 bg-slate-50 border-none rounded-xl px-3 py-1 text-sm font-bold focus:ring-2 focus:ring-amber-500/20 outline-none"
+                                className="w-10 bg-slate-200 rounded-lg text-slate-800 font-black text-l text-center py-0.5 focus:bg-amber-50 focus:text-amber-900 outline-none transition-colors border border-transparent focus:border-amber-200"
                             />
                         </div>
                     </div>
 
-                    {/* Start Button */}
-                    <button 
-                        onClick={startNewSession} 
-                        disabled={Object.keys(selection).filter(k => selection[k].enabled).length === 0} 
-                        className="p-4 bg-indigo-600 text-white rounded-[2.5rem] flex items-center justify-between px-6 shadow-xl shadow-indigo-900/10 active:scale-95 disabled:opacity-30 transition-all"
-                    >
-                        <div className="flex items-center gap-3">
-                            <Play size={20} fill="currentColor"/>
-                            <p className="font-black uppercase text-[10px] tracking-widest">
-                                {Object.keys(selection).filter(k => selection[k].enabled).length} {t.selectedAreas}
-                            </p>
-                        </div>
-                        <span className="font-black uppercase text-[10px] tracking-widest bg-white text-indigo-900 px-4 py-2 rounded-2xl">
-                            {t.startBtn}
-                        </span>
-                    </button>
+                    {/* Right-Side: Primary Launch Session Button Action */}
+                    <div className="w-full lg:w-auto mt-1 lg:mt-0">
+                        {/* 5. Start Session Button */}
+                        <button 
+                            type="button"
+                            onClick={startNewSession} 
+                            disabled={Object.keys(selection).filter(k => selection[k].enabled).length === 0} 
+                            className="w-full lg:w-auto flex items-center justify-center gap-4 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-black uppercase text-sm tracking-widest shadow-md shadow-indigo-600/10 active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Play size={15} fill="currentColor"/>
+                                <span>{t.startBtn}</span>
+                            </div>
+                            <span className="text-[11px] font-black tracking-normal bg-indigo-900/40 text-indigo-100 px-2.5 py-1 rounded-lg">
+                                {Object.keys(selection).filter(k => selection[k].enabled).length} {lang === 'sv' ? 'valda' : 'selected'}
+                            </span>
+                        </button>
+                    </div>
+                    
                 </div>
 
                 {/* PRESETS & RESET ROW */}
@@ -597,17 +649,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         </div>
 
                         {/* --- NEW: WORD PROBLEM TOGGLE CONTROL SLIDER LINKED TO TESTPass --- */}
-                        <div className="flex items-center gap-3 bg-slate-50/80 p-2 px-4 rounded-2xl border border-slate-100 shadow-sm shrink-0 min-w-[200px] justify-between animate-in fade-in duration-200">
-                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-tight select-none">
-                                {lang === 'sv' ? '📝 Vardagsproblem' : '📝 Word Problems'}
-                            </span>
-                            <button 
-                                onClick={() => setUseWordProblems(!useWordProblems)} 
-                                className={`w-10 h-5 rounded-full transition-all relative p-1 ${useWordProblems ? 'bg-emerald-600' : 'bg-slate-300'}`}
-                            >
-                                <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${useWordProblems ? 'translate-x-5' : 'translate-x-0'}`} />
-                            </button>
-                        </div>
+                        {/* Prominent Multi-State Toggle Button */}
+                            
 
                     </div>
 
@@ -836,12 +879,41 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6 overflow-y-auto">
                     <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
                         <MathDisplay content={q?.resolvedData?.renderData?.description} />
-                        {q?.resolvedData?.renderData?.latex && (
-                            <div className="mt-6 text-3xl lg:text-5xl text-indigo-600 font-serif border-t border-slate-100 pt-6">
-                                <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
-                            </div>
-                        )}
                     </div>
+                            {q?.resolvedData?.renderData?.latex && (() => {
+                                const isWordProblem = q?.resolvedData?.renderData?.isWordProblemApplied;
+
+                                // 🟡 If a word problem is running and the user hasn't unblurred it yet...
+                                if (isWordProblem && !isLabEquationUnblurred) {
+                                    return (
+                                        <div className="w-full flex items-center justify-center pt-6">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsLabEquationUnblurred(true)}
+                                                className="group relative px-10 py-6 rounded-[2rem] border-2 border-dashed border-slate-200 bg-white hover:bg-indigo-50/20 hover:border-indigo-400 transition-all flex flex-col items-center justify-center max-w-sm w-full shadow-sm cursor-pointer"
+                                            >
+                                                {/* Blurred math calculation placeholder wrapper */}
+                                                <div className="text-3xl font-serif text-slate-400/30 filter blur-[8px] group-hover:blur-[5px] transition-all duration-300 select-none unselectable">
+                                                    A + B = C
+                                                </div>
+                                                {/* Absolute alignment reveal tooltip anchor overlay button */}
+                                                <div className="absolute inset-0 flex items-center justify-center bg-slate-50/10 rounded-[2rem]">
+                                                    <span className="bg-slate-900 text-white font-black uppercase text-[12px] tracking-widest px-4 py-2.5 rounded-xl shadow-md group-hover:bg-indigo-600 transition-all">
+                                                        {lang === 'sv' ? "Ledtråd: Se uppställning" : "Hint: Show Equation"}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    );
+                                }
+
+                                // 🟢 Standard Display: Renders default abstract calculations or unblurred word problem equations
+                                return (
+                                    <div className="mt-6 text-3xl lg:text-5xl text-indigo-600 font-serif border-t border-slate-100 pt-6 animate-in fade-in duration-300">
+                                        <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
+                                    </div>
+                                );
+                            })()}
                 </div>
 
                 {/* FEEDBACK SECTION */}
