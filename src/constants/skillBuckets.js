@@ -246,18 +246,74 @@ export const SKILL_BUCKETS = {
         variations: [
           { key: 'add_concept', name: { sv: 'Addition: Regler', en: 'Addition: Rules' }, desc: { sv: 'Addera täljare, ej nämnare', en: 'Add numerators, not denominators' } },
           { key: 'add_missing', name: { sv: 'Addition: Pussel', en: 'Addition: Puzzle' }, desc: { sv: 'Hitta saknad term', en: 'Find missing term' } },
-          { key: 'add_calc', name: { sv: 'Addition: Samma nämnare', en: 'Addition: Same denom' }, desc: { sv: 'Enkel addition', en: 'Simple addition' } },
-          { key: 'sub_calc', name: { sv: 'Subtraktion: Samma nämnare', en: 'Subtraction: Same denom' }, desc: { sv: 'Enkel subtraktion', en: 'Simple subtraction' } },
+          {
+            key: "add_calc",
+            name: { sv: "Bråkaddition: Lika nämnare", en: "Fraction Addition: Same Denominator" },
+            desc: { sv: "Addera bråk med gemensam nämnare och svara i enklaste form", en: "Add fractions with a common denominator and simplify the answer" },
+            tags: ["word_problem_ready"],
+            contextType: "frac_same_denom_add",
+            extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d>\d+)\s*}\s*\+\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?:\k<d>)\s*}/
+          },
+          {
+            key: "sub_calc",
+            name: { sv: "Bråksubtraktion: Lika nämnare", en: "Fraction Subtraction: Same Denominator" },
+            desc: { sv: "Subtrahera bråk med gemensam nämnare och svara i enklaste form", en: "Subtract fractions with a common denominator and simplify the answer" },
+            tags: ["word_problem_ready"],
+            contextType: "frac_same_denom_sub",
+            extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d>\d+)\s*}\s*-\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?:\k<d>)\s*}/
+          },
           { key: 'lcd_find', name: { sv: 'Hitta MGN', en: 'Find LCD' }, desc: { sv: 'Minsta gemensamma nämnare', en: 'Lowest common denominator' } },
           { key: 'add_error_spot', name: { sv: 'Hitta felet: Olika nämnare', en: 'Find error: Diff denom' }, desc: { sv: 'Vanliga misstag', en: 'Common mistakes' } },
-          { key: 'add_diff_denom', name: { sv: 'Addition: Olika nämnare', en: 'Addition: Diff denom' }, desc: { sv: 'Förlängning krävs', en: 'Extension required' } },
-          { key: 'sub_diff_denom', name: { sv: 'Subtraktion: Olika nämnare', en: 'Subtraction: Diff denom' }, desc: { sv: 'Förlängning krävs', en: 'Extension required' } },
-          { key: 'mixed_add_diff', name: { sv: 'Blandad Add: Olika', en: 'Mixed Add: Diff' }, desc: { sv: 'MGN med blandad form', en: 'LCD with mixed form' } },
-          { key: 'mixed_sub_diff', name: { sv: 'Blandad Sub: Olika', en: 'Mixed Sub: Diff' }, desc: { sv: 'Låna från heltal', en: 'Borrow from integer' } },
+          {
+            key: "add_diff_denom",
+            name: { sv: "Bråkaddition: Olika nämnare", en: "Fraction Addition: Different Denominators" },
+            desc: { sv: "Hitta MGN för att addera bråk med olika nämnare", en: "Find the LCD to add fractions with different denominators" },
+            tags: ["word_problem_ready"],
+            contextType: "frac_diff_denom_add",
+            extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*\+\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
+          },
+          {
+            key: "sub_diff_denom",
+            name: { sv: "Bråksubtraktion: Olika nämnare", en: "Fraction Subtraction: Different Denominators" },
+            desc: { sv: "Hitta MGN för att subtrahera bråk med olika nämnare", en: "Find the LCD to subtract fractions with different denominators" },
+            tags: ["word_problem_ready"],
+            contextType: "frac_diff_denom_sub",
+            extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*-\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
+          },
+          {
+            key: "mixed_add_diff",
+            name: { sv: "Addition: Blandad form", en: "Addition: Mixed Form" },
+            desc: { sv: "Addera bråk i blandad form genom att omvandla till bråkform", en: "Add fractions in mixed form by converting to improper fractions" },
+            tags: ["word_problem_ready"],
+            contextType: "frac_mixed_add",
+            extractorPattern: /(?<w1>\d+)\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*\+\s*(?<w2>\d+)\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
+          },
+          {
+            key: "mixed_sub_diff",
+            name: { sv: "Subtraktion: Blandad form", en: "Subtraction: Mixed Form" },
+            desc: { sv: "Subtrahera bråk i blandad form genom att omvandla till bråkform", en: "Subtract fractions in mixed form by converting to improper fractions" },
+            tags: ["word_problem_ready"],
+            contextType: "frac_mixed_sub",
+            extractorPattern: /(?<w1>\d+)\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*-\s*(?<w2>\d+)\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
+          },
           { key: 'mult_scaling', name: { sv: 'Multiplikation: Skalning', en: 'Mult: Scaling' }, desc: { sv: 'Större eller mindre?', en: 'Larger or smaller?' } },
-          { key: 'mult_calc', name: { sv: 'Multiplikation', en: 'Multiplication' }, desc: { sv: 'Täljare*Täljare / Nämnare*Nämnare', en: 'Top*Top / Bottom*Bottom' } },
+          {
+            key: "mult_calc",
+            name: { sv: "Bråkmultiplikation", en: "Fraction Multiplication" },
+            desc: { sv: "Multiplicera täljare för sig och nämnare för sig till enklaste form", en: "Multiply numerators and denominators separately into simplest form" },
+            tags: ["word_problem_ready"],
+            contextType: "frac_multiplication",
+            extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*\\cdot\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
+          },
           { key: 'div_reciprocal', name: { sv: 'Inverterade tal', en: 'Reciprocal numbers' }, desc: { sv: 'Vänd på bråket', en: 'Flip the fraction' } },
-          { key: 'div_calc', name: { sv: 'Division', en: 'Division' }, desc: { sv: 'Mult med invers', en: 'Mult by inverse' } }
+          {
+            key: "div_calc",
+            name: { sv: "Bråkdivision", en: "Fraction Division" },
+            desc: { sv: "Dividera bråk genom att multiplicera med det inverterade bråket", en: "Divide fractions by multiplying by the reciprocal" },
+            tags: ["word_problem_ready"],
+            contextType: "frac_division",
+            extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*\\div\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
+          }
         ]
       },
       percent: {
@@ -330,14 +386,42 @@ export const SKILL_BUCKETS = {
       ten_powers: {
         name: { sv: 'Tiopotenser & Prefix', en: 'Powers of Ten & Prefixes' },
         variations: [
-          { key: 'big_mult_std', name: { sv: 'Mult med 10/100/1000', en: 'Mult by 10/100/1000' }, desc: { sv: 'Flytta komma höger', en: 'Move decimal right' } },
-          { key: 'big_div_std', name: { sv: 'Div med 10/100/1000', en: 'Div by 10/100/1000' }, desc: { sv: 'Flytta komma vänster', en: 'Move decimal left' } },
+          {
+            key: "big_mult_std",
+            name: { sv: "Multiplikation: Stora tal", en: "Multiplication: Large numbers" },
+            desc: { sv: "Multiplicera decimaltal med 10, 100, 1000", en: "Multiply decimals by 10, 100, 1000" },
+            tags: ["word_problem_ready"],
+            contextType: "ten_powers_mult_large",
+            extractorPattern: /(?<num>[\d,.]+)\s*·\s*(?<power>10|100|1000|10000)/
+          },
+          {
+            key: "big_div_std",
+            name: { sv: "Division: Stora tal", en: "Division: Large numbers" },
+            desc: { sv: "Dividera decimaltal med 10, 100, 1000", en: "Divide decimals by 10, 100, 1000" },
+            tags: ["word_problem_ready"],
+            contextType: "ten_powers_div_large",
+            extractorPattern: /\\frac{\s*(?<num>[\d,.]+)\s*}{\s*(?<power>10|100|1000|10000)\s*}/
+          },
           { key: 'big_missing_factor', name: { sv: 'Hitta 10-faktorn', en: 'Find 10-factor' }, desc: { sv: 'Vad multiplicerades?', en: 'What was multiplied?' } },
           { key: 'power_discovery', name: { sv: 'Potensform', en: 'Power form' }, desc: { sv: 'Skriv som 10^n', en: 'Write as 10^n' } },
           { key: 'reciprocal_equivalence', name: { sv: 'Inverser (0,1/0,01)', en: 'Reciprocals (0.1/0.01)' }, desc: { sv: '0,1 = 1/10', en: '0.1 = 1/10' } },
           { key: 'concept_spot_lie', name: { sv: 'Hitta felet: 10-bas', en: 'Find error: base 10' }, desc: { sv: 'Konceptuell förståelse', en: 'Conceptual understanding' } },
-          { key: 'decimal_div_std', name: { sv: 'Div med 0,1/0,01/0,001', en: 'Div by 0.1/0.01/0.001' }, desc: { sv: 'Talet blir större', en: 'Number gets larger' } },
-          { key: 'decimal_mult_std', name: { sv: 'Mult med 0,1/0,01/0,001', en: 'Mult by 0.1/0.01/0.001' }, desc: { sv: 'Talet blir mindre', en: 'Number gets smaller' } }
+          {
+            key: "decimal_mult_std",
+            name: { sv: "Multiplikation: Små tal", en: "Multiplication: Small numbers" },
+            desc: { sv: "Multiplicera med decimala tiopotenser (0,1, 0,01)", en: "Multiply by decimal powers of ten (0.1, 0.01)" },
+            tags: ["word_problem_ready"],
+            contextType: "ten_powers_mult_small",
+            extractorPattern: /(?<num>[\d,.]+)\s*·\s*(?<factor>0[.,]0*1)/
+          },
+          {
+            key: "decimal_div_std",
+            name: { sv: "Division: Små tal", en: "Division: Small numbers" },
+            desc: { sv: "Dividera med decimala tiopotenser (0,1, 0,01)", en: "Divide by decimal powers of ten (0.1, 0.01)" },
+            tags: ["word_problem_ready"],
+            contextType: "ten_powers_div_small",
+            extractorPattern: /\\frac{\s*(?<num>[\d,.]+)\s*}{\s*(?<factor>0[.,]0*1)\s*}/
+          }
         ]
       }
     }
@@ -381,18 +465,60 @@ export const SKILL_BUCKETS = {
       geometry: {
         name: { sv: 'Area & Omkrets', en: 'Area & Perimeter' },
         variations: [
-          { key: 'perimeter_square', name: { sv: 'Omkrets: Kvadrat', en: 'Perimeter: Square' }, desc: { sv: '4 * sida', en: '4 * side' } },
+          {
+            key: "perimeter_square",
+            name: { sv: "Omkrets: Kvadrat", en: "Perimeter: Square" },
+            desc: { sv: "Beräkna omkretsen av en kvadrat utifrån en känd sida", en: "Calculate the perimeter of a square from a known side length" },
+            tags: ["word_problem_ready"],
+            contextType: "geom_perimeter_square",
+            extractorPattern: /(?:sidan är|side is)\s*(?<s>\d+)\s*cm/i
+          },
           { key: 'perimeter_rect', name: { sv: 'Omkrets: Rektangel', en: 'Perimeter: Rectangle' }, desc: { sv: '2b + 2h', en: '2w + 2h' } },
           { key: 'perimeter_parallel', name: { sv: 'Omkrets: Parallellogram', en: 'Perimeter: Parallelogram' }, desc: { sv: 'Samma som rektangel', en: 'Same as rectangle' } },
-          { key: 'perimeter_inverse', name: { sv: 'Omkrets: Hitta sidan', en: 'Perimeter: Find side' }, desc: { sv: 'Givet O, hitta x', en: 'Given P, find x' } },
+          {
+            key: "perimeter_inverse",
+            name: { sv: "Omkrets: Omvänd rektangel", en: "Perimeter: Inverse Rectangle" },
+            desc: { sv: "Hitta den saknade höjden i en rektangel utifrån omkrets och bas", en: "Find the missing height of a rectangle using perimeter and base" },
+            tags: ["word_problem_ready"],
+            contextType: "geom_perimeter_inverse",
+            extractorPattern: /(?:omkretsen|perimeter of)\s*(?<p>\d+)\s*cm[\s\S]*(?:basen är|base is)\s*(?<b>\d+)\s*cm/i
+          },
           { key: 'area_square', name: { sv: 'Area: Kvadrat', en: 'Area: Square' }, desc: { sv: 's * s', en: 's * s' } },
-          { key: 'area_rect', name: { sv: 'Area: Rektangel', en: 'Area: Rectangle' }, desc: { sv: 'b * h', en: 'w * h' } },
+          {
+            key: "area_rect",
+            name: { sv: "Area: Rektangel & Parallellogram", en: "Area: Rectangle & Parallelogram" },
+            desc: { sv: "Beräkna ytan på en fyrhörning genom basen gånger höjden", en: "Calculate the surface area of a quadrilateral using base times height" },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_quad",
+            extractorPattern: /Multiplicera:\s*(?<b>\d+)\s*·\s*(?<h>\d+)/i
+          },
           { key: 'area_parallel', name: { sv: 'Area: Parallellogram', en: 'Area: Parallelogram' }, desc: { sv: 'Vinkelrät höjd', en: 'Perpendicular height' } },
-          { key: 'area_triangle', name: { sv: 'Area: Triangel', en: 'Area: Triangle' }, desc: { sv: '(b * h) / 2', en: '(b * h) / 2' } },
+          {
+            key: "area_triangle",
+            name: { sv: "Area: Triangel", en: "Area: Triangle" },
+            desc: { sv: "Beräkna triangelns area genom basen gånger höjden delat på två", en: "Calculate triangle area using base times height divided by two" },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_triangle",
+            extractorPattern: /Multiplicera basen med höjden[\s\S]*?(?<base>\d+)\s*·\s*(?<height>\d+)/i
+          },
           { key: 'perimeter_triangle_right', name: { sv: 'Omkrets: Rätvinklig triangel', en: 'Perimeter: Right triangle' }, desc: { sv: 'Summa av sidor', en: 'Sum of sides' } },
-          { key: 'combined_l_shape', name: { sv: 'Area: L-figur', en: 'Area: L-shape' }, desc: { sv: 'Dela i två rektanglar', en: 'Split into two rectangles' } },
+          {
+            key: "combined_l_shape",
+            name: { sv: "Area: L-formad figur", en: "Area: L-Shaped Figure" },
+            desc: { sv: "Dela upp en sammansatt vinkelformad yta i två rektanglar", en: "Divide a composite L-shaped area into two separate rectangles" },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_l_shape",
+            extractorPattern: /vertikala rektangeln[\s\S]*?(?<vW>\d+)\s*·\s*(?<vH>\d+)[\s\S]*horisontella rektangeln[\s\S]*?(?<hW>\d+)\s*·\s*(?<hH>\d+)/i
+          },
           { key: 'combined_rect_tri', name: { sv: 'Area: Sammansatt Rekt+Tri', en: 'Area: Comp. Rect+Tri' }, desc: { sv: 'Addera delarna', en: 'Add the parts' } },
-          { key: 'circle_area', name: { sv: 'Area: Cirkel', en: 'Area: Circle' }, desc: { sv: 'pi*r^2', en: 'pi*r^2' } },
+          {
+            key: "circle_area",
+            name: { sv: "Area: Cirkel", en: "Area: Circle" },
+            desc: { sv: "Beräkna cirkelns yta utifrån radie eller diameter", en: "Calculate the area of a circle using radius or diameter" },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_circle",
+            extractorPattern: /3,14\s*·\s*(?<r>\d+)\s*\^2/i
+          },
           { key: 'circle_perimeter', name: { sv: 'Omkrets: Cirkel', en: 'Perimeter: Circle' }, desc: { sv: 'pi*diameter', en: 'pi*diameter' } },
           { key: 'semicircle_area', name: { sv: 'Area: Halvcirkel', en: 'Area: Semicircle' }, desc: { sv: 'Hälften av pi*r^2', en: 'Half of pi*r^2' } },
           { key: 'semicircle_perimeter', name: { sv: 'Omkrets: Halvcirkel', en: 'Perimeter: Semicircle' }, desc: { sv: 'Båge + Diameter', en: 'Arc + Diameter' } },
@@ -400,7 +526,14 @@ export const SKILL_BUCKETS = {
           { key: 'perimeter_quarter', name: { sv: 'Omkrets: Kvartscirkel', en: 'Perimeter: Quarter circle' }, desc: { sv: 'Båge + 2 Radier', en: 'Arc + 2 Radii' } },
           { key: 'perimeter_house', name: { sv: 'Omkrets: Hus', en: 'Perimeter: House' }, desc: { sv: 'Rektangel + Triangel', en: 'Rectangle + Triangle' } },
           { key: 'perimeter_portal', name: { sv: 'Omkrets: Portal', en: 'Perimeter: Portal' }, desc: { sv: 'Rektangel + Halvcirkel', en: 'Rectangle + Semicircle' } },
-          { key: 'area_house', name: { sv: 'Area: Hus', en: 'Area: House' }, desc: { sv: 'Rektangel + Triangel', en: 'Rectangle + Triangle' } },
+          {
+            key: "area_house",
+            name: { sv: "Area: Sammansatt Hus", en: "Area: Composite House" },
+            desc: { sv: "Avancerad area genom att addera en hussida med ett triangulärt tak", en: "Advanced area by adding a rectangular wall base with a triangular roof" },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_house",
+            extractorPattern: /rektangelns yta[\s\S]*?(?<w>\d+)\s*·\s*(?<h>\d+)[\s\S]*triangelns yta[\s\S]*?hr:\s*(?<hr>\d+)/i
+          },
           { key: 'area_portal', name: { sv: 'Area: Portal', en: 'Area: Portal' }, desc: { sv: 'Rektangel + Halvcirkel', en: 'Rectangle + Semicircle' } }
         ]
       },
@@ -452,14 +585,36 @@ export const SKILL_BUCKETS = {
         name: { sv: 'Skala', en: 'Scale' },
         variations: [
           { key: 'concept_lie', name: { sv: 'Hitta felet: Skala', en: 'Find error: Scale' }, desc: { sv: 'Analysera påstående', en: 'Analyze statement' } },
-          { key: 'calc_real', name: { sv: 'Beräkna verklighet', en: 'Calculate reality' }, desc: { sv: 'Bild till verklighet', en: 'Image to reality' } },
+          {
+            key: "calc_real",
+            name: { sv: "Beräkna verklighet: Längd", en: "Calculate Reality: Length" },
+            desc: { sv: "Använd skalan 1:X och ritningens mått för att beräkna den verkliga längden", en: "Use scale 1:X and drawing measurements to calculate the actual length" },
+            tags: ["word_problem_ready"],
+            contextType: "scale_calc_real",
+            extractorPattern: /1:(?<scale>\d+)[\s\S]*sträcka\s*(?<imgCm>\d+)\s*cm/i
+          },
           { key: 'calc_image', name: { sv: 'Beräkna bild', en: 'Calculate image' }, desc: { sv: 'Verklighet till bild', en: 'Reality to image' } },
           { key: 'find_scale', name: { sv: 'Bestäm skalan', en: 'Determine scale' }, desc: { sv: '1:X form', en: '1:X form' } },
           { key: 'map_real', name: { sv: 'Karta till verklighet', en: 'Map to reality' }, desc: { sv: 'Använd kartskala', en: 'Use map scale' } },
           { key: 'blueprint_draw', name: { sv: 'Ritning: Beräkna cm', en: 'Blueprint: Calc cm' }, desc: { sv: 'Skala 1:50', en: 'Scale 1:50' } },
           { key: 'microscope_calc', name: { sv: 'Förstoring (Mikroskop)', en: 'Magnification (Micro)' }, desc: { sv: 'X:1 form', en: 'X:1 form' } },
           { key: 'area_concept', name: { sv: 'Areaskala: Koncept', en: 'Area scale: Concept' }, desc: { sv: 'Längdskala i kvadrat', en: 'Length scale squared' } },
-          { key: 'area_calc_large', name: { sv: 'Beräkna stor area', en: 'Calculate large area' }, desc: { sv: 'Använd areaskala', en: 'Use area scale' } }
+          {
+            key: "area_calc_large",
+            name: { sv: "Beräkna verklighet: Area", en: "Calculate Reality: Area" },
+            desc: { sv: "Använd längdskalan i kvadrat för att beräkna den verkliga arean", en: "Use the length scale squared to calculate the actual area" },
+            tags: ["word_problem_ready"],
+            contextType: "scale_area_forward",
+            extractorPattern: /1:(?<scale>\d+)[\s\S]*arean\s*(?<smallA>\d+)\s*cm²/i
+          },
+          {
+            key: "area_reverse",
+            name: { sv: "Bestäm skala utifrån area", en: "Determine Scale from Area" },
+            desc: { sv: "Beräkna längdskalan genom att dra kvadratroten ur areaskalan", en: "Calculate the length scale by taking the square root of the area scale" },
+            tags: ["word_problem_ready"],
+            contextType: "scale_area_reverse",
+            extractorPattern: /arean\s*(?<smallA>\d+)\s*cm²[\s\S]*arean\s*(?<largeA>\d+)\s*cm²/i
+          }
         ]
       },
       volume: {
@@ -523,12 +678,33 @@ export const SKILL_BUCKETS = {
           { key: 'visual_not', name: { sv: 'Komplementhändelse', en: 'Complementary event' }, desc: { sv: 'Sannolikheten för "Inte"', en: 'Probability of "Not"' } },
           { key: 'visual_spinner', name: { sv: 'Lyckohjul', en: 'Lucky wheel' }, desc: { sv: 'Sektorernas andel', en: 'Sector share' } },
           { key: 'dice_single', name: { sv: 'Tärning: Enstaka tal', en: 'Dice: Single number' }, desc: { sv: 'Ex: Få en 5:a', en: 'Ex: Rolling a 5' } },
-          { key: 'dice_parity', name: { sv: 'Tärning: Udda/Jämnt', en: 'Dice: Odd/Even' }, desc: { sv: 'Hälften av utfallen', en: 'Half of outcomes' } },
+          {
+            key: "dice_parity",
+            name: { sv: "Tärningskast: Egenskaper", en: "Die Toss: Properties" },
+            desc: { sv: "Sannolikhet för jämna, udda eller specifika tärningsmönster", en: "Probability of rolling even, odd, or specific die patterns" },
+            tags: ["word_problem_ready"],
+            contextType: "prob_dice_parity",
+            extractorPattern: /slå\s*ett\s*(?<label>jämnt|udda)\s*tal/i
+          },
           { key: 'dice_range', name: { sv: 'Tärning: Intervall', en: 'Dice: Range' }, desc: { sv: 'Större/Mindre än n', en: 'Greater/Smaller than n' } },
-          { key: 'group_ratio', name: { sv: 'Förhållanden', en: 'Ratios' }, desc: { sv: 'Sannolikhet från n:m', en: 'Probability from n:m' } },
+          {
+            key: "group_ratio",
+            name: { sv: "Förhållande i grupp", en: "Ratios in Groups" },
+            desc: { sv: "Beräkna sannolikhet utifrån ett givet proportionellt förhållande", en: "Calculate probability based on a given proportional ratio" },
+            tags: ["word_problem_ready"],
+            contextType: "prob_group_ratio",
+            extractorPattern: /mellan\s*(?<label1>[^ och]+)\s*och\s*(?<label2>[^ ]+)\s*föremål\s*(?<r1>\d+):(?<r2>\d+)/i
+          },
           { key: 'group_ternary', name: { sv: 'Tre grupper', en: 'Three groups' }, desc: { sv: 'Hitta restens chans', en: 'Find rest\'s chance' } },
           { key: 'concept_likelihood', name: { sv: 'Begrepp: Chans', en: 'Concept: Chance' }, desc: { sv: 'Säkert / Omöjligt', en: 'Certain / Impossible' } },
-          { key: 'comp_multi', name: { sv: 'Inte vinst', en: 'Not winning' }, desc: { sv: '100% - Vinstchans', en: '100% - Win chance' } },
+          {
+            key: "comp_multi",
+            name: { sv: "Komplementhändelse: Procent", en: "Complementary Event: Percent" },
+            desc: { sv: "Beräkna sannolikheten att något INTE händer utifrån procent", en: "Calculate the probability of an event NOT happening using percentages" },
+            tags: ["word_problem_ready"],
+            contextType: "prob_complement_pct",
+            extractorPattern: /lotteri\s*är\s*(?<pWin>\d+)\s*%/i
+          },
           { key: 'tree_calc', name: { sv: 'Sannolikhetsträd', en: 'Probability tree' }, desc: { sv: 'Dragning utan återl.', en: 'Pick w/o replacement' } },
           { key: 'chain_any_order', name: { sv: 'Oberoende ordning', en: 'Independent order' }, desc: { sv: 'En av varje färg', en: 'One of each color' } },
           { key: 'comb_constraint', name: { sv: 'Kombinatorik: Outfits', en: 'Combinatorics: Outfits' }, desc: { sv: 'Multiplikation', en: 'Multiplication' } },
