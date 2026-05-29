@@ -23,6 +23,8 @@ import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
 import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
 import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js';
 import { UnitConversionGen } from '../src/core/generators/UnitConversionGen.js';
+import { WordProblemInterceptor } from '../src/core/utils/WordProblemInterceptor.js';
+import { SKILL_BUCKETS } from '../src/constants/skillBuckets.js';
 
 // COMPLETE TOPIC MAP (Aligned with skillBuckets.js)
 const TopicMap: Record<string, any> = {
@@ -106,7 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 3. Generation Loop
     for (const item of requests) {
-      const { topic, variation, level, lang } = item;
+      const { topic, variation, level, lang, wordProblem } = item;
       
       const GeneratorClass = TopicMap[topic];
 
@@ -131,24 +133,62 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           questionData = generator.generate(level || 1, lang);
         }
 
+        // WORD PROBLEM INTERCEPTOR
+        const activateWordProblem = (wordProblem === true || wordProblem === 'true');
+        const activeVariation = variation || questionData?.variationKey;
+
+        if (activateWordProblem && activeVariation) {
+            let foundVariationConfig = null;
+
+            for (const catKey in SKILL_BUCKETS) {
+                const category = (SKILL_BUCKETS as any)[catKey];
+                if (category && typeof category === 'object' && category.topics) {
+                    for (const topicKey in category.topics) {
+                        const topicObj = category.topics[topicKey];
+                        if (topicObj && topicObj.variations && Array.isArray(topicObj.variations)) {
+                            const matchedVariant = topicObj.variations.find((v: any) => v && v.key === String(activeVariation));
+                            if (matchedVariant) {
+                                foundVariationConfig = matchedVariant;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (foundVariationConfig) break;
+            }
+
+            if (foundVariationConfig) {
+                questionData = WordProblemInterceptor.process(questionData, foundVariationConfig, String(lang || 'sv'));
+            }
+        }
+
+
         // SECURITY: Payload Scrubbing
         // We explicitly whitelists the properties to return.
         // By NOT spreading (...questionData), we ensure the raw 'answer' property 
         // is never exposed to the student's browser/Network Tab.
+        // Locate your questions.push configuration block inside api/batch.ts
         questions.push({
           id: `q-${globalIndex}-${Date.now()}`,
           number: globalIndex,
           topic_id: topic,
-          variation_key: variation || 'generic',
+          variation_key: activeVariation || 'generic',
           is_generated: true,
           resolvedData: {
-            renderData: questionData.renderData, // Required for UI
-            token: questionData.token,           // Base64 Answer for Teacher/Print
-            clues: questionData.clues,           // Hints
-            level: questionData.level || level   // Metadata
+            renderData: {
+                ...questionData.renderData,
+                
+                // 🟢 FIX: Read from questionData.metadata or questionData.metadata (handles both paths!)
+                isWordProblemApplied: questionData.metadata?.isWordProblemApplied || 
+                                      questionData.renderData?.isWordProblemApplied || 
+                                      false
+            },
+            token: questionData.token,           
+            clues: questionData.clues,           
+            level: questionData.level || level   
           }
         });
-
+        
         globalIndex++;
 
       } catch (genError) {

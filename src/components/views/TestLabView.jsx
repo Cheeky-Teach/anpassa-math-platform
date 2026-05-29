@@ -113,14 +113,6 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     const [showGuide, setShowGuide] = useState(false);
     const [useWordProblems, setUseWordProblems] = useState(false);
 
-    // --- NEW: TEST LAB INLINE REVEAL CONTROLLER ---
-    const [isLabEquationUnblurred, setIsLabEquationUnblurred] = useState(false);
-
-    // Reset the blur window automatically whenever a student changes index tabs
-    useEffect(() => {
-        setIsLabEquationUnblurred(false);
-    }, [currentIndex]);
-
     // --- HELPERS ---
     const getStyles = (category) => COLOR_VARIANTS[category.color || 'indigo'] || COLOR_VARIANTS.indigo;
 
@@ -173,12 +165,21 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
     // Resets question array when going back to lab to change settings
     const startNewSession = () => {
-        setPacket([]);         // Clear old questions to trigger the fetch useEffect
-        setResponses({});      // Clear previous answers
-        setVisibleClues({});   // Reset clue visibility
-        setCurrentIndex(0);    // Reset to first question
-        setInputValue('');     // Clear any typed text
-        setInternalMode('ACTIVE'); // Switch to the test view
+        setResponses({});          // Clear previous answers
+        setVisibleClues({});       // Reset clue visibility
+        setCurrentIndex(0);        // Reset to first question
+        setInputValue('');         // Clear typed input
+        
+        // 1. Force the layout into LOADING state first
+        setInternalMode('LOADING'); 
+        
+        // 2. Wipe out the stale packet data
+        setPacket([]);             
+        
+        // 3. Let the state clear settle, then boot into ACTIVE mode to trigger a fresh network fetch
+        setTimeout(() => {
+            setInternalMode('ACTIVE');
+        }, 50);
     };
 
     // --- CORE LOGIC ---
@@ -444,8 +445,11 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     }, [configCode]);
 
     useEffect(() => {
-        if (internalMode === 'ACTIVE' && packet.length === 0) fetchNextSprint();
-    }, [internalMode]);
+        if (internalMode === 'ACTIVE' && packet.length === 0) {
+            fetchNextSprint();
+        }
+    // FIX: Include useWordProblems inside the dependency list so changes trigger clean network queries
+    }, [internalMode, packet.length, useWordProblems]);
 
     useEffect(() => {
         let timer;
@@ -561,16 +565,16 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         {/* 2. Word Problem Toggle Button */}
                         <button
                             type="button"
-                            onClick={() => setUseWordProblems(!useWordProblems)}
+                            onClick={() => setUseWordProblems(!useWordProblems)} // Keep it simple here!
                             title={useWordProblems ? (lang === 'sv' ? 'Läget är aktivt' : 'Mode is Active') : (lang === 'sv' ? 'Standard matte' : 'Standard math')}
                             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all active:scale-95 border-2 shadow-sm cursor-pointer ${
                                 useWordProblems 
-                                    ? 'bg-emerald-600 border-emerald-600 text-white shadow-emerald-600/20' 
+                                    ? 'bg-emerald-600 border-emerald-600 text-white shadow-rose-600/20' 
                                     : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100/70 hover:border-slate-300'
                             }`}
                         >
                             <HelpCircle size={15} fill={useWordProblems ? "rgba(255, 255, 255, 0.2)" : "none"}/>
-                            {lang === 'sv' ? 'Problemlösning?' : 'Word Problems?'}
+                            {lang === 'sv' ? 'Vardagsproblem' : 'Word Problems'}
                         </button>
 
                         {/* 3. External Share Test Button */}
@@ -880,40 +884,12 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
                         <MathDisplay content={q?.resolvedData?.renderData?.description} />
                     </div>
-                            {q?.resolvedData?.renderData?.latex && (() => {
-                                const isWordProblem = q?.resolvedData?.renderData?.isWordProblemApplied;
-
-                                // 🟡 If a word problem is running and the user hasn't unblurred it yet...
-                                if (isWordProblem && !isLabEquationUnblurred) {
-                                    return (
-                                        <div className="w-full flex items-center justify-center pt-6">
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsLabEquationUnblurred(true)}
-                                                className="group relative px-10 py-6 rounded-[2rem] border-2 border-dashed border-slate-200 bg-white hover:bg-indigo-50/20 hover:border-indigo-400 transition-all flex flex-col items-center justify-center max-w-sm w-full shadow-sm cursor-pointer"
-                                            >
-                                                {/* Blurred math calculation placeholder wrapper */}
-                                                <div className="text-3xl font-serif text-slate-400/30 filter blur-[8px] group-hover:blur-[5px] transition-all duration-300 select-none unselectable">
-                                                    A + B = C
-                                                </div>
-                                                {/* Absolute alignment reveal tooltip anchor overlay button */}
-                                                <div className="absolute inset-0 flex items-center justify-center bg-slate-50/10 rounded-[2rem]">
-                                                    <span className="bg-slate-900 text-white font-black uppercase text-[12px] tracking-widest px-4 py-2.5 rounded-xl shadow-md group-hover:bg-indigo-600 transition-all">
-                                                        {lang === 'sv' ? "Ledtråd: Se uppställning" : "Hint: Show Equation"}
-                                                    </span>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    );
-                                }
-
-                                // 🟢 Standard Display: Renders default abstract calculations or unblurred word problem equations
-                                return (
-                                    <div className="mt-6 text-3xl lg:text-5xl text-indigo-600 font-serif border-t border-slate-100 pt-6 animate-in fade-in duration-300">
-                                        <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
-                                    </div>
-                                );
-                            })()}
+                            {/* HIDES THE LATEX MATH WHEN WORD PROBLEM INTERCEPTOR IS ACTIVE */}
+                            {q?.resolvedData?.renderData?.latex && !q?.resolvedData?.renderData?.isWordProblemApplied && (
+                                <div className="mt-6 text-3xl lg:text-5xl text-indigo-600 font-serif border-t border-slate-100 pt-6 animate-in fade-in duration-300">
+                                    <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
+                                </div>
+                            )}
                 </div>
 
                 {/* FEEDBACK SECTION */}
