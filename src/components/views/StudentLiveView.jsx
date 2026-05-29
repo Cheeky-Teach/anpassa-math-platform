@@ -359,7 +359,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 </div>
             </header>
 
-            // --- UPDATED LAYOUT FOR MOBILE SCROLLING ---
+            
             <main className="flex-1 max-w-6xl w-full mx-auto p-3 lg:p-6 overflow-hidden flex flex-col">
                 {/* CHANGE 1: Added 'overflow-y-auto lg:overflow-hidden' to allow scrolling on mobile */}
                 <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-y-auto lg:overflow-hidden transition-all duration-300 flex flex-col ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
