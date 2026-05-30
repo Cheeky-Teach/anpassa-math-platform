@@ -97,6 +97,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'square', width: s, height: s, labels: { b: s, h: s } },
                     description: lang === 'sv' ? "Beräkna kvadratens omkrets." : "Calculate the perimeter of the square.",
+                    latex: `4 \\cdot ${s}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -117,6 +118,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'rectangle', width: b, height: h, labels: { b, h: '?' } },
                     description: lang === 'sv' ? `En rektangel har omkretsen ${p} cm. Basen är ${b} cm. Hur lång är höjden?` : `A rectangle has a perimeter of ${p} cm. The base is ${b} cm. What is the height?`,
+                    latex: `P = ${p}, b = ${b}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(h.toString()), variationKey: v, type: 'calculate',
@@ -172,6 +174,7 @@ export class GeometryGenerator {
             renderData: {
                 geometry: { type: v === 'area_parallel' ? 'parallelogram' : 'rectangle', width: b, height: h, labels: { b, h } },
                 description: lang === 'sv' ? "Beräkna figurens area." : "Calculate the area of the figure.",
+                latex: `${b} \\cdot ${h}`,
                 answerType: 'numeric'
             },
             token: this.toBase64((b * h).toString()), variationKey: v, type: 'calculate',

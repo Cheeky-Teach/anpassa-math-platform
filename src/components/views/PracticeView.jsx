@@ -14,6 +14,7 @@ import LevelUpModal from '../modals/LevelUpModal';
 import { LEVEL_DESCRIPTIONS, CATEGORIES } from '../../constants/localization'; 
 import { FractionInput, ScientificInput, ExponentInput } from '../ui/InputComponents';
 import { ChevronLeft, Trophy, Zap, Clock, Info, CheckCircle2, XCircle, HelpCircle, MinusCircle, ChevronRight, BarChart3, ChevronDown } from 'lucide-react';
+import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 
 const PracticeView = ({ 
     lang, ui, question, loading, feedback, input, setInput, 
@@ -31,7 +32,6 @@ const PracticeView = ({
     // --- 1. EARLY DEFINITIONS (Prevents ReferenceErrors) ---
     const cluesLabel = ui.hintsTitle || (lang === 'sv' ? "Ledtrådar" : "Hints");
     const historyLabel = ui.historyTitle || (lang === 'sv' ? "Historik" : "History");
-    const [isEquationUnblurred, setIsEquationUnblurred] = useState(false);
     
     // --- 2. LOCALIZATION & THEME ENGINE ---
     const getCategoryContext = () => {
@@ -77,11 +77,6 @@ const PracticeView = ({
     const handleInputChange = (e) => setInput(sanitizeMathInput(e.target.value));
 
     useEffect(() => { retryRef.current = actions.retry; }, [actions.retry]);
-    
-    // Reset blur overlay every time a brand new question is loaded
-    useEffect(() => {
-        setIsEquationUnblurred(false);
-    }, [question]);
 
     useEffect(() => {
         if (feedback === 'correct' && isSolutionRevealed) {
@@ -147,31 +142,6 @@ const PracticeView = ({
 
         // 2. Fallback Channel for Pure Numerical/Algebraic Expressions
         if (rd.latex) {
-            const isWordProblem = rd.isWordProblemApplied;
-
-            // 🟡 Word Problem Intercept Action: Apply CSS Gaussian blur overlay until clicked
-            if (isWordProblem && !isEquationUnblurred) {
-                return (
-                    <div className="w-full h-full flex items-center justify-center p-4">
-                        <button
-                            type="button"
-                            onClick={() => setIsEquationUnblurred(true)}
-                            className="group relative px-10 py-6 rounded-[2rem] border-2 border-dashed border-slate-200 bg-white hover:bg-indigo-50/20 hover:border-indigo-400 transition-all flex flex-col items-center justify-center max-w-sm w-full shadow-sm cursor-pointer"
-                        >
-                            <div className="text-3xl font-serif text-slate-400/30 filter blur-[8px] group-hover:blur-[5px] transition-all duration-300 transform scale-105 select-none unselectable">
-                                X - (-Y) = Z
-                            </div>
-                            <div className="absolute inset-0 flex items-center justify-center bg-slate-50/10 rounded-[2rem]">
-                                <span className="bg-slate-900 text-white font-black uppercase text-[12px] tracking-widest px-4 py-2.5 rounded-xl shadow-md group-hover:bg-indigo-600 group-hover:scale-105 transition-all">
-                                    {lang === 'sv' ? "Ledtråd: Se uppställning" : "Hint: Show Equation"}
-                                </span>
-                            </div>
-                        </button>
-                    </div>
-                );
-            }
-
-            // 🟢 Standard Display: Unblurred math rendering
             return (
                 <div className="text-2xl sm:text-5xl font-serif text-indigo-600 text-center py-4 animate-in fade-in duration-300">
                     <MathText text={`$$${rd.latex}$$`} large={true} />
@@ -272,12 +242,21 @@ const PracticeView = ({
 
                             {/* VISUAL CONTAINER */}
                             <div className="mb-4 flex justify-center bg-slate-50/50 rounded-[2rem] p-4 min-h-[160px] h-[200px] sm:h-[350px] items-center border border-slate-100 shadow-inner relative overflow-hidden">
+    
+                            {/* Word problem visual guard */}
+                            <WordProblemVisualGuard 
+                                isActive={!!question?.renderData?.isWordProblemApplied} 
+                                lang={lang}
+                                questionKey={question?.token} // Automatically forces re-blur on question change
+                            >
                                 {renderVisual()}
-                                <div className="absolute top-3 left-6 flex items-center gap-2">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${activeTheme.accent} animate-pulse`}></div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 italic">Du kan det här!</span>
-                                </div>
+                            </WordProblemVisualGuard>
+                            
+                            <div className="absolute top-3 left-6 flex items-center gap-2">
+                                <div className={`w-1.5 h-1.5 rounded-full ${activeTheme.accent} animate-pulse`}></div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 italic">Du kan det här!</span>
                             </div>
+                        </div>
                             
                             {/* DESCRIPTION TEXT */}
                             <div className="mb-4 text-center max-w-xl mx-auto">

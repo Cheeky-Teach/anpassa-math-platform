@@ -12,6 +12,7 @@ import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/Sc
 import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
 import AngleVisual from '../visuals/AngleComponents';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
+import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
@@ -419,11 +420,20 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         (packet[currentIndex].resolvedData.renderData.graph || 
                         packet[currentIndex].resolvedData.renderData.geometry || 
                         packet[currentIndex].resolvedData.renderData.pattern) ? (
-                            /* CHANGE 4: Added 'min-h-[400px]' and 'pb-12' on mobile to ensure the image container is tall enough */
-                            <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 lg:order-1 min-h-[400px] lg:h-full border-t lg:border-t-0 border-slate-50 pb-12 lg:pb-12">
-                                <div className="w-full h-full flex items-center justify-center drop-shadow-md transform scale-90 lg:scale-125">
-                                    {renderVisual(packet[currentIndex])}
-                                </div>
+                            <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 lg:order-1 min-h-[400px] lg:h-full border-t lg:border-t-0 border-slate-50 pb-12 lg:pb-12 relative overflow-hidden">
+                                
+                                {/* 🎯 UNIVERSAL ASSESSMENT SHIELD: Absolute occlusion with override button deactivated */}
+                                <WordProblemVisualGuard
+                                    isActive={!!packet[currentIndex].resolvedData?.renderData?.isWordProblemApplied}
+                                    lang={lang}
+                                    questionKey={packet[currentIndex].id || currentIndex}
+                                    allowReveal={false} // 👈 🔒 HIDES THE "REVEAL" BUTTON COMPLETELY
+                                >
+                                    <div className="w-full h-full flex items-center justify-center drop-shadow-md transform scale-90 lg:scale-125">
+                                        {renderVisual(packet[currentIndex])}
+                                    </div>
+                                </WordProblemVisualGuard>
+
                             </div>
                         ) : null}
                     </div>
