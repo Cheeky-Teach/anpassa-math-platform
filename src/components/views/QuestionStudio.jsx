@@ -43,6 +43,38 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
 };
 
+// Word problem / Story saver
+const compileAnchoredStory = (item, lang = 'sv') => {
+    const rd = item.resolvedData?.renderData;
+    
+    // Fallback: If no story index is selected, or if it isn't an intercepted problem, use server description
+    if (item.selectedStoryIndex === undefined || item.selectedStoryIndex === null || !rd?.availableStories) {
+        return rd?.description || item.name;
+    }
+
+    // 1. Safe boundary lookup for the locked template
+    const storyPackage = rd.availableStories[item.selectedStoryIndex];
+    if (!storyPackage) return rd?.description || item.name;
+    
+    let template = storyPackage[lang === 'en' ? 'en' : 'sv'];
+
+    // 2. Locate the regex extractor pattern matching our registered bucket variation
+    const category = Object.values(SKILL_BUCKETS).find(cat => cat.topics[item.topicId]);
+    const variation = category?.topics[item.topicId]?.variations?.find(v => v.key === item.variationKey);
+    
+    if (variation?.extractorPattern && rd.latex) {
+        const match = rd.latex.match(variation.extractorPattern);
+        if (match && match.groups) {
+            // 3. Dynamically inject values back into placeholders
+            Object.entries(match.groups).forEach(([key, value]) => {
+                const cleanValue = String(value).replace(/[()]/g, '');
+                template = template.replace(new RegExp(`{${key}}`, 'g'), cleanValue);
+            });
+        }
+    }
+    return template;
+};
+
 const BackgroundWave = () => (
     <div className="fixed bottom-0 left-0 w-full leading-[0] pointer-events-none z-[-1] overflow-hidden opacity-40">
         <svg className="relative block w-full h-[300px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
@@ -137,19 +169,19 @@ export default function QuestionStudio({
   const [hideExtra, setHideExtra] = useState(false);
   const [useWordProblems, setUseWordProblems] = useState(false);
   
+  const [isGlobalShuffleOpen, setIsGlobalShuffleOpen] = useState(false);
+
   // --- EFFECTS ---
+  // FIXED REPLACEMENT HOOK:
   useEffect(() => {
-        // If the switch is toggled and our active preview item just got filtered out...
-        const stillVisible = visibleVariations.some(v => v.key === activePreviewKey);
-        
-        if (!stillVisible && visibleVariations.length > 0) {
-            // Automatically select and load the first available word problem variant card
-            triggerPreview(visibleVariations[0].key);
-        } else if (activePreviewKey) {
-            // Otherwise, simply reload the current card with its new word problem context active
-            triggerPreview(activePreviewKey);
-        }
-    }, [useWordProblems]);
+    const stillVisible = visibleVariations.some(v => v.key === activePreviewKey);
+
+      if (!stillVisible && visibleVariations.length > 0) {
+          triggerPreview(visibleVariations[0].key);
+      } else if (activePreviewKey) {
+          triggerPreview(activePreviewKey);
+      }
+  }, [useWordProblems]); // 🎯 FIXED: Removed the three stale layout parameters
   useEffect(() => { if (currentTopic?.variations?.[0]) triggerPreview(currentTopic.variations[0].key); }, [selectedTopicId]);
   useEffect(() => { setInitialPacket(packet); }, [packet]);
   useEffect(() => { setStudioMode(setupMode); }, [setupMode]);
@@ -380,9 +412,14 @@ export default function QuestionStudio({
                 topicId: selectedTopicId, 
                 variationKey: variation.key, 
                 name: variation.name[lang] || variation.name.sv, 
-                columnSpan: isFirstInBatch ? 6 : 2, 
+                // Default to full-width (6 spans) so the inline text has room to breathe.
+                columnSpan: useWordProblems ? 6 : (isFirstInBatch ? 6 : 2), 
                 resolvedData: data, 
-                instructionMode: isFirstInBatch ? 'header' : 'hidden' 
+                // If it's a word problem, skip header separations and place directly inline.
+                instructionMode: useWordProblems ? 'inline' : (isFirstInBatch ? 'header' : 'hidden'),
+                // Force the LaTeX and graphics switches off by default exclusively for word problems
+                showLatex: !useWordProblems,
+                showVisual: !useWordProblems
             });
         }
         if (setupMode === 'donow' && packet.length + newItems.length > 6) { alert("Do Now max 6."); return; }
@@ -398,28 +435,41 @@ export default function QuestionStudio({
     } catch (err) { console.error(err); }
   };
 
-  const handleRegenerateAll = async () => {
-    if (packet.length === 0 || isRegeneratingAll) return;
-    setIsRegeneratingAll(true);
-    try {
-        const updatedPacket = await Promise.all(packet.map(async (item) => {
-            if (!item.topicId || !item.variationKey) return item;
+   // handleRegenerateAll now became batchShuffle to save word problem or numbers
+    const batchShuffle = async (mode) => {
+        if (packet.length === 0 || isRegeneratingAll) return;
+        setIsRegeneratingAll(true);
+        try {
+            const updatedPacket = await Promise.all(packet.map(async (item) => {
+                if (!item.topicId || !item.variationKey) return item;
+
+                // Mode A: Just the stories -> Client side loop, zero network delay!
+                if (mode === 'stories') {
+                    const rd = item.resolvedData?.renderData;
+                    if (!rd?.availableStories || rd.availableStories.length <= 1) return item;
+                    const newIndex = Math.floor(Math.random() * rd.availableStories.length);
+                    return { ...item, selectedStoryIndex: newIndex };
+                }
+
+                // Mode B & C: Needs fresh server mathematical coordinates
                 const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${useWordProblems}`);            
                 const data = await res.json();
-            return { 
-                ...item, 
-                id: crypto.randomUUID(), 
-                resolvedData: data 
-            };
-        }));
-        setPacket(updatedPacket);
-        setIsSaved(false);
-    } catch (err) {
-        console.error("Batch regeneration failed:", err);
-    } finally {
-        setIsRegeneratingAll(false);
-    }
-  };
+                
+                return { 
+                    ...item,
+                    id: mode === 'both' ? crypto.randomUUID() : item.id, // Only change component lifecycle ID if completely re-shuffling
+                    selectedStoryIndex: mode === 'numbers' ? (item.selectedStoryIndex !== undefined ? item.selectedStoryIndex : null) : null,
+                    resolvedData: data 
+                };
+            }));
+            setPacket(updatedPacket);
+            setIsSaved(false);
+        } catch (err) {
+            console.error("Batch shuffle failed:", err);
+        } finally {
+            setIsRegeneratingAll(false);
+        }
+    };
 
   const updatePacketItem = (id, key, val) => { setPacket(packet.map(p => p.id === id ? { ...p, [key]: val } : p)); setIsSaved(false); };
   const deleteSheet = async (e, id) => {
@@ -546,13 +596,48 @@ export default function QuestionStudio({
             <button onClick={() => setChosenVisibility('public')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'public' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:bg-white'}`}><Globe size={14}/></button>
           </div>
         </div>
+        {/* Header buttons */}
         <div className="flex items-center gap-3 pl-6">
-          <button onClick={handleSave} disabled={packet.length === 0} className="px-6 py-2.5 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-indigo-50 transition-all disabled:opacity-30"><Save size={16}/> {t.save_btn}</button>
-          <div className="h-6 w-px bg-slate-200 mx-1"></div>
-          <button onClick={handleLaunchLive} disabled={packet.length === 0} className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-indigo-600 transition-all disabled:opacity-30"><Send size={16}/> {t.live_btn}</button>
-          {setupMode === 'worksheet' ? (<button onClick={handleLaunchPrint} disabled={packet.length === 0} className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-emerald-500 shadow-lg transition-all disabled:opacity-30"><Printer size={16}/> {t.publish}</button>) : (<button onClick={handleLaunchGrid} disabled={packet.length === 0} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-indigo-500 shadow-lg transition-all disabled:opacity-30"><Grid3X3 size={16}/> {t.create_donow}</button>)}
-          <div className="h-6 w-px bg-slate-200 mx-1"></div>
-          <button onClick={onClose} className="p-2.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-all"><X size={20}/></button>
+        {/* Save Button */}
+        <button 
+            onClick={handleSave} 
+            disabled={packet.length === 0} 
+            className="px-6 py-2.5 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-indigo-50 transition-all disabled:opacity-30"
+        >
+            <Save size={16}/> {t.save_btn}
+        </button>
+        
+        <div className="h-6 w-px bg-slate-200 mx-1"></div>
+        
+        {/* Live Session Button */}
+        <button 
+            onClick={handleLaunchLive} 
+            disabled={packet.length === 0} 
+            className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-indigo-600 transition-all disabled:opacity-30"
+        >
+            <Send size={16}/> {t.live_btn}
+        </button>
+
+        <div className="h-6 w-px bg-slate-200 mx-1"></div>
+
+        {/* 🎯 RESTORED: Authentic Print/Publish Worksheet Action Button Link */}
+        <button 
+            onClick={handleLaunchPrint} 
+            disabled={packet.length === 0} 
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all disabled:opacity-30 shadow-md shadow-indigo-600/10"
+        >
+            <Printer size={16}/> {t.publish}
+        </button>
+
+        <div className="h-6 w-px bg-slate-200 mx-1"></div>
+        
+        {/* Close Button */}
+        <button 
+            onClick={onClose} 
+            className="p-2.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-all"
+        >
+            <X size={20}/>
+        </button>
         </div>
       </header>
 
@@ -649,17 +734,69 @@ export default function QuestionStudio({
               
               {canvasMode === 'layout' && (
                 <div className="flex gap-2">
+                    <div className="relative">
+                        <button 
+                            disabled={isRegeneratingAll || packet.length === 0}
+                            onClick={() => setIsGlobalShuffleOpen(!isGlobalShuffleOpen)} 
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-slate-800 bg-slate-800 text-white transition-all text-[10px] font-black uppercase shadow-lg hover:bg-slate-700 disabled:opacity-50 active:scale-95"
+                        >
+                            {isRegeneratingAll ? <Loader2 size={14} className="animate-spin" /> : <Shuffle size={14} />} 
+                            {t.regenerate_all}
+                        </button>
+
+                        {isGlobalShuffleOpen && (
+                            <div className="absolute top-12 right-0 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 w-56 z-[60] flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-200">
+                                {/* Mode 1: Numbers Only */}
+                                <button 
+                                    onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('numbers'); }}
+                                    className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:text-indigo-600"
+                                >
+                                    <Calculator size={14} /> {lang === 'sv' ? "Bara Siffror/Värden" : "Numbers Only"}
+                                </button>
+                                {/* Mode 2: Word Problems Only */}
+                                <button 
+                                    onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('stories'); }}
+                                    className="w-full text-left px-4 py-2.5 hover:bg-amber-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:text-amber-600"
+                                >
+                                    <Type size={14} /> {lang === 'sv' ? "Bara Textberättelser" : "Word Problems Only"}
+                                </button>
+                                <div className="h-px bg-slate-100 my-1 mx-2" />
+                                {/* Mode 3: Re-Shuffle Everything */}
+                                <button 
+                                    onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('both'); }}
+                                    className="w-full text-left px-4 py-2.5 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-rose-600"
+                                >
+                                    <RefreshCcw size={14} /> {lang === 'sv' ? "Slumpa Allt (Båda)" : "Reshuffle Both"}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    {/* Spacing toggler now triggers array serialization and saves correctly */}
                     <button 
-                        disabled={isRegeneratingAll || packet.length === 0}
-                        onClick={handleRegenerateAll} 
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-slate-800 bg-slate-800 text-white transition-all text-[10px] font-black uppercase shadow-lg hover:bg-slate-700 disabled:opacity-50 active:scale-95"
-                        title={t.regenerate_all}
+                        onClick={() => {
+                            const nextSpacingState = !showWorkArea;
+                            // 1. Instantly update local preview sheet view state
+                            setShowWorkArea(nextSpacingState);
+                            
+                            // 2. Mark the worksheet as dirty so the save button activates
+                            setIsSaved(false);
+                            
+                            // 3. Batch push the choice into every card in the packet array to keep print view synced!
+                            setPacket(packet.map(item => ({
+                                ...item,
+                                // Custom card flag matching layout specifications
+                                showWorkArea: nextSpacingState 
+                            })));
+                        }} 
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all text-[10px] font-black uppercase shadow-lg select-none cursor-pointer ${
+                            showWorkArea 
+                                ? 'bg-white border-indigo-600 text-indigo-600 hover:bg-indigo-50/50' 
+                                : 'bg-slate-800 border-slate-800 text-white hover:bg-slate-700'
+                        }`}
+                        title={showWorkArea ? "Ändra till kompakt layout" : "Ändra till rymlig layout"}
                     >
-                        {isRegeneratingAll ? <Loader2 size={14} className="animate-spin" /> : <Shuffle size={14} />} 
-                        {t.regenerate_all}
-                    </button>
-                    <button onClick={() => setShowWorkArea(!showWorkArea)} className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all text-[10px] font-black uppercase shadow-lg ${showWorkArea ? 'bg-white border-indigo-600 text-indigo-600' : 'bg-slate-800 border-slate-800 text-white'}`}>
-                        <Square size={14} fill={showWorkArea ? "currentColor" : "none"} /> {showWorkArea ? t.spacious : t.compact}
+                        <Square size={14} fill={showWorkArea ? "currentColor" : "none"} /> 
+                        {showWorkArea ? t.spacious : t.compact}
                     </button>
                 </div>
               )}
@@ -667,8 +804,25 @@ export default function QuestionStudio({
 
           {canvasMode === 'studio' ? (
               <div className="flex-1 bg-white rounded-[3rem] shadow-2xl border border-slate-300 overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300">
-                  <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">{t.board_label}</span>{activePreviewKey && <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-white/10 hover:bg-white/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all"><RefreshCcw size={12}/> {t.new_example}</button>}</div>
-                  <div className="p-12 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">{isPreviewLoading ? <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" size={48} /></div> : !previewData ? <div className="h-full flex items-center justify-center text-slate-200 uppercase font-black tracking-widest italic">{t.select_hint}</div> : <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500"><div className="w-full flex justify-center drop-shadow-md">{renderVisual(previewData?.renderData)}</div><div className="text-2xl text-slate-800 font-bold text-center px-10 leading-relaxed"><MathDisplay content={previewData.renderData.description} /></div>{previewData.renderData.latex && <div className="text-4xl text-indigo-600 bg-indigo-50/50 p-10 rounded-[2.5rem] border-2 border-indigo-100 shadow-inner text-center font-serif"><MathDisplay content={`$$${previewData.renderData.latex}$$`} /></div>}{renderOptions(previewData.renderData?.options)}</div>}</div>
+                  <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">
+                    {t.board_label}</span>{activePreviewKey && <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-white/10 hover:bg-white/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all">
+                        <RefreshCcw size={12}/> {t.new_example}</button>}
+                        </div>
+                  <div className="p-12 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
+                    {isPreviewLoading ? <div className="h-full flex items-center justify-center">
+                        <Loader2 className="animate-spin text-indigo-600" size={48} />
+                        </div> : !previewData ? <div className="h-full flex items-center justify-center text-slate-200 uppercase font-black tracking-widest italic">
+                            {t.select_hint}
+                            </div> : <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="w-full flex justify-center drop-shadow-md">{renderVisual(previewData?.renderData)}
+                                    </div>
+                                    <div className="text-2xl text-slate-800 font-bold text-center px-10 leading-relaxed">
+                                        <MathDisplay content={previewData.renderData.description} />
+                                        </div>{previewData.renderData.latex && <div className="text-4xl text-indigo-600 bg-indigo-50/50 p-10 rounded-[2.5rem] border-2 border-indigo-100 shadow-inner text-center font-serif">
+                                        <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
+                                        </div>}{renderOptions(previewData.renderData?.options)}
+                                    </div>}
+                </div>
               </div>
           ) : (
               /* WORKSHEET ZOOMED OUT VIEW */
@@ -679,32 +833,159 @@ export default function QuestionStudio({
                   >
                       <header className="border-b-2 border-black pb-2 mb-4 flex items-end justify-between"><h1 className="text-lg font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1><div className="flex gap-6 w-2/3 justify-end text-[10px] font-black uppercase tracking-widest"><div className="border-b-2 border-slate-100 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div><div className="border-b-2 border-slate-100 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div></div></header>
                       <div className={`grid grid-cols-6 gap-x-8 ${showWorkArea ? 'gap-y-6' : 'gap-y-1'} items-start content-start`}>
-                          {packet.map((item, idx) => (
-                              <React.Fragment key={item.id}>
-                                  {(item.instructionMode === 'header' || !item.instructionMode) && (
-                                      <div className={`col-span-6 border-l-4 border-indigo-500 pl-4 bg-slate-50/50 rounded-r-2xl shadow-sm ${showWorkArea ? 'py-3 mt-6 mb-2' : 'py-1 mt-2 mb-0'}`}><div className="text-[11px] font-black text-slate-800 italic uppercase tracking-tight"><MathDisplay content={item.resolvedData?.renderData.description || item.name} /></div></div>
-                                  )}
-                                  <div draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => handleDragOver(e, idx)} onDragEnd={handleDragEnd} className={`relative group border-2 rounded-2xl transition-all flex flex-col h-full cursor-move ${getColSpanClass(item.columnSpan)} ${showWorkArea ? 'p-4' : 'px-4 py-1'} ${draggedIdx === idx ? 'opacity-20 border-indigo-500 bg-indigo-50 scale-95' : 'border-transparent hover:border-dashed hover:border-indigo-300'}`}>
-                                      <div className="absolute top-2 left-2 text-slate-200 opacity-0 group-hover:opacity-100"><GripVertical size={14} /></div>
-                                      <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-30 transition-all gap-1.5">
-                                          <div className="bg-white shadow-2xl rounded-full p-1 flex gap-1 border border-slate-200">
-                                            <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'columnSpan', item.columnSpan === 2 ? 3 : item.columnSpan === 3 ? 6 : 2); }} className="bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full italic">W</button>
-                                            <button onClick={(e) => { e.stopPropagation(); const modes = ['header', 'inline', 'hidden']; const next = modes[(modes.indexOf(item.instructionMode || 'header') + 1) % 3]; updatePacketItem(item.id, 'instructionMode', next); }} className={`p-1.5 rounded-full transition-all ${item.instructionMode === 'inline' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}`}><AlignLeft size={12} /></button>
-                                            <button onClick={(e) => { e.stopPropagation(); regenerateItem(item.id, item.topicId, item.variationKey); }} className="bg-slate-900 text-white p-1.5 rounded-full hover:bg-indigo-600"><Shuffle size={12} /></button>
-                                            <button onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }} className="bg-rose-500 text-white p-1.5 rounded-full hover:bg-rose-600"><Trash2 size={12} /></button>
-                                          </div>
-                                      </div>
-                                      <div className="text-sm flex flex-col h-full">
-                                          <div className="font-black mb-1 text-slate-300 text-[10px] tracking-widest">{idx + 1}.</div>
-                                          {item.instructionMode === 'inline' && (<div className="text-[11px] font-bold text-slate-800 mb-2 leading-tight border-b border-slate-100 pb-2"><MathDisplay content={item.resolvedData?.renderData.description || item.name} /></div>)}
-                                          {item.resolvedData?.renderData.latex && (<div className={`${showWorkArea ? 'py-4' : 'py-1'} text-center font-serif text-lg`}><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} /></div>)}
-                                          {renderOptions(item.resolvedData?.renderData?.options, true)}
-                                          <div className="flex justify-center scale-90 origin-top mt-2">{renderVisual(item.resolvedData?.renderData)}</div>
-                                          <div className="mt-auto pt-4">{showWorkArea ? <div className="min-h-[100px] border-b-2 border-dotted border-slate-100" /> : <div className="h-0" />}</div>
-                                      </div>
-                                  </div>
-                              </React.Fragment>
-                          ))}
+                          {packet.map((item, idx) => {
+                                // Use true as the absolute baseline fallback state if flags aren't saved yet
+                                const displayStory = item.showText !== false;
+                                const displayLatex = item.showLatex !== false;
+                                const displayVisual = item.showVisual !== false;
+
+                                return (
+                                    <React.Fragment key={item.id}>
+                                        {/* Header Text Mode — respects individual toggles */}
+                                        {displayStory && (item.instructionMode === 'header' || !item.instructionMode) && (
+                                            <div className={`col-span-6 border-l-4 border-indigo-500 pl-4 bg-slate-50/50 rounded-r-2xl shadow-sm ${showWorkArea ? 'py-3 mt-6 mb-2' : 'py-1 mt-2 mb-0'}`}>
+                                                <div className="text-[11px] font-black text-slate-800 italic uppercase tracking-tight">
+                                                    <MathDisplay content={compileAnchoredStory(item, lang)} />
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        <div 
+                                            draggable 
+                                            onDragStart={(e) => handleDragStart(e, idx)} 
+                                            onDragOver={(e) => handleDragOver(e, idx)} 
+                                            onDragEnd={handleDragEnd} 
+                                            className={`relative group border-2 rounded-2xl transition-all flex flex-col h-full cursor-move ${getColSpanClass(item.columnSpan)} ${showWorkArea ? 'p-4' : 'px-4 py-1'} ${draggedIdx === idx ? 'opacity-20 border-indigo-500 bg-indigo-50 scale-95' : 'border-transparent hover:border-dashed hover:border-indigo-300'}`}
+                                        >
+                                            <div className="absolute top-2 left-2 text-slate-200 opacity-0 group-hover:opacity-100"><GripVertical size={14} /></div>
+                                            
+                                            {/* Top Control Bar — original buttons remain untouched */}
+                                            <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-30 transition-all gap-1.5">
+                                                <div className="bg-white shadow-2xl rounded-full p-1 flex gap-1 border border-slate-200">
+                                                    <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'columnSpan', item.columnSpan === 2 ? 3 : item.columnSpan === 3 ? 6 : 2); }} className="bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full italic">W</button>
+                                                    <button onClick={(e) => { e.stopPropagation(); const modes = ['header', 'inline', 'hidden']; const next = modes[(modes.indexOf(item.instructionMode || 'header') + 1) % 3]; updatePacketItem(item.id, 'instructionMode', next); }} className={`p-1.5 rounded-full transition-all ${item.instructionMode === 'inline' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}`}><AlignLeft size={12} /></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); regenerateItem(item.id, item.topicId, item.variationKey); }} className="bg-slate-900 text-white p-1.5 rounded-full hover:bg-indigo-600"><Shuffle size={12} /></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }} className="bg-rose-500 text-white p-1.5 rounded-full hover:bg-rose-600"><Trash2 size={12} /></button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="text-sm flex flex-col h-full justify-between">
+                                                <div>
+                                                    <div className="font-black mb-1 text-slate-300 text-[10px] tracking-widest">{idx + 1}.</div>
+                                                    
+                                                    {/* Inline Description — checks item flag */}
+                                                    {displayStory && item.instructionMode === 'inline' && (
+                                                        <div className="text-[11px] font-bold text-slate-800 mb-2 leading-tight border-b border-slate-100 pb-2">
+                                                            <MathDisplay content={compileAnchoredStory(item, lang)} />
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* LaTeX Formula Equation — checks item flag */}
+                                                    {displayLatex && item.resolvedData?.renderData.latex && (
+                                                        <div className={`${showWorkArea ? 'py-4' : 'py-1'} text-center font-serif text-lg`}>
+                                                            <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} />
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {renderOptions(item.resolvedData?.renderData?.options, true)}
+                                                    
+                                                    {/* Geometric / Spatial Diagrams — checks item flag */}
+                                                    {displayVisual && (
+                                                        <div className="flex justify-center scale-90 origin-top mt-2">
+                                                            {renderVisual(item.resolvedData?.renderData)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                
+                                                <div>
+                                                    <div className="mt-auto pt-4">
+                                                        {showWorkArea ? <div className="min-h-[100px] border-b-2 border-dotted border-slate-100" /> : <div className="h-0" />}
+                                                    </div>
+
+                                                    {/* GRANULAR CONFIGURATOR ACTION GRID (Bottom of card) */}
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-2 pt-3 border-t border-slate-100 mt-3 z-40 relative">
+                                                        
+                                                        {/* Row A: Shuffling Action Suite */}
+                                                        <div className="flex justify-end gap-2">
+                                                            
+                                                            {/* 🔢 Shuffle Numbers Only — Matches your secondary soft text button styles */}
+                                                            <button
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    try {
+                                                                        const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${useWordProblems}`);
+                                                                        const data = await res.json();
+                                                                        
+                                                                        setPacket(packet.map(p => p.id === item.id ? { 
+                                                                            ...p, 
+                                                                            resolvedData: data,
+                                                                            selectedStoryIndex: p.selectedStoryIndex !== undefined ? p.selectedStoryIndex : null 
+                                                                        } : p));
+                                                                        setIsSaved(false);
+                                                                    } catch (err) { console.error("Number shuffle failed:", err); }
+                                                                }}
+                                                                className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:bg-indigo-50/50 hover:border-indigo-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
+                                                                title="Slumpa siffror (Behåll nuvarande texttema)"
+                                                            >
+                                                                <Calculator size={12} /> {lang === 'sv' ? "Slumpa Tal" : "Shuffle Numbers"}
+                                                            </button>
+
+                                                            {/* 📝 Shuffle Stories Only — Now checks the safe interceptor metadata tag */}
+                                                            {item.resolvedData?.renderData?.availableStories && item.resolvedData.renderData.availableStories.length > 1 && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const totalStories = item.resolvedData.renderData.availableStories.length;
+                                                                        
+                                                                        let newIndex = Math.floor(Math.random() * totalStories);
+                                                                        if (newIndex === item.selectedStoryIndex) {
+                                                                            newIndex = (newIndex + 1) % totalStories;
+                                                                        }
+                                                                        
+                                                                        updatePacketItem(item.id, 'selectedStoryIndex', newIndex);
+                                                                    }}
+                                                                    className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-amber-600 hover:bg-amber-50/50 hover:border-amber-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
+                                                                    title="Slumpa fram en helt ny textkontext för denna fråga"
+                                                                >
+                                                                    <Shuffle size={12} /> {lang === 'sv' ? "Slumpa Text" : "Shuffle Story"}
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Row B: Structural Visibility Switches */}
+                                                        <div className="flex justify-end gap-2">
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'showText', !displayStory); }}
+                                                                className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${displayStory ? 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100/70' : 'bg-slate-50 border-slate-100 text-slate-400 line-through'}`}
+                                                            >
+                                                                <Type size={12} /> Text
+                                                            </button>
+
+                                                            {item.resolvedData?.renderData.latex && (
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'showLatex', !displayLatex); }}
+                                                                    className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${displayLatex ? 'bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100/70' : 'bg-slate-50 border-slate-100 text-slate-400 line-through'}`}
+                                                                >
+                                                                    <Calculator size={12} /> LaTeX
+                                                                </button>
+                                                            )}
+
+                                                            {(item.resolvedData?.renderData.geometry || item.resolvedData?.renderData.graph || item.resolvedData?.renderData.pattern) && (
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'showVisual', !displayVisual); }}
+                                                                    className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all cursor-pointer ${displayVisual ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100/70' : 'bg-slate-50 border-slate-100 text-slate-400 line-through'}`}
+                                                                >
+                                                                    <ImageIcon size={12} /> {lang === 'sv' ? "Figur" : "Visual"}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </React.Fragment>
+                                );
+                            })}
                       </div>
                   </div>
               </div>
@@ -747,8 +1028,23 @@ export default function QuestionStudio({
                 </div>
                 {setupMode === 'worksheet' && (
                     <div className="p-4 border-t bg-white space-y-4">
-                        <div className="flex items-center justify-between"><span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{t.answer_key_toggle}</span><button onClick={() => setIncludeAnswerKey(!includeAnswerKey)} className={`w-10 h-5 rounded-full transition-all relative p-1 ${includeAnswerKey ? 'bg-emerald-500' : 'bg-slate-200'}`}><div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${includeAnswerKey ? 'translate-x-5' : 'translate-x-0'}`} /></button></div>
-                        {includeAnswerKey && (<div className="animate-in fade-in slide-in-from-bottom-2 space-y-2"><label className="text-[8px] font-black uppercase text-slate-400 block">{t.answer_style_label}</label><div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg border border-slate-200"><button onClick={() => setAnswerKeyStyle('compact')} className={`py-1 rounded-md text-[8px] font-black uppercase transition-all ${answerKeyStyle === 'compact' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Kompakt</button><button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-md text-[8px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Steg</button></div></div>)}
+                        <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
+                                {t.answer_key_toggle}
+                                </span>
+                                <button onClick={() => setIncludeAnswerKey(!includeAnswerKey)} className={`w-10 h-5 rounded-full transition-all relative p-1 ${includeAnswerKey ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                                    <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${includeAnswerKey ? 'translate-x-5' : 'translate-x-0'}`} />
+                                </button>
+                        </div>
+                        {includeAnswerKey && (
+                            <div className="animate-in fade-in slide-in-from-bottom-2 space-y-2">
+                                <label className="text-[8px] font-black uppercase text-slate-400 block">{t.answer_style_label}
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg border border-slate-200">
+                                        <button onClick={() => setAnswerKeyStyle('compact')} className={`py-1 rounded-md text-[8px] font-black uppercase transition-all ${answerKeyStyle === 'compact' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>
+                                            Kompakt
+                                            </button>
+                                            <button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-md text-[8px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Steg</button></div></div>)}
                     </div>
                 )}
             </div>

@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Printer, ChevronLeft, X, ChevronRight, Maximize2 } from 'lucide-react';
+import { Printer, ChevronLeft, X, ChevronRight, Maximize2, Loader2 } from 'lucide-react';
+import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
+
 // --- COMPREHENSIVE VISUAL IMPORTS ---
 import { GeometryVisual, GraphCanvas } from '../visuals/GeometryComponents.jsx';
 import { VolumeVisualization } from '../visuals/VolumeVisualization.jsx';
@@ -34,6 +36,36 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
 };
 
+const compileAnchoredStory = (item, lang = 'sv') => {
+    const rd = item.resolvedData?.renderData;
+    
+    if (item.selectedStoryIndex === undefined || item.selectedStoryIndex === null || !rd?.availableStories) {
+        return rd?.description || item.name;
+    }
+
+    const storyPackage = rd.availableStories[item.selectedStoryIndex];
+    if (!storyPackage) return rd?.description || item.name;
+    
+    let template = storyPackage[lang === 'en' ? 'en' : 'sv'];
+
+    const category = Object.values(SKILL_BUCKETS).find(cat => cat.topics[item.topicId]);
+    const variation = category?.topics[item.topicId]?.variations?.find(v => v.key === item.variationKey);
+    
+    if (variation?.extractorPattern && rd.latex) {
+        const match = rd.latex.match(variation.extractorPattern);
+        if (match && match.groups) {
+            Object.entries(match.groups).forEach(([key, value]) => {
+                let cleanValue = String(value).replace(/[()]/g, '');
+                if (cleanValue.startsWith('-')) {
+                    cleanValue = `$${cleanValue}$`;
+                }
+                template = template.replace(new RegExp(`{${key}}`, 'g'), cleanValue);
+            });
+        }
+    }
+    return template;
+};
+
 export default function PrintView({ 
     packet, 
     title, 
@@ -57,26 +89,21 @@ export default function PrintView({
         }
     }[lang];
 
-    // --- SHARED VISUAL DETECTION HELPER ---
     const hasVisual = (rd) => {
         return !!(rd?.graph || rd?.geometry || rd?.pattern || rd?.marbles || rd?.spinner || 
                  rd?.freqTable || rd?.percentGrid || rd?.scale || rd?.similarity || 
                  rd?.compareArea || rd?.tree);
     };
 
-    // --- UNIFIED VISUAL RENDERER ---
     const renderVisual = (rd) => {
         if (!rd) return null;
 
-        // 1. Graphs
         if (rd.graph) return <GraphCanvas data={rd.graph} />;
         
-        // 2. Patterns & Sequences
         if (rd.pattern || rd.geometry?.subtype === 'matchsticks' || rd.geometry?.subtype === 'sequence') {
             return <PatternVisual data={rd.pattern || rd.geometry} />;
         }
         
-        // 3. Probability Marbles & Spinners
         if (rd.marbles || rd.geometry?.type === 'marbles' || rd.geometry?.items) {
             return <ProbabilityMarbles data={rd.marbles || rd.geometry} />;
         }
@@ -84,7 +111,6 @@ export default function PrintView({
             return <ProbabilitySpinner data={rd.spinner || rd.geometry} />;
         }
         
-        // 4. Statistics Tables & Grids
         if (rd.freqTable || rd.geometry?.type === 'frequency_table' || rd.geometry?.headers) {
             return <FrequencyTable data={rd.freqTable || rd.geometry} />;
         }
@@ -92,7 +118,6 @@ export default function PrintView({
             return <PercentGrid data={rd.percentGrid || rd.geometry} />;
         }
 
-        // 5. Volume Visuals (Explicit Height Container for Print)
         if (rd.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'].includes(rd.geometry.type)) {
             return (
                 <div style={{ width: '220px', height: '180px' }}>
@@ -101,17 +126,13 @@ export default function PrintView({
             );
         }
         
-        // 6. Geometry: Angles, Scale, Similarity, Area Comparison
         if (rd.geometry?.type === 'angle') return <AngleVisual data={rd.geometry} />;
         if (rd.scale || rd.geometry?.type === 'scale') return <ScaleVisual data={rd.scale || rd.geometry} />;
         if (rd.similarity || rd.geometry?.type === 'similarity') return <SimilarityCompare data={rd.similarity || rd.geometry} />;
         if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
         
-        // 7. Probability Trees & Pathways
         if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
 
-        // 8. General 2D Geometry (Standard & Composite/Portal)
-        // REFACTOR: We now pass the full 'data' object to ensure 'subtype' and 'dims' are preserved.
         if (rd.geometry) {
             return <GeometryVisual data={rd.geometry} width={220} height={180} />;
         }
@@ -119,55 +140,64 @@ export default function PrintView({
         return null;
     };
 
-    // --- PHASE 6: GRID-AWARE PAGINATION ENGINE ---
-    const paginatedPages = useMemo(() => {
-        const MAX_HEIGHT_PER_PAGE = 960; 
-        const pages = [];
-        let currentPage = [];
-        let currentHeight = 0;
-        let currentRowWidth = 0;
-        let maxHeightInCurrentRow = 0;
+    // 🟢 STRATEGY 3 STATE MANAGEMENT: Tracks calculated groupings via asynchronous DOM passes
+    const [measuredPages, setMeasuredPages] = useState([]);
+    const [isMeasuring, setIsMeasuring] = useState(true);
 
-        packet.forEach((item, idx) => {
-            const colSpan = item.columnSpan || 6;
-            const isHeaderMode = item.instructionMode === 'header' || !item.instructionMode;
+    useEffect(() => {
+        setIsMeasuring(true);
+        
+        const timer = setTimeout(() => {
+            const sandboxCards = document.querySelectorAll('.sandbox-card');
+            if (!sandboxCards.length) return;
+
+            // 🎯 Hardened Target Page Metric Area: 1123px total height - padding bounds
+            const MAX_HEIGHT_PER_PAGE = 1033; 
             
-            let itemHeight = 40; 
-            if (isHeaderMode) itemHeight += 40;
-            if (item.instructionMode === 'inline') itemHeight += 30;
-            if (item.resolvedData?.renderData?.latex) itemHeight += 100;
-            
-            // Aggressively check for any visual type
-            if (hasVisual(item.resolvedData?.renderData)) itemHeight += 180;
+            const pages = [];
+            let currentPage = [];
+            let currentHeight = 0;
+            let currentRowWidth = 0;
+            let maxHeightInCurrentRow = 0;
 
-            if (item.resolvedData?.renderData?.options) itemHeight += (item.resolvedData.renderData.options.length * 15);
-            if (showWorkArea) {
-                const workAreaHeights = { compact: 70, normal: 130, spacious: 260 };
-                itemHeight += workAreaHeights[density];
-            }
+            packet.forEach((item, idx) => {
+                const colSpan = item.columnSpan || 6;
+                const displayStory = item.showText !== false;
+                const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
 
-            if (isHeaderMode || (currentRowWidth + colSpan > 6)) {
-                currentHeight += maxHeightInCurrentRow; 
-                currentRowWidth = 0;
-                maxHeightInCurrentRow = 0;
-            }
+                // ⚡ READ ABSOLUTE REAL FOOTPRINT FROM BROWSER PAINT MATRIX
+                const targetCard = sandboxCards[idx];
+                const itemHeight = targetCard && targetCard.getBoundingClientRect().height > 0 
+                    ? targetCard.getBoundingClientRect().height 
+                    : 140;
 
-            if (currentHeight + itemHeight > MAX_HEIGHT_PER_PAGE && currentPage.length > 0) {
-                pages.push(currentPage);
-                currentPage = [];
-                currentHeight = 0;
-                currentRowWidth = 0;
-                maxHeightInCurrentRow = 0;
-            }
+                if (isHeaderMode || (currentRowWidth + colSpan > 6)) {
+                    currentHeight += maxHeightInCurrentRow; 
+                    currentRowWidth = 0;
+                    maxHeightInCurrentRow = 0;
+                }
 
-            currentPage.push({ ...item, originalIdx: idx });
-            currentRowWidth += isHeaderMode ? 6 : colSpan;
-            maxHeightInCurrentRow = Math.max(maxHeightInCurrentRow, itemHeight);
-        });
+                if (currentHeight + itemHeight > MAX_HEIGHT_PER_PAGE && currentPage.length > 0) {
+                    pages.push(currentPage);
+                    currentPage = [];
+                    currentHeight = 0;
+                    currentRowWidth = 0;
+                    maxHeightInCurrentRow = 0;
+                }
 
-        if (currentPage.length > 0) pages.push(currentPage);
-        return pages;
-    }, [packet, showWorkArea, density]);
+                currentPage.push({ ...item, originalIdx: idx });
+                currentRowWidth += isHeaderMode ? 6 : colSpan;
+                maxHeightInCurrentRow = Math.max(maxHeightInCurrentRow, itemHeight);
+            });
+
+            if (currentPage.length > 0) pages.push(currentPage);
+
+            setMeasuredPages(pages);
+            setIsMeasuring(false);
+        }, 400); // 400ms ensures text symbols, options lists and charts complete rendering layout fully
+
+        return () => clearTimeout(timer);
+    }, [packet, showWorkArea, density, lang]);
 
     const getFinalAnswer = (data) => {
         if (data?.answer && data.answer !== "Se lösning") return data.answer;
@@ -182,7 +212,23 @@ export default function PrintView({
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 pb-20 print:bg-white print:pb-0 font-sans">
+        <div className="print-view-root min-h-screen bg-slate-100 pb-20 print:bg-white print:pb-0 print:min-h-0 print:h-auto font-sans relative">
+            
+            {/* 🟢 FLOATING INTERACTIVE MASK COVER: Locks UI transitions cleanly during DOM layout checks */}
+            {isMeasuring && (
+                <div className="fixed inset-0 bg-slate-900 text-white flex flex-col items-center justify-center gap-4 font-sans select-none z-[9999] animate-in fade-in duration-200 print:hidden">
+                    <Loader2 className="animate-spin text-indigo-500" size={40} />
+                    <div className="text-center space-y-1">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-200">
+                            {lang === 'sv' ? "Anpassar Utskriftslayout" : "Optimizing Print Layout"}
+                        </h3>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            {lang === 'sv' ? "Mäter element och beräknar perfekta sidbrytningar..." : "Measuring elements and calibrating smart page breaks..."}
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* TOOLBAR */}
             <div className="bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50 print:hidden">
                 <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold uppercase hover:text-indigo-400 transition-colors">
@@ -196,13 +242,13 @@ export default function PrintView({
                 </div>
             </div>
 
-            {/* WORKSHEET PAGES */}
-            {paginatedPages.map((pageItems, pageIdx) => (
-                <div key={pageIdx} className="max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[8mm] flex flex-col min-h-[240mm] print:shadow-none print:my-0 print:p-[12mm] relative break-after-page">
+            {/* WORKSHEET PAGES — Maps across evaluated measured states */}
+            {!isMeasuring && measuredPages.map((pageItems, pageIdx) => (
+                <div key={pageIdx} className="max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[8mm] flex flex-col min-h-[240mm] print:min-h-auto print:shadow-none print:my-0 print:p-[12mm] relative break-after-page">
                     <header className="border-b-1 border-black pb-2 mb-4 relative">
                         <div className="mb-6">
                             <div className="text-[6px] font-black uppercase text-slate-600 italic tracking-widest">{t.watermark}</div>
-                            <h1 className="text-[12] font-black uppercase tracking-tight leading-none">{title || "Matematik"}</h1>
+                            <h1 className="text-[12px] font-black uppercase tracking-tight leading-none">{title || "Matematik"}</h1>
                         </div>
                         <div className="flex gap-8 text-[10px] font-bold uppercase">
                             <div className="flex-1 flex gap-2 items-baseline border-b border-black/10"><span>{t.name}</span><div className="flex-1" /></div>
@@ -214,14 +260,21 @@ export default function PrintView({
                     {/* GRID-AWARE CONTENT CONTAINER */}
                     <div className="grid grid-cols-6 gap-x-10 gap-y-10 items-start flex-1">
                         {pageItems.map((item) => {
-                            const isHeaderMode = item.instructionMode === 'header' || !item.instructionMode;
-                            const isInlineMode = item.instructionMode === 'inline';
+                            const displayStory = item.showText !== false;
+                            const displayLatex = item.showLatex !== false;
+                            const displayVisual = item.showVisual !== false;
+
+                            const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
+                            const isInlineMode = displayStory && item.instructionMode === 'inline';
                             
                             return (
                                 <React.Fragment key={item.id}>
+                                    {/* Header Description Text Section */}
                                     {isHeaderMode && (
                                         <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-1 mb-2 bg-slate-50/50">
-                                            <MathDisplay content={item.resolvedData?.renderData.description || item.name} className="text-xs font-bold italic text-slate-700" />
+                                            <div className="text-xs font-bold italic text-slate-700">
+                                                <MathDisplay content={compileAnchoredStory(item, lang)} />
+                                            </div>
                                         </div>
                                     )}
                                     
@@ -234,25 +287,24 @@ export default function PrintView({
                                                 {(item.originalIdx + 1).toString().padStart(2, '')}
                                             </div>
                                             <div className="space-y-4">
+                                                {/* Inline Description Text Section */}
                                                 {isInlineMode && (
                                                     <div className="text-[12px] font-bold text-slate-800 leading-tight border-b border-slate-100 pb-2">
-                                                        <MathDisplay content={item.resolvedData?.renderData.description || item.name} />
+                                                        <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                     </div>
                                                 )}
-                                                {item.resolvedData?.renderData.latex && (
-                                                    <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className="text-xl text-slate-900" /></div>
+                                                
+                                                {/* LaTeX Equation Block */}
+                                                {displayLatex && item.resolvedData?.renderData.latex && (
+                                                    <div className="py-2">
+                                                        <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className="text-xl text-slate-900" />
+                                                    </div>
                                                 )}
                                                 
                                                 {/* DYNAMIC VISUAL RENDERER */}
-                                                {hasVisual(item.resolvedData?.renderData) && (
+                                                {displayVisual && hasVisual(item.resolvedData?.renderData) && (
                                                     <div className="flex justify-center p-4 bg-slate-50/30 rounded-2xl border border-slate-50 overflow-hidden">
                                                         {renderVisual(item.resolvedData.renderData)}
-                                                    </div>
-                                                )}
-
-                                                {item.resolvedData?.renderData?.latex && !item.resolvedData?.renderData?.isWordProblemApplied && (
-                                                    <div className="text-center py-4 font-serif text-lg my-auto select-all">
-                                                        <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} />
                                                     </div>
                                                 )}
 
@@ -266,6 +318,7 @@ export default function PrintView({
                                                         ))}
                                                     </div>
                                                 )}
+                                                
                                                 {showWorkArea && (
                                                     <div className="w-full border border-slate-200 rounded-xl relative overflow-hidden mt-4" style={{ height: density === 'compact' ? '80px' : density === 'normal' ? '160px' : '320px' }}>
                                                         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
@@ -278,50 +331,159 @@ export default function PrintView({
                             );
                         })}
                     </div>
-
-                    <footer className="mt-8 pt-4 border-t border-slate-100 flex justify-between items-center text-[8px] font-black text-slate-300 uppercase tracking-widest">
-                        <span>{t.watermark}</span>
-                        <span>{t.page} {pageIdx + 1} / {paginatedPages.length}</span>
-                    </footer>
                 </div>
             ))}
 
             {/* --- 3-COLUMN SPILLING ANSWER KEY --- */}
-            {includeAnswerKey && (
-                 <div className="max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[15mm] flex flex-col min-h-[297mm] print:shadow-none print:my-0 print:p-[12mm] break-before-page relative border-t-[12px] border-emerald-600">
-                    <header className="border-b-2 border-black pb-4 mb-6">
-                        <div className="text-[8px] font-black uppercase text-slate-300 italic tracking-widest leading-none mb-1">{t.watermark}</div>
-                        <h2 className="text-xl font-black uppercase tracking-tight">{t.key_title}: {title}</h2>
-                    </header>
-                    
-                    <div className="print-columns-3 flex-1">
-                        {packet.map((item, idx) => (
-                            <div key={`ans-${item.id}`} className={`break-inside-avoid border-slate-100 ${answerKeyStyle === 'compact' ? 'mb-2 flex gap-2 items-baseline' : 'mb-6 pb-4 border-b'}`}>
-                                <div className="font-black uppercase text-slate-400 shrink-0 text-[10px] italic">{idx + 1}</div>
-                                {answerKeyStyle === 'compact' ? (
-                                    <div className="font-bold text-slate-900 text-[11px]"><MathDisplay content={getFinalAnswer(item.resolvedData)} /></div>
-                                ) : (
-                                    <div className="space-y-2 mt-0.5">
-                                        {item.resolvedData?.clues?.map((clue, cIdx) => (
-                                            <div key={cIdx} className={`${cIdx === item.resolvedData.clues.length - 1 ? 'font-bold text-emerald-700 bg-emerald-50 p-2 rounded-lg' : 'text-slate-500 pl-2'} text-[9px] leading-tight`}>
-                                                <div className="italic opacity-80 mb-1">{clue.text}</div>
-                                                {clue.latex && <MathDisplay content={`$${clue.latex}$`} />}
-                                            </div>
-                                        ))}
+            {!isMeasuring && includeAnswerKey && (
+                 <div className="print-answer-key-page print:my-0">
+                     <div className="max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[15mm] flex flex-col min-h-[297mm] print:min-h-0 print:shadow-none print:my-0 print:p-[12mm] relative border-t-[12px] border-emerald-600">
+                        <header className="border-b-2 border-black pb-4 mb-6">
+                            <div className="text-[8px] font-black uppercase text-slate-300 italic tracking-widest leading-none mb-1">{t.watermark}</div>
+                            <h2 className="text-xl font-black uppercase tracking-tight">{t.key_title}: {title}</h2>
+                        </header>
+                        
+                        <div className="print-columns-3 flex-1">
+                            {packet.map((item, idx) => (
+                                <div key={`ans-${item.id}`} className={`break-inside-avoid border-slate-100 ${answerKeyStyle === 'compact' ? 'mb-2 flex gap-2 items-baseline' : 'mb-6 pb-4 border-b'}`}>
+                                    <div className="font-black uppercase text-slate-400 shrink-0 text-[10px] italic">{idx + 1}</div>
+                                    {answerKeyStyle === 'compact' ? (
+                                        <div className="font-bold text-slate-900 text-[11px]"><MathDisplay content={getFinalAnswer(item.resolvedData)} /></div>
+                                    ) : (
+                                        <div className="space-y-2 mt-0.5">
+                                            {item.resolvedData?.clues?.map((clue, cIdx) => (
+                                                <div key={cIdx} className={`${cIdx === item.resolvedData.clues.length - 1 ? 'font-bold text-emerald-700 bg-emerald-50 p-2 rounded-lg' : 'text-slate-500 pl-2'} text-[9px] leading-tight`}>
+                                                    <div className="italic opacity-80 mb-1">{clue.text}</div>
+                                                    {clue.latex && <MathDisplay content={`$${clue.latex}$`} />}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                 </div>
+            )}
+
+            {/* 🟢 HIDDEN SANDBOX INTERACTION CANVAS: Kept constantly rendered in background to give true measurements */}
+            <div className="absolute top-0 left-0 opacity-0 pointer-events-none print:hidden z-[-100] w-[210mm] px-[12mm] box-border">
+                <div id="print-sandbox" className="grid grid-cols-6 gap-x-10 gap-y-10 items-start">
+                    {packet.map((item, idx) => {
+                        const displayStory = item.showText !== false;
+                        const displayLatex = item.showLatex !== false;
+                        const displayVisual = item.showVisual !== false;
+                        
+                        const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
+                        const isInlineMode = displayStory && item.instructionMode === 'inline';
+
+                        return (
+                            <React.Fragment key={`sb-card-${item.id}`}>
+                                {isHeaderMode && (
+                                    <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-1 bg-slate-50/50">
+                                        <div className="text-xs font-bold italic"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
                                     </div>
                                 )}
-                            </div>
-                        ))}
-                    </div>
+                                <div className={`sandbox-card ${item.columnSpan === 2 ? 'col-span-2' : item.columnSpan === 3 ? 'col-span-3' : 'col-span-6'}`}>
+                                    <div className="pl-8 space-y-4">
+                                        {isInlineMode && (
+                                            <div className="text-[12px] font-bold"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
+                                        )}
+                                        {displayLatex && item.resolvedData?.renderData.latex && (
+                                            <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} /></div>
+                                        )}
+                                        {displayVisual && hasVisual(item.resolvedData?.renderData) && (
+                                            <div className="flex justify-center p-4 bg-slate-50/30 rounded-2xl border h-[180px] w-full">
+                                                {renderVisual(item.resolvedData.renderData)}
+                                            </div>
+                                        )}
+                                        {showWorkArea && (
+                                            <div className="w-full border rounded-xl" style={{ height: density === 'compact' ? '80px' : density === 'normal' ? '160px' : '320px' }} />
+                                        )}
+                                    </div>
+                                </div>
+                            </React.Fragment>
+                        );
+                    })}
                 </div>
-            )}
-            
+            </div>
+
+            {/* DYNAMIC MEDIA PRINT STYLE HANDLERS */}
             <style dangerouslySetInnerHTML={{ __html: `
                 @media print {
+                    /* 1. Neutralize high-level layout layers */
+                    html, body, #root, main { 
+                        height: auto !important; 
+                        min-height: 0 !important; 
+                        overflow: visible !important;
+                        display: block !important;
+                        position: static !important;
+                    }
+
+                    /* 2. Find any structural parent wrappers holding this view and flatten them entirely */
+                    *:has(> .print-view-root),
+                    *:has(> .break-after-page),
+                    *:has(> .print-answer-key-page) {
+                        display: block !important;
+                        overflow: visible !important;
+                        height: auto !important;
+                        min-height: 0 !important;
+                        position: static !important;
+                        grid-template-columns: none !important;
+                        grid-template-rows: none !important;
+                        flex-direction: column !important;
+                    }
+
+                    /* 3. Strip layout constraints on your component root */
+                    .print-view-root {
+                        display: block !important;
+                        position: static !important;
+                        overflow: visible !important;
+                        height: auto !important;
+                        min-height: 0 !important;
+                    }
+
                     @page { size: A4; margin: 0; }
                     .print\\:hidden { display: none !important; }
-                    .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
-                    .break-after-page { break-before: page; page-break-before: always; }
+                    
+                    /* 4. Enforce strict fragmentation boundaries on individual cards */
+                    .break-inside-avoid { 
+                        break-inside: avoid !important; 
+                        page-break-inside: avoid !important;
+                        /* 🎯 SAFETY BUFFER: If an ultra-tall element is forced to split, 
+                           this padding keeps it inside the printable area of the sheet */
+                        padding-top: 4mm !important;
+                    }
+                    
+                    /* 🎯 THE GRID-TO-FLEX OVERRIDE: 
+                       Flattens the grid container into an adjustable flex row so the browser 
+                       can calculate item page breaks properly */
+                    .grid-cols-6 {
+                        display: flex !important;
+                        flex-wrap: wrap !important;
+                        gap: 2.5rem 1.5rem !important; /* Replicates grid column gaps */
+                    }
+                    
+                    /* Map col-span configurations into explicit print-safe percentage widths */
+                    .col-span-2 { width: calc(33.333% - 1rem) !important; flex-shrink: 0 !important; }
+                    .col-span-3 { width: calc(50% - 1rem) !important; flex-shrink: 0 !important; }
+                    .col-span-6 { width: 100% !important; flex-shrink: 0 !important; }
+                    
+                    .break-after-page { 
+                        display: block !important;
+                        break-after: page !important; 
+                        page-break-after: always !important; 
+                    }
+                    
+                    .print-answer-key-page {
+                        display: block !important;
+                        clear: both !important;
+                        break-before: page !important;
+                        page-break-before: always !important;
+                        page-break-after: avoid !important;
+                        break-after: avoid !important;
+                    }
+                    
                     .print-columns-3 { column-count: 3; column-gap: 1cm; }
                     body { background: white !important; -webkit-print-color-adjust: exact; }
                 }

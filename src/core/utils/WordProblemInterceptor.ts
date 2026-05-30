@@ -54,7 +54,8 @@ export class WordProblemInterceptor {
             ...questionData,
             renderData: {
                 ...questionData.renderData,
-                description: localizedStory
+                description: localizedStory,
+                availableStories: Array.isArray(entry) ? entry : [entry]
             },
             metadata: {
                 ...questionData.metadata,

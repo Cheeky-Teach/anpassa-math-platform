@@ -471,7 +471,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Beräkna omkretsen av en kvadrat utifrån en känd sida", en: "Calculate the perimeter of a square from a known side length" },
             tags: ["word_problem_ready"],
             contextType: "geom_perimeter_square",
-            extractorPattern: /(?:sidan är|side is)\s*(?<s>\d+)\s*cm/i
+            extractorPattern: /4\s*(?:\\cdot|·)\s*(?<s>\d+)/i // Matches: 4 \cdot X
           },
           { key: 'perimeter_rect', name: { sv: 'Omkrets: Rektangel', en: 'Perimeter: Rectangle' }, desc: { sv: '2b + 2h', en: '2w + 2h' } },
           { key: 'perimeter_parallel', name: { sv: 'Omkrets: Parallellogram', en: 'Perimeter: Parallelogram' }, desc: { sv: 'Samma som rektangel', en: 'Same as rectangle' } },
@@ -481,7 +481,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Hitta den saknade höjden i en rektangel utifrån omkrets och bas", en: "Find the missing height of a rectangle using perimeter and base" },
             tags: ["word_problem_ready"],
             contextType: "geom_perimeter_inverse",
-            extractorPattern: /(?:omkretsen|perimeter of)\s*(?<p>\d+)\s*cm[\s\S]*(?:basen är|base is)\s*(?<b>\d+)\s*cm/i
+            extractorPattern: /P\s*=\s*(?<p>\d+)\s*,\s*b\s*=\s*(?<b>\d+)/i // Matches: P = X, b = Y
           },
           { key: 'area_square', name: { sv: 'Area: Kvadrat', en: 'Area: Square' }, desc: { sv: 's * s', en: 's * s' } },
           {
@@ -490,7 +490,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Beräkna ytan på en fyrhörning genom basen gånger höjden", en: "Calculate the surface area of a quadrilateral using base times height" },
             tags: ["word_problem_ready"],
             contextType: "geom_area_quad",
-            extractorPattern: /Multiplicera:\s*(?<b>\d+)\s*·\s*(?<h>\d+)/i
+            extractorPattern: /(?<b>\d+)\s*(?:\\cdot|·)\s*(?<h>\d+)/i // Matches: X \cdot Y
           },
           { key: 'area_parallel', name: { sv: 'Area: Parallellogram', en: 'Area: Parallelogram' }, desc: { sv: 'Vinkelrät höjd', en: 'Perpendicular height' } },
           {
@@ -499,7 +499,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Beräkna triangelns area genom basen gånger höjden delat på två", en: "Calculate triangle area using base times height divided by two" },
             tags: ["word_problem_ready"],
             contextType: "geom_area_triangle",
-            extractorPattern: /Multiplicera basen med höjden[\s\S]*?(?<base>\d+)\s*·\s*(?<height>\d+)/i
+            extractorPattern: /(?<base>\d+)\s*(?:\\cdot|·)\s*(?<height>\d+)\s*=\s*\d+/i // Matches: X · Y = Z
           },
           { key: 'perimeter_triangle_right', name: { sv: 'Omkrets: Rätvinklig triangel', en: 'Perimeter: Right triangle' }, desc: { sv: 'Summa av sidor', en: 'Sum of sides' } },
           {
