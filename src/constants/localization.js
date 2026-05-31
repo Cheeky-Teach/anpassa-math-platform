@@ -143,8 +143,7 @@ export const LEVEL_DESCRIPTIONS = {
         1: { sv: "Begrepp & Definition", en: "Concepts & Definitions" },
         2: { sv: "Beräkna nya värdet", en: "Calculate New Value" },
         3: { sv: "Beräkna gamla värdet", en: "Find Original Value" },
-        4: { sv: "Total förändring", en: "Total Change" },
-        5: { sv: "Textuppgifter", en: "Word Problems" }
+        4: { sv: "Total förändring", en: "Total Change" }
     },
     fraction_basics: {
         1: { sv: "Visuella Bråk", en: "Visual Fractions" },

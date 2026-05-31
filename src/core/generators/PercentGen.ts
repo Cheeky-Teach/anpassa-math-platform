@@ -158,6 +158,7 @@ export class PercentGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `Beräkna ${pct}% av ${base}.` : `Calculate ${pct}% of ${base}.`,
+                    latex: `${pct}\\% \\cdot ${base}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -179,6 +180,7 @@ export class PercentGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `Om ${pctInv}% av ett tal är ${part}, vad är då 100%?` : `If ${pctInv}% of a number is ${part}, what is 100%?`,
+                latex: `${pctInv}\\% = ${part}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(total.toString()), variationKey: 'benchmark_inverse', type: 'calculate',
@@ -207,6 +209,7 @@ export class PercentGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `Beräkna ${pct}% av ${base} genom att först hitta 10%.` : `Calculate ${pct}% of ${base} by first finding 10%.`,
+                    latex: `${pct}\\% \\cdot ${base}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -251,7 +254,13 @@ export class PercentGen {
             : (isTest ? `You got ${part} correct out of ${w} on a test. What percentage did you get right?` : `An item was reduced by ${part} kr from the price ${w} kr. What was the reduction in percent?`);
 
         return {
-            renderData: { description: desc, answerType: 'numeric', suffix: '%' },
+            renderData: { 
+                description: desc, 
+                // 🟢 Handshake anchor injection added
+                latex: `\\frac{${part}}{${w}}`,
+                answerType: 'numeric', 
+                suffix: '%' 
+            },            
             token: this.toBase64(p.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? "Steg 1: Identifiera 'delen' och 'det hela'." : "Step 1: Identify the 'part' and the 'whole'." },
@@ -325,7 +334,9 @@ export class PercentGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `Ett pris ändrades från ${oldV} kr till ${newV} kr. Vad var förändringen i procent?` : `A price changed from ${oldV} kr to ${newV} kr. What was the change in percent?`,
-                answerType: 'numeric', suffix: '%'
+                latex: `\\frac{${diff}}{${oldV}}`,
+                answerType: 'numeric', 
+                suffix: '%'
             },
             token: this.toBase64(p.toString()), variationKey: 'change_calc', type: 'calculate',
             clues: [

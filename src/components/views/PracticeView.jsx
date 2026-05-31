@@ -32,7 +32,8 @@ const PracticeView = ({
     // --- 1. EARLY DEFINITIONS (Prevents ReferenceErrors) ---
     const cluesLabel = ui.hintsTitle || (lang === 'sv' ? "Ledtrådar" : "Hints");
     const historyLabel = ui.historyTitle || (lang === 'sv' ? "Historik" : "History");
-    
+
+
     // --- 2. LOCALIZATION & THEME ENGINE ---
     const getCategoryContext = () => {
         const catKey = Object.keys(CATEGORIES).find(key => 
