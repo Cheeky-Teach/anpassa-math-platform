@@ -58,20 +58,48 @@ const compileAnchoredStory = (item, lang = 'sv') => {
     
     let template = storyPackage[lang === 'en' ? 'en' : 'sv'];
 
-    // 2. Locate the regex extractor pattern matching our registered bucket variation
-    const category = Object.values(SKILL_BUCKETS).find(cat => cat.topics[item.topicId]);
-    const variation = category?.topics[item.topicId]?.variations?.find(v => v.key === item.variationKey);
-    
-    if (variation?.extractorPattern && rd.latex) {
-        const match = rd.latex.match(variation.extractorPattern);
-        if (match && match.groups) {
-            // 3. Dynamically inject values back into placeholders
-            Object.entries(match.groups).forEach(([key, value]) => {
-                const cleanValue = String(value).replace(/[()]/g, '');
-                template = template.replace(new RegExp(`{${key}}`, 'g'), cleanValue);
-            });
+    // 2. Prioritize pre-extracted parameters passed down from the interceptor data payload
+    let params = rd.extractedParams;
+
+    // 3. Backward compatibility fallback: run regex if extractedParams is missing from history streams
+    if (!params) {
+        const category = Object.values(SKILL_BUCKETS).find(cat => cat.topics[item.topicId]);
+        const variation = category?.topics[item.topicId]?.variations?.find(v => v.key === item.variationKey);
+        
+        const sourceToken = rd.latex || rd.interceptorToken;
+        if (variation?.extractorPattern && sourceToken) {
+            const match = sourceToken.match(variation.extractorPattern);
+            if (match && match.groups) {
+                params = match.groups;
+            }
         }
     }
+
+    // 4. Perform placeholder variable substitution
+    if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+            const cleanValue = String(value).replace(/[()]/g, '');
+            template = template.replace(new RegExp(`\\{${key}\\}`, 'g'), cleanValue);
+        });
+    }
+
+    // 5. Append the exact uniform instructional directive suffix corresponding to the current variation key context
+    if (item.variationKey === 'apply_factor_inc' || item.variationKey === 'apply_factor_dec') {
+        template += lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.";
+    } else if (item.variationKey === 'find_original_inc' || item.variationKey === 'find_original_dec') {
+        template += lang === 'en' ? " Calculate the original value." : " Beräkna det ursprungliga värdet.";
+    } else if (item.variationKey === 'sequential_factors') {
+        template += lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.";
+    } else if (item.topicId === 'equations' || item.topicId === 'equations_word') {
+        if (item.resolvedData?.metadata?.difficulty === 5) {
+            template += lang === 'en' ? " Write the equation that describes this situation." : " Teckna ekvationen som beskriver situationen.";
+        } else {
+            template += lang === 'en' ? " Calculate the value of x." : " Beräkna värdet på x.";
+        }
+    } else if (item.topicId === 'expressions') {
+        template += lang === 'en' ? " Write and simplify the algebraic expression." : " Skriv och förenkla uttrycket.";
+    }
+
     return template;
 };
 
@@ -412,14 +440,13 @@ export default function QuestionStudio({
                 topicId: selectedTopicId, 
                 variationKey: variation.key, 
                 name: variation.name[lang] || variation.name.sv, 
-                // Default to full-width (6 spans) so the inline text has room to breathe.
                 columnSpan: useWordProblems ? 6 : (isFirstInBatch ? 6 : 2), 
                 resolvedData: data, 
-                // If it's a word problem, skip header separations and place directly inline.
                 instructionMode: useWordProblems ? 'inline' : (isFirstInBatch ? 'header' : 'hidden'),
-                // Force the LaTeX and graphics switches off by default exclusively for word problems
                 showLatex: !useWordProblems,
-                showVisual: !useWordProblems
+                showVisual: !useWordProblems,
+                // 🟢 Pin the narrative text array tracker to index 0 explicitly upon creation
+                selectedStoryIndex: useWordProblems ? 0 : null 
             });
         }
         if (setupMode === 'donow' && packet.length + newItems.length > 6) { alert("Do Now max 6."); return; }
@@ -864,7 +891,6 @@ export default function QuestionStudio({
                                                 <div className="bg-white shadow-2xl rounded-full p-1 flex gap-1 border border-slate-200">
                                                     <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'columnSpan', item.columnSpan === 2 ? 3 : item.columnSpan === 3 ? 6 : 2); }} className="bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full italic">W</button>
                                                     <button onClick={(e) => { e.stopPropagation(); const modes = ['header', 'inline', 'hidden']; const next = modes[(modes.indexOf(item.instructionMode || 'header') + 1) % 3]; updatePacketItem(item.id, 'instructionMode', next); }} className={`p-1.5 rounded-full transition-all ${item.instructionMode === 'inline' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400'}`}><AlignLeft size={12} /></button>
-                                                    <button onClick={(e) => { e.stopPropagation(); regenerateItem(item.id, item.topicId, item.variationKey); }} className="bg-slate-900 text-white p-1.5 rounded-full hover:bg-indigo-600"><Shuffle size={12} /></button>
                                                     <button onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }} className="bg-rose-500 text-white p-1.5 rounded-full hover:bg-rose-600"><Trash2 size={12} /></button>
                                                 </div>
                                             </div>
@@ -919,7 +945,8 @@ export default function QuestionStudio({
                                                                         setPacket(packet.map(p => p.id === item.id ? { 
                                                                             ...p, 
                                                                             resolvedData: data,
-                                                                            selectedStoryIndex: p.selectedStoryIndex !== undefined ? p.selectedStoryIndex : null 
+                                                                            // 🟢 Keeps the active text theme locked stably into position when rolling value variables
+                                                                            selectedStoryIndex: p.selectedStoryIndex !== undefined && p.selectedStoryIndex !== null ? p.selectedStoryIndex : 0 
                                                                         } : p));
                                                                         setIsSaved(false);
                                                                     } catch (err) { console.error("Number shuffle failed:", err); }
@@ -937,10 +964,14 @@ export default function QuestionStudio({
                                                                         e.stopPropagation();
                                                                         const totalStories = item.resolvedData.renderData.availableStories.length;
                                                                         
+                                                                        // 🟢 Guarantees an unbroken comparative value baseline fallback
+                                                                        const currentStoryIdx = item.selectedStoryIndex !== undefined && item.selectedStoryIndex !== null ? item.selectedStoryIndex : 0;
                                                                         let newIndex = Math.floor(Math.random() * totalStories);
-                                                                        if (newIndex === item.selectedStoryIndex) {
+                                                                        if (newIndex === currentStoryIdx) {
                                                                             newIndex = (newIndex + 1) % totalStories;
                                                                         }
+                                                                        
+                                                                        updatePacketItem(item.id, 'selectedStoryIndex', newIndex);
                                                                         
                                                                         updatePacketItem(item.id, 'selectedStoryIndex', newIndex);
                                                                     }}

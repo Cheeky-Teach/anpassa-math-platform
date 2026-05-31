@@ -14,15 +14,64 @@ export const SKILL_BUCKETS = {
       equations: {
         name: { sv: 'Ekvationslösning', en: 'Equation Solving' },
         variations: [
-          { key: 'onestep_calc', name: { sv: 'Ensteg: Beräkning', en: 'One-step: Calculation' }, desc: { sv: 'Lös enkla x + a = b', en: 'Solve simple x + a = b' } },
+          { 
+            key: 'onestep_calc', 
+            name: { sv: 'Ensteg: Beräkning', en: 'One-step: Calculation' }, 
+            desc: { sv: 'Lös enkla x + a = b eller x - a = b', en: 'Solve simple x + a = b or x - a = b' },
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_onestep',
+            // Matches: x + 5 = 12 OR x - 3 = 8
+            extractorPattern: /^x\s*(?<op>[\+\-])\s*(?<a>\d+)\s*=\s*(?<b>\d+)$/
+          },
           { key: 'onestep_concept_inverse', name: { sv: 'Ensteg: Invers', en: 'One-step: Inverse' }, desc: { sv: 'Välj rätt räknesätt (+/-/*/÷)', en: 'Choose the correct operation' } },
           { key: 'onestep_spot_lie', name: { sv: 'Hitta felet: Ensteg', en: 'Find the error: One-step' }, desc: { sv: 'Identifiera felaktig lösning', en: 'Identify incorrect solutions' } },
-          { key: 'twostep_calc', name: { sv: 'Tvåsteg: Beräkning', en: 'Two-step: Calculation' }, desc: { sv: 'ax + b = c', en: 'ax + b = c' } },
+          { 
+            key: 'twostep_calc', 
+            name: { sv: 'Tvåsteg: Beräkning', en: 'Two-step: Calculation' }, 
+            desc: { sv: 'ax + b = c eller ax - b = c', en: 'ax + b = c or ax - b = c' },
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_twostep',
+            // Matches: 3x + 12 = 36 OR 4x - 5 = 15
+            extractorPattern: /^(?<a>\d+)x\s*(?<op>[\+\-])\s*(?<b>\d+)\s*=\s*(?<c>\d+)$/
+          },
           { key: 'twostep_concept_order', name: { sv: 'Tvåsteg: Ordning', en: 'Two-step: Order' }, desc: { sv: 'Vilket steg tas först?', en: 'Which step is taken first?' } },
-          { key: 'paren_calc', name: { sv: 'Parenteser: Beräkning', en: 'Parentheses: Calculation' }, desc: { sv: 'a(x + b) = c', en: 'a(x + b) = c' } },
+          { 
+            key: 'paren_calc', 
+            name: { sv: 'Parenteser: Beräkning', en: 'Parentheses: Calculation' }, 
+            desc: { sv: 'a(x + b) = c eller a(x - b) = c', en: 'a(x + b) = c or a(x - b) = c' },
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_parentheses',
+            // Matches: 2(x + 4) = 16 OR 3(x - 5) = 21
+            extractorPattern: /^(?<a>\d+)\(x\s*(?<op>[\+\-])\s*(?<b>\d+)\)\s*=\s*(?<c>\d+)$/
+          },
           { key: 'paren_lie_distribution', name: { sv: 'Hitta felet: Parentes', en: 'Find the error: Parentheses' }, desc: { sv: 'Analysera multiplikation i parentes', en: 'Analyze distribution errors' } },
-          { key: 'bothsides_calc', name: { sv: 'X på båda sidor', en: 'X on both sides' }, desc: { sv: 'Samla x-termer på en sida', en: 'Collect x-terms on one side' } },
+          { 
+            key: 'bothsides_calc', 
+            name: { sv: 'X på båda sidor', en: 'X on both sides' }, 
+            desc: { sv: 'Samla x-termer på en sida (ax + b = cx + d)', en: 'Collect x-terms on one side' },
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_bothsides',
+            // Matches equations where a > c to guarantee positive x-bounds: 5x + 4 = 2x + 16 OR 4x - 3 = 2x + 9
+            extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*=\s*(?<c>\d+)x\s*(?<op2>[\+\-])\s*(?<d>\d+)$/
+          },
           { key: 'bothsides_concept_strategy', name: { sv: 'X på båda sidor: Strategi', en: 'X on both sides: Strategy' }, desc: { sv: 'Håll antalet x positivt', en: 'Keep the number of x positive' } }
+        ]
+      },
+      expressions: {
+        name: { sv: 'Förenkling av Uttryck', en: 'Expression Simplification' },
+        variations: [
+          { key: 'combine_lie_exponent', name: { sv: 'Hitta felet: Potenser', en: 'Find error: Exponents' }, desc: { sv: 'x + x vs x * x', en: 'x + x vs x * x' } },
+          { key: 'combine_concept_id', name: { sv: 'Begrepp: Termer', en: 'Concept: Terms' }, desc: { sv: 'Identifiera lika termer', en: 'Identify like terms' } },
+          { 
+            key: 'combine_standard_mixed', 
+            name: { sv: 'Förenkla uttryck', en: 'Simplify expressions' }, 
+            desc: { sv: 'Samla x och tal i ordning', en: 'Combine x and constants' },
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_expressions',
+            // 🟢 Captures all 4 terms and both operators dynamically!
+            // Matches formats like: "12x + 15 - 4x + 6", "10x - 8 - 2x - 3", etc.
+            extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*(?<op2>[\+\-])\s*(?<c>\d+)x\s*(?<op3>[\+\-])\s*(?<d>\d+)$/
+          }
         ]
       },
       equations_word: {
@@ -45,10 +94,29 @@ export const SKILL_BUCKETS = {
           { key: 'combine_concept_id', name: { sv: 'Begrepp: Termer', en: 'Concept: Terms' }, desc: { sv: 'Identifiera lika termer', en: 'Identify like terms' } },
           { key: 'combine_standard_mixed', name: { sv: 'Förenkla uttryck', en: 'Simplify expressions' }, desc: { sv: 'Samla x och tal', en: 'Combine x and constants' } },
           { key: 'distribute_lie_partial', name: { sv: 'Hitta felet: Parentes', en: 'Find error: Parentheses' }, desc: { sv: 'Partiell distribution', en: 'Partial distribution' } },
-          { key: 'distribute_plus', name: { sv: 'Parentes (+)', en: 'Parentheses (+)' }, desc: { sv: '+ framför parentes', en: '+ in front of parenthesis' } },
-          { key: 'distribute_minus', name: { sv: 'Parentes (-)', en: 'Parentheses (-)' }, desc: { sv: '- framför parentes', en: '- in front of parenthesis' } },
+          { 
+            key: 'distribute_plus', 
+            name: { sv: 'Parentes (+)', en: 'Parentheses (+)' }, 
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_expressions_dist',
+            extractorPattern: /^(?<a>\d+)x\s*\+\s*\(?(?<b>\d*)x\s*\+\s*(?<c>\d+)\)?$/
+          },
+          { 
+            key: 'distribute_minus', 
+            name: { sv: 'Parentes (-)', en: 'Parentheses (-)' }, 
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_expressions_dist_neg',
+            extractorPattern: /^(?<a>\d+)x\s*-\s*\(?(?<b>\d*)x\s*\+\s*(?<c>\d+)\)?$/
+          },
+
           { key: 'distribute_double', name: { sv: 'Dubbla parenteser', en: 'Double parentheses' }, desc: { sv: 'Expandera två parenteser', en: 'Expand two parentheses' } },
-          { key: 'distribute_combine_std', name: { sv: 'Expandera & Förenkla', en: 'Expand & Simplify' }, desc: { sv: 'Multiplicera och samla termer', en: 'Multiply and combine terms' } },
+          { 
+            key: 'distribute_combine_std', 
+            name: { sv: 'Expandera & Förenkla', en: 'Expand & Simplify' }, 
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_expressions_expand',
+            extractorPattern: /^(?<a>\d+)\((?<b>\d*)x\s*\+\s*(?<c>\d+)\)\s*(?<op>[\+\-])\s*(?<d>\d+)x$/
+          },
           { key: 'sub_concept_plus_logic', name: { sv: 'Teckenregler', en: 'Sign rules' }, desc: { sv: 'Minus framför parentes', en: 'Minus in front of parentheses' } },
           { key: 'sub_block_plus', name: { sv: 'Minusparentes (+)', en: 'Minus parentheses (+)' }, desc: { sv: '-(ax + b)', en: '-(ax + b)' } },
           { key: 'sub_block_minus', name: { sv: 'Minusparentes (-)', en: 'Minus parentheses (-)' }, desc: { sv: '-(ax - b)', en: '-(ax - b)' } },
@@ -322,19 +390,61 @@ export const SKILL_BUCKETS = {
           { key: 'visual_translation', name: { sv: 'Bild till Procent', en: 'Visual to Percent' }, desc: { sv: 'Tolka figurer', en: 'Interpret figures' } },
           { key: 'visual_lie', name: { sv: 'Hitta felet: Bild', en: 'Find error: Visual' }, desc: { sv: 'Visuell analys', en: 'Visual analysis' } },
           { key: 'equivalence', name: { sv: 'Decimal-Procent', en: 'Decimal-Percent' }, desc: { sv: 'Samband', en: 'Relationships' } },
-          { key: 'benchmark_calc', name: { sv: 'Huvudräkning (Bas)', en: 'Mental Math (Basic)' }, desc: { sv: '10%, 25%, 50%', en: '10%, 25%, 50%' } },
-          { key: 'benchmark_inverse', name: { sv: 'Hitta 100% (Bas)', en: 'Find 100% (Basic)' }, desc: { sv: 'Om 10% är 5, vad är allt?', en: 'If 10% is 5, what is total?' } },
-          { key: 'composition', name: { sv: 'Sammansättning', en: 'Composition' }, desc: { sv: 'Bygg 30, 40, 70%', en: 'Build 30, 40, 70%' } },
+          {
+            key: 'benchmark_calc',
+            name: { sv: 'Huvudräkning (Bas)', en: 'Mental Math (Basic)' },
+            desc: { sv: '10%, 25%, 50%', en: '10%, 25%, 50%' },
+            tags: ['word_problem_ready'],
+            contextType: 'percent_of_amount',
+            extractorPattern: /^(?<pct>\d+)\\%\\s*\\cdot\\s*(?<base>\d+)/
+          },
+          {
+            key: 'benchmark_inverse',
+            name: { sv: 'Hitta 100% (Bas)', en: 'Find 100% (Basic)' },
+            desc: { sv: 'Om 10% är 5, vad är allt?', en: 'If 10% is 5, what is total?' },
+            tags: ['word_problem_ready'],
+            contextType: 'percent_base_part',
+            extractorPattern: /^(?<pct>\d+)\\%\\s*=\\s*(?<part>\d+)/
+          },
+          {
+            key: 'composition',
+            name: { sv: 'Sammansättning', en: 'Composition' },
+            desc: { sv: 'Bygg 30, 40, 70%', en: 'Build 30, 40, 70%' },
+            tags: ['word_problem_ready'],
+            contextType: 'percent_of_amount',
+            extractorPattern: /^(?<pct>\d+)\\%\\s*\\cdot\\s*(?<base>\d+)/
+          },
           { key: 'decomposition', name: { sv: 'Uppdelning (5%)', en: 'Decomposition (5%)' }, desc: { sv: 'Använd 10% för att hitta 5%', en: 'Use 10% to find 5%' } },
-          { key: 'find_percent_test', name: { sv: 'Procentsats: Prov', en: 'Percent: Test' }, desc: { sv: 'Delen / Hela', en: 'Part / Whole' } },
-          { key: 'find_percent_discount', name: { sv: 'Procentsats: Rabatt', en: 'Percent: Discount' }, desc: { sv: 'Beräkna andelen', en: 'Calculate share' } },
-          { key: 'reverse_find_whole', name: { sv: 'Hitta 100%', en: 'Find 100%' }, desc: { sv: 'Beräkna hela summan', en: 'Calculate total sum' } },
-          { key: 'change_calc', 
+          {
+            key: 'find_percent_test',
+            name: { sv: 'Procentsats: Prov', en: 'Percent: Test' },
+            desc: { sv: 'Delen / Hela', en: 'Part / Whole' },
+            tags: ['word_problem_ready'],
+            contextType: 'percent_find_rate',
+            extractorPattern: /\\frac\{(?<part>\d+)\}\{(?<whole>\d+)\}/
+          },
+          {
+            key: 'find_percent_discount',
+            name: { sv: 'Procentsats: Rabatt', en: 'Percent: Discount' },
+            desc: { sv: 'Beräkna andelen', en: 'Calculate share' },
+            tags: ['word_problem_ready'],
+            contextType: 'percent_find_rate',
+            extractorPattern: /\\frac\{(?<part>\d+)\}\{(?<whole>\d+)\}/
+          },
+          {
+            key: 'reverse_find_whole',
+            name: { sv: 'Hitta 100%', en: 'Find 100%' },
+            desc: { sv: 'Beräkna hela summan', en: 'Calculate total sum' },
+            tags: ['word_problem_ready'],
+            contextType: 'percent_base_part',
+            extractorPattern: /^(?<pct>\d+)\\%\\s*=\\s*(?<part>\d+)/
+          },
+          { 
+            key: 'change_calc', 
             name: { sv: 'Beräkna förändring', en: 'Calculate change' }, 
             desc: { sv: 'Skillnad / Ursprung', en: 'Difference / Original' },
             tags: ['word_problem_ready'],
             contextType: 'value_delta',
-            // Captures the difference/change value (?<diff>) and the starting original baseline (?<oldV>)
             extractorPattern: /\\frac\{(?<diff>\d+)\}\{(?<oldV>\d+)\}/
           },
           { key: 'change_multiplier', name: { sv: 'Förändringsfaktor', en: 'Change Factor' }, desc: { sv: '1,0 +/- %', en: '1.0 +/- %' } }
@@ -347,19 +457,47 @@ export const SKILL_BUCKETS = {
           { key: 'pct_to_factor_dec', name: { sv: 'Minskning till Faktor', en: 'Decrease to Factor' }, desc: { sv: '-20% -> 0,80', en: '-20% -> 0.80' } },
           { key: 'factor_to_pct_inc', name: { sv: 'Factor till Ökning', en: 'Factor to Increase' }, desc: { sv: '1,20 -> +20%', en: '1.20 -> +20%' } },
           { key: 'factor_to_pct_dec', name: { sv: 'Factor till Minskning', en: 'Factor to Decrease' }, desc: { sv: '0,80 -> -20%', en: '0.80 -> -20%' } },
-          { key: 'apply_factor_inc', name: { sv: 'Beräkna nytt (Ökning)', en: 'Calc new (Increase)' }, desc: { sv: 'Start * Faktor', en: 'Start * Factor' } },
-          { key: 'apply_factor_dec', name: { sv: 'Beräkna nytt (Minskning)', en: 'Calc new (Decrease)' }, desc: { sv: 'Start * Faktor', en: 'Start * Factor' } },
-          { key: 'find_original_inc', name: { sv: 'Hitta gamla (Ökning)', en: 'Find old (Increase)' }, desc: { sv: 'Nytt / Faktor', en: 'New / Factor' } },
-          { key: 'find_original_dec', name: { sv: 'Hitta gamla (Minskning)', en: 'Find old (Decrease)' }, desc: { sv: 'Nytt / Faktor', en: 'New / Factor' } },
-          { key: 'sequential_factors', name: { sv: 'Total faktor', en: 'Total factor' }, desc: { sv: 'Faktor1 * Faktor2', en: 'Factor1 * Factor2' } },
-          { key: 'word_population', name: { sv: 'Problem: Befolkning', en: 'Problem: Population' }, desc: { sv: 'Förändringsfaktor', en: 'Change factor' } },
-          { key: 'word_interest', name: { sv: 'Problem: Ränta', en: 'Problem: Interest' }, desc: { sv: 'Bank och lån', en: 'Bank and loans' } },
-          { key: 'word_depreciation', name: { sv: 'Problem: Värdeminskning', en: 'Problem: Depreciation' }, desc: { sv: 'Bil/Maskin', en: 'Car/Machine' } },
-          { key: 'word_sale', name: { sv: 'Problem: Rea', en: 'Problem: Sale' }, desc: { sv: 'Rabatter', en: 'Discounts' } },
-          { key: 'word_decay', name: { sv: 'Problem: Sönderfall', en: 'Problem: Decay' }, desc: { sv: 'Naturvetenskap', en: 'Science' } },
-          { key: 'word_salary', name: { sv: 'Problem: Lön', en: 'Problem: Salary' }, desc: { sv: 'Löneförhandling', en: 'Salary negotiation' } },
-          { key: 'word_inflation', name: { sv: 'Problem: Inflation', en: 'Problem: Inflation' }, desc: { sv: 'Prisökningar', en: 'Price increases' } },
-          { key: 'word_stock', name: { sv: 'Problem: Aktier', en: 'Problem: Stocks' }, desc: { sv: 'Börsutveckling', en: 'Market development' } }
+          { 
+            key: 'apply_factor_inc', 
+            name: { sv: 'Beräkna nytt (Ökning)', en: 'Calc new (Increase)' }, 
+            desc: { sv: 'Startvärde · Ökningsfaktor', en: 'Initial value · Growth factor' }, // 🟢 Restores studio subtitle labels
+            tags: ['word_problem_ready'],
+            contextType: 'apply_factor_inc', 
+            // 🟢 Embraces both dot notation layout strings '·' and code-escaped '\\cdot' configurations dynamically
+            extractorPattern: /^(?<base>\d+)\s*(?:\\cdot|·)\s*(?<factor>1[.,]\d+)$/
+          },
+          { 
+            key: 'apply_factor_dec', 
+            name: { sv: 'Beräkna nytt (Minskning)', en: 'Calc new (Decrease)' }, 
+            desc: { sv: 'Startvärde · Minskningsfaktor', en: 'Initial value · Decay factor' },
+            tags: ['word_problem_ready'],
+            contextType: 'apply_factor_dec',
+            extractorPattern: /^(?<base>\d+)\s*(?:\\cdot|·)\s*(?<factor>0[.,]\d+)$/
+          },
+          { 
+            key: 'find_original_inc', 
+            name: { sv: 'Hitta gamla (Ökning)', en: 'Find old (Increase)' }, 
+            desc: { sv: 'Nytt värde / Ökningsfaktor', en: 'New value / Growth factor' },
+            tags: ['word_problem_ready'],
+            contextType: 'find_original_inc',
+            extractorPattern: /^\\frac\{(?<newPrice>\d+)\}\{(?<factor>1[.,]\d+)\}$/
+          },
+          { 
+            key: 'find_original_dec', 
+            name: { sv: 'Hitta gamla (Minskning)', en: 'Find old (Decrease)' }, 
+            desc: { sv: 'Nytt värde / Minskningsfaktor', en: 'New value / Decay factor' },
+            tags: ['word_problem_ready'],
+            contextType: 'find_original_dec',
+            extractorPattern: /^\\frac\{(?<newPrice>\d+)\}\{(?<factor>0[.,]\d+)\}$/
+          },
+          { 
+            key: 'sequential_factors', 
+            name: { sv: 'Total faktor', en: 'Total factor' }, 
+            desc: { sv: 'Faktor 1 · Faktor 2', en: 'Factor 1 · Factor 2' },
+            tags: ['word_problem_ready'],
+            contextType: 'factor_compound',
+            extractorPattern: /^(?<f1>[01][.,]\d+)\s*(?:\\cdot|·)\s*(?<f2>[01][.,]\d+)$/
+          },
         ]
       },
       exponents: {

@@ -1,175 +1,268 @@
+// src/core/utils/stories/tenpowers.stories.ts
 import { StoryScenario } from '../WordProblemInterceptor.js';
 
-export const TEN_POWER_STORIES: Record<string, StoryScenario[]> = {
+export const TENPOWERS_STORIES: Record<string, StoryScenario[]> = {
+    // =========================================================================
+    // 🎯 1. TEN POWERS MULT LARGE (Requires placeholders: {num} and {power})
+    // =========================================================================
     ten_powers_mult_large: [
         {
-            sv: "En kartong med skruvar väger {num} kilo. Hur mycket väger ett parti på {power} stycken likadana kartonger totalt?",
-            en: "A box of screws weighs {num} kg. How much does a batch of {power} identical boxes weigh in total?"
+            sv: "Ett gamingkonto laddar upp videoklipp som i genomsnitt får {num} visningar styck. En vecka går ett klipp viralt och får {power} gånger fler visningar. Hur många visningar fick det virala klippet?",
+            en: "A gaming account uploads video clips that average {num} views each. One week, a clip goes viral and gets {power} times more views. How many views did the viral clip get?"
         },
         {
-            sv: "En löpare dricker {num} liter vatten under ett träningspass. Hur många liter vatten går det åt om {power} löpare dricker lika mycket var?",
-            en: "A runner drinks {num} liters of water during a workout. How many liters of water are needed if {power} runners drink the same amount each?"
+            sv: "En skola köper in {power} stycken likadana skrivblock till sina elever. Om varje enskilt block kostar {num} kr, vad blir då den totala kostnaden för alla block?",
+            en: "A school purchases {power} identical notebooks for its students. If each individual notebook costs {num} kr, what is the total cost for all notebooks?"
         },
         {
-            sv: "Ett litet solcellsbatteri kan lagra {num} kWh energi. Hur mycket energi kan en stor anläggning med {power} sammankopplade batterier lagra?",
-            en: "A small solar battery can store {num} kWh of energy. How much energy can a large facility with {power} interconnected batteries store?"
+            sv: "Ett kompisgäng ska köpa biljetter till en festival. Om {power} personer köper varsin biljett och varje biljett kostar {num} kr, hur mycket kostar alla biljetter totalt?",
+            en: "A group of friends is buying tickets for a festival. If {power} people buy one ticket each and each ticket costs {num} kr, how much do all the tickets cost in total?"
         },
         {
-            sv: "En skola köper in block för {num} kr styck. Vad blir den totala kostnaden om skolan beställer hem ett paket med {power} block?",
-            en: "A school purchases notebooks for {num} kr each. What is the total cost if the school orders a package of {power} notebooks?"
+            sv: "En streamer har i snitt {num} tittare samtidigt under sina vanliga sändningar. Under ett stort event ökar antalet tittare och blir {power} gånger så stort. Hur många tittare har sändningen då?",
+            en: "A streamer averages {num} concurrent viewers during regular streams. During a major event, the viewer count increases to {power} times its usual size. How many viewers are watching then?"
         },
         {
-            sv: "Ett bageri använder i genomsnitt {num} kilo mjöl per timme. Hur mycket mjöl förbrukar bageriet under en period på {power} timmar?",
-            en: "A bakery uses an average of {num} kg of flour per hour. How much flour does the bakery consume over a period of {power} hours?"
+            sv: "Priset på ett sällsynt föremål på en spelmarknad är {num} kr. Efter att en känd kreatör använde föremålet ökade efterfrågan så att priset gångrades med {power}. Vad kostar föremålet nu?",
+            en: "The price of a rare item on a game marketplace is {num} kr. After a famous creator used the item, demand increased so the price was multiplied by {power}. What does the item cost now?"
         },
         {
-            sv: "Tjockleken på ett pappersark är {num} mm. Hur högt blir ett pappersblock om du travar {power} likadana ark på varandra?",
-            en: "The thickness of a sheet of paper is {num} mm. How high will a stack of paper be if you pile {power} identical sheets on top of each other?"
+            sv: "En designer gör ordning på {power} likadana hoodies till en klädinsamling. Om varje hoodie väger {num} kg, hur mycket väger hela sändningen med kläder totalt?",
+            en: "A designer prepares {power} identical hoodies for a clothing drive. If each hoodie weighs {num} kg, how much does the entire shipment of clothes weigh in total?"
         },
         {
-            sv: "En datamodul skickar {num} megabyte data per sekund. Hur många megabyte har skickats efter {power} sekunder?",
-            en: "A data module transmits {num} megabytes of data per second. How many megabytes have been transmitted after {power} seconds?"
+            sv: "Ett videoklipp på sociala medier delas vidare och sprids snabbt. Om klippet från början skickades till {num} personer och antalet mottagare sedan ökade med en faktor på {power}, hur många har fått klippet?",
+            en: "A social media video is shared and spreads rapidly. If the video was initially sent to {num} people and the number of recipients then increased by a factor of {power}, how many people received it?"
         },
         {
-            sv: "En behållare rymmer {num} liter flytande tvål. Hur många liter tvål behövs för att fylla en fabrikstank som motsvarar volymen av {power} sådana behållare?",
-            en: "A container holds {num} liters of liquid soap. How many liters of soap are needed to fill a factory tank equal to the volume of {power} such containers?"
+            sv: "Du sparar undan {num} kr från din månadspeng varje vecka. Om du fortsätter i samma takt och sparar {power} gånger så länge, hur mycket pengar har du fått ihop till slut?",
+            en: "You save {num} kr from your monthly allowance each week. If you continue at the same rate and save for {power} times as long, how much money have you gathered in the end?"
         },
         {
-            sv: "Varje biljett till en välgörenhetskonsert kostar {num} kr. Hur mycket pengar samlas in om arrangörerna säljer exakt {power} biljetter?",
-            en: "Each ticket to a charity concert costs {num} kr. How much money is raised if the organizers sell exactly {power} tickets?"
+            sv: "En digital rityta i ett grafikprogram har en bredd på {num} mm. Du väljer att zooma ut så att arbetsytan förstoras med {power} gånger i bredd. Hur många millimeter bred blir ytan på skärmen?",
+            en: "A digital drawing canvas in a graphics app has a width of {num} mm. You choose to zoom out so that the workspace is magnified {power} times in width. How many millimeters wide does the canvas become on screen?"
         },
         {
-            sv: "Ett tåg rör sig framåt med {num} meter per sekund. Hur många meter har tåget färdats efter {power} sekunder?",
-            en: "A train moves forward at {num} meters per second. How many meters has the train traveled after {power} seconds?"
+            sv: "Det ligger {num} gram snacks i en liten portionsförpackning. Till en fest köper du en stor hink som innehåller {power} gånger mer innehåll. Hur många gram snacks innehåller hinken?",
+            en: "There are {num} grams of snacks in a small portion pack. For a party, you buy a large tub that contains {power} times more content. How many grams of snacks does the tub contain?"
+        },
+        {
+            sv: "Ett skript i ett indiespel spawnar {num} monster per kvadratmeter i en startzon. I en svårare zon är spawn-takten programmerad att vara {power} gånger högre. Hur många monster spawnar där?",
+            en: "A script in an indie game spawns {num} monsters per square meter in a starting zone. In a harder zone, the spawn rate is programmed to be {power} times higher. How many monsters spawn there?"
+        },
+        {
+            sv: "En låt på Spotify strömmas i genomsnitt {num} gånger om dagen. Under julveckan ökar strömningarna och blir {power} gånger fler. Hur många gånger strömmas låten per dag under julen?",
+            en: "A song on Spotify is streamed an average of {num} times a day. During Christmas week, streams increase by {power} times. How many times is the song streamed per day during Christmas?"
+        },
+        {
+            sv: "En rulle med LED-tejp är {num} meter lång. Ett gym köper in ett storpack som innehåller {power} stycken likadana rullar för att lysa upp salen. Hur många meter LED-tejp får gymmet totalt?",
+            en: "A roll of LED tape is {num} meters long. A gym purchases a bulk pack containing {power} identical rolls to light up the hall. How many meters of LED tape does the gym get in total?"
+        },
+        {
+            sv: "En prenumerationstjänst för spel kostar {num} kr i månaden. Om du behåller din prenumeration löpande i {power} månader, hur mycket pengar har du betalat totalt under hela tiden?",
+            en: "A game subscription service costs {num} kr a month. If you maintain your subscription continuously for {power} months, how much money have you paid in total over the entire time?"
+        },
+        {
+            sv: "Ett klipp på TikTok fick {num} gilla-markeringar under den första timmen. Efter att det hamnade på For You-sidan ökade antalet markeringar med {power} gånger. Hur många gilla-markeringar har klippet nu?",
+            en: "A TikTok clip received {num} likes during its first hour. After landing on the For You page, the number of likes increased by {power} times. How many likes does the clip have now?"
         }
     ],
 
+    // =========================================================================
+    // 🎯 2. TEN POWERS DIV LARGE (Requires placeholders: {num} and {power})
+    // =========================================================================
     ten_powers_div_large: [
         {
-            sv: "Ett parti med färska bär väger totalt {num} kilo. Bären ska fördelas helt lika i {power} mindre plastaskar. Hur mycket väger bären i varje ask?",
-            en: "A batch of fresh berries weighs a total of {num} kg. The berries are to be divided completely equally into {power} smaller plastic containers. How much do the berries in each container weigh?"
+            sv: "En vinstpott på {num} kr från en gamingturnering ska delas helt lika mellan de {power} deltagarna i laget. Hur mycket pengar får varje lagmedlem?",
+            en: "A prize pool of {num} kr from a gaming tournament is to be split completely evenly among the {power} players on the team. How much money does each team member get?"
         },
         {
-            sv: "En vinstpott på {num} kr ska delas helt lika mellan de {power} personerna som köpte en gemensam lott. Hur mycket får varje person?",
-            en: "A prize pool of {num} kr is to be split completely equally among the {power} people who bought a joint lottery ticket. How much does each person receive?"
+            sv: "Ett stort parti med {num} ml läsk ska fördelas i små provflaskor som rymmer {power} ml var. Hur många provflaskor kan man fylla helt med läsk?",
+            en: "A large batch of {num} ml of soda is to be distributed into small sample bottles holding {power} ml each. How many sample bottles can be completely filled with soda?"
         },
         {
-            sv: "Ett långt rep mäter {num} meter. Du klipper repet i {power} exakt lika långa bitar. Hur lång blir varje enskild repbit?",
-            en: "A long rope measures {num} meters. You cut the rope into {power} exactly equal pieces. How long will each individual piece of rope be?"
+            sv: "Ett internetcafé har en total datamängd på {num} GB som ska delas jämnt på {power} datorer i nätverket. Hur många GB tilldelas varje enskild dator?",
+            en: "An internet cafe has a total data volume of {num} GB to be shared equally among {power} computers in the network. How many GB are assigned to each individual computer?"
         },
         {
-            sv: "En fabrik har producerat {num} liter saft. Vätskan ska tappas upp på {power} likadana flaskor. Hur mycket saft ska fyllas i varje flaska?",
-            en: "A factory has produced {num} liters of juice. The liquid is to be bottled into {power} identical bottles. How much juice should be filled into each bottle?"
+            sv: "En klädbutik köper in ett parti med kepsar för totalt {num} kr. Om partiet innehåller {power} stycken kepsar, vad blir då inköpspriset per keps?",
+            en: "A clothing store purchases a batch of caps for a total of {num} kr. If the batch contains {power} caps, what is the purchase price per cap?"
         },
         {
-            sv: "En löpare har sprungit totalt {num} meter under ett antal intervaller. Om hon sprang exakt {power} lika långa intervaller, hur lång var då varje intervall?",
-            en: "A runner has run a total of {num} meters over a number of intervals. If she ran exactly {power} equally long intervals, how long was each interval?"
+            sv: "Ett gäng har samlat ihop {num} poäng tillsammans i ett mobilspel. Poängen ska fördelas helt lika mellan de {power} kompisarna. Hur många poäng får varje person?",
+            en: "A group gathered {num} points together in a mobile game. The points are to be divided completely evenly among the {power} friends. How many points does each person get?"
         },
         {
-            sv: "En stor rulle kabel väger {num} kilo. Om rullen innehåller en kabel som är {power} meter lång, hur mycket väger då varje meter av kabelan?",
-            en: "A large roll of cable weighs {num} kg. If the roll contains a cable that is {power} meters long, how much does each meter of the cable weigh?"
+            sv: "En digital bildfil har en total filstorlek på {num} KB. Du laddar upp den på en sajt som komprimerar filen så att den blir {power} gånger mindre. Vad blir den nya filstorleken?",
+            en: "A digital image file has a total file size of {num} KB. You upload it to a site that compresses the file to be {power} times smaller. What is the new file size?"
         },
         {
-            sv: "Ett lager har {num} stycken glödlampor packade i {power} likadana lådor. Hur många glödlampor finns det i varje låda?",
-            en: "A warehouse has {n} light bulbs packed into {power} identical boxes. How many light bulbs are there in each box?"
+            sv: "En fabrik tillverkar en lång kabel som mäter {num} cm. Kabeln ska kapas upp i {power} stycken helt lika långa delar för att säljas i butik. Hur lång blir varje del?",
+            en: "A factory manufactures a long cable measuring {num} cm. The cable is to be cut into {power} completely equal parts to be sold in stores. How long will each part be?"
         },
         {
-            sv: "Ett byggföretag har {num} ton grus som ska köras bort i {power} lika stora lass med en lastbil. Hur mycket grus tas med i varje lass?",
-            en: "A construction company has {num} tons of gravel to be hauled away in {power} equal loads by a truck. How much gravel is taken in each load?"
+            sv: "Ett videoklipp har visats i totalt {num} minuter på nätet utspritt över {power} olika visningar. Hur lång var den genomsnittliga tittartiden per visning?",
+            en: "A video clip has been watched for a total of {num} minutes online spread across {power} different views. How long was the average viewing time per view?"
         },
         {
-            sv: "En vattentank rymmer {num} liter. Vattnet töms ut genom en ventil och det tar exakt {power} minuter innan tanken är helt tom. Hur många liter rinner ut per minut i snitt?",
-            en: "A water tank holds {num} liters. The water drains through a valve and it takes exactly {power} minutes before the tank is completely empty. How many liters drain out per minute on average?"
+            sv: "En rulle med skyddsplast till skärmar väger {num} gram. Plasten ska delas upp jämnt till {power} stycken förpackningar. Hur många gram plast hamnar i varje förpackning?",
+            en: "A roll of protective screen film weighs {num} grams. The plastic is to be divided evenly into {power} packages. How many grams of plastic end up in each package?"
         },
         {
-            sv: "En digital sändning på {num} megabyte skickas uppdelat i {power} lika stora datapaket. Hur många megabyte innehåller varje datapaket?",
-            en: "A digital transmission of {num} megabytes is sent divided into {power} equally sized data packets. How many megabytes does each data packet contain?"
+            sv: "Ett techbolag lägger ut {num} kr på reklam under en kampanj på sociala medier. Kampanjen genererade totalt {power} klick till deras sajt. Vad blev kostnaden per klick?",
+            en: "A tech company spends {num} kr on advertising during a social media campaign. The campaign generated a total of {power} clicks to their site. What was the cost per click?"
+        },
+        {
+            sv: "Ett lager med energidryck innehåller totalt {num} burkar. Burkarna ska fraktas bort i {power} stycken likadana kartonger. Hur många burkar ryms det i varje kartong?",
+            en: "A warehouse stock of energy drinks contains a total of {num} cans. The cans are to be shipped away in {power} identical boxes. How many cans fit in each box?"
+        },
+        {
+            sv: "Du har skapat en spellista med en total speltid på {num} minuter. Spellistan består av {power} stycken låtar som alla är exakt lika långa. Hur lång är varje låt?",
+            en: "You created a playlist with a total runtime of {num} minutes. The playlist consists of {power} songs that are all exactly the same length. How long is each song?"
+        },
+        {
+            sv: "Ett torg på en ritning har en area på {num} mm². Om ritningen görs om så att torget visas {power} gånger mindre, vilken area får torget på den nya skissen?",
+            en: "A plaza on a drawing has an area of {num} mm². If the drawing is modified so that the plaza is shown {power} times smaller, what area does the plaza have on the new sketch?"
+        },
+        {
+            sv: "En serverhall har laddat ner totalt {num} MB data fördelat på {power} stycken likadana uppdateringsfiler. Hur stor filstorlek i MB har varje enskild fil?",
+            en: "A server room downloaded a total of {num} MB of data distributed across {power} identical update files. What file size in MB does each individual file have?"
+        },
+        {
+            sv: "En rulle med fästande tejp till ett bygge är {num} cm lång. Du klipper upp hela rullen i {power} stycken lika långa bitar. Hur många centimeter lång blir varje bit?",
+            en: "A roll of adhesive tape for a project is {num} cm long. You cut up the entire roll into {power} pieces of equal length. How many centimeters long will each piece be?"
         }
     ],
 
+    // =========================================================================
+    // 🎯 3. TEN POWERS MULT SMALL (Requires placeholders: {num} and {factor})
+    // =========================================================================
     ten_powers_mult_small: [
         {
-            sv: "Ett stort lagerområde har en total yta på {num} kvadratmeter. En mindre kontorsmodul upptar en area som motsvarar {factor} av lagerytan. Hur stor är kontorsmodulens yta?",
-            en: "A large warehouse area has a total space of {num} square meters. A smaller office module occupies an area corresponding to {factor} of the warehouse space. How large is the office module's area?"
+            sv: "Ett föremål i ett mobilspel mäter {num} mm på skärmen. När du förminskar vyn blir föremålet bara {factor} av sin ursprungliga storlek. Vad blir föremålets nya mått på skärmen?",
+            en: "An item in a mobile game measures {num} mm on screen. When minimizing the view, the item becomes only {factor} of its original size. What is the item's new screen measurement?"
         },
         {
-            sv: "Ett cykellopp sträcker sig över {num} meter. Efter att ha cyklat {factor} av den totala sträckan får en deltagare punktering. Hur många meter hann han cykla?",
-            en: "A bicycle race covers {num} meters. After cycling {factor} of the total distance, a participant gets a flat tire. How many meters did he manage to cycle?"
+            sv: "En tråd till en 3D-printer har tjockleken {num} mm. Skrivaren kan justeras så att den matar ut en finare tråd som bara är {factor} av den vanliga tjockleken. Vad blir trådens mått?",
+            en: "A filament thread for a 3D printer has a thickness of {num} mm. The printer can be adjusted to feed a finer thread that is only {factor} of the standard thickness. What is the thread measurement?"
         },
         {
-            sv: "En kommun har en årlig budget på {num} miljoner kr för idrottsaktiviteter. Av denna budget går {factor} direkt till simhallar. Hur mycket pengar tilldelas simhallarna?",
-            en: "A municipality has an annual budget of {num} million kr for sports activities. Out of this budget, {factor} goes directly to swimming pools. How much money is allocated to the swimming pools?"
+            sv: "En textruta på en webbsida har bredden {num} pixlar. I mobilversionen skalas rutan ner så att den bara utgör {factor} av datorbredden. Hur många pixlar bred blir rutan i mobilen?",
+            en: "A text box on a webpage has a width of {num} pixels. In the mobile version, the box scales down to make up only {factor} of the desktop width. How many pixels wide is the mobile box?"
         },
         {
-            sv: "Ett oljefat innehåller {num} liter råolja. På grund av en spricka läcker {factor} av oljan ut på golvet. Hur många liter olja har läckt ut?",
-            en: "An oil barrel contains {num} liters of crude oil. Due to a crack, {factor} of the oil leaks out onto the floor. How many liters of oil have leaked out?"
+            sv: "En bit plastfilm till ett skärmskydd väger {num} gram. En mindre variant av samma skydd väger bara {factor} av den vikten. Hur mycket väger den mindre plastfilmen?",
+            en: "A piece of plastic film for a screen protector weighs {num} grams. A smaller variant of the same protector weighs only {factor} of that weight. How much does the smaller film weigh?"
         },
         {
-            sv: "Skalan på en ritning är satt så att längden av en modell är {factor} av den verkliga längden. Om det verkliga föremålet är {num} cm långt, hur långt blir det på ritningen?",
-            en: "The scale on a drawing is set so that the length of a model is {factor} of the real length. If the real object is {num} cm long, how long will it be on the drawing?"
+            sv: "Laddningstiden för ett batteri var {num} minuter med en gammal sladd. Med en ny snabbladdare minskar tiden och blir bara {factor} av den gamla tiden. Hur många minuter tar laddningen nu?",
+            en: "The charging time for a battery was {num} minutes with an old cable. With a new fast charger, the time drops to only {factor} of the old duration. How many minutes does charging take now?"
         },
         {
-            sv: "En skogsägare har {num} träd på sin fastighet. Under en storm faller {factor} av träden till marken. Hur många träd har fallit?",
-            en: "A forest owner has {num} trees on his property. During a storm, {factor} of the trees fall to the ground. How many trees have fallen?"
+            sv: "En karaktär i ett spel rör sig med hastigheten {num} steg per sekund. När karaktären drabbas av en slow-effekt sjunker takten till {factor} av normal fart. Vad blir hastigheten under effekten?",
+            en: "A game character moves at a speed of {num} steps per second. When hit by a slow effect, the rate drops to {factor} of normal speed. What is the speed during the effect?"
         },
         {
-            sv: "Ett fraktfartyg bär en last som väger {num} ton. Vid den första hamnen lastas {factor} av den totala vikten av. Hur många ton lastas av?",
-            en: "A cargo ship carries a load weighing {num} tons. At the first port, {factor} of the total weight is unloaded. How many tons are unloaded?"
+            sv: "En digital pensel i ett ritprogram är inställd på storleken {num} mm. När du aktiverar finjustering ändras penseldraget till {factor} av den inställda storleken. Vad blir penselns nya bredd?",
+            en: "A digital brush in a drawing app is set to a size of {num} mm. When activating fine adjustment, the brush stroke changes to {factor} of the set size. What is the brush's new width?"
         },
         {
-            sv: "Ett dataspel kräver {num} megabyte lagringsutrymme. En mindre uppdatering motsvarar {factor} av grundspelets storlek. Hur stor är uppdateringen?",
-            en: "A computer game requires {num} megabytes of storage space. A small update corresponds to {factor} of the base game's size. How large is the update?"
+            sv: "En kaffemugg rymmer {num} ml vätska. En liten espressokopp mäter {factor} av muggens volym. Hur många milliliter rymmer espressokoppen?",
+            en: "A coffee mug holds {num} ml of liquid. A small espresso cup measures {factor} of the mug's volume. How many milliliters does the espresso cup hold?"
         },
         {
-            sv: "Priset på en jacka var {num} kr. Under en utförsäljning sänks priset med en rabattfaktor på {factor} av det ursprungliga priset. Hur stor är prissänkningen i kr?",
-            en: "The price of a jacket was {num} kr. During a clearance sale, the price is reduced by a discount factor of {factor} of the original price. How large is the price reduction in kr?"
+            sv: "Ljudvolymen på en video är inställd på {num} decibel. Du sänker volymen i reglaget så att ljudnivån blir {factor} av den tidigare inställningen. Vilken decibelnivå har videon nu?",
+            en: "The audio volume of a video is set to {num} decibels. You lower the volume slider so that the sound level becomes {factor} of the previous setting. What decibel level does the video have now?"
         },
         {
-            sv: "En skola har {num} elever. Av dessa är det {factor} som deltar i schackturneringen. Hur många elever från skolan spelar i turneringen?",
-            en: "A school has {num} students. Out of these, {factor} participate in the chess tournament. How many students from the school are playing in the tournament?"
+            sv: "En rektangulär banner på en sajt har arean {num} cm². En mindre annonsruta bredvid tar bara upp {factor} av bannerns yta. Vilken area har den mindre annonsrutan?",
+            en: "A rectangular banner on a site has an area of {num} cm². A smaller ad box next to it takes up only {factor} of the banner's area. What area does the smaller ad box have?"
+        },
+        {
+            sv: "En speltimer startar på {num} sekunder. I ett snabbare spelläge kortas timern ner så att starttiden bara är {factor} av den vanliga tiden. Hur många sekunder har man på sig i det snabba läget?",
+            en: "A game timer starts at {num} seconds. In a faster game mode, the timer is shortened so that the starting time is only {factor} of the regular duration. How many seconds do you have in the fast mode?"
+        },
+        {
+            sv: "Vikten på ett headset är {num} gram. Tillverkaren utvecklar en lättviktsmodell som väger {factor} av den ursprungliga modellen. Hur mycket väger lättviktsmodellen?",
+            en: "The weight of a headset is {num} grams. The manufacturer develops a lightweight model weighing {factor} of the original model. How much does the lightweight model weigh?"
+        },
+        {
+            sv: "En bit snöre till ett pyssel är {num} cm långt. Du klipper av en liten bit som utgör {factor} av snörets hela längd. Hur många centimeter lång är biten du klippte av?",
+            en: "A piece of string for a craft project is {num} cm long. You cut off a small piece making up {factor} of the string's total length. How many centimeters long is the cut piece?"
+        },
+        {
+            sv: "En prenumeration på en sajt kostade {num} kr om året. Under en kampanj sänktes avgiften för den första månaden till {factor} av årspriset. Vad kostade kampanjmånaden?",
+            en: "A subscription to a site cost {num} kr a year. During a promotion, the fee for the first month was reduced to {factor} of the annual price. What did the promotional month cost?"
+        },
+        {
+            sv: "Tjockleken på ett skyddsglas till en mobil är {num} mm. Ett tunnare premiumglas tillverkas med en tjocklek som bara är {factor} av det vanliga glaset. Hur tjockt är premiumglaset?",
+            en: "The thickness of a protective glass for a phone is {num} mm. A thinner premium glass is manufactured with a thickness that is only {factor} of the standard glass. How thick is the premium glass?"
         }
     ],
 
+    // =========================================================================
+    // 🎯 4. TEN POWERS DIV SMALL (Requires placeholders: {num} and {factor})
+    // =========================================================================
     ten_powers_div_small: [
         {
-            sv: "En mikroskopisk cell har längden {num} mm på en bildskärm. Bilden är tagen med en lins som krympt motivet till {factor} av dess storlek. Vad är cellens faktiska längd?",
-            en: "A microscopic cell measures {num} mm on a monitor display. The image was captured with a lens that shrank the subject to {factor} of its size. What is the actual length of the cell?"
+            sv: "En bit tråd till ett armband har längden {num} cm. Du ska klippa upp tråden i småbitar som är {factor} cm långa var. Hur många småbitar får du ut av tråden?",
+            en: "A piece of string for a bracelet has a length of {num} cm. You are going to cut the string into small pieces that are {factor} cm long each. How many small pieces do you get from the string?"
         },
         {
-            sv: "Ett kemiskt prov väger {num} gram efter att det har torkats. Torkningsprocessen gjorde att vikten minskade till {factor} av ursprungsvikten. Vad vägde provet från början?",
-            en: "A chemical sample weighs {num} grams after being dried. The drying process caused the weight to decrease to {factor} of its original weight. What did the sample weigh initially?"
+            sv: "Du har en behållare med {num} ml flytande färg till ett pyssel. Färgen ska portioneras ut i små behållare som rymmer {factor} ml var. Hur många behållare kan fyllas?",
+            en: "You have a container with {num} ml of liquid paint for a craft project. The paint is to be portioned into small cups holding {factor} ml each. How many cups can be filled?"
         },
         {
-            sv: "En miniatyrmodell av en båt är {num} cm lång. Modellen är byggd så att dess längd motsvarar {factor} av den riktiga båtens längd. Hur lång är den riktiga båten?",
-            en: "A miniature model of a boat is {num} cm long. The model is built so that its length corresponds to {factor} of the actual boat's length. How long is the actual boat?"
+            sv: "En digital rityta har en total bredd på {num} mm. Du delar in ytan i små pixelsektioner som är {factor} mm breda var. Hur många sektioner får plats i bredd?",
+            en: "A digital canvas has a total width of {num} mm. You divide the canvas into pixel sections that are {factor} mm wide each. How many sections fit across the width?"
         },
         {
-            sv: "Ett företag redovisar en vinst på {num} miljoner kr för en mindre underavdelning. Denna delvinst utgör {factor} av hela koncernens totala vinst. Hur stor är koncernens vinst?",
-            en: "A company reports a profit of {num} million kr for a small subsidiary. This partial profit constitutes {factor} of the entire group's total profit. How large is the group's profit?"
+            sv: "En bit skyddsfilm väger {num} gram totalt. Filmen ska skäras upp i små bitar till kretsar där varje liten bit väger {factor} gram. Hur många bitar får man ut?",
+            en: "A piece of protective film weighs {num} grams in total. The film is to be cut into tiny pieces for chips where each small piece weighs {factor} grams. How many pieces do you get?"
         },
         {
-            sv: "En liten bit av en karta visar en sträcka som mäter {num} cm. Sträckan utgör {factor} av den totala längden på hela vandringsleden. Hur lång är vandringsleden i cm?",
-            en: "A small segment of a map shows a trail measuring {num} cm. This segment constitutes {factor} of the total length of the entire hiking trail. How long is the hiking trail in cm?"
+            sv: "Ett minneskort har {num} GB ledigt utrymme. Du ska spara små sparfiler från ett spel som tar {factor} GB i anspråk styck. Hur många sparfiler får plats på kortet?",
+            en: "A memory card has {num} GB of free space. You are going to save small save files from a game that take up {factor} GB each. How many save files can fit on the card?"
         },
         {
-            sv: "En behållare innehåller {num} liter koncentrerad juice efter en indunstning. Detta motsvarar {factor} av den ursprungliga juicemängden före koncentreringen. Hur många liter fanns det från början?",
-            en: "A container holds {num} liters of concentrated juice after evaporation. This corresponds to {factor} of the original amount of juice before concentration. How many liters were there initially?"
+            sv: "En stor flaska med rengöringsvätska innehåller {num} liter. För att göra ett experiment behöver du dosera vätskan i provrör som rymmer {factor} liter var. Hur många rör kan du fylla?",
+            en: "A large bottle of cleaning fluid contains {num} liters. To run an experiment, you need to dose the fluid into test tubes holding {factor} liters each. How many tubes can you fill?"
         },
         {
-            sv: "Du har sparat {num} kr på ett särskilt sparkonto. Denna summa motsvarar {factor} av dina totala samlade sparpengar. Hur mycket sparpengar har du sammanlagt?",
-            en: "You have saved {num} kr in a specific savings account. This sum corresponds to {factor} of your total accumulated savings. How much savings do you have in total?"
+            sv: "En förpackning med metalltråd är {num} meter lång. Du ska klippa till korta bitar till ett teknikbygge där varje bit ska vara {factor} meter. Hur många bitar räcker tråden till?",
+            en: "A pack of metal wire is {num} meters long. You are going to cut short pieces for a tech project where each piece must be {factor} meters. How many pieces will the wire last for?"
         },
         {
-            sv: "En liten testpanel bestående av {num} personer godkände en ny produkt. Testpanelen utgjorde {factor} av det totala antalet personer i hela marknadsundersökningen. Hur många deltog totalt?",
-            en: "A small test panel consisting of {num} people approved a new product. The test panel constituted {factor} of the total number of people in the entire market survey. How many people participated in total?"
+            sv: "Ett skript i ett spel körs under en total tid på {num} sekunder. Skriptet är indelat i små delmoment som tar {factor} sekunder var att köra. Hur många delmoment innehåller skriptet?",
+            en: "A script in a game runs for a total time of {num} seconds. The script is divided into sub-steps that take {factor} seconds each to execute. How many sub-steps does the script contain?"
         },
         {
-            sv: "En hantverkare har gjort klart en sektion på {num} meter av ett staket. Den färdiga sektionen utgör {factor} av staketets totala planerade längd. Hur långt ska staketet bli?",
-            en: "A craftsman has finished a section measuring {num} meters of a fence. The completed section constitutes {factor} of the total planned length of the fence. How long will the fence be?"
+            sv: "En bit tejp till en TV-bänk är {num} cm lång. Du ska klippa upp tejpen i bitar som mäter {factor} cm var för att fästa sladdar. Hur många bitar får du?",
+            en: "A piece of tape for a TV stand is {num} cm long. You are going to cut the tape into pieces measuring {factor} cm each to secure cords. How many pieces do you get?"
         },
         {
-            sv: "Efter en gallring finns det {num} tallar kvar i ett skogsparti. Detta antal motsvarar {factor} av det ursprungliga antalet tallar före gallringen. Hur många tallar fanns där i början?",
-            en: "After thinning, {num} pine trees remain in a section of forest. This count corresponds to {factor} of the original number of pine trees before thinning. How many pine trees were there initially?"
+            sv: "Ett paket med modellera väger {num} gram. Du ska rulla små dekorationskulor till ett pyssel där varje kula väger {factor} gram. Hur många kulor kan du rulla totalt?",
+            en: "A pack of modeling clay weighs {num} grams. You are going to roll small decorative beads for a craft where each bead weighs {factor} grams. How many beads can you roll in total?"
+        },
+        {
+            sv: "En digital ljudfil är {num} sekunder lång. Du delar upp filen i korta samplingar som är {factor} sekunder långa var. Hur många samplingar får du ut av ljudfilen?",
+            en: "A digital audio file is {num} seconds long. You split the file into short samples that are {factor} seconds long each. How many samples do you get from the audio file?"
+        },
+        {
+            sv: "En rulle med färgband är {num} meter lång. Till en fest ska bandet klippas upp i korta bitar som mäter {factor} meter var. Hur många bitar räcker rullen till?",
+            en: "A roll of colored ribbon is {num} meters long. For a party, the ribbon is to be cut into short pieces measuring {factor} meters each. How many pieces will the roll last for?"
+        },
+        {
+            sv: "En bit skyddsplast till skärmar har arean {num} cm². Den ska skäras till små skyddslappar för smartklockor där varje lapp täcker {factor} cm². Hur många lappar får man ut?",
+            en: "A sheet of screen protective plastic has an area of {num} cm². It is to be cut into small protective covers for smartwatches where each cover measures {factor} cm². How many covers do you get?"
+        },
+        {
+            sv: "En behållare rymmer {num} dl vatten. Du använder en sked som rymmer {factor} dl för att tömma behållaren helt. Hur många skedar vatten måste du ösa upp?",
+            en: "A container holds {num} dl of water. You use a scoop that holds {factor} dl to empty the container completely. How many scoops of water do you need to scoop up?"
+        },
+        {
+            sv: "En bit kartong är {num} mm tjock. Du har ett verktyg som skär skivor som är {factor} mm tjocka var. Hur många skivor kan du dela kartongbiten i?",
+            en: "A piece of cardboard is {num} mm thick. You have a tool that slices sheets that are {factor} mm thick each. How many sheets can you divide the piece of cardboard into?"
         }
     ]
 };

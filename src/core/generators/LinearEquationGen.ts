@@ -1,22 +1,10 @@
 import { MathUtils } from '../utils/MathUtils.js';
-import { LinearEquationProblemGen } from './LinearEquationProblemGen.js';
 
 export class LinearEquationGen {
-    private problemGen: LinearEquationProblemGen;
-
-    constructor() {
-        this.problemGen = new LinearEquationProblemGen();
-    }
-
-    public generate(level: number, lang: string = 'sv', options: any = {}): any {
+        public generate(level: number, lang: string = 'sv', options: any = {}): any {
         // Adaptive Fallback: If Level 1 concepts are mastered, push to Level 2 logic
         if (level === 1 && options.hideConcept && options.exclude?.includes('onestep_calc')) {
             return this.level2_TwoStep(lang, undefined, options);
-        }
-
-        // Levels 5 and 6 are delegated to the Word Problem Generator
-        if (level === 5 || level === 6) {
-            return this.problemGen.generate(level, lang);
         }
         
         // Fix: Level 7 handles the mixed logic safely
@@ -24,13 +12,28 @@ export class LinearEquationGen {
             return this.level7_Mixed(lang, options);
         }
 
+        let questionData: any;
+
         switch (level) {
-            case 1: return this.level1_OneStep(lang, undefined, options);
-            case 2: return this.level2_TwoStep(lang, undefined, options);
-            case 3: return this.level3_Parentheses(lang, undefined, options);
-            case 4: return this.level4_BothSides(lang, undefined, options);
-            default: return this.level1_OneStep(lang, undefined, options);
+            case 1: questionData = this.level1_OneStep(lang, undefined, options); break;
+            case 2: questionData = this.level2_TwoStep(lang, undefined, options); break;
+            case 3: questionData = this.level3_Parentheses(lang, undefined, options); break;
+            case 4: questionData = this.level4_BothSides(lang, undefined, options); break;
+            case 5: 
+                // Level 5 (Formulation) generates Two-Step equations, flagged for write assignment routing
+                questionData = this.level2_TwoStep(lang, 'twostep_calc', options); 
+                if (questionData && questionData.metadata) questionData.metadata.difficulty = 5;
+                break;
+            case 6: 
+                // Level 6 (Solving Word Problems) generates Two-Step equations, flagged for solve routing
+                questionData = this.level2_TwoStep(lang, 'twostep_calc', options); 
+                if (questionData && questionData.metadata) questionData.metadata.difficulty = 6;
+                break;
+            case 7: return this.level7_Mixed(lang, options);
+            default: questionData = this.level1_OneStep(lang, undefined, options); break;
         }
+
+        return questionData;
     }
 
     /**
@@ -38,18 +41,7 @@ export class LinearEquationGen {
      * Maps ALL keys from skillBuckets.js to preserve Studio compatibility.
      */
     public generateByVariation(key: string, lang: string = 'sv'): any {
-        const wordProblemKeys = [
-            'rate_fixed_add_write', 'rate_fixed_add_solve',
-            'rate_fixed_sub_write', 'rate_fixed_sub_solve',
-            'compare_word_sum_write', 'compare_word_sum_solve',
-            'compare_word_diff_write', 'compare_word_diff_solve'
-        ];
-
-        if (wordProblemKeys.includes(key)) {
-            const level = key.endsWith('_write') ? 5 : 6;
-            return this.problemGen.generate(level, lang);
-        }
-
+        // 🟢 Legacy word problem routing array is completely deleted.
         switch (key) {
             case 'onestep_concept_inverse':
             case 'onestep_spot_lie':
@@ -127,9 +119,10 @@ export class LinearEquationGen {
             }
 
             return {
-                renderData: {
-                    description: lang === 'sv' ? `Vilket operation isolerar x i $${q}$?` : `Which operation isolates x in $${q}$?`,
-                    answerType: 'multiple_choice', options: MathUtils.shuffle(ops)
+                renderData: { 
+                    latex: q, 
+                    description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.", 
+                    answerType: 'text' 
                 },
                 token: this.toBase64(ansVal), variationKey: v, type: 'concept',
                 clues: [
@@ -195,7 +188,8 @@ export class LinearEquationGen {
         return {
             renderData: { latex, description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.", answerType: 'text' },
             token: this.toBase64(x.toString()),
-            variationKey: v, type: 'calculate',
+            variationKey: 'onestep_calc', // Forces key grouping for pattern detection
+            type: 'calculate',
             clues: clues,
             metadata: { variation_key: v, difficulty: 1 }
         };
@@ -298,10 +292,10 @@ export class LinearEquationGen {
                 answerType: 'text' 
             },
             token: this.toBase64(x.toString()), 
-            variationKey: v, 
+            variationKey: 'twostep_calc', // Forces key grouping for pattern detection
             type: 'calculate',
             clues: clues,
-            metadata: { variation_key: v, difficulty: 2 }
+            metadata: { variation_key: v, difficulty: 2 } // Set explicitly to its true mathematical level mapping contract
         };
     }
 
@@ -319,8 +313,9 @@ export class LinearEquationGen {
             const lie = `${a}(x + ${b}) = ${a}x + ${b}`; 
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Vilket påstående visar FELAKTIG multiplikation?" : "Which statement shows INCORRECT distribution?",
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, lie])
+                    description: lang === 'sv' ? "Vilken uträkning är FALSK?" : "Which calculation is FALSE?",
+                    answerType: 'multiple_choice',
+                    options: MathUtils.shuffle([correct, lie, `${a}(x + 1) = ${a}x + ${a}`])
                 },
                 token: this.toBase64(lie), variationKey: v, type: 'concept',
                 clues: [
@@ -345,7 +340,9 @@ export class LinearEquationGen {
                 description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.",
                 answerType: 'text'
             },
-            token: this.toBase64(x.toString()), variationKey: v, type: 'calculate',
+            token: this.toBase64(x.toString()), 
+            variationKey: 'paren_calc', // Forces key grouping for pattern detection
+            type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? "Steg 1: Multiplicera in faktorn utanför i parentesen först." : "Step 1: First multiply the factor outside into the parentheses." },
                 { text: lang === 'sv' ? `Uträkning: ${a} · x + ${a} · ${b}` : `Calculation: ${a} · x + ${a} · ${b}`, latex: `${a}x + ${expandedConst} = ${constantSum}` },
@@ -392,8 +389,14 @@ export class LinearEquationGen {
         const diffConst = d - b;
 
         return {
-            renderData: { latex: eq, description: lang === 'sv' ? "Samla x på ena sidan och siffror på den andra." : "Gather x on one side and numbers on the other.", answerType: 'text' },
-            token: this.toBase64(x.toString()), variationKey: v, type: 'calculate',
+            renderData: { 
+                latex: eq, 
+                description: lang === 'sv' ? "Samla x på ena sidan och siffror på den andra." : "Gather x on one side and numbers on the other.", 
+                answerType: 'text' 
+            },
+            token: this.toBase64(x.toString()), 
+            variationKey: 'bothsides_calc', // 🟢 Forces key grouping for pattern detection
+            type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? "När x finns på båda sidor löser vi det steg för steg." : "When x is on both sides, we solve it step-by-step." },
                 { text: lang === 'sv' ? `Steg 1: Ta bort ${c}x från båda sidor.` : `Step 1: Remove ${c}x from both sides.`, latex: `${a}x - ${c}x = ${diffX}x` },
