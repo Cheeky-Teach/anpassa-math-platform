@@ -111,6 +111,11 @@ const PracticeView = ({
 
     const descriptionText = typeof question?.renderData?.description === 'object' ? question.renderData.description[lang] : question?.renderData?.description;
     
+    // Targeted check: Only targets patterns topics when word problems are active
+    const isPatternWordProblem = 
+        uiState?.topic === 'patterns' && 
+        (!!useWordProblems || !!question?.metadata?.isWordProblemApplied || !!question?.renderData?.availableStories);
+
     const handleChoiceClick = (choice) => { 
         if (feedback === 'correct') return; 
         setInput(choice); 
@@ -121,6 +126,9 @@ const PracticeView = ({
     const renderVisual = () => {
         const rd = question?.renderData;
         if (!rd) return null;
+
+        // Suppress matchstick/sequence structures if a real-world pattern story is active
+        if (isPatternWordProblem) return null;
 
         // 1. Dynamic Routing Channels for Interactive Graphical Canvas Components
         if (rd.graph) return <GraphCanvas data={rd.graph} lang={lang} />;

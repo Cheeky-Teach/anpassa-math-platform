@@ -19,16 +19,24 @@ export class LinearEquationGen {
             case 2: questionData = this.level2_TwoStep(lang, undefined, options); break;
             case 3: questionData = this.level3_Parentheses(lang, undefined, options); break;
             case 4: questionData = this.level4_BothSides(lang, undefined, options); break;
-            case 5: 
-                // Level 5 (Formulation) generates Two-Step equations, flagged for write assignment routing
-                questionData = this.level2_TwoStep(lang, 'twostep_calc', options); 
-                if (questionData && questionData.metadata) questionData.metadata.difficulty = 5;
-                break;
-            case 6: 
-                // Level 6 (Solving Word Problems) generates Two-Step equations, flagged for solve routing
-                questionData = this.level2_TwoStep(lang, 'twostep_calc', options); 
-                if (questionData && questionData.metadata) questionData.metadata.difficulty = 6;
-                break;
+            case 5: {
+                // 🟢 RESTORED LEVEL 5: Write Equation Formulation Tier
+                const qData = this.level2_TwoStep(lang, 'twostep_calc', options);
+                if (qData && qData.renderData) {
+                    qData.variationKey = 'twostep_write_problem'; // Custom variation target
+                    if (qData.metadata) qData.metadata.difficulty = 5;
+                }
+                return qData;
+            }
+            case 6: {
+                // 🟢 RESTORED LEVEL 6: Solve Real-World Equation Tier
+                const qData = this.level2_TwoStep(lang, 'twostep_calc', options);
+                if (qData && qData.renderData) {
+                    qData.variationKey = 'twostep_solve_problem'; // Custom variation target
+                    if (qData.metadata) qData.metadata.difficulty = 6;
+                }
+                return qData;
+            }
             case 7: return this.level7_Mixed(lang, options);
             default: questionData = this.level1_OneStep(lang, undefined, options); break;
         }
@@ -164,9 +172,16 @@ export class LinearEquationGen {
         let latex = '';
         let clues = [];
         
+        // 🟢 Define placeholder vars outside the branches so they are accessible to the token string builder below
+        let modifierVal = 0;
+        let finalRes = 0;
+        let isPlus = false;
+
         if (type === 1) {
             const k = MathUtils.randomInt(2, 9);
             const res = k * x;
+            modifierVal = k;   // 🟢 Safely preserve for token compilation
+            finalRes = res;    // 🟢 Safely preserve for token compilation
             latex = `${k}x = ${res}`;
             clues = [
                 { text: lang === 'sv' ? `Steg 1: x är multiplicerat med ${k}. För att få x ensamt måste vi dividera båda sidor med ${k}.` : `Step 1: x is multiplied by ${k}. To isolate x, we must divide both sides by ${k}.` },
@@ -175,8 +190,10 @@ export class LinearEquationGen {
             ];
         } else {
             const k = MathUtils.randomInt(1, 20);
-            const isPlus = Math.random() > 0.5;
+            isPlus = Math.random() > 0.5;
             const res = isPlus ? x + k : x - k;
+            modifierVal = k;   // 🟢 Safely preserve for token compilation
+            finalRes = res;    // 🟢 Safely preserve for token compilation
             latex = isPlus ? `x + ${k} = ${res}` : `x - ${k} = ${res}`;
             clues = [
                 { text: lang === 'sv' ? (isPlus ? `Steg 1: Det står +${k} bredvid x. Utför motsatsen (-${k}) på båda sidor.` : `Steg 1: Det står -${k} bredvid x. Utför motsatsen (+${k}) på båda sidor.`) : (isPlus ? `Step 1: It says +${k} next to x. Perform the opposite (-${k}) on both sides.` : `Step 1: It says -${k} next to x. Perform the opposite (+${k}) on both sides.`) },
@@ -185,10 +202,20 @@ export class LinearEquationGen {
             ];
         }
 
+        // 🟢 Strategy B Token Definition unifies algebraic states using outer scoped tracking variables
+        const backgroundToken = type === 1 
+            ? `multiply ; ${modifierVal} ; ${finalRes}`
+            : (isPlus ? `add ; ${modifierVal} ; ${finalRes}` : `sub ; ${modifierVal} ; ${finalRes}`);
+
         return {
-            renderData: { latex, description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.", answerType: 'text' },
+            renderData: { 
+                latex, 
+                description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.", 
+                interceptorToken: backgroundToken, // Hidden parsing lane link
+                answerType: 'text' 
+            },
             token: this.toBase64(x.toString()),
-            variationKey: 'onestep_calc', // Forces key grouping for pattern detection
+            variationKey: 'onestep_calc', 
             type: 'calculate',
             clues: clues,
             metadata: { variation_key: v, difficulty: 1 }
@@ -285,17 +312,23 @@ export class LinearEquationGen {
 
         clues.push({ text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}` });
 
+        // 🟢 Strategy B Background Contract: Unifies both equations into a clean data string for the regex parser
+        const backgroundToken = isMultiplication 
+            ? `multiply ; ${a} ; ${isPlus ? '+' : '-'} ; ${b} ; ${c}`
+            : `divide ; ${a} ; ${isPlus ? '+' : '-'} ; ${b} ; ${c}`;
+
         return {
             renderData: { 
                 latex: equationLatex, 
                 description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.", 
+                interceptorToken: backgroundToken, // Hidden data layer channel passed safely to interceptor
                 answerType: 'text' 
             },
             token: this.toBase64(x.toString()), 
-            variationKey: 'twostep_calc', // Forces key grouping for pattern detection
+            variationKey: 'twostep_calc', 
             type: 'calculate',
             clues: clues,
-            metadata: { variation_key: v, difficulty: 2 } // Set explicitly to its true mathematical level mapping contract
+            metadata: { variation_key: v, difficulty: 2 } 
         };
     }
 

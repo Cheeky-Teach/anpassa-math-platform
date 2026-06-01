@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents.jsx';
 import { 
     X, Maximize, Minimize, ZoomIn, ZoomOut, RefreshCw, 
-    Eye, EyeOff, Loader2, Play, Pause, RotateCcw, ChevronUp, ChevronDown 
+    Eye, EyeOff, Loader2, Play, Pause, RotateCcw, ChevronUp, ChevronDown,
+    Shuffle, Calculator, Type as TextIcon, RefreshCcw
 } from 'lucide-react';
 
 const MathDisplay = ({ content, className = "" }) => {
@@ -30,11 +31,41 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-container ${className}`} />;
 };
 
+// Resolves and compiles contextual placeholders dynamically
+const compileAnchoredStory = (item, lang = 'sv') => {
+    const rd = item?.resolvedData?.renderData;
+    if (item?.selectedStoryIndex === undefined || item?.selectedStoryIndex === null || !rd?.availableStories) {
+        return rd?.description || item?.name || "";
+    }
+    const storyPackage = rd.availableStories[item.selectedStoryIndex];
+    if (!storyPackage) return rd?.description || item?.name || "";
+
+    let template = storyPackage[lang === 'en' ? 'en' : 'sv'];
+    let params = rd.extractedParams;
+
+    if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+            template = template.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value).replace(/[()]/g, ''));
+        });
+    }
+
+    // Append instructional suffixes safely matching WordProblemInterceptor parameters
+    if (item.variationKey === 'apply_factor_inc' || item.variationKey === 'apply_factor_dec') {
+        template += lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.";
+    } else if (item.variationKey === 'find_original_inc' || item.variationKey === 'find_original_dec') {
+        template += lang === 'en' ? " Calculate the original value." : " Beräkna det ursprungliga värdet.";
+    } else if (item.variationKey === 'sequential_factors') {
+        template += lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.";
+    } else if (item.topicId === 'equations' || item.topicId === 'equations_word') {
+        template += lang === 'en' ? " Calculate the value of x." : " Beräkna värdet på x.";
+    }
+    return template;
+};
+
+
 const TEXT_SIZES = ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'text-3xl'];
 
-const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, lang, textSizeClass, isFocused = false }) => {
-    
-    // SECURITY: Updated answer retrieval to handle scrubbed payloads
+const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onRefreshStory, onFocus, lang, textSizeClass, isFocused = false }) => {    // SECURITY: Updated answer retrieval to handle scrubbed payloads
     const getFinalAnswer = () => {
         const rd = q?.resolvedData;
         if (!rd) return "---";
@@ -62,6 +93,12 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
 
     const data = q?.resolvedData?.renderData;
 
+    // Multi-Channel Check: Validates frontend selection indices alongside server payload markers
+    const isWordProblemApplied = 
+        (q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined) || 
+        !!q?.resolvedData?.metadata?.isWordProblemApplied || 
+        !!q?.resolvedData?.renderData?.isWordProblemApplied;    
+        
     // Loading State for individual cards (Prevents blanking during single refresh)
     if (!data) {
         return (
@@ -117,7 +154,8 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
             <div className={`flex-1 flex flex-col items-center text-center relative overflow-hidden transition-all duration-300 
                 ${isFocused ? 'p-10' : 'p-3'}`}>
                 
-                {hasVisual && (
+                {/* Hide geometric visuals/graphs completely if word problem mode is active */}
+                {hasVisual && !isWordProblemApplied && (
                     <div 
                         className="w-full flex justify-center items-center shrink-0 overflow-hidden mb-2 border border-slate-50 rounded-xl bg-slate-50/30"
                         style={{ height: isFocused ? '440px' : '220px' }} // Fixed "Frame"
@@ -144,8 +182,10 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
                 
                 <div className={`font-bold text-slate-800 leading-tight ${textSizeClass} flex-1 flex flex-col justify-center items-center transition-all w-full
                     ${isFocused ? 'px-8 pb-4' : 'px-1'}`}>
-                    <MathDisplay content={data?.description} />
-                    {data?.latex && (
+                    <MathDisplay content={compileAnchoredStory(q, lang)} />
+
+                    {/* Hide the raw math formula container if this question is a word problem */}
+                    {data?.latex && !isWordProblemApplied && (
                         <div className={`text-indigo-600 font-serif ${isFocused ? 'mt-4 text-5xl' : 'mt-1'}`}>
                             <MathDisplay content={`$$${data.latex}$$`} />
                         </div>
@@ -171,15 +211,29 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
             <div className={`absolute top-10 right-3 flex flex-col gap-2 transition-opacity duration-300 
                 ${isFocused ? 'opacity-100 z-50' : 'opacity-0 group-hover:opacity-100'}`}>
                 
-                {/* 1. GRID-ONLY TOOLS: Refresh (Only shown on the 6-grid cards) */}
+                {/* 1. GRID-ONLY TOOLS: Granular split option suite */}
                 {!isFocused && (
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); onRefresh(); }}
-                        className="w-8 h-8 rounded-full flex items-center justify-center bg-white/90 text-slate-400 border border-slate-200 hover:text-indigo-600 shadow-sm"
-                        title="Refresh question"
-                    >
-                        <RefreshCw size={14} />
-                    </button>
+                    <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
+                        {/* 🔢 Shuffle Numbers Only */}
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onRefreshNumbers(); }}
+                            className="w-8 h-8 rounded-full flex flex-col items-center justify-center bg-white/95 text-slate-400 border border-slate-200 hover:text-indigo-600 hover:bg-indigo-50 shadow-sm transition-all active:scale-95 cursor-pointer"
+                            title={lang === 'sv' ? "Slumpa tal (Behåll text)" : "Shuffle numbers"}
+                        >
+                            <Calculator size={13} />
+                        </button>
+
+                        {/* 📝 Shuffle Story Text Only — visible exclusively for active word problems */}
+                        {q.selectedStoryIndex !== null && q.selectedStoryIndex !== undefined && data?.availableStories && data.availableStories.length > 1 && (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onRefreshStory(); }}
+                                className="w-8 h-8 rounded-full flex flex-col items-center justify-center bg-white/95 text-slate-400 border border-slate-200 hover:text-amber-600 hover:bg-amber-50 shadow-sm transition-all active:scale-95 cursor-pointer"
+                                title={lang === 'sv' ? "Slumpa textberättelse" : "Shuffle story text"}
+                            >
+                                <Shuffle size={13} />
+                            </button>
+                        )}
+                    </div>
                 )}
                 
                 {/* 2. UNIVERSAL TOOLS: Zoom & Answer (Shown in both views) */}
@@ -233,10 +287,13 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefresh, onFocus, l
     );
 };
 
-export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefreshAll, onRefreshOne }) {
+export default function DoNowGrid({ questions, ui, onBack, onClose, lang }) {
+    // 🟢 Local state enables target-specific inline layout transformations
+    const [gridQuestions, setGridQuestions] = useState(questions || []);
     const [revealed, setRevealed] = useState({});
     const [focusedIndex, setFocusedIndex] = useState(null);
     const [showAll, setShowAll] = useState(false);
+    const [isShuffleDropdownOpen, setIsShuffleDropdownOpen] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [textSizeIndex, setTextSizeIndex] = useState(2);
     const [isGlobalRefreshing, setIsGlobalRefreshing] = useState(false);
@@ -245,6 +302,10 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
     const [timerSeconds, setTimerSeconds] = useState(300); // Set by teacher (default 5m)
     const [timeLeft, setTimeLeft] = useState(300);
     const [isTimerActive, setIsTimerActive] = useState(false);
+
+    useEffect(() => {
+        setGridQuestions(questions);
+    }, [questions]);
 
     useEffect(() => {
         let interval = null;
@@ -301,19 +362,95 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
         setTimeLeft(newTime);
     };
 
-    const handleGlobalRefresh = async () => {
-        if (isGlobalRefreshing) return;
-        setIsGlobalRefreshing(true);
-        // Clear local UI states before fetching
-        setRevealed({});
-        setShowAll(false);
+    // 🟢 Granular Single Question Value Re-Roll
+    const handleRefreshNumbers = async (i) => {
+        const item = gridQuestions[i];
+        if (!item) return;
         try {
-            await onRefreshAll();
-        } catch (e) {
-            console.error("Global Refresh Error", e);
-        } finally {
-            setIsGlobalRefreshing(false);
+            const isItemWordProblem = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
+            const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWordProblem}`);
+            const data = await res.json();
+
+            setGridQuestions(prev => prev.map((q, idx) => idx === i ? {
+                ...q,
+                resolvedData: data,
+                selectedStoryIndex: isItemWordProblem ? q.selectedStoryIndex : null
+            } : q));
+            setRevealed(prev => ({ ...prev, [i]: false }));
+        } catch (err) { console.error("Individual number refresh failed:", err); }
+    };
+
+    // 🟢 Granular Single Question Story Phrase Rotation
+    const handleRefreshStory = (i) => {
+        const item = gridQuestions[i];
+        const rd = item?.resolvedData?.renderData;
+        if (!rd?.availableStories || rd.availableStories.length <= 1) return;
+
+        const totalStories = rd.availableStories.length;
+        const currentStoryIdx = item.selectedStoryIndex !== undefined && item.selectedStoryIndex !== null ? item.selectedStoryIndex : 0;
+
+        let newIndex = Math.floor(Math.random() * totalStories);
+        if (newIndex === currentStoryIdx && totalStories > 1) {
+            newIndex = (newIndex + 1) % totalStories;
         }
+
+        setGridQuestions(prev => prev.map((q, idx) => idx === i ? {
+            ...q,
+            selectedStoryIndex: newIndex
+        } : q));
+    };
+
+    // Unified Batch Shuffle Engine (Bara Siffror, Bara Text, Slumpa Allt)
+    const handleGridShuffle = async (mode) => {
+        if (gridQuestions.length === 0 || isGlobalRefreshing) return;
+        setIsGlobalRefreshing(true);
+
+        if (mode === 'both' || mode === 'numbers') {
+            setRevealed({});
+            setShowAll(false);
+        }
+
+        try {
+            const updatedQuestions = await Promise.all(gridQuestions.map(async (item) => {
+                if (!item.topicId || !item.variationKey) return item;
+
+                const isItemWordProblem = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
+
+                if (mode === 'stories') {
+                    if (!isItemWordProblem) return item;
+                    const rd = item.resolvedData?.renderData;
+                    if (!rd?.availableStories || rd.availableStories.length <= 1) return item;
+
+                    let newIndex = Math.floor(Math.random() * rd.availableStories.length);
+                    if (newIndex === item.selectedStoryIndex && rd.availableStories.length > 1) {
+                        newIndex = (newIndex + 1) % rd.availableStories.length;
+                    }
+                    return { ...item, selectedStoryIndex: newIndex };
+                }
+
+                const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWordProblem}`);
+                const data = await res.json();
+
+                let nextStoryIndex = null;
+                if (isItemWordProblem) {
+                    if (mode === 'numbers') {
+                        nextStoryIndex = item.selectedStoryIndex;
+                    } else if (mode === 'both') {
+                        const totalStories = data.renderData?.availableStories?.length || 1;
+                        nextStoryIndex = Math.floor(Math.random() * totalStories);
+                    }
+                }
+
+                return {
+                    ...item,
+                    selectedStoryIndex: nextStoryIndex,
+                    resolvedData: data
+                };
+            }));
+
+            setGridQuestions(updatedQuestions);
+        } catch (err) { console.error("Grid batch shuffle failed:", err); }
+        finally { setIsGlobalRefreshing(false); }
     };
 
     const adjustText = (delta) => {
@@ -328,7 +465,7 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                     onClick={() => setFocusedIndex(null)}
                 >
                     <div className="w-full max-w-6xl h-full max-h-[95vh] shadow-2xl rounded-[3rem] cursor-default bg-white overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-                        <DoNowCard index={focusedIndex} q={questions[focusedIndex]} showAnswer={!!revealed[focusedIndex]} onToggleAnswer={() => toggleOne(focusedIndex)} onRefresh={() => onRefreshOne(focusedIndex)} onFocus={() => {}} lang={lang} textSizeClass="text-5xl" isFocused={true} />
+                    <DoNowCard index={focusedIndex} q={gridQuestions[focusedIndex]} showAnswer={!!revealed[focusedIndex]} onToggleAnswer={() => toggleOne(focusedIndex)} onRefreshNumbers={() => handleRefreshNumbers(focusedIndex)} onRefreshStory={() => handleRefreshStory(focusedIndex)} onFocus={() => {}} lang={lang} textSizeClass="text-5xl" isFocused={true} />
                     </div>
                 </div>
             )}
@@ -386,23 +523,41 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                         </button>
                     </div>
 
-                    <button 
-                        onClick={handleGlobalRefresh} 
-                        disabled={isGlobalRefreshing} 
-                        className="px-5 py-2.5 bg-indigo-400/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl text-xs font-black transition-all uppercase tracking-wider border border-indigo-500/30 flex items-center gap-2 disabled:opacity-70"
-                    >
-                        {isGlobalRefreshing ? (
-                            <>
-                                <Loader2 size={14} className="animate-spin" />
-                                <span>SLUMPAR...</span>
-                            </>
-                        ) : (
-                            <>
-                                <RefreshCw size={14} />
-                                <span>NYTT SET</span>
-                            </>
+                    {/* Unified Multi-Choice Randomizer Dropdown */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setIsShuffleDropdownOpen(!isShuffleDropdownOpen)} 
+                            disabled={isGlobalRefreshing || gridQuestions.length === 0} 
+                            className="px-5 py-2.5 bg-indigo-400/20 hover:bg-indigo-600 text-indigo-400 hover:text-white rounded-xl text-xs font-black transition-all uppercase tracking-wider border border-indigo-500/30 flex items-center gap-2 disabled:opacity-70 cursor-pointer animate-in fade-in duration-200"
+                        >
+                            {isGlobalRefreshing ? <Loader2 size={14} className="animate-spin" /> : <Shuffle size={14} />}
+                            <span>{lang === 'sv' ? "NYTT SET" : "REFRESH GRID"}</span>
+                        </button>
+
+                        {isShuffleDropdownOpen && (
+                            <div className="absolute top-12 right-0 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 w-56 z-[70] flex flex-col gap-1 text-slate-700 animate-in fade-in zoom-in-95 duration-200">
+                                <button 
+                                    onClick={async () => { setIsShuffleDropdownOpen(false); await handleGridShuffle('numbers'); }}
+                                    className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:text-indigo-600 cursor-pointer"
+                                >
+                                    <Calculator size={14} /> {lang === 'sv' ? "Bara Siffror/Värden" : "Numbers Only"}
+                                </button>
+                                <button 
+                                    onClick={async () => { setIsShuffleDropdownOpen(false); await handleGridShuffle('stories'); }}
+                                    className="w-full text-left px-4 py-2.5 hover:bg-amber-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:text-amber-600 cursor-pointer"
+                                >
+                                    <TextIcon size={14} /> {lang === 'sv' ? "Bara Textberättelser" : "Word Problems Only"}
+                                </button>
+                                <div className="h-px bg-slate-100 my-1 mx-2" />
+                                <button 
+                                    onClick={async () => { setIsShuffleDropdownOpen(false); await handleGridShuffle('both'); }}
+                                    className="w-full text-left px-4 py-2.5 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-rose-600 cursor-pointer"
+                                >
+                                    <RefreshCcw size={14} /> {lang === 'sv' ? "Slumpa Allt (Båda)" : "Reshuffle Both"}
+                                </button>
+                            </div>
                         )}
-                    </button>
+                    </div>
                     <button onClick={toggleAll} className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest ${showAll ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`}>
                         <span>{showAll ? '🙈' : '👁️'}</span> FACIT
                     </button>
@@ -425,14 +580,16 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang, onRefr
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 grid-rows-2 gap-6 h-full w-full max-w-[1800px] mx-auto">
-                    {questions.slice(0, 6).map((q, i) => (
+                    {/* Pulls from gridQuestions state array */}
+                    {gridQuestions.slice(0, 6).map((q, i) => (
                         <div key={q.id || `q-${i}`} className="min-h-0 min-w-0">
                             <DoNowCard 
                                 index={i} 
                                 q={q} 
                                 showAnswer={!!revealed[i]} 
                                 onToggleAnswer={() => toggleOne(i)} 
-                                onRefresh={() => onRefreshOne(i)} 
+                                onRefreshNumbers={() => handleRefreshNumbers(i)}
+                                onRefreshStory={() => handleRefreshStory(i)}
                                 onFocus={() => setFocusedIndex(i)} 
                                 lang={lang} 
                                 textSizeClass={TEXT_SIZES[textSizeIndex]} 

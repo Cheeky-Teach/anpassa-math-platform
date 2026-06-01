@@ -647,14 +647,24 @@ export default function QuestionStudio({
 
         <div className="h-6 w-px bg-slate-200 mx-1"></div>
 
-        {/* 🎯 RESTORED: Authentic Print/Publish Worksheet Action Button Link */}
-        <button 
-            onClick={handleLaunchPrint} 
-            disabled={packet.length === 0} 
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all disabled:opacity-30 shadow-md shadow-indigo-600/10"
-        >
-            <Printer size={16}/> {t.publish}
-        </button>
+        {/*  Displays Grid launcher for Do Now, Print launcher for Worksheets */}
+        {setupMode === 'donow' ? (
+            <button 
+                onClick={handleLaunchGrid} 
+                disabled={packet.length === 0} 
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all disabled:opacity-30 shadow-md shadow-indigo-600/10"
+            >
+                <Grid3X3 size={16}/> {t.create_donow}
+            </button>
+        ) : (
+            <button 
+                onClick={handleLaunchPrint} 
+                disabled={packet.length === 0} 
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all disabled:opacity-30 shadow-md shadow-indigo-600/10"
+            >
+                <Printer size={16}/> {t.publish}
+            </button>
+        )}
 
         <div className="h-6 w-px bg-slate-200 mx-1"></div>
         

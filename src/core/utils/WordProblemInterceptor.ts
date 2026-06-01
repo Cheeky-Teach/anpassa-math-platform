@@ -11,8 +11,8 @@ export class WordProblemInterceptor {
             return questionData;
         }
 
-        // 🟢 FALLBACK LANE: Prioritize standard latex field, fallback to hidden interceptorToken if empty
-        const sourceToken = questionData?.renderData?.latex || questionData?.renderData?.interceptorToken;
+        // 🟢 FIXED PRIORITY: Prioritize background tokens built for regex matching, fallback to latex display field if empty
+        const sourceToken = questionData?.renderData?.interceptorToken || questionData?.renderData?.latex;
         if (!sourceToken || typeof sourceToken !== 'string') {
             return questionData;
         }
@@ -25,9 +25,20 @@ export class WordProblemInterceptor {
         const extractedParams = matchResult.groups;
         
         // 🟢 FIXED: Reads from the clean, imported decentralized registry
-        const entry = GLOBAL_STORY_REGISTRY[variationConfig.contextType];
+        let entry = GLOBAL_STORY_REGISTRY[variationConfig.contextType];
         if (!entry) {
             return questionData;
+        }
+
+        // 🟢 Dynamic Operator Router Lane: Automatically selects correct story sub-bucket
+        if (!Array.isArray(entry) && entry && typeof entry === 'object') {
+            const targetSubKey = extractedParams.type && extractedParams.op 
+                ? `${extractedParams.type}_${extractedParams.op === '+' ? 'plus' : 'minus'}`
+                : extractedParams.type || extractedParams.op;
+            
+            if (entry[targetSubKey]) {
+                entry = entry[targetSubKey];
+            }
         }
 
         let activeScenario: StoryScenario;
@@ -102,11 +113,52 @@ export class WordProblemInterceptor {
         } else if (questionData.variationKey === 'sequential_factors') {
             // Change Factor Level 4 Appending Rule
             localizedStory += lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.";
-        } else {
-            // All other levels (including Level 6 solve tasks) append ONE clean instruction to SOLVE for x
+        } else if (
+            questionData.variationKey === 'high_term' ||
+            questionData.variationKey === 'visual_calc' ||
+            questionData.variationKey === 'reverse_calc'
+            ) {
+            // These elements contain clear narrative questions natively.
+            // Do not append generic tracking suffixes to their strings.
+        } else if (
+            questionData.variationKey === 'high_term' ||
+            questionData.variationKey === 'visual_calc' ||
+            questionData.variationKey === 'reverse_calc' ||
+            questionData.variationKey === 'add_std_horizontal' || // 🟢 Suffix bypass row
+            questionData.variationKey === 'sub_std_horizontal' ||
+            questionData.variationKey === 'mult_table_std' ||
+            questionData.variationKey === 'div_basic_std'
+            ) {
+            // BYPASS PASS: These contain natural narrative questions natively.
+            // Do not append any generic trailing math-class suffixes.
+        } else if (variationConfig.key === 'twostep_write_problem') {
+            // Level 5 Explicit Formulation Suffix
+            localizedStory += lang === 'en' 
+                ? " Write the equation that describes this situation." 
+                : " Teckna ekvationen som beskriver situationen.";
+        } else if (variationConfig.key === 'expressions_word_problem') {
+            // Expression Level 5 Suffix
+            localizedStory += lang === 'en'
+                ? " Write and simplify an expression for the current count."
+                : " Skriv och förenkla ett uttryck för det nya antalet.";
+        } else if (
+            variationConfig.key === 'onestep_calc' ||
+            variationConfig.key === 'twostep_calc' ||
+            variationConfig.key === 'twostep_solve_problem' || // Level 6 explicitly appended
+            variationConfig.key === 'paren_calc' ||       
+            variationConfig.key === 'bothsides_calc' ||   
+            variationConfig.contextType?.startsWith('algebra_onestep') ||
+            variationConfig.contextType?.startsWith('algebra_twostep') ||
+            variationConfig.contextType?.startsWith('algebra_parentheses') ||
+            variationConfig.contextType?.startsWith('algebra_bothsides')
+        ) {
             localizedStory += lang === 'en' 
                 ? " Calculate the value of x." 
                 : " Beräkna värdet på x.";
+        } else {
+            // Does nothing! If a topic/generator doesn't explicitly register a 
+            // suffix instruction, it leaves the story text completely untouched.
+            // This prevents cross-contamination across different question modules.
         }
 
         return {
