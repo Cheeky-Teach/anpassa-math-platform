@@ -9,14 +9,18 @@ import { PERCENT_STORIES } from './percent.stories.js';
 import { EQUATION_STORIES } from './equation.stories.js';
 import { EXPRESSION_STORIES } from './expressions.stories.js';
 import { CHANGE_FACTOR_STORIES } from './changefactor.stories.js';
+import { PATTERN_STORIES } from './patterns.stories.js';
+import { ARITHMETIC_STORIES } from './arithmetic.stories.js';
 
 export const GLOBAL_STORY_REGISTRY: Record<string, any> = {
-    ...NEGATIVE_STORIES,
+    ...ARITHMETIC_STORIES,
     ...CHANGE_FACTOR_STORIES,
     ...EQUATION_STORIES,
     ...EXPRESSION_STORIES,
     ...FRACTION_STORIES,
     ...GEOMETRY_STORIES,
+    ...NEGATIVE_STORIES,
+    ...PATTERN_STORIES,
     ...PERCENT_STORIES,
     ...PROBABILITY_STORIES,
     ...SCALE_STORIES,

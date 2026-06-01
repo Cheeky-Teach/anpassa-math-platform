@@ -316,11 +316,13 @@ export class ExpressionSimplificationGen {
         };
     }
 
-    // --- LEVEL 5: WORD PROBLEMS ---
+    // ---  LEVEL 5: EXPRESSION WORD PROBLEMS ---
     private level5_WordProblems(lang: string, variationKey?: string, options: any = {}): any {
-        // 🟢 Complete layout removal. We forward everything directly to Level 1 
-        // to pass abstract structures to the interceptor context layer.
-        return this.level1_CombineTerms(lang, 'combine_standard_mixed', options);
+        const qData = this.level1_CombineTerms(lang, 'combine_standard_mixed', options);
+        if (qData && qData.renderData) {
+            qData.variationKey = 'expressions_word_problem'; // Custom contextual matching tag
+        }
+        return qData;
     }
 
     private level6_Mixed(lang: string, options: any): any {

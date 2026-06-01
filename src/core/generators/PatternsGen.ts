@@ -169,9 +169,13 @@ export class PatternsGen {
         const targetN = MathUtils.randomChoice([10, 20, 50, 100]);
         const ans = s + (targetN - 1) * d;
 
+        // Background Token Contract matching planned registry RegEx filters
+        const backgroundToken = `${s} ; ${d} ; ${targetN}`;
+
         return {
             renderData: {
                 description: lang === 'sv' ? `Vilket värde har tal nummer ${targetN} i mönstret: ${s}, ${s+d}, ${s+d*2}... ?` : `What is the value of number ${targetN} in the pattern: ${s}, ${s+d}, ${s+d*2}... ?`,
+                interceptorToken: backgroundToken, // Background anchor parsing link
                 answerType: 'numeric',
                 geometry: { type: 'pattern', subtype: 'sequence', sequence: [s, s + d, s + d * 2, '...'] }
             },
@@ -226,9 +230,14 @@ export class PatternsGen {
         if (v === 'visual_calc') {
             const target = MathUtils.randomInt(5, 12);
             const ans = a * target + b;
+
+            // RegEx Token Contract
+            const backgroundToken = `${a} · ${target} + ${b}`;
+
             return {
                 renderData: {
                     description: lang === 'sv' ? `Mönstret följer formeln $V = ${a}n + ${b}$. Hur många stickor behövs till figur nummer ${target}?` : `The pattern follows the formula $V = ${a}n + ${b}$. How many sticks are needed for figure number ${target}?`,
+                    interceptorToken: backgroundToken, // Background anchor parsing link
                     answerType: 'numeric',
                     geometry: { type: 'pattern', subtype: 'matchsticks', figures: figs }
                 },
@@ -306,9 +315,13 @@ export class PatternsGen {
         const n = MathUtils.randomInt(10, 40);
         const total = a * n + b;
 
+        // RegEx Token Contract
+        const backgroundToken = `${a}n + ${b} = ${total}`;
+
         return {
             renderData: {
                 description: lang === 'sv' ? `I ett mönster med formeln $V = ${a}n + ${b}$, vilken figur (n) består av ${total} stycken delar?` : `In a pattern with the formula $V = ${a}n + ${b}$, which figure (n) consists of ${total} parts?`,
+                interceptorToken: backgroundToken, // Background anchor parsing link
                 answerType: 'numeric'
             },
             token: this.toBase64(n.toString()), variationKey: 'reverse_calc', type: 'calculate',

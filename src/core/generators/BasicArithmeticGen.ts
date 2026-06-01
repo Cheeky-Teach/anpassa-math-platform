@@ -94,6 +94,7 @@ export class BasicArithmeticGen {
                 renderData: {
                     description: lang === 'sv' ? "Beräkna summan." : "Calculate the sum.",
                     latex: isVertical ? this.makeVertical(a, b, '+') : `${a} + ${b}`,
+                    interceptorToken: `${a} + ${b}`, // Added background channel token
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()),
@@ -160,6 +161,7 @@ export class BasicArithmeticGen {
                 renderData: {
                     description: lang === 'sv' ? "Beräkna differensen." : "Calculate the difference.",
                     latex: v === 'sub_std_vertical' ? this.makeVertical(a, b, '-') : `${a} - ${b}`,
+                    interceptorToken: `${a} - ${b}`, // 🟢 Added background channel token
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -222,7 +224,12 @@ export class BasicArithmeticGen {
 
         if (v === 'mult_table_std') {
             return {
-                renderData: { description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.", latex: `${a} · ${b}`, answerType: 'numeric' },
+                renderData: { 
+                    description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.", 
+                    latex: `${a} · ${b}`, 
+                    interceptorToken: `${a} · ${b}`, // 🟢 Added background channel token
+                    answerType: 'numeric' 
+                },
                 token: this.toBase64((a * b).toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { text: lang === 'sv' ? "Steg 1: Multiplikation är upprepad addition." : "Step 1: Multiplication is repeated addition." },
@@ -323,7 +330,12 @@ export class BasicArithmeticGen {
 
         if (v === 'div_basic_std') {
             return {
-                renderData: { description: lang === 'sv' ? "Beräkna kvoten." : "Calculate the quotient.", latex: `\\frac{${prod}}{${f1}}`, answerType: 'numeric' },
+                renderData: { 
+                    description: lang === 'sv' ? "Beräkna kvoten." : "Calculate the quotient.", 
+                    latex: `\\frac{${prod}}{${f1}}`, 
+                    interceptorToken: `${prod} / ${f1}`, // 🟢 Added flat background division token to cleanly map regex without LaTeX backslash issues
+                    answerType: 'numeric' 
+                },
                 token: this.toBase64(f2.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { text: lang === 'sv' ? "Steg 1: Division är multiplikation baklänges." : "Step 1: Division is multiplication in reverse." },

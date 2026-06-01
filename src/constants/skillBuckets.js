@@ -20,8 +20,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Lös enkla x + a = b eller x - a = b', en: 'Solve simple x + a = b or x - a = b' },
             tags: ['word_problem_ready'],
             contextType: 'algebra_onestep',
-            // Matches: x + 5 = 12 OR x - 3 = 8
-            extractorPattern: /^x\s*(?<op>[\+\-])\s*(?<a>\d+)\s*=\s*(?<b>\d+)$/
+            // 🟢 Captures context parameters: {type} (multiply/add/sub), {a} (modifier constant), {b} (evaluated total)
+            extractorPattern: /^(?<type>multiply|add|sub)\s*;\s*(?<a>\d+)\s*;\s*(?<b>\d+)$/
           },
           { key: 'onestep_concept_inverse', name: { sv: 'Ensteg: Invers', en: 'One-step: Inverse' }, desc: { sv: 'Välj rätt räknesätt (+/-/*/÷)', en: 'Choose the correct operation' } },
           { key: 'onestep_spot_lie', name: { sv: 'Hitta felet: Ensteg', en: 'Find the error: One-step' }, desc: { sv: 'Identifiera felaktig lösning', en: 'Identify incorrect solutions' } },
@@ -31,8 +31,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'ax + b = c eller ax - b = c', en: 'ax + b = c or ax - b = c' },
             tags: ['word_problem_ready'],
             contextType: 'algebra_twostep',
-            // Matches: 3x + 12 = 36 OR 4x - 5 = 15
-            extractorPattern: /^(?<a>\d+)x\s*(?<op>[\+\-])\s*(?<b>\d+)\s*=\s*(?<c>\d+)$/
+            // 🟢 Captures: {type} (multiply/divide), {a} (coefficient), {op} (+/-), {b} (constant), and {c} (total)
+            extractorPattern: /^(?<type>multiply|divide)\s*;\s*(?<a>\d+)\s*;\s*(?<op>[\+\-])\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)$/
           },
           { key: 'twostep_concept_order', name: { sv: 'Tvåsteg: Ordning', en: 'Two-step: Order' }, desc: { sv: 'Vilket steg tas först?', en: 'Which step is taken first?' } },
           { 
@@ -54,6 +54,22 @@ export const SKILL_BUCKETS = {
             // Matches equations where a > c to guarantee positive x-bounds: 5x + 4 = 2x + 16 OR 4x - 3 = 2x + 9
             extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*=\s*(?<c>\d+)x\s*(?<op2>[\+\-])\s*(?<d>\d+)$/
           },
+          { 
+            key: 'twostep_write_problem', 
+            name: { sv: 'Formulera: Ekvation', en: 'Formulate: Equation' }, 
+            desc: { sv: 'Skriv ekvationen utifrån en text', en: 'Write equation from a story' },
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_twostep_formulation',
+            extractorPattern: /^(?<type>multiply|divide)\s*;\s*(?<a>\d+)\s*;\s*(?<op>[\+\-])\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)$/
+          },
+          { 
+            key: 'twostep_solve_problem', 
+            name: { sv: 'Lös: Verklighetsproblem', en: 'Solve: Word Problems' }, 
+            desc: { sv: 'Beräkna x utifrån en text', en: 'Calculate x from a story' },
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_twostep_solver',
+            extractorPattern: /^(?<type>multiply|divide)\s*;\s*(?<a>\d+)\s*;\s*(?<op>[\+\-])\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)$/
+          },
           { key: 'bothsides_concept_strategy', name: { sv: 'X på båda sidor: Strategi', en: 'X on both sides: Strategy' }, desc: { sv: 'Håll antalet x positivt', en: 'Keep the number of x positive' } }
         ]
       },
@@ -70,6 +86,14 @@ export const SKILL_BUCKETS = {
             contextType: 'algebra_expressions',
             // 🟢 Captures all 4 terms and both operators dynamically!
             // Matches formats like: "12x + 15 - 4x + 6", "10x - 8 - 2x - 3", etc.
+            extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*(?<op2>[\+\-])\s*(?<c>\d+)x\s*(?<op3>[\+\-])\s*(?<d>\d+)$/
+          },
+          { 
+            key: 'expressions_word_problem', 
+            name: { sv: 'Uttryck: Vardagsproblem', en: 'Expressions: Word Problems' }, 
+            desc: { sv: 'Förenkla uttryck utifrån textscenarier', en: 'Simplify expressions from text scenarios' },
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_expressions_story',
             extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*(?<op2>[\+\-])\s*(?<c>\d+)x\s*(?<op3>[\+\-])\s*(?<d>\d+)$/
           }
         ]
@@ -132,13 +156,37 @@ export const SKILL_BUCKETS = {
           { key: 'seq_type', name: { sv: 'Mönstertyp', en: 'Pattern type' }, desc: { sv: 'Aritmetisk vs Geometrisk', en: 'Arithmetic vs Geometric' } },
           { key: 'seq_diff', name: { sv: 'Hitta differensen', en: 'Find the difference' }, desc: { sv: 'Ökning per steg', en: 'Increase per step' } },
           { key: 'seq_next', name: { sv: 'Nästa tal', en: 'Next number' }, desc: { sv: 'Fortsätt talföljden', en: 'Continue the sequence' } },
-          { key: 'high_term', name: { sv: 'Hitta tal n', en: 'Find term n' }, desc: { sv: 'Beräkna värdet långt fram', en: 'Calculate far-off values' } },
           { key: 'formula_missing', name: { sv: 'Hitta formeln (Bild)', en: 'Find formula (Visual)' }, desc: { sv: 'Koppla bild till uttryck', en: 'Link image to expression' } },
-          { key: 'visual_calc', name: { sv: 'Beräkna antal (Bild)', en: 'Calculate count (Visual)' }, desc: { sv: 'Hur många tändstickor?', en: 'How many matches?' } },
           { key: 'find_formula', name: { sv: 'Skriv formeln', en: 'Write the formula' }, desc: { sv: 'Skapa y = kn + m', en: 'Create y = kn + m' } },
           { key: 'table_formula', name: { sv: 'Tabell till Formel', en: 'Table to Formula' }, desc: { sv: 'Hitta mönster i värdetabell', en: 'Find patterns in value tables' } },
           { key: 'table_fill', name: { sv: 'Fyll i tabell', en: 'Fill in table' }, desc: { sv: 'Använd formeln', en: 'Use the formula' } },
-          { key: 'reverse_calc', name: { sv: 'Hitta n (Ekvation)', en: 'Find n (Equation)' }, desc: { sv: 'Vilket figurnummer har värdet X?', en: 'Which figure number has value X?' } }
+          { 
+            key: 'high_term', 
+            name: { sv: 'Hitta tal n', en: 'Find term n' }, 
+            desc: { sv: 'Beräkna värdet långt fram', en: 'Calculate far-off values' },
+            tags: ['word_problem_ready'],
+            contextType: 'pattern_high_term',
+            // Parses out: {s} (start value), {d} (difference value), {targetN} (target term step index)
+            extractorPattern: /^(?<s>\d+)\s*;\s*(?<d>\d+)\s*;\s*(?<targetN>\d+)$/
+          },
+          { 
+            key: 'visual_calc', 
+            name: { sv: 'Beräkna antal (Bild)', en: 'Calculate count (Visual)' }, 
+            desc: { sv: 'Hur många tändstickor?', en: 'How many matches?' },
+            tags: ['word_problem_ready'],
+            contextType: 'pattern_linear_calc',
+            // Parses out: {a} (growth coefficient rate), {target} (target steps evaluation count), {b} (base value)
+            extractorPattern: /^(?<a>\d+)\s*·\s*(?<target>\d+)\s*\+\s*(?<b>\d+)$/
+          },
+          { 
+            key: 'reverse_calc', 
+            name: { sv: 'Hitta n (Ekvation)', en: 'Find n (Equation)' }, 
+            desc: { sv: 'Vilket figurnummer har värdet X?', en: 'Which figure number has value X?' },
+            tags: ['word_problem_ready'],
+            contextType: 'pattern_linear_reverse',
+            // Parses out: {a} (multiplier scale coefficient), {b} (base baseline value), {total} (cumulative final amount)
+            extractorPattern: /^(?<a>\d+)n\s*\+\s*(?<b>\d+)\s*=\s*(?<total>\d+)$/
+          }
         ]
       },
       graphs: {
@@ -168,22 +216,50 @@ export const SKILL_BUCKETS = {
         name: { sv: 'De 4 Räknesätten', en: 'The 4 Operations' },
         variations: [
           { key: 'add_std_vertical', name: { sv: 'Addition: Uppställning', en: 'Addition: Column Method' }, desc: { sv: 'Stora tal', en: 'Large numbers' } },
-          { key: 'add_std_horizontal', name: { sv: 'Addition: Horisontell', en: 'Addition: Horizontal' }, desc: { sv: 'Strategier', en: 'Strategies' } },
           { key: 'add_missing_variable', name: { sv: 'Addition: Hitta termen', en: 'Addition: Find the term' }, desc: { sv: 'a + x = b', en: 'a + x = b' } },
           { key: 'add_spot_the_lie', name: { sv: 'Hitta felet: Addition', en: 'Find error: Addition' }, desc: { sv: 'Felsökning', en: 'Troubleshooting' } },
           { key: 'sub_std_vertical', name: { sv: 'Subtraktion: Uppställning', en: 'Subtraction: Column Method' }, desc: { sv: 'Växling', en: 'Borrowing' } },
-          { key: 'sub_std_horizontal', name: { sv: 'Subtraktion: Horisontell', en: 'Subtraction: Horizontal' }, desc: { sv: 'Strategier', en: 'Strategies' } },
           { key: 'sub_missing_variable', name: { sv: 'Subtraktion: Hitta termen', en: 'Subtraction: Find the term' }, desc: { sv: 'a - x = b', en: 'a - x = b' } },
           { key: 'dec_add_vertical', name: { sv: 'Decimaler: Addition', en: 'Decimals: Addition' }, desc: { sv: 'Passa kommatecknet', en: 'Align decimal point' } },
           { key: 'dec_sub_vertical', name: { sv: 'Decimaler: Subtraktion', en: 'Decimals: Subtraction' }, desc: { sv: 'Passa kommatecknet', en: 'Align decimal point' } },
-          { key: 'mult_table_std', name: { sv: 'Multiplikationstabellen', en: 'Multiplication Tables' }, desc: { sv: 'Grundläggande tabeller', en: 'Basic tables' } },
           { key: 'mult_commutative', name: { sv: 'Kommutativa lagen', en: 'Commutative Law' }, desc: { sv: 'a * b = b * a', en: 'a * b = b * a' } },
           { key: 'mult_2x1_vertical', name: { sv: 'Mult: Uppställning', en: 'Mult: Column Method' }, desc: { sv: 'Två siffror * en siffra', en: 'Two digits * one digit' } },
           { key: 'mult_distributive', name: { sv: 'Distributiva lagen', en: 'Distributive Law' }, desc: { sv: 'Dela upp faktorer', en: 'Split factors' } },
           { key: 'mult_decimal_std', name: { sv: 'Decimalmultiplikation', en: 'Decimal Multiplication' }, desc: { sv: 'Räkna decimaler', en: 'Count decimals' } },
           { key: 'mult_decimal_placement', name: { sv: 'Placera kommatecknet', en: 'Place decimal point' }, desc: { sv: 'Uppskattning', en: 'Estimation' } },
-          { key: 'div_basic_std', name: { sv: 'Kort division', en: 'Short Division' }, desc: { sv: 'Standardalgoritm', en: 'Standard algorithm' } },
-          { key: 'div_inverse_logic', name: { sv: 'Division via multiplikation', en: 'Division via mult' }, desc: { sv: 'Samband', en: 'Connection' } }
+          { key: 'div_inverse_logic', name: { sv: 'Division via multiplikation', en: 'Division via mult' }, desc: { sv: 'Samband', en: 'Connection' } },
+          { 
+            key: 'add_std_horizontal', 
+            name: { sv: 'Addition: Vågrät', en: 'Addition: Horizontal' }, 
+            desc: { sv: 'Standardberäkning med heltal', en: 'Standard whole number calculations' },
+            tags: ['word_problem_ready'],
+            contextType: 'arithmetic_add_std',
+            extractorPattern: /^(?<f1>\d+)\s*\+\s*(?<f2>\d+)$/
+          },
+          { 
+            key: 'sub_std_horizontal', 
+            name: { sv: 'Subtraktion: Vågrät', en: 'Subtraction: Horizontal' }, 
+            desc: { sv: 'Standardberäkning med heltal', en: 'Standard whole number calculations' },
+            tags: ['word_problem_ready'],
+            contextType: 'arithmetic_sub_std',
+            extractorPattern: /^(?<f1>\d+)\s*-\s*(?<f2>\d+)$/
+          },
+          { 
+            key: 'mult_table_std', 
+            name: { sv: 'Multiplikationstabell', en: 'Multiplication Table' }, 
+            desc: { sv: 'Standardträning på tabellerna', en: 'Standard times table practice' },
+            tags: ['word_problem_ready'],
+            contextType: 'arithmetic_mult_std',
+            extractorPattern: /^(?<f1>\d+)\s*(?:\\cdot|·)\s*(?<f2>\d+)$/
+          },
+          { 
+            key: 'div_basic_std', 
+            name: { sv: 'Division: Enkel', en: 'Division: Basic' }, 
+            desc: { sv: 'Exakta svar utifrån tabellerna', en: 'Exact inverse multiplication calculations' },
+            tags: ['word_problem_ready'],
+            contextType: 'arithmetic_div_std',
+            extractorPattern: /^(?<prod>\d+)\s*\/\s*(?<f1>\d+)$/
+          },
         ]
       },
       order_of_operations: {
