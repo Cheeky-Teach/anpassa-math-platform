@@ -1,10 +1,23 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { LinearEquationProblemGen } from './LinearEquationProblemGen.js';
 
 export class LinearEquationGen {
-        public generate(level: number, lang: string = 'sv', options: any = {}): any {
+    private problemGen: LinearEquationProblemGen;
+
+    constructor() {
+        // Instantiate the connection handler during main class initialization
+        this.problemGen = new LinearEquationProblemGen();
+    }
+
+    public generate(level: number, lang: string = 'sv', options: any = {}): any {
         // Adaptive Fallback: If Level 1 concepts are mastered, push to Level 2 logic
         if (level === 1 && options.hideConcept && options.exclude?.includes('onestep_calc')) {
             return this.level2_TwoStep(lang, undefined, options);
+        }
+
+        // RESTORED: Direct delegation without metadata/variation modification
+        if (level === 5 || level === 6) {
+            return this.problemGen.generate(level, lang, options);
         }
         
         // Fix: Level 7 handles the mixed logic safely
@@ -19,24 +32,12 @@ export class LinearEquationGen {
             case 2: questionData = this.level2_TwoStep(lang, undefined, options); break;
             case 3: questionData = this.level3_Parentheses(lang, undefined, options); break;
             case 4: questionData = this.level4_BothSides(lang, undefined, options); break;
-            case 5: {
-                // 🟢 RESTORED LEVEL 5: Write Equation Formulation Tier
-                const qData = this.level2_TwoStep(lang, 'twostep_calc', options);
-                if (qData && qData.renderData) {
-                    qData.variationKey = 'twostep_write_problem'; // Custom variation target
-                    if (qData.metadata) qData.metadata.difficulty = 5;
-                }
-                return qData;
-            }
-            case 6: {
-                // 🟢 RESTORED LEVEL 6: Solve Real-World Equation Tier
-                const qData = this.level2_TwoStep(lang, 'twostep_calc', options);
-                if (qData && qData.renderData) {
-                    qData.variationKey = 'twostep_solve_problem'; // Custom variation target
-                    if (qData.metadata) qData.metadata.difficulty = 6;
-                }
-                return qData;
-            }
+            case 5: 
+                // Directly delivers standalone Equation Formulation problems
+                return this.problemGen.generate(5, lang, options);
+            case 6: 
+                // Directly delivers standalone Real-World Word Problem equations
+                return this.problemGen.generate(6, lang, options);
             case 7: return this.level7_Mixed(lang, options);
             default: questionData = this.level1_OneStep(lang, undefined, options); break;
         }

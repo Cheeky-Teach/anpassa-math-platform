@@ -15,10 +15,7 @@ export class ExpressionSimplificationGen {
             case 3: questionData = this.level3_DistributeAndSimplify(lang, undefined, options); break;
             case 4: questionData = this.level4_SubtractParentheses(lang, undefined, options); break;
             case 5: 
-                // Level 5 (Word Problems) generates Combine Terms, flagged for expression intercept parsing
-                questionData = this.level5_WordProblems(lang, undefined, options); 
-                if (questionData && questionData.metadata) questionData.metadata.difficulty = 5;
-                break;
+                return this.level5_WordProblems(lang, undefined, options);
             case 6: return this.level6_Mixed(lang, options);
             default: questionData = this.level1_CombineTerms(lang, undefined, options); break;
         }
@@ -318,11 +315,29 @@ export class ExpressionSimplificationGen {
 
     // ---  LEVEL 5: EXPRESSION WORD PROBLEMS ---
     private level5_WordProblems(lang: string, variationKey?: string, options: any = {}): any {
-        const qData = this.level1_CombineTerms(lang, 'combine_standard_mixed', options);
-        if (qData && qData.renderData) {
-            qData.variationKey = 'expressions_word_problem'; // Custom contextual matching tag
-        }
-        return qData;
+        const A = MathUtils.randomInt(2, 6);
+        const B = MathUtils.randomInt(3, 15);
+        
+        const desc = lang === 'sv'
+            ? `Inledningsvis finns det x passagerare på en buss. ${B} personer går av, och sedan kliver ${A}x passagerare på. Skriv ett uttryck för antalet passagerare nu.`
+            : `Initially there are x passengers on a bus. ${B} leave, then ${A}x passengers board. Write an expression for the current count.`;
+            
+        const ans = `${A+1}x - ${B}`;
+        const steps = [
+            { text: lang === 'sv' ? "Steg 1: Börja med det ursprungliga antalet passagerare." : "Step 1: Start with the original number of passengers.", latex: "x" },
+            { text: lang === 'sv' ? `Steg 2: Dra bort de ${B} som gick av.` : `Step 2: Subtract the ${B} who left.`, latex: `x - ${B}` },
+            { text: lang === 'sv' ? `Steg 3: Lägg till de ${A}x som steg på.` : `Step 3: Add the ${A}x who boarded.`, latex: `x - ${B} + ${A}x` },
+            { text: lang === 'sv' ? "Steg 4: Förenkla genom att kombinera x-termerna (variablerna)." : "Step 4: Simplify by combining the x-terms (the variables).", latex: `${A+1}x - ${B}` },
+            { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+        ];
+
+        return {
+            renderData: { latex: "", description: desc, answerType: 'text' },
+            token: this.toBase64(ans.replace(/\s/g, "")), 
+            variationKey: 'word_passengers', // Maps back to native bucket 
+            type: 'calculate',
+            clues: steps
+        };
     }
 
     private level6_Mixed(lang: string, options: any): any {
