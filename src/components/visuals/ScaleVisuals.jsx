@@ -74,9 +74,9 @@ export const SimilarityCompare = ({ data, width = "100%", height = "auto" }) => 
                 preserveAspectRatio="xMidYMid meet"
                 className="block overflow-visible drop-shadow-sm"
             >
-                <RenderShape type={shapeType} dims={leftDims} labels={data.left.labels} offsetX={-25} scale={0.8} />
-                <text x="250" y="125" textAnchor="middle" fontSize="30" fontWeight="bold" fill="#cbd5e1">→</text>
-                <RenderShape type={shapeType} dims={rightDims} labels={data.right.labels} offsetX={225} scale={1.2} />
+                <RenderShape type={shapeType} dims={leftDims} labels={data.left.labels} offsetX={-75} scale={0.6} />
+                <text x="200" y="125" textAnchor="middle" fontSize="30" fontWeight="bold" fill="#000000">→</text>
+                <RenderShape type={shapeType} dims={rightDims} labels={data.right.labels} offsetX={200} scale={1.1} />
             </svg>
         </div>
     );
@@ -97,7 +97,7 @@ export const CompareShapesArea = ({ data, width = "100%", height = "auto" }) => 
                 className="block overflow-visible drop-shadow-sm"
             >
                 <RenderShape type={data.shapeType} dims={data.left} areaText={data.left.area} offsetX={-25} scale={0.8} />
-                <text x="250" y="125" textAnchor="middle" fontSize="30" fontWeight="bold" fill="#cbd5e1">→</text>
+                <text x="250" y="105" textAnchor="middle" fontSize="30" fontWeight="bold" fill="#cbd5e1">→</text>
                 <RenderShape type={data.shapeType} dims={data.right} areaText={data.right.area} offsetX={225} scale={1.2} />
             </svg>
         </div>

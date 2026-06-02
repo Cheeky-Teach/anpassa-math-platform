@@ -134,7 +134,6 @@ const PracticeView = ({
         if (rd.graph) return <GraphCanvas data={rd.graph} lang={lang} />;
         if (rd.geometry) {
             if (rd.geometry.type === 'transversal') return <TransversalVisual data={rd.geometry} />;
-            if (rd.geometry.type === 'composite') return <CompositeVisual data={rd.geometry} />;
             return <GeometryVisual data={rd.geometry} />;
         }
         if (rd.volume) return <VolumeVisualization data={rd.volume} />;
@@ -252,14 +251,24 @@ const PracticeView = ({
                             {/* VISUAL CONTAINER */}
                             <div className="mb-4 flex justify-center bg-slate-50/50 rounded-[2rem] p-4 min-h-[160px] h-[200px] sm:h-[350px] items-center border border-slate-100 shadow-inner relative overflow-hidden">
     
-                            {/* Word problem visual guard */}
-                            <WordProblemVisualGuard 
-                                isActive={!!question?.renderData?.isWordProblemApplied} 
-                                lang={lang}
-                                questionKey={question?.token} // Automatically forces re-blur on question change
-                            >
-                                {renderVisual()}
-                            </WordProblemVisualGuard>
+                            {/* 🟢 RESTORED VISUAL CONTAINER WITH STRICT BOUNDING BOXES */}
+    
+                                <WordProblemVisualGuard 
+                                    isActive={!!question?.renderData?.isWordProblemApplied} 
+                                    lang={lang}
+                                    questionKey={question?.token} 
+                                >
+                                    {/* 🟢 THE LOCK: Enforces a strict max-width of 300px so raw SVGs cannot explode in size */}
+                                    <div className="w-full max-w-[300px] flex justify-center items-center mx-auto overflow-visible">
+                                        {renderVisual()}
+                                    </div>
+                                </WordProblemVisualGuard>
+                                
+                                <div className="absolute top-3 left-6 flex items-center gap-2">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${activeTheme.accent} animate-pulse`}></div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 italic">Du kan det här!</span>
+                                </div>
+
                             
                             <div className="absolute top-3 left-6 flex items-center gap-2">
                                 <div className={`w-1.5 h-1.5 rounded-full ${activeTheme.accent} animate-pulse`}></div>

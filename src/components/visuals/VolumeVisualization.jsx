@@ -111,7 +111,7 @@ export const VolumeVisualization = ({ data }) => {
             const dh = valH * scale * 0.8; 
             const dd = valD * scale * 0.5;
             const x0 = cx - (dw + dd) / 2; 
-            const y0 = cy + (dh - dd) / 2 + 60;
+            const y0 = cy + (dh - dd) / 2 + 20;
             drawDashed(x0 + dd, y0 - dd, x0 + dd, y0 - dh - dd);
             drawDashed(x0, y0, x0 + dd, y0 - dd);
             drawDashed(x0 + dd, y0 - dd, x0 + dw + dd, y0 - dd);

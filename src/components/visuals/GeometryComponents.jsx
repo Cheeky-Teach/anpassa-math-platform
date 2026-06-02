@@ -19,6 +19,15 @@ import AngleVisual from './AngleComponents';
 export const GeometryVisual = ({ data }) => {
     if (!data) return null;
 
+    // Catches VolumeGen payloads and routes them safely to the 3D Canvas
+    if (['cuboid', 'triangular_prism', 'cylinder', 'pyramid', 'cone', 'sphere'].includes(data.type)) {
+        return (
+            <div className="w-full h-[200px] sm:h-[250px] max-w-[300px] mx-auto">
+                <VolumeVisualization data={data} />
+            </div>
+        );
+    }
+
     // --- ANGLE VISUAL ---
     if (data.type === 'angle') {
         return <AngleVisual data={data} />;
@@ -72,12 +81,21 @@ export const GeometryVisual = ({ data }) => {
         return <CompareShapesArea data={data} />;
     }
 
-    // --- BASIC & COMPOSITE SHAPES (Dispatcher) ---
-    // UPDATED: 'composite' is now handled by RenderShape which has logic for new and legacy subtypes
-    if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle', 'semicircle', 'quarter_circle', 'composite'].includes(data.type)) {
+    // Safely reads from either the legacy root object or the clean modern nested geometry configuration
+    const shapeType = data.type;
+    if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle', 'semicircle', 'quarter_circle', 'composite'].includes(shapeType)) {
+        // Trace data configurations safely to unpack whichever container layer is populated by the generator
+        const activeDims = data.dims || data;
+        const activeLabels = data.labels || (data.dims && data.dims.labels);
+
         return (
             <svg width="300" height="250" viewBox="0 0 300 250" className="my-2 w-full max-w-[300px] mx-auto">
-                <RenderShape type={data.type} dims={data} labels={data.labels} />
+                <RenderShape 
+                    type={shapeType} 
+                    dims={activeDims} 
+                    labels={activeLabels} 
+                    areaText={data.areaText} 
+                />
             </svg>
         );
     }
