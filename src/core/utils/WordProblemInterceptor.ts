@@ -116,18 +116,22 @@ export class WordProblemInterceptor {
         } else if (
             questionData.variationKey === 'high_term' ||
             questionData.variationKey === 'visual_calc' ||
-            questionData.variationKey === 'reverse_calc'
-            ) {
-            // These elements contain clear narrative questions natively.
-            // Do not append generic tracking suffixes to their strings.
-        } else if (
-            questionData.variationKey === 'high_term' ||
-            questionData.variationKey === 'visual_calc' ||
             questionData.variationKey === 'reverse_calc' ||
-            questionData.variationKey === 'add_std_horizontal' || // 🟢 Suffix bypass row
+            questionData.variationKey === 'add_std_horizontal' || // Suffix bypass row
             questionData.variationKey === 'sub_std_horizontal' ||
             questionData.variationKey === 'mult_table_std' ||
-            questionData.variationKey === 'div_basic_std'
+            questionData.variationKey === 'div_basic_std' ||
+            questionData.variationKey === 'vol_cuboid_std' || // Added volume keys to bypass
+            questionData.variationKey === 'vol_tri_prism_std' ||
+            questionData.variationKey === 'vol_cyl_std' ||
+            questionData.variationKey === 'vol_pyramid_std' ||
+            questionData.variationKey === 'vol_cone_std' ||
+            questionData.variationKey === 'vol_sphere_std' ||
+            questionData.variationKey === 'sim_calc_big' ||      // 🟢 Grounded similarity bypass targets
+            questionData.variationKey === 'sim_calc_small' ||
+            questionData.variationKey === 'sim_find_k' ||
+            questionData.variationKey === 'transversal_total' ||
+            questionData.variationKey === 'transversal_extension'
             ) {
             // BYPASS PASS: These contain natural narrative questions natively.
             // Do not append any generic trailing math-class suffixes.

@@ -234,60 +234,6 @@ export class GeometryGenerator {
         };
     }
 
-    // --- LEVEL 4: COMBINED FIGURES ---
-    private level4_CombinedFigures(lang: string, variationKey?: string, options: any = {}): any {
-        const pool: {key: string, type: 'concept' | 'calculate'}[] = [
-            { key: 'combined_l_shape', type: 'calculate' },
-            { key: 'combined_rect_tri', type: 'calculate' }
-        ];
-        const v = variationKey || this.getVariation(pool, options);
-
-        if (v === 'combined_l_shape') {
-            const vW = MathUtils.randomInt(3, 5), vH = MathUtils.randomInt(8, 12);
-            const hW = MathUtils.randomInt(4, 7), hH = MathUtils.randomInt(3, 5);
-            const totalW = vW + hW; // Critical visual parameter
-            const area1 = vW * vH;
-            const area2 = hW * hH;
-            const ans = area1 + area2;
-
-            return {
-                renderData: {
-                    geometry: { type: 'composite', subtype: 'l_shape', labels: { vW, vH, hW, hH, totalW } },
-                    description: lang === 'sv' ? "Beräkna arean av den sammansatta figuren." : "Calculate the area of the composite figure.",
-                    answerType: 'numeric'
-                },
-                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
-                clues: [
-                    { text: lang === 'sv' ? "Sammansatta figurer kan delas upp i mindre rektanglar." : "Composite figures can be divided into smaller rectangles." },
-                    { text: lang === 'sv' ? "Steg 1: Dela figuren i två delar. Beräkna arean för den vertikala rektangeln." : "Step 1: Divide the figure into two parts. Calculate the area for the vertical rectangle.", latex: `${vW} · ${vH} = ${area1}` },
-                    { text: lang === 'sv' ? "Steg 2: Beräkna arean för den horisontella rektangeln." : "Step 2: Calculate the area for the horizontal rectangle.", latex: `${hW} · ${hH} = ${area2}` },
-                    { text: lang === 'sv' ? "Steg 3: Addera de två delarna för att få hela figurens yta." : "Step 3: Add the two parts to get the total area of the figure.", latex: `${area1} + ${area2} = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
-                ]
-            };
-        }
-
-        const rw = MathUtils.randomInt(6, 12), rh = MathUtils.randomInt(4, 8), tb = MathUtils.randomInt(3, 6);
-        const rectA = rw * rh;
-        const triA = (tb * rh) / 2;
-        const ans = rectA + triA;
-        return {
-            renderData: {
-                geometry: { type: 'composite', subtype: 'rect_right_tri', labels: { w: rw, h: rh, tri_b: tb } },
-                description: lang === 'sv' ? "Figuren består av en rektangel och en triangel. Vad är totalarean?" : "The figure consists of a rectangle and a triangle. What is the total area?",
-                answerType: 'numeric'
-            },
-            token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
-            clues: [
-                { text: lang === 'sv' ? "Dela upp uppgiften genom att räkna ut varje form för sig." : "Split the task by calculating each shape separately." },
-                { text: lang === 'sv' ? "Steg 1: Beräkna rektangelns area (bas · höjd)." : "Step 1: Calculate the area of the rectangle (base · height).", latex: `${rw} · ${rh} = ${rectA}` },
-                { text: lang === 'sv' ? "Steg 2: Beräkna triangelns area (bas · höjd / 2)." : "Step 2: Calculate the area of the triangle (base · height / 2).", latex: `\\frac{${tb} · ${rh}}{2} = ${triA}` },
-                { text: lang === 'sv' ? "Steg 3: Summera ytorna." : "Step 3: Sum the areas.", latex: `${rectA} + ${triA} = ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
-            ]
-        };
-    }
-
     // --- LEVEL 5: CIRCLES (REFACTORED & FIXED) ---
     private level5_Circles(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
@@ -426,54 +372,196 @@ export class GeometryGenerator {
         return this.level1_PerimeterBasic(lang); // fallback
     }
 
-    // --- LEVEL 6: COMPOSITE ADVANCED ---
-    private level6_CompositeAdvanced(lang: string, variationKey?: string, options: any = {}): any {
-        const pool: {key: string, type: 'concept' | 'calculate'}[] = [
-            { key: 'area_house', type: 'calculate' },
-            { key: 'area_portal', type: 'calculate' }
-        ];
+    // Composite shapes (has the geometry wrapper needed to render visuals in frontend)
+    private generateCompositeShape(lang: string, isAdvancedLevel: boolean, variationKey?: string, options: any = {}): any {
+        const pool: {key: string, type: 'concept' | 'calculate'}[] = isAdvancedLevel 
+            ? [
+                { key: 'area_house', type: 'calculate' },
+                { key: 'area_portal', type: 'calculate' }
+              ]
+            : [
+                { key: 'combined_l_shape', type: 'calculate' },
+                { key: 'combined_rect_tri', type: 'calculate' }
+              ];
+              
         const v = variationKey || this.getVariation(pool, options);
-        const w = MathUtils.randomInt(40, 60), h = MathUtils.randomInt(30, 45), hr = MathUtils.randomInt(20, 30);
 
-        if (v === 'area_house') {
-            const rectA = w * h;
-            const roofA = (w * hr) / 2;
-            const total = rectA + roofA;
-            return {
-                renderData: {
-                    geometry: { type: 'composite', subtype: 'house', labels: { w, h, h_roof: hr } },
-                    description: lang === 'sv' ? "Beräkna husets totala area." : "Calculate the total area of the house.",
-                    answerType: 'numeric'
-                },
-                token: this.toBase64(total.toString()), variationKey: v, type: 'calculate',
-                clues: [
-                    { text: lang === 'sv' ? "Dela upp huset i en rektangel (väggarna) och en triangel (taket)." : "Divide the house into a rectangle (walls) and a triangle (roof)." },
-                    { text: lang === 'sv' ? "Steg 1: Beräkna rektangelns yta." : "Step 1: Calculate the rectangle's surface.", latex: `${w} · ${h} = ${rectA}` },
-                    { text: lang === 'sv' ? "Steg 2: Beräkna triangelns yta." : "Step 2: Calculate the triangle's surface.", latex: `\\frac{${w} · ${hr}}{2} = ${roofA}` },
-                    { text: lang === 'sv' ? "Steg 3: Lägg ihop areorna för att få totalsvaret." : "Step 3: Add the areas together to get the final total.", latex: `${rectA} + ${roofA} = ${total}` },
-                    { text: lang === 'sv' ? `Svar: ${total}` : `Answer: ${total}` }
-                ]
-            };
+        let description = "";
+        let ans = 0;
+        let subtype = "";
+        let labelsObj: Record<string, number> = {};
+        let clues: any[] = [];
+        let rawW = 10;
+        let rawH = 10;
+
+        // A. Handle L-Shape Configuration
+        if (v === 'combined_l_shape') {
+            const vW = MathUtils.randomInt(3, 5), vH = MathUtils.randomInt(8, 12);
+            const hW = MathUtils.randomInt(4, 7), hH = MathUtils.randomInt(3, 5);
+            rawW = vW + hW;
+            rawH = Math.max(vH, hH);
+            ans = (vW * vH) + (hW * hH);
+            subtype = "l_shape";
+            labelsObj = { vW, vH, hW, hH, totalW: rawW };
+            description = lang === 'sv' 
+                ? "Beräkna arean av den sammansatta figuren." 
+                : "Calculate the area of the composite figure.";
+            clues = [
+                { text: lang === 'sv' ? "Sammansatta figurer kan delas upp i mindre rektanglar." : "Composite figures can be divided into smaller rectangles." },
+                { text: lang === 'sv' ? "Steg 1: Dela figuren i två delar. Beräkna arean för den vertikala rektangeln." : "Step 1: Divide the figure into two parts. Calculate the area for the vertical rectangle.", latex: `${vW} · ${vH} = ${vW * vH}` },
+                { text: lang === 'sv' ? "Steg 2: Beräkna arean för den horisontella rektangeln." : "Step 2: Calculate the area for the horizontal rectangle.", latex: `${hW} · ${hH} = ${hW * hH}` },
+                { text: lang === 'sv' ? "Steg 3: Addera de två delarna för att få hela figurens yta." : "Step 3: Add the two parts to get the total area of the figure.", latex: `${vW * vH} + ${hW * hH} = ${ans}` },
+                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+            ];
+        } 
+        // B. Handle Rectangle + Right-Angled Triangle Configuration
+        else if (v === 'combined_rect_tri') {
+            const rw = MathUtils.randomInt(6, 12), rh = MathUtils.randomInt(4, 8), tb = MathUtils.randomInt(3, 6);
+            rawW = rw;
+            rawH = rh;
+            ans = (rw * rh) + ((tb * rh) / 2);
+            subtype = "rect_right_tri";
+            labelsObj = { w: rw, h: rh, tri_b: tb };
+            description = lang === 'sv' 
+                ? "Figuren består av en rektangel och en triangel. Vad är totalarean?" 
+                : "The figure consists of a rectangle and a triangle. What is the total area?";
+            clues = [
+                { text: lang === 'sv' ? "Dela upp uppgiften genom att räkna ut varje form för sig." : "Split the task by calculating each shape separately." },
+                { text: lang === 'sv' ? "Steg 1: Beräkna rektangelns area (bas · höjd)." : "Step 1: Calculate the area of the rectangle (base · height).", latex: `${rw} · ${rh} = ${rw * rh}` },
+                { text: lang === 'sv' ? "Steg 2: Beräkna triangelns area (bas · höjd / 2)." : "Step 2: Calculate the area of the triangle (base · height / 2).", latex: `\\frac{${tb} · ${rh}}{2} = ${(tb * rh) / 2}` },
+                { text: lang === 'sv' ? "Steg 3: Summera ytorna." : "Step 3: Sum the areas.", latex: `${rw * rh} + ${(tb * rh) / 2} = ${ans}` },
+                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+            ];
+        } 
+        // C. Handle House Configuration
+        else if (v === 'area_house') {
+            const rw = MathUtils.randomInt(40, 60), rh = MathUtils.randomInt(30, 45), hr = MathUtils.randomInt(20, 30);
+            rawW = rw;
+            rawH = rh;
+            ans = (rw * rh) + ((rw * hr) / 2);
+            subtype = "house";
+            labelsObj = { w: rw, h: rh, h_roof: hr };
+            description = lang === 'sv' ? "Beräkna husets totala area." : "Calculate the total area of the house.";
+            clues = [
+                { text: lang === 'sv' ? "Dela upp huset i en rektangel (väggarna) och en triangel (taket)." : "Divide the house into a rectangle (walls) and a triangle (roof)." },
+                { text: lang === 'sv' ? "Steg 1: Beräkna rektangelns yta." : "Step 1: Calculate the rectangle's surface.", latex: `${rw} · ${rh} = ${rw * rh}` },
+                { text: lang === 'sv' ? "Steg 2: Beräkna triangelns yta." : "Step 2: Calculate the triangle's surface.", latex: `\\frac{${rw} · ${hr}}{2} = ${(rw * hr) / 2}` },
+                { text: lang === 'sv' ? "Steg 3: Lägg ihop areorna för att få totalsvaret." : "Step 3: Add the areas together to get the final total.", latex: `${rw * rh} + ${(rw * hr) / 2} = ${ans}` },
+                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+            ];
+        } else if (v === 'perimeter_house') {
+            // Perimeter House Calculation
+            const rw = MathUtils.randomInt(6, 12);     // Base width
+            const rh = MathUtils.randomInt(5, 10);     // Wall height
+            const roof_slant = MathUtils.randomInt(4, 8); // Slant side length of isosceles roof
+            
+            // To ensure it's a physically possible triangle, slant + slant must be > base width
+            if (roof_slant * 2 <= rw) {
+                return this.generateCompositeShape(lang, isAdvancedLevel, v, options); // Re-roll safely
+            }
+
+            // Perimeter = width + 2*height + 2*slant
+            ans = rw + (2 * rh) + (2 * roof_slant);
+            subtype = "house_perimeter"; // Custom safe subtype token
+            labelsObj = { w: rw, h: rh, s: roof_slant }; // s = slant side matching target
+            
+            description = lang === 'sv'
+                ? "Beräkna husets omkrets."
+                : "Calculate the perimeter of the house.";
+                
+            clues = [
+                { text: lang === 'sv' ? "Omkretsen är summan av alla ytterkanter runt figuren." : "Perimeter is the sum of all outer edges around the figure." },
+                { text: lang === 'sv' ? `Husets ytterkanter består av basen (${rw} cm), två väggar (${rh} cm var) och två taksidor (${roof_slant} cm var).` : `The outer edges consist of the base (${rw} cm), two walls (${rh} cm each), and two roof sides (${roof_slant} cm each).` },
+                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${rw} + ${rh} + ${rh} + ${roof_slant} + ${roof_slant} = ${ans}` },
+                { text: lang === 'sv' ? `Svar: ${ans} cm` : `Answer: ${ans} cm` }
+            ];
+        } else if (v === 'perimeter_portal') {
+            // 🏛️ RESTORED: Perimeter Portal Calculation
+            const rw = MathUtils.randomInt(6, 14) * 2; // Width (even for clean radius)
+            const rh = MathUtils.randomInt(5, 12);     // Height
+            const r = rw / 2;
+            const arcLength = Math.round(3.14 * r);    // Semi-circle arc circumference
+            
+            ans = arcLength + rw + (2 * rh);
+            subtype = "portal_perimeter";
+            labelsObj = { w: rw, h: rh, arc: arcLength };
+            
+            description = lang === 'sv'
+                ? "Beräkna portalens totala omkrets (runt ytterkanterna)."
+                : "Calculate the total perimeter of the portal (around the outer edges).";
+                
+            clues = [
+                { text: lang === 'sv' ? "Omkretsen består av basen, de två raka sidorna och den svängda bågen överst." : "The perimeter consists of the base, the two straight sides, and the curved arc on top." },
+                { text: lang === 'sv' ? `Bågens längd är ungefär ${arcLength} cm.` : `The arc length is approximately ${arcLength} cm.` },
+                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${rw} + ${rh} + ${rh} + ${arcLength} = ${ans}` },
+                { text: lang === 'sv' ? `Svar: ${ans} cm` : `Answer: ${ans} cm` }
+            ];
+        } else {
+            // Standard area_portal remains safely unchanged here as final fallback lane
+            const rw = MathUtils.randomInt(20, 30) * 2; 
+            const rh = MathUtils.randomInt(30, 45);
+            const r = rw / 2;
+            const rectA = rw * rh;
+            const semiA = (3.14 * r * r) / 2;
+            rawW = rw;
+            rawH = rh;
+            ans = Math.round((rectA + semiA) * 10) / 10;
+            subtype = "portal";
+            labelsObj = { w: rw, h: rh };
+            description = lang === 'sv' ? "Beräkna figurens totala area." : "Calculate the total area of the figure.";
+            clues = [
+                { text: lang === 'sv' ? "Figuren består av en rektangel nertill och en halvcirkel upptill." : "The figure consists of a rectangle at the bottom and a semicircle on top." },
+                { text: lang === 'sv' ? "Steg 1: Beräkna rektangelns area." : "Step 1: Calculate the area of the rectangle.", latex: `${rw} · ${rh} = ${rectA}` },
+                { text: lang === 'sv' ? "Steg 2: Beräkna halvcirkelns area." : "Step 2: Calculate the area of the semicircle.", latex: `\\frac{3,14 · ${r}^2}{2} = ${semiA}` },
+                { text: lang === 'sv' ? "Steg 3: Summera ytorna." : "Step 3: Sum the areas.", latex: `${rectA} + ${semiA} = ${ans}` }, 
+                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+            ];
         }
 
-        const r = w / 2;
-        const rectA = w * h;
-        const semiA = (3.14 * r * r) / 2;
-        const total = Math.round((rectA + semiA) * 10) / 10;
+        // Double-nested wrapper guarantees layout validation coverage
         return {
             renderData: {
-                geometry: { type: 'composite', subtype: 'portal', labels: { w, h } },
-                description: lang === 'sv' ? "Beräkna figurens totala area." : "Calculate the total area of the figure.",
-                answerType: 'numeric'
+                geometry: {
+                    type: "composite",
+                    subtype: subtype,       
+                    width: rawW,
+                    height: rawH,
+                    dims: {
+                        subtype: subtype,   
+                        width: rawW,
+                        height: rawH
+                    },
+                    labels: labelsObj
+                },
+                // Added explicit root height/width fallbacks matching standard layout expects
+                type: "composite",
+                subtype: subtype,
+                width: rawW,
+                height: rawH,
+                dims: {
+                    subtype: subtype,
+                    width: rawW,
+                    height: rawH
+                },
+                labels: labelsObj,
+                description: description,
+                answerType: "numeric",
+                suffix: "cm²"
             },
-            token: this.toBase64(total.toString()), variationKey: v, type: 'calculate',
-            clues: [
-                { text: lang === 'sv' ? "Figuren består av en rektangel nertill och en halvcirkel upptill." : "The figure consists of a rectangle at the bottom and a semicircle on top." },
-                { text: lang === 'sv' ? "Steg 1: Beräkna rektangelns area." : "Step 1: Calculate the area of the rectangle.", latex: `${w} · ${h} = ${rectA}` },
-                { text: lang === 'sv' ? "Steg 2: Beräkna halvcirkelns area." : "Step 2: Calculate the area of the semicircle.", latex: `\\frac{3,14 · ${r}^2}{2} = ${semiA}` },
-                { text: lang === 'sv' ? "Steg 3: Summera ytorna." : "Step 3: Sum the areas.", latex: `${rectA} + ${semiA} = ${total}` },
-                { text: lang === 'sv' ? `Svar: ${total}` : `Answer: ${total}` }
-            ]
+            token: this.toBase64(ans.toString()),
+            variationKey: v,
+            type: "calculate",
+            clues: clues
         };
     }
+
+    // REDIRECTIVE INTERFACES KEEP LEGACY ROUTERS WORKING OUT OF THE BOX ---
+    private level4_CombinedFigures(lang: string, variationKey?: string, options: any = {}): any {
+        return this.generateCompositeShape(lang, false, variationKey, options);
+    }
+
+    private level6_CompositeAdvanced(lang: string, variationKey?: string, options: any = {}): any {
+        return this.generateCompositeShape(lang, true, variationKey, options);
+    }
+
 }

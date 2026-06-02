@@ -129,6 +129,7 @@ export class VolumeGen {
             renderData: {
                 geometry: { type: 'cuboid', labels: { w, d, h } },
                 description: lang === 'sv' ? "Beräkna rätblockets volym." : "Calculate the volume of the rectangular prism.",
+                interceptorToken: `${w} ; ${d} ; ${h}`,
                 answerType: 'numeric', suffix: 'cm³'
             },
             token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',
@@ -151,6 +152,7 @@ export class VolumeGen {
             renderData: {
                 geometry: { type: 'triangular_prism', labels: { b, h: hTri, l: length } },
                 description: lang === 'sv' ? "Beräkna volymen för det triangulära prismat." : "Calculate the volume of the triangular prism.",
+                interceptorToken: `${b} ; ${hTri} ; ${length}`, 
                 answerType: 'numeric', suffix: 'cm³'
             },
             token: this.toBase64(vol.toString()), variationKey: 'vol_tri_prism_std', type: 'calculate',
@@ -174,6 +176,7 @@ export class VolumeGen {
             renderData: {
                 geometry: { type: 'cylinder', show: useDiameter ? 'diameter' : 'radius', labels: useDiameter ? { d: displayVal, h } : { r: displayVal, h } },
                 description: lang === 'sv' ? "Beräkna cylinderns volym ($\\pi \\approx 3,14$)." : "Calculate the volume of the cylinder ($\\pi \\approx 3.14$).",
+                interceptorToken: `${r} ; ${h}`,
                 answerType: 'numeric', suffix: 'cm³'
             },
             token: this.toBase64(vol.toString()), variationKey: 'vol_cyl_std', type: 'calculate',
@@ -200,6 +203,7 @@ export class VolumeGen {
                 renderData: {
                     geometry: { type: 'pyramid', labels: { s, h } },
                     description: lang === 'sv' ? "Pyramiden har en kvadratisk basyta. Beräkna pyramidens volym." : "Calculate the volume of the pyramid with a square base.",
+                    interceptorToken: `${s} ; ${h}`, 
                     answerType: 'numeric', suffix: 'cm³'
                 },
                 token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',
@@ -219,6 +223,7 @@ export class VolumeGen {
             renderData: {
                 geometry: { type: 'cone', labels: { r, h } },
                 description: lang === 'sv' ? "Beräkna konens volym ($\\pi \\approx 3,14$)." : "Calculate the volume of the cone ($\\pi \\approx 3.14$).",
+                interceptorToken: `${r} ; ${h}`,
                 answerType: 'numeric', suffix: 'cm³'
             },
             token: this.toBase64(vol.toString()), variationKey: 'vol_cone_std', type: 'calculate',
@@ -242,7 +247,8 @@ export class VolumeGen {
             return {
                 renderData: {
                     geometry: { type: 'sphere', labels: { r } },
-                    description: lang === 'sv' ? `Beräkna klotets volym med radien ${r} cm.` : `Calculate the volume of the sphere with radius ${r} cm.`,
+                    description: lang === 'sv' ? `Beräkna klotets volym med radien ${r} cm.` : `Calculate the volume of the sphere with radius ${r} cm.,`,
+                    interceptorToken: `${r}`, 
                     answerType: 'numeric', suffix: 'cm³'
                 },
                 token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',

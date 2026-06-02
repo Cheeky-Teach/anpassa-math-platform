@@ -11,6 +11,8 @@ import { EXPRESSION_STORIES } from './expressions.stories.js';
 import { CHANGE_FACTOR_STORIES } from './changefactor.stories.js';
 import { PATTERN_STORIES } from './patterns.stories.js';
 import { ARITHMETIC_STORIES } from './arithmetic.stories.js';
+import { VOLUME_STORIES } from './volume.stories.js';
+import { SIMILARITY_STORIES } from './similarity.stories.js';
 
 export const GLOBAL_STORY_REGISTRY: Record<string, any> = {
     ...ARITHMETIC_STORIES,
@@ -23,6 +25,8 @@ export const GLOBAL_STORY_REGISTRY: Record<string, any> = {
     ...PATTERN_STORIES,
     ...PERCENT_STORIES,
     ...PROBABILITY_STORIES,
+    ...SIMILARITY_STORIES,
     ...SCALE_STORIES,
-    ...TENPOWERS_STORIES
+    ...TENPOWERS_STORIES,
+    ...VOLUME_STORIES
 };

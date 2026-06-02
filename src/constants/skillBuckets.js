@@ -786,13 +786,51 @@ export const SKILL_BUCKETS = {
           { key: 'sim_tri_angle_check', name: { sv: 'Likformighet: Vinklar', en: 'Similarity: Angles' }, desc: { sv: 'Samma vinklar', en: 'Same angles' } },
           { key: 'sim_tri_side_check', name: { sv: 'Likformighet: Sidor', en: 'Similarity: Sides' }, desc: { sv: 'Proportioner', en: 'Proportions' } },
           { key: 'sim_concept_lie', name: { sv: 'Hitta felet: Teori', en: 'Find error: Theory' }, desc: { sv: 'Begreppsförståelse', en: 'Conceptual understanding' } },
-          { key: 'sim_calc_big', name: { sv: 'Beräkna stor sida', en: 'Calculate long side' }, desc: { sv: 'Multiplicera med k', en: 'Multiply by k' } },
-          { key: 'sim_calc_small', name: { sv: 'Beräkna liten sida', en: 'Calculate short side' }, desc: { sv: 'Dividera med k', en: 'Divide by k' } },
-          { key: 'sim_find_k', name: { sv: 'Hitta skalfaktor', en: 'Find scale factor' }, desc: { sv: 'Kvot av sidor', en: 'Ratio of sides' } },
-          { key: 'transversal_total', name: { sv: 'Transversal: Hela', en: 'Transversal: Total' }, desc: { sv: 'Söker stora basen', en: 'Seeking large base' } },
-          { key: 'transversal_extension', name: { sv: 'Transversal: Del', en: 'Transversal: Part' }, desc: { sv: 'Del av sidosidan', en: 'Part of side' } },
           { key: 'transversal_concept_id', name: { sv: 'Identifiera fall', en: 'Identify case' }, desc: { sv: 'Topp vs Transversal', en: 'Top vs Transversal' } },
-          { key: 'pythagoras_sim_hyp', name: { sv: 'Likf. & Pythagoras', en: 'Sim. & Pythagoras' }, desc: { sv: 'Kombinerad (Hyp)', en: 'Combined (Hyp)' } }
+          { key: 'pythagoras_sim_hyp', name: { sv: 'Likf. & Pythagoras', en: 'Sim. & Pythagoras' }, desc: { sv: 'Kombinerad (Hyp)', en: 'Combined (Hyp)' } },
+          // Inside skillBuckets.js -> geometry_cat -> topics -> geometry -> variations
+          { 
+            key: 'sim_calc_big', 
+            name: { sv: 'Beräkna stor sida', en: 'Calculate long side' }, 
+            desc: { sv: 'Multiplicera med k', en: 'Multiply by k' },
+            tags: ['word_problem_ready'],
+            contextType: 'similarity_calc_big',
+            // 🟢 Matches primitive string array sequence: s1 ; s2 ; bigS1 ; bigS2 ; k
+            extractorPattern: /^(?<s1>\d+)\s*;\s*(?<s2>\d+)\s*;\s*(?<bigS1>[\d.]+)\s*;\s*(?<bigS2>[\d.]+)\s*;\s*(?<k>[\d.]+)/
+          },
+          { 
+            key: 'sim_calc_small', 
+            name: { sv: 'Beräkna liten sida', en: 'Calculate short side' }, 
+            desc: { sv: 'Dividera med k', en: 'Divide by k' },
+            tags: ['word_problem_ready'],
+            contextType: 'similarity_calc_small',
+            extractorPattern: /^(?<s1>\d+)\s*;\s*(?<s2>\d+)\s*;\s*(?<bigS1>[\d.]+)\s*;\s*(?<bigS2>[\d.]+)\s*;\s*(?<k>[\d.]+)/
+          },
+          { 
+            key: 'sim_find_k', 
+            name: { sv: 'Hitta skalfaktor', en: 'Find scale factor' }, 
+            desc: { sv: 'Kvot av sidor', en: 'Ratio of sides' },
+            tags: ['word_problem_ready'],
+            contextType: 'similarity_find_k',
+            extractorPattern: /^(?<s1>\d+)\s*;\s*(?<s2>\d+)\s*;\s*(?<bigS1>[\d.]+)\s*;\s*(?<bigS2>[\d.]+)\s*;\s*(?<k>[\d.]+)/
+          },
+          { 
+            key: 'transversal_total', 
+            name: { sv: 'Transversal: Hela', en: 'Transversal: Total' }, 
+            desc: { sv: 'Söker stora basen', en: 'Seeking large base' },
+            tags: ['word_problem_ready'],
+            contextType: 'transversal_total',
+            // 🟢 Matches primitive string array sequence: top ; extra ; smallBase ; totSide ; bigBase ; transK
+            extractorPattern: /^(?<top>\d+)\s*;\s*(?<extra>\d+)\s*;\s*(?<smallBase>\d+)\s*;\s*(?<totSide>\d+)\s*;\s*(?<bigBase>[\d.]+)\s*;\s*(?<k>[\d.]+)/
+          },
+          { 
+            key: 'transversal_extension', 
+            name: { sv: 'Transversal: Del', en: 'Transversal: Part' }, 
+            desc: { sv: 'Del av sidosidan', en: 'Part of side' },
+            tags: ['word_problem_ready'],
+            contextType: 'transversal_extension',
+            extractorPattern: /^(?<top>\d+)\s*;\s*(?<extra>\d+)\s*;\s*(?<smallBase>\d+)\s*;\s*(?<totSide>\d+)\s*;\s*(?<bigBase>[\d.]+)\s*;\s*(?<k>[\d.]+)/
+          }
         ]
       },
       scale: {
@@ -834,14 +872,8 @@ export const SKILL_BUCKETS = {
       volume: {
         name: { sv: 'Volym & Yta', en: 'Volume & Surface Area' },
         variations: [
-          { key: 'vol_cuboid_std', name: { sv: 'Volym: Rätblock', en: 'Volume: Cuboid' }, desc: { sv: 'l * b * h', en: 'l * w * h' } },
           { key: 'vol_cuboid_inverse', name: { sv: 'Rätblock: Hitta höjd', en: 'Cuboid: Find height' }, desc: { sv: 'Givet V, sök h', en: 'Given V, seek h' } },
           { key: 'vol_cuboid_scaling', name: { sv: 'Rätblock: Skalning', en: 'Cuboid: Scaling' }, desc: { sv: 'Ökad höjd', en: 'Increased height' } },
-          { key: 'vol_tri_prism_std', name: { sv: 'Volym: Prisma', en: 'Volume: Prism' }, desc: { sv: 'Basarea * längd', en: 'Base area * length' } },
-          { key: 'vol_cyl_std', name: { sv: 'Volym: Cylinder', en: 'Volume: Cylinder' }, desc: { sv: 'pi * r^2 * h', en: 'pi * r^2 * h' } },
-          { key: 'vol_pyramid_std', name: { sv: 'Volym: Pyramid', en: 'Volume: Pyramid' }, desc: { sv: '(Bas * h) / 3', en: '(Base * h) / 3' } },
-          { key: 'vol_cone_std', name: { sv: 'Volym: Kon', en: 'Volume: Cone' }, desc: { sv: '(Cirkel * h) / 3', en: '(Circle * h) / 3' } },
-          { key: 'vol_sphere_std', name: { sv: 'Volym: Klot', en: 'Volume: Sphere' }, desc: { sv: '4*pi*r^3 / 3', en: '4*pi*r^3 / 3' } },
           { key: 'vol_silo_std', name: { sv: 'Silo (Cyl+Halvklot)', en: 'Silo (Cyl+Hemis)' }, desc: { sv: 'Sammansatt volym', en: 'Composite volume' } },
           { key: 'vol_icecream_std', name: { sv: 'Strut (Kon+Halvklot)', en: 'Cone (Cone+Hemis)' }, desc: { sv: 'Sammansatt volym', en: 'Composite volume' } },
           { key: 'vol_units_liter', name: { sv: 'Enheter: Liter', en: 'Units: Liter' }, desc: { sv: 'dm3 = liter', en: 'dm3 = liter' } },
@@ -849,7 +881,55 @@ export const SKILL_BUCKETS = {
           { key: 'sa_cuboid', name: { sv: 'Begränsningsyta: Rätbl.', en: 'Surface area: Cuboid' }, desc: { sv: 'Alla sex sidor', en: 'All six sides' } },
           { key: 'sa_sphere', name: { sv: 'Begränsningsyta: Klot', en: 'Surface area: Sphere' }, desc: { sv: '4 * pi * r^2', en: '4 * pi * r^2' } },
           { key: 'vol_unit_conv', name: { sv: 'Volym: Enheter', en: 'Volume: Units' }, desc: { sv: 'Omvandla mellan dm³, cm³, liter och ml', en: 'Convert between dm³, cm³, liters and ml' } },
-          { key: 'vol_word_unit', name: { sv: 'Volym: Vardagsproblem', en: 'Volume: Word Problems' }, desc: { sv: 'Beräkna volym och svara i liter/ml (med bild)', en: 'Calculate volume and answer in liters/ml (with image)' } }
+          { key: 'vol_word_unit', name: { sv: 'Volym: Vardagsproblem', en: 'Volume: Word Problems' }, desc: { sv: 'Beräkna volym och svara i liter/ml (med bild)', en: 'Calculate volume and answer in liters/ml (with image)' } },
+          { 
+            key: 'vol_cuboid_std', 
+            name: { sv: 'Volym: Rätblock', en: 'Volume: Cuboid' }, 
+            desc: { sv: 'l * b * h', en: 'l * w * h' },
+            tags: ['word_problem_ready'],
+            contextType: 'volume_cuboid',
+            extractorPattern: /^(?<w>\d+)\s*;\s*(?<d>\d+)\s*;\s*(?<h>\d+)$/
+          },
+          { 
+            key: 'vol_tri_prism_std', 
+            name: { sv: 'Volym: Prisma', en: 'Volume: Prism' }, 
+            desc: { sv: 'Basarea * längd', en: 'Base area * length' },
+            tags: ['word_problem_ready'],
+            contextType: 'volume_prism',
+            extractorPattern: /^(?<b>\d+)\s*;\s*(?<hTri>\d+)\s*;\s*(?<length>\d+)$/
+          },
+          { 
+            key: 'vol_cyl_std', 
+            name: { sv: 'Volym: Cylinder', en: 'Volume: Cylinder' }, 
+            desc: { sv: 'pi * r^2 * h', en: 'pi * r^2 * h' },
+            tags: ['word_problem_ready'],
+            contextType: 'volume_cylinder',
+            extractorPattern: /^(?<r>\d+)\s*;\s*(?<h>\d+)$/
+          },
+          { 
+            key: 'vol_pyramid_std', 
+            name: { sv: 'Volym: Pyramid', en: 'Volume: Pyramid' }, 
+            desc: { sv: '(Bas * h) / 3', en: '(Base * h) / 3' },
+            tags: ['word_problem_ready'],
+            contextType: 'volume_pyramid',
+            extractorPattern: /^(?<s>\d+)\s*;\s*(?<h>\d+)$/
+          },
+          { 
+            key: 'vol_cone_std', 
+            name: { sv: 'Volym: Kon', en: 'Volume: Cone' }, 
+            desc: { sv: '(Cirkel * h) / 3', en: '(Circle * h) / 3' },
+            tags: ['word_problem_ready'],
+            contextType: 'volume_cone',
+            extractorPattern: /^(?<r>\d+)\s*;\s*(?<h>\d+)$/
+          },
+          { 
+            key: 'vol_sphere_std', 
+            name: { sv: 'Volym: Klot', en: 'Volume: Sphere' }, 
+            desc: { sv: '4*pi*r^3 / 3', en: '4*pi*r^3 / 3' },
+            tags: ['word_problem_ready'],
+            contextType: 'volume_sphere',
+            extractorPattern: /^(?<r>\d+)$/
+          }
         ]
       }
     }
