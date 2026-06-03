@@ -199,6 +199,44 @@ export default function QuestionStudio({
   
   const [isGlobalShuffleOpen, setIsGlobalShuffleOpen] = useState(false);
 
+  // --- UNIFIED BI-DIRECTIONAL DRAG AND DROP ---
+  // Tracks active sorting positions seamlessly across both views simultaneously
+  const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+
+  const handleDragStartUnified = (e, index) => {
+    setDraggedIdx(index);
+    setDraggedItemIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    
+    // Transparent spacer image ensures structural element cards drag cleanly without layout glitches
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(img, 0, 0);
+  };
+
+  const handleDragOverUnified = (e, targetIndex) => {
+    e.preventDefault();
+    const sourceIndex = draggedIdx !== null ? draggedIdx : draggedItemIndex;
+    if (sourceIndex === null || sourceIndex === targetIndex) return;
+
+    // Mutating a single state target automatically pushes reactive adjustments 
+    // to Pane 3 and Pane 4 simultaneously for a true bi-directional WYSIWYG feel!
+    const updatedPacket = [...packet];
+    const [movedItem] = updatedPacket.splice(sourceIndex, 1);
+    updatedPacket.splice(targetIndex, 0, movedItem);
+
+    if (draggedIdx !== null) setDraggedIdx(targetIndex);
+    if (draggedItemIndex !== null) setDraggedItemIndex(targetIndex);
+    
+    setPacket(updatedPacket);
+    setIsSaved(false);
+  };
+
+  const handleDragEndUnified = () => {
+    setDraggedIdx(null);
+    setDraggedItemIndex(null);
+  };
+
   // --- EFFECTS ---
   // FIXED REPLACEMENT HOOK:
   useEffect(() => {
@@ -267,6 +305,24 @@ export default function QuestionStudio({
             ))}
         </div>
     );
+  };
+
+  const handleReorderMaster = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+
+    // 🟢 Step 1: Shift elements inside the Pane 4 Sidebar Queue State
+    const updatedSelected = [...selectedQuestions];
+    const [draggedSelected] = updatedSelected.splice(fromIndex, 1);
+    updatedSelected.splice(toIndex, 0, draggedSelected);
+    setSelectedQuestions(updatedSelected);
+
+    // 🟢 Step 2: Simultaneously shift elements inside the Pane 3 Canvas Preview State
+    if (questions && questions.length > 0) {
+      const updatedQuestions = [...questions];
+      const [draggedQuestion] = updatedQuestions.splice(fromIndex, 1);
+      updatedQuestions.splice(toIndex, 0, draggedQuestion);
+      setQuestions(updatedQuestions); // Loops back to update your main display canvas state
+    }
   };
 
   // --- UNIFIED VISUAL RENDERER ---
@@ -889,9 +945,9 @@ export default function QuestionStudio({
                                         
                                         <div 
                                             draggable 
-                                            onDragStart={(e) => handleDragStart(e, idx)} 
-                                            onDragOver={(e) => handleDragOver(e, idx)} 
-                                            onDragEnd={handleDragEnd} 
+                                            onDragStart={(e) => handleDragStartUnified(e, idx)} 
+                                            onDragOver={(e) => handleDragOverUnified(e, idx)} 
+                                            onDragEnd={handleDragEndUnified} 
                                             className={`relative group border-2 rounded-2xl transition-all flex flex-col h-full cursor-move ${getColSpanClass(item.columnSpan)} ${showWorkArea ? 'p-4' : 'px-4 py-1'} ${draggedIdx === idx ? 'opacity-20 border-indigo-500 bg-indigo-50 scale-95' : 'border-transparent hover:border-dashed hover:border-indigo-300'}`}
                                         >
                                             <div className="absolute top-2 left-2 text-slate-200 opacity-0 group-hover:opacity-100"><GripVertical size={14} /></div>
@@ -1055,19 +1111,44 @@ export default function QuestionStudio({
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-slate-50/30">
                     {packet.map((item, idx) => (
-                        <div key={item.id} className="p-3 bg-white border border-slate-200 rounded-xl flex justify-between items-center group shadow-sm hover:shadow-md transition-all">
+                        <div 
+                        key={item.id}
+                        draggable // 🟢 Enables element dragging on the sidebar item natively
+                        onDragStart={(e) => handleDragStartUnified(e, idx)}
+                        onDragOver={(e) => handleDragOverUnified(e, idx)}
+                        onDragEnd={handleDragEndUnified}
+                        className={`p-3 border rounded-xl flex justify-between items-center group shadow-sm transition-all select-none
+                            ${draggedItemIndex === idx 
+                                ? 'opacity-30 bg-indigo-50 border-indigo-400 border-dashed scale-[0.98]' 
+                                : 'bg-white border-slate-200 hover:shadow-md hover:border-slate-300 cursor-grab active:cursor-grabbing'
+                            }`}
+                    >
+                        <div className="flex items-center gap-2 min-w-0">
+                            {/* Visual grab handle indicator icon added for user feedback */}
+                            <GripVertical size={12} className="text-slate-300 shrink-0 group-hover:text-slate-400 transition-colors" />
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className="text-[9px] font-black text-slate-300">#{idx + 1}</span>
                                     <span className={`w-1.5 h-1.5 rounded-full ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-slate-200'}`} />
                                 </div>
-                                <div className="text-[10px] font-bold text-slate-700 truncate pr-4 uppercase">{item.name}</div>
+                                    <div className="text-[10px] font-bold text-slate-700 truncate pr-4 uppercase">{item.name}</div>
                             </div>
-                            <button onClick={() => setPacket(packet.filter(p => p.id !== item.id))} className="p-1 text-slate-200 hover:text-rose-500 rounded-lg transition-all"><Trash2 size={14}/></button>
                         </div>
-                    ))}
-                </div>
-                {setupMode === 'worksheet' && (
+
+                        {/* 🟢 FIXED: Re-added the task delete button and closed the row wrapper div safely */}
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }}
+                                className="p-1 text-slate-300 hover:text-rose-500 transition-colors rounded-lg"
+                                title={t.delete_task}
+                            >
+                                <Trash2 size={12} />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            {setupMode === 'worksheet' && (
                     <div className="p-4 border-t bg-white space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">

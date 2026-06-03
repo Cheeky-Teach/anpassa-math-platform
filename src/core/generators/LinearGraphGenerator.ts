@@ -20,22 +20,22 @@ export class LinearGraphGenerator {
     /**
      * Targeted Generation for Question Studio
      */
-    public generateByVariation(key: string, lang: string = 'sv'): any {
+    public generateByVariation(key: string, lang: string = 'sv', options: any = {}): any {
         switch (key) {
             case 'intercept_id':
-                return this.level1_FindM(lang, key);
+                return this.level1_FindM(lang, key, options);
             case 'slope_pos_int':
             case 'slope_pos_frac':
-                return this.level2_FindK_Pos(lang, key);
+                return this.level2_FindK_Pos(lang, key, options);
             case 'slope_neg_int':
             case 'slope_neg_frac':
-                return this.level3_FindK_Neg(lang, key);
+                return this.level3_FindK_Neg(lang, key, options);
             case 'eq_standard':
             case 'eq_no_m':
             case 'eq_horizontal':
-                return this.level4_FindFunction(lang, key);
+                return this.level4_FindFunction(lang, key, options);
             default:
-                return this.generate(1, lang);
+                return this.generate(1, lang, options);
         }
     }
 
@@ -67,6 +67,7 @@ export class LinearGraphGenerator {
                 description: lang === 'sv' 
                     ? "Var skär linjen den vertikala y-axeln? Bestäm linjens m-värde." 
                     : "Where does the line intersect the vertical y-axis? Determine the m-value.",
+                interceptorToken: `${m} ; ${k}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(m.toString()),
@@ -120,6 +121,7 @@ export class LinearGraphGenerator {
             renderData: {
                 graph: { range: 10, lines: [{ slope: dy/dx, intercept: MathUtils.randomInt(-3, 1), color: '#16a34a' }] },
                 description: lang === 'sv' ? "Bestäm linjens lutning (k-värde)." : "Determine the slope (k-value) of the line.",
+                interceptorToken: `${dy} ; ${dx} ; ${kDisplay}`,
                 answerType: 'text'
             },
             token: this.toBase64(kDisplay),
@@ -151,6 +153,7 @@ export class LinearGraphGenerator {
             renderData: {
                 graph: { range: 10, lines: [{ slope: dy/dx, intercept: MathUtils.randomInt(0, 4), color: '#dc2626' }] },
                 description: lang === 'sv' ? "Vad är linjens k-värde? Tänk på att linjen lutar nedåt!" : "What is the k-value of the line? Remember that it slopes downward!",
+                interceptorToken: `${dy} ; ${dx} ; ${kDisplay}`,
                 answerType: 'text'
             },
             token: this.toBase64(kDisplay),
@@ -169,7 +172,7 @@ export class LinearGraphGenerator {
         ];
         const v = variationKey || this.getVariation(pool, options);
         
-        let k = MathUtils.randomInt(-2, 2);
+        let k = MathUtils.randomInt(-3, 3);
         let m = MathUtils.randomInt(-4, 4);
 
         if (v === 'eq_no_m') m = 0;
@@ -193,6 +196,7 @@ export class LinearGraphGenerator {
             renderData: {
                 graph: { range: 10, lines: [{ slope: k, intercept: m, color: '#7c3aed' }] },
                 description: lang === 'sv' ? "Bestäm linjens ekvation på formen y = kx + m." : "Determine the equation of the line in the form y = kx + m.",
+                interceptorToken: `${k} ; ${m} ; ${eq}`,
                 answerType: 'text'
             },
             token: this.toBase64(eq.replace(/\s/g, "")),

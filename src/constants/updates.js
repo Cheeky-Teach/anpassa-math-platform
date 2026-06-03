@@ -2,6 +2,35 @@
 
 export const APP_UPDATES = [
   {
+    id: 'v017',
+    date: '2026-06-03',
+    version: '0.1.7',
+    title: { 
+      sv: "💥 MEGA-UPPDATERING: Fullt stöd för Problemlösning & Skräddarsydd arbetsblad!", 
+      en: "💥 MEGA UPDATE: Full Word Problems & More Worksheet Customization!" 
+    },
+    highlights: {
+      sv: "Förvandla matte till verkliga berättelser med ett klick och skräddarsy varje enskild uppgift.",
+      en: "Transform math into real-world stories with one click and customize every individual question."
+    },
+    changes: {
+      sv: [
+        "Textuppgifter i ett klick: Aktivera vardagsproblem-togglen så förvandlas dina standardekvationer direkt till spännande, ungdomsanpassade berättelser! Vårt smarta system fångar upp de exakta siffrorna under huven och flätar in dem sömlöst i unika scenarier som fungerar klockrent i Egen träning, Do Now, arbetsblad och Live-lektioner.",
+        "SMART arbetsblad: Du kan behålla alla problemlösningsuppgifter i dina arbetsblad och slumpa fram nya tal utan att ändra layouten eller syftet. Samma arbetsblad, samma begrepp, nya möjligheter!",
+        "Total kontroll i Pane 3 Question Studio: Varje uppgiftskort i arbetsytan har fått egna snabbkontroller. Nu kan du dölja eller visa matematiken (LaTeX) och visuella figurer individuellt per fråga för att skapa perfekta, anpassade layouter.",
+        "Dubbelriktad Drag-and-Drop: Sortera uppgifter supersmidigt! Om du ändrar ordningen på korten i förhandsgranskningen (Pane 3) uppdateras sidomenyn direkt – och om du drar i sidomenyn (Pane 4) flyttas korten direkt på bladet i realtid.",
+        "Smarta Failsafe-figurer: Koordinatsystem för linjära grafer och frekvenstabeller för statistik visas nu alltid automatiskt när textuppgifter är aktiva, vilket garanterar att uppgifterna förblir lösbara på alla skärmar och utskrifter."
+      ],
+      en: [
+        "Word Problems in a Click: Turn on the word problem toggle to instantly change standard math equations into exciting, teenage-friendly stories! Our smart system captures the exact numbers under the hood and blends them seamlessly into unique narratives that work perfectly across Practice mode, Do Nows, Worksheet Creator, and Live sessions.",
+        "SMART Worksheets: You can keep all of your questions and word problems in your worksheet while being able to generate only new numbers, only new text for word problems, or both! Same worksheet, same skills, new possibilities!",
+        "Total Control in Pane 3 Question Studio: Every question card on the workspace canvas now has individual quick controls. You can now hide or show the math text (LaTeX) and visual diagrams independently per question to design perfect custom sheet setups.",
+        "Bi-Directional Drag-and-Drop: Sorting your material is now easier than ever! Dragging cards on the main sheet preview (Pane 3) instantly re-orders the sidebar list, and moving rows in the queue list (Pane 4) dynamically mirrors your sheet layout in real-time.",
+        "Smart Failsafe Diagrams: Coordinate systems for linear graphs and data grids for statistics are now automatically whitelisted to always stay visible during word problems, ensuring worksheets stay fully solvable across all screens and prints."
+      ]
+    }
+  },
+  {
     id: 'v016',
     date: '2026-05-07',
     version: '0.1.6',

@@ -254,9 +254,11 @@ const PracticeView = ({
                             {/* 🟢 RESTORED VISUAL CONTAINER WITH STRICT BOUNDING BOXES */}
     
                                 <WordProblemVisualGuard 
-                                    isActive={!!question?.renderData?.isWordProblemApplied} 
+                                    isActive={!!question?.metadata?.isWordProblemApplied || useWordProblems} 
                                     lang={lang}
-                                    questionKey={question?.token} 
+                                    questionKey={question?.variationKey || question?.metadata?.variation_key || question?.metadata?.variationKey} 
+                                    // 🟢 FAILSAFE: Structural check looking directly for data features rather than text string matches
+                                    alwaysShow={!!question?.renderData?.graph || question?.renderData?.geometry?.type === 'frequency_table' || !!question?.renderData?.frequencyTable}
                                 >
                                     {/* 🟢 THE LOCK: Enforces a strict max-width of 300px so raw SVGs cannot explode in size */}
                                     <div className="w-full max-w-[300px] flex justify-center items-center mx-auto overflow-visible">

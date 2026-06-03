@@ -22,35 +22,35 @@ export class PythagorasGen {
      * Targeted Generation for Question Studio
      * Maps ALL keys from skillBuckets.js to maintain visual/studio compatibility.
      */
-    public generateByVariation(key: string, lang: string = 'sv'): any {
+    public generateByVariation(key: string, lang: string = 'sv', options: any = {}): any {
         switch (key) {
             case 'sqrt_calc':
             case 'square_calc':
             case 'missing_square':
             case 'sqrt_estimation':
-                return this.level1_SquaresRoots(lang, key);
+                return this.level1_SquaresRoots(lang, key, options);
             case 'hyp_visual':
             case 'hyp_equation':
             case 'hyp_error':
-                return this.level2_Hypotenuse(lang, key);
+                return this.level2_Hypotenuse(lang, key, options);
             case 'leg_visual':
             case 'leg_concept':
             case 'leg_text':
-                return this.level3_Leg(lang, key);
+                return this.level3_Leg(lang, key, options);
             case 'app_ladder':
             case 'app_diagonal':
             case 'app_displacement':
             case 'app_guy_wire':
             case 'app_coords':
-                return this.level4_Applications(lang, key);
+                return this.level4_Applications(lang, key, options);
             case 'conv_check':
             case 'conv_missing':
             case 'conv_trap':
-                return this.level5_Converse(lang, key);
+                return this.level5_Converse(lang, key, options);
             case 'advanced_mixed':
-                return this.level6_AdvancedMixed(lang);
+                return this.level6_AdvancedMixed(lang, options);
             default:
-                return this.generate(1, lang);
+                return this.generate(1, lang, options);
         }
     }
 
@@ -168,6 +168,7 @@ export class PythagorasGen {
                 renderData: {
                     description: lang === 'sv' ? `Vilken ekvation är rätt uppställd för att hitta hypotenusan x?` : `Which equation is correctly set up to find the hypotenuse x?`,
                     answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${t.a}² + x² = ${t.c}²`, `${t.a} + ${t.b} = x`]),
+                    interceptorToken: `${t.a} ; ${t.b} ; ${t.c}`,
                     geometry: { type: 'triangle', subtype: 'right', width: t.a, height: t.b, labels: { b: t.a, h: t.b, hyp: 'x' } }
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
@@ -182,6 +183,7 @@ export class PythagorasGen {
         return {
             renderData: {
                 description: lang === 'sv' ? "Beräkna hypotenusan x." : "Calculate the hypotenuse x.",
+                interceptorToken: `${t.a} ; ${t.b} ; ${t.c}`,
                 answerType: 'numeric',
                 geometry: { type: 'triangle', subtype: 'right', width: t.a, height: t.b, labels: { b: t.a, h: t.b, hyp: 'x' } }
             },
@@ -224,6 +226,7 @@ export class PythagorasGen {
         return {
             renderData: {
                 description: lang === 'sv' ? "Beräkna den saknade kateten x." : "Calculate the missing leg x.",
+                interceptorToken: `${t.a} ; ${t.b} ; ${t.c}`,
                 answerType: 'numeric',
                 geometry: { type: 'triangle', subtype: 'right', width: t.b, height: t.a, labels: { b: 'x', h: t.a, hyp: t.c } }
             },
@@ -252,6 +255,7 @@ export class PythagorasGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `En rektangel har sidorna ${t.a} cm och ${t.b} cm. Hur lång är diagonalen?` : `A rectangle has sides of ${t.a} cm and ${t.b} cm. How long is the diagonal?`,
+                    interceptorToken: `${t.a} ; ${t.b} ; ${t.c}`,
                     answerType: 'numeric',
                     geometry: { type: 'rectangle', width: t.a, height: t.b, labels: { b: t.a, h: t.b } }
                 },

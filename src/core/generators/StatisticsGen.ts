@@ -33,36 +33,36 @@ export class StatisticsGen {
         }
     }
 
-    public generateByVariation(key: string, lang: string = 'sv'): any {
+    public generateByVariation(key: string, lang: string = 'sv', options: any = {}): any {
         switch (key) {
             case 'find_mode':
             case 'find_range':
             case 'stats_lie':
             case 'find_min_max':
-                return this.level1_ModeRange(lang, key);
+                return this.level1_ModeRange(lang, key, options);
             case 'calc_mean':
             case 'mean_concept_balance':
             case 'mean_negatives':
-                return this.level2_Mean(lang, key);
+                return this.level2_Mean(lang, key, options);
             case 'median_odd':
             case 'median_even':
             case 'median_lie':
-                return this.level3_Median(lang, key);
+                return this.level3_Median(lang, key, options);
             case 'reverse_mean_calc':
             case 'mean_target_score':
-                return this.level4_ReverseMean(lang, key);
+                return this.level4_ReverseMean(lang, key, options);
             case 'freq_mean':
             case 'freq_count':
             case 'freq_mode':
             case 'freq_range':
-                return this.level5_FrequencyTable(lang, key);
+                return this.level5_FrequencyTable(lang, key, options);
             case 'real_outlier_shift':
             case 'real_measure_choice':
             case 'real_weighted_avg':
             case 'real_weighted_missing':
-                return this.level6_RealWorldMixed(lang, key);
+                return this.level6_RealWorldMixed(lang, key, options);
             default:
-                return this.generate(1, lang);
+                return this.generate(1, lang, options);
         }
     }
 
@@ -105,6 +105,7 @@ export class StatisticsGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `Studera listan över ${s.sv}: ${setStr}. Vilket är typvärdet?` : `Examine the list of ${s.en}: ${setStr}. What is the mode?`,
+                    interceptorToken: `${setStr} ; ${modeVal}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(modeVal.toString()), variationKey: v, type: 'calculate',
@@ -125,6 +126,7 @@ export class StatisticsGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `Beräkna variationsbredden för följande ${s.sv}: ${setStr}.` : `Calculate the range for the following ${s.en}: ${setStr}.`,
+                    interceptorToken: `${setStr} ; ${max} ; ${min} ; ${range}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(range.toString()), variationKey: v, type: 'calculate',
@@ -190,6 +192,7 @@ export class StatisticsGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `Beräkna medelvärdet för följande ${s.sv}: ${list.join(', ')}.` : `Calculate the mean for the following ${s.en}: ${list.join(', ')}.`,
+                interceptorToken: `${list.join(', ')} ; ${sum} ; ${count} ; ${mean}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(mean.toString()), variationKey: 'calc_mean', type: 'calculate',
@@ -213,6 +216,7 @@ export class StatisticsGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `Bestäm medianen för följande ${s.sv}: ${list.join(', ')}.` : `Determine the median for the following ${s.en}: ${list.join(', ')}.`,
+                interceptorToken: `${list.join(', ')} ; ${median}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(median.toString()), variationKey: 'median_odd', type: 'calculate',
@@ -237,6 +241,7 @@ export class StatisticsGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `Medelvärdet av fyra tal är ${mean}. Tre av talen är ${v1}, ${v2} och ${v3}. Vilket är det fjärde talet?` : `The mean of four numbers is ${mean}. Three of the numbers are ${v1}, ${v2}, and ${v3}. What is the fourth number?`,
+                interceptorToken: `${mean} ; ${v1}, ${v2}, ${v3} ; ${missing}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(missing.toString()), variationKey: 'reverse_mean_calc', type: 'calculate',
@@ -262,6 +267,7 @@ export class StatisticsGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? "Hur många observationer (totalt antal) visas i frekvenstabellen?" : "How many observations (total count) are shown in the frequency table?",
+                    interceptorToken: `${totalCount}`,
                     answerType: 'numeric',
                     geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
                 },
@@ -279,6 +285,7 @@ export class StatisticsGen {
         return {
             renderData: {
                 description: lang === 'sv' ? "Vilket är typvärdet enligt tabellen?" : "What is the mode according to the table?",
+                interceptorToken: `${mode}`,
                 answerType: 'numeric',
                 geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
             },

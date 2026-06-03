@@ -192,14 +192,71 @@ export const SKILL_BUCKETS = {
       graphs: {
         name: { sv: 'Räta Linjens Ekvation', en: 'Linear Equations & Graphs' },
         variations: [
-          { key: 'intercept_id', name: { sv: 'Hitta m-värde', en: 'Find m-value' }, desc: { sv: 'Var skär linjen y-axeln?', en: 'Where does the line cross the y-axis?' } },
-          { key: 'slope_pos_int', name: { sv: 'Positiv Lutning (Heltal)', en: 'Positive Slope (Integer)' }, desc: { sv: 'Stigande k-värde', en: 'Rising k-value' } },
-          { key: 'slope_pos_frac', name: { sv: 'Positiv Lutning (Bråk)', en: 'Positive Slope (Fraction)' }, desc: { sv: 'Stigande, flack/brant', en: 'Rising, shallow/steep' } },
-          { key: 'slope_neg_int', name: { sv: 'Negativ Lutning (Heltal)', en: 'Negative Slope (Integer)' }, desc: { sv: 'Sjunkande k-värde', en: 'Falling k-value' } },
-          { key: 'slope_neg_frac', name: { sv: 'Negativ Lutning (Bråk)', en: 'Negative Slope (Fraction)' }, desc: { sv: 'Sjunkande, flack/brant', en: 'Falling, shallow/steep' } },
-          { key: 'eq_standard', name: { sv: 'Bestäm ekvation', en: 'Determine equation' }, desc: { sv: 'y = kx + m', en: 'y = kx + m' } },
-          { key: 'eq_no_m', name: { sv: 'Proportionalitet', en: 'Proportionality' }, desc: { sv: 'y = kx (Går genom origo)', en: 'y = kx (Passes through origin)' } },
-          { key: 'eq_horizontal', name: { sv: 'Horisontell linje', en: 'Horizontal line' }, desc: { sv: 'y = m (k=0)', en: 'y = m (k=0)' } }
+          // Inside skillBuckets.js -> functions/geometry -> topics -> linear_graphs -> variations
+          { 
+            key: 'intercept_id', 
+            name: { sv: 'Bestäm m-värde', en: 'Find m-value' }, 
+            desc: { sv: 'Hitta var linjen korsar y-axeln på grafen', en: 'Find where the line crosses the y-axis' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_intercept_m',
+            extractorPattern: /^(?<m>-?\d+)\s*;\s*(?<k>[\d.-]+)/
+          },
+          { 
+            key: 'slope_pos_int', 
+            name: { sv: 'Positiv lutning (Heltal)', en: 'Positive Slope (Int)' }, 
+            desc: { sv: 'Beräkna k-värdet för en stigande rät linje', en: 'Calculate the k-value for a rising straight line' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_slope_pos',
+            extractorPattern: /^(?<dy>\d+)\s*;\s*(?<dx>\d+)\s*;\s*(?<kDisplay>[^;]+)/
+          },
+          { 
+            key: 'slope_pos_frac', 
+            name: { sv: 'Positiv lutning (Bråk)', en: 'Positive Slope (Frac)' }, 
+            desc: { sv: 'Hitta lutningen som ett bråk k = dy/dx', en: 'Find the slope as a fraction k = dy/dx' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_slope_pos',
+            extractorPattern: /^(?<dy>\d+)\s*;\s*(?<dx>\d+)\s*;\s*(?<kDisplay>[^;]+)/
+          },
+          { 
+            key: 'slope_neg_int', 
+            name: { sv: 'Negativ lutning (Heltal)', en: 'Negative Slope (Int)' }, 
+            desc: { sv: 'Beräkna k-värdet för en fallande rät linje', en: 'Calculate the k-value for a falling straight line' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_slope_neg',
+            extractorPattern: /^(?<dy>-?\d+)\s*;\s*(?<dx>\d+)\s*;\s*(?<kDisplay>[^;]+)/
+          },
+          { 
+            key: 'slope_neg_frac', 
+            name: { sv: 'Negativ lutning (Bråk)', en: 'Negative Slope (Frac)' }, 
+            desc: { sv: 'Bestäm fallande lutning som ett bråk', en: 'Determine falling slope as a fraction' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_slope_neg',
+            extractorPattern: /^(?<dy>-?\d+)\s*;\s*(?<dx>\d+)\s*;\s*(?<kDisplay>[^;]+)/
+          },
+          { 
+            key: 'eq_standard', 
+            name: { sv: 'Linjens ekvation', en: 'Line equation' }, 
+            desc: { sv: 'Skriv fullständiga formeln y = kx + m utifrån grafen', en: 'Write the full formula y = kx + m from the graph' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_equation',
+            extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<m>-?\d+)\s*;\s*(?<eq>[^;]+)/
+          },
+          { 
+            key: 'eq_no_m', 
+            name: { sv: 'Ekvation utan m', en: 'Equation without m' }, 
+            desc: { sv: 'Formel för linjer som går genom origo (y = kx)', en: 'Formula for lines passing through origin (y = kx)' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_equation',
+            extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<m>-?\d+)\s*;\s*(?<eq>[^;]+)/
+          },
+          { 
+            key: 'eq_horizontal', 
+            name: { sv: 'Horisontell linje', en: 'Horizontal line' }, 
+            desc: { sv: 'Formel för linjer utan lutning (y = m)', en: 'Formula for lines with no slope (y = m)' },
+            tags: ['word_problem_ready'],
+            contextType: 'graph_equation',
+            extractorPattern: /^(?<k>-?\d+)\s*;\s*(?<m>-?\d+)\s*;\s*(?<eq>[^;]+)/
+          }
         ]
       }
     }
@@ -581,15 +638,72 @@ export const SKILL_BUCKETS = {
         variations: [
           { key: 'zero_rule', name: { sv: 'Noll-regeln', en: 'Zero rule' }, desc: { sv: 'x^0 = 1', en: 'x^0 = 1' } },
           { key: 'power_of_one', name: { sv: 'Upphöjt till 1', en: 'Power of one' }, desc: { sv: 'x^1 = x', en: 'x^1 = x' } },
-          { key: 'foundations_calc', name: { sv: 'Beräkna potenser', en: 'Calc powers' }, desc: { sv: 'Bas * Bas...', en: 'Base * Base...' } },
+          { 
+            key: 'foundations_calc', 
+            name: { sv: 'Beräkna potenser', en: 'Calc powers' }, 
+            desc: { sv: 'Beräkna värdet av en potens med heltalsbas', en: 'Calculate the value of a whole number power' },
+            tags: ['word_problem_ready'],
+            contextType: 'exp_foundations_calc',
+            extractorPattern: /^(?<base>\d+)\s*;\s*(?<exp>\d+)\s*;\s*(?<ans>\d+)/
+          },
           { key: 'foundations_spot_the_lie', name: { sv: 'Hitta felet: Bas/Exp', en: 'Find error: Base/Exp' }, desc: { sv: 'Vanliga misstag', en: 'Common mistakes' } },
-          { key: 'ten_positive_exponent', name: { sv: 'Tiopotenser (Pos)', en: 'Powers of ten (Pos)' }, desc: { sv: 'Stora tal', en: 'Large numbers' } },
-          { key: 'ten_negative_exponent', name: { sv: 'Tiopotenser (Neg)', en: 'Powers of ten (Neg)' }, desc: { sv: 'Små tal', en: 'Small numbers' } },
-          { key: 'ten_inverse_counting', name: { sv: 'Räkna nollor', en: 'Count zeros' }, desc: { sv: 'Skriv som 10^n', en: 'Write as 10^n' } },
-          { key: 'scientific_to_form', name: { sv: 'Till Grundpotensform', en: 'To Scientific Notation' }, desc: { sv: 'a * 10^n', en: 'a * 10^n' } },
-          { key: 'scientific_missing_mantissa', name: { sv: 'Hitta mantissan', en: 'Find mantissa' }, desc: { sv: 'Talet mellan 1-10', en: 'Number between 1-10' } },
-          { key: 'root_calc', name: { sv: 'Kvadratrötter', en: 'Square roots' }, desc: { sv: 'Roten ur x', en: 'Square root of x' } },
-          { key: 'root_inverse_algebra', name: { sv: 'Ekvation x^2', en: 'Equation x^2' }, desc: { sv: 'Lös ut x', en: 'Solve for x' } },
+          { 
+            key: 'ten_positive_exponent', 
+            name: { sv: 'Tiopotenser (Pos)', en: 'Powers of ten (Pos)' }, 
+            desc: { sv: 'Skriv en positiv tiopotens som ett heltal', en: 'Write a positive power of ten as an integer' },
+            tags: ['word_problem_ready'],
+            contextType: 'exp_ten_positive',
+            extractorPattern: /^(?<exp>\d+)\s*;\s*(?<ans>\d+)/
+          },
+          { 
+            key: 'ten_negative_exponent', 
+            name: { sv: 'Tiopotenser (Neg)', en: 'Powers of ten (Neg)' }, 
+            desc: { sv: 'Omvandla en negativ tiopotens till ett decimaltal', en: 'Convert a negative power of ten to a decimal' },
+            tags: ['word_problem_ready'],
+            contextType: 'exp_ten_negative',
+            extractorPattern: /^(?<exp>\d+)\s*;\s*(?<ans>[\d.]+)/
+          },
+          { 
+            key: 'ten_inverse_counting', 
+            name: { sv: 'Räkna nollor', en: 'Count zeros' }, 
+            desc: { sv: 'Skriv ett tal som en tiopotens genom att räkna nollor', en: 'Write a number as a power of ten by counting zeros' },
+            tags: ['word_problem_ready'],
+            contextType: 'exp_ten_inverse',
+            extractorPattern: /^(?<num>\d+)\s*;\s*(?<zeros>\d+)/
+          },
+          { 
+            key: 'scientific_to_form', 
+            name: { sv: 'Till Grundpotensform', en: 'To Scientific Notation' }, 
+            desc: { sv: 'Skriv om stora tal i grundpotensform', en: 'Rewrite large numbers in scientific notation' },
+            tags: ['word_problem_ready'],
+            contextType: 'exp_scientific_to_form',
+            extractorPattern: /^(?<number>[\d.]+)\s*;\s*(?<mantissa>[\d.]+)\s*;\s*(?<exponent>\d+)/
+          },
+          { 
+            key: 'scientific_missing_mantissa', 
+            name: { sv: 'Hitta mantissan', en: 'Find mantissa' }, 
+            desc: { sv: 'Bestäm saknat värde a i a * 10^n', en: 'Determine missing value a in a * 10^n' },
+            tags: ['word_problem_ready'],
+            contextType: 'exp_scientific_missing',
+            extractorPattern: /^(?<number>[\d.]+)\s*;\s*(?<exponent>\d+)\s*;\s*(?<mantissa>[\d.]+)/
+          },
+          { key: 'scientific_missing_exponent', name: { sv: 'Hitta exponenten', en: 'Find exponent' }, desc: { sv: 'Bestäm n i a * 10^n', en: 'Determine n in a * 10^n' } },
+          { 
+            key: 'root_calc', 
+            name: { sv: 'Kvadratrötter', en: 'Square roots' }, 
+            desc: { sv: 'Beräkna det positiva talet som multiplicerat med sig självt blir x', en: 'Calculate the positive square root of a number' },
+            tags: ['word_problem_ready'],
+            contextType: 'exp_root_calc',
+            extractorPattern: /^(?<square>\d+)\s*;\s*(?<base>\d+)/
+          },
+          { 
+            key: 'root_inverse_algebra', 
+            name: { sv: 'Ekvation x^2', en: 'Equation x^2' }, 
+            desc: { sv: 'Lös andragradsekvationer på formen x^2 = a', en: 'Solve basic quadratic equations of form x^2 = a' },
+            tags: ['word_problem_ready'],
+            contextType: 'exp_root_inverse',
+            extractorPattern: /^(?<square>\d+)\s*;\s*(?<base>\d+)/
+          },
           { key: 'law_multiplication', name: { sv: 'Lag: Multiplikation', en: 'Law: Multiplication' }, desc: { sv: 'Addera exponenter', en: 'Add exponents' } },
           { key: 'law_division', name: { sv: 'Lag: Division', en: 'Law: Division' }, desc: { sv: 'Subtrahera exponenter', en: 'Subtract exponents' } },
           { key: 'law_mult_div_combined', name: { sv: 'Lag: Mult & Div', en: 'Law: Mult & Div' }, desc: { sv: 'Blandade regler', en: 'Mixed rules' } },
@@ -770,13 +884,34 @@ export const SKILL_BUCKETS = {
           { key: 'square_calc', name: { sv: 'Kvadrat', en: 'Square' }, desc: { sv: 'Tal i kvadrat', en: 'Number squared' } },
           { key: 'missing_square', name: { sv: 'Invers kvadrat', en: 'Inverse square' }, desc: { sv: 'x^2 = a', en: 'x^2 = a' } },
           { key: 'sqrt_estimation', name: { sv: 'Uppskatta rot', en: 'Estimate root' }, desc: { sv: 'Ja/Nej frågor', en: 'Yes/No questions' } },
-          { key: 'hyp_visual', name: { sv: 'Hitta Hypotenusan', en: 'Find Hypotenuse' }, desc: { sv: 'a^2 + b^2 = c^2', en: 'a^2 + b^2 = c^2' } },
           { key: 'hyp_equation', name: { sv: 'Ekvation: Hypotenusa', en: 'Equation: Hypotenuse' }, desc: { sv: 'Rätt uppställning', en: 'Correct setup' } },
-          { key: 'leg_visual', name: { sv: 'Hitta Kateten', en: 'Find Leg' }, desc: { sv: 'c^2 - a^2 = b^2', en: 'c^2 - a^2 = b^2' } },
           { key: 'leg_concept', name: { sv: 'Koncept: Katet', en: 'Concept: Leg' }, desc: { sv: 'Subtraktion krävs', en: 'Subtraction required' } },
           { key: 'app_ladder', name: { sv: 'Problem: Stegen', en: 'Problem: The Ladder' }, desc: { sv: 'Lutande stege', en: 'Leaning ladder' } },
-          { key: 'app_diagonal', name: { sv: 'Problem: Diagonal', en: 'Problem: Diagonal' }, desc: { sv: 'Rektangelns diagonal', en: 'Rectangle diagonal' } },
-          { key: 'conv_check', name: { sv: 'Rätvinklig?', en: 'Right-angled?' }, desc: { sv: 'Kontrollera satsen', en: 'Check the theorem' } }
+          { key: 'conv_check', name: { sv: 'Rätvinklig?', en: 'Right-angled?' }, desc: { sv: 'Kontrollera satsen', en: 'Check the theorem' } },
+          { 
+            key: 'hyp_visual', 
+            name: { sv: 'Beräkna hypotenusa', en: 'Calculate hypotenuse' }, 
+            desc: { sv: 'Sök den längsta sidan utifrån kateterna', en: 'Find longest side given the two legs' },
+            tags: ['word_problem_ready'],
+            contextType: 'pyth_hypotenuse',
+            extractorPattern: /^(?<a>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)/
+          },
+          { 
+            key: 'leg_visual', 
+            name: { sv: 'Beräkna katet', en: 'Calculate leg' }, 
+            desc: { sv: 'Hitta en kort sida med subtraktion', en: 'Find a shorter side using subtraction' },
+            tags: ['word_problem_ready'],
+            contextType: 'pyth_leg',
+            extractorPattern: /^(?<a>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)/
+          },
+          { 
+            key: 'app_diagonal', 
+            name: { sv: 'Rektangelns diagonal', en: 'Rectangle diagonal' }, 
+            desc: { sv: 'Räkna ut sträckan tvärs över en rektangel', en: 'Calculate path across a rectangle' },
+            tags: ['word_problem_ready'],
+            contextType: 'pyth_diagonal',
+            extractorPattern: /^(?<a>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)/
+          }
         ]
       },
       similarity: {
@@ -837,19 +972,7 @@ export const SKILL_BUCKETS = {
         name: { sv: 'Skala', en: 'Scale' },
         variations: [
           { key: 'concept_lie', name: { sv: 'Hitta felet: Skala', en: 'Find error: Scale' }, desc: { sv: 'Analysera påstående', en: 'Analyze statement' } },
-          {
-            key: "calc_real",
-            name: { sv: "Beräkna verklighet: Längd", en: "Calculate Reality: Length" },
-            desc: { sv: "Använd skalan 1:X och ritningens mått för att beräkna den verkliga längden", en: "Use scale 1:X and drawing measurements to calculate the actual length" },
-            tags: ["word_problem_ready"],
-            contextType: "scale_calc_real",
-            extractorPattern: /1:(?<scale>\d+)[\s\S]*sträcka\s*(?<imgCm>\d+)\s*cm/i
-          },
-          { key: 'calc_image', name: { sv: 'Beräkna bild', en: 'Calculate image' }, desc: { sv: 'Verklighet till bild', en: 'Reality to image' } },
           { key: 'find_scale', name: { sv: 'Bestäm skalan', en: 'Determine scale' }, desc: { sv: '1:X form', en: '1:X form' } },
-          { key: 'map_real', name: { sv: 'Karta till verklighet', en: 'Map to reality' }, desc: { sv: 'Använd kartskala', en: 'Use map scale' } },
-          { key: 'blueprint_draw', name: { sv: 'Ritning: Beräkna cm', en: 'Blueprint: Calc cm' }, desc: { sv: 'Skala 1:50', en: 'Scale 1:50' } },
-          { key: 'microscope_calc', name: { sv: 'Förstoring (Mikroskop)', en: 'Magnification (Micro)' }, desc: { sv: 'X:1 form', en: 'X:1 form' } },
           { key: 'area_concept', name: { sv: 'Areaskala: Koncept', en: 'Area scale: Concept' }, desc: { sv: 'Längdskala i kvadrat', en: 'Length scale squared' } },
           {
             key: "area_calc_large",
@@ -857,7 +980,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Använd längdskalan i kvadrat för att beräkna den verkliga arean", en: "Use the length scale squared to calculate the actual area" },
             tags: ["word_problem_ready"],
             contextType: "scale_area_forward",
-            extractorPattern: /1:(?<scale>\d+)[\s\S]*arean\s*(?<smallA>\d+)\s*cm²/i
+            // 🟢 FIXED: Matches the emitted semicolon structure: scale ; smallA ; largeA
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<smallA>\d+)\s*;\s*(?<largeA>\d+)/
           },
           {
             key: "area_reverse",
@@ -865,7 +989,49 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Beräkna längdskalan genom att dra kvadratroten ur areaskalan", en: "Calculate the length scale by taking the square root of the area scale" },
             tags: ["word_problem_ready"],
             contextType: "scale_area_reverse",
-            extractorPattern: /arean\s*(?<smallA>\d+)\s*cm²[\s\S]*arean\s*(?<largeA>\d+)\s*cm²/i
+            // 🟢 FIXED: Matches the emitted semicolon structure: smallA ; largeA ; scale
+            extractorPattern: /^(?<smallA>\d+)\s*;\s*(?<largeA>\d+)\s*;\s*(?<scale>\d+)/
+          },
+          { 
+            key: 'calc_real', 
+            name: { sv: 'Beräkna verklighet', en: 'Calculate reality' },
+            desc: { sv: 'Hitta det verkliga måttet', en: 'Find the real measure' },
+            tags: ['word_problem_ready'],
+            contextType: 'scale_calc_real',
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<imgCm>\d+)\s*;\s*(?<ans>\d+)/
+          },
+          { 
+            key: 'calc_image', 
+            name: { sv: 'Beräkna ritning', en: 'Calculate drawing' },
+            desc: { sv: 'Hitta måttet på bilden', en: 'Find the image measure' },
+            tags: ['word_problem_ready'],
+            contextType: 'scale_linear_image',
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<realCm>\d+)\s*;\s*(?<imgCm>\d+)/
+          },
+          { 
+            key: 'map_real', 
+            name: { sv: 'Karta: Verklighet', en: 'Map: Reality' },
+            desc: { sv: 'Beräkna avstånd från karta', en: 'Calculate distance from map' },
+            tags: ['word_problem_ready'],
+            contextType: 'scale_map_real',
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<mapCm>\d+)\s*;\s*(?<ans>[\d.]+)/
+          },
+          { 
+            key: 'blueprint_draw', 
+            name: { sv: 'Ritning: Skala', en: 'Blueprint: Scale' },
+            desc: { sv: 'Räkna ut längd på ritning', en: 'Calculate length on drawing' },
+            tags: ['word_problem_ready'],
+            contextType: 'scale_blueprint_draw',
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<realM>\d+)\s*;\s*(?<ans>\d+)/
+          },
+          { 
+            key: 'microscope_calc', 
+            name: { sv: 'Förstoring (Mikroskop)', en: 'Magnification (Micro)' }, 
+            desc: { sv: 'X:1 form', en: 'X:1 form' },
+            // 🟢 FIXED: Instrument microscope calculations for interception
+            tags: ['word_problem_ready'],
+            contextType: 'scale_microscope_calc',
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<realMm>[\d.]+)\s*;\s*(?<ansMm>[\d.]+)/
           }
         ]
       },
@@ -945,17 +1111,67 @@ export const SKILL_BUCKETS = {
       statistics: {
         name: { sv: 'Statistik', en: 'Statistics' },
         variations: [
-          { key: 'find_mode', name: { sv: 'Typvärde', en: 'Mode' }, desc: { sv: 'Vanligaste värdet', en: 'Most common value' } },
-          { key: 'find_range', name: { sv: 'Variationsbredd', en: 'Range' }, desc: { sv: 'Max - Min', en: 'Max - Min' } },
           { key: 'find_min_max', name: { sv: 'Minsta/Största tal', en: 'Min/Max number' }, desc: { sv: 'Hitta extrempunkter', en: 'Find extremes' } },
-          { key: 'calc_mean', name: { sv: 'Medelvärde', en: 'Mean' }, desc: { sv: 'Beräkna genomsnitt', en: 'Calculate average' } },
           { key: 'mean_concept_balance', name: { sv: 'Medel: Koncept', en: 'Mean: Concept' }, desc: { sv: 'Effekt av nytt tal', en: 'Effect of new value' } },
-          { key: 'median_odd', name: { sv: 'Median', en: 'Median' }, desc: { sv: 'Talet i mitten', en: 'Middle number' } },
-          { key: 'reverse_mean_calc', name: { sv: 'Hitta saknat tal', en: 'Find missing number' }, desc: { sv: 'Givet medelvärde', en: 'Given mean' } },
-          { key: 'freq_count', name: { sv: 'Tabell: Totalt antal', en: 'Table: Total count' }, desc: { sv: 'Summera frekvens', en: 'Sum frequency' } },
-          { key: 'freq_mode', name: { sv: 'Tabell: Typvärde', en: 'Table: Mode' }, desc: { sv: 'Högst frekvens', en: 'Highest frequency' } },
           { key: 'real_measure_choice', name: { sv: 'Välj Lägesmått', en: 'Choose measure' }, desc: { sv: 'Medel vs Median', en: 'Mean vs Median' } },
-          { key: 'real_weighted_missing', name: { sv: 'Viktat medelvärde', en: 'Weighted average' }, desc: { sv: 'Sammansatt snitt', en: 'Composite average' } }
+          { key: 'real_weighted_missing', name: { sv: 'Viktat medelvärde', en: 'Weighted average' }, desc: { sv: 'Sammansatt snitt', en: 'Composite average' } },
+          // Inside skillBuckets.js -> data -> topics -> statistics -> variations
+          { 
+            key: 'find_mode', 
+            name: { sv: 'Typvärde', en: 'Mode' }, 
+            desc: { sv: 'Hitta det vanligaste värdet i listan', en: 'Find the most frequent list value' },
+            tags: ['word_problem_ready'],
+            contextType: 'stats_find_mode',
+            extractorPattern: /^(?<list>[^;]+)\s*;\s*(?<ans>\d+)/
+          },
+          { 
+            key: 'find_range', 
+            name: { sv: 'Variationsbredd', en: 'Range' }, 
+            desc: { sv: 'Beräkna skillnaden mellan max och min', en: 'Calculate difference between max and min' },
+            tags: ['word_problem_ready'],
+            contextType: 'stats_find_range',
+            extractorPattern: /^(?<list>[^;]+)\s*;\s*(?<max>\d+)\s*;\s*(?<min>\d+)\s*;\s*(?<ans>\d+)/
+          },
+          { 
+            key: 'calc_mean', 
+            name: { sv: 'Medelvärde', en: 'Mean' }, 
+            desc: { sv: 'Räkna ut det genomsnittliga värdet', en: 'Calculate the average value' },
+            tags: ['word_problem_ready'],
+            contextType: 'stats_calc_mean',
+            extractorPattern: /^(?<list>[^;]+)\s*;\s*(?<sum>\d+)\s*;\s*(?<count>\d+)\s*;\s*(?<ans>[\d.]+)/
+          },
+          { 
+            key: 'median_odd', 
+            name: { sv: 'Median', en: 'Median' }, 
+            desc: { sv: 'Sortera listan och finn talet i mitten', en: 'Sort the list and find the middle number' },
+            tags: ['word_problem_ready'],
+            contextType: 'stats_median_odd',
+            extractorPattern: /^(?<list>[^;]+)\s*;\s*(?<ans>\d+)/
+          },
+          { 
+            key: 'reverse_mean_calc', 
+            name: { sv: 'Hitta saknat tal', en: 'Find missing number' }, 
+            desc: { sv: 'Räkna ut saknat värde utifrån medelvärdet', en: 'Calculate a missing value given the mean' },
+            tags: ['word_problem_ready'],
+            contextType: 'stats_reverse_mean',
+            extractorPattern: /^(?<mean>\d+)\s*;\s*(?<knownList>[^;]+)\s*;\s*(?<ans>\d+)/
+          },
+          { 
+            key: 'freq_count', 
+            name: { sv: 'Tabell: Totalt antal', en: 'Table: Total count' }, 
+            desc: { sv: 'Summera alla frekvenser i tabellen', en: 'Sum all frequencies in the table' },
+            tags: ['word_problem_ready'],
+            contextType: 'stats_freq_count',
+            extractorPattern: /^(?<totalCount>\d+)/
+          },
+          { 
+            key: 'freq_mode', 
+            name: { sv: 'Tabell: Typvärde', en: 'Table: Mode' }, 
+            desc: { sv: 'Hitta värdet med högst frekvens', en: 'Find the value with the highest frequency' },
+            tags: ['word_problem_ready'],
+            contextType: 'stats_freq_mode',
+            extractorPattern: /^(?<mode>\d+)/
+          }
         ]
       },
       probability: {
