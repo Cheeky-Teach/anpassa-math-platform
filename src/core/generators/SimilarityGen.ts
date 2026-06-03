@@ -168,7 +168,7 @@ export class SimilarityGen {
                     geometry: { type: 'similarity_compare', shapeType, left: { labels: labelsL }, right: { labels: labelsR } },
                     description: lang === 'sv' ? `Beräkna den saknade sidan x i de likformiga figurerna.` : `Calculate the missing side x in the similar shapes.`,
                     // 🟢 Interceptor channel: simple primitive string pass
-                    interceptorToken: `${s1} ; ${s2} ; ${k}`,
+                    interceptorToken: `${s1} ; ${s2} ; ${bigS1} ; ${bigS2} ; ${k}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(k.toString()), variationKey: v, type: 'calculate',
@@ -240,7 +240,7 @@ export class SimilarityGen {
                 geometry: { type: 'transversal', labels },
                 description: lang === 'sv' ? "Beräkna längden på basen x med hjälp av likformighet." : "Calculate the length of base x using similarity.",
                 // 🟢 FIXED: References existing local primitives explicitly to completely avoid editor warnings
-                interceptorToken: `${top} ; ${extra} ; ${smallBase}`,
+                interceptorToken: `${top} ; ${extra} ; ${smallBase} ; ${totSide} ; ${bigBase} ; ${k}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(bigBase.toString()), variationKey: v, type: 'calculate',

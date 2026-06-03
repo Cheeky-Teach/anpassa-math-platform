@@ -6,7 +6,8 @@ export default function WordProblemVisualGuard({
     children, 
     lang = 'sv', 
     questionKey,
-    allowReveal = true 
+    allowReveal = true,
+    alwaysShow = false // 🟢 Accepted failsafe structural prop
 }) {
     const [reveal, setReveal] = useState(false);
 
@@ -14,8 +15,37 @@ export default function WordProblemVisualGuard({
         setReveal(false);
     }, [questionKey]);
 
+    // 🟢 UI-LEVEL NEVER-HIDE REGISTRY RULE
+    const ALWAYS_SHOW_VISUAL_KEYS = [
+        'intercept_id',
+        'slope_pos_int',
+        'slope_pos_frac',
+        'slope_neg_int',
+        'slope_neg_frac',
+        'eq_standard',
+        'eq_no_m',
+        'eq_horizontal',
+        'freq_count',
+        'freq_mode'
+    ];
+
+    const shouldBypassGuard = alwaysShow || ALWAYS_SHOW_VISUAL_KEYS.includes(questionKey);
+
+    // If the tool is completely turned off, return the default flex container
     if (!isActive) {
         return <div className="w-full h-full flex items-center justify-center">{children}</div>;
+    }
+
+    // 🟢 FIXED: If this question is a structural dependency, return the EXACT same absolute container layout 
+    // structure as the revealed view state. This prevents canvas grids from collapsing to 0px height!
+    if (shouldBypassGuard) {
+        return (
+            <div className="w-full h-full absolute inset-0 select-none overflow-hidden rounded-[2rem]">
+                <div className="w-full h-full flex items-center justify-center p-4 transition-all duration-700 blur-none scale-100 opacity-100">
+                    {children}
+                </div>
+            </div>
+        );
     }
 
     return (

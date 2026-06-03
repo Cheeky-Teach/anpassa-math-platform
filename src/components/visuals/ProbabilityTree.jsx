@@ -25,15 +25,15 @@ const ProbabilityTree = ({ data }) => {
                     height="28" 
                     fill="white" 
                     stroke={isT ? "#6366f1" : "#e2e8f0"} 
-                    strokeWidth={isT ? "2" : "1"} 
+                    strokeWidth={isT ? "4" : "1"} 
                     rx="4" 
                 />
                 <text 
                     x={mx} 
                     y={my + 5} 
                     textAnchor="middle" 
-                    fontSize="12" 
-                    fontWeight="800"
+                    fontSize="14" 
+                    fontWeight="900"
                     className={`${isT ? 'fill-indigo-600 animate-pulse' : 'fill-slate-600'}`}
                 >
                     {isT ? 'x' : `${num}/${den}`}

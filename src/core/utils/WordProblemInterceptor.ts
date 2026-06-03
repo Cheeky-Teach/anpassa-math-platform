@@ -127,11 +127,44 @@ export class WordProblemInterceptor {
             questionData.variationKey === 'vol_pyramid_std' ||
             questionData.variationKey === 'vol_cone_std' ||
             questionData.variationKey === 'vol_sphere_std' ||
-            questionData.variationKey === 'sim_calc_big' ||      // 🟢 Grounded similarity bypass targets
+            questionData.variationKey === 'sim_calc_big' ||      // Grounded similarity bypass targets
             questionData.variationKey === 'sim_calc_small' ||
             questionData.variationKey === 'sim_find_k' ||
             questionData.variationKey === 'transversal_total' ||
-            questionData.variationKey === 'transversal_extension'
+            questionData.variationKey === 'transversal_extension' ||
+            questionData.variationKey === 'calc_real' ||      // Scale
+            questionData.variationKey === 'calc_image' ||
+            questionData.variationKey === 'map_real' ||
+            questionData.variationKey === 'blueprint_draw' ||
+            questionData.variationKey === 'area_reverse' ||    
+            questionData.variationKey === 'area_calc_large' ||
+            questionData.variationKey === 'microscope_calc' ||
+            questionData.variationKey === 'find_mode' ||       //statistics
+            questionData.variationKey === 'find_range' ||
+            questionData.variationKey === 'calc_mean' ||
+            questionData.variationKey === 'median_odd' ||
+            questionData.variationKey === 'reverse_mean_calc' ||
+            questionData.variationKey === 'freq_count' ||
+            questionData.variationKey === 'freq_mode' ||
+            questionData.variationKey === 'foundations_calc' ||   
+            questionData.variationKey === 'ten_positive_exponent' ||  //exponents
+            questionData.variationKey === 'ten_negative_exponent' ||
+            questionData.variationKey === 'ten_inverse_counting' ||
+            questionData.variationKey === 'scientific_to_form' ||
+            questionData.variationKey === 'scientific_missing_mantissa' ||
+            questionData.variationKey === 'root_calc' ||
+            questionData.variationKey === 'root_inverse_algebra' ||
+            questionData.variationKey === 'intercept_id' ||     // linear graph gen
+            questionData.variationKey === 'slope_pos_int' ||
+            questionData.variationKey === 'slope_pos_frac' ||
+            questionData.variationKey === 'slope_neg_int' ||
+            questionData.variationKey === 'slope_neg_frac' ||
+            questionData.variationKey === 'eq_standard' ||
+            questionData.variationKey === 'eq_no_m' ||
+            questionData.variationKey === 'eq_horizontal' ||
+            questionData.variationKey === 'hyp_visual' ||       //pythagoras
+            questionData.variationKey === 'leg_visual' ||
+            questionData.variationKey === 'app_diagonal'
             ) {
             // BYPASS PASS: These contain natural narrative questions natively.
             // Do not append any generic trailing math-class suffixes.

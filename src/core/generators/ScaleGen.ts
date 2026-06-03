@@ -166,6 +166,7 @@ export class ScaleGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `På ${scenario.sv} i skala 1:${scale} är en sträcka ${imgCm} cm. Hur lång är den i verkligheten?` : `On ${scenario.en} in scale 1:${scale}, a segment is ${imgCm} cm. How long is it in reality?`,
+                    interceptorToken: `${scale} ; ${imgCm} ; ${ans}`,
                     answerType: 'numeric', suffix: 'cm'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -186,6 +187,7 @@ export class ScaleGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `En vägg är ${realCm} cm i verkligheten. Hur lång blir den på ${scenario.sv} i skala 1:${scale}?` : `A wall is ${realCm} cm in reality. How long will it be on ${scenario.en} in scale 1:${scale}?`,
+                    interceptorToken: `${scale} ; ${realCm} ; ${imgCm}`,
                     answerType: 'numeric', suffix: 'cm'
                 },
                 token: this.toBase64(imgCm.toString()), variationKey: v, type: 'calculate',
@@ -205,6 +207,7 @@ export class ScaleGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `I ${scenario.sv} är ett föremål ${real} mm, men på bilden är det ${img} mm. Vilken skala har bilden?` : `In ${scenario.en} an object is ${real} mm, but in the image it is ${img} mm. What scale does the image have?`,
+                interceptorToken: `${real} ; ${img} ; ${scale}`,
                 answerType: 'text', placeholder: '1:X'
             },
             token: this.toBase64(`1:${scale}`), variationKey: v, type: 'calculate',
@@ -240,7 +243,8 @@ export class ScaleGen {
                     description: lang === 'sv' 
                         ? `På ${scenario.sv} i skala 1:${this.formatNum(scale)} är ${scenario.contextSv} ${mapCm} cm. Hur långt är detta i verkligheten? Svara i ${useKm ? 'kilometer' : 'meter'}.`
                         : `On ${scenario.en} in scale 1:${this.formatNum(scale)}, ${scenario.contextEn} is ${mapCm} cm. How long is this in reality? Answer in ${useKm ? 'kilometers' : 'meters'}.`,
-                    answerType: 'numeric', suffix: unit
+                        interceptorToken: `${scale} ; ${mapCm} ; ${ans}`,
+                        answerType: 'numeric', suffix: unit
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
@@ -263,6 +267,7 @@ export class ScaleGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `${scenario.sv.charAt(0).toUpperCase() + scenario.sv.slice(1)} är ritad i skala 1:${scale}. I verkligheten är ${scenario.contextSv} ${realM} meter. Hur lång blir den på ritningen? Svara i cm.` : `${scenario.en.charAt(0).toUpperCase() + scenario.en.slice(1)} is drawn in scale 1:${scale}. In reality, ${scenario.contextEn} is ${realM} meters. How long will it be on the drawing? Answer in cm.`,
+                    interceptorToken: `${scale} ; ${realM} ; ${ans}`,
                     answerType: 'numeric', suffix: 'cm'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -283,6 +288,7 @@ export class ScaleGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `I ${scenario.sv} (skala ${scale}:1) är ${scenario.contextSv} ${realMm.toString().replace('.', ',')} mm. Hur lång är den på bilden?` : `In ${scenario.en} (scale ${scale}:1), the ${scenario.contextEn} is ${realMm} mm. How long is it in the image?`,
+                interceptorToken: `${scale} ; ${realMm} ; ${ansMm}`,
                 answerType: 'numeric', suffix: 'mm'
             },
             token: this.toBase64(ansMm.toString()), variationKey: v, type: 'calculate',
@@ -344,6 +350,7 @@ export class ScaleGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `En liten figur har arean ${smallA} cm². En förstoring av samma figur har arean ${largeA} cm². Vilken är längdskalan?` : `A small figure has an area of ${smallA} cm². An enlargement of the same figure has an area of ${largeA} cm². What is the length scale?`,
+                    interceptorToken: `${smallA} ; ${largeA} ; ${L}`,
                     answerType: 'text', placeholder: '1:X'
                 },
                 token: this.toBase64(`1:${L}`), variationKey: v, type: 'calculate',
@@ -360,6 +367,7 @@ export class ScaleGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `Längdskalan är 1:${L}. En rektangel har arean ${smallA} cm² på bilden. Hur stor är dess verkliga area?` : `The length scale is 1:${L}. A rectangle has an area of ${smallA} cm² in the image. How large is its real area?`,
+                    interceptorToken: `${L} ; ${smallA} ; ${largeA}`,
                     answerType: 'numeric', suffix: 'cm²'
                 },
                 token: this.toBase64(largeA.toString()), variationKey: v, type: 'calculate',

@@ -22,35 +22,35 @@ export class ExponentsGen {
      * Targeted Generation for Question Studio
      * Maps ALL keys from skillBuckets.js to preserve Studio compatibility.
      */
-    public generateByVariation(key: string, lang: string = 'sv'): any {
+    public generateByVariation(key: string, lang: string = 'sv', options: any = {}): any {
         switch (key) {
             case 'zero_rule':
             case 'power_of_one':
             case 'foundations_calc':
             case 'foundations_spot_the_lie':
-                return this.level1_Foundations(lang, key);
+                return this.level1_Foundations(lang, key, options);
             case 'ten_positive_exponent':
             case 'ten_negative_exponent':
             case 'ten_inverse_counting':
-                return this.level2_PowersOfTen(lang, key);
+                return this.level2_PowersOfTen(lang, key, options);
             case 'scientific_to_form':
             case 'scientific_missing_mantissa':
             case 'scientific_missing_exponent':
-                return this.level3_ScientificNotation(lang, key);
+                return this.level3_ScientificNotation(lang, key, options);
             case 'root_calc':
             case 'root_inverse_algebra':
-                return this.level4_SquareRoots(lang, key);
+                return this.level4_SquareRoots(lang, key, options);
             case 'law_multiplication':
             case 'law_division':
             case 'law_addition_trap':
             case 'law_mult_div_combined':
-                return this.level5_LawsBasic(lang, key);
+                return this.level5_LawsBasic(lang, key, options);
             case 'law_power_of_power':
             case 'law_inverse_algebra':
             case 'law_all_combined':
-                return this.level6_LawsAdvanced(lang, key);
+                return this.level6_LawsAdvanced(lang, key, options);
             default:
-                return this.generate(1, lang);
+                return this.generate(1, lang, options);
         }
     }
 
@@ -136,7 +136,11 @@ export class ExponentsGen {
         const base = MathUtils.randomInt(2, 10), exp = MathUtils.randomInt(2, 4);
         const ans = Math.pow(base, exp);
         return {
-            renderData: { description: lang === 'sv' ? "Beräkna potensen." : "Calculate the power.", latex: `${base}^{${exp}}`, answerType: 'numeric' },
+            renderData: { 
+                description: lang === 'sv' ? "Beräkna potensen." : "Calculate the power.", 
+                latex: `${base}^{${exp}}`, 
+                interceptorToken: `${base} ; ${exp} ; ${ans}`,
+                answerType: 'numeric' },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? `Steg 1: Identifiera basen (${base}) och exponenten (${exp}).` : `Step 1: Identify the base (${base}) and the exponent (${exp}).` },
@@ -160,7 +164,11 @@ export class ExponentsGen {
         if (v === 'ten_negative_exponent') {
             const ansStr = (1 / Math.pow(10, p)).toString();
             return {
-                renderData: { description: lang === 'sv' ? "Skriv som ett decimaltal." : "Write as a decimal number.", latex: `10^{-${p}}`, answerType: 'numeric' },
+                renderData: { 
+                    description: lang === 'sv' ? "Skriv som ett decimaltal." : "Write as a decimal number.", 
+                    latex: `10^{-${p}}`, 
+                    interceptorToken: `${p} ; ${ansStr}`,
+                    answerType: 'numeric' },
                 token: this.toBase64(ansStr), variationKey: v, type: 'calculate',
                 clues: [
                     { text: lang === 'sv' ? "Steg 1: En negativ exponent betyder att vi dividerar 1 med basen upphöjt till samma tal fast positivt." : "Step 1: A negative exponent means we divide 1 by the base raised to the same positive power.", latex: "10^{-n} = \\frac{1}{10^n}" },
@@ -176,7 +184,11 @@ export class ExponentsGen {
             const zeros = MathUtils.randomInt(2, 7);
             const num = "1" + "0".repeat(zeros);
             return {
-                renderData: { description: lang === 'sv' ? `Skriv ${num} som en tiopotens.` : `Write ${num} as a power of ten.`, latex: `10^{?} = ${num}`, answerType: 'structured_power' },
+                renderData: { 
+                    description: lang === 'sv' ? `Skriv ${num} som en tiopotens.` : `Write ${num} as a power of ten.`, 
+                    latex: `10^{?} = ${num}`, 
+                    interceptorToken: `${num} ; ${zeros}`,
+                    answerType: 'structured_power' },
                 token: this.toBase64(`10^${zeros}`), variationKey: v, type: 'calculate',
                 clues: [
                     { text: lang === 'sv' ? "Steg 1: En tiopotens med en etta följt av nollor har alltid basen 10." : "Step 1: A power of ten with a one followed by zeros always has a base of 10." },
@@ -212,7 +224,10 @@ export class ExponentsGen {
 
         if (v === 'scientific_to_form') {
             return {
-                renderData: { description: lang === 'sv' ? `Skriv ${number.toLocaleString(lang)} i grundpotensform.` : `Write ${number.toLocaleString(lang)} in scientific notation.`, answerType: 'structured_scientific' },
+                renderData: { 
+                    description: lang === 'sv' ? `Skriv ${number.toLocaleString(lang)} i grundpotensform.` : `Write ${number.toLocaleString(lang)} in scientific notation.`, 
+                    interceptorToken: `${number} ; ${mantissa} ; ${exponent}`,
+                    answerType: 'structured_scientific' },
                 token: this.toBase64(`${mantissa}*10^${exponent}`), variationKey: v, type: 'calculate',
                 clues: [
                     { text: lang === 'sv' ? "Steg 1: Grundpotensform skrivs alltid som ett tal mellan 1 och 10 multiplicerat med en tiopotens." : "Step 1: Scientific notation is always written as a number between 1 and 10 multiplied by a power of ten.", latex: "a · 10^n" },
@@ -224,7 +239,11 @@ export class ExponentsGen {
         }
 
         return {
-            renderData: { description: lang === 'sv' ? "Vilket värde på 'a' saknas?" : "Which value of 'a' is missing?", latex: `${number.toLocaleString(lang)} = a · 10^{${exponent}}`, answerType: 'numeric' },
+            renderData: { 
+                description: lang === 'sv' ? "Vilket värde på 'a' saknas?" : "Which value of 'a' is missing?", 
+                latex: `${number.toLocaleString(lang)} = a · 10^{${exponent}}`, 
+                interceptorToken: `${number} ; ${exponent} ; ${mantissa}`,
+                answerType: 'numeric' },
             token: this.toBase64(mantissa.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? "Steg 1: I uttrycket a · 10ⁿ är 'a' mantissan, vilket måste vara ett tal från 1 till (men mindre än) 10." : "Step 1: In the expression a · 10ⁿ, 'a' is the mantissa, which must be a number from 1 to (but less than) 10." },
@@ -243,7 +262,11 @@ export class ExponentsGen {
 
         if (v === 'root_inverse_algebra') {
             return {
-                renderData: { description: lang === 'sv' ? "Lös ekvationen (hitta x)." : "Solve the equation (find x).", latex: `x^2 = ${square}`, answerType: 'numeric' },
+                renderData: { 
+                    description: lang === 'sv' ? "Lös ekvationen (hitta x)." : "Solve the equation (find x).", 
+                    latex: `x^2 = ${square}`, 
+                    interceptorToken: `${square} ; ${base}`,
+                    answerType: 'numeric' },
                 token: this.toBase64(base.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { text: lang === 'sv' ? "Steg 1: Motsatsen till att upphöja något till 2 är att ta kvadratroten." : "Step 1: The opposite of squaring something is taking the square root." },
@@ -255,7 +278,11 @@ export class ExponentsGen {
         }
 
         return {
-            renderData: { description: lang === 'sv' ? "Beräkna kvadratroten." : "Calculate the square root.", latex: `\\sqrt{${square}}`, answerType: 'numeric' },
+            renderData: { 
+                description: lang === 'sv' ? "Beräkna kvadratroten." : "Calculate the square root.", 
+                latex: `\\sqrt{${square}}`, 
+                interceptorToken: `${square} ; ${base}`,
+                answerType: 'numeric' },
             token: this.toBase64(base.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? `Steg 1: Kvadratroten ur ${square} är det positiva tal som multiplicerat med sig självt blir ${square}.` : `Step 1: The square root of ${square} is the positive number that, when multiplied by itself, equals ${square}.` },
