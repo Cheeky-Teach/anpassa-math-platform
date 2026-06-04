@@ -141,77 +141,93 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     try {
         const generator = new GeneratorClass();
         let questionData;
-
-        // 3. GENERATION LOGIC
-        if (variation && typeof generator.generateByVariation === 'function') {
-            questionData = generator.generateByVariation(String(variation), String(lang));
-        } else {
-            const safeLevel = Number(level) || 1;
-            
-            const options = {
-                exclude: String(exclude).split(',').filter(Boolean),
-                hideConcept: hideConcept
-            };
-
-            if (typeof generator.generate === 'function') {
-                questionData = generator.generate(safeLevel, String(lang), options);
-            } else {
-                questionData = generator.generate(1, String(lang), options);
-            }
-        }
-        
-        // Word Problem Interceptor
         const activateWordProblem = (query.wordProblem === 'true' || body.wordProblem === true);
 
-        // FALLBACK: If the request did not supply an explicit variation parameter (like standard Practice mode),
-        // look into the generated math response to read the variation key resolved by the generator engine.
-        const activeVariation = variation || questionData?.variationKey;
+        // 1. 🟢 UNIVERSAL CAPABILITY DETECTION: Check if the topic has ANY word problems
+        let topicSupportsWordProblems = false;
+        const category = Object.values(SKILL_BUCKETS).find((cat: any) => cat.topics && cat.topics[String(rawTopic)]);
+        if (category) {
+            const topicObj = (category.topics as any)[String(rawTopic)];
+            if (topicObj && topicObj.variations) {
+                topicSupportsWordProblems = topicObj.variations.some((v: any) => v.tags?.includes('word_problem_ready'));
+            }
+        }
 
-        // CRITICAL FIX: Only execute this matching block if word problems are explicitly activated
-        // AND we have a valid variation identifier string to process!
-        if (activateWordProblem && activeVariation) {
-            let foundVariationConfig = null;
+        // 2. 🟢 SMART ROULETTE LOOP: Prevent "flickering" by forcing the generator to find a story if requested
+        let activeVariation;
+        let foundVariationConfig: any = null;
+        let attempts = 0;
 
-            // Deep search through SKILL_BUCKETS taxonomy to find our target metadata parameters
-            for (const catKey in SKILL_BUCKETS) {
-                const category = (SKILL_BUCKETS as any)[catKey];
-                
-                // Add defensive check for category layout properties
-                if (category && typeof category === 'object' && category.topics) {
-                    for (const topicKey in category.topics) {
-                        const topicObj = category.topics[topicKey];
-                        
-                        if (topicObj && topicObj.variations && Array.isArray(topicObj.variations)) {
-                            // Match against activeVariation instead of the empty variation variable
-                            const matchedVariant = topicObj.variations.find((v: any) => v && v.key === String(activeVariation));
-                            if (matchedVariant) {
-                                foundVariationConfig = matchedVariant;
-                                break;
+        do {
+            foundVariationConfig = null;
+
+            if (variation && typeof generator.generateByVariation === 'function') {
+                questionData = generator.generateByVariation(String(variation), String(lang));
+            } else {
+                const safeLevel = Number(level) || 1;
+                const options = {
+                    exclude: String(exclude).split(',').filter(Boolean),
+                    hideConcept: hideConcept
+                };
+                questionData = typeof generator.generate === 'function' 
+                    ? generator.generate(safeLevel, String(lang), options)
+                    : generator.generate(1, String(lang), options);
+            }
+
+            activeVariation = variation || questionData?.variationKey;
+
+            // Deep search through SKILL_BUCKETS taxonomy to find the target metadata parameters
+            if (activeVariation) {
+                for (const catKey in SKILL_BUCKETS) {
+                    const cat = (SKILL_BUCKETS as any)[catKey];
+                    if (cat && typeof cat === 'object' && cat.topics) {
+                        for (const topicKey in cat.topics) {
+                            const topicObj = cat.topics[topicKey];
+                            if (topicObj && topicObj.variations && Array.isArray(topicObj.variations)) {
+                                const matchedVariant = topicObj.variations.find((v: any) => v && v.key === String(activeVariation));
+                                if (matchedVariant) {
+                                    foundVariationConfig = matchedVariant;
+                                    break;
+                                }
                             }
                         }
                     }
+                    if (foundVariationConfig) break;
                 }
-                if (foundVariationConfig) break;
             }
 
-            // If a regex pattern configuration is assigned to this key, execute text transformation pass
-            if (foundVariationConfig) {
-                questionData = WordProblemInterceptor.process(questionData, foundVariationConfig, String(lang));
+            // Check if this specific random question supports word problems
+            const isEligible = foundVariationConfig?.tags?.includes('word_problem_ready');
+            
+            // If user wants a word problem but we rolled a standard math concept, spin again!
+            if (activateWordProblem && !isEligible && !variation) {
+                attempts++;
+                continue; 
+            } else {
+                break; // Valid variation found, or word problems are off
             }
-        }
-        // =================================================================
+
+        } while (attempts < 10);
         
-        // SECURITY: Payload Scrubbing
-        // Explicitly defining returned properties to ensure raw 'answer' is hidden.
+        // 3. TEXT TRANSFORMATION PASS
+        if (activateWordProblem && foundVariationConfig) {
+            questionData = WordProblemInterceptor.process(questionData, foundVariationConfig, String(lang));
+        }
+        
+        // 4. 🟢 FIXED: METADATA PASSTHROUGH (Payload Scrubbing)
         const scrubbedQuestion = {
             renderData: {
                 ...questionData.renderData,
-                // Ensure the metadata flag is cleanly attached directly onto the render data block
                 isWordProblemApplied: questionData.metadata?.isWordProblemApplied || false
             },
             token: questionData.token,
             clues: questionData.clues,
-            level: questionData.level || level
+            level: questionData.level || level,
+            metadata: {
+                ...(questionData.metadata || {}),
+                // Combines manual generator overrides with the universal topic unlock!
+                levelSupportsWordProblems: topicSupportsWordProblems || questionData.metadata?.levelSupportsWordProblems || false
+            }
         };
 
         res.status(200).json(scrubbedQuestion);

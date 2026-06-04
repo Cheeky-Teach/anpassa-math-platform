@@ -1,56 +1,84 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class BasicArithmeticGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
-        // Adaptive Level Jump: If Concepts are mastered, skip Concept-only early levels if applicable
-        // Arithmetic levels are usually progressive, so we filter variations internally.
+        let questionData: any;
+
+        // 🛑 Capture the level output inside a local variable instead of immediate returns
         switch (level) {
-            case 1: return this.level1_AddSimple(lang, undefined, options);
-            case 2: return this.level2_SubSimple(lang, undefined, options);
-            case 3: return this.level3_Decimals(lang, undefined, options);
-            case 4: return this.level4_MultEasy(lang, undefined, options);
-            case 5: return this.level5_MultMedium(lang, undefined, options);
-            case 6: return this.level6_MultHard(lang, undefined, options);
-            case 7: return this.level7_DivEasy(lang, undefined, options);
-            case 8: return this.level8_MixedIntegers(lang, options);
-            case 9: return this.level9_MixedDecimals(lang, options);
-            default: return this.level1_AddSimple(lang, undefined, options);
+            case 1: questionData = this.level1_AddSimple(lang, undefined, options); break;
+            case 2: questionData = this.level2_SubSimple(lang, undefined, options); break;
+            case 3: questionData = this.level3_Decimals(lang, undefined, options); break;
+            case 4: questionData = this.level4_MultEasy(lang, undefined, options); break;
+            case 5: questionData = this.level5_MultMedium(lang, undefined, options); break;
+            case 6: questionData = this.level6_MultHard(lang, undefined, options); break;
+            case 7: questionData = this.level7_DivEasy(lang, undefined, options); break;
+            case 8: questionData = this.level8_MixedIntegers(lang, options); break;
+            case 9: questionData = this.level9_MixedDecimals(lang, options); break;
+            default: questionData = this.level1_AddSimple(lang, undefined, options); break;
         }
+
+        // 🟢 FIX 1: Run the question data through the decorator for default fallback parameters
+        enrichQuestionMetadata(questionData);
+
+        // 🟢 FIX 2: Level-wide capability override for Practice Mode
+        // Levels 1, 2, 4, and 7 contain variations that support stories, so lock the level open!
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 4, 7];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
+        }
+
+        return questionData;
     }
 
     /**
      * Targeted Generation for Question Studio
      * Must match skillBuckets.js keys exactly.
      */
-    public generateByVariation(key: string, lang: string = 'sv'): any {
+    public generateByVariation(key: string, lang: string = 'sv', options: any = {}): any {
+        let questionData: any;
+
         switch (key) {
             case 'add_std_vertical':
             case 'add_std_horizontal':
             case 'add_missing_variable':
             case 'add_spot_the_lie':
-                return this.level1_AddSimple(lang, key);
+                questionData = this.level1_AddSimple(lang, key, options);
+                break;
             case 'sub_std_vertical':
             case 'sub_std_horizontal':
             case 'sub_missing_variable':
-                return this.level2_SubSimple(lang, key);
+                questionData = this.level2_SubSimple(lang, key, options);
+                break;
             case 'dec_add_vertical': 
             case 'dec_sub_vertical':
-                return this.level3_Decimals(lang, key);
+                questionData = this.level3_Decimals(lang, key, options);
+                break;
             case 'mult_table_std':
             case 'mult_commutative':
-                return this.level4_MultEasy(lang, key);
+                questionData = this.level4_MultEasy(lang, key, options);
+                break;
             case 'mult_2x1_vertical':
             case 'mult_distributive':
-                return this.level5_MultMedium(lang, key);
+                questionData = this.level5_MultMedium(lang, key, options);
+                break;
             case 'mult_decimal_std':
             case 'mult_decimal_placement':
-                return this.level6_MultHard(lang, key);
+                questionData = this.level6_MultHard(lang, key, options);
+                break;
             case 'div_basic_std':
             case 'div_inverse_logic':
-                return this.level7_DivEasy(lang, key);
+                questionData = this.level7_DivEasy(lang, key, options);
+                break;
             default:
-                return this.generate(1, lang);
+                questionData = this.generate(1, lang, options);
+                break;
         }
+
+        // Word Problem Decorator: Passes the built question through the universal decorator for interceptor toggle button in practice view
+        return enrichQuestionMetadata(questionData);
     }
 
     // --- PRIVATE UTILITIES ---

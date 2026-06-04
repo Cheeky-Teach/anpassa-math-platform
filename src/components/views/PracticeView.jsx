@@ -13,7 +13,7 @@ import HistoryList from '../practice/HistoryList';
 import LevelUpModal from '../modals/LevelUpModal';
 import { LEVEL_DESCRIPTIONS, CATEGORIES } from '../../constants/localization'; 
 import { FractionInput, ScientificInput, ExponentInput } from '../ui/InputComponents';
-import { ChevronLeft, Trophy, Zap, Clock, Info, CheckCircle2, XCircle, HelpCircle, MinusCircle, ChevronRight, BarChart3, ChevronDown } from 'lucide-react';
+import { ChevronLeft, Trophy, Zap, Clock, Info, CheckCircle2, XCircle, HelpCircle, MinusCircle, ChevronRight, BarChart3, ChevronDown, Lock } from 'lucide-react';
 import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 
 const PracticeView = ({ 
@@ -395,21 +395,50 @@ const PracticeView = ({
 
                 <aside className="w-full lg:w-64 shrink-0 flex flex-col gap-4">
     
-                    {/* 🟢 UNIFIED WORD PROBLEM COACHING BANNER (ABOVE CLUE PANEL) */}
-                    <div className="bg-teal-300 rounded-[1rem] p-4 shadow-lg border border-slate-100 flex-1 relative overflow-hidden mx-auto mb-4 px-3 animate-in fade-in duration-300">
-                                                {/* Prominent Multi-State Toggle Button */}
+                    {/* DYNAMIC WORD PROBLEM COACHING BANNER (REFACTORED FOR DECORATOR METADATA) */}
+                    <div className={`rounded-[2rem] p-4 shadow-lg border relative overflow-hidden transition-all duration-300 ${
+                        !question?.metadata?.levelSupportsWordProblems 
+                            ? 'bg-slate-50/60 border-slate-200/60 shadow-sm' 
+                            : 'bg-white border-slate-100 shadow-md'
+                    }`}>
+                        {/* Vertical Accent Theme Bars Added to match the layout aesthetic of the app */}
+                        <div className={`absolute top-0 left-0 w-1 h-full transition-colors ${
+                            !question?.metadata?.levelSupportsWordProblems 
+                                ? 'bg-slate-300' 
+                                : useWordProblems ? 'bg-emerald-500' : 'bg-indigo-500'
+                        }`}></div>
+
+                        {!question?.metadata?.levelSupportsWordProblems ? (
+                            /* 🔒 STATE 3: Unavailable / LOCKED at this level */
                             <button 
                                 type="button"
-                                onClick={() => setUseWordProblems(!useWordProblems)} 
-                                className={`w-full flex items-center justify-center gap-2 px-6 py-3 text-[12px] font-black uppercase tracking-widest rounded-[1rem] transition-all shadow-md active:scale-95 border-2 ${
-                                    useWordProblems 
-                                        ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/10' 
-                                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
-                                }`}
+                                disabled
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl border-2 bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-70"
                             >
-                                <HelpCircle size={18} fill={useWordProblems ? "rgba(255, 255, 255, 0.2)" : "none"}/> 
-                                {lang === 'sv' ? 'Aktivera Problemlösning' : 'Activate Word Problems'}
+                                <Lock size={14} className="text-slate-400" />
+                                {lang === 'sv' ? `Problemlösning på Nivå ${uiState.level} ej tillgänglig` : `Word problems not available on Lvl ${uiState.level}`}
                             </button>
+                        ) : useWordProblems ? (
+                            /* 🎯 STATE 1: Available & Active / ON */
+                            <button 
+                                type="button"
+                                onClick={() => setUseWordProblems(false)} 
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 border-2 bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20 animate-in fade-in zoom-in-95 duration-200"
+                            >
+                                <CheckCircle2 size={14} />
+                                {lang === 'sv' ? 'Problemlösning: På' : 'Word Problems: Active'}
+                            </button>
+                        ) : (
+                            /* 🔓 STATE 2: Available & Inactive / OFF */
+                            <button 
+                                type="button"
+                                onClick={() => setUseWordProblems(true)} 
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 border-2 bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50/50 hover:border-indigo-300 animate-in fade-in zoom-in-95 duration-200"
+                            >
+                                <HelpCircle size={14} />
+                                {lang === 'sv' ? 'Aktivera problemlösning' : 'Try Word Problems'}
+                            </button>
+                        )}
                     </div>
                     {/* ================================================================= */}
                     

@@ -239,26 +239,55 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white"><LayoutGrid size={20} /></div>
                         <h2 className="text-xl font-black uppercase italic tracking-tighter text-slate-900">{lang === 'sv' ? "Resultatsöversikt" : "Result overview"}</h2>
                     </div>
-                    <button onClick={onBack} className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-indigo-600 transition-all">Stäng</button>
+                    <button onClick={onBack} className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-indigo-600 transition-all cursor-pointer">Stäng</button>
                 </header>
                 <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {packet.map((item, idx) => (
-                        <div key={item.id} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-xl flex flex-col ${completed[idx] === 'correct' ? 'border-emerald-500 shadow-emerald-50/50' : 'border-rose-400 shadow-rose-50/50'}`}>
-                            <div className="flex justify-between items-center mb-6">
-                                <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">{lang === 'sv' ? "Uppgift" : "Question"} {idx + 1}</span>
-                                {completed[idx] === 'correct' ? <CheckCircle2 className="text-emerald-500" size={24} /> : <XCircle className="text-rose-400" size={24} />}
-                            </div>
-                            <div className="flex-1 flex flex-col items-center justify-center space-y-6">
-                                <div className="scale-75 origin-center">{renderVisual(item)}</div>
-                                <div className="text-center font-bold text-slate-700 text-sm px-4">
-                                    <MathDisplay content={item.resolvedData?.renderData?.description} />
+                    {packet.map((item, idx) => {
+                        const hasVisual = item.resolvedData?.renderData && 
+                            (item.resolvedData.renderData.graph || 
+                             item.resolvedData.renderData.geometry || 
+                             item.resolvedData.renderData.pattern);
+
+                        return (
+                            <div key={item.id} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-xl flex flex-col justify-between ${completed[idx] === 'correct' ? 'border-emerald-500 shadow-emerald-50/50' : 'border-rose-400 shadow-rose-50/50'}`}>
+                                <div>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">{lang === 'sv' ? "Uppgift" : "Question"} {idx + 1}</span>
+                                        {completed[idx] === 'correct' ? <CheckCircle2 className="text-emerald-500" size={24} /> : <XCircle className="text-rose-400" size={24} />}
+                                    </div>
+                                    
+                                    {/* 🎨 Renders the visual diagram if it exists for this task */}
+                                    {hasVisual && (
+                                        <div className="w-full flex justify-center bg-slate-50/50 p-4 rounded-2xl mb-4 border border-slate-100 overflow-hidden">
+                                            <div className="scale-75 origin-center max-h-[160px] flex items-center justify-center">
+                                                {renderVisual(item)}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-3 text-slate-700">
+                                        {/* Main Question Text Description */}
+                                        <div className="text-sm font-bold leading-relaxed">
+                                            <MathDisplay content={item.resolvedData?.renderData?.description} />
+                                        </div>
+
+                                        {/* 🔢 Renders the formal LaTeX equation block if available */}
+                                        {item.resolvedData?.renderData?.latex && (
+                                            <div className="py-2 bg-indigo-50/30 rounded-xl text-center font-serif text-base border border-indigo-100/40">
+                                                <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className={`w-full py-3 rounded-2xl text-center font-black text-sm uppercase tracking-widest ${completed[idx] === 'correct' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'}`}>
-                                    Svar: {answers[idx] || '-'}
+
+                                <div className="mt-6">
+                                    <div className={`w-full py-3 rounded-2xl text-center font-black text-sm uppercase tracking-widest ${completed[idx] === 'correct' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'}`}>
+                                        {lang === 'sv' ? "Ditt Svar:" : "Your Answer:"} {answers[idx] || '-'}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         );

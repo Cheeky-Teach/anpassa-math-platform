@@ -271,7 +271,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 const shouldPause = limit > 0 ? nextIndex === halfwayPoint : nextIndex % 15 === 0;
 
                 if (shouldPause) {
-                    setCooldown(10);
+                    setCooldown(2);
                     setShowMilestone(true);
                 } else {
                     // Pre-fetch if near end
@@ -574,7 +574,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             }`}
                         >
                             <HelpCircle size={15} fill={useWordProblems ? "rgba(255, 255, 255, 0.2)" : "none"}/>
-                            {lang === 'sv' ? 'Vardagsproblem' : 'Word Problems'}
+                            {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
                         </button>
 
                         {/* 3. External Share Test Button */}
@@ -983,46 +983,51 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             .map(idx => {
                                 const qItem = packet[idx];
                                 const res = responses[idx];
-                                const rd = qItem.resolvedData?.renderData;
+                                const rd = qItem?.resolvedData?.renderData;
                                 const hasVisual = rd?.graph || rd?.geometry || rd?.pattern;
-                                const clues = qItem.clues || qItem.resolvedData?.clues || [];
+                                const clues = qItem?.clues || qItem?.resolvedData?.clues || [];
 
                                 return (
-                                    <div key={idx} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-sm flex flex-col relative transition-all ${res.isCorrect ? 'border-emerald-500 shadow-emerald-50/30' : 'border-rose-400 shadow-rose-50/30'}`}>
+                                    <div key={idx} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-sm flex flex-col justify-between relative transition-all ${res.isCorrect ? 'border-emerald-500 shadow-emerald-50/30' : 'border-rose-400 shadow-rose-50/30'}`}>
                                         
-                                        <div className="flex justify-between items-center mb-4">
-                                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                                                {lang === 'sv' ? "Uppgift" : "Question"} {parseInt(idx) + 1}
-                                            </span>
-                                            {res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-400" size={20} />}
-                                        </div>
-
-                                        {hasVisual && (
-                                            <div className="w-full h-28 flex items-center justify-center bg-slate-50 rounded-2xl mb-4 border border-slate-100 overflow-hidden relative">
-                                                <div className="scale-[0.5] transform origin-center">
-                                                    {renderVisual(qItem)}
-                                                </div>
+                                        <div>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                                                    {lang === 'sv' ? "Uppgift" : "Question"} {parseInt(idx) + 1}
+                                                </span>
+                                                {res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-400" size={20} />}
                                             </div>
-                                        )}
 
-                                        <div className="flex-1 space-y-2 mb-6">
-                                            <div className="text-center font-bold text-slate-700 text-[11px] leading-tight">
-                                                <MathDisplay content={typeof rd?.description === 'object' ? rd.description[lang] : rd?.description} />
-                                            </div>
-                                            {rd?.latex && (
-                                                <div className="py-1.5 bg-indigo-50/30 rounded-xl border border-indigo-100/50 text-center">
-                                                    <MathDisplay content={`$$${rd.latex}$$`} className="text-indigo-600 scale-75" />
+                                            {/* 🎨 REFACTORED: Renders the diagram container beautifully */}
+                                            {hasVisual && (
+                                                <div className="w-full flex justify-center bg-slate-50 p-4 rounded-2xl mb-4 border border-slate-100 overflow-hidden">
+                                                    <div className="scale-75 origin-center max-h-[140px] flex items-center justify-center">
+                                                        {renderVisual(qItem)}
+                                                    </div>
                                                 </div>
                                             )}
+
+                                            <div className="space-y-3 text-slate-700 mb-6">
+                                                <div className="text-center font-bold text-[12px] leading-snug px-2">
+                                                    <MathDisplay content={typeof rd?.description === 'object' ? rd.description[lang] : rd?.description} />
+                                                </div>
+                                                
+                                                {/* 🔢 REFACTORED: Formal LaTeX Formula equation slot */}
+                                                {rd?.latex && (
+                                                    <div className="py-2 bg-indigo-50/30 rounded-xl border border-indigo-100/50 text-center">
+                                                        <MathDisplay content={`$$${rd.latex}$$`} className="text-indigo-600 scale-90" />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="space-y-2 mt-auto">
                                             <div className={`p-3 rounded-2xl text-center shadow-inner ${res.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
                                                 <span className="text-[8px] font-black text-white/60 uppercase block mb-0.5">
-                                                    {lang === 'sv' ? "Rätt Svar" : "Correct Answer"}
+                                                    {lang === 'sv' ? "Ditt Svar" : "Your Answer"}
                                                 </span>
                                                 <span className="font-black text-white text-xs">
-                                                    {atob(qItem.resolvedData.token)}
+                                                    {res.answer || '-'}
                                                 </span>
                                             </div>
 
@@ -1030,7 +1035,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                                 <div className="space-y-2">
                                                     <button 
                                                         onClick={() => setVisibleClues(prev => ({ ...prev, [idx]: !prev[idx] }))}
-                                                        className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2
+                                                        className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2 cursor-pointer
                                                             ${visibleClues[idx] 
                                                                 ? 'bg-amber-500 border-amber-600 text-white shadow-md' 
                                                                 : 'bg-white border-amber-100 text-amber-500 hover:bg-amber-50'}`}
@@ -1043,13 +1048,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                                         <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-100 animate-in slide-in-from-top-2 duration-200">
                                                             <div className="space-y-4">
                                                                 {clues.map((step, sIdx) => {
-                                                                    const stepText = typeof step === 'object' && step !== null
-                                                                        ? step[lang] || step.text || Object.values(step)[0]
-                                                                        : step;
-                                                                    const stepLatex = typeof step === 'object' && step !== null 
-                                                                        ? step.latex || step.math 
-                                                                        : null;
-
+                                                                    const stepText = typeof step === 'object' && step !== null ? step[lang] || step.text || Object.values(step)[0] : step;
+                                                                    const stepLatex = typeof step === 'object' && step !== null ? step.latex || step.math : null;
                                                                     return (
                                                                         <div key={sIdx} className="flex gap-2 items-start border-l-2 border-amber-200 pl-2">
                                                                             <div className="flex-1 space-y-1">
@@ -1120,6 +1120,27 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             </p>
                         </div>
                         <Beaker size={48} className="text-indigo-400 opacity-20" />
+                    </div>
+                    {/* 4. Dual Navigation Footer */}
+                    <div className="p-12 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-center gap-4">
+                        <button 
+                            onClick={() => {
+                                setPacket([]);
+                                setResponses({});
+                                setCurrentIndex(0);
+                                setInternalMode('SETUP');
+                            }} 
+                            className="px-10 py-5 bg-white border-2 border-slate-200 text-slate-600 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:border-indigo-600 hover:text-indigo-600 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Settings2 size={18} /> {t.backToLab}
+                        </button>
+
+                        <button 
+                            onClick={onBack} 
+                            className="px-10 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-rose-600 transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            {t.toDashboard} <LogOut size={18} />
+                        </button>
                     </div>
 
                     {/* 2. Full Question Review Grid */}
@@ -1277,27 +1298,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         })}
                     </div>
 
-                    {/* 4. Dual Navigation Footer */}
-                    <div className="p-12 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-center gap-4">
-                        <button 
-                            onClick={() => {
-                                setPacket([]);
-                                setResponses({});
-                                setCurrentIndex(0);
-                                setInternalMode('SETUP');
-                            }} 
-                            className="px-10 py-5 bg-white border-2 border-slate-200 text-slate-600 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:border-indigo-600 hover:text-indigo-600 transition-all flex items-center justify-center gap-2"
-                        >
-                            <Settings2 size={18} /> {t.backToLab}
-                        </button>
-
-                        <button 
-                            onClick={onBack} 
-                            className="px-10 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-rose-600 transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
-                        >
-                            {t.toDashboard} <LogOut size={18} />
-                        </button>
-                    </div>
+                    
                 </div>
             </div>
         );
