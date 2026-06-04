@@ -1,4 +1,5 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class ProbabilityGen {
     // --- CONTEXT LIBRARY (16 Dynamic Scenarios) ---
@@ -63,23 +64,29 @@ export class ProbabilityGen {
     };
 
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
-        if (level === 1 && options.hideConcept && options.exclude?.includes('visual_calc')) {
-            return this.level2_StandardGroups(lang, undefined, options);
-        }
+        let questionData: any;
 
         switch (level) {
-            case 1: return this.level1_Visuals(lang, undefined, options);
-            case 2: 
-                const subType = Math.random() > 0.5 ? 'dice' : 'groups';
-                return subType === 'dice' ? this.level2_Dice(lang, undefined, options) : this.level2_StandardGroups(lang, undefined, options);
-            case 3: return this.level3_ConceptsAndLogic(lang, undefined, options);
-            // Level 4 merged into Level 1
-            case 4: return this.level5_ProbabilityTree(lang, undefined, options);
-            case 5: return this.level6_EventChains(lang, undefined, options);
-            case 6: return this.level7_Combinatorics(lang, undefined, options);
-            case 7: return this.level8_CombinatoricsComplex(lang, undefined, options);
-            default: return this.level1_Visuals(lang, undefined, options);
+            case 1: questionData = this.level1_DiscretePools(lang, undefined, options); break;
+            case 2: questionData = this.level2_DiceFluency(lang, undefined, options); break;
+            case 3: questionData = this.level3_RatiosAndGroups(lang, undefined, options); break;
+            case 4: questionData = this.level4_ComplementaryEvents(lang, undefined, options); break;
+            case 5: questionData = this.level5_TreeDiagrams(lang, undefined, options); break;
+            case 6: questionData = this.level6_PathwaysGrid(lang, undefined, options); break;
+            default: questionData = this.level1_DiscretePools(lang, undefined, options); break;
         }
+
+        // 🟢 Run through the decorator
+        enrichQuestionMetadata(questionData);
+
+        // 🟢 Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
+        }
+
+        return questionData;
     }
 
     public generateByVariation(key: string, lang: string = 'sv'): any {

@@ -1,4 +1,5 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class ExponentsGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
@@ -7,15 +8,29 @@ export class ExponentsGen {
             return this.level2_PowersOfTen(lang, undefined, options);
         }
 
+        let questionData: any;
+
         switch (level) {
-            case 1: return this.level1_Foundations(lang, undefined, options);
-            case 2: return this.level2_PowersOfTen(lang, undefined, options);
-            case 3: return this.level3_ScientificNotation(lang, undefined, options);
-            case 4: return this.level4_SquareRoots(lang, undefined, options);
-            case 5: return this.level5_LawsBasic(lang, undefined, options);
-            case 6: return this.level6_LawsAdvanced(lang, undefined, options);
-            default: return this.level1_Foundations(lang, undefined, options);
+            case 1: questionData = this.level1_Foundations(lang, undefined, options); break;
+            case 2: questionData = this.level2_PowersOfTen(lang, undefined, options); break;
+            case 3: questionData = this.level3_ScientificNotation(lang, undefined, options); break;
+            case 4: questionData = this.level4_SquareRoots(lang, undefined, options); break;
+            case 5: questionData = this.level5_LawsBasic(lang, undefined, options); break;
+            case 6: questionData = this.level6_LawsAdvanced(lang, undefined, options); break;
+            default: questionData = this.level1_Foundations(lang, undefined, options); break;
         }
+
+        // run through the decorator
+        enrichQuestionMetadata(questionData);
+
+        // practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
+        }
+
+        return questionData;
     }
 
     /**

@@ -1,4 +1,5 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js'; 
 
 export class ChangeFactorGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
@@ -15,8 +16,6 @@ export class ChangeFactorGen {
             case 3: questionData = this.level3_FindOriginal(lang, undefined, options); break;
             case 4: questionData = this.level4_TotalChange(lang, undefined, options); break;
             case 5: 
-                // 🟢 Level 5 (Word Problems) randomly routes into Increase or Decrease calculations.
-                // The downstream Interceptor maps the real narrative scenario text dynamically!
                 if (Math.random() > 0.5) {
                     questionData = this.level2_ApplyFactor(lang, 'apply_factor_inc', options);
                 } else {
@@ -24,6 +23,16 @@ export class ChangeFactorGen {
                 }
                 break;
             default: questionData = this.level1_Concepts(lang, undefined, options); break;
+        }
+
+        // Run through the decorator to handle specific variation token detection
+        enrichQuestionMetadata(questionData);
+
+        // Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [2, 3, 4, 5];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
         }
 
         return questionData;

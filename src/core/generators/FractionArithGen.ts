@@ -1,4 +1,5 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class FractionArithGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
@@ -6,14 +7,28 @@ export class FractionArithGen {
             return this.level2_DiffDenom(lang, undefined, options);
         }
 
+        let questionData: any;
+
         switch (level) {
-            case 1: return this.level1_SameDenom(lang, undefined, options);
-            case 2: return this.level2_DiffDenom(lang, undefined, options);
-            case 3: return this.level3_MixedNumbers(lang, undefined, options);
-            case 4: return this.level4_Multiplication(lang, undefined, options);
-            case 5: return this.level5_Division(lang, undefined, options);
-            default: return this.level1_SameDenom(lang, undefined, options);
+            case 1: questionData = this.level1_SameDenom(lang, undefined, options); break;
+            case 2: questionData = this.level2_DiffDenom(lang, undefined, options); break;
+            case 3: questionData = this.level3_MixedNumbers(lang, undefined, options); break;
+            case 4: questionData = this.level4_Multiplication(lang, undefined, options); break;
+            case 5: questionData = this.level5_Division(lang, undefined, options); break;
+            default: questionData = this.level1_SameDenom(lang, undefined, options); break;
         }
+
+        // 🟢 Run through the decorator
+        enrichQuestionMetadata(questionData);
+
+        // 🟢 Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4, 5];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
+        }
+
+        return questionData;
     }
 
     public generateByVariation(key: string, lang: string = 'sv'): any {

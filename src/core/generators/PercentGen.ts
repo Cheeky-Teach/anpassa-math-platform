@@ -1,4 +1,5 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class PercentGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
@@ -7,15 +8,29 @@ export class PercentGen {
             return this.level2_MentalMath(lang, undefined, options);
         }
 
+        let questionData: any;
+
         switch (level) {
-            case 1: return this.level1_ConceptsAndVisuals(lang, undefined, options);
-            case 2: return this.level2_MentalMath(lang, undefined, options);
-            case 3: return this.level3_BuildingBlocks(lang, undefined, options);
-            case 4: return this.level4_PercentEquation(lang, undefined, options);
-            case 5: return this.level5_ReversePercentage(lang, undefined, options);
-            case 6: return this.level6_PercentageChange(lang, undefined, options);
-            default: return this.level1_ConceptsAndVisuals(lang, undefined, options);
+            case 1: questionData = this.level1_ConceptsAndVisuals(lang, undefined, options); break;
+            case 2: questionData = this.level2_MentalMath(lang, undefined, options); break;
+            case 3: questionData = this.level3_BuildingBlocks(lang, undefined, options); break;
+            case 4: questionData = this.level4_PercentEquation(lang, undefined, options); break;
+            case 5: questionData = this.level5_ReversePercentage(lang, undefined, options); break;
+            case 6: questionData = this.level6_PercentageChange(lang, undefined, options); break;
+            default: questionData = this.level1_ConceptsAndVisuals(lang, undefined, options); break;
         }
+
+        // 🟢 Run through the decorator
+        enrichQuestionMetadata(questionData);
+
+        // 🟢 Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [2, 3, 4, 5, 6];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
+        }
+
+        return questionData;
     }
 
     /**

@@ -1,5 +1,6 @@
 import { MathUtils } from '../utils/MathUtils.js';
 import { LinearEquationProblemGen } from './LinearEquationProblemGen.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class LinearEquationGen {
     private problemGen: LinearEquationProblemGen;
@@ -15,31 +16,31 @@ export class LinearEquationGen {
             return this.level2_TwoStep(lang, undefined, options);
         }
 
-        // RESTORED: Direct delegation without metadata/variation modification
-        if (level === 5 || level === 6) {
-            return this.problemGen.generate(level, lang, options);
-        }
-        
-        // Fix: Level 7 handles the mixed logic safely
-        if (level === 7) {
-            return this.level7_Mixed(lang, options);
-        }
-
         let questionData: any;
 
-        switch (level) {
-            case 1: questionData = this.level1_OneStep(lang, undefined, options); break;
-            case 2: questionData = this.level2_TwoStep(lang, undefined, options); break;
-            case 3: questionData = this.level3_Parentheses(lang, undefined, options); break;
-            case 4: questionData = this.level4_BothSides(lang, undefined, options); break;
-            case 5: 
-                // Directly delivers standalone Equation Formulation problems
-                return this.problemGen.generate(5, lang, options);
-            case 6: 
-                // Directly delivers standalone Real-World Word Problem equations
-                return this.problemGen.generate(6, lang, options);
-            case 7: return this.level7_Mixed(lang, options);
-            default: questionData = this.level1_OneStep(lang, undefined, options); break;
+        // RESTORED: Direct delegation captured safely to pass through the decorator pipeline
+        if (level === 5 || level === 6) {
+            questionData = this.problemGen.generate(level, lang, options);
+        } else if (level === 7) {
+            questionData = this.level7_Mixed(lang, options);
+        } else {
+            switch (level) {
+                case 1: questionData = this.level1_OneStep(lang, undefined, options); break;
+                case 2: questionData = this.level2_TwoStep(lang, undefined, options); break;
+                case 3: questionData = this.level3_Parentheses(lang, undefined, options); break;
+                case 4: questionData = this.level4_BothSides(lang, undefined, options); break;
+                default: questionData = this.level1_OneStep(lang, undefined, options); break;
+            }
+        }
+
+        // 🟢 Run through the decorator
+        enrichQuestionMetadata(questionData);
+
+        // 🟢 Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4, 5, 6, 7];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
         }
 
         return questionData;

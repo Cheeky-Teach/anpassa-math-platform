@@ -1,4 +1,5 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class ScaleGen {
     // Standard shapes for visuals (must match ScaleVisuals.jsx emoji mapping)
@@ -33,20 +34,34 @@ export class ScaleGen {
     };
 
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
-        if (level === 1 && options.hideConcept && options.exclude?.includes('concept_match')) {
-            return this.level2_LinearFluency(lang, undefined, options);
+        // Adaptive Jump: Skip concepts if master option is requested
+        if (level === 1 && options.hideConcept) {
+            return this.level2_CalculateReality(lang, undefined, options);
         }
 
+        let questionData: any;
+
         switch (level) {
-            case 1: return this.level1_Concepts(lang, undefined, options);
-            case 2: return this.level2_LinearFluency(lang, undefined, options);
-            case 3: return this.level3_MixedScenarios(lang, undefined, options);
-            case 4: return this.level4_DetermineScale(lang, undefined, options);
-            case 5: return this.level5_NoPictures(lang, options);
-            case 6: return this.level6_AreaScaleDeep(lang, undefined, options);
-            case 7: return this.level7_Mixed(lang, options);
-            default: return this.level1_Concepts(lang, undefined, options);
+            case 1: questionData = this.level1_Concepts(lang, undefined, options); break;
+            case 2: questionData = this.level2_CalculateReality(lang, undefined, options); break;
+            case 3: questionData = this.level3_CalculateImage(lang, undefined, options); break;
+            case 4: questionData = this.level4_MapsAndBlueprints(lang, undefined, options); break;
+            case 5: questionData = this.level5_MicroscopeMagnification(lang, undefined, options); break;
+            case 6: questionData = this.level6_AreaVolumeScale(lang, undefined, options); break;
+            default: questionData = this.level1_Concepts(lang, undefined, options); break;
         }
+
+        // 🟢 Run through the decorator
+        enrichQuestionMetadata(questionData);
+
+        // 🟢 Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [2, 3, 4, 5, 6];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
+        }
+
+        return questionData;
     }
 
     public generateByVariation(key: string, lang: string = 'sv'): any {

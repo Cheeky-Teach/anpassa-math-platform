@@ -1,4 +1,5 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class SimilarityGen {
     // A pool of "instructive" scale factors to build student intuition
@@ -10,13 +11,27 @@ export class SimilarityGen {
             return this.level2_CalcSide(lang, undefined, options);
         }
 
+        let questionData: any;
+
         switch (level) {
-            case 1: return this.level1_Concept(lang, undefined, options);
-            case 2: return this.level2_CalcSide(lang, undefined, options);
-            case 3: return this.level3_TopTriangle(lang, undefined, options);
-            case 4: return this.level4_Mixed(lang, options);
-            default: return this.level1_Concept(lang, undefined, options);
+            case 1: questionData = this.level1_Concept(lang, undefined, options); break;
+            case 2: questionData = this.level2_CalcSide(lang, undefined, options); break;
+            case 3: questionData = this.level3_TopTriangle(lang, undefined, options); break;
+            case 4: questionData = this.level4_Mixed(lang, options); break;
+            default: questionData = this.level1_Concept(lang, undefined, options); break;
         }
+
+        // 🟢 Run through the decorator
+        enrichQuestionMetadata(questionData);
+
+        // 🟢 Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [2, 3, 4];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
+        }
+
+        return questionData;
     }
 
     /**
