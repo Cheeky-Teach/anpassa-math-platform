@@ -1,4 +1,5 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class StatisticsGen {
     // --- CONTEXT LIBRARY ---
@@ -17,22 +18,35 @@ export class StatisticsGen {
     };
 
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
-        // Adaptive Fallback: If Level 1 is mastered, push to mean calculations
-        if (level === 1 && options.hideConcept && options.exclude?.includes('stats_lie')) {
-            return this.level2_Mean(lang, undefined, options);
+        // Adaptive Fallback: If base concepts are satisfied, push forward to computation chains
+        if (level === 1 && options.hideConcept) {
+            return this.level3_Mean(lang, undefined, options);
         }
+
+        let questionData: any;
 
         switch (level) {
-            case 1: return this.level1_ModeRange(lang, undefined, options);
-            case 2: return this.level2_Mean(lang, undefined, options);
-            case 3: return this.level3_Median(lang, undefined, options);
-            case 4: return this.level4_ReverseMean(lang, undefined, options);
-            case 5: return this.level5_FrequencyTable(lang, undefined, options);
-            case 6: return this.level6_RealWorldMixed(lang, undefined, options);
-            default: return this.level1_ModeRange(lang, undefined, options);
+            case 1: questionData = this.level1_Mode(lang, undefined, options); break;
+            case 2: questionData = this.level2_RangeAndMedian(lang, undefined, options); break;
+            case 3: questionData = this.level3_Mean(lang, undefined, options); break;
+            case 4: questionData = this.level4_ReverseMean(lang, undefined, options); break;
+            case 5: questionData = this.level5_TablesAndWeighted(lang, undefined, options); break;
+            case 6: questionData = this.level6_MixedStatistics(lang, options); break;
+            default: questionData = this.level1_Mode(lang, undefined, options); break;
         }
-    }
 
+        // 🟢 Run through the decorator
+        enrichQuestionMetadata(questionData);
+
+        // 🟢 Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4, 6];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
+        }
+
+        return questionData;
+    }
     public generateByVariation(key: string, lang: string = 'sv', options: any = {}): any {
         switch (key) {
             case 'find_mode':

@@ -1,4 +1,5 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class LinearEquationProblemGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
@@ -12,14 +13,27 @@ export class LinearEquationProblemGen {
         ];
         
         const v = this.getVariation(pool, options);
+        let questionData: any;
         
         switch (v) {
-            case 'rate_fixed_add': return this.scenarioA_RatePlusFixed(lang, mode);
-            case 'rate_fixed_sub': return this.scenarioB_RateMinusFixed(lang, mode);
-            case 'compare_word_sum': return this.scenarioC_CompareSum(lang, mode);
-            case 'compare_word_diff': return this.scenarioD_CompareDiff(lang, mode);
-            default: return this.scenarioA_RatePlusFixed(lang, mode);
+            case 'rate_fixed_add': questionData = this.scenarioA_RatePlusFixed(lang, mode); break;
+            case 'rate_fixed_sub': questionData = this.scenarioB_RateMinusFixed(lang, mode); break;
+            case 'compare_word_sum': questionData = this.scenarioC_CompareSum(lang, mode); break;
+            case 'compare_word_diff': questionData = this.scenarioD_CompareDiff(lang, mode); break;
+            default: questionData = this.scenarioA_RatePlusFixed(lang, mode); break;
         }
+
+        // 🟢 Run through the decorator
+        enrichQuestionMetadata(questionData);
+
+        // 🟢 Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [5, 6];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
+        }
+
+        return questionData;
     }
 
     public generateByVariation(key: string, lang: string = 'sv'): any {

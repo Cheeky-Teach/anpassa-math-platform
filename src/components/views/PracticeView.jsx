@@ -109,6 +109,15 @@ const PracticeView = ({
         }
     }, [uiState.level]);
 
+    // Resets the word problem layout state instantly when switching between topics or unsupportive levels
+    useEffect(() => {
+    // If the freshly loaded question structure explicitly lacks word problem metadata,
+    // immediately disarm the active toggle state to prevent layout masking bugs!
+    if (!question?.metadata?.levelSupportsWordProblems) {
+        setUseWordProblems(false);
+    }
+    }, [question?.variationKey, question?.metadata?.levelSupportsWordProblems]); // Triggers precisely when the item changes
+
     const descriptionText = typeof question?.renderData?.description === 'object' ? question.renderData.description[lang] : question?.renderData?.description;
     
     // Targeted check: Only targets patterns topics when word problems are active

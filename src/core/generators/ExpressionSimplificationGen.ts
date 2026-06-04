@@ -1,4 +1,5 @@
 import { MathUtils } from '../utils/MathUtils.js';
+import { enrichQuestionMetadata } from '../utils/WordProblemDecorator.js';
 
 export class ExpressionSimplificationGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
@@ -14,10 +15,19 @@ export class ExpressionSimplificationGen {
             case 2: questionData = this.level2_Parentheses(lang, undefined, options); break;
             case 3: questionData = this.level3_DistributeAndSimplify(lang, undefined, options); break;
             case 4: questionData = this.level4_SubtractParentheses(lang, undefined, options); break;
-            case 5: 
-                return this.level5_WordProblems(lang, undefined, options);
-            case 6: return this.level6_Mixed(lang, options);
+            case 5: questionData = this.level5_WordProblems(lang, undefined, options); break;
+            case 6: questionData = this.level6_Mixed(lang, options); break;
             default: questionData = this.level1_CombineTerms(lang, undefined, options); break;
+        }
+
+        // 🟢 Run through the decorator
+        enrichQuestionMetadata(questionData);
+
+        // 🟢 Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4, 5];
+        if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
+            if (!questionData.metadata) questionData.metadata = {};
+            questionData.metadata.levelSupportsWordProblems = true;
         }
 
         return questionData;
