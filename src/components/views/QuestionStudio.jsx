@@ -198,17 +198,15 @@ export default function QuestionStudio({
   const [useWordProblems, setUseWordProblems] = useState(false);
   
   const [isGlobalShuffleOpen, setIsGlobalShuffleOpen] = useState(false);
+  const [filterDocType, setFilterDocType] = useState('all');
 
   // --- UNIFIED BI-DIRECTIONAL DRAG AND DROP ---
-  // Tracks active sorting positions seamlessly across both views simultaneously
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
 
   const handleDragStartUnified = (e, index) => {
     setDraggedIdx(index);
     setDraggedItemIndex(index);
     e.dataTransfer.effectAllowed = "move";
-    
-    // Transparent spacer image ensures structural element cards drag cleanly without layout glitches
     const img = new Image();
     img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     e.dataTransfer.setDragImage(img, 0, 0);
@@ -219,8 +217,6 @@ export default function QuestionStudio({
     const sourceIndex = draggedIdx !== null ? draggedIdx : draggedItemIndex;
     if (sourceIndex === null || sourceIndex === targetIndex) return;
 
-    // Mutating a single state target automatically pushes reactive adjustments 
-    // to Pane 3 and Pane 4 simultaneously for a true bi-directional WYSIWYG feel!
     const updatedPacket = [...packet];
     const [movedItem] = updatedPacket.splice(sourceIndex, 1);
     updatedPacket.splice(targetIndex, 0, movedItem);
@@ -238,57 +234,29 @@ export default function QuestionStudio({
   };
 
   // --- EFFECTS ---
-  // FIXED REPLACEMENT HOOK:
   useEffect(() => {
     const stillVisible = visibleVariations.some(v => v.key === activePreviewKey);
+    if (!stillVisible && visibleVariations.length > 0) {
+        triggerPreview(visibleVariations[0].key);
+    } else if (activePreviewKey) {
+        triggerPreview(activePreviewKey);
+    }
+  }, [useWordProblems]);
 
-      if (!stillVisible && visibleVariations.length > 0) {
-          triggerPreview(visibleVariations[0].key);
-      } else if (activePreviewKey) {
-          triggerPreview(activePreviewKey);
-      }
-  }, [useWordProblems]); // 🎯 FIXED: Removed the three stale layout parameters
   useEffect(() => { if (currentTopic?.variations?.[0]) triggerPreview(currentTopic.variations[0].key); }, [selectedTopicId]);
   useEffect(() => { setInitialPacket(packet); }, [packet]);
   useEffect(() => { setStudioMode(setupMode); }, [setupMode]);
-
-  // --- DRAG AND DROP ---
-  const handleDragStart = (e, index) => {
-    setDraggedIdx(index);
-    e.dataTransfer.effectAllowed = "move";
-    const img = new Image();
-    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-    e.dataTransfer.setDragImage(img, 0, 0);
-  };
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault();
-    if (draggedIdx === null || draggedIdx === index) return;
-    const newPacket = [...packet];
-    const draggedItem = newPacket[draggedIdx];
-    newPacket.splice(draggedIdx, 1);
-    newPacket.splice(index, 0, draggedItem);
-    setDraggedIdx(index);
-    setPacket(newPacket);
-    setIsSaved(false);
-  };
-
-  const handleDragEnd = () => setDraggedIdx(null);
+  useEffect(() => { fetchLibrary(); }, [setupMode, libraryTab]);
 
   // Helper to find the translated name for a topic ID
   const getTopicLabel = (topicId) => {
       if (!topicId || topicId === 'all') return lang === 'sv' ? "Alla ämnen" : "All topics";
-      
-      // Iterate through categories (algebra, arithmetic, etc.)
       for (const catKey in SKILL_BUCKETS) {
           const category = SKILL_BUCKETS[catKey];
-          // Check if the topic exists in this category
           if (category.topics && category.topics[topicId]) {
               return category.topics[topicId].name[lang] || topicId;
           }
       }
-    
-      // Fallback to capitalize the ID if not found in skillBuckets
       return topicId.charAt(0).toUpperCase() + topicId.slice(1).replace('_', ' ');
   };
 
@@ -307,48 +275,25 @@ export default function QuestionStudio({
     );
   };
 
-  const handleReorderMaster = (fromIndex, toIndex) => {
-    if (fromIndex === toIndex) return;
-
-    // 🟢 Step 1: Shift elements inside the Pane 4 Sidebar Queue State
-    const updatedSelected = [...selectedQuestions];
-    const [draggedSelected] = updatedSelected.splice(fromIndex, 1);
-    updatedSelected.splice(toIndex, 0, draggedSelected);
-    setSelectedQuestions(updatedSelected);
-
-    // 🟢 Step 2: Simultaneously shift elements inside the Pane 3 Canvas Preview State
-    if (questions && questions.length > 0) {
-      const updatedQuestions = [...questions];
-      const [draggedQuestion] = updatedQuestions.splice(fromIndex, 1);
-      updatedQuestions.splice(toIndex, 0, draggedQuestion);
-      setQuestions(updatedQuestions); // Loops back to update your main display canvas state
-    }
-  };
-
   // --- UNIFIED VISUAL RENDERER ---
   const renderVisual = (rd) => {
     if (!rd) return null;
-
     if (rd.graph) return <GraphCanvas data={rd.graph} />;
-    
     if (rd.pattern || rd.geometry?.subtype === 'matchsticks' || rd.geometry?.subtype === 'sequence') {
         return <PatternVisual data={rd.pattern || rd.geometry} />;
     }
-    
     if (rd.marbles || rd.geometry?.type === 'marbles' || rd.geometry?.items) {
         return <ProbabilityMarbles data={rd.marbles || rd.geometry} />;
     }
     if (rd.spinner || rd.geometry?.type === 'spinner') {
         return <ProbabilitySpinner data={rd.spinner || rd.geometry} />;
     }
-    
     if (rd.freqTable || rd.geometry?.type === 'frequency_table' || rd.geometry?.headers) {
         return <FrequencyTable data={rd.freqTable || rd.geometry} />;
     }
     if (rd.percentGrid || rd.geometry?.type === 'percent_grid') {
         return <PercentGrid data={rd.percentGrid || rd.geometry} />;
     }
-
     if (rd.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'].includes(rd.geometry.type)) {
         return (
             <div style={{ width: '220px', height: '180px', display: 'flex', justifyContent: 'center' }}>
@@ -356,15 +301,12 @@ export default function QuestionStudio({
             </div>
         );
     }
-    
     if (rd.geometry?.type === 'angle') return <AngleVisual data={rd.geometry} />;
     if (rd.scale || rd.geometry?.type === 'scale') return <ScaleVisual data={rd.scale || rd.geometry} />;
     if (rd.similarity || rd.geometry?.type === 'similarity') return <SimilarityCompare data={rd.similarity || rd.geometry} />;
     if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
     if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
-
     if (rd.geometry) return <GeometryVisual data={rd.geometry} width={220} height={180} />;
-    
     return null;
   };
 
@@ -399,18 +341,31 @@ export default function QuestionStudio({
 
   const fetchLibrary = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+        console.warn("No active user found in Supabase context.");
+        return;
+    }
+    
     setIsLibraryLoading(true);
     try {
         let query = supabase.from('saved_sheets').select('*').order('updated_at', { ascending: false });
-        if (libraryTab === 'private') query = query.eq('user_id', user.id);
-        else if (libraryTab === 'school') query = query.eq('visibility', 'school').eq('school_name', profile?.school_name);
-        else query = query.eq('visibility', 'public');
+        
+        if (libraryTab === 'private') {
+            query = query.eq('user_id', user.id);
+        } else if (libraryTab === 'school') {
+            query = query.eq('visibility', 'school').eq('school_name', profile?.school_name);
+        } else {
+            query = query.eq('visibility', 'public');
+        }
+        
         const { data, error } = await query;
         if (error) throw error;
         setSavedSheets(data || []);
-    } catch (err) { console.error(err); }
-    finally { setIsLibraryLoading(false); }
+    } catch (err) { 
+        console.error("Error loading library assets directly from Supabase:", err); 
+    } finally { 
+        setIsLibraryLoading(false); 
+    }
   };
 
   const handleSave = async () => {
@@ -418,20 +373,36 @@ export default function QuestionStudio({
       try {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) return;
+
           const uniqueTopics = [...new Set(packet.map(q => q.topicId))];
           const uniqueLevels = [...new Set(packet.map(q => q.resolvedData?.level || 1))];
+          
           const sheetData = { 
-              user_id: user.id, title: sheetTitle, type: setupMode, packet: packet, 
+              user_id: user.id,
+              title: sheetTitle, 
+              type: setupMode, 
+              packet: packet, 
               config: { showWorkArea, lang, includeAnswerKey, answerKeyStyle }, 
-              updated_at: new Date().toISOString(), visibility: chosenVisibility,
-              school_name: profile?.school_name || null, auto_topics: uniqueTopics, auto_levels: uniqueLevels
+              visibility: chosenVisibility,
+              school_name: profile?.school_name || null, 
+              auto_topics: uniqueTopics, 
+              auto_levels: uniqueLevels,
+              updated_at: new Date().toISOString()
           };
+
           const { data, error } = activeSheetId 
               ? await supabase.from('saved_sheets').update(sheetData).eq('id', activeSheetId).select().single()
               : await supabase.from('saved_sheets').insert([sheetData]).select().single();
+
           if (error) throw error;
-          setActiveSheetId(data.id); setIsSaved(true); alert(t.save_success); fetchLibrary(); 
-      } catch (err) { alert("Fel vid sparande."); }
+
+          setActiveSheetId(data.id); 
+          setIsSaved(true); 
+          alert(t.save_success); 
+          fetchLibrary(); 
+      } catch (err) { 
+          alert("Fel vid sparande: " + err.message); 
+      }
   };
 
   const handleClone = async (sheetId) => {
@@ -501,7 +472,6 @@ export default function QuestionStudio({
                 instructionMode: useWordProblems ? 'inline' : (isFirstInBatch ? 'header' : 'hidden'),
                 showLatex: !useWordProblems,
                 showVisual: !useWordProblems,
-                // 🟢 Pin the narrative text array tracker to index 0 explicitly upon creation
                 selectedStoryIndex: useWordProblems ? 0 : null 
             });
         }
@@ -518,15 +488,13 @@ export default function QuestionStudio({
     } catch (err) { console.error(err); }
   };
 
-   // handleRegenerateAll now became batchShuffle to save word problem or numbers
-    const batchShuffle = async (mode) => {
+  const batchShuffle = async (mode) => {
         if (packet.length === 0 || isRegeneratingAll) return;
         setIsRegeneratingAll(true);
         try {
             const updatedPacket = await Promise.all(packet.map(async (item) => {
                 if (!item.topicId || !item.variationKey) return item;
 
-                // Mode A: Just the stories -> Client side loop, zero network delay!
                 if (mode === 'stories') {
                     const rd = item.resolvedData?.renderData;
                     if (!rd?.availableStories || rd.availableStories.length <= 1) return item;
@@ -534,13 +502,12 @@ export default function QuestionStudio({
                     return { ...item, selectedStoryIndex: newIndex };
                 }
 
-                // Mode B & C: Needs fresh server mathematical coordinates
                 const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${useWordProblems}`);            
                 const data = await res.json();
                 
                 return { 
                     ...item,
-                    id: mode === 'both' ? crypto.randomUUID() : item.id, // Only change component lifecycle ID if completely re-shuffling
+                    id: mode === 'both' ? crypto.randomUUID() : item.id, 
                     selectedStoryIndex: mode === 'numbers' ? (item.selectedStoryIndex !== undefined ? item.selectedStoryIndex : null) : null,
                     resolvedData: data 
                 };
@@ -552,33 +519,43 @@ export default function QuestionStudio({
         } finally {
             setIsRegeneratingAll(false);
         }
-    };
+  };
 
   const updatePacketItem = (id, key, val) => { setPacket(packet.map(p => p.id === id ? { ...p, [key]: val } : p)); setIsSaved(false); };
   const deleteSheet = async (e, id) => {
-    e.stopPropagation(); if (!window.confirm(t.delete_confirm)) return;
+    e.stopPropagation(); 
+    if (!window.confirm(t.delete_confirm)) return;
     try {
         const { error } = await supabase.from('saved_sheets').delete().eq('id', id);
         if (error) throw error;
         setSavedSheets(savedSheets.filter(s => s.id !== id));
-    } catch (err) { alert("Kunde inte radera."); }
+    } catch (err) { 
+        alert("Kunde inte radera: " + err.message); 
+    }
   };
 
   const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name[lang], categoryId: cat.id, ...data })));
   const currentTopic = allTopics.find(tp => tp.id === selectedTopicId) || allTopics[0];
   const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
-  const filteredLibrary = savedSheets.filter(sheet => sheet.title.toLowerCase().includes(searchTerm.toLowerCase()) && (filterTopic === 'all' || sheet.auto_topics?.includes(filterTopic)));
+  
+  const filteredLibrary = savedSheets.filter(sheet => {
+      const matchesSearch = sheet.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTopic = filterTopic === 'all' || sheet.auto_topics?.includes(filterTopic);
+      const activeSheetType = (sheet.type || '').replace('_', '').toLowerCase();
+      const matchesType = setupMode
+        ? activeSheetType === setupMode.replace('_', '').toLowerCase()
+        : filterDocType === 'all' || activeSheetType === filterDocType;
+        
+      return matchesSearch && matchesTopic && matchesType;
+  });
   const availableTopics = [...new Set(savedSheets.flatMap(s => s.auto_topics || []))];
 
   const visibleVariations = (currentTopic?.variations || [])
   .filter(v => {
-    // --- NEW: Exclude items missing the word problem tag if the switch is ON ---
     if (useWordProblems) {
       const hasTag = v.tags?.includes('word_problem_ready');
-      if (!hasTag) return false; // Drops it from Pane 2 instantly
+      if (!hasTag) return false; 
     }
-
-    // Your existing filter constraints for hideExtra remain completely untouched
     if (!hideExtra) return true;
     const k = v.key.toLowerCase();
     const isMCQ = ['lie', 'spot', 'choice', 'mcq', 'check', 'select', 'which', 'error', 'inverse'].some(kw => k.includes(kw));
@@ -589,9 +566,11 @@ export default function QuestionStudio({
 
   if (!setupMode) {
     return (
-      <div className="flex-1 bg-slate-50 flex flex-col p-12 overflow-y-auto relative custom-scrollbar">
+      <div className="flex-1 bg-[#f9fbf7] flex flex-col p-12 overflow-y-auto relative custom-scrollbar">
         <button onClick={onClose} className="absolute top-8 right-8 p-3 bg-slate-900 text-white hover:bg-rose-600 rounded-2xl shadow-xl transition-all flex items-center gap-2 font-black text-[10px] uppercase tracking-widest z-50"><X size={18}/> {t.btn_close}</button>
+        
         <div className="max-w-6xl w-full mx-auto space-y-12 relative z-10">
+            {/* Upper Mode Pickers */}
             <div className="text-center">
                 <h2 className="text-5xl font-black text-emerald-900 tracking-tighter uppercase italic mb-8">{t.studio}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
@@ -599,46 +578,137 @@ export default function QuestionStudio({
                     <button onClick={() => { setSetupMode('worksheet'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); }} className="group p-10 bg-white border-2 border-slate-100 rounded-[3rem] hover:border-emerald-600 transition-all text-left shadow-sm hover:shadow-xl active:scale-[0.98]"><FileText size={40} className="text-emerald-600 mb-6" /><h3 className="text-3xl font-black text-slate-800 uppercase leading-none mb-2">{t.worksheet_title}</h3><p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Klassiska pappersblad</p></button>
                 </div>
             </div>
-            <div className="bg-emerald rounded-[2rem] shadow-xl border border-slate-600 overflow-hidden min-h-[600px] flex flex-col">
-                <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6 bg-slate-50/50">
-                    <div className="flex gap-2 p-1 bg-slate-200/50 rounded-2xl">
-                        <button onClick={() => setLibraryTab('private')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${libraryTab === 'private' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{t.tab_mine}</button>
-                        <button onClick={() => setLibraryTab('school')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${libraryTab === 'school' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{t.tab_school}</button>
-                        <button onClick={() => setLibraryTab('public')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${libraryTab === 'public' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>{t.tab_global}</button>
-                    </div>
-                    <div className="flex gap-3 items-center">
-                        <div className="relative"><Search className="absolute left-3 top-2.5 text-slate-400" size={16} /><input type="text" placeholder="Sök..." className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none w-40" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
-                        
-                        <select 
-                            value={filterTopic} 
-                            onChange={(e) => setFilterTopic(e.target.value)}
-                            className="text-[16px] font-bold bg-slate-50 border-none rounded-lg focus:ring-0 outline-none"
-                        >
-                            <option value="all">{lang === 'sv' ? "Välj område" : "Filter topics"}</option>
-                            {/* Change: Map over availableTopics instead of sheet.type */}
-                            {availableTopics.map(tId => (
-                                <option key={tId} value={tId}>
-                                    {getTopicLabel(tId)}
-                                </option>
-                            ))}
-                        </select>
 
+            {/* Streamlined Archive Library Card Element Container */}
+            <div className="bg-white rounded-[2rem] shadow-xl border border-emerald-100 overflow-hidden min-h-[600px] flex flex-col">
+                {/* Tier 1: Primary Scope Tabs */}
+                <div className="bg-slate-900 px-8 pt-4 flex justify-between items-center">
+                    <div className="flex gap-1">
+                        <button 
+                            onClick={() => setLibraryTab('private')} 
+                            className={`px-6 py-3 rounded-t-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'private' ? 'bg-[#f9fbf7] text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            {t.tab_mine}
+                        </button>
+                        <button 
+                            onClick={() => setLibraryTab('school')} 
+                            className={`px-6 py-3 rounded-t-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'school' ? 'bg-[#f9fbf7] text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            {t.tab_school}
+                        </button>
+                        <button 
+                            onClick={() => setLibraryTab('public')} 
+                            className={`px-6 py-3 rounded-t-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'public' ? 'bg-[#f9fbf7] text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                        >
+                            {t.tab_global}
+                        </button>
+                    </div>
+                    <span className="text-[10px] font-black tracking-widest uppercase text-slate-500 italic mr-2">
+                        {t.library_title}
+                    </span>
+                </div>
+
+                {/* Tier 2: Action Sub-Toolbar Utility Strip */}
+                <div className="p-6 border-b border-emerald-100 flex flex-col lg:flex-row justify-between items-center gap-4 bg-slate-50/70">
+                    {/* Left Side: Type Sub-Filters */}
+                    <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto py-1">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 mr-1 select-none">
+                            {lang === 'sv' ? "Typ:" : "Type:"}
+                        </span>
+                        <div className="flex gap-1 p-1 bg-slate-200/60 rounded-xl border border-slate-300/40 shadow-inner">
+                            <button 
+                                onClick={() => setFilterDocType('all')}
+                                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${filterDocType === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                            >
+                                {lang === 'sv' ? "Visa Alla" : "Show Both"}
+                            </button>
+                            <button 
+                                onClick={() => setFilterDocType('worksheet')}
+                                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer ${filterDocType === 'worksheet' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                            >
+                                <FileText size={12} />
+                                {lang === 'sv' ? "Arbetsblad" : "Worksheets"}
+                            </button>
+                            <button 
+                                onClick={() => setFilterDocType('donow')}
+                                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer ${filterDocType === 'donow' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                            >
+                                <Grid3X3 size={12} />
+                                {lang === 'sv' ? "Do Now Grids" : "Grids"}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Right Side: Title Search & Topic Filters */}
+                    <div className="flex flex-col sm:flex-row gap-3 items-center w-full lg:w-auto justify-end">
+                        <div className="relative w-full sm:w-48 group">
+                            <Search className="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={14} />
+                            <input 
+                                type="text" 
+                                placeholder={lang === 'sv' ? "Sök titel..." : "Search title..."} 
+                                className="w-full pl-9 pr-4 py-2 bg-white border border-emerald-100 focus:border-indigo-500 rounded-xl text-xs font-bold outline-none transition-all shadow-sm" 
+                                value={searchTerm} 
+                                onChange={(e) => setSearchTerm(e.target.value)} 
+                            />
+                        </div>
+                        
+                        <div className="relative w-full sm:w-auto bg-white border border-emerald-100 rounded-xl px-3 py-1.5 shadow-sm focus-within:border-indigo-500 transition-all flex items-center gap-1">
+                            <Filter size={12} className="text-slate-400" />
+                            <select 
+                                value={filterTopic} 
+                                onChange={(e) => setFilterTopic(e.target.value)}
+                                className="text-xs font-black uppercase bg-transparent border-none rounded-lg focus:ring-0 outline-none cursor-pointer pr-6 text-slate-600 hover:text-slate-900"
+                            >
+                                <option value="all">{lang === 'sv' ? "Alla Områden" : "All Topics"}</option>
+                                {availableTopics.map(tId => (
+                                    <option key={tId} value={tId}>
+                                        {getTopicLabel(tId).toUpperCase()}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
+
+                {/* Content Table Layout Area */}
                 <div className="flex-1 overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <thead><tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest"><th className="p-6">Titel</th><th className="p-6">Innehåll</th><th className="p-6 text-center">Uppgifter</th><th className="p-6 text-center">Senast ändrad</th><th className="p-6 text-center">Åtgärder</th></tr></thead>
-                        <tbody className="divide-y divide-slate-50">
+                        <thead>
+                            <tr className="bg-slate-50 border-b border-emerald-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <th className="p-6">Titel</th>
+                                <th className="p-6">Innehåll</th>
+                                <th className="p-6 text-center">Uppgifter</th>
+                                <th className="p-6 text-center">Senast ändrad</th>
+                                <th className="p-6 text-center">Åtgärder</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-emerald-50/50">
                             {filteredLibrary.map(sheet => (
                                 <tr key={sheet.id} className="hover:bg-indigo-50/30 transition-colors group">
                                     <td className="p-6 font-bold text-slate-700">{sheet.title}</td>
-                                    <td className="p-6"><div className="flex flex-wrap gap-1">{sheet.auto_topics?.slice(0, 2).map(tag => (<span key={tag} className="text-[8px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 px-2 py-0.5 rounded-md">{tag}</span>))}{sheet.auto_topics?.length > 2 && <span className="text-[8px] font-black text-slate-300">+{sheet.auto_topics.length - 2}</span>}</div></td>
+                                    <td className="p-6">
+                                        <div className="flex flex-wrap gap-1">
+                                            {sheet.auto_topics?.slice(0, 2).map(tag => (
+                                                <span key={tag} className="text-[8px] font-black uppercase tracking-widest bg-slate-100 text-slate-400 px-2 py-0.5 rounded-md">{tag}</span>
+                                            ))}
+                                            {sheet.auto_topics?.length > 2 && (
+                                                <span className="text-[8px] font-black text-slate-300">+{sheet.auto_topics.length - 2}</span>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="p-6 text-center font-bold text-slate-400 text-sm">{sheet.packet?.length || 0}</td>
                                     <td className="p-6 text-center font-medium text-slate-400 text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
                                     <td className="p-6 text-right">
                                         <div className="flex justify-end gap-2 items-center">
                                             <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-2 text-slate-300 hover:text-indigo-600 transition-colors"><Maximize2 size={18}/></button>
-                                            {libraryTab === 'private' ? (<><button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors">{t.load_btn}</button><button onClick={(e) => deleteSheet(e, sheet.id)} className="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={18}/></button></>) : (<button onClick={() => handleClone(sheet.id)} className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2"><Copy size={14}/> {t.clone_btn}</button>)}
+                                            {libraryTab === 'private' ? (
+                                                <>
+                                                    <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors">{t.load_btn}</button>
+                                                    <button onClick={(e) => deleteSheet(e, sheet.id)} className="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={18}/></button>
+                                                </>
+                                            ) : (
+                                                <button onClick={() => handleClone(sheet.id)} className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2"><Copy size={14}/> {t.clone_btn}</button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -668,71 +738,98 @@ export default function QuestionStudio({
 
   return (
     <div className="flex flex-col h-screen bg-slate-200 font-sans overflow-hidden relative">
-      <header className="bg-white border-b border-slate-300 px-6 py-3 flex items-center justify-between shadow-md z-50">
-        <div className="flex items-center gap-4 flex-1">
-          <button onClick={() => { if(!isSaved && !window.confirm(t.unsaved_warning)) return; setSetupMode(null); }} className="text-[11px] font-black text-indigo-600 uppercase hover:underline flex items-center gap-1 shrink-0"><ChevronLeft size={16}/> {t.change_mode}</button>
-          <div className="h-6 w-px bg-slate-200 mx-2"></div>
-          <div className="relative group flex-1 max-w-md"><input type="text" className="w-full bg-slate-50 px-4 py-2 rounded-xl text-sm font-black uppercase tracking-tight outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all border border-transparent group-hover:border-slate-200" placeholder={t.title_placeholder} value={sheetTitle} onChange={(e) => { setSheetTitle(e.target.value); setIsSaved(false); }} /></div>
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button onClick={() => setChosenVisibility('private')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'private' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:bg-white'}`}><Lock size={14}/></button>
-            <button onClick={() => setChosenVisibility('school')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'school' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:bg-white'}`}><Building2 size={14}/></button>
-            <button onClick={() => setChosenVisibility('public')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'public' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:bg-white'}`}><Globe size={14}/></button>
-          </div>
-        </div>
-        {/* Header buttons */}
-        <div className="flex items-center gap-3 pl-6">
-        {/* Save Button */}
-        <button 
-            onClick={handleSave} 
-            disabled={packet.length === 0} 
-            className="px-6 py-2.5 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-indigo-50 transition-all disabled:opacity-30"
-        >
-            <Save size={16}/> {t.save_btn}
-        </button>
-        
-        <div className="h-6 w-px bg-slate-200 mx-1"></div>
-        
-        {/* Live Session Button */}
-        <button 
-            onClick={handleLaunchLive} 
-            disabled={packet.length === 0} 
-            className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 hover:bg-indigo-600 transition-all disabled:opacity-30"
-        >
-            <Send size={16}/> {t.live_btn}
-        </button>
+      <header className="relative bg-white border-b border-slate-300 px-6 py-3 flex items-center justify-between shadow-md z-50">
+            {/* Left Side: Navigation Inputs (Given a flex-1 and max-w constraint to prevent it from overlapping the center) */}
+            <div className="flex items-center gap-4 flex-1 max-w-[40%]">
+                <div className="flex items-center gap-2 shrink-0">
+                    <button 
+                        onClick={() => { if(!isSaved && !window.confirm(t.unsaved_warning)) return; setSetupMode(null); }} 
+                        className="text-[11px] font-black text-indigo-600 uppercase hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                        <ChevronLeft size={16}/> {t.change_mode}
+                    </button>
+                </div>
+                
+                <div className="h-6 w-px bg-slate-200 mx-1"></div>
+                <div className="relative group flex-1 max-w-md">
+                    <input 
+                        type="text" 
+                        className="w-full bg-slate-50 px-4 py-2 rounded-xl text-m font-black tracking-tight outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 transition-all border border-transparent group-hover:border-slate-200" 
+                        placeholder={t.title_placeholder} 
+                        value={sheetTitle} 
+                        onChange={(e) => { setSheetTitle(e.target.value); setIsSaved(false); }} 
+                    />
+                </div>
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button onClick={() => setChosenVisibility('private')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'private' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:bg-white'}`}><Lock size={14}/></button>
+                    <button onClick={() => setChosenVisibility('school')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'school' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:bg-white'}`}><Building2 size={14}/></button>
+                    <button onClick={() => setChosenVisibility('public')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'public' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:bg-white'}`}><Globe size={14}/></button>
+                </div>
+            </div>
 
-        <div className="h-6 w-px bg-slate-200 mx-1"></div>
+            {/* Absolute Centered Target Layer: Bypasses flex pushes entirely to align mathematically with the window viewport center */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
+                {setupMode === 'donow' ? (
+                    <span className=" text-indigo-700 font-black uppercase text-[20px] px-4 py-1.5 rounded-xl tracking-wide animate-in zoom-in-95 pointer-events-auto select-none">
+                        {t.donow_title}
+                    </span>
+                ) : setupMode === 'worksheet' ? (
+                    <span className="text-emerald-700 font-black uppercase text-[20px] px-4 py-1.5 rounded-xl tracking-wide animate-in zoom-in-95 pointer-events-auto select-none">
+                        {t.worksheet_title}
+                    </span>
+                ) : null}
+            </div>
 
-        {/*  Displays Grid launcher for Do Now, Print launcher for Worksheets */}
-        {setupMode === 'donow' ? (
-            <button 
-                onClick={handleLaunchGrid} 
-                disabled={packet.length === 0} 
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all disabled:opacity-30 shadow-md shadow-indigo-600/10"
-            >
-                <Grid3X3 size={16}/> {t.create_donow}
-            </button>
-        ) : (
-            <button 
-                onClick={handleLaunchPrint} 
-                disabled={packet.length === 0} 
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all disabled:opacity-30 shadow-md shadow-indigo-600/10"
-            >
-                <Printer size={16}/> {t.publish}
-            </button>
-        )}
+            {/* Right Side: Primary Active Tool Launch & Save Buttons */}
+            <div className="flex items-center gap-3 pl-6 max-w-[45%] justify-end">
+                <button 
+                    onClick={handleSave} 
+                    disabled={packet.length === 0} 
+                    className="px-6 py-2.5 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-indigo-50 transition-all disabled:opacity-30 cursor-pointer"
+                >
+                    <Save size={16}/> {t.save_btn}
+                </button>
+                
+                <div className="h-6 w-px bg-slate-200 mx-1"></div>
+                
+                <button 
+                    onClick={handleLaunchLive} 
+                    disabled={packet.length === 0} 
+                    className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-indigo-600 transition-all disabled:opacity-30 cursor-pointer"
+                >
+                    <Send size={16}/> {t.live_btn}
+                </button>
 
-        <div className="h-6 w-px bg-slate-200 mx-1"></div>
-        
-        {/* Close Button */}
-        <button 
-            onClick={onClose} 
-            className="p-2.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-all"
-        >
-            <X size={20}/>
-        </button>
-        </div>
-      </header>
+                <div className="h-6 w-px bg-slate-200 mx-1"></div>
+
+                {setupMode === 'donow' ? (
+                    <button 
+                        onClick={handleLaunchGrid} 
+                        disabled={packet.length === 0} 
+                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-30 shadow-md shadow-indigo-600/10 cursor-pointer"
+                    >
+                        <Grid3X3 size={16}/> {t.create_donow}
+                    </button>
+                ) : (
+                    <button 
+                        onClick={handleLaunchPrint} 
+                        disabled={packet.length === 0} 
+                        className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-30 shadow-md shadow-indigo-600/10 cursor-pointer"
+                    >
+                        <Printer size={16}/> {t.publish}
+                    </button>
+                )}
+
+                <div className="h-6 w-px bg-slate-200 mx-1"></div>
+                
+                <button 
+                    onClick={onClose} 
+                    className="p-2.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-all cursor-pointer"
+                >
+                    <X size={20}/>
+                </button>
+            </div>
+        </header>
 
       <div className="flex flex-1 overflow-hidden relative z-10">
         {/* PANE 1: Topics */}
@@ -756,7 +853,6 @@ export default function QuestionStudio({
                     <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${hideExtra ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
               </div>
-              {/* --- NEW: WORD PROBLEMS SELECTOR SWITCH --- */}
                 <div className="flex items-center justify-between bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner animate-in fade-in duration-200">
                     <span className="text-[9px] font-black uppercase text-slate-500 ml-2 tracking-tighter">
                         {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
@@ -789,7 +885,6 @@ export default function QuestionStudio({
                             <div className={`shrink-0 px-2 py-0.5 rounded-md border ${styles.border} ${styles.bg} ${styles.text} text-[8px] font-black uppercase flex items-center gap-1`}>
                                 {styles.icon} {styles.label}
                             </div>
-                            {/* WORD PROBLEM ELIGIBILITY BADGE */}
                             {hasWordProblem && (
                                 <div className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[7px] font-black uppercase tracking-tight">
                                     📝 {lang === 'sv' ? 'Kontext' : 'Story'}
@@ -839,14 +934,12 @@ export default function QuestionStudio({
 
                         {isGlobalShuffleOpen && (
                             <div className="absolute top-12 right-0 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 w-56 z-[60] flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-200">
-                                {/* Mode 1: Numbers Only */}
                                 <button 
                                     onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('numbers'); }}
                                     className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:text-indigo-600"
                                 >
                                     <Calculator size={14} /> {lang === 'sv' ? "Bara Siffror/Värden" : "Numbers Only"}
                                 </button>
-                                {/* Mode 2: Word Problems Only */}
                                 <button 
                                     onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('stories'); }}
                                     className="w-full text-left px-4 py-2.5 hover:bg-amber-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:text-amber-600"
@@ -854,7 +947,6 @@ export default function QuestionStudio({
                                     <Type size={14} /> {lang === 'sv' ? "Bara Textberättelser" : "Word Problems Only"}
                                 </button>
                                 <div className="h-px bg-slate-100 my-1 mx-2" />
-                                {/* Mode 3: Re-Shuffle Everything */}
                                 <button 
                                     onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('both'); }}
                                     className="w-full text-left px-4 py-2.5 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-rose-600"
@@ -864,20 +956,13 @@ export default function QuestionStudio({
                             </div>
                         )}
                     </div>
-                    {/* Spacing toggler now triggers array serialization and saves correctly */}
                     <button 
                         onClick={() => {
                             const nextSpacingState = !showWorkArea;
-                            // 1. Instantly update local preview sheet view state
                             setShowWorkArea(nextSpacingState);
-                            
-                            // 2. Mark the worksheet as dirty so the save button activates
                             setIsSaved(false);
-                            
-                            // 3. Batch push the choice into every card in the packet array to keep print view synced!
                             setPacket(packet.map(item => ({
                                 ...item,
-                                // Custom card flag matching layout specifications
                                 showWorkArea: nextSpacingState 
                             })));
                         }} 
@@ -927,14 +1012,12 @@ export default function QuestionStudio({
                       <header className="border-b-2 border-black pb-2 mb-4 flex items-end justify-between"><h1 className="text-lg font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1><div className="flex gap-6 w-2/3 justify-end text-[10px] font-black uppercase tracking-widest"><div className="border-b-2 border-slate-100 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div><div className="border-b-2 border-slate-100 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div></div></header>
                       <div className={`grid grid-cols-6 gap-x-8 ${showWorkArea ? 'gap-y-6' : 'gap-y-1'} items-start content-start`}>
                           {packet.map((item, idx) => {
-                                // Use true as the absolute baseline fallback state if flags aren't saved yet
                                 const displayStory = item.showText !== false;
                                 const displayLatex = item.showLatex !== false;
                                 const displayVisual = item.showVisual !== false;
 
                                 return (
                                     <React.Fragment key={item.id}>
-                                        {/* Header Text Mode — respects individual toggles */}
                                         {displayStory && (item.instructionMode === 'header' || !item.instructionMode) && (
                                             <div className={`col-span-6 border-l-4 border-indigo-500 pl-4 bg-slate-50/50 rounded-r-2xl shadow-sm ${showWorkArea ? 'py-3 mt-6 mb-2' : 'py-1 mt-2 mb-0'}`}>
                                                 <div className="text-[11px] font-black text-slate-800 italic uppercase tracking-tight">
@@ -952,7 +1035,6 @@ export default function QuestionStudio({
                                         >
                                             <div className="absolute top-2 left-2 text-slate-200 opacity-0 group-hover:opacity-100"><GripVertical size={14} /></div>
                                             
-                                            {/* Top Control Bar — original buttons remain untouched */}
                                             <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-30 transition-all gap-1.5">
                                                 <div className="bg-white shadow-2xl rounded-full p-1 flex gap-1 border border-slate-200">
                                                     <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'columnSpan', item.columnSpan === 2 ? 3 : item.columnSpan === 3 ? 6 : 2); }} className="bg-indigo-600 text-white text-[9px] font-black px-3 py-1 rounded-full italic">W</button>
@@ -965,14 +1047,12 @@ export default function QuestionStudio({
                                                 <div>
                                                     <div className="font-black mb-1 text-slate-300 text-[10px] tracking-widest">{idx + 1}.</div>
                                                     
-                                                    {/* Inline Description — checks item flag */}
                                                     {displayStory && item.instructionMode === 'inline' && (
                                                         <div className="text-[11px] font-bold text-slate-800 mb-2 leading-tight border-b border-slate-100 pb-2">
                                                             <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                         </div>
                                                     )}
                                                     
-                                                    {/* LaTeX Formula Equation — checks item flag */}
                                                     {displayLatex && item.resolvedData?.renderData.latex && (
                                                         <div className={`${showWorkArea ? 'py-4' : 'py-1'} text-center font-serif text-lg`}>
                                                             <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} />
@@ -981,7 +1061,6 @@ export default function QuestionStudio({
                                                     
                                                     {renderOptions(item.resolvedData?.renderData?.options, true)}
                                                     
-                                                    {/* Geometric / Spatial Diagrams — checks item flag */}
                                                     {displayVisual && (
                                                         <div className="flex justify-center scale-90 origin-top mt-2">
                                                             {renderVisual(item.resolvedData?.renderData)}
@@ -994,24 +1073,18 @@ export default function QuestionStudio({
                                                         {showWorkArea ? <div className="min-h-[100px] border-b-2 border-dotted border-slate-100" /> : <div className="h-0" />}
                                                     </div>
 
-                                                    {/* GRANULAR CONFIGURATOR ACTION GRID (Bottom of card) */}
                                                     <div className="opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-2 pt-3 border-t border-slate-100 mt-3 z-40 relative">
                                                         
-                                                        {/* Row A: Shuffling Action Suite */}
                                                         <div className="flex justify-end gap-2">
-                                                            
-                                                            {/* 🔢 Shuffle Numbers Only — Matches your secondary soft text button styles */}
                                                             <button
                                                                 onClick={async (e) => {
                                                                     e.stopPropagation();
                                                                     try {
                                                                         const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${useWordProblems}`);
                                                                         const data = await res.json();
-                                                                        
                                                                         setPacket(packet.map(p => p.id === item.id ? { 
                                                                             ...p, 
                                                                             resolvedData: data,
-                                                                            // 🟢 Keeps the active text theme locked stably into position when rolling value variables
                                                                             selectedStoryIndex: p.selectedStoryIndex !== undefined && p.selectedStoryIndex !== null ? p.selectedStoryIndex : 0 
                                                                         } : p));
                                                                         setIsSaved(false);
@@ -1023,22 +1096,16 @@ export default function QuestionStudio({
                                                                 <Calculator size={12} /> {lang === 'sv' ? "Slumpa Tal" : "Shuffle Numbers"}
                                                             </button>
 
-                                                            {/* 📝 Shuffle Stories Only — Now checks the safe interceptor metadata tag */}
                                                             {item.resolvedData?.renderData?.availableStories && item.resolvedData.renderData.availableStories.length > 1 && (
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         const totalStories = item.resolvedData.renderData.availableStories.length;
-                                                                        
-                                                                        // 🟢 Guarantees an unbroken comparative value baseline fallback
                                                                         const currentStoryIdx = item.selectedStoryIndex !== undefined && item.selectedStoryIndex !== null ? item.selectedStoryIndex : 0;
                                                                         let newIndex = Math.floor(Math.random() * totalStories);
                                                                         if (newIndex === currentStoryIdx) {
                                                                             newIndex = (newIndex + 1) % totalStories;
                                                                         }
-                                                                        
-                                                                        updatePacketItem(item.id, 'selectedStoryIndex', newIndex);
-                                                                        
                                                                         updatePacketItem(item.id, 'selectedStoryIndex', newIndex);
                                                                     }}
                                                                     className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-amber-600 hover:bg-amber-50/50 hover:border-amber-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
@@ -1049,7 +1116,6 @@ export default function QuestionStudio({
                                                             )}
                                                         </div>
 
-                                                        {/* Row B: Structural Visibility Switches */}
                                                         <div className="flex justify-end gap-2">
                                                             <button 
                                                                 onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'showText', !displayStory); }}
@@ -1089,7 +1155,7 @@ export default function QuestionStudio({
           )}
         </div>
 
-        {/* PANE 4: Selected Questions (Refactored to be collapsible and narrower) */}
+        {/* PANE 4: Selected Questions */}
         <div className={`bg-white/90 backdrop-blur-sm border-l border-slate-300 flex flex-col shadow-2xl shrink-0 transition-all duration-300 ${isPane4Collapsed ? 'w-16' : 'w-72'}`}>
           <div className={`p-4 border-b flex items-center ${isPane4Collapsed ? 'justify-center' : 'justify-between'} bg-slate-50/80`}>
               {!isPane4Collapsed && (
@@ -1113,7 +1179,7 @@ export default function QuestionStudio({
                     {packet.map((item, idx) => (
                         <div 
                         key={item.id}
-                        draggable // 🟢 Enables element dragging on the sidebar item natively
+                        draggable 
                         onDragStart={(e) => handleDragStartUnified(e, idx)}
                         onDragOver={(e) => handleDragOverUnified(e, idx)}
                         onDragEnd={handleDragEndUnified}
@@ -1124,7 +1190,6 @@ export default function QuestionStudio({
                             }`}
                     >
                         <div className="flex items-center gap-2 min-w-0">
-                            {/* Visual grab handle indicator icon added for user feedback */}
                             <GripVertical size={12} className="text-slate-300 shrink-0 group-hover:text-slate-400 transition-colors" />
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
@@ -1135,7 +1200,6 @@ export default function QuestionStudio({
                             </div>
                         </div>
 
-                        {/* 🟢 FIXED: Re-added the task delete button and closed the row wrapper div safely */}
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                             <button 
                                 onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }}

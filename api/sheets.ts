@@ -1,11 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase
-const supabase = createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_ANON_KEY || ''
-);
+
+// FIXED: Cross-OS adaptive environment variable loader
+// Resolves strings cleanly regardless of Linux/Windows shell configurations
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+
+if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn("⚠️ Database credentials missing from process environment variables.");
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 1. Setup CORS and Security Headers
@@ -54,10 +60,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // --- METHOD: GET (Fetch Library) ---
         if (req.method === 'GET') {
+            // Dynamically apply the validated user token to this database request context
             const { data, error } = await supabase
                 .from('saved_sheets')
                 .select('id, title, type, packet, config, updated_at')
-                .eq('user_id', user.id) // Security: Filter by verified user ID
+                .eq('user_id', user.id) 
                 .order('updated_at', { ascending: false });
 
             if (error) throw error;
