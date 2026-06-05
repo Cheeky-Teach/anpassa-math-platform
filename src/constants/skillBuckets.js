@@ -73,31 +73,6 @@ export const SKILL_BUCKETS = {
           { key: 'bothsides_concept_strategy', name: { sv: 'X på båda sidor: Strategi', en: 'X on both sides: Strategy' }, desc: { sv: 'Håll antalet x positivt', en: 'Keep the number of x positive' } }
         ]
       },
-      expressions: {
-        name: { sv: 'Förenkling av Uttryck', en: 'Expression Simplification' },
-        variations: [
-          { key: 'combine_lie_exponent', name: { sv: 'Hitta felet: Potenser', en: 'Find error: Exponents' }, desc: { sv: 'x + x vs x * x', en: 'x + x vs x * x' } },
-          { key: 'combine_concept_id', name: { sv: 'Begrepp: Termer', en: 'Concept: Terms' }, desc: { sv: 'Identifiera lika termer', en: 'Identify like terms' } },
-          { 
-            key: 'combine_standard_mixed', 
-            name: { sv: 'Förenkla uttryck', en: 'Simplify expressions' }, 
-            desc: { sv: 'Samla x och tal i ordning', en: 'Combine x and constants' },
-            tags: ['word_problem_ready'],
-            contextType: 'algebra_expressions',
-            // 🟢 Captures all 4 terms and both operators dynamically!
-            // Matches formats like: "12x + 15 - 4x + 6", "10x - 8 - 2x - 3", etc.
-            extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*(?<op2>[\+\-])\s*(?<c>\d+)x\s*(?<op3>[\+\-])\s*(?<d>\d+)$/
-          },
-          { 
-            key: 'expressions_word_problem', 
-            name: { sv: 'Uttryck: Vardagsproblem', en: 'Expressions: Word Problems' }, 
-            desc: { sv: 'Förenkla uttryck utifrån textscenarier', en: 'Simplify expressions from text scenarios' },
-            tags: ['word_problem_ready'],
-            contextType: 'algebra_expressions_story',
-            extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*(?<op2>[\+\-])\s*(?<c>\d+)x\s*(?<op3>[\+\-])\s*(?<d>\d+)$/
-          }
-        ]
-      },
       equations_word: {
         name: { sv: 'Ekvationer: Problemlösning', en: 'Equations: Problem Solving' },
         variations: [
@@ -116,11 +91,27 @@ export const SKILL_BUCKETS = {
         variations: [
           { key: 'combine_lie_exponent', name: { sv: 'Hitta felet: Potenser', en: 'Find error: Exponents' }, desc: { sv: 'x + x vs x * x', en: 'x + x vs x * x' } },
           { key: 'combine_concept_id', name: { sv: 'Begrepp: Termer', en: 'Concept: Terms' }, desc: { sv: 'Identifiera lika termer', en: 'Identify like terms' } },
-          { key: 'combine_standard_mixed', name: { sv: 'Förenkla uttryck', en: 'Simplify expressions' }, desc: { sv: 'Samla x och tal', en: 'Combine x and constants' } },
+          { 
+            key: 'combine_standard_mixed', 
+            name: { sv: 'Förenkla uttryck', en: 'Simplify expressions' }, 
+            desc: { sv: 'Samla x och tal i ordning', en: 'Combine x and constants' },
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_expressions',
+            extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*(?<op2>[\+\-])\s*(?<c>\d+)x\s*(?<op3>[\+\-])\s*(?<d>\d+)$/
+          },
+          { 
+            key: 'expressions_word_problem', 
+            name: { sv: 'Uttryck: Vardagsproblem', en: 'Expressions: Word Problems' }, 
+            desc: { sv: 'Förenkla uttryck utifrån textscenarier', en: 'Simplify expressions from text scenarios' },
+            tags: ['word_problem_ready'],
+            contextType: 'algebra_expressions_story',
+            extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*(?<op2>[\+\-])\s*(?<c>\d+)x\s*(?<op3>[\+\-])\s*(?<d>\d+)$/
+          },
           { key: 'distribute_lie_partial', name: { sv: 'Hitta felet: Parentes', en: 'Find error: Parentheses' }, desc: { sv: 'Partiell distribution', en: 'Partial distribution' } },
           { 
             key: 'distribute_plus', 
             name: { sv: 'Parentes (+)', en: 'Parentheses (+)' }, 
+            desc: { sv: 'Multiplicera in i parentes', en: 'Multiply into parentheses' }, // 🟢 Added missing desc
             tags: ['word_problem_ready'],
             contextType: 'algebra_expressions_dist',
             extractorPattern: /^(?<a>\d+)x\s*\+\s*\(?(?<b>\d*)x\s*\+\s*(?<c>\d+)\)?$/
@@ -128,15 +119,16 @@ export const SKILL_BUCKETS = {
           { 
             key: 'distribute_minus', 
             name: { sv: 'Parentes (-)', en: 'Parentheses (-)' }, 
+            desc: { sv: 'Multiplicera med negativt tecken', en: 'Multiply with negative sign' }, // 🟢 Added missing desc
             tags: ['word_problem_ready'],
             contextType: 'algebra_expressions_dist_neg',
             extractorPattern: /^(?<a>\d+)x\s*-\s*\(?(?<b>\d*)x\s*\+\s*(?<c>\d+)\)?$/
           },
-
           { key: 'distribute_double', name: { sv: 'Dubbla parenteser', en: 'Double parentheses' }, desc: { sv: 'Expandera två parenteser', en: 'Expand two parentheses' } },
           { 
             key: 'distribute_combine_std', 
             name: { sv: 'Expandera & Förenkla', en: 'Expand & Simplify' }, 
+            desc: { sv: 'Förenkla uttryck med parenteser', en: 'Simplify expressions with parentheses' }, // 🟢 Added missing desc
             tags: ['word_problem_ready'],
             contextType: 'algebra_expressions_expand',
             extractorPattern: /^(?<a>\d+)\((?<b>\d*)x\s*\+\s*(?<c>\d+)\)\s*(?<op>[\+\-])\s*(?<d>\d+)x$/
