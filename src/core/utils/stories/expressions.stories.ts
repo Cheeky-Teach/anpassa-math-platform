@@ -7,7 +7,7 @@ export const EXPRESSION_STORIES: Record<string, StoryScenario[]> = {
     // =========================================================================
     algebra_expressions: [
         {
-            sv: "Inledningsvis finns det x passagerare på en buss. Vid nästa hållplats går {a} personer av, sedan kliver {b}x passagerare på. Skriv och förenkla ett uttryck för det nya antalet passagerare.",
+            sv: "Det finns x passagerare på en buss. Vid nästa hållplats går {a} personer av, sedan kliver {b}x passagerare på. Skriv och förenkla ett uttryck för det nya antalet passagerare.",
             en: "Initially, there are x passengers on a bus. At the next stop, {a} people get off, then {b}x passengers board. Write and simplify an expression for the new number of passengers."
         },
         {

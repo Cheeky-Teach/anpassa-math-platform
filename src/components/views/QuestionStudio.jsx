@@ -482,9 +482,13 @@ export default function QuestionStudio({
 
   const regenerateItem = async (id, topicId, variationKey) => {
     try {
-        const res = await fetch(`/api/question?topic=${topicId}&variation=${variationKey}&lang=${lang}&wordProblem=${useWordProblems}`);
+        const item = packet.find(p => p.id === id);
+        // Look at the item's history to see if it should fetch a word problem
+        const isItemWP = item?.selectedStoryIndex !== null && item?.selectedStoryIndex !== undefined;
+
+        const res = await fetch(`/api/question?topic=${topicId}&variation=${variationKey}&lang=${lang}&wordProblem=${isItemWP}`);
         const data = await res.json();
-        setPacket(prev => prev.map(item => item.id === id ? { ...item, resolvedData: data } : item)); setIsSaved(false);
+        setPacket(prev => prev.map(p => p.id === id ? { ...p, resolvedData: data } : p)); setIsSaved(false);
     } catch (err) { console.error(err); }
   };
 
@@ -495,6 +499,9 @@ export default function QuestionStudio({
             const updatedPacket = await Promise.all(packet.map(async (item) => {
                 if (!item.topicId || !item.variationKey) return item;
 
+                // 🟢 IDENTIFY ITEM STATE: Determine if THIS specific item was created as a word problem
+                const isItemWP = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
+
                 if (mode === 'stories') {
                     const rd = item.resolvedData?.renderData;
                     if (!rd?.availableStories || rd.availableStories.length <= 1) return item;
@@ -502,13 +509,24 @@ export default function QuestionStudio({
                     return { ...item, selectedStoryIndex: newIndex };
                 }
 
-                const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${useWordProblems}`);            
+                // 🟢 PASS ITEM STATE: Use the item's own word problem state, NOT the global toggle
+                const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWP}`);            
                 const data = await res.json();
                 
+                // 🟢 SHUFFLE BOTH LOGIC: If 'both' is selected and it is a word problem, randomize the text index!
+                let nextStoryIdx = null;
+                if (isItemWP) {
+                    if (mode === 'both' && data.renderData?.availableStories) {
+                        nextStoryIdx = Math.floor(Math.random() * data.renderData.availableStories.length);
+                    } else {
+                        nextStoryIdx = item.selectedStoryIndex; // Keep same story, just update numbers
+                    }
+                }
+
                 return { 
                     ...item,
                     id: mode === 'both' ? crypto.randomUUID() : item.id, 
-                    selectedStoryIndex: mode === 'numbers' ? (item.selectedStoryIndex !== undefined ? item.selectedStoryIndex : null) : null,
+                    selectedStoryIndex: nextStoryIdx,
                     resolvedData: data 
                 };
             }));
@@ -1080,7 +1098,10 @@ export default function QuestionStudio({
                                                                 onClick={async (e) => {
                                                                     e.stopPropagation();
                                                                     try {
-                                                                        const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${useWordProblems}`);
+                                                                        // Check the item's historical state
+                                                                        const isItemWP = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
+                                                                        
+                                                                        const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWP}`);
                                                                         const data = await res.json();
                                                                         setPacket(packet.map(p => p.id === item.id ? { 
                                                                             ...p, 
