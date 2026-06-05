@@ -5,7 +5,7 @@ import {
   Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, X, Globe, Building2, Lock, Copy, Check, Filter,
   MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical, Brain, Calculator, Target, 
-  Image as ImageIcon, FileText as TextIcon
+  Image as ImageIcon, FileText as TextIcon, Monitor
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 // --- COMPREHENSIVE VISUAL IMPORTS ---
@@ -18,6 +18,7 @@ import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/Sc
 import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals.jsx';
 import AngleVisual from '../visuals/AngleComponents.jsx';
 import { supabase } from '../../lib/supabaseClient'; 
+import PresentationView from '../views/PresentationView.jsx';
 
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
@@ -147,7 +148,8 @@ export default function QuestionStudio({
       tab_mine: "Mina sparade", tab_school: "Min Skola", tab_global: "Globalt",
       clone_btn: "Kopiera", clone_success: "Kopierad!", peek_title: "Snabbkoll",
       mode_header: "Som rubrik", mode_inline: "Inuti kortet", mode_hidden: "Dölj text",
-      hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Text"
+      hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Text",
+      present: "Presentera"
     },
     en: {
       studio: "Question Studio", library_title: "Library", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
@@ -166,7 +168,8 @@ export default function QuestionStudio({
       tab_mine: "My Saved", tab_school: "School", tab_global: "Global",
       clone_btn: "Clone", clone_success: "Cloned!", peek_title: "Quick Peek",
       mode_header: "As Header", mode_inline: "Inside Card", mode_hidden: "Hide Text",
-      hide_extra: "Hide Concepts & MCQ", type_calc: "Calculate", type_concept: "Concept", type_logic: "Logic", type_visual: "Image", type_text: "Text"
+      hide_extra: "Hide Concepts & MCQ", type_calc: "Calculate", type_concept: "Concept", type_logic: "Logic", type_visual: "Image", type_text: "Text",
+      present: "Present"
     }
   }[lang];
 
@@ -199,6 +202,7 @@ export default function QuestionStudio({
   
   const [isGlobalShuffleOpen, setIsGlobalShuffleOpen] = useState(false);
   const [filterDocType, setFilterDocType] = useState('all');
+  const [showPresentation, setShowPresentation] = useState(false); 
 
   // --- UNIFIED BI-DIRECTIONAL DRAG AND DROP ---
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
@@ -783,6 +787,15 @@ export default function QuestionStudio({
                     <button onClick={() => setChosenVisibility('school')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'school' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:bg-white'}`}><Building2 size={14}/></button>
                     <button onClick={() => setChosenVisibility('public')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'public' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:bg-white'}`}><Globe size={14}/></button>
                 </div>
+                <button 
+                    onClick={handleSave} 
+                    disabled={packet.length === 0} 
+                    className="px-6 py-2.5 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-indigo-50 transition-all disabled:opacity-30 cursor-pointer"
+                >
+                    <Save size={16}/> {t.save_btn}
+                </button>
+                
+                <div className="h-6 w-px bg-slate-200 mx-1"></div>
             </div>
 
             {/* Absolute Centered Target Layer: Bypasses flex pushes entirely to align mathematically with the window viewport center */}
@@ -800,15 +813,7 @@ export default function QuestionStudio({
 
             {/* Right Side: Primary Active Tool Launch & Save Buttons */}
             <div className="flex items-center gap-3 pl-6 max-w-[45%] justify-end">
-                <button 
-                    onClick={handleSave} 
-                    disabled={packet.length === 0} 
-                    className="px-6 py-2.5 bg-white border-2 border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-indigo-50 transition-all disabled:opacity-30 cursor-pointer"
-                >
-                    <Save size={16}/> {t.save_btn}
-                </button>
                 
-                <div className="h-6 w-px bg-slate-200 mx-1"></div>
                 
                 <button 
                     onClick={handleLaunchLive} 
@@ -816,6 +821,14 @@ export default function QuestionStudio({
                     className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-indigo-600 transition-all disabled:opacity-30 cursor-pointer"
                 >
                     <Send size={16}/> {t.live_btn}
+                </button>
+
+                <button 
+                    onClick={() => setShowPresentation(true)} 
+                    disabled={packet.length === 0} 
+                    className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-30 shadow-md cursor-pointer"
+                    >
+                    <Monitor size={16}/> {t.present}
                 </button>
 
                 <div className="h-6 w-px bg-slate-200 mx-1"></div>
@@ -836,7 +849,9 @@ export default function QuestionStudio({
                     >
                         <Printer size={16}/> {t.publish}
                     </button>
+
                 )}
+
 
                 <div className="h-6 w-px bg-slate-200 mx-1"></div>
                 
@@ -1254,10 +1269,19 @@ export default function QuestionStudio({
                                             <button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-md text-[8px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Steg</button></div></div>)}
                     </div>
                 )}
+                
             </div>
           )}
         </div>
       </div>
+      {showPresentation && (
+                    <PresentationView 
+                        packet={packet} 
+                        sheetTitle={sheetTitle} 
+                        lang={lang} 
+                        onClose={() => setShowPresentation(false)} 
+                    />
+                )}
       <BackgroundWave /> 
     </div>
   );
