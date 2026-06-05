@@ -17,6 +17,7 @@ import ProfileView from './components/views/ProfileView';
 import TimesTable from './components/views/TimesTable';
 import WhiteboardView from './components/whiteboard/WhiteboardView';
 import TestLabView from './components/views/TestLabView';
+import PresentationView from './components/views/PresentationView';
 
 // Modals
 import AboutModal from './components/modals/AboutModal';
