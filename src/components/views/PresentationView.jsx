@@ -76,6 +76,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
     // --- QUALITY OF LIFE STATES ---
     const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
+    const [isRightCollapsed, setIsRightCollapsed] = useState(false);
     const [textSize, setTextSize] = useState('base'); 
     const [viewMode, setViewMode] = useState('sheet'); 
     const [clueViewMode, setClueViewMode] = useState('steps'); // 'steps' (revealer array slider) or 'answers' (kompakt full list facit)
@@ -146,10 +147,10 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     // --- TEXT SIZE CLASS MAPPER ---
     const getTextSizeClass = (type) => {
         const textMap = {
-            'base': { desc: 'text-xl', latex: 'text-xl', clue: 'text-xl', headerText: 'text-m' },
-            'lg': { desc: 'text-2xl', latex: 'text-2xl', clue: 'text-2xl', headerText: 'text-l' },
-            'xl': { desc: 'text-3xl', latex: 'text-3xl', clue: 'text-3xl', headerText: 'text-xl' },
-            '2xl': { desc: 'text-4xl', latex: 'text-4xl', clue: 'text-4xl', headerText: 'text-base' }
+            'base': { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l' },
+            'lg': { desc: 'text-xl', latex: 'text-2xl', clue: 'text-xl', headerText: 'text-xl' },
+            'xl': { desc: 'text-2xl', latex: 'text-3xl', clue: 'text-2xl', headerText: 'text-2xl' },
+            '2xl': { desc: 'text-3xl', latex: 'text-4xl', clue: 'text-3xl', headerText: 'text-3xl' }
         };
         return textMap[textSize] || textMap['base'];
     };
@@ -174,13 +175,13 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                             onClick={() => setViewMode('list')}
                             className={`p-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
                         >
-                            <List size={14} /> <span className="text-[9px]">List</span>
+                            <List size={14} /> <span className="text-[12px]">{lang === 'sv' ? "List" : "List"}</span>
                         </button>
                         <button 
                             onClick={() => setViewMode('sheet')}
-                            className={`p-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'sheet' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                            className={`p-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'sheet' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-100 hover:text-white'}`}
                         >
-                            <FileText size={14} /> <span className="text-[9px]">Blad</span>
+                            <FileText size={14} /> <span className="text-[12px]">{lang === 'sv' ? "Blad" : "Sheet"}</span>
                         </button>
                     </div>
 
@@ -191,17 +192,17 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                         <button 
                             disabled={textSize === 'base'}
                             onClick={() => setTextSize(prev => prev === '2xl' ? 'xl' : prev === 'xl' ? 'lg' : 'base')}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-20 cursor-pointer transition-colors"
+                            className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-slate-500 disabled:opacity-20 cursor-pointer transition-colors"
                         >
                             <ZoomOut size={14} />
                         </button>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-300 px-2 min-w-[70px] text-center">
+                        <span className="text-[12px] font-black uppercase tracking-widest text-slate-100 px-2 min-w-[70px] text-center">
                             {lang === 'sv' ? `TEXT: ${textSize.toUpperCase()}` : `SIZE: ${textSize.toUpperCase()}`}
                         </span>
                         <button 
                             disabled={textSize === '2xl'}
                             onClick={() => setTextSize(prev => prev === 'base' ? 'lg' : prev === 'lg' ? 'xl' : '2xl')}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-20 cursor-pointer transition-colors"
+                            className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-slate-700 disabled:opacity-20 cursor-pointer transition-colors"
                         >
                             <ZoomIn size={14} />
                         </button>
@@ -215,14 +216,14 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                 setActiveIds([]);
                             }
                         }}
-                        className="px-4 py-2 bg-slate-800 hover:bg-rose-600 border border-slate-700/60 text-slate-300 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-20 disabled:hover:bg-slate-800 disabled:hover:text-slate-300 cursor-pointer"
+                        className="px-4 py-2 bg-slate-800 hover:bg-rose-600 border border-slate-700/60 text-slate-300 hover:text-white rounded-xl text-[12px] font-black uppercase tracking-widest transition-all disabled:opacity-20 disabled:hover:bg-slate-800 disabled:hover:text-slate-300 cursor-pointer"
                     >
                         {lang === 'sv' ? "Nollställ" : "Reset Canvas"}
                     </button>
 
                     <div className="w-px h-6 bg-slate-700/60 hidden sm:block" />
 
-                    <button onClick={onClose} className="bg-white/10 hover:bg-rose-500 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer">Stäng</button>
+                    <button onClick={onClose} className="bg-white/10 hover:bg-rose-500 px-6 py-2 rounded-xl text-[12px] font-black uppercase tracking-widest transition-all cursor-pointer">{lang === 'sv' ? "Stäng" : "Close"}</button>
                 </div>
             </header>
 
@@ -230,13 +231,14 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
             <div 
                 className="flex-1 grid overflow-hidden relative transition-all duration-300"
                 style={{ 
-                    gridTemplateColumns: `${isLeftCollapsed ? '64px' : '288px'} 1fr 320px` 
+                    /* Right column track collapses seamlessly, automatically shifting the center workspace */
+                    gridTemplateColumns: `${isLeftCollapsed ? '64px' : '288px'} 1fr ${isRightCollapsed ? '64px' : '320px'}` 
                 }}
             >
                 {/* COLUMN 1: COLLAPSIBLE WORKSPACE SELECTION PICKER */}
                 <div className={`bg-white border-r border-slate-200 overflow-y-auto custom-scrollbar flex flex-col transition-all duration-300 select-none shrink-0 z-10 min-w-0 ${isLeftCollapsed ? 'p-2 items-center' : 'p-6'}`}>
                     <div className={`flex items-center mb-4 w-full ${isLeftCollapsed ? 'justify-center' : 'justify-between'}`}>
-                        {!isLeftCollapsed && <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">Uppgifter ({packet.length})</h2>}
+                        {!isLeftCollapsed && <h2 className="text-[16px] font-black text-purple-700 uppercase tracking-widest truncate">{lang === 'sv' ? "Uppgifter" : "Question"} ({packet.length})</h2>}
                         <button 
                             onClick={() => { setIsLeftCollapsed(!isLeftCollapsed); }}
                             className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
@@ -269,7 +271,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all shrink-0 min-w-0 ${isActive ? 'border-amber-500 bg-amber-50 shadow-md scale-[1.01]' : 'border-slate-100 hover:border-slate-300 bg-white'}`}
                                 >
                                     <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[9px] font-black text-slate-400">#UPPGIFT {idx + 1}</span>
+                                        <span className="text-[16px] font-black text-blue-900"># {idx + 1}</span>
                                         {isActive && <span className="w-2 h-2 rounded-full bg-amber-500 shadow-sm" />}
                                     </div>
                                     <div className="text-xs font-bold line-clamp-2 text-slate-600 truncate">
@@ -282,43 +284,40 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 </div>
 
                 {/* COLUMN 2: WORKSPACE CANVAS INTERACTION SHELF */}
-                    <div className="relative bg-[#f9fbf7] overflow-auto h-full w-full custom-scrollbar pt-16 pb-[70px] px-8 flex flex-col justify-start items-center">
-                        
-                        {/* 🟢 FIXED: RESPONSIVE CORNER-ANCHORED PRESENTATION CONTROLS */}
-                        {/* Pinned strictly inside the bounds of the active middle pane canvas track */}
-                        <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
-                            <button 
-                                onClick={handleCanvasPrev}
-                                disabled={activeIds.length > 0 && presentationIndex === 0}
-                                className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
-                                title={lang === 'sv' ? "Föregående uppgift" : "Previous Question"}
-                            >
-                                <ChevronLeft size={28} />
-                            </button>
-
-                            {/* Small center label to track progress on screen for the teacher */}
-                            {activeIds.length > 0 && (
-                                <div className="bg-slate-900/90 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest backdrop-blur-sm shadow border border-white/10">
-                                    {lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${packet.length}` : `Question ${presentationIndex + 1} of ${packet.length}`}
-                                </div>
-                            )}
-
-                            <button 
-                                onClick={handleCanvasNext}
-                                disabled={activeIds.length > 0 && presentationIndex >= packet.length - 1}
-                                className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
-                                title={lang === 'sv' ? "Nästa uppgift" : "Next Question"}
-                            >
-                                <ChevronRight size={28} />
-                            </button>
-                        </div>
-
-                        {/* DYNAMIC PRESENTATION ENGINE SWITCHBOARD LAYER */}
-                        {viewMode === 'sheet' ? (
-                        /* 📄 OPTION A: 1:1 REPLICATED BORDERLESS PAPER WORKSHEET VIEWER */
-                        <div 
-                            className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-[15mm] flex flex-col rounded-sm border border-slate-300 animate-in fade-in zoom-in-95 duration-300 select-none mb-8 mt-2"
+                <div className="relative bg-[#f9fbf7] overflow-auto h-full w-full custom-scrollbar pt-16 pb-[70px] px-8 flex flex-col justify-start items-center">
+                    
+                    {/* RESPONSIVE CORNER-ANCHORED PRESENTATION CONTROLS */}
+                    <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
+                        <button 
+                            onClick={handleCanvasPrev}
+                            disabled={activeIds.length > 0 && presentationIndex === 0}
+                            className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
+                            title={lang === 'sv' ? "Föregående uppgift" : "Previous Question"}
                         >
+                            <ChevronLeft size={28} />
+                        </button>
+
+                        {/* Small center label to track progress on screen for the teacher */}
+                        {activeIds.length > 0 && (
+                            <div className="bg-slate-900/90 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest backdrop-blur-sm shadow border border-white/10 pointer-events-auto">
+                                {lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${packet.length}` : `Question ${presentationIndex + 1} of ${packet.length}`}
+                            </div>
+                        )}
+
+                        <button 
+                            onClick={handleCanvasNext}
+                            disabled={activeIds.length > 0 && presentationIndex >= packet.length - 1}
+                            className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
+                            title={lang === 'sv' ? "Nästa uppgift" : "Next Question"}
+                        >
+                            <ChevronRight size={28} />
+                        </button>
+                    </div>
+
+                    {/* DYNAMIC PRESENTATION ENGINE SWITCHBOARD LAYER */}
+                    {viewMode === 'sheet' ? (
+                        /* 📄 OPTION A: 1:1 REPLICATED BORDERLESS PAPER WORKSHEET VIEWER */
+                        <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-[15mm] flex flex-col rounded-sm border border-slate-300 animate-in fade-in zoom-in-95 duration-300 select-none mb-8 mt-2">
                             {/* Replicated Worksheet Title Header Row Strip */}
                             <header className="border-b-2 border-black pb-2 mb-6 flex items-end justify-between">
                                 <h1 className="text-md font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1>
@@ -424,7 +423,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                             <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
                                         )}
 
-                                        <div className="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block mb-6 uppercase tracking-wider shadow-sm shrink-0">
+                                        <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block mb-6 uppercase tracking-wider shadow-sm shrink-0">
                                             {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
                                         </div>
                                         
@@ -451,156 +450,176 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 </div>
 
                 {/* COLUMN 3: SOLUTIONS & COMPACT ANSWER KEY DRAWER PANEL */}
-                <div className="w-80 bg-white border-l border-slate-200 p-6 overflow-y-auto custom-scrollbar flex flex-col gap-6 shrink-0 select-none h-full">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <div className="flex items-center gap-2">
-                            <Layers size={14} className="text-slate-400" />
-                            <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                {clueViewMode === 'steps' ? (lang === 'sv' ? "Lösningssteg" : "Solution Steps") : (lang === 'sv' ? "Facit" : "Answer Key")}
-                            </h2>
-                        </div>
-                        
-                        {/* STATE SWITCHER CONTROLS */}
-                        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner">
-                            <button
-                                onClick={() => setClueViewMode('steps')}
-                                className={`px-2 py-1 text-[8px] font-black uppercase rounded-md transition-all cursor-pointer ${clueViewMode === 'steps' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                <div 
+                    className={`bg-white border-l border-slate-200 flex flex-col shrink-0 select-none h-full transition-all duration-300 relative min-h-0 overflow-hidden
+                        ${isRightCollapsed ? 'w-16 p-2 items-center justify-start pt-4' : 'w-80 p-6 gap-6'}`}
+                >
+                    {isRightCollapsed ? (
+                        /* 📄 VERTICAL TEXT STRIP BUTTON (When panel is collapsed) */
+                        <button
+                            onClick={() => setIsRightCollapsed(false)}
+                            className="w-12 flex-1 flex flex-col items-center justify-start py-6 bg-slate-50 hover:bg-indigo-50 border border-slate-200/60 rounded-2xl cursor-pointer group transition-all text-slate-400 hover:text-indigo-600 gap-4"
+                            title={lang === 'sv' ? "Expandera panel" : "Expand Panel"}
+                        >
+                            <Layers size={16} className="shrink-0 transition-transform group-hover:scale-110" />
+                            
+                            <span 
+                                className="text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap mt-4 select-none"
+                                style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                             >
-                                {lang === 'sv' ? "Steg" : "Steps"}
-                            </button>
-                            <button
-                                onClick={() => setClueViewMode('answers')}
-                                className={`px-2 py-1 text-[8px] font-black uppercase rounded-md transition-all cursor-pointer ${clueViewMode === 'answers' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                            >
-                                {lang === 'sv' ? "Svar" : "Answers"}
-                            </button>
-                        </div>
-                    </div>
-                    
-                    {/* 🟢 CONDITIONAL LOGIC SPLIT: FULL ASSIGNED ANSWER SHEET VS INDIVIDUAL ACTIVE PROBLEM STEPS */}
-{clueViewMode === 'answers' ? (
-    /* 🚀 NEW ENGINE: KOMPAKT MULTI-COLUMN FULL WORKSHEET KEY GRID */
-    <div className="flex-1 flex flex-col min-h-0 animate-in fade-in duration-200">
-        {packet.length === 0 ? (
-            <div className="text-center text-slate-300 italic text-xs mt-12">Tomt arbetsblad</div>
-        ) : (
-                                /* 🟢 FIX A: Added a custom utility class 'katex-size-bridge' so we can force deep children to listen to our sizing state wrapper */
-                                <div className={`columns-2 gap-x-4 gap-y-2 font-bold leading-normal break-inside-avoid text-slate-700 ${sizeClasses.latex}`}>
-                                    
-                                    {packet.map((q, idx) => {
-                                        const rd = q.resolvedData?.renderData;
+                                {clueViewMode === 'steps' 
+                                    ? (lang === 'sv' ? "Ledtråd" : "Clues") 
+                                    : (lang === 'sv' ? "Facit" : "Answer Key")}
+                            </span>
+                        </button>
+                    ) : (
+                        /* 🛠️ TRADITIONAL FULLY EXPANDED SIDEBAR DRAWER INTERFACE */
+                        <>
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setIsRightCollapsed(true)}
+                                        className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer mr-0.5"
+                                        title={lang === 'sv' ? "Minimera panel" : "Minimize Panel"}
+                                    >
+                                        <ChevronRight size={16} />
+                                    </button>
+                                    <Layers size={14} className="text-slate-400" />
+                                    <h2 className="text-[12px] font-black text-slate-400 uppercase tracking-widest">
+                                        {clueViewMode === 'steps' ? (lang === 'sv' ? "Steg-för-steg" : "Solution Steps") : (lang === 'sv' ? "Facit" : "Answer Key")}
+                                    </h2>
+                                </div>
+                                
+                                <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner">
+                                    <button
+                                        onClick={() => setClueViewMode('steps')}
+                                        className={`px-2 py-1 text-[10px] font-black uppercase rounded-md transition-all cursor-pointer ${clueViewMode === 'steps' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    >
+                                        {lang === 'sv' ? "Steg" : "Steps"}
+                                    </button>
+                                    <button
+                                        onClick={() => setClueViewMode('answers')}
+                                        className={`px-2 py-1 text-[10px] font-black uppercase rounded-md transition-all cursor-pointer ${clueViewMode === 'answers' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    >
+                                        {lang === 'sv' ? "Svar" : "Answers"}
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {clueViewMode === 'answers' ? (
+                                /* KOMPAKT MULTI-COLUMN FULL WORKSHEET KEY GRID */
+                                <div className="flex-1 flex flex-col min-h-0 animate-in fade-in duration-200 overflow-y-auto custom-scrollbar">
+                                    {packet.length === 0 ? (
+                                        <div className="text-center text-slate-300 italic text-m mt-12">Tomt arbetsblad</div>
+                                    ) : (
+                                        <div className={`columns-2 gap-x-4 gap-y-2 font-bold leading-normal break-inside-avoid text-slate-700 ${sizeClasses.latex}`}>
+                                            {packet.map((q, idx) => {
+                                                const rd = q.resolvedData?.renderData;
+                                                const clues = q?.clues || q?.resolvedData?.clues || [];
+
+                                                let finalPayload = rd?.answer || q.answer;
+
+                                                if (!finalPayload && clues.length > 0) {
+                                                    const lastClue = clues[clues.length - 1];
+                                                    finalPayload = typeof lastClue === 'object' 
+                                                        ? (lastClue.latex || lastClue[lang] || lastClue.text) 
+                                                        : lastClue;
+                                                }
+
+                                                if (!finalPayload) finalPayload = "-";
+                                                const inlineMathAnswer = `$${String(finalPayload).replace(/\$/g, '')}$`;
+
+                                                return (
+                                                    <div 
+                                                        key={`key-ans-${q.id}`} 
+                                                        className="inline-block w-full py-2 px-3 mb-2 bg-slate-50 border border-slate-200/60 rounded-xl overflow-hidden text-ellipsis transition-all duration-200"
+                                                    >
+                                                        <span className="font-black text-indigo-600 mr-2 text-[14px] select-none inline-block align-middle">
+                                                            {idx + 1}:
+                                                        </span>
+                                                        <div className="inline-block align-middle max-w-[80%] overflow-hidden text-ellipsis">
+                                                            <MathDisplay content={inlineMathAnswer} className="font-bold text-slate-800" />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                /* LEGACY STEP-BY-STEP SOLUTION CAROUSEL RENDERER */
+                                <div className="flex-1 flex flex-col min-h-0 gap-4 overflow-y-auto custom-scrollbar pr-1">
+                                    {activeIds.length === 0 && (
+                                        <div className="text-center text-slate-300 italic text-xs mt-12 px-4">
+                                            {lang === 'sv' ? "Klicka på en uppgift i arbetsbladet för att visa tillhörande lösningssteg." : "Click any question inside the worksheet page to load its clues."}
+                                        </div>
+                                    )}
+
+                                    {activeIds.map(id => {
+                                        const q = packet.find(p => p.id === id);
                                         const clues = q?.clues || q?.resolvedData?.clues || [];
+                                        const progress = clueProgress[id] || 0;
+                                        const masterIndex = packet.findIndex(p => p.id === id) + 1;
 
-                                        // 🟢 FIXED: Target the true final answer instead of the question root latex field
-                                        // 1. Look for explicit final answer strings first (e.g., rd.answer or q.answer)
-                                        let finalPayload = rd?.answer || q.answer;
-
-                                        // 2. Fallback: If no explicit answer field exists, extract the math data from the very last clue step
-                                        if (!finalPayload && clues.length > 0) {
-                                            const lastClue = clues[clues.length - 1];
-                                            // If the clue is a localized object structure, pull its math latex or text field safely
-                                            finalPayload = typeof lastClue === 'object' 
-                                                ? (lastClue.latex || lastClue[lang] || lastClue.text) 
-                                                : lastClue;
-                                        }
-
-                                        // Fallback default if absolutely nothing is found
-                                        if (!finalPayload) finalPayload = "-";
-
-                                        // Standardize wrapping inside inline math blocks cleanly
-                                        const inlineMathAnswer = `$${String(finalPayload).replace(/\$/g, '')}$`;
+                                        if (!q || clues.length === 0) return null;
 
                                         return (
-                                            <div 
-                                                key={`key-ans-${q.id}`} 
-                                                className="inline-block w-full py-2 px-3 mb-2 bg-slate-50 border border-slate-200/60 rounded-xl overflow-hidden text-ellipsis transition-all duration-200"
-                                            >
-                                                <span className="font-black text-indigo-600 mr-2 text-[20px] select-none inline-block align-middle">
-                                                    {idx + 1}:
-                                                </span>
-                                                
-                                                <div className="inline-block align-middle max-w-[80%] overflow-hidden text-ellipsis">
-                                                    <MathDisplay content={inlineMathAnswer} className="font-bold text-slate-800" />
+                                            <div key={`clues-${id}`} className="bg-slate-50/80 p-4 rounded-2xl border border-slate-100 animate-in slide-in-from-right-4 duration-300 mb-2 shrink-0">
+                                                <div className="flex items-center justify-between mb-4 bg-white p-2 rounded-xl border border-slate-200/60 shadow-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="text-[12px] font-black uppercase text-indigo-600 tracking-wider">
+                                                            {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
+                                                        </div>
+                                                        {progress > 0 && (
+                                                            <button
+                                                                onClick={() => setClueProgress({ ...clueProgress, [id]: 0 })}
+                                                                className="p-1 text-slate-400 hover:text-rose-500 rounded bg-slate-50 border border-slate-100 hover:border-rose-100 transition-colors cursor-pointer text-[12px] font-black uppercase tracking-tight"
+                                                            >
+                                                                {lang === 'sv' ? "Dölj" : "Reset"}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex gap-0.5 items-center">
+                                                        <button 
+                                                            onClick={() => setClueProgress({...clueProgress, [id]: Math.max(0, progress - 1)})}
+                                                            disabled={progress === 0}
+                                                            className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer transition-colors"
+                                                        ><ChevronLeft size={16}/></button>
+                                                        <div className="min-w-8 text-center text-[12px] font-black text-slate-500">{progress}/{clues.length}</div>
+                                                        <button 
+                                                            onClick={() => setClueProgress({...clueProgress, [id]: Math.min(clues.length, progress + 1)})}
+                                                            disabled={progress === clues.length}
+                                                            className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer transition-colors"
+                                                        ><ChevronRight size={16}/></button>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2.5">
+                                                    {clues.slice(0, progress).map((clue, idx) => {
+                                                        const text = typeof clue === 'object' ? clue[lang] || clue.text : clue;
+                                                        const latex = clue.latex;
+                                                        return (
+                                                            <div key={idx} className="bg-white p-3 rounded-xl shadow-sm border-l-4 border-amber-400 animate-in slide-in-from-top-2 duration-200">
+                                                                <div className={`font-bold text-slate-700 leading-snug ${sizeClasses.clue}`}>
+                                                                    <MathDisplay content={text}/>
+                                                                </div>
+                                                                {latex && (
+                                                                    <div className="mt-2 text-center text-indigo-600 font-serif bg-indigo-50/20 py-1.5 rounded border border-indigo-50/50 scale-95 origin-center">
+                                                                        <MathDisplay content={`$$${latex}$$`}/>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
-                                )}
-                            </div>
-                        ) : (
-                        /* 🛠️ LEGACY STEP-BY-STEP SOLUTION CAROUSEL RENDERER */
-                        <>
-                            {activeIds.length === 0 && (
-                                <div className="text-center text-slate-300 italic text-xs mt-12 px-4">
-                                    {lang === 'sv' ? "Klicka på en uppgift i arbetsbladet för att visa tillhörande lösningssteg." : "Click any question inside the worksheet page to load its clues."}
-                                </div>
                             )}
-
-                            {activeIds.map(id => {
-                                const q = packet.find(p => p.id === id);
-                                const clues = q?.clues || q?.resolvedData?.clues || [];
-                                const progress = clueProgress[id] || 0;
-                                const masterIndex = packet.findIndex(p => p.id === id) + 1;
-
-                                if (!q || clues.length === 0) return null;
-
-                                return (
-                                    <div key={`clues-${id}`} className="bg-slate-50/80 p-4 rounded-2xl border border-slate-100 animate-in slide-in-from-right-4 duration-300 mb-2">
-                                        <div className="flex items-center justify-between mb-4 bg-white p-2 rounded-xl border border-slate-200/60 shadow-sm">
-                                            <div className="flex items-center gap-2">
-                                                <div className="text-[10px] font-black uppercase text-indigo-600 tracking-wider">
-                                                    {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
-                                                </div>
-                                                {progress > 0 && (
-                                                    <button
-                                                        onClick={() => setClueProgress({ ...clueProgress, [id]: 0 })}
-                                                        className="p-1 text-slate-400 hover:text-rose-500 rounded bg-slate-50 border border-slate-100 hover:border-rose-100 transition-colors cursor-pointer text-[8px] font-black uppercase tracking-tight"
-                                                    >
-                                                        {lang === 'sv' ? "Dölj" : "Reset"}
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <div className="flex gap-0.5 items-center">
-                                                <button 
-                                                    onClick={() => setClueProgress({...clueProgress, [id]: Math.max(0, progress - 1)})}
-                                                    disabled={progress === 0}
-                                                    className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer transition-colors"
-                                                ><ChevronLeft size={16}/></button>
-                                                <div className="min-w-8 text-center text-[10px] font-black text-slate-500">{progress}/{clues.length}</div>
-                                                <button 
-                                                    onClick={() => setClueProgress({...clueProgress, [id]: Math.min(clues.length, progress + 1)})}
-                                                    disabled={progress === clues.length}
-                                                    className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 cursor-pointer transition-colors"
-                                                ><ChevronRight size={16}/></button>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2.5">
-                                            {clues.slice(0, progress).map((clue, idx) => {
-                                                const text = typeof clue === 'object' ? clue[lang] || clue.text : clue;
-                                                const latex = clue.latex;
-                                                return (
-                                                    <div key={idx} className="bg-white p-3 rounded-xl shadow-sm border-l-4 border-amber-400 animate-in slide-in-from-top-2 duration-200">
-                                                        <div className={`font-bold text-slate-700 leading-snug ${sizeClasses.clue}`}>
-                                                            <MathDisplay content={text}/>
-                                                        </div>
-                                                        {latex && (
-                                                            <div className="mt-2 text-center text-indigo-600 font-serif bg-indigo-50/20 py-1.5 rounded border border-indigo-50/50 scale-95 origin-center">
-                                                                <MathDisplay content={`$$${latex}$$`}/>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                );
-                            })}
                         </>
                     )}
                 </div>
-
             </div>
         </div>
     );

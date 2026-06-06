@@ -722,10 +722,21 @@ export default function QuestionStudio({
                                     <td className="p-6 text-center font-medium text-slate-400 text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
                                     <td className="p-6 text-right">
                                         <div className="flex justify-end gap-2 items-center">
-                                            <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-2 text-slate-300 hover:text-indigo-600 transition-colors"><Maximize2 size={18}/></button>
+                                            <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-2 text-red-900 hover:text-indigo-600 transition-colors"><Maximize2 size={18}/></button>
                                             {libraryTab === 'private' ? (
                                                 <>
+                                                    {/* OPEN BUTTON */}
                                                     <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors">{t.load_btn}</button>
+                                                    
+                                                    {/* 🟢 NEW: PRESENT DIRECTLY FROM LIBRARY BUTTON */}
+                                                    <button 
+                                                        onClick={() => { loadSheet(sheet); setShowPresentation(true); }} 
+                                                        className="bg-amber-500 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 shadow-sm transition-colors flex items-center gap-1.5"
+                                                    >
+                                                        <Monitor size={14} /> {t.present}
+                                                    </button>
+
+                                                    {/* DELETE BUTTON */}
                                                     <button onClick={(e) => deleteSheet(e, sheet.id)} className="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={18}/></button>
                                                 </>
                                             ) : (
@@ -747,10 +758,25 @@ export default function QuestionStudio({
                     <div className="p-8 border-b flex justify-between items-center bg-slate-900 text-white"><div><h3 className="text-xl font-black uppercase italic tracking-tighter leading-none">{peekSheet.title}</h3><p className="text-[10px] font-bold text-slate-400 uppercase mt-2 tracking-widest">{peekSheet.packet?.length || 0} Uppgifter</p></div><button onClick={() => setPeekSheet(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X size={24}/></button></div>
                     <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
                         {peekSheet.packet.map((q, i) => (
-                            <div key={i} className="border-b border-slate-100 pb-8 last:border-0"><div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4">Uppgift {i+1}</div><div className="flex justify-center mb-4 scale-75 origin-top">{renderVisual(q.resolvedData?.renderData)}</div><div className="text-sm font-bold text-slate-700 leading-relaxed"><MathDisplay content={q.resolvedData?.renderData?.description} /></div>{q.resolvedData?.renderData?.latex && <div className="mt-4 p-4 bg-slate-50 rounded-2xl text-center font-serif"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>}{renderOptions(q.resolvedData?.renderData?.options)}</div>
+                            <div key={i} className="border-b border-slate-100 pb-8 last:border-0">
+                                <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4">{lang === 'sv' ? "Uppgift" : "Question"} {i+1}</div><div className="flex justify-center mb-4 scale-75 origin-top">{renderVisual(q.resolvedData?.renderData)}</div><div className="text-sm font-bold text-slate-700 leading-relaxed"><MathDisplay content={q.resolvedData?.renderData?.description} /></div>{q.resolvedData?.renderData?.latex && <div className="mt-4 p-4 bg-slate-50 rounded-2xl text-center font-serif"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>}{renderOptions(q.resolvedData?.renderData?.options)}</div>
                         ))}
                     </div>
-                    <div className="p-8 border-t bg-slate-50">{libraryTab === 'private' ? (<button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); }} className="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all">Redigera detta blad</button>) : (<button onClick={() => { handleClone(peekSheet.id); setPeekSheet(null); }} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3"><Copy size={20}/> Kopiera till mitt arkiv</button>)}</div>
+                        <div className="p-8 border-t bg-slate-50">
+                        {libraryTab === 'private' ? (
+                            <div className="flex gap-4">
+                                <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); }} className="flex-1 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all">
+                                    {lang === 'sv' ? "Redigera" : "Edit"}
+                                </button>
+                                {/* 🟢 NEW: PRESENT FROM QUICK PEEK */}
+                                <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); setShowPresentation(true); }} className="flex-1 py-5 bg-amber-500 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-amber-600 transition-all flex items-center justify-center gap-3">
+                                    <Monitor size={20} /> {t.present}
+                                </button>
+                            </div>
+                        ) : (
+                            <button onClick={() => { handleClone(peekSheet.id); setPeekSheet(null); }} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center gap-3"><Copy size={20}/> {lang === 'sv' ? "Kopiera till mitt arkiv" : "Clone to my library"}</button>
+                        )}
+                    </div>
                 </div>
             </div>
         )}
