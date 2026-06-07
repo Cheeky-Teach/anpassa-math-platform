@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     Type, PenTool, Highlighter, Minus, Square, 
     Circle, Palette, Trash2, PlusSquare, PlusCircle, 
@@ -6,7 +6,7 @@ import {
     LineChart, Ruler, Compass, Table, Clock,
     Undo2, Redo2, RefreshCw, Share2, Triangle,
     Cone, Cylinder, Pyramid, Orbit, Home,
-    FileText // New icon for the Wordpad tool
+    FileText, ChevronDown, ChevronUp 
 } from 'lucide-react';
 
 const Toolbar = ({ 
@@ -15,99 +15,36 @@ const Toolbar = ({
 }) => {
     const [showColors, setShowColors] = useState(false);
     const [show3DMenu, setShow3DMenu] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false); // 🟢 NEW: Toolbar collapse state
+
+    // Close popups automatically if the toolbar is collapsed
+    useEffect(() => {
+        if (isCollapsed) {
+            setShowColors(false);
+            setShow3DMenu(false);
+        }
+    }, [isCollapsed]);
 
     const colors = ['#06b6d4', '#0f172a', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
 
-    const translations = {
+    const t = {
         sv: {
-            cat_writing: "Skriva",
-            cat_geometry: "Geometri",
-            cat_analysis: "Statistik",
-            cat_system: "System",
-            undo: "Ångra",
-            redo: "Gör om",
-            select: "Markera",
-            text: "Enkel Text",
-            richText: "Dokument", // Added translation
-            math: "Matte",
-            pen: "Penna",
-            highlighter: "Markör",
-            line: "Linje",
-            ruler: "Tallinje",
-            rect: "Fyrkant",
-            circle: "Cirkel",
-            triangle: "Triangel",
-            frac_rect: "Bråk Fyr",
-            frac_circle: "Bråk Cirk",
-            shapes_3d: "3D Former",
-            protractor: "Gradskiva",
-            coord: "Koordsystem",
-            tchart: "Tabell",
-            dice: "Tärning",
-            spinner: "Snurra",
-            node: "Nod",
-            timer: "Timer",
-            clock: "Klocka",
-            color: "Färg",
-            clear: "Rensa",
-            cube: "Kub", prism: "Rätblock", cylinder: "Cylinder", sphere: "Klot",
-            cone: "Kon", pyramid: "Pyramid", icecream: "Glass-strut",
-            silo: "Silo", house: "Hus", tube: "Rör", frustum: "Stympad kon",
-            hemi: "Halvklot", triprism: "Tri-Prisma"
+            cube: "Kub", prism: "Rätblock", cylinder: "Cylinder", sphere: "Klot", cone: "Kon", pyramid: "Pyramid", 
+            icecream: "Glass-strut", silo: "Silo", house: "Hus", tube: "Rör", frustum: "Stympad kon", hemi: "Halvklot", triprism: "Tri-Prisma"
         },
         en: {
-            cat_writing: "Write",
-            cat_geometry: "Geometry",
-            cat_analysis: "Statistics",
-            cat_system: "System",
-            undo: "Undo",
-            redo: "Redo",
-            select: "Select",
-            text: "Simple Text",
-            richText: "Document", // Added translation
-            math: "Math",
-            pen: "Pen",
-            highlighter: "Highlighter",
-            line: "Line",
-            ruler: "Number Line",
-            rect: "Rectangle",
-            circle: "Circle",
-            triangle: "Triangle",
-            frac_rect: "Frac Rect",
-            frac_circle: "Frac Circle",
-            shapes_3d: "3D Shapes",
-            protractor: "Protractor",
-            coord: "Coordinate System",
-            tchart: "Table",
-            dice: "Dice",
-            spinner: "Spinner",
-            node: "Node",
-            timer: "Timer",
-            clock: "Clock",
-            color: "Color",
-            clear: "Clear",
-            cube: "Cube", prism: "Prism", cylinder: "Cylinder", sphere: "Sphere",
-            cone: "Cone", pyramid: "Pyramid", icecream: "Ice Cream",
-            silo: "Silo", house: "House", tube: "Tube", frustum: "Frustum",
-            hemi: "Hemisphere", triprism: "Tri-Prism"
+            cube: "Cube", prism: "Prism", cylinder: "Cylinder", sphere: "Sphere", cone: "Cone", pyramid: "Pyramid", 
+            icecream: "Ice Cream", silo: "Silo", house: "House", tube: "Tube", frustum: "Frustum", hemi: "Hemisphere", triprism: "Tri-Prism"
         }
-    };
-
-    const t = translations[lang] || translations.sv;
+    }[lang] || {};
 
     const shapes3D = [
-        { id: '3d_cube', label: t.cube, icon: Box },
-        { id: '3d_prism', label: t.prism, icon: Box },
-        { id: '3d_cylinder', label: t.cylinder, icon: Cylinder },
-        { id: '3d_sphere', label: t.sphere, icon: Orbit },
-        { id: '3d_cone', label: t.cone, icon: Cone },
-        { id: '3d_pyramid', label: t.pyramid, icon: Pyramid },
-        { id: '3d_triprism', label: t.triprism, icon: Triangle },
-        { id: '3d_house', label: t.house, icon: Home },
-        { id: '3d_icecream', label: t.icecream, icon: Cone },
-        { id: '3d_silo', label: t.silo, icon: Cylinder },
-        { id: '3d_tube', label: t.tube, icon: Circle },
-        { id: '3d_frustum', label: t.frustum, icon: Cone },
+        { id: '3d_cube', label: t.cube, icon: Box }, { id: '3d_prism', label: t.prism, icon: Box },
+        { id: '3d_cylinder', label: t.cylinder, icon: Cylinder }, { id: '3d_sphere', label: t.sphere, icon: Orbit },
+        { id: '3d_cone', label: t.cone, icon: Cone }, { id: '3d_pyramid', label: t.pyramid, icon: Pyramid },
+        { id: '3d_triprism', label: t.triprism, icon: Triangle }, { id: '3d_house', label: t.house, icon: Home },
+        { id: '3d_icecream', label: t.icecream, icon: Cone }, { id: '3d_silo', label: t.silo, icon: Cylinder },
+        { id: '3d_tube', label: t.tube, icon: Circle }, { id: '3d_frustum', label: t.frustum, icon: Cone },
         { id: '3d_hemi', label: t.hemi, icon: Orbit },
     ];
 
@@ -118,94 +55,97 @@ const Toolbar = ({
             analysis: { active: 'bg-orange-500', hover: 'hover:text-orange-500 hover:bg-orange-50' },
             system: { active: 'bg-slate-700', hover: 'hover:text-rose-600 hover:bg-rose-50' }
         }[category];
-        const isActive = activeTool === id || (id === 'shapes_3d' && activeTool.startsWith('3d_'));
+        
+        const isActive = activeTool === id || (id === 'shapes_3d' && activeTool?.startsWith('3d_'));
+        
         return (
             <button
                 onClick={onClick || (() => { setActiveTool(id); setShowColors(false); setShow3DMenu(false); })}
                 disabled={disabled} title={label}
-                className={`w-9 h-9 rounded-lg transition-all flex items-center justify-center border shrink-0
-                    ${isActive ? `${theme.active} text-white shadow-sm scale-105 border-transparent` : `bg-white text-slate-500 border-slate-100 ${theme.hover}`} 
-                    ${disabled ? 'opacity-20 cursor-not-allowed' : 'active:scale-95'}`}
+                className={`w-10 h-10 rounded-xl transition-all flex items-center justify-center border shrink-0
+                    ${isActive ? `${theme.active} text-white shadow-md scale-110 border-transparent` : `bg-white text-slate-500 border-slate-100 ${theme.hover}`} 
+                    ${disabled ? 'opacity-30 cursor-not-allowed' : 'active:scale-95 cursor-pointer'}`}
             >
-                {children ? children : <Icon size={18} />}
+                {children ? children : <Icon size={20} />}
             </button>
         );
     };
 
+    const Divider = () => <div className="w-px h-8 bg-slate-200 mx-2 shrink-0" />;
+
     return (
-        <div className="flex flex-col h-full bg-white border-l border-slate-200 w-[94px] shrink-0 shadow-2xl z-[500] relative select-none">
-            
-            {show3DMenu && (
-                <div className="fixed right-[100px] top-20 p-4 bg-white rounded-3xl shadow-[0_20px_80px_rgba(0,0_0,0.4)] border-2 border-emerald-100 w-[300px] grid grid-cols-3 gap-3 z-[1000] animate-in slide-in-from-right-4">
+        <div 
+            className={`absolute bottom-0 left-0 right-0 h-[70px] bg-white/95 backdrop-blur-md border-t border-slate-200 flex items-center px-4 overflow-visible shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50 select-none transition-transform duration-300 ease-in-out
+                ${isCollapsed ? 'translate-y-full' : 'translate-y-0'}`}
+        >
+            {/* 🟢 FLOATING COLLAPSE TOGGLE TAB */}
+            <button 
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="absolute -top-8 left-1/2 -translate-x-1/2 w-16 h-8 bg-white/95 backdrop-blur-md border-t border-x border-slate-200 rounded-t-xl flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors shadow-sm cursor-pointer"
+                title={isCollapsed ? "Visa verktyg" : "Dölj verktyg"}
+            >
+                {isCollapsed ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </button>
+
+            {/* Pop-up Menus */}
+            {show3DMenu && !isCollapsed && (
+                <div className="absolute bottom-[80px] left-1/2 -translate-x-1/2 p-4 bg-white rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.2)] border-2 border-emerald-100 w-[320px] grid grid-cols-4 gap-3 z-[1000] animate-in slide-in-from-bottom-4">
                     {shapes3D.map(s => (
                         <button key={s.id} onClick={() => { setActiveTool(s.id); setShow3DMenu(false); }}
-                            className={`flex flex-col items-center justify-center p-3 rounded-2xl transition-all ${activeTool === s.id ? 'bg-emerald-600 text-white shadow-lg scale-105' : 'hover:bg-emerald-50 text-slate-600'}`}>
-                            <s.icon size={22} />
-                            <span className="text-[10px] mt-1.5 font-black uppercase text-center leading-tight">{s.label}</span>
+                            className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all ${activeTool === s.id ? 'bg-emerald-600 text-white shadow-lg scale-105' : 'hover:bg-emerald-50 text-slate-600 cursor-pointer'}`}>
+                            <s.icon size={20} />
+                            <span className="text-[8px] mt-1 font-black uppercase text-center leading-tight">{s.label}</span>
                         </button>
                     ))}
                 </div>
             )}
 
-            {showColors && (
-                <div className="fixed right-[100px] bottom-10 p-4 bg-white rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.4)] border-2 border-slate-100 w-[140px] grid grid-cols-2 gap-3 z-[1000] animate-in slide-in-from-right-4">
-                    {colors.map(c => <button key={c} onClick={() => { setColor(c); setShowColors(false); }} className={`w-12 h-12 rounded-xl border-4 ${color === c ? 'border-blue-500 scale-110 shadow-lg' : 'border-transparent hover:scale-105'}`} style={{ backgroundColor: c }} />)}
+            {showColors && !isCollapsed && (
+                <div className="absolute bottom-[80px] right-8 p-4 bg-white rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.2)] border-2 border-slate-100 w-[240px] grid grid-cols-5 gap-3 z-[1000] animate-in slide-in-from-bottom-4">
+                    {colors.map(c => <button key={c} onClick={() => { setColor(c); setShowColors(false); }} className={`w-8 h-8 rounded-full border-4 ${color === c ? 'border-blue-500 scale-125 shadow-lg' : 'border-transparent hover:scale-110 cursor-pointer'}`} style={{ backgroundColor: c }} />)}
                 </div>
             )}
 
-            <div className="p-1.5 flex flex-col gap-2.5 h-full overflow-y-auto no-scrollbar">
-                {/* Writing Tool Grid */}
-                <div className="flex flex-col gap-0.5">
-                    <span className="text-[7px] font-black text-blue-400 uppercase tracking-widest pl-1">{t.cat_writing}</span>
-                    <div className="grid grid-cols-2 gap-1">
-                        <ToolButton id="undo" icon={Undo2} label={t.undo} onClick={onUndo} disabled={!canUndo} />
-                        <ToolButton id="redo" icon={Redo2} label={t.redo} onClick={onRedo} disabled={!canRedo} />
-                        <ToolButton id="select" icon={MousePointer2} label={t.select} />
-                        <ToolButton id="richText" icon={FileText} label={t.richText} /> {/* New Rich Text Button */}
-                        <ToolButton id="math" icon={Hash} label={t.math} />
-                        <ToolButton id="pen" icon={PenTool} label={t.pen} />
-                        <ToolButton id="highlighter" icon={Highlighter} label={t.highlighter} />
-                        <ToolButton id="line" icon={Minus} label={t.line} />
-                    </div>
-                </div>
+            <div className="flex items-center gap-1 mx-auto overflow-x-auto custom-scrollbar px-2 py-1">
+                {/* System & Navigation */}
+                <ToolButton id="undo" icon={Undo2} category="system" onClick={onUndo} disabled={!canUndo} />
+                <ToolButton id="redo" icon={Redo2} category="system" onClick={onRedo} disabled={!canRedo} />
+                <ToolButton id="select" icon={MousePointer2} category="system" />
+                <Divider />
 
-                {/* Geometry Tool Grid */}
-                <div className="flex flex-col gap-0.5">
-                    <span className="text-[7px] font-black text-emerald-400 uppercase tracking-widest pl-1">{t.cat_geometry}</span>
-                    <div className="grid grid-cols-2 gap-1">
-                        <ToolButton id="rect" icon={Square} label={t.rect} category="geometry" />
-                        <ToolButton id="circle" icon={Circle} label={t.circle} category="geometry" />
-                        <ToolButton id="triangle" icon={Triangle} label={t.triangle} category="geometry" />
-                        <ToolButton id="frac_rect" icon={PlusSquare} label={t.frac_rect} category="geometry" />
-                        <ToolButton id="frac_circle" icon={PlusCircle} label={t.frac_circle} category="geometry" />
-                        <ToolButton id="shapes_3d" icon={Box} label={t.shapes_3d} category="geometry" onClick={() => { setShow3DMenu(!show3DMenu); setShowColors(false); }} />
-                        <ToolButton id="protractor" icon={Compass} label={t.protractor} category="geometry" />
-                    </div>
-                </div>
+                {/* Writing & Math */}
+                <ToolButton id="pen" icon={PenTool} category="writing" />
+                <ToolButton id="highlighter" icon={Highlighter} category="writing" />
+                <ToolButton id="line" icon={Minus} category="writing" />
+                <ToolButton id="math" icon={Hash} category="writing" />
+                <ToolButton id="richText" icon={FileText} category="writing" />
+                <Divider />
 
-                {/* Analysis Tool Grid */}
-                <div className="flex flex-col gap-0.5">
-                    <span className="text-[7px] font-black text-orange-400 uppercase tracking-widest pl-1">{t.cat_analysis}</span>
-                    <div className="grid grid-cols-2 gap-1">
-                        <ToolButton id="coord" icon={LineChart} label={t.coord} category="analysis" />
-                        <ToolButton id="tchart" icon={Table} label={t.tchart} category="analysis" />
-                        <ToolButton id="dice" icon={Dices} label={t.dice} category="analysis" />
-                        <ToolButton id="spinner" icon={RefreshCw} label={t.spinner} category="analysis" />
-                        <ToolButton id="node" icon={Share2} label={t.node} category="analysis" />
-                        <ToolButton id="timer" icon={Timer} label={t.timer} category="analysis" />
-                        <ToolButton id="clock" icon={Clock} label={t.clock} category="analysis" />
-                        <ToolButton id="ruler" icon={Ruler} label={t.ruler} category="analysis" />
-                    </div>
-                </div>
+                {/* Geometry */}
+                <ToolButton id="rect" icon={Square} category="geometry" />
+                <ToolButton id="circle" icon={Circle} category="geometry" />
+                <ToolButton id="triangle" icon={Triangle} category="geometry" />
+                <ToolButton id="frac_rect" icon={PlusSquare} category="geometry" />
+                <ToolButton id="frac_circle" icon={PlusCircle} category="geometry" />
+                <ToolButton id="shapes_3d" icon={Box} category="geometry" onClick={() => { setShow3DMenu(!show3DMenu); setShowColors(false); }} />
+                <ToolButton id="protractor" icon={Compass} category="geometry" />
+                <Divider />
 
-                <div className="flex flex-col gap-1 border-t border-slate-100 pt-2 pb-10">
-                    <div className="grid grid-cols-2 gap-1">
-                        <ToolButton id="color_picker" label={t.color} category="system" icon={Palette} onClick={() => { setShowColors(!showColors); setShow3DMenu(false); }}>
-                            <div className="w-4 h-4 rounded-full border border-black/10" style={{ backgroundColor: color }} />
-                        </ToolButton>
-                        <ToolButton id="clear_all" icon={Trash2} label={t.clear} category="system" onClick={onClear} />
-                    </div>
-                </div>
+                {/* Analysis & Widgets */}
+                <ToolButton id="coord" icon={LineChart} category="analysis" />
+                <ToolButton id="tchart" icon={Table} category="analysis" />
+                <ToolButton id="dice" icon={Dices} category="analysis" />
+                <ToolButton id="spinner" icon={RefreshCw} category="analysis" />
+                <ToolButton id="ruler" icon={Ruler} category="analysis" />
+                <ToolButton id="timer" icon={Timer} category="analysis" />
+                <ToolButton id="clock" icon={Clock} category="analysis" />
+                <Divider />
+
+                {/* Color & Clear */}
+                <ToolButton id="color_picker" category="system" icon={Palette} onClick={() => { setShowColors(!showColors); setShow3DMenu(false); }}>
+                    <div className="w-5 h-5 rounded-full shadow-inner border border-black/10" style={{ backgroundColor: color }} />
+                </ToolButton>
+                <ToolButton id="clear_all" icon={Trash2} category="system" onClick={onClear} />
             </div>
         </div>
     );

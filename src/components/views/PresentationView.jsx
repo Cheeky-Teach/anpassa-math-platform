@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
     X, ChevronLeft, ChevronRight, Monitor, PanelLeftClose, 
-    PanelLeftOpen, ZoomIn, ZoomOut, Layers, FileText, List 
+    PanelLeftOpen, ZoomIn, ZoomOut, Layers, FileText, List, Plus
 } from 'lucide-react';
 
 // Import your visual components exactly as you do in QuestionStudio
@@ -12,6 +12,8 @@ import ProbabilityTree from '../visuals/ProbabilityTree';
 import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
 import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
 import AngleVisual from '../visuals/AngleComponents';
+import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
+import QuestionSummoner from './QuestionSummoner';
 
 // Standard Math Renderer
 const MathDisplay = ({ content, className = "" }) => {
@@ -80,6 +82,12 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     const [textSize, setTextSize] = useState('base'); 
     const [viewMode, setViewMode] = useState('sheet'); 
     const [clueViewMode, setClueViewMode] = useState('steps'); // 'steps' (revealer array slider) or 'answers' (kompakt full list facit)
+
+    // CREATE A LIVE PACKET FOR THE SESSION
+    const [livePacket, setLivePacket] = useState(packet || []);
+    
+    // SUMMONER STATE
+    const [isSummonerOpen, setIsSummonerOpen] = useState(false);
 
     // --- REUSED VISUAL RENDERER ---
     const renderVisual = (rd) => {
@@ -238,7 +246,21 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 {/* COLUMN 1: COLLAPSIBLE WORKSPACE SELECTION PICKER */}
                 <div className={`bg-white border-r border-slate-200 overflow-y-auto custom-scrollbar flex flex-col transition-all duration-300 select-none shrink-0 z-10 min-w-0 ${isLeftCollapsed ? 'p-2 items-center' : 'p-6'}`}>
                     <div className={`flex items-center mb-4 w-full ${isLeftCollapsed ? 'justify-center' : 'justify-between'}`}>
-                        {!isLeftCollapsed && <h2 className="text-[16px] font-black text-purple-700 uppercase tracking-widest truncate">{lang === 'sv' ? "Uppgifter" : "Question"} ({packet.length})</h2>}
+                        {!isLeftCollapsed && (
+                            <div className="flex items-center gap-3">
+                                <h2 className="text-[16px] font-black text-purple-700 uppercase tracking-widest truncate">
+                                    {lang === 'sv' ? "Uppgifter" : "Question"} ({livePacket.length})
+                                </h2>
+                                {/* 🟢 THE SUMMON TRIGGER BUTTON */}
+                                <button 
+                                    onClick={() => setIsSummonerOpen(true)}
+                                    className="bg-indigo-100 hover:bg-indigo-600 text-indigo-600 hover:text-white w-6 h-6 rounded-md flex items-center justify-center transition-colors shadow-sm"
+                                    title={lang === 'sv' ? "Hämta ny uppgift" : "Summon new question"}
+                                >
+                                    <Plus size={16} strokeWidth={3} />
+                                </button>
+                            </div>
+                        )}
                         <button 
                             onClick={() => { setIsLeftCollapsed(!isLeftCollapsed); }}
                             className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer"
@@ -284,170 +306,177 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 </div>
 
                 {/* COLUMN 2: WORKSPACE CANVAS INTERACTION SHELF */}
-                <div className="relative bg-[#f9fbf7] overflow-auto h-full w-full custom-scrollbar pt-16 pb-[70px] px-8 flex flex-col justify-start items-center">
+                <main className="relative bg-[#f9fbf7] overflow-hidden h-full w-full flex flex-col">
                     
-                    {/* RESPONSIVE CORNER-ANCHORED PRESENTATION CONTROLS */}
-                    <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
-                        <button 
-                            onClick={handleCanvasPrev}
-                            disabled={activeIds.length > 0 && presentationIndex === 0}
-                            className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
-                            title={lang === 'sv' ? "Föregående uppgift" : "Previous Question"}
-                        >
-                            <ChevronLeft size={28} />
-                        </button>
+                    {/* The Scrolling Workspace Area */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pt-16 pb-[100px] px-8 flex flex-col justify-start items-center relative z-10">
+                        
+                        {/* RESPONSIVE CORNER-ANCHORED PRESENTATION CONTROLS */}
+                        <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
+                            <button 
+                                onClick={handleCanvasPrev}
+                                disabled={activeIds.length > 0 && presentationIndex === 0}
+                                className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
+                                title={lang === 'sv' ? "Föregående uppgift" : "Previous Question"}
+                            >
+                                <ChevronLeft size={28} />
+                            </button>
 
-                        {/* Small center label to track progress on screen for the teacher */}
-                        {activeIds.length > 0 && (
-                            <div className="bg-slate-900/90 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest backdrop-blur-sm shadow border border-white/10 pointer-events-auto">
-                                {lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${packet.length}` : `Question ${presentationIndex + 1} of ${packet.length}`}
-                            </div>
-                        )}
-
-                        <button 
-                            onClick={handleCanvasNext}
-                            disabled={activeIds.length > 0 && presentationIndex >= packet.length - 1}
-                            className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
-                            title={lang === 'sv' ? "Nästa uppgift" : "Next Question"}
-                        >
-                            <ChevronRight size={28} />
-                        </button>
-                    </div>
-
-                    {/* DYNAMIC PRESENTATION ENGINE SWITCHBOARD LAYER */}
-                    {viewMode === 'sheet' ? (
-                        /* 📄 OPTION A: 1:1 REPLICATED BORDERLESS PAPER WORKSHEET VIEWER */
-                        <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-[15mm] flex flex-col rounded-sm border border-slate-300 animate-in fade-in zoom-in-95 duration-300 select-none mb-8 mt-2">
-                            {/* Replicated Worksheet Title Header Row Strip */}
-                            <header className="border-b-2 border-black pb-2 mb-6 flex items-end justify-between">
-                                <h1 className="text-md font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1>
-                                <div className="flex gap-6 w-2/3 justify-end text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                    <div className="border-b border-slate-200 pb-0.5 flex gap-2 flex-1 max-w-[160px]"><span>{lang === 'sv' ? "Namn:" : "Name:"}</span></div>
-                                    <div className="border-b border-slate-200 pb-0.5 flex gap-2 w-[100px]"><span>{lang === 'sv' ? "Datum:" : "Date:"}</span></div>
+                            {/* Small center label to track progress on screen for the teacher */}
+                            {activeIds.length > 0 && (
+                                <div className="bg-slate-900/90 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest backdrop-blur-sm shadow border border-white/10 pointer-events-auto">
+                                    {lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${packet.length}` : `Question ${presentationIndex + 1} of ${packet.length}`}
                                 </div>
-                            </header>
+                            )}
 
-                            {/* 1:1 Replicated Grid Matrix matching QuestionStudio layout architecture */}
-                            <div className="grid grid-cols-6 gap-x-8 gap-y-6 items-start content-start relative">
-                                {packet.map((item, idx) => {
-                                    const isFocused = activeIds.includes(item.id);
-                                    const hasAnyFocus = activeIds.length > 0;
-                                    
-                                    const displayStory = item.showText !== false;
-                                    const displayLatex = item.showLatex !== false;
-                                    const displayVisual = item.showVisual !== false;
-                                    const rd = item.resolvedData?.renderData;
+                            <button 
+                                onClick={handleCanvasNext}
+                                disabled={activeIds.length > 0 && presentationIndex >= packet.length - 1}
+                                className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
+                                title={lang === 'sv' ? "Nästa uppgift" : "Next Question"}
+                            >
+                                <ChevronRight size={28} />
+                            </button>
+                        </div>
+
+                        {/* DYNAMIC PRESENTATION ENGINE SWITCHBOARD LAYER */}
+                        {viewMode === 'sheet' ? (
+                            /* 📄 OPTION A: 1:1 REPLICATED BORDERLESS PAPER WORKSHEET VIEWER */
+                            <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-[15mm] flex flex-col rounded-sm border border-slate-300 animate-in fade-in zoom-in-95 duration-300 select-none mb-8 mt-2 relative z-20">
+                                {/* Replicated Worksheet Title Header Row Strip */}
+                                <header className="border-b-2 border-black pb-2 mb-6 flex items-end justify-between">
+                                    <h1 className="text-md font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1>
+                                    <div className="flex gap-6 w-2/3 justify-end text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                        <div className="border-b border-slate-200 pb-0.5 flex gap-2 flex-1 max-w-[160px]"><span>{lang === 'sv' ? "Namn:" : "Name:"}</span></div>
+                                        <div className="border-b border-slate-200 pb-0.5 flex gap-2 w-[100px]"><span>{lang === 'sv' ? "Datum:" : "Date:"}</span></div>
+                                    </div>
+                                </header>
+
+                                {/* 1:1 Replicated Grid Matrix matching QuestionStudio layout architecture */}
+                                <div className="grid grid-cols-6 gap-x-8 gap-y-6 items-start content-start relative">
+                                    {packet.map((item, idx) => {
+                                        const isFocused = activeIds.includes(item.id);
+                                        const hasAnyFocus = activeIds.length > 0;
+                                        
+                                        const displayStory = item.showText !== false;
+                                        const displayLatex = item.showLatex !== false;
+                                        const displayVisual = item.showVisual !== false;
+                                        const rd = item.resolvedData?.renderData;
+
+                                        return (
+                                            <React.Fragment key={item.id}>
+                                                {/* Header Placement Story Directive banner */}
+                                                {displayStory && (item.instructionMode === 'header' || !item.instructionMode) && (
+                                                    <div className={`col-span-6 border-l-4 border-indigo-500 pl-4 bg-slate-50/40 rounded-r-xl py-2.5 transition-all duration-300
+                                                        ${hasAnyFocus && !isFocused ? 'opacity-25' : 'opacity-100'}`}>
+                                                        <div className={`font-black text-slate-800 italic uppercase tracking-tight ${sizeClasses.headerText}`}>
+                                                            <MathDisplay content={compileAnchoredStory(item, lang)} />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Dynamic Borderless Question Layout block wrapper */}
+                                                <div 
+                                                    onClick={() => focusSingleQuestionOnWorksheet(item.id)}
+                                                    className={`relative transition-all duration-300 rounded-2xl flex flex-col p-3 cursor-pointer group
+                                                        ${getColSpanClass(item.columnSpan)}
+                                                        ${isFocused ? 'bg-indigo-50/50 ring-2 ring-indigo-500/30 opacity-100 scale-[1.01]' : hasAnyFocus ? 'opacity-25' : 'hover:bg-slate-50'}`}
+                                                >
+                                                    <div className="text-xs flex flex-col h-full justify-between">
+                                                        <div>
+                                                            <div className="font-black mb-1 text-slate-400 text-[10px] tracking-widest">
+                                                                {idx + 1}.
+                                                            </div>
+                                                            
+                                                            {displayStory && item.instructionMode === 'inline' && (
+                                                                <div className={`font-bold text-slate-800 mb-2 leading-tight border-b border-slate-100 pb-2 ${sizeClasses.desc}`}>
+                                                                    <MathDisplay content={compileAnchoredStory(item, lang)} />
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {displayLatex && rd?.latex && (
+                                                                <div className={`py-3 text-center font-serif text-slate-900 ${sizeClasses.latex}`}>
+                                                                    <MathDisplay content={`$$${rd.latex}$$`} />
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {/* Render options if multiple choice options populate data fields */}
+                                                            {rd?.options && rd.options.length > 0 && (
+                                                                <div className="mt-2 grid grid-cols-2 gap-1.5 w-full">
+                                                                    {rd.options.map((opt, oIdx) => (
+                                                                        <div key={oIdx} className="flex items-center gap-1.5 text-[10px] bg-slate-50/60 p-1.5 rounded-lg border border-slate-100">
+                                                                            <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
+                                                                            <MathDisplay content={opt} />
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {displayVisual && rd && (
+                                                                <div className="flex justify-center scale-75 origin-top mt-2 max-h-[120px]">
+                                                                    {renderVisual(rd)}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ) : (
+                            /* 🗂️ OPTION B: PERFECTLY BALANCED BORDERLESS CLASSROOM REVIEW LANES */
+                            <div className="w-full h-full min-h-screen relative flex items-start select-none pt-6 pb-[70px] z-20">
+                                {activeIds.length === 0 && (
+                                    <div className="text-slate-300 font-black uppercase text-center mt-32 tracking-widest text-sm w-full">Välj uppgifter till vänster för att presentera</div>
+                                )}
+                                
+                                {activeIds.map((id, index) => {
+                                    const q = packet.find(p => p.id === id);
+                                    if (!q) return null;
+                                    const rd = q.resolvedData?.renderData;
+                                    const masterIndex = packet.findIndex(p => p.id === id) + 1;
 
                                     return (
-                                        <React.Fragment key={item.id}>
-                                            {/* Header Placement Story Directive banner */}
-                                            {displayStory && (item.instructionMode === 'header' || !item.instructionMode) && (
-                                                <div className={`col-span-6 border-l-4 border-indigo-500 pl-4 bg-slate-50/40 rounded-r-xl py-2.5 transition-all duration-300
-                                                    ${hasAnyFocus && !isFocused ? 'opacity-25' : 'opacity-100'}`}>
-                                                    <div className={`font-black text-slate-800 italic uppercase tracking-tight ${sizeClasses.headerText}`}>
-                                                        <MathDisplay content={compileAnchoredStory(item, lang)} />
-                                                    </div>
-                                                </div>
+                                        <div 
+                                            key={id} 
+                                            className="flex flex-col flex-1 px-8 relative h-full items-center justify-start animate-in zoom-in-95 duration-200"
+                                        >
+                                            {/* DYNAMIC FULL-HEIGHT PROJECTION DIVIDER LINES */}
+                                            {index > 0 && (
+                                                <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
                                             )}
 
-                                            {/* Dynamic Borderless Question Layout block wrapper */}
-                                            <div 
-                                                onClick={() => focusSingleQuestionOnWorksheet(item.id)}
-                                                className={`relative transition-all duration-300 rounded-2xl flex flex-col p-3 cursor-pointer group
-                                                    ${getColSpanClass(item.columnSpan)}
-                                                    ${isFocused ? 'bg-indigo-50/50 ring-2 ring-indigo-500/30 opacity-100 scale-[1.01]' : hasAnyFocus ? 'opacity-25' : 'hover:bg-slate-50'}`}
-                                            >
-                                                <div className="text-xs flex flex-col h-full justify-between">
-                                                    <div>
-                                                        <div className="font-black mb-1 text-slate-400 text-[10px] tracking-widest">
-                                                            {idx + 1}.
-                                                        </div>
-                                                        
-                                                        {displayStory && item.instructionMode === 'inline' && (
-                                                            <div className={`font-bold text-slate-800 mb-2 leading-tight border-b border-slate-100 pb-2 ${sizeClasses.desc}`}>
-                                                                <MathDisplay content={compileAnchoredStory(item, lang)} />
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {displayLatex && rd?.latex && (
-                                                            <div className={`py-3 text-center font-serif text-slate-900 ${sizeClasses.latex}`}>
-                                                                <MathDisplay content={`$$${rd.latex}$$`} />
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {/* Render options if multiple choice options populate data fields */}
-                                                        {rd?.options && rd.options.length > 0 && (
-                                                            <div className="mt-2 grid grid-cols-2 gap-1.5 w-full">
-                                                                {rd.options.map((opt, oIdx) => (
-                                                                    <div key={oIdx} className="flex items-center gap-1.5 text-[10px] bg-slate-50/60 p-1.5 rounded-lg border border-slate-100">
-                                                                        <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
-                                                                        <MathDisplay content={opt} />
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {displayVisual && rd && (
-                                                            <div className="flex justify-center scale-75 origin-top mt-2 max-h-[120px]">
-                                                                {renderVisual(rd)}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                            <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block mb-6 uppercase tracking-wider shadow-sm shrink-0">
+                                                {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
                                             </div>
-                                        </React.Fragment>
+                                            
+                                            {q.showVisual !== false && rd && (
+                                                <div className="flex justify-center mb-6 scale-90 origin-top max-h-[160px] overflow-hidden shrink-0">
+                                                    {renderVisual(rd)}
+                                                </div>
+                                            )}
+                                            {q.showText !== false && (
+                                                <div className={`font-bold text-slate-800 text-center leading-relaxed max-w-prose w-full break-words px-4 ${sizeClasses.desc}`}>
+                                                    <MathDisplay content={rd?.description} />
+                                                </div>
+                                            )}
+                                            {q.showLatex !== false && rd?.latex && (
+                                                <div className={`mt-6 py-4 bg-indigo-50/40 rounded-2xl text-center font-serif text-indigo-950 border border-indigo-100/60 shadow-inner w-full max-w-xs shrink-0 ${sizeClasses.latex}`}>
+                                                    <MathDisplay content={`$$${rd.latex}$$`} />
+                                                </div>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </div>
-                        </div>
-                    ) : (
-                        /* 🗂️ OPTION B: PERFECTLY BALANCED BORDERLESS CLASSROOM REVIEW LANES */
-                        <div className="w-full h-full min-h-screen relative flex items-start select-none pt-6 pb-[70px]">
-                            {activeIds.length === 0 && (
-                                <div className="text-slate-300 font-black uppercase text-center mt-32 tracking-widest text-sm w-full">Välj uppgifter till vänster för att presentera</div>
-                            )}
-                            
-                            {activeIds.map((id, index) => {
-                                const q = packet.find(p => p.id === id);
-                                if (!q) return null;
-                                const rd = q.resolvedData?.renderData;
-                                const masterIndex = packet.findIndex(p => p.id === id) + 1;
+                        )}
+                    </div>
 
-                                return (
-                                    <div 
-                                        key={id} 
-                                        className="flex flex-col flex-1 px-8 relative h-full items-center justify-start animate-in zoom-in-95 duration-200"
-                                    >
-                                        {/* DYNAMIC FULL-HEIGHT PROJECTION DIVIDER LINES */}
-                                        {index > 0 && (
-                                            <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
-                                        )}
-
-                                        <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block mb-6 uppercase tracking-wider shadow-sm shrink-0">
-                                            {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
-                                        </div>
-                                        
-                                        {q.showVisual !== false && rd && (
-                                            <div className="flex justify-center mb-6 scale-90 origin-top max-h-[160px] overflow-hidden shrink-0">
-                                                {renderVisual(rd)}
-                                            </div>
-                                        )}
-                                        {q.showText !== false && (
-                                            <div className={`font-bold text-slate-800 text-center leading-relaxed max-w-prose w-full break-words px-4 ${sizeClasses.desc}`}>
-                                                <MathDisplay content={rd?.description} />
-                                            </div>
-                                        )}
-                                        {q.showLatex !== false && rd?.latex && (
-                                            <div className={`mt-6 py-4 bg-indigo-50/40 rounded-2xl text-center font-serif text-indigo-950 border border-indigo-100/60 shadow-inner w-full max-w-xs shrink-0 ${sizeClasses.latex}`}>
-                                                <MathDisplay content={`$$${rd.latex}$$`} />
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
+                    {/* 🟢 THE ISOLATED DRAWING ENGINE INJECTED HERE */}
+                    <InteractiveCanvas lang={lang} />
+                </main>
 
                 {/* COLUMN 3: SOLUTIONS & COMPACT ANSWER KEY DRAWER PANEL */}
                 <div 
@@ -621,6 +650,25 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                     )}
                 </div>
             </div>
+            {/* 🟢 THE SUMMONER MODAL */}
+            {isSummonerOpen && (
+                <QuestionSummoner 
+                    lang={lang} 
+                    onClose={() => setIsSummonerOpen(false)} 
+                    onSummon={(newItem) => {
+                        // Append the new question, auto-select it, and close the modal
+                        const updatedPacket = [...livePacket, newItem];
+                        setLivePacket(updatedPacket);
+                        
+                        // Focus the newly summoned item immediately
+                        setActiveIds([newItem.id]);
+                        setClueProgress({ ...clueProgress, [newItem.id]: 0 });
+                        setPresentationIndex(updatedPacket.length - 1);
+                        
+                        setIsSummonerOpen(false);
+                    }} 
+                />
+            )}
         </div>
     );
 }
