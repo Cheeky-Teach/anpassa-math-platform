@@ -24,7 +24,8 @@ export const CATEGORIES = {
         topics: [
             { id: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
             { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
-            { id: 'patterns', label: { sv: "Algebraiska mönster", en: "Algebraic patterns" } }
+            { id: 'patterns', label: { sv: "Algebraiska mönster", en: "Algebraic patterns" } },
+            { id: 'algebraic_geometry', label: { sv: "Geometri med Algebra", en: "Geometry with Algebra" } }
         ]
     },
     geometry: {
@@ -39,7 +40,8 @@ export const CATEGORIES = {
             { id: 'volume', label: { sv: "Volym", en: "Volume" } },
             { id: 'similarity', label: { sv: "Likformighet", en: "Similar Shapes" } },
             { id: 'pythagoras', label: { sv: "Pythagoras Sats", en: "Pythagoras" } },
-            { id: 'angles', label: { sv: "Vinklar", en: "Angles" } }
+            { id: 'angles', label: { sv: "Vinklar", en: "Angles" } },
+            { id: 'algebraic_geometry', label: { sv: "Geometri med Algebra", en: "Geometry with Algebra" } }
         ]
     },
 
@@ -125,6 +127,14 @@ export const UI_TEXT = {
 };
 
 export const LEVEL_DESCRIPTIONS = {
+    algebraic_geometry: {
+        1: { sv: "Omkrets: Teckna uttryck", en: "Perimeter: Write Expression" },
+        2: { sv: "Omkrets: Lös ut x", en: "Perimeter: Solve for x" },
+        3: { sv: "Area: Teckna uttryck", en: "Area: Write Expression" },
+        4: { sv: "Area: Lös ut x", en: "Area: Solve for x" },
+        5: { sv: "Vinklar: Teckna uttryck", en: "Angles: Write Expression" },
+        6: { sv: "Vinklar: Lös ut x", en: "Angles: Solve for x" }
+    },
     order_of_operations: {
         1: { sv: "Prioritering: Grund", en: "Order: Basics" },
         2: { sv: "Prioritering: Parenteser", en: "Order: Parentheses" },

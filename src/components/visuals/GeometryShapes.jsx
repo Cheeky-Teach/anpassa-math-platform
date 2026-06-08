@@ -47,8 +47,8 @@ export const GeometryVisual = ({ data }) => {
 };
 
 export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
-    const cx = 150 + offsetX;
-    const cy = 103 + offsetY;
+    const cx = 125 + offsetX;
+    const cy = 125 + offsetY;
     const safeDims = dims || {};
     const lab = labels || {};
 
@@ -152,8 +152,8 @@ export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY
                     
                     {/* 🟢 LAYER 2: Structural Exterior Layout Values */}
                     {l_b && mkTxt(cx, B + 25, l_b)}
-                    {l_h && mkTxt(cx + 5, cy, l_h, "start")}
-                    {l_s1 && mkTxt(L - 10, cy, l_s1, "end")}
+                    {l_h && mkTxt(cx -20, cy + 20, l_h, "start")}
+                    {l_s1 && mkTxt(L + 20, cy, l_s1, "end")}
                     {l_s2 && mkTxt(R + 10, cy, l_s2, "start")}
 
                     {/* 🟢 LAYER 3: Internal Vertex Degree Labels always output LAST (On Top) */}
