@@ -146,25 +146,6 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     };
 
 
-    
-    const saveSpontaneousWorksheet = async () => {
-        const title = window.prompt(lang === 'sv' ? "Namnge ditt nya arbetsblad:" : "Name your new worksheet:");
-        if (!title) return;
-        
-        const { data: { user } } = await supabase.auth.getUser();
-        const uniqueTopics = [...new Set(livePacket.map(q => q.topicId))];
-        
-        await supabase.from('saved_sheets').insert([{
-            user_id: user.id,
-            title: title,
-            type: 'worksheet',
-            packet: livePacket, 
-            auto_topics: uniqueTopics,
-            visibility: 'private'
-        }]);
-        alert(lang === 'sv' ? "Sparat till ditt bibliotek!" : "Saved to your library!");
-    };
-
     const focusSingleQuestionOnWorksheet = (id) => {
         setActiveIds([id]);
         if (clueProgress[id] === undefined) {
