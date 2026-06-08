@@ -141,6 +141,17 @@ export const SKILL_BUCKETS = {
           { key: 'word_passengers', name: { sv: 'Uttryck: Passagerare', en: 'Expressions: Passengers' }, desc: { sv: 'Förändring på buss', en: 'Changes on a bus' } }
         ]
       },
+      algebraic_geometry: {
+        name: { sv: 'Geometri med Algebra', en: 'Geometry with Algebra' },
+        variations: [
+          { key: 'perimeter_write', name: { sv: 'Omkrets: Teckna uttryck', en: 'Perimeter: Write Expression' }, desc: { sv: 'Skriv förenklat uttryck för figurernas sidomkrets', en: 'Write a simplified expression for shape perimeters' } },
+          { key: 'perimeter_solve', name: { sv: 'Omkrets: Lös ut x', en: 'Perimeter: Solve for x' }, desc: { sv: 'Hitta x-värdet utifrån en känd total omkrets', en: 'Find x based on a known total perimeter parameter' } },
+          { key: 'area_write', name: { sv: 'Area: Teckna uttryck', en: 'Area: Write Expression' }, desc: { sv: 'Teckna ett förenklat uttryck för areaytan', en: 'Write a simplified expression for side areas' } },
+          { key: 'area_solve', name: { sv: 'Area: Lös ut x', en: 'Area: Solve for x' }, desc: { sv: 'Lös ut x-variabeln via kända area-parametrar', en: 'Isolate x via a known given total figure area' } },
+          { key: 'angles_write', name: { sv: 'Vinklar: Teckna uttryck', en: 'Angles: Write Expression' }, desc: { sv: 'Teckna uttryck för intilliggande vinkelsummor', en: 'Write expressions for combined adjacent angles' } },
+          { key: 'angles_solve', name: { sv: 'Vinklar: Lös ut x', en: 'Angles: Solve for x' }, desc: { sv: 'Beräkna x via vinklar på en rät linje (180°)', en: 'Calculate x using straight line angles summing to 180°' } },
+        ]
+      },
       patterns: {
         name: { sv: 'Mönster & Formler', en: 'Patterns & Formulas' },
         variations: [
