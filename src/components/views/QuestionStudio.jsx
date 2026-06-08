@@ -737,7 +737,7 @@ export default function QuestionStudio({
                                                     </button>
 
                                                     {/* DELETE BUTTON */}
-                                                    <button onClick={(e) => deleteSheet(e, sheet.id)} className="p-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={18}/></button>
+                                                    <button onClick={(e) => deleteSheet(e, sheet.id)} className="p-2 text-slate-800 hover:text-rose-500 opacity-50 group-hover:opacity-100 transition-all"><Trash2 size={18}/></button>
                                                 </>
                                             ) : (
                                                 <button onClick={() => handleClone(sheet.id)} className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-2"><Copy size={14}/> {t.clone_btn}</button>
@@ -786,7 +786,7 @@ export default function QuestionStudio({
 
   return (
     <div className="flex flex-col h-screen bg-slate-200 font-sans overflow-hidden relative">
-      <header className={`relative border-b px-6 py-3 flex items-center justify-between shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
+      <header className={`relative border-b px-6 py-1 flex items-center justify-between shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
             {/* Left Side: Navigation Inputs */}
             <div className="flex items-center gap-4 flex-1 max-w-[40%]">
                 <div className="flex items-center gap-2 shrink-0">
@@ -804,7 +804,7 @@ export default function QuestionStudio({
                 <div className="relative group flex-1 max-w-md">
                     <input 
                         type="text" 
-                        className="w-full bg-white/50 px-4 py-2 rounded-xl text-m font-black tracking-tight outline-none focus:bg-white-400 transition-all border border-transparent hover:border-white/20 text-white placeholder-white/40" 
+                        className="w-full bg-white/50 px-4 py-2 rounded-xl text-s font-black tracking-tight outline-none focus:bg-white-400 transition-all border border-transparent hover:border-white/20 text-white placeholder-white/40" 
                         placeholder={t.title_placeholder} 
                         value={sheetTitle} 
                         onChange={(e) => { setSheetTitle(e.target.value); setIsSaved(false); }} 
@@ -812,15 +812,15 @@ export default function QuestionStudio({
                 </div>
 
                 <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl border border-white/10">
-                    <button onClick={() => setChosenVisibility('private')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'private' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Lock size={14}/></button>
-                    <button onClick={() => setChosenVisibility('school')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Building2 size={14}/></button>
-                    <button onClick={() => setChosenVisibility('public')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'public' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Globe size={14}/></button>
+                    <button onClick={() => setChosenVisibility('private')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'private' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Lock size={12}/></button>
+                    <button onClick={() => setChosenVisibility('school')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Building2 size={12}/></button>
+                    <button onClick={() => setChosenVisibility('public')} className={`p-2 rounded-lg transition-all ${chosenVisibility === 'public' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Globe size={12}/></button>
                 </div>
 
                 <button 
                     onClick={handleSave} 
                     disabled={packet.length === 0} 
-                    className="px-6 py-2.5 bg-blue-500 border border-white/20 rounded-xl text-[14px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-white/20 text-white transition-all disabled:opacity-50 cursor-pointer"
+                    className="px-6 py-2 bg-blue-500 border border-white/20 rounded-xl text-[12px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-white/20 text-white transition-all disabled:opacity-50 cursor-pointer"
                 >
                     <Save size={16}/> {t.save_btn}
                 </button>
@@ -848,7 +848,7 @@ export default function QuestionStudio({
                 <button 
                     onClick={handleLaunchLive} 
                     disabled={packet.length === 0} 
-                    className="px-6 py-2.5 bg-black text-white rounded-xl text-[12px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-white/20 transition-all disabled:opacity-30 cursor-pointer"
+                    className="px-6 py-2 bg-red-700 text-white rounded-xl text-[12px] font-black uppercase tracking-wider flex items-center gap-2 hover:bg-white/20 transition-all disabled:opacity-30 cursor-pointer"
                 >
                     <Send size={16}/> {t.live_btn}
                 </button>
@@ -857,7 +857,7 @@ export default function QuestionStudio({
                 <button 
                     onClick={() => setShowPresentation(true)} 
                     disabled={packet.length === 0} 
-                    className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-xl text-[12px] font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-30 shadow-md cursor-pointer"
+                    className="px-6 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-xl text-[12px] font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-30 shadow-md cursor-pointer"
                 >
                     <Monitor size={16}/> {t.present}
                 </button>
@@ -869,7 +869,7 @@ export default function QuestionStudio({
                     <button 
                         onClick={handleLaunchGrid} 
                         disabled={packet.length === 0} 
-                        className="px-6 py-2.5 bg-white text-indigo-950 hover:bg-indigo-50 rounded-xl text-[12px] font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-30 shadow-md cursor-pointer"
+                        className="px-6 py-2 bg-white text-indigo-950 hover:bg-indigo-50 rounded-xl text-[12px] font-black uppercase tracking-wider flex items-center gap-2 transition-all disabled:opacity-30 shadow-md cursor-pointer"
                     >
                         <Grid3X3 size={16}/> {t.create_donow}
                     </button>
@@ -887,7 +887,7 @@ export default function QuestionStudio({
                 
                 <button 
                     onClick={onClose} 
-                    className="p-2.5 text-white/60 hover:bg-rose-500 hover:text-white rounded-xl transition-all cursor-pointer"
+                    className="p-2 text-white/60 hover:bg-rose-500 hover:text-white rounded-xl transition-all cursor-pointer"
                 >
                     <X size={20}/>
                 </button>

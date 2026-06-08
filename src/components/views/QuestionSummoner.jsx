@@ -158,7 +158,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                     {/* COL 2: Variations (The "Levels") */}
                     <div className="w-1/3 bg-slate-50 border-r border-slate-200 flex flex-col shrink-0">
                         <div className="p-4 border-b border-slate-200 bg-slate-100/50">
-                            <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{lang === 'sv' ? "Välj Nivå / Typ" : "Select Level / Type"}</h3>
+                            <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{lang === 'sv' ? "Välj Typ" : "Select Type"}</h3>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                             {currentTopic?.variations.map((v, idx) => {
@@ -169,7 +169,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                                         onClick={() => setSelectedVariation(v)}
                                         className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${isSelected ? 'bg-white border-indigo-500 shadow-lg scale-[1.02]' : 'bg-white border-transparent hover:border-slate-300 shadow-sm'}`}
                                     >
-                                        <div className="text-[10px] font-black text-indigo-400 mb-1 tracking-widest">NIVÅ {idx + 1}</div>
+                                        <div className="text-[10px] font-black text-indigo-400 mb-1 tracking-widest">{lang === 'sv' ? "Variation" : "Variation"} {idx + 1}</div>
                                         <div className="font-bold text-slate-800 text-sm">{v.name[lang]}</div>
                                     </div>
                                 );
@@ -178,13 +178,16 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                     </div>
 
                     {/* COL 3: Preview & Actions */}
-                    <div className="w-1/3 flex flex-col bg-white shrink-0 relative">
-                        <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center custom-scrollbar">
+                    <div className="flex-1 min-w-[33%] flex flex-col bg-white relative">
+                        <div className="flex-1 overflow-y-auto p-8 flex flex-col items-stretch justify-center custom-scrollbar">
                             {isLoading ? (
-                                <Loader2 className="animate-spin text-indigo-600" size={48} />
+                                <div className="flex justify-center items-center h-full">
+                                    <Loader2 className="animate-spin text-indigo-600" size={48} />
+                                </div>
                             ) : previewData ? (
                                 <div className="w-full flex flex-col items-center animate-in zoom-in-95 duration-200">
-                                    <div className="flex justify-center scale-90 origin-top mb-6">
+                                    {/* 🟢 FIXED: Removed scale-95 origin constraints and set wide scrolling handles if needed */}
+                                    <div className="w-full max-w-md mx-auto flex justify-center mb-6 overflow-x-auto custom-scrollbar p-2">
                                         {renderVisual(previewData.renderData)}
                                     </div>
                                     <div className="text-lg text-slate-800 font-bold text-center px-4 leading-relaxed mb-6">
