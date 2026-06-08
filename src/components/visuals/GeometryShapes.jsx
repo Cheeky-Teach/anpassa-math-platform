@@ -48,7 +48,7 @@ export const GeometryVisual = ({ data }) => {
 
 export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
     const cx = 150 + offsetX;
-    const cy = 125 + offsetY;
+    const cy = 103 + offsetY;
     const safeDims = dims || {};
     const lab = labels || {};
 

@@ -638,7 +638,11 @@ function App() {
                         onLabOpen={() => setView('practice_lab')}
                         onProfileOpen={() => setView('profile')} 
                         onTimesTableOpen={() => setView('times_table')}
-                        onWhiteboardOpen={() => setView('whiteboard')}
+                        onWhiteboardOpen={() => {
+                            setSavedPacket([]); 
+                            setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
+                            setView('presentation');
+                        }}
                         onRelaunch={handleRelaunchSession} 
                         onViewReport={handleViewArchiveReport} 
                         onEdit={handleEditArchivedPacket}
@@ -652,8 +656,13 @@ function App() {
                     />
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />
-                ) : view === 'whiteboard' ? ( 
-                        <WhiteboardView onBack={() => setView('dashboard')} />
+                ) : view === 'presentation' ? ( 
+                    <PresentationView 
+                        packet={savedPacket} 
+                        sheetTitle={sheetTitle} 
+                        lang={lang} 
+                        onClose={() => setView('dashboard')} 
+                    />
                 ) : view === 'times_table' ? ( 
                     <TimesTable 
                         lang={lang} 

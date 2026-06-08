@@ -14,6 +14,8 @@ import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
 import AngleVisual from '../visuals/AngleComponents';
 import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
 import QuestionSummoner from './QuestionSummoner';
+import { supabase } from '../../lib/supabaseClient'; 
+
 
 // Standard Math Renderer
 const MathDisplay = ({ content, className = "" }) => {
@@ -91,16 +93,41 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
     // --- REUSED VISUAL RENDERER ---
     const renderVisual = (rd) => {
-        if (!rd) return null;
-        if (rd.graph) return <GraphCanvas data={rd.graph} />;
-        if (rd.pattern || rd.geometry?.subtype === 'sequence') return <PatternVisual data={rd.pattern || rd.geometry} />;
-        if (rd.marbles) return <ProbabilityMarbles data={rd.marbles} />;
-        if (rd.spinner) return <ProbabilitySpinner data={rd.spinner} />;
-        if (rd.freqTable) return <FrequencyTable data={rd.freqTable} />;
-        if (rd.geometry?.type === 'angle') return <AngleVisual data={rd.geometry} />;
-        if (rd.geometry) return <GeometryVisual data={rd.geometry} width={220} height={180} />;
-        return null;
-    };
+    if (!rd) return null;
+    if (rd.graph) return <GraphCanvas data={rd.graph} />;
+    if (rd.pattern || rd.geometry?.subtype === 'matchsticks' || rd.geometry?.subtype === 'sequence') {
+        return <PatternVisual data={rd.pattern || rd.geometry} />;
+    }
+    if (rd.marbles || rd.geometry?.type === 'marbles' || rd.geometry?.items) {
+        return <ProbabilityMarbles data={rd.marbles || rd.geometry} />;
+    }
+    if (rd.spinner || rd.geometry?.type === 'spinner') {
+        return <ProbabilitySpinner data={rd.spinner || rd.geometry} />;
+    }
+    if (rd.freqTable || rd.geometry?.type === 'frequency_table' || rd.geometry?.headers) {
+        return <FrequencyTable data={rd.freqTable || rd.geometry} />;
+    }
+    if (rd.percentGrid || rd.geometry?.type === 'percent_grid') {
+        return <PercentGrid data={rd.percentGrid || rd.geometry} />;
+    }
+    if (rd.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'].includes(rd.geometry.type)) {
+        return (
+            <div style={{ width: '220px', height: '180px', display: 'flex', justifyContent: 'center' }}>
+                <VolumeVisualization data={rd.geometry} />
+            </div>
+        );
+    }
+    if (rd.geometry?.type === 'angle') return <AngleVisual data={rd.geometry} />;
+    if (rd.scale || rd.geometry?.type === 'scale') return <ScaleVisual data={rd.scale || rd.geometry} />;
+    if (rd.similarity || rd.geometry?.type === 'similarity') return <SimilarityCompare data={rd.similarity || rd.geometry} />;
+    if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
+    if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
+    if (rd.geometry) return <GeometryVisual data={rd.geometry} width={220} height={180} />;
+    return null;
+  };
+
+    // Tracks which diagram is currently blown up full screen
+    const [spotlightVisual, setSpotlightVisual] = useState(null);
 
     // --- SELECTION UTILITIES ---
     const toggleQuestion = (id) => {
@@ -112,10 +139,30 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 setClueProgress({ ...clueProgress, [id]: 0 });
             }
             if (activeIds.length === 0) {
-                const newIdx = packet.findIndex(p => p.id === id);
+                const newIdx = livePacket.findIndex(p => p.id === id);
                 if (newIdx !== -1) setPresentationIndex(newIdx);
             }
         }
+    };
+
+
+    
+    const saveSpontaneousWorksheet = async () => {
+        const title = window.prompt(lang === 'sv' ? "Namnge ditt nya arbetsblad:" : "Name your new worksheet:");
+        if (!title) return;
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        const uniqueTopics = [...new Set(livePacket.map(q => q.topicId))];
+        
+        await supabase.from('saved_sheets').insert([{
+            user_id: user.id,
+            title: title,
+            type: 'worksheet',
+            packet: livePacket, 
+            auto_topics: uniqueTopics,
+            visibility: 'private'
+        }]);
+        alert(lang === 'sv' ? "Sparat till ditt bibliotek!" : "Saved to your library!");
     };
 
     const focusSingleQuestionOnWorksheet = (id) => {
@@ -123,7 +170,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
         if (clueProgress[id] === undefined) {
             setClueProgress({ ...clueProgress, [id]: 0 });
         }
-        const masterIdx = packet.findIndex(p => p.id === id);
+        const masterIdx = livePacket.findIndex(p => p.id === id);
         if (masterIdx !== -1) setPresentationIndex(masterIdx);
     };
 
@@ -155,10 +202,11 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     // --- TEXT SIZE CLASS MAPPER ---
     const getTextSizeClass = (type) => {
         const textMap = {
-            'base': { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l' },
-            'lg': { desc: 'text-xl', latex: 'text-2xl', clue: 'text-xl', headerText: 'text-xl' },
-            'xl': { desc: 'text-2xl', latex: 'text-3xl', clue: 'text-2xl', headerText: 'text-2xl' },
-            '2xl': { desc: 'text-3xl', latex: 'text-4xl', clue: 'text-3xl', headerText: 'text-3xl' }
+            // 🟢 FIXED: Added dynamic visual scale factors and margins tied to the user's zoom settings
+            'base': { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px]' },
+            'lg': { desc: 'text-xl', latex: 'text-2xl', clue: 'text-xl', headerText: 'text-xl', visualClass: 'scale-125 max-h-[240px] my-3' },
+            'xl': { desc: 'text-2xl', latex: 'text-3xl', clue: 'text-2xl', headerText: 'text-2xl', visualClass: 'scale-150 max-h-[320px] my-6' },
+            '2xl': { desc: 'text-3xl', latex: 'text-4xl', clue: 'text-3xl', headerText: 'text-3xl', visualClass: 'scale-[1.85] max-h-[420px] my-12' }
         };
         return textMap[textSize] || textMap['base'];
     };
@@ -166,13 +214,14 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     const sizeClasses = getTextSizeClass();
     const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
 
+
     return (
         <div className="fixed inset-0 z-[100] bg-slate-100 flex flex-col font-sans overflow-hidden animate-in fade-in">
             {/* Header Navbar Layer */}
-            <header className="bg-slate-900 text-white px-6 py-4 flex justify-between items-center shadow-md z-50 select-none">
+            <header className="bg-slate-900 text-white px-6 py-2 flex justify-between items-center shadow-md z-50 select-none">
                 <div className="flex items-center gap-2">
-                    <Monitor size={20} className="text-amber-400" />
-                    <h1 className="text-lg font-black uppercase tracking-widest italic">{sheetTitle || 'Presentationsläge'}</h1>
+                    <Monitor size={16} className="text-amber-400" />
+                    <h1 className="text-m font-black uppercase tracking-widest italic">{sheetTitle || 'Presentationsläge'}</h1>
                 </div>
                 
                 {/* RIGHT-ALIGNED CONTROLS STRIP */}
@@ -245,21 +294,33 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
             >
                 {/* COLUMN 1: COLLAPSIBLE WORKSPACE SELECTION PICKER */}
                 <div className={`bg-white border-r border-slate-200 overflow-y-auto custom-scrollbar flex flex-col transition-all duration-300 select-none shrink-0 z-10 min-w-0 ${isLeftCollapsed ? 'p-2 items-center' : 'p-6'}`}>
+                    {/* Header Row */}
+                    {/* PROMINENT ACTION BUTTON STRIP */}
+                    <div className="w-full mb-4 shrink-0">
+                        {isLeftCollapsed ? (
+                            <button 
+                                onClick={() => setIsSummonerOpen(true)}
+                                className="w-10 h-10 bg-blue-500 text-white hover:bg-purple-700 rounded-full flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer font-black mx-auto"
+                                title={lang === 'sv' ? "Hämta ny uppgift" : "Summon new question"}
+                            >
+                                <Plus size={20} strokeWidth={3} />
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={() => setIsSummonerOpen(true)}
+                                className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] cursor-pointer"
+                            >
+                                <Plus size={14} strokeWidth={3} />
+                                {lang === 'sv' ? "Hämta Ny Uppgift" : "Summon Question"}
+                            </button>
+                        )}
+                    </div>
+                    
                     <div className={`flex items-center mb-4 w-full ${isLeftCollapsed ? 'justify-center' : 'justify-between'}`}>
                         {!isLeftCollapsed && (
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-[16px] font-black text-purple-700 uppercase tracking-widest truncate">
-                                    {lang === 'sv' ? "Uppgifter" : "Question"} ({livePacket.length})
-                                </h2>
-                                {/* 🟢 THE SUMMON TRIGGER BUTTON */}
-                                <button 
-                                    onClick={() => setIsSummonerOpen(true)}
-                                    className="bg-indigo-100 hover:bg-indigo-600 text-indigo-600 hover:text-white w-6 h-6 rounded-md flex items-center justify-center transition-colors shadow-sm"
-                                    title={lang === 'sv' ? "Hämta ny uppgift" : "Summon new question"}
-                                >
-                                    <Plus size={16} strokeWidth={3} />
-                                </button>
-                            </div>
+                            <h2 className="text-[14px] font-black text-slate-400 uppercase tracking-widest truncate">
+                                {lang === 'sv' ? "Uppgifter" : "Questions"} ({livePacket.length})
+                            </h2>
                         )}
                         <button 
                             onClick={() => { setIsLeftCollapsed(!isLeftCollapsed); }}
@@ -269,8 +330,9 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                         </button>
                     </div>
 
+                    {/* Question Items Playlist */}
                     <div className="flex-1 flex flex-col gap-3 w-full min-w-0">
-                        {packet.map((q, idx) => {
+                        {livePacket.map((q, idx) => {
                             const isActive = activeIds.includes(q.id);
                             
                             if (isLeftCollapsed) {
@@ -308,8 +370,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 {/* COLUMN 2: WORKSPACE CANVAS INTERACTION SHELF */}
                 <main className="relative bg-[#f9fbf7] overflow-hidden h-full w-full flex flex-col">
                     
-                    {/* The Scrolling Workspace Area */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar pt-16 pb-[100px] px-8 flex flex-col justify-start items-center relative z-10">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar pt-16 pb-[480px] px-8 flex flex-col justify-start items-center relative z-10">
                         
                         {/* RESPONSIVE CORNER-ANCHORED PRESENTATION CONTROLS */}
                         <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
@@ -325,13 +386,13 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                             {/* Small center label to track progress on screen for the teacher */}
                             {activeIds.length > 0 && (
                                 <div className="bg-slate-900/90 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest backdrop-blur-sm shadow border border-white/10 pointer-events-auto">
-                                    {lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${packet.length}` : `Question ${presentationIndex + 1} of ${packet.length}`}
+                                    {lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${livePacket.length}` : `Question ${presentationIndex + 1} of ${livePacket.length}`}
                                 </div>
                             )}
 
                             <button 
                                 onClick={handleCanvasNext}
-                                disabled={activeIds.length > 0 && presentationIndex >= packet.length - 1}
+                                disabled={activeIds.length > 0 && presentationIndex >= livePacket.length - 1}
                                 className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
                                 title={lang === 'sv' ? "Nästa uppgift" : "Next Question"}
                             >
@@ -341,8 +402,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
                         {/* DYNAMIC PRESENTATION ENGINE SWITCHBOARD LAYER */}
                         {viewMode === 'sheet' ? (
-                            /* 📄 OPTION A: 1:1 REPLICATED BORDERLESS PAPER WORKSHEET VIEWER */
-                            <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-[15mm] flex flex-col rounded-sm border border-slate-300 animate-in fade-in zoom-in-95 duration-300 select-none mb-8 mt-2 relative z-20">
+                            <div className="bg-white shadow-2xl w-[210mm] h-auto min-h-[297mm] p-[15mm] pb-[40mm] flex flex-col rounded-sm border border-slate-300 animate-in fade-in zoom-in-95 duration-300 select-none mb-8 mt-2 relative z-20">
                                 {/* Replicated Worksheet Title Header Row Strip */}
                                 <header className="border-b-2 border-black pb-2 mb-6 flex items-end justify-between">
                                     <h1 className="text-md font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1>
@@ -354,7 +414,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
                                 {/* 1:1 Replicated Grid Matrix matching QuestionStudio layout architecture */}
                                 <div className="grid grid-cols-6 gap-x-8 gap-y-6 items-start content-start relative">
-                                    {packet.map((item, idx) => {
+                                    {livePacket.map((item, idx) => {
                                         const isFocused = activeIds.includes(item.id);
                                         const hasAnyFocus = activeIds.length > 0;
                                         
@@ -413,7 +473,11 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                             )}
                                                             
                                                             {displayVisual && rd && (
-                                                                <div className="flex justify-center scale-75 origin-top mt-2 max-h-[120px]">
+                                                                /* 🟢 FIXED: Handled text size reactive scaling and enabled click-to-spotlight */
+                                                                <div 
+                                                                    onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
+                                                                    className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 relative z-30 ${sizeClasses.visualClass}`}
+                                                                >
                                                                     {renderVisual(rd)}
                                                                 </div>
                                                             )}
@@ -426,17 +490,16 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                 </div>
                             </div>
                         ) : (
-                            /* 🗂️ OPTION B: PERFECTLY BALANCED BORDERLESS CLASSROOM REVIEW LANES */
                             <div className="w-full h-full min-h-screen relative flex items-start select-none pt-6 pb-[70px] z-20">
                                 {activeIds.length === 0 && (
                                     <div className="text-slate-300 font-black uppercase text-center mt-32 tracking-widest text-sm w-full">Välj uppgifter till vänster för att presentera</div>
                                 )}
                                 
                                 {activeIds.map((id, index) => {
-                                    const q = packet.find(p => p.id === id);
+                                    const q = livePacket.find(p => p.id === id);
                                     if (!q) return null;
                                     const rd = q.resolvedData?.renderData;
-                                    const masterIndex = packet.findIndex(p => p.id === id) + 1;
+                                    const masterIndex = livePacket.findIndex(p => p.id === id) + 1;
 
                                     return (
                                         <div 
@@ -451,15 +514,18 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                             <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block mb-6 uppercase tracking-wider shadow-sm shrink-0">
                                                 {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
                                             </div>
-                                            
-                                            {q.showVisual !== false && rd && (
-                                                <div className="flex justify-center mb-6 scale-90 origin-top max-h-[160px] overflow-hidden shrink-0">
-                                                    {renderVisual(rd)}
-                                                </div>
-                                            )}
                                             {q.showText !== false && (
                                                 <div className={`font-bold text-slate-800 text-center leading-relaxed max-w-prose w-full break-words px-4 ${sizeClasses.desc}`}>
                                                     <MathDisplay content={rd?.description} />
+                                                </div>
+                                            )}
+                                            {q.showVisual !== false && rd && (
+                                                /* 🟢 FIXED: Handled reactive scale tracking and click toggles for lane views */
+                                                <div 
+                                                    onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
+                                                    className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 ${sizeClasses.visualClass}`}
+                                                >
+                                                    {renderVisual(rd)}
                                                 </div>
                                             )}
                                             {q.showLatex !== false && rd?.latex && (
@@ -474,7 +540,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                         )}
                     </div>
 
-                    {/* 🟢 THE ISOLATED DRAWING ENGINE INJECTED HERE */}
+                    {/* THE ISOLATED DRAWING ENGINE INJECTED HERE */}
                     <InteractiveCanvas lang={lang} />
                 </main>
 
@@ -484,7 +550,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                         ${isRightCollapsed ? 'w-16 p-2 items-center justify-start pt-4' : 'w-80 p-6 gap-6'}`}
                 >
                     {isRightCollapsed ? (
-                        /* 📄 VERTICAL TEXT STRIP BUTTON (When panel is collapsed) */
+                        /* VERTICAL TEXT STRIP BUTTON (When panel is collapsed) */
                         <button
                             onClick={() => setIsRightCollapsed(false)}
                             className="w-12 flex-1 flex flex-col items-center justify-start py-6 bg-slate-50 hover:bg-indigo-50 border border-slate-200/60 rounded-2xl cursor-pointer group transition-all text-slate-400 hover:text-indigo-600 gap-4"
@@ -538,11 +604,11 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                             {clueViewMode === 'answers' ? (
                                 /* KOMPAKT MULTI-COLUMN FULL WORKSHEET KEY GRID */
                                 <div className="flex-1 flex flex-col min-h-0 animate-in fade-in duration-200 overflow-y-auto custom-scrollbar">
-                                    {packet.length === 0 ? (
+                                    {livePacket.length === 0 ? (
                                         <div className="text-center text-slate-300 italic text-m mt-12">Tomt arbetsblad</div>
                                     ) : (
                                         <div className={`columns-2 gap-x-4 gap-y-2 font-bold leading-normal break-inside-avoid text-slate-700 ${sizeClasses.latex}`}>
-                                            {packet.map((q, idx) => {
+                                            {livePacket.map((q, idx) => {
                                                 const rd = q.resolvedData?.renderData;
                                                 const clues = q?.clues || q?.resolvedData?.clues || [];
 
@@ -585,10 +651,10 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                     )}
 
                                     {activeIds.map(id => {
-                                        const q = packet.find(p => p.id === id);
+                                        const q = livePacket.find(p => p.id === id);
                                         const clues = q?.clues || q?.resolvedData?.clues || [];
                                         const progress = clueProgress[id] || 0;
-                                        const masterIndex = packet.findIndex(p => p.id === id) + 1;
+                                        const masterIndex = livePacket.findIndex(p => p.id === id) + 1;
 
                                         if (!q || clues.length === 0) return null;
 
@@ -650,7 +716,28 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                     )}
                 </div>
             </div>
-            {/* 🟢 THE SUMMONER MODAL */}
+            {/* CLASSROOM SPOTLIGHT VISUAL LIGHTBOX MODAL */}
+            {spotlightVisual && (
+                <div 
+                    onClick={() => setSpotlightVisual(null)} 
+                    className="fixed inset-0 z-[300] bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-12 cursor-zoom-out animate-in fade-in duration-200 select-none"
+                >
+                    {/* Floating Escape Label */}
+                    <div className="absolute top-6 text-white/40 text-[11px] font-black uppercase tracking-widest bg-white/5 border border-white/10 px-4 py-1.5 rounded-full shadow">
+                        {lang === 'sv' ? "Klicka var som helst för att gå tillbaka" : "Click anywhere to close spotlight"}
+                    </div>
+
+                    {/* Magnification Vault */}
+                    <div 
+                        onClick={(e) => e.stopPropagation()} 
+                        className="bg-white p-12 rounded-[2.5rem] shadow-2xl flex items-center justify-center border border-slate-100 max-w-4xl max-h-[75vh] min-w-[450px] min-h-[350px] transform scale-[1.65] origin-center shadow-emerald-950/20"
+                    >
+                        {renderVisual(spotlightVisual)}
+                    </div>
+                </div>
+            )}
+
+            {/* THE SUMMONER MODAL */}
             {isSummonerOpen && (
                 <QuestionSummoner 
                     lang={lang} 

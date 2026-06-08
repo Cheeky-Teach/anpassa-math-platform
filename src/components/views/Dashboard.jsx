@@ -240,19 +240,21 @@ const Dashboard = ({
                             </span>
                         </button>
 
-                        {/* Whiteboard - Teacher Only */}
+                        {/* Presentation Canvas - Teacher Only */}
                         {userRole === 'teacher' && (
                             <button 
                                 onClick={onWhiteboardOpen} 
-                                className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-emerald-600 transition-all text-left shadow-sm relative overflow-hidden">
-                                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-emerald-600 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
+                                /* CHANGED: Shifted hover styles to purple to visually link it to the 'Summoner' color system themes */
+                                className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-purple-600 transition-all text-left shadow-sm relative overflow-hidden cursor-pointer"
+                            >
+                                <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-4 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-sm">
                                     <Monitor size={20} />
                                 </div>
                                 <span className="block font-bold text-sm uppercase text-slate-700 mb-1">
-                                    {lang === 'sv' ? 'Whiteboard' : 'Whiteboard'}
+                                    {lang === 'sv' ? 'Presentationstavla' : 'Presentation Board'}
                                 </span>
                                 <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">
-                                    {lang === 'sv' ? 'Genomgång' : 'Presentation'}
+                                    {lang === 'sv' ? 'Starta tom lektionsyta' : 'Start blank canvas'}
                                 </span>
                             </button>
                         )}

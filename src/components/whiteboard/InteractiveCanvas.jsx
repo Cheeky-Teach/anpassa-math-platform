@@ -51,6 +51,28 @@ export default function InteractiveCanvas({ lang = 'sv' }) {
         return () => clearInterval(interval);
     }, []);
 
+    // GLOBAL BACKGROUND DESELECTION CONTROLLER
+    useEffect(() => {
+        const handleGlobalDeselect = (e) => {
+            // Ignore clicks if interacting with text editors or UI utility toolbars
+            if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]')) return;
+            
+            // Ignore clicks targeted directly at drawn shapes
+            if (e.target.closest('[data-id]')) return;
+            
+            // If the user clicks empty space in Selection Mode, cleanly drop active selection handles
+            if (activeTool === 'select') {
+                setSelectedId(null);
+                setEditingId(null);
+                setInteractionMode(null);
+                setIsDrawing(false);
+            }
+        };
+
+        window.addEventListener('pointerdown', handleGlobalDeselect);
+        return () => window.removeEventListener('pointerdown', handleGlobalDeselect);
+    }, [activeTool]);
+
     // --- 3. ENGINE HELPERS ---
     const getCoordinates = (e, shouldSnap = true) => {
         const svg = svgRef.current;
@@ -157,6 +179,8 @@ export default function InteractiveCanvas({ lang = 'sv' }) {
             setElements([...elements, newEl]);
             setSelectedId(newId);
             setActiveTool('select');
+            setIsDrawing(false);
+            setInteractionMode(null);
             return;
         }
 
@@ -172,6 +196,8 @@ export default function InteractiveCanvas({ lang = 'sv' }) {
             } else {
                 setSelectedId(null); 
                 setEditingId(null);
+                setInteractionMode(null);
+                setIsDrawing(false);
             }
             return;
         }
