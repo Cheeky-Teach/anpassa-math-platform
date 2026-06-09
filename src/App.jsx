@@ -15,7 +15,6 @@ import DoNowGrid from './components/views/DoNowGrid';
 import SessionReportView from './components/views/SessionReportView';
 import ProfileView from './components/views/ProfileView';
 import TimesTable from './components/views/TimesTable';
-import WhiteboardView from './components/whiteboard/WhiteboardView';
 import TestLabView from './components/views/TestLabView';
 import PresentationView from './components/views/PresentationView';
 

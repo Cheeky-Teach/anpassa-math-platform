@@ -26,7 +26,7 @@ export class AlgebraicGeometryGenerator {
     }
 
     private toBase64(str: string): string {
-        return btoa(unescape(encodeURIComponent(str)));
+        return Buffer.from(str, 'utf-8').toString('base64');
     }
 
     // Comprehensive label mapping matrix matching GeometryShapes.jsx expectations
