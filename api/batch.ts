@@ -23,7 +23,7 @@ import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
 import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
 import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js';
 import { UnitConversionGen } from '../src/core/generators/UnitConversionGen.js';
-import { AlgebraicGeometryGenerator } from '@core/generators/AlgebraicGeometryGenerator.js';
+import { AlgebraicGeometryGenerator } from '../src/core/generators/AlgebraicGeometryGenerator.js';
 import { WordProblemInterceptor } from '../src/core/utils/WordProblemInterceptor.js';
 import { SKILL_BUCKETS } from '../src/constants/skillBuckets.js';
 
