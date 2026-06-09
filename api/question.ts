@@ -26,7 +26,7 @@ import { AnglesGen } from '../src/core/generators/AnglesGen.js';
 import { PatternsGen } from '../src/core/generators/PatternsGen.js';
 import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js';
 import { UnitConversionGen } from '../src/core/generators/UnitConversionGen.js';
-import { AlgebraicGeometryGenerator } from '@core/generators/AlgebraicGeometryGenerator.js';
+import { AlgebraicGeometryGenerator } from '../src/core/generators/AlgebraicGeometryGenerator.js';
 
 interface VercelRequest extends IncomingMessage {
     query: Record<string, string | string[]>;
