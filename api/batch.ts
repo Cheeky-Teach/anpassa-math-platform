@@ -39,6 +39,7 @@ const TopicMap: Record<string, any> = {
   'expression_simplification': ExpressionSimplificationGen,
   'patterns': PatternsGen,
   'graphs': LinearGraphGenerator,
+  'algebraic_geometry': AlgebraicGeometryGenerator,
 
   // Arithmetic
   'basic_arithmetic': BasicArithmeticGen,
