@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
     X, ChevronLeft, ChevronRight, Monitor, PanelLeftClose, 
-    PanelLeftOpen, ZoomIn, ZoomOut, Layers, FileText, List, Plus
+    PanelLeftOpen, ZoomIn, ZoomOut, Layers, FileText, List, Plus,
+    RefreshCw
 } from 'lucide-react';
 
 // Import your visual components exactly as you do in QuestionStudio
@@ -82,7 +83,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
     const [isRightCollapsed, setIsRightCollapsed] = useState(false);
     const [textSize, setTextSize] = useState('base'); 
-    const [viewMode, setViewMode] = useState('sheet'); 
+    const [viewMode, setViewMode] = useState('list'); 
     const [clueViewMode, setClueViewMode] = useState('steps'); // 'steps' (revealer array slider) or 'answers' (kompakt full list facit)
 
     // CREATE A LIVE PACKET FOR THE SESSION
@@ -129,6 +130,57 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     // Tracks which diagram is currently blown up full screen
     const [spotlightVisual, setSpotlightVisual] = useState(null);
 
+    // --- 🟢 NEW: LIVE QUESTION REGENERATOR ENGINE ---
+    const handleRegenerateQuestion = async (targetId) => {
+        const targetItem = livePacket.find(q => q.id === targetId);
+        if (!targetItem) return;
+
+        try {
+            // Read metadata parameters from the active question item instance
+            // 🟢 FIXED: Expanded the check to look for camelCase 'topicId' and 'topic' first
+            const topic = targetItem.topicId || targetItem.topic || targetItem.topic_id || targetItem.metadata?.topic || 'algebraic_geometry';
+            const level = targetItem.level || targetItem.metadata?.level || 1;
+            const variation = targetItem.variationKey || targetItem.variation_key || targetItem.metadata?.variation_key;
+
+            // Fetch a fresh set of text/numbers from the serverless backend pipeline
+            let url = `/api/question?topic=${topic}&level=${level}&lang=${lang}`;
+            if (variation && variation !== 'generic') {
+                url += `&variation=${variation}`;
+            }
+
+            const res = await fetch(url);
+            const freshData = await res.json();
+
+            if (freshData.error || !freshData.renderData) {
+                console.error("Failed to regenerate question:", freshData.error);
+                return;
+            }
+
+            // Update the state array in-place, preserving the established element reference ID
+            setLivePacket(prev => prev.map(q => {
+                if (q.id === targetId) {
+                    return {
+                        ...q,
+                        // Update with fresh random text, visual metadata configurations, and tokens
+                        resolvedData: {
+                            renderData: freshData.renderData,
+                            token: freshData.token,
+                            clues: freshData.clues,
+                            level: freshData.level || level
+                        }
+                    };
+                }
+                return q;
+            }));
+
+            // Reset clue progression for this specific question since it's a completely new task
+            setClueProgress(prev => ({ ...prev, [targetId]: 0 }));
+
+        } catch (err) {
+            console.error("Critical error while cycling question parameters:", err);
+        }
+    };
+    
     // --- SELECTION UTILITIES ---
     const toggleQuestion = (id) => {
         if (activeIds.includes(id)) {
@@ -492,15 +544,22 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                 <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
                                             )}
 
-                                            <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block mb-6 uppercase tracking-wider shadow-sm shrink-0">
-                                                {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
-                                            </div>
-                                            {q.showText !== false && (
-                                                <div className={`font-bold text-slate-800 text-center leading-relaxed max-w-prose w-full break-words px-4 ${sizeClasses.desc}`}>
-                                                    <MathDisplay content={rd?.description} />
+                                            {/* 🟢 NEW: FLEX CONTAINER FOR HEADER & REGENERATE BUTTON */}
+                                            <div className="flex items-center gap-3 mb-6 shrink-0 relative z-40">
+                                                <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block uppercase tracking-wider shadow-sm">
+                                                    {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
                                                 </div>
-                                            )}
-                                            {q.showVisual !== false && rd && (
+                                                
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleRegenerateQuestion(q.id); }}
+                                                    className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all active:scale-90 cursor-pointer ui-ignore"
+                                                    title={lang === 'sv' ? "Slå om tal / slumpa nya värden" : "Roll fresh question numbers"}
+                                                >
+                                                    <RefreshCw size={18} className="transition-transform duration-300 hover:rotate-180" />
+                                                </button>
+                                            </div>
+
+                                            {q.showText !== false && (
                                                 /* 🟢 FIXED: Handled reactive scale tracking and click toggles for lane views */
                                                 <div 
                                                     onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}

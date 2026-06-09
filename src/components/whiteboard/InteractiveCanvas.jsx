@@ -73,6 +73,27 @@ export default function InteractiveCanvas({ lang = 'sv' }) {
         return () => window.removeEventListener('pointerdown', handleGlobalDeselect);
     }, [activeTool]);
 
+    // 🟢 NEW: GLOBAL POINTER TRACKING ATTACHMENT FOR FAST TRANSFORMATIONS
+    useEffect(() => {
+        if (!isDrawing) return; // Only listen globally if actively transforming/drawing
+
+        const handleGlobalMove = (e) => {
+            handlePointerMove(e);
+        };
+
+        const handleGlobalUp = (e) => {
+            handlePointerUp(e);
+        };
+
+        window.addEventListener('pointermove', handleGlobalMove);
+        window.addEventListener('pointerup', handleGlobalUp);
+
+        return () => {
+            window.removeEventListener('pointermove', handleGlobalMove);
+            window.removeEventListener('pointerup', handleGlobalUp);
+        };
+    }, [isDrawing, interactionMode, selectedId, dragOffset, activeTool]); 
+
     // --- 3. ENGINE HELPERS ---
     const getCoordinates = (e, shouldSnap = true) => {
         const svg = svgRef.current;
@@ -810,19 +831,16 @@ export default function InteractiveCanvas({ lang = 'sv' }) {
 
     return (
         <>
-            {/* 🟢 THE DRAWING LAYER */}
+            {/* THE DRAWING LAYER */}
             <svg 
                 ref={svgRef}
                 className={`absolute inset-0 w-full h-full z-30 ${activeTool === 'select' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair'}`}
                 onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerLeave={handlePointerUp}
             >
                 {elements.map(renderElement)}
             </svg>
 
-            {/* 🟢 THE HORIZONTAL TOOLBAR */}
+            {/*THE HORIZONTAL TOOLBAR */}
             <Toolbar 
                 lang={lang} 
                 activeTool={activeTool} 
