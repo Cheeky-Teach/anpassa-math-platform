@@ -544,22 +544,15 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                 <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
                                             )}
 
-                                            {/* 🟢 NEW: FLEX CONTAINER FOR HEADER & REGENERATE BUTTON */}
-                                            <div className="flex items-center gap-3 mb-6 shrink-0 relative z-40">
-                                                <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block uppercase tracking-wider shadow-sm">
-                                                    {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
-                                                </div>
-                                                
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleRegenerateQuestion(q.id); }}
-                                                    className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all active:scale-90 cursor-pointer ui-ignore"
-                                                    title={lang === 'sv' ? "Slå om tal / slumpa nya värden" : "Roll fresh question numbers"}
-                                                >
-                                                    <RefreshCw size={18} className="transition-transform duration-300 hover:rotate-180" />
-                                                </button>
+                                            <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block mb-6 uppercase tracking-wider shadow-sm shrink-0">
+                                                {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
                                             </div>
-
                                             {q.showText !== false && (
+                                                <div className={`font-bold text-slate-800 text-center leading-relaxed max-w-prose w-full break-words px-4 ${sizeClasses.desc}`}>
+                                                    <MathDisplay content={rd?.description} />
+                                                </div>
+                                            )}
+                                            {q.showVisual !== false && rd && (
                                                 /* 🟢 FIXED: Handled reactive scale tracking and click toggles for lane views */
                                                 <div 
                                                     onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
