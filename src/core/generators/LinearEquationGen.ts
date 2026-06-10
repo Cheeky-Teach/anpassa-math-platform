@@ -186,9 +186,22 @@ export class LinearEquationGen {
             finalRes = res;    // 🟢 Safely preserve for token compilation
             latex = `${k}x = ${res}`;
             clues = [
-                { text: lang === 'sv' ? `Steg 1: x är multiplicerat med ${k}. För att få x ensamt måste vi dividera båda sidor med ${k}.` : `Step 1: x is multiplied by ${k}. To isolate x, we must divide both sides by ${k}.` },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `\\frac{${res}}{${k}} = ${x}` },
-                { text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}` }
+                { 
+                    text: lang === 'sv' ? "Målet är att isolera x och få det helt ensamt på sin sida." : "The goal is to isolate x and get it completely by itself on its side.", 
+                    latex: `${k}x = ${res}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Steg 1: Ta bort multiplikationen genom att dela med ${k} på båda sidor.` : `Step 1: Undo the multiplication by dividing both sides by ${k}.`, 
+                    latex: `\\frac{${k}x}{\\mathbf{${k}}} = \\frac{${res}}{\\mathbf{${k}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Förenkla divisionen för att se vad x blir." : "Simplify the division to see what x equals.", 
+                    latex: `x = \\mathbf{${x}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}`, 
+                    latex: `x = ${x}` 
+                }
             ];
         } else {
             const k = MathUtils.randomInt(1, 20);
@@ -198,9 +211,22 @@ export class LinearEquationGen {
             finalRes = res;    // 🟢 Safely preserve for token compilation
             latex = isPlus ? `x + ${k} = ${res}` : `x - ${k} = ${res}`;
             clues = [
-                { text: lang === 'sv' ? (isPlus ? `Steg 1: Det står +${k} bredvid x. Utför motsatsen (-${k}) på båda sidor.` : `Steg 1: Det står -${k} bredvid x. Utför motsatsen (+${k}) på båda sidor.`) : (isPlus ? `Step 1: It says +${k} next to x. Perform the opposite (-${k}) on both sides.` : `Step 1: It says -${k} next to x. Perform the opposite (+${k}) on both sides.`) },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: isPlus ? `${res} - ${k} = ${x}` : `${res} + ${k} = ${x}` },
-                { text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}` }
+                { 
+                    text: lang === 'sv' ? "Målet är att isolera x och få det helt ensamt på sin sida." : "The goal is to isolate x and get it completely by itself on its side.", 
+                    latex: isPlus ? `x + ${k} = ${res}` : `x - ${k} = ${res}` 
+                },
+                { 
+                    text: lang === 'sv' ? (isPlus ? `Steg 1: Ta bort +${k} genom att subtrahera ${k} från båda sidor.` : `Step 1: Remove -${k} by adding ${k} to both sides.`) : (isPlus ? `Step 1: Undo +${k} by subtracting ${k} from both sides.` : `Step 1: Undo -${k} by adding ${k} to both sides.`), 
+                    latex: isPlus ? `x + ${k} \\mathbf{- ${k}} = ${res} \\mathbf{- ${k}}` : `x - ${k} \\mathbf{+ ${k}} = ${res} \\mathbf{+ ${k}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Förenkla uttrycket på båda sidor för att få fram svaret." : "Simplify the expression on both sides to get the answer.", 
+                    latex: `x = \\mathbf{${x}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}`, 
+                    latex: `x = ${x}` 
+                }
             ];
         }
 
@@ -274,45 +300,37 @@ export class LinearEquationGen {
         }
 
         const clues = [
-            { text: lang === 'sv' ? "En tvåstegsekvation löses i två tydliga steg." : "A two-step equation is solved in two clear steps." },
             { 
-                text: lang === 'sv' 
-                    ? `Steg 1: Flytta siffertermen ${b} genom att utföra motsatsen på båda sidor.` 
-                    : `Step 1: Move the constant term ${b} by performing the opposite on both sides.` 
+                text: lang === 'sv' ? "Vi löser tvåstegsekvationer genom att först ta bort de lösa sifferkonstanterna." : "We solve two-step equations by removing loose numerical constants first.", 
+                latex: equationLatex 
             },
             { 
-                text: lang === 'sv' ? "Uträkning steg 1:" : "Step 1 calculation:", 
-                latex: isPlus ? `${c} - ${b} = ${intermediate}` : `${c} + ${b} = ${intermediate}` 
+                text: lang === 'sv' ? (isPlus ? `Steg 1: Ta bort +${b} genom och subtrahera ${b} från båda sidor.` : `Steg 1: Ta bort -${b} genom att addera ${b} på båda sidor.`) : (isPlus ? `Step 1: Remove +${b} by subtracting ${b} from both sides.` : `Step 1: Remove -${b} by adding ${b} to both sides.`), 
+                latex: isMultiplication 
+                    ? `${a}x ${isPlus ? '+' : '-'} ${b} \\mathbf{${isPlus ? '-' : '+'}} ${b} = ${c} \\mathbf{${isPlus ? '-' : '+'}} ${b}`
+                    : `\\frac{x}{${a}} ${isPlus ? '+' : '-'} ${b} \\mathbf{${isPlus ? '-' : '+'}} ${b} = ${c} \\mathbf{${isPlus ? '-' : '+'}} ${b}`
             },
             { 
-                text: lang === 'sv' ? `Nu har vi ekvationen:` : `Now we have the equation:`, 
-                latex: isMultiplication ? `${a}x = ${intermediate}` : `\\frac{x}{${a}} = ${intermediate}` 
+                text: lang === 'sv' ? "Förenkla siffertermerna så att variabeltermen står helt ensam:" : "Simplify the constants to isolate the variable term:", 
+                latex: isMultiplication ? `${a}x = \\mathbf{${intermediate}}` : `\\frac{x}{${a}} = \\mathbf{${intermediate}}` 
+            },
+            { 
+                text: isMultiplication 
+                    ? (lang === 'sv' ? `Steg 2: Dela båda sidor med ${a} för att få bort multiplikationen.` : `Step 2: Divide both sides by ${a} to undo the multiplication.`)
+                    : (lang === 'sv' ? `Steg 2: Multiplicera båda sidor med ${a} för att få bort divisionen.` : `Step 2: Multiply both sides by ${a} to undo the division.`),
+                latex: isMultiplication
+                    ? `\\frac{${a}x}{\\mathbf{${a}}} = \\frac{${intermediate}}{\\mathbf{${a}}}`
+                    : `\\frac{x}{${a}} \\mathbf{\\cdot ${a}} = ${intermediate} \\mathbf{\\cdot ${a}}`
+            },
+            { 
+                text: lang === 'sv' ? "Förenkla raden för att beräkna det slutgiltiga värdet på x." : "Simplify the line to calculate the final value of x.", 
+                latex: `x = \\mathbf{${x}}` 
+            },
+            { 
+                text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}`, 
+                latex: `x = ${x}` 
             }
         ];
-
-        if (isMultiplication) {
-            clues.push(
-                { 
-                    text: lang === 'sv' ? `Steg 2: Eftersom x är multiplicerat med ${a}, dividerar vi båda sidor med ${a} för att få fram x.` : `Step 2: Since x is multiplied by ${a}, we divide both sides by ${a} to isolate x.` 
-                },
-                { 
-                    text: lang === 'sv' ? "Uträkning steg 2:" : "Step 2 calculation:", 
-                    latex: `\\frac{${intermediate}}{${a}} = ${x}` 
-                }
-            );
-        } else {
-            clues.push(
-                { 
-                    text: lang === 'sv' ? `Steg 2: Eftersom x är dividerat med ${a}, multiplicerar vi båda sidor med ${a} för att få fram x.` : `Step 2: Since x is divided by ${a}, we multiply both sides by ${a} to isolate x.` 
-                },
-                { 
-                    text: lang === 'sv' ? "Uträkning steg 2:" : "Step 2 calculation:", 
-                    latex: `${intermediate} \\cdot ${a} = ${x}` 
-                }
-            );
-        }
-
-        clues.push({ text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}` });
 
         // 🟢 Strategy B Background Contract: Unifies both equations into a clean data string for the regex parser
         const backgroundToken = isMultiplication 
@@ -379,13 +397,38 @@ export class LinearEquationGen {
             variationKey: 'paren_calc', // Forces key grouping for pattern detection
             type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Multiplicera in faktorn utanför i parentesen först." : "Step 1: First multiply the factor outside into the parentheses." },
-                { text: lang === 'sv' ? `Uträkning: ${a} · x + ${a} · ${b}` : `Calculation: ${a} · x + ${a} · ${b}`, latex: `${a}x + ${expandedConst} = ${constantSum}` },
-                { text: lang === 'sv' ? `Steg 2: Flytta siffran ${expandedConst} genom att subtrahera den från båda sidor.` : `Step 2: Move the number ${expandedConst} by subtracting it from both sides.` },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${constantSum} - ${expandedConst} = ${diff} \\\\ ${a}x = ${diff}` },
-                { text: lang === 'sv' ? `Steg 3: Dela båda sidor med ${a} för att få x.` : `Step 3: Divide both sides by ${a} to find x.` },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `\\frac{${diff}}{${a}} = ${x}` },
-                { text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}` }
+                { 
+                    text: lang === 'sv' ? "När en ekvation innehåller en parentes börjar vi med att multiplicera in i den." : "When an equation contains a parenthesis, we start by multiplying into it.", 
+                    latex: `${a}(x + ${b}) = ${constantSum}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Multiplicera ${a} med både x och ${b} på insidan av parentesen:` : `Multiply ${a} by both x and ${b} on the inside of the parentheses:`, 
+                    latex: `\\mathbf{${a} \\cdot x + ${a} \\cdot ${b}} = ${constantSum}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Förenkla multiplikationen för att få en vanlig tvåstegsekvation:" : "Simplify the multiplication to generate a standard two-step equation:", 
+                    latex: `${a}x + \\mathbf{${expandedConst}} = ${constantSum}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Steg 1: Ta bort siffertermen genom att ta -${expandedConst} på båda sidor.` : `Step 1: Remove the constant term by subtracting ${expandedConst} from both sides.`, 
+                    latex: `${a}x + ${expandedConst} \\mathbf{- ${expandedConst}} = ${constantSum} \\mathbf{- ${expandedConst}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut subtraktionen på höger och vänster sida:" : "Calculate the subtraction on the right and left sides:", 
+                    latex: `${a}x = \\mathbf{${diff}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Steg 2: Dela båda sidor med ${a} för att få x helt fritt.` : `Step 2: Divide both sides by ${a} to set x completely free.`, 
+                    latex: `\\frac{${a}x}{\\mathbf{${a}}} = \\frac{${diff}}{\\mathbf{${a}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Utför divisionen för att räkna ut det slutgiltiga svaret." : "Perform the division to compute the final answer.", 
+                    latex: `x = \\mathbf{${x}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}`, 
+                    latex: `x = ${x}` 
+                }
             ],
             metadata: { variation_key: v, difficulty: 3 }
         };
@@ -433,13 +476,38 @@ export class LinearEquationGen {
             variationKey: 'bothsides_calc', // 🟢 Forces key grouping for pattern detection
             type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "När x finns på båda sidor löser vi det steg för steg." : "When x is on both sides, we solve it step-by-step." },
-                { text: lang === 'sv' ? `Steg 1: Ta bort ${c}x från båda sidor.` : `Step 1: Remove ${c}x from both sides.`, latex: `${a}x - ${c}x = ${diffX}x` },
-                { text: lang === 'sv' ? `Nu har vi: ${diffX}x + ${b} = ${d}` : `Now we have: ${diffX}x + ${b} = ${d}`, latex: `${diffX}x + ${b} = ${d}` },
-                { text: lang === 'sv' ? `Steg 2: Flytta ${b} genom att subtrahera det från båda sidor.` : `Step 2: Move ${b} by subtracting it from both sides.`, latex: `${d} - ${b} = ${diffConst}` },
-                { text: lang === 'sv' ? `Nu har vi: ${diffX}x = ${diffConst}` : `Now we have: ${diffX}x = ${diffConst}`, latex: `${diffX}x = ${diffConst}` },
-                { text: lang === 'sv' ? `Steg 3: Dela med ${diffX} för att få fram x.` : `Step 3: Divide by ${diffX} to find x.`, latex: `\\frac{${diffConst}}{${diffX}} = ${x}` },
-                { text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}` }
+                { 
+                    text: lang === 'sv' ? "När det finns x på båda sidor samlar vi dem först på den sida som har flest." : "When x is on both sides, we first collect them on the side that has more.", 
+                    latex: eq 
+                },
+                { 
+                    text: lang === 'sv' ? `Steg 1: Ta bort den minsta x-termen (${c}x) genom att subtrahera den från båda sidor.` : `Step 1: Remove the smallest x-term (${c}x) by subtracting it from both sides.`, 
+                    latex: `${a}x \\mathbf{- ${c}x} + ${b} = ${c}x \\mathbf{- ${c}x} + ${d}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Förenkla x-termerna. Nu har vi bara x på en och samma sida:" : "Simplify the x-terms. Now we have x on one side only:", 
+                    latex: `\\mathbf{${diffX}}x + ${b} = ${d}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Steg 2: Ta bort siffertermen +${b} genom att ta -${b} på båda sidor.` : `Step 2: Remove the constant term +${b} by subtracting ${b} from both sides.`, 
+                    latex: `${diffX}x + ${b} \\mathbf{- ${b}} = ${d} \\mathbf{- ${b}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Förenkla sifferkonstanterna för att få variabeltermen ensam:" : "Simplify the constant numbers to isolate the variable term:", 
+                    latex: `${diffX}x = \\mathbf{${diffConst}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Steg 3: Dela båda sidor med ${diffX} för att räkna ut vad ett ensamt x är värt.` : `Step 3: Divide both sides by ${diffX} to calculate what a single x is worth.`, 
+                    latex: `\\frac{${diffX}x}{\\mathbf{${diffX}}} = \\frac{${diffConst}}{\\mathbf{${diffX}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Slutför divisionen för att få fram det slutgiltiga värdet på x." : "Complete the division to reveal the final value of x.", 
+                    latex: `x = \\mathbf{${x}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}`, 
+                    latex: `x = ${x}` 
+                }
             ],
             metadata: { variation_key: v, difficulty: 4 }
         };

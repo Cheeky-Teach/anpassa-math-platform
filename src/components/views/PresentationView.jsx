@@ -16,6 +16,8 @@ import AngleVisual from '../visuals/AngleComponents';
 import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
 import QuestionSummoner from './QuestionSummoner';
 import { supabase } from '../../lib/supabaseClient'; 
+import { useMyCoach } from '../../hooks/useMyCoach';
+import MyCoachModal from '../modals/MyCoachModal';
 
 
 // Standard Math Renderer
@@ -91,6 +93,19 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     
     // SUMMONER STATE
     const [isSummonerOpen, setIsSummonerOpen] = useState(false);
+
+    // 🟢 NEW: IDENTIFY THE ACTIVE FOCUSED QUESTION & INITIALIZE COACH
+    const currentFocusedQuestion = livePacket.find(p => activeIds.includes(p.id)) || livePacket[presentationIndex] || null;
+    const { coachProps } = useMyCoach(currentFocusedQuestion, lang);
+
+    // 🟢 NEW: SCROLL LOCK FOR THE MIDDLE Whiteboard CHALKBOARD
+    const presentationBoardEndRef = useRef(null);
+
+    useEffect(() => {
+        if (clueViewMode === 'coach' && presentationBoardEndRef.current) {
+            presentationBoardEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    }, [coachProps.currentStep, clueViewMode]);
 
     // --- REUSED VISUAL RENDERER ---
     const renderVisual = (rd) => {
@@ -406,7 +421,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                     <div className="flex-1 overflow-y-auto custom-scrollbar pt-16 pb-[480px] px-8 flex flex-col justify-start items-center relative z-10">
                         
                         {/* RESPONSIVE CORNER-ANCHORED PRESENTATION CONTROLS */}
-                        <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
+                        <div className="absolute top-2 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
                             <button 
                                 onClick={handleCanvasPrev}
                                 disabled={activeIds.length > 0 && presentationIndex === 0}
@@ -524,62 +539,92 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                             </div>
                         ) : (
                             <div className="w-full h-full min-h-screen relative flex items-start select-none pt-6 pb-[70px] z-20">
-                                {activeIds.length === 0 && (
-                                    <div className="text-slate-300 font-black uppercase text-center mt-32 tracking-widest text-sm w-full">Välj uppgifter till vänster för att presentera</div>
-                                )}
                                 
-                                {activeIds.map((id, index) => {
-                                    const q = livePacket.find(p => p.id === id);
-                                    if (!q) return null;
-                                    const rd = q.resolvedData?.renderData;
-                                    const masterIndex = livePacket.findIndex(p => p.id === id) + 1;
+                                {/* 🟢 FIXED: Mount the full standalone Modal directly into the center container frame */}
+                                {clueViewMode === 'coach' ? (
+                                    <MyCoachModal
+                                        lang={lang}
+                                        inlineMode={true} // 🚀 Tells the modal to blend in natively
+                                        question={currentFocusedQuestion} // 🚀 Passes active visual descriptors
+                                        {...coachProps} // 🚀 Forwards all playback control parameters seamlessly
+                                    />
+                                ) : activeIds.length === 0 ? (
+                                    <div className="text-slate-300 font-black uppercase text-center mt-32 tracking-widest text-sm w-full">Välj uppgifter till vänster för att presentera</div>
+                                ) : (
+                                    /* 🟢 RENDER STANDARD LANE PROJECTIONS WHEN NOT IN COACH MODE */
+                                    activeIds.map((id, index) => {
+                                        const q = livePacket.find(p => p.id === id);
+                                        if (!q) return null;
+                                        const rd = q.resolvedData?.renderData;
+                                        const masterIndex = livePacket.findIndex(p => p.id === id) + 1;
 
-                                    return (
-                                        <div 
-                                            key={id} 
-                                            className="flex flex-col flex-1 px-8 relative h-full items-center justify-start animate-in zoom-in-95 duration-200"
-                                        >
-                                            {/* DYNAMIC FULL-HEIGHT PROJECTION DIVIDER LINES */}
-                                            {index > 0 && (
-                                                <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
-                                            )}
+                                        return (
+                                            <div 
+                                                key={id} 
+                                                className="flex flex-col flex-1 px-8 relative h-full items-center justify-start animate-in zoom-in-95 duration-200"
+                                            >
+                                                {/* DYNAMIC FULL-HEIGHT PROJECTION DIVIDER LINES */}
+                                                {index > 0 && (
+                                                    <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
+                                                )}
 
-                                            {/* 🟢 NEW: FLEX CONTAINER FOR HEADER & REGENERATE BUTTON */}
-                                            <div className="flex items-center gap-3 mb-6 shrink-0 relative z-40">
-                                                <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block uppercase tracking-wider shadow-sm">
-                                                    {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
+                                                {/* FLEX CONTAINER FOR HEADER & REGENERATE BUTTON */}
+                                                <div className="flex items-center gap-3 mb-6 shrink-0 relative z-40">
+                                                    <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block uppercase tracking-wider shadow-sm">
+                                                        {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
+                                                    </div>
+                                                    
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleRegenerateQuestion(q.id); }}
+                                                        className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all active:scale-90 cursor-pointer ui-ignore"
+                                                        title={lang === 'sv' ? "Slå om tal / slumpa nya värden" : "Roll fresh question numbers"}
+                                                    >
+                                                        <RefreshCw size={18} className="transition-transform duration-300 hover:rotate-180" />
+                                                    </button>
                                                 </div>
+
+                                                {/* Standard Question Text Mode */}
+                                                {q.showText !== false && (
+                                                    <div className={`font-bold text-slate-800 text-center leading-relaxed max-w-prose w-full break-words px-4 mb-6 ${sizeClasses.desc}`}>
+                                                        <MathDisplay content={compileAnchoredStory(q, lang)} />
+                                                    </div>
+                                                )}
                                                 
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleRegenerateQuestion(q.id); }}
-                                                    className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all active:scale-90 cursor-pointer ui-ignore"
-                                                    title={lang === 'sv' ? "Slå om tal / slumpa nya värden" : "Roll fresh question numbers"}
-                                                >
-                                                    <RefreshCw size={18} className="transition-transform duration-300 hover:rotate-180" />
-                                                </button>
-                                            </div>
+                                                {/* Visual Renderer */}
+                                                {q.showVisual !== false && rd && (
+                                                    <div 
+                                                        onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
+                                                        className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 ${sizeClasses.visualClass}`}
+                                                    >
+                                                        {renderVisual(rd)}
+                                                    </div>
+                                                )}
 
-                                            {q.showText !== false && (
-                                                /* 🟢 FIXED: Handled reactive scale tracking and click toggles for lane views */
-                                                <div 
-                                                    onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
-                                                    className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 ${sizeClasses.visualClass}`}
-                                                >
-                                                    {renderVisual(rd)}
-                                                </div>
-                                            )}
-                                            {q.showLatex !== false && rd?.latex && (
-                                                <div className={`mt-6 py-4 bg-indigo-50/40 rounded-2xl text-center font-serif text-indigo-950 border border-indigo-100/60 shadow-inner w-full max-w-xs shrink-0 ${sizeClasses.latex}`}>
-                                                    <MathDisplay content={`$$${rd.latex}$$`} />
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                                {/* Restored Multiple Choice Option Grid */}
+                                                {rd?.options && rd.options.length > 0 && (
+                                                    <div className="mt-6 grid grid-cols-2 gap-4 w-full max-w-md shrink-0 relative z-30">
+                                                        {rd.options.map((opt, oIdx) => (
+                                                            <div key={oIdx} className={`flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-slate-200 bg-white shadow-sm ${sizeClasses.desc}`}>
+                                                                <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
+                                                                <MathDisplay content={opt} className="font-bold text-slate-700" />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Latex MathBox */}
+                                                {q.showLatex !== false && rd?.latex && (
+                                                    <div className={`mt-6 py-4 bg-indigo-50/40 rounded-2xl text-center font-serif text-indigo-950 border border-indigo-100/60 shadow-inner w-full max-w-xs shrink-0 ${sizeClasses.latex}`}>
+                                                        <MathDisplay content={`$$${rd.latex}$$`} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    }) // 🟢 FIXED: This bracket closes the activeIds.map block securely!
+                                )}
                             </div>
                         )}
                     </div>
-
                     {/* THE ISOLATED DRAWING ENGINE INJECTED HERE */}
                     <InteractiveCanvas lang={lang} />
                 </main>
@@ -625,13 +670,22 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                     </h2>
                                 </div>
                                 
-                                <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner">
+                                <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shadow-inner gap-0.5">
                                     <button
                                         onClick={() => setClueViewMode('steps')}
                                         className={`px-2 py-1 text-[10px] font-black uppercase rounded-md transition-all cursor-pointer ${clueViewMode === 'steps' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
                                         {lang === 'sv' ? "Steg" : "Steps"}
                                     </button>
+                                    
+                                    {/* 🟢 NEW: THREE-WAY CONTROL TOWER "COACH" SELECTOR */}
+                                    <button
+                                        onClick={() => setClueViewMode('coach')}
+                                        className={`px-2 py-1 text-[10px] font-black uppercase rounded-md transition-all cursor-pointer ${clueViewMode === 'coach' ? 'bg-purple-600 text-white shadow-sm' : 'text-purple-500 hover:text-purple-700'}`}
+                                    >
+                                        Coach
+                                    </button>
+
                                     <button
                                         onClick={() => setClueViewMode('answers')}
                                         className={`px-2 py-1 text-[10px] font-black uppercase rounded-md transition-all cursor-pointer ${clueViewMode === 'answers' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
@@ -640,8 +694,22 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                     </button>
                                 </div>
                             </div>
-                            
-                            {clueViewMode === 'answers' ? (
+                            {/* 🟢 FIXED: Simplified placeholder dashboard container since controls live inside the chalkboard pane */}
+                            {clueViewMode === 'coach' ? (
+                                <div className="flex-1 flex flex-col min-h-0 justify-center items-center bg-slate-50/60 p-6 rounded-2xl border border-dashed border-slate-200 text-center animate-in fade-in duration-200">
+                                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mb-3 animate-pulse shadow-sm">
+                                        <Layers size={20} />
+                                    </div>
+                                    <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
+                                        {lang === 'sv' ? "Coach Aktiv i Mitten" : "Coach View Active"}
+                                    </h4>
+                                    <p className="text-[11px] font-bold text-slate-400 max-w-[200px] leading-relaxed">
+                                        {lang === 'sv' 
+                                            ? "Hela genomgången med tavelkontroller och förklaringar visas nu på stora skärmen." 
+                                            : "The complete walkthrough dashboard is now displayed on the main center board."}
+                                    </p>
+                                </div>
+                            ) : clueViewMode === 'answers' ? (
                                 /* KOMPAKT MULTI-COLUMN FULL WORKSHEET KEY GRID */
                                 <div className="flex-1 flex flex-col min-h-0 animate-in fade-in duration-200 overflow-y-auto custom-scrollbar">
                                     {livePacket.length === 0 ? (
