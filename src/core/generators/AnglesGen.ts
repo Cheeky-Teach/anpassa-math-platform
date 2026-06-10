@@ -74,9 +74,28 @@ export class AnglesGen {
                 },
                 token: this.toBase64(label), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Vi jämför vinklar med en rät vinkel ($90^\\circ$)." : "Step 1: We compare angles to a right angle ($90^\\circ$).", latex: `90^\\circ = \\text{${lang === 'sv' ? 'Rät' : 'Right'}}` },
-                    { text: lang === 'sv' ? `Steg 2: En vinkel på ${angle}^\\circ$ kategoriseras som:` : `Step 2: An angle of ${angle}^\\circ$ is categorized as:`, latex: `${angle}^\\circ \\\\ \\text{${label}}` },
-                    { text: label }
+                    { 
+                        text: lang === 'sv' ? "Vi klassificerar vinklar genom att jämföra deras storlek med en rät vinkel (90°)." : "We classify angles by comparing their size to a right angle (90°).", 
+                        latex: `\\text{Rät vinkel} = 90^\\circ` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Undersök om figurens markerade vinkel på ${angle}° är större, mindre eller lika med 90°.` : `Check if the figure's marked angle of ${angle}° is larger, smaller, or equal to 90°.`, 
+                        latex: `\\text{Aktuell vinkel} = ${angle}^\\circ` 
+                    },
+                    { 
+                        text: type === 'acute' 
+                            ? (lang === 'sv' ? `Eftersom ${angle}° är mindre än 90°, kallas vinkeln för en spetsig vinkel.` : `Since ${angle}° is less than 90°, the angle is classified as an acute angle.`)
+                            : type === 'right'
+                            ? (lang === 'sv' ? "Eftersom vinkeln är exakt 90°, kallas den för en rät vinkel." : "Since the angle is exactly 90°, it is classified as a right angle.")
+                            : type === 'obtuse'
+                            ? (lang === 'sv' ? `Eftersom ${angle}° är större än 90° men mindre än 180°, kallas den för en trubbig vinkel.` : `Since ${angle}° is greater than 90° but less than 180°, it is classified as an obtuse angle.`)
+                            : (lang === 'sv' ? "Eftersom vinkeln är exakt 180°, kallas den för en rak vinkel." : "Since the angle is exactly 180°, it is classified as a straight angle."),
+                        latex: type === 'acute' ? `${angle}^\\circ < 90^\\circ \\rightarrow \\mathbf{\\text{${label}}}` : type === 'right' ? `${angle}^\\circ = 90^\\circ \\rightarrow \\mathbf{\\text{${label}}}` : type === 'obtuse' ? `90^\\circ < ${angle}^\\circ < 180^\\circ \\rightarrow \\mathbf{\\text{${label}}}` : `${angle}^\\circ = 180^\\circ \\rightarrow \\mathbf{\\text{${label}}}`
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${label}` : `Answer: ${label}`, 
+                        latex: `\\text{${label}}` 
+                    }
                 ]
             };
         }
@@ -91,9 +110,24 @@ export class AnglesGen {
                 },
                 token: this.toBase64(ans), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: En vinkel är spetsig om den är mindre än $90^\\circ$." : "Step 1: An angle is acute if it is less than $90^\\circ$." },
-                    { text: lang === 'sv' ? `Steg 2: Är ${angle}^\\circ < 90^\\circ?` : `Step 2: Is ${angle}^\\circ < 90^\\circ?`, latex: `${angle}^\\circ \\\\ \\text{${ans}}` },
-                    { text: ans }
+                    { 
+                        text: lang === 'sv' ? "Kom ihåg regeln: En vinkel kallas spetsig om dess storlek ligger mellan 0° och 90°." : "Remember the definition: An angle is called acute if its size lies between 0° and 90°.", 
+                        latex: `\\text{Spetsig vinkel} < 90^\\circ` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Jämför nu uppgiftens givna vinkel på ${angle}° med gränsen på 90°.` : `Now compare the problem's given angle of ${angle}° against the 90° boundary.`, 
+                        latex: `${angle}^\\circ \\mathbf{<} 90^\\circ` 
+                    },
+                    { 
+                        text: angle < 90 
+                            ? (lang === 'sv' ? `Ja, eftersom ${angle}° är mindre än 90° så stämmer påståendet.` : `Yes, because ${angle}° is less than 90°, the statement is true.`)
+                            : (lang === 'sv' ? `Nej, eftersom ${angle}° är större än eller lika med 90° så är vinkeln inte spetsig.` : `No, because ${angle}° is greater than or equal to 90°, the angle is not acute.`),
+                        latex: angle < 90 ? `${angle}^\\circ < 90^\\circ \\rightarrow \\mathbf{\\text{${ans}}}` : `${angle}^\\circ \\ge 90^\\circ \\rightarrow \\mathbf{\\text{${ans}}}`
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `\\text{${ans}}` 
+                    }
                 ]
             };
         }
@@ -122,9 +156,24 @@ export class AnglesGen {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Steg 1: Vinklar på en linje är $180^\\circ$, i ett hörn $90^\\circ$.` : `Step 1: Angles on a line are $180^\\circ$, in a corner $90^\\circ$.`, latex: `x + ${known}^\\circ = ${total}^\\circ` },
-                    { text: lang === 'sv' ? "Steg 2: Subtrahera för att hitta x." : "Step 2: Subtract to find x.", latex: `${total} - ${known} \\\\ x = ${ans}` },
-                    { text: ans.toString() }
+                    { 
+                        text: lang === 'sv' 
+                            ? (isSupp ? "Vinklarna ligger tillsammans längs en rak linje, vilket betyder att de bildar sidovinklar (180° totalt)." : "Vinklarna bildar tillsammans ett rätvinkligt hörn, vilket betyder att de är komplementvinklar (90° totalt).")
+                            : (isSupp ? "The angles lie together on a straight line, meaning they form supplementary angles (180° total)." : "The angles join together to form a right angle corner, meaning they are complementary angles (90° total)."), 
+                        latex: `x + ${known}^\\circ = ${total}^\\circ` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Minska med ${known}° på båda sidor för att lämna x ensamt.` : `Subtract ${known}° from both sides to isolate variable x.`, 
+                        latex: `x + ${known}^\\circ \\mathbf{- ${known}^\\circ} = ${total}^\\circ \\mathbf{- ${known}^\\circ}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Förenkla uträkningen för att bestämma det okända värdet på vinkeln." : "Simplify the subtractions to compute the unknown angle value.", 
+                        latex: `x = \\mathbf{${ans}^\\circ}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: x = ${ans}` : `Answer: x = ${ans}`, 
+                        latex: `x = ${ans}` 
+                    }
                 ]
             };
         }
@@ -151,9 +200,30 @@ export class AnglesGen {
                 },
                 token: this.toBase64(target.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? (isVertical ? "Steg 1: Vertikalvinklar är lika stora." : "Steg 1: Sidovinklar är totalt $180^\\circ$.") : (isVertical ? "Step 1: Vertical angles are equal." : "Step 1: Side angles sum to $180^\\circ$.") },
-                    { text: lang === 'sv' ? "Steg 2: Lös ut x." : "Step 2: Solve for x.", latex: `${isVertical ? a : '180 - ' + a} \\\\ x = ${target}` },
-                    { text: target.toString() }
+                    { 
+                        text: lang === 'sv' 
+                            ? (isVertical ? `Vinklarna står mitt emot varandra där två linjer korsas, vilket innebär att de är vertikalvinklar.` : `Vinklarna ligger bredvid varandra på en rak linje, vilket innebär det är sidovinklar (180° totalt).`)
+                            : (isVertical ? `The angles sit opposite each other where two straight lines intersect, meaning they are vertical angles.` : `The angles sit adjacent to each other on a single straight line, meaning they are supplementary side angles (180° total).`),
+                        latex: isVertical ? `x = ${a}^\\circ` : `x + ${a}^\\circ = 180^\\circ`
+                    },
+                    isVertical ? {
+                        text: lang === 'sv' ? "Eftersom vertikalvinklar alltid är helt identiska får vi x direkt utan uträkning." : "Since vertical angles are always completely identical, we obtain x directly without further calculation.",
+                        latex: `x = \\mathbf{${target}^\\circ}`
+                    } : {
+                        text: lang === 'sv' ? `Ta bort ${a}° genom att subtrahera det från 180° på båda sidor.` : `Isolate x by subtracting ${a}° from 180° on both sides.`,
+                        latex: `x + ${a}^\\circ \\mathbf{- ${a}^\\circ} = 180^\\circ \\mathbf{- ${a}^\\circ}`
+                    },
+                    !isVertical ? {
+                        text: lang === 'sv' ? "Räkna ut subtraktionen för att bestämma vinkeln x." : "Perform the subtraction on the right side to determine angle x.",
+                        latex: `x = \\mathbf{${target}^\\circ}`
+                    } : {
+                        text: lang === 'sv' ? "Kontrollera att likheten stämmer." : "Confirm that the equality balance is correct.",
+                        latex: `${target}^\\circ = ${a}^\\circ`
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: x = ${target}` : `Answer: x = ${target}`, 
+                        latex: `x = ${target}` 
+                    }
                 ]
             };
         }
@@ -174,9 +244,26 @@ export class AnglesGen {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Vinkelsumman i en triangel är $180^\\circ$." : "Step 1: The angle sum in a triangle is $180^\\circ$." },
-                    { text: lang === 'sv' ? "Steg 2: Dra bort de kända vinklarna från 180." : "Step 2: Subtract the known angles from 180.", latex: `180 - ${a+b} \\\\ x = ${ans}` },
-                    { text: ans.toString() }
+                    { 
+                        text: lang === 'sv' ? "Kom ihåg geometrisatsen: Den sammanlagda vinkelsumman inuti en triangel är alltid exakt 180°." : "Remember the geometric rule: The total combined sum of internal angles inside any triangle is always exactly 180°.", 
+                        latex: `x + ${a}^\\circ + ${b}^\\circ = 180^\\circ` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Addera de två kända vinklarna (${a}° + ${b}°) på vänster sida.` : `Add the two known internal angles (${a}° + ${b}°) together on the left side.`, 
+                        latex: `x + \\mathbf{${a + b}^\\circ} = 180^\\circ` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Isolera x genom att subtrahera ${a + b}° från 180° på båda sidor.` : `Isolate x by subtracting ${a + b}° from 180° on both sides.`, 
+                        latex: `x + ${a + b}^\\circ \\mathbf{- ${a + b}^\\circ} = 180^\\circ \\mathbf{- ${a + b}^\\circ}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Förenkla siffertermerna för att räkna ut den saknade vinkeln." : "Simplify the constant scalar expressions to calculate the missing angle layout.", 
+                        latex: `x = \\mathbf{${ans}^\\circ}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: x = ${ans}` : `Answer: x = ${ans}`, 
+                        latex: `x = ${ans}` 
+                    }
                 ]
             };
         }
@@ -197,9 +284,26 @@ export class AnglesGen {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Vinkelsumman i en fyrhörning är $360^\\circ$." : "Step 1: The sum of angles in a quadrilateral is $360^\\circ$." },
-                    { text: lang === 'sv' ? "Steg 2: Dra bort de kända vinklarna." : "Step 2: Subtract the known angles.", latex: `360 - ${a+b+c} \\\\ x = ${ans}` },
-                    { text: ans.toString() }
+                    { 
+                        text: lang === 'sv' ? "Kom ihåg geometrisatsen: Den sammanlagda vinkelsumman inuti en fyrhörning (kvadrilateral) är alltid 360°." : "Remember the geometric rule: The total combined sum of internal angles inside a four-sided quadrilateral shape is always 360°.", 
+                        latex: `x + ${a}^\\circ + ${b}^\\circ + ${c}^\\circ = 360^\\circ` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Addera ihop de tre kända vinklarna (${a}° + ${b}° + ${c}°) tillsammans på vänster sida.` : `Add the three known tracking internal angles (${a}° + ${b}° + ${c}°) together on the left side.`, 
+                        latex: `x + \\mathbf{${a + b + c}^\\circ} = 360^\\circ` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Isolera x genom att subtrahera ${a + b + c}° från 360° på båda sidor.` : `Isolate x by subtracting ${a + b + c}° from 360° on both sides.`, 
+                        latex: `x + ${a + b + c}^\\circ \\mathbf{- ${a + b + c}^\\circ} = 360^\\circ \\mathbf{- ${a + b + c}^\\circ}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Förenkla högerledet för att bestämma storleken på den fjärde vinkeln." : "Simplify the right side equation expression to resolve the size of the fourth angle.", 
+                        latex: `x = \\mathbf{${ans}^\\circ}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: x = ${ans}` : `Answer: x = ${ans}`, 
+                        latex: `x = ${ans}` 
+                    }
                 ]
             };
         }
@@ -227,17 +331,38 @@ export class AnglesGen {
             else if (type === 'alt_ext') { labels.push({ x: 90, y: 60, text: `${angle}°` }, { x: 230, y: 190, text: 'x' }); }
             else { labels.push({ x: 145, y: 60, text: `${angle}°` }, { x: 215, y: 160, text: 'x' }); }
 
-            const typeSv = type === 'interior' ? "liksidig inre" : "likbelägen eller alternat";
+            const relTextSv = type === 'corr' ? "likbelägna vinklar (de är lika stora)" : type === 'alt_int' ? "alternatvinklar på insidan (de är lika stora)" : type === 'alt_ext' ? "alternatvinklar på utsidan (de är lika stora)" : "liksidiga inre vinklar (de blir tillsammans 180°)";
+            const relTextEn = type === 'corr' ? "corresponding angles (they are equal)" : type === 'alt_int' ? "alternate interior angles (they are equal)" : type === 'alt_ext' ? "alternate exterior angles (they are equal)" : "consecutive interior angles (they supplement to 180°)";
+
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Bestäm vinkeln x (parallella linjer)." : "Determine angle x (parallel lines).",
+                    description: lang === 'sv' ? "Bestäm vinkeln x utifrån teorin om parallella linjer." : "Determine angle x using parallel lines angle theorems.",
                     answerType: 'numeric', geometry: { type: 'angle', lines, labels }
                 },
                 token: this.toBase64(target.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Steg 1: Vinklarna bildar en ${typeSv}-relation.` : `Step 1: Identify the angle relationship.` },
-                    { text: lang === 'sv' ? "Steg 2: Beräkna x." : "Step 2: Solve for x.", latex: type === 'interior' ? `180 - ${angle} \\\\ x = ${target}` : `x = ${angle}` },
-                    { text: target.toString() }
+                    { 
+                        text: lang === 'sv' ? `När en rät linje skär två parallella linjer kan vi identifiera vinkelrelationer. Här har vi ${relTextSv}.` : `When a transversal line crosses two parallel lines, we map out specific properties. Here we observe ${relTextEn}.`,
+                        latex: type === 'interior' ? `x + ${angle}^\\circ = 180^\\circ` : `x = ${angle}^\\circ`
+                    },
+                    type === 'interior' ? {
+                        text: lang === 'sv' ? `Ta bort ${angle}° genom att subtrahera det från 180° på båda sidor.` : `Undo the constant addition by subtracting ${angle}° from 180° on both sides.`,
+                        latex: `x + ${angle}^\\circ \\mathbf{- ${angle}^\\circ} = 180^\\circ \\mathbf{- ${angle}^\\circ}`
+                    } : {
+                        text: lang === 'sv' ? "Eftersom vinklarna är direkt lika stora krävs ingen uträkning på tavlan." : "Since these matching angle configurations are equal by theorem, no complex calculation is required on the board.",
+                        latex: `x = \\mathbf{${target}^\\circ}`
+                    },
+                    type === 'interior' ? {
+                        text: lang === 'sv' ? "Förenkla uträkningen för att bestämma värdet på x." : "Simplify the mathematical balance row layout to get x.",
+                        latex: `x = \\mathbf{${target}^\\circ}`
+                    } : {
+                        text: lang === 'sv' ? "Verifiera det slutgiltiga geometriska värdet." : "Verify the final geometric theorem output matching state.",
+                        latex: `${target}^\\circ = ${angle}^\\circ`
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: x = ${target}` : `Answer: x = ${target}`, 
+                        latex: `x = ${target}` 
+                    }
                 ]
             };
         }
