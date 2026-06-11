@@ -114,31 +114,33 @@ export class TenPowersGen {
             const currentLatex = isMult ? `${numStr} \\cdot ${power}` : `\\frac{${numStr}}{${power}}`;
 
             return {
-                renderData: {
-                    latex: currentLatex,
-                    description: lang === 'sv' ? "Räkna ut värdet genom att flytta kommatecknet." : "Calculate the value by shifting the decimal point.",
-                    answerType: 'numeric'
+            renderData: {
+                latex: currentLatex,
+                description: lang === 'sv' ? "Räkna ut värdet genom att flytta kommatecknet." : "Calculate the value by shifting the decimal point.",
+                answerType: 'numeric'
+            },
+            token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+            clues: [
+                { 
+                    text: lang === 'sv' ? `Kolla på nollorna i talet ${power}. Det har exakt ${zeros} nollor i slutet, vilket betyder att vi ska hoppa med kommatecknet ${zeros} steg.` : `Look at the zeroes in the number ${power}. It has exactly ${zeros} zeroes at the end, which means we will jump with the decimal point ${zeros} steps.`, 
+                    latex: `\\text{Antal nollor} = \\mathbf{${zeros}}` 
                 },
-                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
-                clues: [
-                    { 
-                        text: lang === 'sv' ? `Kolla på nollorna i talet ${power}. Det har exakt ${zeros} nollor i slutet, vilket betyder att vi ska hoppa med kommatecknet ${zeros} steg.` : `Look at the zeroes in the number ${power}. It has exactly ${zeros} zeroes at the end, which means we will jump with the decimal point ${zeros} steps.`, 
-                        latex: `\\text{Antal nollor} = \\mathbf{${zeros}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? (isMult ? `Eftersom vi gångrar (multiplicerar) ska talet bli mycket STÖRRE. Vi flyttar kommatecknet åt HÖGER.` : `Eftersom vi delar (dividerar) ska talet bli mycket MINDRE. Vi flyttar kommatecknet åt VÄNSTER.`), 
-                        latex: isMult ? `\\text{Riktning} = \\mathbf{\\rightarrow \\text{ HÖGER}}` : `\\text{Riktning} = \\mathbf{\\leftarrow \\text{ VÄNSTER}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Ta starttalet ${numStr} och låt kommatecknet hoppa exakt ${zeros} steg åt ${isMult ? 'höger' : 'vänster'}. Fyll i med extra nollor om platserna tar slut.` : `Take the starting number ${numStr} and let the decimal point jump exactly ${zeros} steps to the ${isMult ? 'right' : 'left'}. Fill in with extra zeroes if you run out of spaces.`, 
-                        latex: `${currentLatex} = \\mathbf{${ansStr}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
-                        latex: `${ansStr}` 
-                    }
-                ]
-            };
+                { 
+                    text: lang === 'sv' 
+                        ? (isMult ? `Eftersom vi gångrar (multiplicerar) ska talet bli mycket STÖRRE. Vi flyttar kommatecknet åt HÖGER.` : `Eftersom vi delar (dividerar) ska talet bli mycket MINDRE. Vi flyttar kommatecknet åt VÄNSTER.`)
+                        : (isMult ? `Since we are multiplying, the number needs to get much LARGER. We move the decimal point to the RIGHT.` : `Since we are dividing, the number needs to get much SMALLER. We move the decimal point to the LEFT.`), 
+                    latex: isMult ? `\\text{Riktning} = \\mathbf{\\rightarrow \\text{ HÖGER}}` : `\\text{Riktning} = \\mathbf{\\leftarrow \\text{ VÄNSTER}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Ta starttalet ${numStr} och låt kommatecknet hoppa exakt ${zeros} steg åt ${isMult ? 'höger' : 'vänster'}. Fyll i med extra nollor om platserna tar slut.` : `Take the starting number ${numStr} and let the decimal point jump exactly ${zeros} steps to the ${isMult ? 'right' : 'left'}. Fill in with extra zeroes if you run out of spaces.`, 
+                    latex: `${currentLatex} = \\mathbf{${ansStr}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
+                    latex: `${ansStr}` 
+                }
+            ]
+        };
         }
 
         if (v === 'big_missing_factor') {
@@ -244,7 +246,9 @@ export class TenPowersGen {
                         latex: `${valFormatted} = \\frac{1}{${s.equiv}}` 
                     },
                     { 
-                        text: lang === 'sv' ? (isMult ? `Att ta något gånger en ${s.nameSv} (delat med ${s.equiv}) är därför precis samma sak som att göra en vanlig division med ${s.equiv}.` : `Att dela med en ${s.nameSv} fungerar baklänges, och ger samma lyftande effekt som att göra en vanlig multiplikation med ${s.equiv}.`) : (isMult ? `Multiplying something by ${s.nameEn} (divided by ${s.equiv}) is therefore exactly the same as performing a regular division by ${s.equiv}.` : `Dividing something by ${s.nameEn} runs backwards, and delivers the same magnifying effect as performing a standard multiplication by ${s.equiv}.`), 
+                        text: lang === 'sv' 
+                            ? (isMult ? `Att ta något gånger en ${s.nameSv} (delat med ${s.equiv}) är därför precis samma sak som att göra en vanlig division med ${s.equiv}.` : `Att dela med en ${s.nameSv} fungerar baklänges, och ger samma lyftande effekt som att göra en vanlig multiplikation med ${s.equiv}.`) 
+                            : (isMult ? `Multiplying something by ${s.nameEn} (divided by ${s.equiv}) is therefore exactly the same as performing a regular division by ${s.equiv}.` : `Dividing something by ${s.nameEn} runs backwards, and delivers the same magnifying effect as performing a standard multiplication by ${s.equiv}.`), 
                         latex: isMult ? `\\text{Gångra med } ${valFormatted} \\iff \\text{Dela med } \\mathbf{${s.equiv}}` : `\\text{Dela med } ${valFormatted} \\iff \\text{Gångra med } \\mathbf{${s.equiv}}` 
                     },
                     { 
@@ -296,9 +300,13 @@ export class TenPowersGen {
             { key: 'decimal_div_std', type: 'calculate' }
         ];
         const v = variationKey || this.getVariation(pool, options);
-        const factor = MathUtils.randomChoice([0.1, 0.01, 0.001]);
+        
+        // Hantera fällan dynamiskt om nyckeln skickas in, annars slumpa 0.1, 0.01, 0.001
+        const factor = v === 'decimal_logic_trap' ? 0.1 : MathUtils.randomChoice([0.1, 0.01, 0.001]);
         const num = this.generateNum();
-        const isMult = v === 'decimal_mult_std';
+        
+        // Om det är en fälla låtsas vi att det är multiplikation men sätter upp en klurig text
+        const isMult = v === 'decimal_logic_trap' ? true : v === 'decimal_mult_std';
         const ans = isMult ? this.fixFloat(num * factor) : this.fixFloat(num / factor);
         const steps = Math.abs(Math.round(Math.log10(factor)));
 
@@ -317,11 +325,13 @@ export class TenPowersGen {
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? `Kolla på det lilla decimalnumret ${factorStr}. Det har exakt ${steps} stycken nollor och decimalsteg gömda i sig, vilket talar om hur många kliv kommatecknet ska ta.` : `Look closely at the small decimal number ${factorStr}. It features exactly ${steps} zeroes and decimal places hidden inside, which tells us how many steps our decimal point should take.`, 
+                    text: lang === 'sv' ? `Kolla på det lilla decimalnumret ${factorStr}. Det hat exakt ${steps} stycken nollor och decimalsteg gömda i sig, vilket talar om hur många kliv kommatecknet ska ta.` : `Look closely at the small decimal number ${factorStr}. It features exactly ${steps} zeroes and decimal places hidden inside, which tells us how many steps our decimal point should take.`, 
                     latex: `\\text{Hopp} = \\mathbf{${steps} \\text{ steg}}` 
                 },
                 { 
-                    text: lang === 'sv' ? (isMult ? `Att gångra (multiplicera) med småbitar som ${factorStr} gör att talet blir MINDRE. Vi flyttar kommatecknet åt VÄNSTER.` : `Att dela (dividerar) med småbitar som ${factorStr} gör baklänges att talet blir mycket STÖRRE. Vi flyttar kommatecknet åt HÖGER.`), 
+                    text: lang === 'sv' 
+                        ? (isMult ? `Att gångra (multiplicera) med småbitar som ${factorStr} gör att talet blir MINDRE. Vi flyttar kommatecknet åt VÄNSTER.` : `Att dela (dividerar) med småbitar som ${factorStr} gör baklänges att talet blir mycket STÖRRE. Vi flyttar kommatecknet åt HÖGER.`)
+                        : (isMult ? `Multiplying by small parts like ${factorStr} makes the number SMALLER. We move the decimal point to the LEFT.` : `Dividing by small parts like ${factorStr} does the opposite and makes the number LARGER. We move the decimal point to the RIGHT.`), 
                     latex: isMult ? `\\text{Riktning} = \\mathbf{\\leftarrow \\text{ VÄNSTER}}` : `\\text{Riktning} = \\mathbf{\\rightarrow \\text{ HÖGER}}` 
                 },
                 { 
