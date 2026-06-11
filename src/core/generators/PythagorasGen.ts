@@ -127,9 +127,15 @@ export class PythagorasGen {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? (isRoot ? `Steg 1: Kvadratroten ur ${square} är det tal som multiplicerat med sig självt blir ${square}.` : `Steg 1: Att kvadrera ett tal innebär att man multiplicerar det med sig självt en gång.`) : (isRoot ? `Step 1: The square root of ${square} is the number that, when multiplied by itself, equals ${square}.` : `Step 1: Squaring a number means multiplying it by itself once.`) },
-                    { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: isRoot ? `${base} · ${base} = ${square}` : `${base} · ${base} = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? (isRoot ? `Kvadratroten ur ${square} är talet som gånger sig självt blir ${square}.` : `Att kvadrera ett tal innebär att du tar talet gånger sig självt.`) : (isRoot ? `The square root of ${square} is the number that times itself equals ${square}.` : `Squaring a number means multiplying it by itself.`), 
+                        latex: isRoot ? `\\sqrt{${square}} = x \\rightarrow x \\cdot x = ${square}` : `${base}^2 = ${base} \\cdot ${base}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut: ${base} gånger ${base}.` : `Calculate: ${base} times ${base}.`, 
+                        latex: `${base} \\cdot ${base} = \\mathbf{${ans}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `${ans}` }
                 ]
             };
         }
@@ -148,21 +154,45 @@ export class PythagorasGen {
                 },
                 token: this.toBase64(ans), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? `Steg 1: Beräkna kvadraten av ${base} för att ha något att jämföra med.` : `Step 1: Calculate the square of ${base} to have a comparison point.`, latex: `${base}^2 = ${sq}` },
-                    { text: lang === 'sv' ? `Steg 2: Jämför ${test} med ${sq}.` : `Step 2: Compare ${test} with ${sq}.` },
-                    { text: lang === 'sv' ? `Eftersom ${test} är ${isGreater ? 'större' : 'mindre'} än ${sq}, så är dess kvadratrot också ${isGreater ? 'större' : 'mindre'} än ${base}.` : `Since ${test} is ${isGreater ? 'greater' : 'less'} than ${sq}, its square root is also ${isGreater ? 'greater' : 'less'} than ${base}.` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? `För att jämföra räknar vi ut vad ${base} blir om vi gångrar det med sig självt (kvadrerar det).` : `To compare easily, let's find out what ${base} equals when multiplied by itself (squared).`, 
+                        latex: `${base}^2 = ${base} \\cdot ${base} = \\mathbf{${sq}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det betyder att talet ${base} exakt motsvarar uttrycket \\sqrt{${sq}}.` : `This means that the number ${base} perfectly matches the expression \\sqrt{${sq}}.`, 
+                        latex: `${base} = \\sqrt{${sq}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Nu jämför vi rötterna under taket: Är roten ur ${test} större än roten ur ${sq}?` : `Now let's compare the square roots: Is the root of ${test} larger than the root of ${sq}?`, 
+                        latex: `\\sqrt{${test}} \\quad \\text{vs} \\quad \\sqrt{${sq}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? (isGreater ? `Ja! Eftersom ${test} är ett större tal än ${sq}, blir dess rot också större.` : `Nej! Eftersom ${test} är ett mindre tal än ${sq}, blir dess rot mindre.`) : (isGreater ? `Yes! Since ${test} is a larger number than ${sq}, its root will also be larger.` : `No! Since ${test} is a smaller number than ${sq}, its root will be smaller.`), 
+                        latex: isGreater ? `\\mathbf{\\sqrt{${test}} > \\sqrt{${sq}}}` : `\\mathbf{\\sqrt{${test}} < \\sqrt{${sq}}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `\\text{${ans}}` }
                 ]
             };
         }
 
         const b = MathUtils.randomInt(4, 11);
         return {
-            renderData: { description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.", latex: `x^2 = ${b*b}`, answerType: 'numeric' },
+            renderData: { description: lang === 'sv' ? "Lös ekvationen och hitta värdet på x." : "Solve the equation and find the value of x.", latex: `x^2 = ${b*b}`, answerType: 'numeric' },
             token: this.toBase64(b.toString()), variationKey: 'missing_square', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: För att lösa ut x när det är upphöjt till 2, använder vi kvadratroten på båda sidor." : "Step 1: To solve for x when it is squared, we use the square root on both sides.", latex: `x = \\sqrt{${b*b}}` },
-                { text: lang === 'sv' ? `Svar: ${b}` : `Answer: ${b}` }
+                { 
+                    text: lang === 'sv' ? "Det lilla två-talet däruppe betyder 'gånger sig själv'. Vi söker alltså ett okänt tal som gånger sig självt blir " + (b*b) + "." : "The small exponent 2 means 'multiplied by itself'. We are looking for an unknown number that times itself equals " + (b*b) + ".", 
+                    latex: `x^2 = ${b*b}` 
+                },
+                { 
+                    text: lang === 'sv' ? "För att trolla bort upphöjt till 2 gör vi det motsatta på andra sidan, vilket är att ta kvadratroten." : "To undo the power of 2, we perform the opposite operation on the other side, which is taking the square root.", 
+                    latex: `x = \\mathbf{\\sqrt{${b*b}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Kolla i multiplikationstabellen: Vilket tal gånger sig självt blir ${b*b}? Det är ${b}.` : `Think of your multiplication facts: What number times itself equals ${b*b}? That is ${b}.`, 
+                    latex: `x = \\mathbf{${b}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${b}` : `Answer: ${b}`, latex: `${b}` }
             ]
         };
     }
@@ -204,11 +234,23 @@ export class PythagorasGen {
             },
             token: this.toBase64(t.c.toString()), variationKey: 'hyp_visual', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Ställ upp Pythagoras sats." : "Step 1: Set up Pythagoras' theorem.", latex: `${t.a}^2 + ${t.b}^2 = x^2` },
-                { text: lang === 'sv' ? "Steg 2: Beräkna kvadraterna för de två kända sidorna." : "Step 2: Calculate the squares for the two known sides.", latex: `${t.a*t.a} + ${t.b*t.b} = x^2` },
-                { text: lang === 'sv' ? "Steg 3: Addera areorna." : "Step 3: Add the areas.", latex: `${t.a*t.a + t.b*t.b} = x^2` },
-                { text: lang === 'sv' ? "Steg 4: Dra kvadratroten ur summan för att hitta längden x." : "Step 4: Take the square root of the sum to find the length x.", latex: `x = \\sqrt{${t.c*t.c}}` },
-                { text: lang === 'sv' ? `Svar: ${t.c}` : `Answer: ${t.c}` }
+                { 
+                    text: lang === 'sv' ? "Vi tänker oss att vi bygger en kvadrat på varje sida. Summan av de två små rutorna blir lika med den stora rutan på den sneda sidan." : "Imagine building a square on each side. The sum of the two small squares equals the big square on the slanted side.", 
+                    latex: `${t.a}^2 + ${t.b}^2 = x^2` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut arean på de två raka sidorna: ${t.a} gånger ${t.a} och ${t.b} gånger ${t.b}.` : `Calculate the area of the two straight sides: ${t.a} times ${t.a} and ${t.b} times ${t.b}.`, 
+                    latex: `${t.a*t.a} + ${t.b*t.b} = x^2` 
+                },
+                { 
+                    text: lang === 'sv' ? `Plussa ihop de två areorna: ${t.a*t.a} + ${t.b*t.b} blir ${t.a*t.a + t.b*t.b}.` : `Add the two areas: ${t.a*t.a} + ${t.b*t.b} equals ${t.a*t.a + t.b*t.b}.`, 
+                    latex: `x^2 = \\mathbf{${t.a*t.a + t.b*t.b}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Dra nu kvadratroten ur svaret för att hitta längden på den sneda sidan x." : "Now take the square root of the result to find the length of the slanted side x.", 
+                    latex: `x = \\sqrt{${t.c*t.c}} = \\mathbf{${t.c}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${t.c}` : `Answer: ${t.c}`, latex: `${t.c}` }
             ]
         };
     }
@@ -247,12 +289,23 @@ export class PythagorasGen {
             },
             token: this.toBase64(t.b.toString()), variationKey: 'leg_visual', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Ställ upp ekvationen. Katet² + Katet² = Hypotenusa²." : "Step 1: Set up the equation. Leg² + Leg² = Hypotenuse².", latex: `x^2 + ${t.a}^2 = ${t.c}^2` },
-                { text: lang === 'sv' ? "Steg 2: Beräkna de kända kvadraterna." : "Step 2: Calculate the known squares.", latex: `x^2 + ${t.a*t.a} = ${t.c*t.c}` },
-                { text: lang === 'sv' ? "Steg 3: Subtrahera den kända arean från hypotenusans area." : "Step 3: Subtract the known area from the hypotenuse area.", latex: `x^2 = ${t.c*t.c} - ${t.a*t.a}` },
-                { text: lang === 'sv' ? "Steg 4: Beräkna skillnaden." : "Step 4: Calculate the difference.", latex: `x^2 = ${t.b*t.b}` },
-                { text: lang === 'sv' ? "Steg 5: Dra kvadratroten ur svaret." : "Step 5: Take the square root of the answer.", latex: `x = \\sqrt{${t.b*t.b}}` },
-                { text: lang === 'sv' ? `Svar: ${t.b}` : `Answer: ${t.b}` }
+                { 
+                    text: lang === 'sv' ? "När vi vill hitta en kort sida (en rak vägg), tar vi den långa sneda sidan minus den korta väggen." : "When we want to find a short side (a straight wall), we take the long slanted side minus the short wall.", 
+                    latex: `x^2 = ${t.c}^2 - ${t.a}^2` 
+                },
+                { 
+                    text: lang === 'sv' ? `Beräkna kvadraterna: ${t.c} gånger ${t.c} och ${t.a} gånger ${t.a}.` : `Calculate the squares: ${t.c} times ${t.c} and ${t.a} times ${t.a}.`, 
+                    latex: `x^2 = ${t.c*t.c} - ${t.a*t.a}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut skillnaden: ${t.c*t.c} minus ${t.a*t.a} blir ${t.b*t.b}.` : `Calculate the difference: ${t.c*t.c} minus ${t.a*t.a} equals ${t.b*t.b}.`, 
+                    latex: `x^2 = \\mathbf{${t.b*t.b}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Dra kvadratroten ur svaret för att hitta längden x." : "Take the square root of the result to find the length x.", 
+                    latex: `x = \\sqrt{${t.b*t.b}} = \\mathbf{${t.b}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${t.b}` : `Answer: ${t.b}`, latex: `${t.b}` }
             ]
         };
     }
@@ -292,9 +345,27 @@ export class PythagorasGen {
             },
             token: this.toBase64(t.a.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Stegen är hypotenusan och väggen är en katet." : "Step 1: The ladder is the hypotenuse and the wall is one leg." },
-                { text: lang === 'sv' ? "Steg 2: Använd formeln för att hitta den saknade kateten." : "Step 2: Use the formula to find the missing leg.", latex: `x^2 = ${t.c}^2 - ${t.b}^2` },
-                { text: lang === 'sv' ? `Svar: ${t.a}` : `Answer: ${t.a}` }
+                { 
+                    text: lang === 'sv' ? `När stegen lutar mot väggen bildas en rätvinklig triangel. Den långa sneda stegen (${t.c} m) är hypotenusan, och den höga väggen (${t.b} m) är en rak sida.` : `When the ladder leans against the wall, it forms a right-angled triangle. The long slanted ladder (${t.c} m) is the hypotenuse, and the vertical wall (${t.b} m) is one straight side.`, 
+                    latex: `\\text{Formel}: x^2 = \\text{sneda sidan}^2 - \\text{raka väggen}^2` 
+                },
+                { 
+                    text: lang === 'sv' ? `Eftersom vi söker avståndet på marken (en kort rak sida x), tar vi den sneda stegen i kvadrat minus väggen i kvadrat.` : `Since we are looking for the distance on the ground (a short straight side x), we take the slanted ladder squared minus the wall squared.`, 
+                    latex: `x^2 = ${t.c}^2 - ${t.b}^2` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut areorna: ${t.c} · ${t.c} blir ${t.c*t.c}, och ${t.b} · ${t.b} blir ${t.b*t.b}.` : `Compute the squared values: ${t.c} · ${t.c} equals ${t.c*t.c}, and ${t.b} · ${t.b} equals ${t.b*t.b}.`, 
+                    latex: `x^2 = ${t.c*t.c} - ${t.b*t.b}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut skillnaden: ${t.c*t.c} minus ${t.b*t.b} lämnar kvar arean ${t.a*t.a}.` : `Calculate the difference: ${t.c*t.c} minus ${t.b*t.b} leaves the area ${t.a*t.a}.`, 
+                    latex: `x^2 = \\mathbf{${t.a*t.a}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Ta nu kvadratroten ur ${t.a*t.a} för att hitta avståndet x längs marken.` : `Now take the square root of ${t.a*t.a} to find the actual distance x along the ground.`, 
+                    latex: `x = \\sqrt{${t.a*t.a}} = \\mathbf{${t.a}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${t.a}` : `Answer: ${t.a}`, latex: `${t.a}` }
             ]
         };
     }
@@ -313,11 +384,23 @@ export class PythagorasGen {
             },
             token: this.toBase64(ans), variationKey: 'conv_check', type: 'concept',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Testa om Pythagoras sats stämmer för dessa sidor." : "Step 1: Test if Pythagoras' theorem holds for these sides.", latex: `${t.a}^2 + ${t.b}^2 = ${c}^2` },
-                { text: lang === 'sv' ? `Steg 2: Beräkna vänsterledet: ${t.a*t.a} + ${t.b*t.b} = ${t.a*t.a + t.b*t.b}.` : `Step 2: Calculate the left side: ${t.a*t.a} + ${t.b*t.b} = ${t.a*t.a + t.b*t.b}.` },
-                { text: lang === 'sv' ? `Steg 3: Beräkna högerledet: ${c}^2 = ${c*c}.` : `Step 3: Calculate the right side: ${c}^2 = ${c*c}.` },
-                { text: lang === 'sv' ? (isRight ? "Då sidorna stämmer med formeln är den rätvinklig." : "Då sidorna INTE stämmer med formeln är den inte rätvinklig.") : (isRight ? "Since the sides match the formula, it is right-angled." : "Since the sides do NOT match the formula, it is not right-angled.") },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? "För att kolla om en triangel är rätvinklig testar vi om kvadraten av de två korta sidorna blir lika med kvadraten av den längsta sidan." : "To check if a triangle is right-angled, we test if the square of the two short sides equals the square of the longest side.", 
+                    latex: `? : ${t.a}^2 + ${t.b}^2 = ${c}^2` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut de korta sidorna: ${t.a*t.a} + ${t.b*t.b} blir ${t.a*t.a + t.b*t.b}.` : `Calculate the short sides: ${t.a*t.a} + ${t.b*t.b} equals ${t.a*t.a + t.b*t.b}.`, 
+                    latex: `${t.a*t.a + t.b*t.b} \\quad \\dots` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut den långa sidan: ${c} gånger ${c} blir ${c*c}.` : `Calculate the long side: ${c} times ${c} equals ${c*c}.`, 
+                    latex: `\\dots \\quad ${c*c}` 
+                },
+                { 
+                    text: lang === 'sv' ? (isRight ? "Eftersom båda sidorna blev samma tal, så stämmer det: Triangeln är rätvinklig!" : "Eftersom sidorna inte blev samma tal, stämmer det inte: Triangeln är INTE rätvinklig.") : (isRight ? "Since both sides became the same number, it matches: The triangle is right-angled!" : "Since the sides did not match, it does not match: The triangle is NOT right-angled."), 
+                    latex: isRight ? `\\mathbf{${t.a*t.a + t.b*t.b} = ${c*c}}` : `\\mathbf{${t.a*t.a + t.b*t.b} \\neq ${c*c}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `\\text{${ans}}` }
             ]
         };
     }

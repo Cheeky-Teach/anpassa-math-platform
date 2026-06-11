@@ -89,21 +89,30 @@ export class SimilarityGen {
         const v = variationKey || this.getVariation(pool, options);
 
         if (v === 'sim_concept_lie') {
-            const sTrue1 = lang === 'sv' ? "Alla liksidiga trianglar är likformiga." : "All equilateral triangles are similar.";
-            const sTrue2 = lang === 'sv' ? "Alla cirklar är likformiga med varandra." : "All circles are similar to each other.";
-            const sLie = lang === 'sv' ? "Alla rektanglar är likformiga." : "All rectangles are similar.";
+            const sTrue1 = lang === 'sv' ? "Alla liksidiga trianglar har samma form." : "All equilateral triangles have the same shape.";
+            const sTrue2 = lang === 'sv' ? "Alla cirklar har exakt samma runda form." : "All circles have exactly the same round shape.";
+            const sLie = lang === 'sv' ? "Alla rektanglar har exakt samma form." : "All rectangles have exactly the same shape.";
             
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Vilket av följande påståenden om likformighet är FALSKT?" : "Which of the following statements about similarity is FALSE?",
+                    description: lang === 'sv' ? "Vilket av följande påståenden om likformighet stämmer INTE?" : "Which of the following statements about similarity is FALSE?",
                     answerType: 'multiple_choice', options: MathUtils.shuffle([sTrue1, sTrue2, sLie])
                 },
                 token: this.toBase64(sLie), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: För att två figurer ska vara likformiga måste de ha samma form, men kan ha olika storlek." : "Step 1: For two shapes to be similar, they must have the same shape, but can be of different sizes." },
-                    { text: lang === 'sv' ? "Steg 2: Alla cirklar har samma form. Alla liksidiga trianglar har alltid vinklarna 60°, 60°, 60°." : "Step 2: All circles have the same shape. All equilateral triangles always have the angles 60°, 60°, 60°." },
-                    { text: lang === 'sv' ? "Steg 3: Rektanglar har alltid 90° vinklar, men förhållandet mellan långsida och kortsida kan variera." : "Step 3: Rectangles always have 90° angles, but the ratio between the long side and short side can vary." },
-                    { text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}` }
+                    { 
+                        text: lang === 'sv' ? "Likformighet betyder att två figurer är perfekta kopior av varandra. De måste ha exakt samma form, men den ena kan vara uppförstoring eller nedkrympning." : "Similarity means two shapes are perfect copies of each other. They must have exactly the same shape, but one can be magnified or shrunk down.", 
+                        latex: `\\text{Likformig} = \\text{Exakt samma form}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Alla cirklar är alltid perfekt runda. Alla liksidiga trianglar har alltid exakt vinklarna 60°, 60° och 60°, så de har alltid samma form." : "All circles are always perfectly round. All equilateral triangles always have exactly the angles 60°, 60°, and 60°, so they always share the same shape.", 
+                        latex: `\\text{Cirklar och liksidiga trianglar} \\rightarrow \\text{Alltid samma form}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Men rektanglar kan se helt olika ut! En rektangel kan vara jättelång och smal, medan en annan är nästan som en kvadrat. De har alltså inte alltid samma form, vilket gör det här påståendet till en lögn:" : "But rectangles can look completely different! One rectangle can be very long and narrow, while another is almost like a square. They don't always share the same shape, making this statement the lie:", 
+                        latex: `\\mathbf{\\text{Lögn: } ${sLie}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}`, latex: `\\text{${sLie}}` }
                 ]
             };
         }
@@ -120,26 +129,26 @@ export class SimilarityGen {
             const h2 = isSimilar ? h1 * k : h1 * (k + 0.5);
             geom.left = { labels: { b: w1, h: h1 } };
             geom.right = { labels: { b: w2, h: h2 } };
-            desc = lang === 'sv' ? "Avgör om de två rektanglarna nedan är likformiga." : "Determine if the two rectangles below are similar.";
-            clueText = lang === 'sv' ? "Kontrollera om förhållandet mellan motsvarande sidor är detsamma." : "Check if the ratio between corresponding sides is the same.";
+            desc = lang === 'sv' ? "Avgör om de två rektanglarna nedan är likformiga (perfekta kopior)." : "Determine if the two rectangles below are similar (perfect copies).";
+            clueText = lang === 'sv' ? "Vi kollar om bredden och höjden har förstorats lika många gånger. Dela den stora figurens mått med den lillas motsvarande mått." : "Let's check if the width and height have been magnified the same number of times. Divide the large shape's dimensions by the small one's corresponding dimensions.";
             clueLatex = `\\frac{${w2}}{${w1}} = ${w2/w1} \\quad \\text{vs} \\quad \\frac{${h2}}{${h1}} = ${h2/h1}`;
         } else if (v === 'sim_tri_angle_check') {
             geom.shapeType = 'triangle';
             const a1 = MathUtils.randomChoice([30, 45, 60]), a2 = MathUtils.randomChoice([40, 70, 80]);
             const b1 = isSimilar ? a1 : a1 + 10;
-            // 🟢 FIXED: Remapped keys to explicitly match internal canvas property expectations
             geom.left = { labels: { angle1: `${a1}°`, angle2: `${a2}°` } };
             geom.right = { labels: { angle1: `${b1}°`, angle2: `${a2}°` } };
             desc = lang === 'sv' ? "Är trianglarna likformiga baserat på vinklarna?" : "Are the triangles similar based on the angles?";
-            clueText = lang === 'sv' ? "Två trianglar är likformiga om alla deras motsvarande vinklar är lika stora." : "Two triangles are similar if all their corresponding angles are equal.";
+            clueText = lang === 'sv' ? "För att två trianglar ska ha exakt samma form måste deras vinklar matcha varandra perfekt." : "For two triangles to have exactly the same shape, their angles must match each other perfectly.";
+            clueLatex = lang === 'sv' ? `\\text{Jämför hörnens öppningar}` : `\\text{Compare corresponding corner angles}`;
         } else {
             geom.shapeType = 'triangle';
             const s1 = MathUtils.randomInt(3, 8), s2 = MathUtils.randomInt(6, 10);
             const r1 = s1 * k, r2 = isSimilar ? s2 * k : s2 * (k + 1);
             geom.left = { labels: { s1, s2 } };
             geom.right = { labels: { s1: r1, s2: r2 } };
-            desc = lang === 'sv' ? "Undersök sidorna nedan. Är figurerna likformiga?" : "Examine the sides below. Are the shapes similar?";
-            clueText = lang === 'sv' ? "Dividera måtten i den stora figuren med motsvarande mått i den lilla." : "Divide the measures in the large shape by the corresponding measures in the small one.";
+            desc = lang === 'sv' ? "Undersök sidorna nedan. Är figurerna likformiga (lika formade)?" : "Examine the sides below. Are the shapes similar (identically shaped)?";
+            clueText = lang === 'sv' ? "Dela måtten i den stora figuren med motsvarande vägg i den lilla figuren för att se om de har växt i samma takt." : "Divide the measurements in the large shape by the corresponding wall in the small shape to see if they grew at the exact same rate.";
             clueLatex = `\\frac{${r1}}{${s1}} = ${r1/s1} \\quad \\text{vs} \\quad \\frac{${r2}}{${s2}} = ${r2/s2}`;
         }
 
@@ -148,9 +157,16 @@ export class SimilarityGen {
             renderData: { description: desc, answerType: 'multiple_choice', options: lang === 'sv' ? ["Ja", "Nej"] : ["Yes", "No"], geometry: geom },
             token: this.toBase64(ans), variationKey: v, type: 'concept',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Vid likformighet måste alla vinklar vara lika och sidorna proportionella." : "Step 1: In similarity, all angles must be equal and the sides must be proportional." },
+                { 
+                    text: lang === 'sv' ? "Kom ihåg regeln: Likformiga figurer är som foton i olika storlekar. Alla vinklar måste vara helt identiska och sidorna måste ha förstorats eller krympts exakt lika mycket." : "Remember the rule: Similar shapes are like photos in different sizes. All angles must be completely identical and the sides must have been magnified or shrunk by the exact same amount.", 
+                    latex: `\\text{Likformig} = \\text{Samma form, men olika storlek}` 
+                },
                 { text: clueText, latex: clueLatex },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? (isSimilar ? "Eftersom båda sidorna har växt i exakt samma takt blir svaret Ja!" : "Eftersom sidorna inte har växt i samma takt (olika förstoring) blir svaret Nej.") : (isSimilar ? "Since both sides grew at the exact same rate, the answer is Yes!" : "Since the sides did not grow at the same rate (different magnification), the answer is No."), 
+                    latex: isSimilar ? `\\text{Resultat} = \\mathbf{\\text{${ans}}}` : `\\text{Resultat} = \\mathbf{\\text{${ans}}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `\\text{${ans}}` }
             ]
         };
     }
@@ -182,16 +198,24 @@ export class SimilarityGen {
                 renderData: {
                     geometry: { type: 'similarity_compare', shapeType, left: { labels: labelsL }, right: { labels: labelsR } },
                     description: lang === 'sv' ? `Beräkna den saknade sidan x i de likformiga figurerna.` : `Calculate the missing side x in the similar shapes.`,
-                    // 🟢 Interceptor channel: simple primitive string pass
                     interceptorToken: `${s1} ; ${s2} ; ${bigS1} ; ${bigS2} ; ${k}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(k.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Längdskalan (k) hittas genom att jämföra två motsvarande sidor." : "Step 1: The length scale (k) is found by comparing two corresponding sides." },
-                    { text: lang === 'sv' ? "Steg 2: Dividera måttet i den nya figuren (den stora) med måttet i den gamla (den lilla)." : "Step 2: Divide the measure in the new shape (the large one) by the measure in the old one (the small one)." },
-                    { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `k = \\frac{\\text{Bild}}{\\text{Verklighet}} = \\frac{${bigS1}}{${s1}}` },
-                    { text: lang === 'sv' ? `Svar: ${k}` : `Answer: ${k}` }
+                    { 
+                        text: lang === 'sv' ? "Vi vill ta reda på hur många gånger större den stora kopian är jämfört med den lilla originalfiguren. Det gör vi genom att jämföra två kända väggar som matchar varandra." : "We want to find out how many times larger the large copy is compared to the small original shape. We do this by comparing two known walls that match each other.", 
+                        latex: `\\text{Förstoringstakt} = \\frac{\\text{Matchande sida i STORA figuren}}{\\text{Matchande sida i LILLA figuren}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Ta den kända bottenlinjen i den stora figuren (${bigS1}) och dela (dividera) med bottenlinjen i den lilla figuren (${s1}).` : `Take the known baseline in the large shape (${bigS1}) and divide by the baseline in the small shape (${s1}).`, 
+                        latex: `\\text{Förstoringstakt} = \\frac{${bigS1}}{\\mathbf{${s1}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut divisionen för att hitta hur många gånger större figuren har blivit." : "Calculate the division to find out how many times larger the shape has become.", 
+                        latex: `\\text{Förndringstakt} = \\mathbf{${k}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${k}` : `Answer: ${k}`, latex: `${k}` }
                 ]
             };
         }
@@ -200,17 +224,28 @@ export class SimilarityGen {
             renderData: {
                 geometry: { type: 'similarity_compare', shapeType, left: { labels: labelsL }, right: { labels: labelsR } },
                 description: lang === 'sv' ? `Beräkna den saknade sidan x i de likformiga figurerna.` : `Calculate the missing side x in the similar shapes.`,
-                // 🟢 Interceptor channel: simple primitive string pass
                 interceptorToken: `${s1} ; ${s2} ; ${k}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Identifiera vilka sidor som motsvarar varandra i de två figurerna." : "Step 1: Identify which sides correspond to each other in the two shapes." },
-                { text: lang === 'sv' ? `Steg 2: Beräkna skalan (k) genom att dividera de kända sidorna.` : `Step 2: Calculate the scale (k) by dividing the known sides.`, latex: `k = \\frac{${bigS2}}{${s2}} = ${k}` },
-                { text: lang === 'sv' ? (findBig ? `Steg 3: Eftersom vi söker en sida i den stora figuren, multiplicerar vi lilla sidans mått med skalan.` : `Steg 3: Eftersom vi söker en sida i den lilla figuren, dividerar vi stora sidans mått med skalan.`) : (findBig ? `Step 3: Since we are looking for a side in the large shape, multiply the small side's measure by the scale.` : `Step 3: Since we are looking for a side in the small shape, divide the large side's measure by the scale.`) },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: findBig ? `${s1} · ${k} = ${ans}` : `${bigS1} / ${k} = ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? "Först tar vi reda på förstoringstakten (hur många gånger större den stora figuren är). Det gör vi genom att dela de två kända väggarna som matchar varandra." : "First, let's find out the magnification rate (how many times larger the big shape is). We do this by dividing the two known walls that match each other.", 
+                    latex: `\\text{Förstoringstakt} = \\frac{\\text{Stora väggen}}{\\text{Lilla väggen}} = \\frac{${bigS2}}{${s2}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Uträkningen visar att den stora figuren är exakt ${k} gånger större än den lilla.` : `The calculation shows that the large shape is exactly ${k} times larger than the small one.`, 
+                    latex: `\\text{Förstoringstakt} = \\mathbf{${k}}` 
+                },
+                { 
+                    text: lang === 'sv' ? (findBig ? `Eftersom vi letar efter en lång sida x i den STORA figuren, tar vi den lilla sidans mått (${s1}) och gångrar (multiplicerar) med förstoringen ${k}.` : `Eftersom vi letar efter en kort sida x i den LILLA figuren, tar vi den stora bildens mått (${bigS1}) och delar (dividerar) med ${k}.`) : (findBig ? `Since we are looking for a long side x in the LARGE shape, we take the small side's dimension (${s1}) and multiply by the magnification factor ${k}.` : `Since we are looking for a short side x in the SMALL shape, we take the large image's dimension (${bigS1}) and divide by ${k}.`), 
+                    latex: findBig ? `x = ${s1} \\cdot \\mathbf{${k}}` : `x = \\frac{${bigS1}}{\\mathbf{${k}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut det sista steget för att låsa upp längden på väggen x." : "Calculate the final step to unlock the length of wall x.", 
+                    latex: `x = \\mathbf{${ans}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `${ans}` }
             ]
         };
     }
@@ -230,17 +265,27 @@ export class SimilarityGen {
         const bigBase = smallBase * k;
 
         if (v === 'transversal_concept_id') {
-            const correct = lang === 'sv' ? "Topptriangeln och hela triangeln" : "The top triangle and the whole triangle";
+            const correct = lang === 'sv' ? "Topptriangeln och hela den stora triangeln" : "The top triangle and the whole large triangle";
             return {
                 renderData: {
-                    description: lang === 'sv' ? "När en triangel delas av en parallelltransversal, vilka två figurer är likformiga?" : "When a triangle is divided by a parallel transversal, which two shapes are similar?",
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, lang === 'sv' ? "Den övre och den nedre delen" : "The upper and lower parts", lang === 'sv' ? "Inga delar är likformiga" : "No parts are similar"])
+                    description: lang === 'sv' ? "När en triangel delas av en rät linje parallell med basen, vilka två figurer är då likformiga (perfekta kopior)?" : "When a triangle is divided by a straight line parallel to the base, which two shapes are then similar (perfect copies)?",
+                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, lang === 'sv' ? "Den övre triangeln och den nedre fyrhörningen" : "The upper triangle and the lower quadrilateral", lang === 'sv' ? "Inga delar alls är likformiga" : "No parts at all are similar"])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: En parallelltransversal är en linje inuti en triangel som är parallell med basen." : "Step 1: A parallel transversal is a line inside a triangle that is parallel to the base." },
-                    { text: lang === 'sv' ? "Steg 2: Detta skapar en liten 'topptriangel' som har exakt samma vinklar som den stora 'orginaltriangeln'." : "Step 2: This creates a small 'top triangle' that has exactly the same angles as the large 'original triangle'." },
-                    { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}` }
+                    { 
+                        text: lang === 'sv' ? "När vi drar ett rakt streck inuti triangeln som lutar exakt likadant som bottenlinjen, knoppar vi av en liten miniatyr-triangel högst upp." : "When we draw a straight line inside the triangle that slants exactly like the baseline, we bud off a small miniature triangle at the very top.", 
+                        latex: `\\text{Parallell linje i triangeln}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Den här lilla 'topptriangeln' behåller exakt samma hörnöppningar (vinklar) som den stora originaltriangeln. De har alltså exakt samma form!" : "This small 'top triangle' retains exactly the same corner openings (angles) as the original big triangle. Therefore, they have exactly the same shape!", 
+                        latex: `\\text{Miniatyr och Original} \\rightarrow \\text{Samma form}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det betyder att det är topptriangeln och hela den stora triangeln som är likformiga kopior av varandra.` : `This means that the top triangle and the whole large triangle are similar copies of each other.`, 
+                        latex: `\\mathbf{\\text{Svar: } ${correct}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}`, latex: `\\text{${correct}}` }
                 ]
             };
         }
@@ -254,17 +299,32 @@ export class SimilarityGen {
             renderData: {
                 geometry: { type: 'transversal', labels },
                 description: lang === 'sv' ? "Beräkna längden på basen x med hjälp av likformighet." : "Calculate the length of base x using similarity.",
-                // 🟢 FIXED: References existing local primitives explicitly to completely avoid editor warnings
                 interceptorToken: `${top} ; ${extra} ; ${smallBase} ; ${totSide} ; ${bigBase} ; ${k}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(bigBase.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Identifiera de två likformiga figurerna: den lilla topptriangeln och den stora hela triangeln." : "Step 1: Identify the two similar shapes: the small top triangle and the large whole triangle." },
-                { text: lang === 'sv' ? (isExt ? `Steg 2: Beräkna hela sidans längd i den stora triangeln genom addition.` : `Steg 2: Hitta måtten för de motsvarande sidorna.`) : (isExt ? `Step 2: Calculate the total side length of the large triangle by addition.` : `Step 2: Find the measures of the corresponding sides.`), latex: isExt ? `${top} + ${extra} = ${totSide}` : "" },
-                { text: lang === 'sv' ? `Steg 3: Beräkna skalfaktorn (k) genom att dividera stora sidans längd med lilla sidans längd.` : `Step 3: Calculate the scale factor (k) by dividing the large side length by the small side length.`, latex: `k = \\frac{${totSide}}{${top}} = ${k}` },
-                { text: lang === 'sv' ? `Steg 4: Multiplicera den lilla basen (${smallBase}) med skalfaktorn för att hitta x.` : `Step 4: Multiply the small base (${smallBase}) by the scale factor to find x.`, latex: `${smallBase} · ${k} = ${bigBase}` },
-                { text: lang === 'sv' ? `Svar: ${bigBase}` : `Answer: ${bigBase}` }
+                { 
+                    text: lang === 'sv' ? "Den lilla triangeln högst upp (topptriangeln) är en perfekt liten kopia av hela den jättestora triangeln. Vi kan hitta förstoringen genom att jämföra deras kända långsidor." : "The small triangle at the very top (the top triangle) is a perfect little copy of the entire huge triangle. We can find the magnification factor by comparing their known long sides.", 
+                    latex: `\\text{Förstoringstakt} = \\frac{\\text{Hela stora trianglens vägg}}{\\text{Lilla topptriangelns vägg}}` 
+                },
+                { 
+                    text: lang === 'sv' ? (isExt ? `Räkna först ut hela den långa vänstersidan på den stora triangeln genom att plussa ihop bitarna: ${top} + ${extra} blir ${totSide}.` : `Vi ser i bilden att den lilla topptriangelns vägg är ${top} och hela den stora trianglens vägg är ${totSide}.`) : (isExt ? `First, calculate the complete long left side of the large triangle by adding the pieces together: ${top} + ${extra} equals ${totSide}.` : `We can see in the diagram that the small top triangle's wall is ${top} and the whole large triangle's wall is ${totSide}.`), 
+                    latex: isExt ? `\\text{Hela stora väggen} = ${top} + ${extra} = \\mathbf{${totSide}}` : `\\text{Hela stora väggen} = \\mathbf{${totSide}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Dela nu hela den stora väggen (${totSide}) med den lilla toppväggen (${top}) för att se hur många gånger större den stora triangeln är.` : `Now divide the complete large wall (${totSide}) by the small top wall (${top}) to see how many times larger the big triangle is.`, 
+                    latex: `\\text{Förstoringstakt} = \\frac{${totSide}}{\\mathbf{${top}}} = \\mathbf{${k}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Eftersom hela den stora triangeln är exakt ${k} gånger större, tar vi den lilla innermuren (${smallBase}) och gångrar (multiplicerar) med ${k} för att hitta botten x.` : `Since the entire large triangle is exactly ${k} times larger, we take the small inner base (${smallBase}) and multiply by ${k} to find the bottom base x.`, 
+                    latex: `x = ${smallBase} \\cdot \\mathbf{${k}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Slutför multiplikationen för att få fram det färdiga bottenmåttet." : "Complete the multiplication to get the finished bottom baseline measurement.", 
+                    latex: `x = \\mathbf{${bigBase}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${bigBase}` : `Answer: ${bigBase}`, latex: `${bigBase}` }
             ]
         };
     }

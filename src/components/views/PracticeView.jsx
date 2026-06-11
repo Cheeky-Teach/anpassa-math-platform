@@ -391,11 +391,10 @@ const PracticeView = ({
                                 {/* 🟢 NEW: FULL-WIDTH PERSONAL COACH TRIGGER BUTTON */}
                                 <button
                                     onClick={openCoach}
-                                    className="flex items-center justify-center gap-2 py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer shadow-md border-b-4 border-purple-800"
+                                    className="flex items-center justify-center gap-4 py-3 px-2 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer shadow-md border-b-2 border-purple-800"
                                     title={lang === 'sv' ? "Starta tavel-repris och få hjälp" : "Start interactive step guide"}
                                 >
-                                    <Zap size={14} strokeWidth={2.5} className="fill-amber-400 text-amber-400 animate-pulse" />
-                                    {lang === 'sv' ? "💡Starta Min Coach" : "💡 Start My Coach"}
+                                    {lang === 'sv' ? "Hjälp!" : "Help!"}
                                 </button>
 
                                 <button 

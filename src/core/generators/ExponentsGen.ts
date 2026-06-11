@@ -109,19 +109,28 @@ export class ExponentsGen {
             const isZero = v === 'zero_rule';
             const base = MathUtils.randomInt(5, 500);
             const ansValue = isZero ? "1" : base.toString();
+            const expr = isZero ? `${base}^{0}` : `${base}^{1}`;
             
             return {
                 renderData: {
                     description: lang === 'sv' ? "Beräkna värdet av uttrycket." : "Calculate the value of the expression.",
-                    latex: isZero ? `${base}^{0}` : `${base}^{1}`,
+                    latex: expr,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ansValue), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? (isZero ? "Steg 1: Det finns en matematisk regel som säger att alla tal (utom noll) upphöjda till 0 blir 1." : "Step 1: There is a mathematical rule stating that any number (except zero) raised to 0 becomes 1.") : (isZero ? "Step 1: There is a rule that any number raised to 0 is 1." : "Step 1: Any number raised to 1 is just the number itself."), latex: isZero ? "x^0 = 1" : "x^1 = x" },
-                    { text: lang === 'sv' ? "Detta beror på hur mönstret i potenser fungerar när vi dividerar bort basen steg för steg." : "This is due to the pattern of powers when we divide away the base step-by-step." },
-                    { text: lang === 'sv' ? `Resultatet blir därför ${ansValue}.` : `The result is therefore ${ansValue}.` },
-                    { text: lang === 'sv' ? `Svar: ${ansValue}` : `Answer: ${ansValue}` }
+                    { 
+                        text: lang === 'sv' ? (isZero ? "Kom ihåg den enklaste regeln: Vilket tal som helst upphöjt till 0 blir ALLTID exakt 1." : "Remember the easiest rule: Any number raised to the power of 0 ALWAYS equals exactly 1.") : (isZero ? "Remember the rule: Any number raised to the power of 0 ALWAYS equals exactly 1." : "Remember the rule: Any number raised to the power of 1 is just that exact same number unchanged."), 
+                        latex: isZero ? `\\mathbf{x^0 = 1}` : `\\mathbf{x^1 = x}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? (isZero ? `Eftersom exponenten är noll, slår regeln in direkt och hela uttrycket förvandlas till en etta.` : `Eftersom exponenten är 1 betyder det att basen bara står skriven en enda gång.`) : (isZero ? `Since the exponent is zero, the rule kicks in instantly and the whole expression turns into 1.` : `Since the exponent is 1, it means the base number is written down only one single time.`), 
+                        latex: isZero ? `${base}^{0} = \\mathbf{1}` : `${base}^{1} = \\mathbf{${base}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ansValue}` : `Answer: ${ansValue}`, 
+                        latex: `${ansValue}` 
+                    }
                 ],
                 metadata: { variation_key: v, difficulty: 1 }
             };
@@ -130,38 +139,68 @@ export class ExponentsGen {
         if (v === 'foundations_spot_the_lie') {
             const b = MathUtils.randomInt(2, 5), e = MathUtils.randomInt(2, 3);
             const val = Math.pow(b, e);
-            const t1 = `${b}${this.toSup(e)} = ${val}`, t2 = `${MathUtils.randomInt(10, 99)}${this.toSup(0)} = 1`, lie = `${b}${this.toSup(e)} = ${b * e}`;
+            const t1 = `${b}^{${e}} = ${val}`, t2 = `${MathUtils.randomInt(10, 99)}^{0} = 1`, lie = `${b}^{${e}} = ${b * e}`;
 
             return {
                 renderData: {
                     description: lang === 'sv' ? "Vilket påstående är FALSKT?" : "Which statement is FALSE?",
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([t1, t2, lie])
+                    answerType: 'multiple_choice', options: MathUtils.shuffle([t1, lie, t2])
                 },
                 token: this.toBase64(lie), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: En potens betyder upprepad multiplikation av basen." : "Step 1: A power means repeated multiplication of the base." },
-                    { text: lang === 'sv' ? `Steg 2: Exponenten ${e} talar om att vi ska multiplicera basen ${b} med sig själv ${e} gånger.` : `Step 2: The exponent ${e} tells us to multiply the base ${b} by itself ${e} times.` },
-                    { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${b}^{${e}} = ` + Array(e).fill(b).join(' · ') + ` = ${val}` },
-                    { text: lang === 'sv' ? "Ett vanligt fel är att multiplicera basen med exponenten, vilket ger ett felaktigt svar." : "A common error is multiplying the base by the exponent, which gives an incorrect answer." },
-                    { text: lang === 'sv' ? `Svar: ${lie}` : `Answer: ${lie}` }
+                    { 
+                        text: lang === 'sv' ? `För att hitta lögnen måste vi minnas vad en potens betyder: Exponenten uppe i hörnet berättar hur många gånger talet ska multipliceras med sig själv.` : `To spot the lie, we must recall what a power means: The small exponent tells us how many times to multiply the base by itself.`, 
+                        latex: `${b}^{${e}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Vi skriver ut och testar: ${b} upphöjt till ${e} betyder ${b} gånger sig själv ${e} gånger.` : `Let's write it out completely: ${b} raised to the power of ${e} means ${b} multiplied by itself ${e} times.`, 
+                        latex: `${b}^{${e}} = \\mathbf{` + Array(e).fill(b).join(' \\cdot ') + `}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räknar vi ut multiplikationen får vi produkten ${val}. Det är ett vanligt fuskfel att bara råka ta ${b} · ${e} = ${b * e}!` : `When we calculate that product, we get exactly ${val}. It's a common trick trap to accidentally just multiply the base by the exponent (${b} · ${e} = ${b * e})!`, 
+                        latex: `${b}^{${e}} = \\mathbf{${val}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Därför är den här uträkningen en lögn och helt felaktig:` : `Therefore, this specific option statement is a lie and completely incorrect:`, 
+                        latex: `\\mathbf{${b}^{${e}} = ${b * e}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${b}^{${e}} = ${b * e}` : `Answer: ${b}^{${e}} = ${b * e}`, 
+                        latex: `${b}^{${e}} = ${b * e}` 
+                    }
                 ]
             };
         }
 
         const base = MathUtils.randomInt(2, 10), exp = MathUtils.randomInt(2, 4);
         const ans = Math.pow(base, exp);
+        const chain = Array(exp).fill(base).join(' \\cdot ');
+
         return {
             renderData: { 
                 description: lang === 'sv' ? "Beräkna potensen." : "Calculate the power.", 
                 latex: `${base}^{${exp}}`, 
                 interceptorToken: `${base} ; ${exp} ; ${ans}`,
-                answerType: 'numeric' },
+                answerType: 'numeric' 
+            },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Identifiera basen (${base}) och exponenten (${exp}).` : `Step 1: Identify the base (${base}) and the exponent (${exp}).` },
-                { text: lang === 'sv' ? `Steg 2: Multiplicera basen med sig själv ${exp} gånger.` : `Step 2: Multiply the base by itself ${exp} times.` },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: Array(exp).fill(base).join(' · ') + ` = ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? `Det lilla talet däruppe (${exp}) berättar hur många gånger vi ska skriva upp och multiplicera basen (${base}).` : `The small number on top (${exp}) tells us exactly how many times to write out and multiply the main base number (${base}).`, 
+                    latex: `${base}^{${exp}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Vi skriver ut potensen som en lång multiplikationskedja:` : `Let's expand the power completely into a long chain of multiplication:`, 
+                    latex: `${base}^{${exp}} = \\mathbf{${chain}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut multiplikationen steg för steg för att hitta det färdiga talet.` : `Perform the multiplication step-by-step to arrive at the final number.`, 
+                    latex: `${base}^{${exp}} = \\mathbf{${ans}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    latex: `${ans}` 
+                }
             ]
         };
     }
@@ -183,14 +222,26 @@ export class ExponentsGen {
                     description: lang === 'sv' ? "Skriv som ett decimaltal." : "Write as a decimal number.", 
                     latex: `10^{-${p}}`, 
                     interceptorToken: `${p} ; ${ansStr}`,
-                    answerType: 'numeric' },
+                    answerType: 'numeric' 
+                },
                 token: this.toBase64(ansStr), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: En negativ exponent betyder att vi dividerar 1 med basen upphöjt till samma tal fast positivt." : "Step 1: A negative exponent means we divide 1 by the base raised to the same positive power.", latex: "10^{-n} = \\frac{1}{10^n}" },
-                    { text: lang === 'sv' ? `Steg 2: Skriv om uttrycket som ett bråk.` : `Step 2: Rewrite the expression as a fraction.`, latex: `\\frac{1}{10^{${p}}}` },
-                    { text: lang === 'sv' ? `Steg 3: Beräkna nämnaren. 10 upphöjt till ${p} är 1 följt av ${p} nollor.` : `Step 3: Calculate the denominator. 10 to the power of ${p} is 1 followed by ${p} zeros.`, latex: `\\frac{1}{${Math.pow(10, p)}}` },
-                    { text: lang === 'sv' ? `Steg 4: Omvandla bråket till decimaltal. Det ger en etta på den ${p}:e decimalplatsen.` : `Step 4: Convert the fraction to a decimal. This gives a one at the ${p}:th decimal place.` },
-                    { text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}` }
+                    { 
+                        text: lang === 'sv' ? "Ett minustecken framför en exponent betyder helt enkelt att talet ska vändas upp-och-ner och bli ett bråk med en etta därefter." : "A minus sign in front of an exponent simply means the expression turns upside down into a fraction with 1 on top.", 
+                        latex: `10^{-${p}} = \\frac{1}{10^{${p}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut nämnaren där nere. En tiopotens med exponenten ${p} betyder en etta följt av ${p} nollor.` : `Calculate the denominator block below. A power of 10 with an exponent of ${p} means a 1 followed by ${p} zeros.`, 
+                        latex: `10^{-${p}} = \\frac{1}{\\mathbf{${Math.pow(10, p)}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `När vi delar 1 med ${Math.pow(10, p)} flyttas decimaltecknet ${p} steg åt vänster, vilket ger oss ett litet decimaltal.` : `When we divide 1 by ${Math.pow(10, p)}, the decimal point hops ${p} steps to the left, revealing our decimal answer.`, 
+                        latex: `10^{-${p}} = \\mathbf{${ansStr}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
+                        latex: `${ansStr}` 
+                    }
                 ]
             };
         }
@@ -201,15 +252,28 @@ export class ExponentsGen {
             return {
                 renderData: { 
                     description: lang === 'sv' ? `Skriv ${num} som en tiopotens.` : `Write ${num} as a power of ten.`, 
-                    latex: `10^{?} = ${num}`, 
+                    latex: `10^{x} = ${num}`, 
                     interceptorToken: `${num} ; ${zeros}`,
-                    answerType: 'structured_power' },
+                    answerType: 'structured_power' 
+                },
                 token: this.toBase64(`10^${zeros}`), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: En tiopotens med en etta följt av nollor har alltid basen 10." : "Step 1: A power of ten with a one followed by zeros always has a base of 10." },
-                    { text: lang === 'sv' ? "Steg 2: Räkna hur många nollor som står efter ettan." : "Step 2: Count how many zeros follow the one." },
-                    { text: lang === 'sv' ? `Det är ${zeros} nollor, vilket betyder att exponenten är ${zeros}.` : `There are ${zeros} zeros, which means the exponent is ${zeros}.` },
-                    { text: lang === 'sv' ? `Svar: 10${this.toSup(zeros)}` : `Answer: 10${this.toSup(zeros)}` }
+                    { 
+                        text: lang === 'sv' ? `När vi ska skriva stora jämna noll-tal med basen 10, räknar vi helt enkelt antalet nollor som står efter ettan.` : `When writing clean multi-zero numbers as a power of 10, we simply look closely and count the total zeros trailing behind the leading 1.`, 
+                        latex: `10^{x} = ${num}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räknar vi nollorna i ${num} ser vi att det finns exakt ${zeros} stycken.` : `Counting the exact zero placeholders inside ${num} reveals a total of ${zeros}.`, 
+                        latex: `10^{x} = 1\\mathbf{` + "0".repeat(zeros) + `} \\rightarrow \\text{${zeros} st}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Antalet nollor matchar direkt vårt okända x uppe i hörnet på tiopotensen.` : `The total number of zeros directly matches our unknown placeholder x up in the exponent slot.`, 
+                        latex: `10^{\\mathbf{${zeros}}} = ${num}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: 10^{${zeros}}` : `Answer: 10^{${zeros}}`, 
+                        latex: `10^{${zeros}}` 
+                    }
                 ]
             };
         }
@@ -240,31 +304,57 @@ export class ExponentsGen {
         if (v === 'scientific_to_form') {
             return {
                 renderData: { 
-                    description: lang === 'sv' ? `Skriv ${number.toLocaleString(lang)} i grundpotensform.` : `Write ${number.toLocaleString(lang)} in scientific notation.`, 
+                    description: lang === 'sv' ? `Skriv ${number.toLocaleString(lang)} med en tiopotens.` : `Write ${number.toLocaleString(lang)} using a power of ten.`, 
                     interceptorToken: `${number} ; ${mantissa} ; ${exponent}`,
-                    answerType: 'structured_scientific' },
+                    answerType: 'structured_scientific' 
+                },
                 token: this.toBase64(`${mantissa}*10^${exponent}`), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Grundpotensform skrivs alltid som ett tal mellan 1 och 10 multiplicerat med en tiopotens." : "Step 1: Scientific notation is always written as a number between 1 and 10 multiplied by a power of ten.", latex: "a · 10^n" },
-                    { text: lang === 'sv' ? "Steg 2: Flytta decimaltecknet tills bara en siffra (förutom noll) står till vänster." : "Step 2: Move the decimal point until only one non-zero digit is to the left.", latex: `${mantissa}` },
-                    { text: lang === 'sv' ? `Steg 3: Räkna hur många steg du flyttade kommat. Det var ${exponent} steg.` : `Step 3: Count how many steps you moved the point. It was ${exponent} steps.` },
-                    { text: lang === 'sv' ? `Svar: ${mantissa} · 10${this.toSup(exponent)}` : `Answer: ${mantissa} · 10${this.toSup(exponent)}` }
+                    { 
+                        text: lang === 'sv' ? "Ett smart sätt att skriva stora tal är att sätta ett kommatecken så att det bara blir EN siffra kvar framför." : "A clever way to write large numbers is putting a decimal point so only ONE single digit is left in front.", 
+                        latex: `\\text{Mål: } ${number}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Flytta kommatecknet från slutet av talet tills det hamnar direkt efter den första siffran: ${mantissa}.` : `Flytta kommatecknet från slutet av talet tills det hamnar direkt efter den första siffran: ${mantissa}.`, 
+                        latex: `\\mathbf{${mantissa}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna hur många steg du tvingades flytta kommat. Det var exakt ${exponent} steg, vilket blir vårt lilla hörntal.` : `Count how many steps you had to jump the comma. It was exactly ${exponent} steps, which becomes our small corner exponent.`, 
+                        latex: `${mantissa} \\cdot 10^{\\mathbf{${exponent}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${mantissa} · 10^{${exponent}}` : `Answer: ${mantissa} · 10^{${exponent}}`, 
+                        latex: `${mantissa} \\cdot 10^{${exponent}}` 
+                    }
                 ]
             };
         }
 
         return {
             renderData: { 
-                description: lang === 'sv' ? "Vilket värde på 'a' saknas?" : "Which value of 'a' is missing?", 
-                latex: `${number.toLocaleString(lang)} = a · 10^{${exponent}}`, 
+                description: lang === 'sv' ? "Vilket tal saknas på platsen för 'a'?" : "Which number is missing in place of 'a'?", 
+                latex: `${number.toLocaleString(lang)} = a \\cdot 10^{${exponent}}`, 
                 interceptorToken: `${number} ; ${exponent} ; ${mantissa}`,
-                answerType: 'numeric' },
+                answerType: 'numeric' 
+            },
             token: this.toBase64(mantissa.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: I uttrycket a · 10ⁿ är 'a' mantissan, vilket måste vara ett tal från 1 till (men mindre än) 10." : "Step 1: In the expression a · 10ⁿ, 'a' is the mantissa, which must be a number from 1 to (but less than) 10." },
-                { text: lang === 'sv' ? `Steg 2: Dividera det stora talet med tiopotensen 10 upphöjt till ${exponent}.` : `Step 2: Divide the large number by the power of ten, 10 to the power of ${exponent}.` },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${number} / ${Math.pow(10, exponent)} = ${mantissa}` },
-                { text: lang === 'sv' ? `Svar: ${mantissa}` : `Answer: ${mantissa}` }
+                { 
+                    text: lang === 'sv' ? `Hörntalet ${exponent} berättar att talet till höger har flyttat sitt kommatecken ${exponent} steg.` : `The corner number ${exponent} tells us that the expression on the right has moved its decimal point ${exponent} steps.`, 
+                    latex: `${number} = a \\cdot 10^{${exponent}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `För att hitta det saknade talet 'a' delar vi helt enkelt det stora talet med ${Math.pow(10, exponent)}.` : `To find the missing number 'a', we simply divide the large starting value by ${Math.pow(10, exponent)}.`, 
+                    latex: `a = \\frac{${number}}{\\mathbf{10^{${exponent}}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Gör om tiopotensen och räkna ut divisionen: Flytta kommatecknet i ${number} bakåt ${exponent} steg.` : `Solve the division step: Move the decimal point in ${number} backward by ${exponent} positions.`, 
+                    latex: `a = \\frac{${number}}{\\mathbf{${Math.pow(10, exponent)}}} = \\mathbf{${mantissa}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${mantissa}` : `Answer: ${mantissa}`, 
+                    latex: `${mantissa}` 
+                }
             ]
         };
     }
@@ -320,12 +410,21 @@ export class ExponentsGen {
 
         if (v === 'law_multiplication') {
             return {
-                renderData: { description: lang === 'sv' ? "Förenkla till en enda potens." : "Simplify to a single power.", latex: `x^{${a}} · x^{${b}}`, answerType: 'structured_power' },
+                renderData: { description: lang === 'sv' ? "Förenkla till en enda potens." : "Simplify to a single power.", latex: `x^{${a}} \\cdot x^{${b}}`, answerType: 'structured_power' },
                 token: this.toBase64(`x^${a + b}`), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Vid multiplikation av potenser med samma bas ska exponenterna adderas." : "Step 1: When multiplying powers with the same base, the exponents should be added.", latex: "x^a · x^b = x^{a+b}" },
-                    { text: lang === 'sv' ? `Steg 2: Addera ${a} och ${b}.` : `Step 2: Add ${a} and ${b}.`, latex: `${a} + ${b} = ${a+b}` },
-                    { text: lang === 'sv' ? `Svar: x${this.toSup(a+b)}` : `Answer: x${this.toSup(a+b)}` }
+                    { 
+                        text: lang === 'sv' ? `Gångertecknet mellan de två x-baserna talar om att vi helt enkelt ska addera ihop (plussa) de två små hörntalen.` : `The multiplication dot between identical bases tells us that we simply add the two small corner exponents together.`, 
+                        latex: `x^{${a}} \\cdot x^{${b}} = x^{${a} + ${b}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut summan av exponenterna: ${a} + ${b} blir ${a + b}.` : `Calculate the sum of those corner values: ${a} + ${b} equals ${a + b}.`, 
+                        latex: `x^{${a}} \\cdot x^{${b}} = x^{\\mathbf{${a + b}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: x^{${a + b}}` : `Answer: x^{${a + b}}`, 
+                        latex: `x^{${a + b}}` 
+                    }
                 ]
             };
         }
@@ -336,9 +435,18 @@ export class ExponentsGen {
                 renderData: { description: lang === 'sv' ? "Förenkla till en enda potens." : "Simplify to a single power.", latex: `\\frac{x^{${big}}}{x^{${a}}}`, answerType: 'structured_power' },
                 token: this.toBase64(`x^${b}`), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Vid division av potenser med samma bas ska nämnarens exponent subtraheras från täljarens." : "Step 1: In division of powers with the same base, the denominator's exponent is subtracted from the numerator's.", latex: "\\frac{x^a}{x^b} = x^{a-b}" },
-                    { text: lang === 'sv' ? `Steg 2: Subtrahera: ${big} - ${a}.` : `Step 2: Subtract: ${big} - ${a}.`, latex: `${big} - ${a} = ${b}` },
-                    { text: lang === 'sv' ? `Svar: x${this.toSup(b)}` : `Answer: x${this.toSup(b)}` }
+                    { 
+                        text: lang === 'sv' ? `Bråkstrecket (delat med) betyder att vi ska dra bort (subtrahera) den nedre lilla exponenten från den övre.` : `The fraction bar (division) tells us that we work downwards by subtracting the lower exponent from the upper exponent value.`, 
+                        latex: `\\frac{x^{${big}}}{x^{${a}}} = x^{${big} - ${a}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut skillnaden mellan de små hörntalen: ${big} minus ${a} blir ${b}.` : `Calculate the difference between those corner items: ${big} minus ${a} equals ${b}.`, 
+                        latex: `\\frac{x^{${big}}}{x^{${a}}} = x^{\\mathbf{${b}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: x^{${b}}` : `Answer: x^{${b}}`, 
+                        latex: `x^{${b}}` 
+                    }
                 ]
             };
         }

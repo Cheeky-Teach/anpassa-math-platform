@@ -124,10 +124,22 @@ export class StatisticsGen {
                 },
                 token: this.toBase64(modeVal.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Typvärdet är det tal som förekommer flest gånger i en samling data." : "Step 1: The mode is the number that appears most frequently in a data set." },
-                    { text: lang === 'sv' ? "Gå igenom listan och räkna hur många gånger varje tal dyker upp." : "Go through the list and count how many times each number appears." },
-                    { text: lang === 'sv' ? `Talet ${modeVal} förekommer 3 gånger, vilket är mer än något annat tal.` : `The number ${modeVal} appears 3 times, which is more than any other number.` },
-                    { text: lang === 'sv' ? `Svar: ${modeVal}` : `Answer: ${modeVal}` }
+                    { 
+                        text: lang === 'sv' ? "Typvärdet är helt enkelt det tal som är populärast och dyker upp flest gånger i hela listan." : "The mode is simply the most popular number that appears the most times in the entire list.", 
+                        latex: `\\text{Leta efter flest upprepningar}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Gå igenom sifferraden noggrant och räkna hur många gånger varje enskilt tal finns med." : "Go through the number row carefully and count how many times each individual number is included.", 
+                        latex: `\\text{Lista: } ${setStr}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Vi ser att talet ${modeVal} förekommer 3 gånger. Det är fler gånger än något annat tal i listan.` : `We can see that the number ${modeVal} appears 3 times. That is more times than any other number in the list.`, 
+                        latex: `\\text{Populärast} = \\mathbf{${modeVal}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${modeVal}` : `Answer: ${modeVal}`, 
+                        latex: `${modeVal}` 
+                    }
                 ]
             };
         }
@@ -145,11 +157,26 @@ export class StatisticsGen {
                 },
                 token: this.toBase64(range.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Variationsbredden är skillnaden mellan det största och det minsta värdet i listan." : "Step 1: The range is the difference between the largest and the smallest value in the list." },
-                    { text: lang === 'sv' ? `Steg 2: Hitta det största talet i listan.` : `Step 2: Find the largest number in the list.`, latex: `\\text{Max} = ${max}` },
-                    { text: lang === 'sv' ? `Steg 3: Hitta det minsta talet i listan.` : `Step 3: Find the smallest number in the list.`, latex: `\\text{Min} = ${min}` },
-                    { text: lang === 'sv' ? "Steg 4: Subtrahera det minsta värdet från det största." : "Step 4: Subtract the smallest value from the largest.", latex: `${max} - ${min} = ${range}` },
-                    { text: lang === 'sv' ? `Svar: ${range}` : `Answer: ${range}` }
+                    { 
+                        text: lang === 'sv' ? "Variationsbredden beskriver det totala gapet eller avståndet mellan det absolut största och det minsta talet i listan." : "The range describes the total gap or distance between the absolute largest and the smallest number in the list.", 
+                        latex: `\\text{Variationsbredd} = \\text{Största talet} - \\text{Minsta talet}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Leta reda på det högsta numret och det lägsta numret i sifferraden.` : `Find the highest number and the lowest number in the row of numbers.`, 
+                        latex: `\\text{Största} = \\mathbf{${max}} \\quad \\text{Minsta} = \\mathbf{${min}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Ta nu det största talet (${max}) minus det minsta talet (${min}) för och räkna ut skillnaden.` : `Now take the largest number (${max}) minus the smallest number (${min}) to calculate the difference.`, 
+                        latex: `\\text{Variationsbredd} = \\mathbf{${max} - ${min}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Slutför subtraktionen för att bestämma storleken på siffer-gapet." : "Complete the final subtraction to determine the size of the number gap.", 
+                        latex: `\\text{Variationsbredd} = \\mathbf{${range}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${range}` : `Answer: ${range}`, 
+                        latex: `${range}` 
+                    }
                 ]
             };
         }
@@ -163,8 +190,18 @@ export class StatisticsGen {
             },
             token: this.toBase64((isMin ? min : max).toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Leta igenom listan metodiskt för att hitta det ${isMin ? 'lägsta' : 'högsta'} värdet.` : `Search the list methodically to find the ${isMin ? 'lowest' : 'highest'} value.` },
-                { text: lang === 'sv' ? `Svar: ${isMin ? min : max}` : `Answer: ${isMin ? min : max}` }
+                { 
+                    text: lang === 'sv' ? `Skanna igenom sifferraden metodiskt från start till slut för att hitta det ${isMin ? 'allra lägsta' : 'allra högsta'} värdet.` : `Scan through the number row methodically from start to finish to find the ${isMin ? 'absolute lowest' : 'absolute highest'} value.`, 
+                    latex: `\\text{Lista: } ${setStr}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Det ${isMin ? 'lägsta' : 'högsta'} talet vi hittar är ${isMin ? min : max}.` : `The ${isMin ? 'lowest' : 'highest'} number we can find is ${isMin ? min : max}.`, 
+                    latex: `\\text{Resultat} = \\mathbf{${isMin ? min : max}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${isMin ? min : max}` : `Answer: ${isMin ? min : max}`, 
+                    latex: `${isMin ? min : max}` 
+                }
             ]
         };
     }
@@ -191,9 +228,18 @@ export class StatisticsGen {
                 },
                 token: this.toBase64(ans), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Medelvärdet kan ses som en balanspunkt för alla värden." : "Step 1: The mean can be seen as a balance point for all values." },
-                    { text: lang === 'sv' ? `Steg 2: Om det nya värdet (${newVal}) är lägre än snittet (${mean}), kommer det att dra ner balansen.` : `Step 2: If the new value (${newVal}) is lower than the average (${mean}), it will pull down the balance.` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? `Tänk på medelvärdet (${mean}) som en perfekt, stabil balanspunkt eller en jämvikt för hela gruppen.` : `Think of the mean (${mean}) as a perfect, stable balance point or an equilibrium for the entire group.`, 
+                        latex: `\\text{Balanspunkt} = ${mean}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? (isLower ? `Eftersom det nya talet (${newVal}) är LÄGRE än gruppens nuvarande balanspunkt, kommer det att tynga ner och sänka det totala snittet.` : `Eftersom det nya talet (${newVal}) är HÖGRE än gruppens nuvarande balanspunkt, kommer det att lyfta upp och höja det totala snittet.`) : (isLower ? `Since the new number (${newVal}) is LOWER than the group's current balance point, it will weigh down and decrease the overall average.` : `Since the new number (${newVal}) is HIGHER than the group's current balance point, it will lift up and increase the overall average.`), 
+                        latex: isLower ? `${newVal} < ${mean} \\rightarrow \\mathbf{\\text{Svaret sjunker}}` : `${newVal} > ${mean} \\rightarrow \\mathbf{\\text{Svaret höjs}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `\\text{${ans}}` 
+                    }
                 ]
             };
         }
@@ -211,10 +257,26 @@ export class StatisticsGen {
             },
             token: this.toBase64(mean.toString()), variationKey: 'calc_mean', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Medelvärdet beräknas genom att dela den totala summan med antalet värden." : "Step 1: The mean is calculated by dividing the total sum by the count of values." },
-                { text: lang === 'sv' ? "Steg 2: Addera alla tal i listan för att få totalsumman." : "Step 2: Add all the numbers in the list to get the total sum.", latex: `${list.join(' + ')} = ${sum}` },
-                { text: lang === 'sv' ? `Steg 3: Dividera summan (${sum}) med antalet observationer (${count}).` : `Step 3: Divide the sum (${sum}) by the number of observations (${count}).`, latex: `\\frac{${sum}}{${count}} = ${mean}` },
-                { text: lang === 'sv' ? `Svar: ${mean}` : `Answer: ${mean}` }
+                { 
+                    text: lang === 'sv' ? "Medelvärdet betyder att vi slår ihop allt vi har till en stor gemensam pott, och delar sedan ut det helt rättvist och lika till alla." : "The mean means we pool everything we have into one big pile, and then distribute it completely fairly and equally to everyone.", 
+                    latex: `\\text{Medelvärde} = \\frac{\\text{Hela summan tillsammans}}{\\text{Antalet personer / saker}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Börja med att plussa ihop alla talen i listan för att ta reda på vad den gemensamma potten blir." : "Start by adding all the numbers in the list together to find out what the shared pool total will be.", 
+                    latex: `\\text{Hela summan} = ${list.join(' + ')} = \\mathbf{${sum}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Dela nu potten (${sum}) med hur många siffror det fanns i listan från början (${count} stycken).` : `Now divide the shared pool (${sum}) by how many numbers were in the list at the start (${count} numbers).`, 
+                    latex: `\\text{Medelvärde} = \\frac{\\mathbf{${sum}}}{\\mathbf{${count}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Utför divisionen för att få fram det färdiga, rättvisa snittvärdet." : "Execute the division step to find the finished, fair average value.", 
+                    latex: `\\text{Medelvärde} = \\mathbf{${mean}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${mean}` : `Answer: ${mean}`, 
+                    latex: `${mean}` 
+                }
             ]
         };
     }
@@ -235,11 +297,22 @@ export class StatisticsGen {
             },
             token: this.toBase64(median.toString()), variationKey: 'median_odd', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: För att hitta medianen måste talen först sorteras i storleksordning." : "Step 1: To find the median, the numbers must first be sorted in order of size." },
-                { text: lang === 'sv' ? "Sorterad lista:" : "Sorted list:", latex: sorted.join(', ') },
-                { text: lang === 'sv' ? `Steg 2: Identifiera det mittersta talet i den sorterade listan.` : `Step 2: Identify the middle number in the sorted list.` },
-                { text: lang === 'sv' ? `Svaret är talet som står på plats ${Math.ceil(count/2)}.` : `The answer is the number at position ${Math.ceil(count/2)}.` },
-                { text: lang === 'sv' ? `Svar: ${median}` : `Answer: ${median}` }
+                { 
+                    text: lang === 'sv' ? "Medianen betyder mitt-talet. Men se upp! För att hitta talet i mitten måste siffrorna STÄLLAS I STORLEKSORDNING allra först, som en kö från kortast till längst." : "The median means the middle number. But watch out! To find the number in the center, the digits must BE SORTED BY SIZE first, like a line from shortest to tallest.", 
+                    latex: `\\text{Sortera från minst till störst}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Här är sifferraden uppställd i perfekt ordning på tavlan:" : "Here is the row of numbers arranged in perfect order on the board:", 
+                    latex: `\\text{Sorterad kö: } \\mathbf{${sorted.join(', ')}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Kolla nu vilket tal som står exakt i mitten av kön och har lika många kompisar till vänster som till höger.` : `Now check which number stands exactly in the middle of the line, having just as many neighbors to its left as to its right.`, 
+                    latex: `\\text{Mittersta platsen} = \\mathbf{${median}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${median}` : `Answer: ${median}`, 
+                    latex: `${median}` 
+                }
             ]
         };
     }
@@ -260,11 +333,30 @@ export class StatisticsGen {
             },
             token: this.toBase64(missing.toString()), variationKey: 'reverse_mean_calc', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Beräkna vad den totala summan av de fyra talen måste vara." : "Step 1: Calculate what the total sum of the four numbers must be." },
-                { text: lang === 'sv' ? `Multiplicera medelvärdet med antalet tal.` : `Multiply the mean by the count of numbers.`, latex: `${mean} · 4 = ${total}` },
-                { text: lang === 'sv' ? "Steg 2: Beräkna summan av de tre kända talen." : "Step 2: Calculate the sum of the three known numbers.", latex: `${v1} + ${v2} + ${v3} = ${v1 + v2 + v3}` },
-                { text: lang === 'sv' ? "Steg 3: Dra bort den kända summan från totalsumman för att hitta det saknade talet." : "Step 3: Subtract the known sum from the total sum to find the missing number.", latex: `${total} - ${v1+v2+v3} = ${missing}` },
-                { text: lang === 'sv' ? `Svar: ${missing}` : `Answer: ${missing}` }
+                { 
+                    text: lang === 'sv' ? `Vi ska räkna baklänges! Om medelvärdet för 4 stycken tal ska bli ${mean}, kan vi direkt räkna ut vad den stora gemensamma totalsumman måste vara.` : `We are going to work backwards! If the average for 4 numbers is supposed to equal ${mean}, we can immediately calculate what the big grand total sum must be.`, 
+                    latex: `\\text{Måste-summa totalt} = \\text{Medelvärde} \\cdot \\text{Antal tal}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Gångra (multiplicera) medelvärdet ${mean} med 4 tal totalt:` : `Multiply the mean ${mean} by 4 total numbers:`, 
+                    latex: `\\text{Måste-summa totalt} = ${mean} \\cdot 4 = \\mathbf{${total}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Lägg nu ihop de tre talen som vi redan känner till för att se hur mycket av den summan vi har skrapat ihop hittills.` : `Now add up the three numbers we already know to see how much of that total sum we have gathered so far.`, 
+                    latex: `\\text{Känd delsumma} = ${v1} + ${v2} + ${v3} = \\mathbf{${v1 + v2 + v3}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Dra bort den kända summan (${v1 + v2 + v3}) från den totala måstebasen (${total}) för att avslöja det dolda fjärde talet.` : `Subtract the known sum (${v1 + v2 + v3}) from the required grand total (${total}) to reveal the hidden fourth number.`, 
+                    latex: `\\text{Saknat tal} = ${total} - \\mathbf{${v1 + v2 + v3}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut skillnaden för att få fram det saknade värdet." : "Compute the difference to discover the missing value token code.", 
+                    latex: `\\text{Saknat tal} = \\mathbf{${missing}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${missing}` : `Answer: ${missing}`, 
+                    latex: `${missing}` 
+                }
             ]
         };
     }
@@ -287,9 +379,22 @@ export class StatisticsGen {
                 },
                 token: this.toBase64(totalCount.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: 'Antal' (frekvens) visar hur många gånger varje värde har mätts." : "Step 1: 'Count' (frequency) shows how many times each value was measured." },
-                    { text: lang === 'sv' ? "Steg 2: Addera alla siffror i kolumnen för antal." : "Step 2: Add all the numbers in the count column.", latex: freqs.join(' + ') + ` = ${totalCount}` },
-                    { text: lang === 'sv' ? `Svar: ${totalCount}` : `Answer: ${totalCount}` }
+                    { 
+                        text: lang === 'sv' ? "Kolumnen 'Antal' talar om exakt hur många gånger varje enskilt värde har räknats eller mätts upp." : "The 'Count' column tells us exactly how many times each individual value was counted or measured.", 
+                        latex: `\\text{Kolla i spalten för 'Antal'}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `För att hitta hela gruppens storlek plussar vi helt enkelt ihop alla siffrorna nedåt i Antal-spalten.` : `To find the size of the entire group, simply add up all the numbers going down the Count column.`, 
+                        latex: `\\text{Totalt antal} = ${freqs.join(' + ')}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut summan för att hitta det totala antalet mätningar." : "Calculate the sum to find the total count of measurements.", 
+                        latex: `\\text{Totalt antal} = \\mathbf{${totalCount}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${totalCount}` : `Answer: ${totalCount}`, 
+                        latex: `${totalCount}` 
+                    }
                 ]
             };
         }
@@ -305,10 +410,22 @@ export class StatisticsGen {
             },
             token: this.toBase64(mode.toString()), variationKey: 'freq_mode', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Typvärdet är det värde som förekommer flest gånger (har högst frekvens)." : "Step 1: The mode is the value that appears most often (has the highest frequency)." },
-                { text: lang === 'sv' ? `Steg 2: Leta efter det största talet i kolumnen 'Antal'.` : `Step 2: Look for the largest number in the 'Count' column.` },
-                { text: lang === 'sv' ? `Det största antalet är ${freqs[modeIdx]}, vilket hör till värdet ${mode}.` : `The largest count is ${freqs[modeIdx]}, which belongs to the value ${mode}.` },
-                { text: lang === 'sv' ? `Svar: ${mode}` : `Answer: ${mode}` }
+                { 
+                    text: lang === 'sv' ? "Typvärdet betyder fortfarande det värde som är kändast och förekommer flest gånger (har absolut högst siffra i Antal-spalten)." : "The mode still means the value that is most famous and appears the most times (has the absolute highest number in the Count column).", 
+                    latex: `\\text{Leta efter högst frekvens}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Leta efter det största numret i kolumnen 'Antal'. Vi ser att den högsta toppsiffran där är ${freqs[modeIdx]}.` : `Look for the largest number in the 'Count' column. We can see that the highest top digit there is ${freqs[modeIdx]}.`, 
+                    latex: `\\text{Högsta antal} = \\mathbf{${freqs[modeIdx]}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Kolla nu horisontellt till vänster på samma rad för att se vilket 'Värde' som hör ihop med den vinnande siffran: Det är värdet ${mode}.` : `Now look horizontally to the left on that same row to see which 'Value' belongs to that winning count: It is the value ${mode}.`, 
+                    latex: `\\text{Motsvarande värde} = \\mathbf{${mode}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${mode}` : `Answer: ${mode}`, 
+                    latex: `${mode}` 
+                }
             ]
         };
     }
@@ -321,14 +438,27 @@ export class StatisticsGen {
             const ans = lang === 'sv' ? "Median" : "Median";
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Om en datamängd innehåller ett extremt värde (ett 'outlier'), vilket lägesmått är oftast mest rättvisande?" : "If a data set contains an extreme value (an 'outlier'), which measure of center is usually most accurate?",
+                    description: lang === 'sv' ? "Om en datamängd innehåller ett extremt värde (en 'outlier' som skiljer sig enormt), vilket lägesmått är oftast mest rättvisande?" : "If a data set contains an extreme value (an 'outlier' that is vastly different), which measure of center is usually most accurate?",
                     answerType: 'multiple_choice', options: lang === 'sv' ? ["Medelvärde", "Median", "Typvärde"] : ["Mean", "Median", "Mode"]
                 },
                 token: this.toBase64(ans), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Medelvärdet påverkas mycket av extremvärden eftersom alla tal räknas in i summan." : "Step 1: The mean is heavily affected by outliers because all numbers are included in the sum." },
-                    { text: lang === 'sv' ? "Steg 2: Medianen är mer stabil eftersom den bara bryr sig om vilket tal som hamnar i mitten." : "Step 2: The median is more stable because it only cares about which number ends up in the middle." },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? "Tänk på vad som händer med medelvärdet: Eftersom alla tal plussas ihop i summan kommer en enda gigantisk lyxvilla eller jättehög miljonlön att förvränga och dra upp snittet jättemycket." : "Think about what happens to the mean: Since all numbers are added together into the sum, a single gigantic luxury mansion or ultra-high salary will distort and pull up the average massively.", 
+                        latex: `\\text{Medelvärde} \\rightarrow \\text{Känsligt för chocksiffror}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Medianen bryr sig däremot bara om vilket tal som hamnar exakt i mitten av kön. Den struntar fullständigt i hur extrema talsiffrorna är ute i kanterna." : "The median, on the other hand, only cares about which number ends up exactly in the middle of the line. It completely ignores how extreme the numbers are out on the edges.", 
+                        latex: `\\text{Median} \\rightarrow \\text{Oskadd av chocksiffror}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Därför är medianen bäst och mest rättvisande att använda när vi har konstiga avvikande fantasisiffror i datan." : "Therefore, the median is best and most fair to use when we have weird, skewed outlier numbers in our data setup.", 
+                        latex: `\\text{Bästa val} = \\mathbf{\\text{Median}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `\\text{${ans}}` 
+                    }
                 ]
             };
         }
@@ -347,11 +477,34 @@ export class StatisticsGen {
             },
             token: this.toBase64(ansVal.toString()), variationKey: 'real_weighted_missing', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Beräkna vad den totala kostnaden för alla 5 kg blev." : "Step 1: Calculate the total cost for all 5 kg." },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `5 · 26 = ${totalSum}` },
-                { text: lang === 'sv' ? "Steg 2: Dra bort kostnaden för de första 2 kilona." : "Step 2: Subtract the cost for the first 2 kg.", latex: `${totalSum} - (2 · 20) = ${missingSum}` },
-                { text: lang === 'sv' ? "Steg 3: Dela den återstående kostnaden på de 3 kilona av den andra sorten." : "Step 3: Divide the remaining cost by the 3 kg of the other kind.", latex: `\\frac{${missingSum}}{3} = ${ansVal}` },
-                { text: lang === 'sv' ? `Svar: ${ansVal}` : `Answer: ${ansVal}` }
+                { 
+                    text: lang === 'sv' ? "Vi löser uppgiften baklänges! Om medelpriset för alla 5 kg äpplen (2 kg + 3 kg) ska landa på 26 kr/kg, kan vi direkt räkna ut vad kassan ska kosta totalt." : "We solve this task backwards! If the average price for all 5 kg of apples (2 kg + 3 kg) is supposed to land on 26 kr/kg, we can directly calculate what the register total must equal.", 
+                    latex: `\\text{Total kostnad i kassan} = 5 \\text{ kg} \\cdot 26 \\text{ kr/kg}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Gångra vikten med medelpriset för att hitta kassa-totalen:" : "Multiply the weight by the average price to find the register total:", 
+                    latex: `\\text{Total kostnad i kassan} = 5 \\cdot 26 = \\mathbf{${totalSum}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut vad den första kända sorten kostade: 2 kg gånger 20 kr/kg blir ${val1 * weight1} kr.` : `Calculate what the first known kind costed: 2 kg times 20 kr/kg equals ${val1 * weight1} kr.`, 
+                    latex: `\\text{Kostnad sort 1} = 2 \\cdot 20 = \\mathbf{${val1 * weight1}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Dra bort sort 1 (${val1 * weight1} kr) från hela kassa-totalen (${totalSum} kr) för att se hur mycket pengar som läggs på den andra sorten.` : `Subtract kind 1 (${val1 * weight1} kr) from the register total (${totalSum} kr) to see how much money is spent on the second kind.`, 
+                    latex: `\\text{Kostnad sort 2 samlat} = ${totalSum} - \\mathbf{${val1 * weight1}} = \\mathbf{${missingSum}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Eftersom de ${missingSum} kronorna fördelas jämnt på de återstående 3 kilona av den andra sorten, delar (dividerar) vi med 3.` : `Since those ${missingSum} crowns are spread evenly across the remaining 3 kg of the second kind, we divide by 3.`, 
+                    latex: `\\text{Pris per kg för sort 2} = \\frac{${missingSum}}{\\mathbf{3}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut delningen för att hitta kilopriset på den andra äppelsorten." : "Compute the final division fraction to establish the per-kilogram price of the second apple group.", 
+                    latex: `\\text{Pris per kg för sort 2} = \\mathbf{${ansVal}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ansVal} kr/kg` : `Answer: ${ansVal} kr/kg`, 
+                    latex: `${ansVal}` 
+                }
             ]
         };
     }
