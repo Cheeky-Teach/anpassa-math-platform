@@ -36,18 +36,18 @@ export class ScaleGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
         // Adaptive Jump: Skip concepts if master option is requested
         if (level === 1 && options.hideConcept) {
-            return this.level2_CalculateReality(lang, undefined, options);
+            return this.level2_LinearFluency(lang, undefined, options);
         }
 
         let questionData: any;
 
         switch (level) {
             case 1: questionData = this.level1_Concepts(lang, undefined, options); break;
-            case 2: questionData = this.level2_CalculateReality(lang, undefined, options); break;
-            case 3: questionData = this.level3_CalculateImage(lang, undefined, options); break;
-            case 4: questionData = this.level4_MapsAndBlueprints(lang, undefined, options); break;
-            case 5: questionData = this.level5_MicroscopeMagnification(lang, undefined, options); break;
-            case 6: questionData = this.level6_AreaVolumeScale(lang, undefined, options); break;
+            case 2: questionData = this.level2_LinearFluency(lang, undefined, options); break;
+            case 3: questionData = this.level3_MixedScenarios(lang, undefined, options); break;
+            case 4: questionData = this.level4_DetermineScale(lang, undefined, options); break;
+            case 5: questionData = this.level5_NoPictures(lang, options); break;
+            case 6: questionData = this.level6_AreaScaleDeep(lang, undefined, options); break;
             default: questionData = this.level1_Concepts(lang, undefined, options); break;
         }
 
@@ -154,38 +154,36 @@ export class ScaleGen {
             };
         }
 
-        if (v === 'concept_lie') {
-            const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.blueprint);
-            const ratio = MathUtils.randomChoice([20, 50, 100, 500]);
-            const sLie = lang === 'sv' ? `Bilden visar föremålet i dess verkliga storlek.` : `The image shows the object in its real size.`;
-            const sTrue1 = lang === 'sv' ? `Verkligheten är ${ratio} gånger större än bilden.` : `Reality is ${ratio} times larger than the image.`;
-            const sTrue2 = lang === 'sv' ? `Detta är en förminskning.` : `This is a reduction.`;
-
-            return {
-                renderData: {
-                    description: lang === 'sv' ? `På ${scenario.sv} är skalan 1:${ratio}. Vilket påstående stämmer INTE?` : `On ${scenario.en}, the scale is 1:${ratio}. Which statement is FALSE?`,
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([sLie, sTrue1, sTrue2]),
-                    geometry: { type: 'scale_single', label: `1:${ratio}`, shape: 'house' }
+        // Fallback for concept_match
+        const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.microscope);
+        const ratio = MathUtils.randomChoice([5, 10, 20]);
+        const scaleStr = `${ratio}:1`;
+        const ans = lang === 'sv' ? `Bilden är ${ratio} gånger större än verkligheten.` : `The image is ${ratio} times larger than reality.`;
+        
+        return {
+            renderData: {
+                description: lang === 'sv' ? `Vad innebär det när ${scenario.sv} har skalan ${scaleStr}?` : `What does it mean when ${scenario.en} has the scale ${scaleStr}?`,
+                answerType: 'multiple_choice', options: MathUtils.shuffle([ans, lang === 'sv' ? "Verkligheten är större än bilden." : "Reality is larger than the image."]),
+                geometry: { type: 'scale_compare', leftLabel: 'Bild', rightLabel: 'Verklighet', leftValue: ratio, rightValue: 1, shape: 'ladybug' }
+            },
+            token: this.toBase64(ans), variationKey: v, type: 'concept',
+            clues: [
+                { 
+                    text: lang === 'sv' ? `När den stora siffran står FÖRST i skalan (${scaleStr}) betyder det att vi tittar på en förstoring.` : `When the large number stands FIRST in the scale (${scaleStr}), it means we are looking at an enlargement.`, 
+                    latex: `\\mathbf{${ratio}} : 1` 
                 },
-                token: this.toBase64(sLie), variationKey: v, type: 'concept',
-                clues: [
-                    { 
-                        text: lang === 'sv' ? `Skalan 1:${ratio} betyder att 1 cm på ritningen motsvarar hela ${ratio} cm ute i verkligheten.` : `The scale 1:${ratio} means that 1 cm on the drawing corresponds to a full ${ratio} cm out in reality.`, 
-                        latex: `1 \\text{ cm på bilden} = ${ratio} \\text{ cm i verkligheten}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Det betyder att verkligheten är mycket större, närmare bestämt exakt ${ratio} gånger större än ritningen.` : `This means reality is much larger, more specifically exactly ${ratio} times larger than the drawing.`, 
-                        latex: `\\text{Verklighet} = \\text{Bild} \\cdot \\mathbf{${ratio}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Eftersom ritningen är en krympt version, blir påståendet att "bilden visar föremålet i dess verkliga storlek" helt felaktigt.` : `Since the drawing is a shrunken version, stating that "the image shows the object in its real size" is completely false.`, 
-                        latex: `\\mathbf{\\text{Felaktigt: } ${sLie}}` 
-                    },
-                    { text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}`, latex: `\\text{${sLie}}` }
-                ],
-                metadata: { variation_key: v, difficulty: 1 }
-            };
-        }
+                { 
+                    text: lang === 'sv' ? `Skalan berättar att ${ratio} cm på bilden i själva verket bara är en enda liten ensam centimeter (1 cm) ute i verkligheten.` : `The scale tells us that ${ratio} cm in the picture is actually just one single tiny centimeter (1 cm) out in reality.`, 
+                    latex: `${ratio} \\text{ cm på bilden} = 1 \\text{ cm i verkligheten}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Det betyder att linsen har blåst upp bilden så att den har blivit exakt ${ratio} gånger större än vad föremålet är på riktigt.` : `This means the lens has blown up the image so that it has become exactly ${ratio} times larger than what the object really is.`, 
+                    latex: `\\text{Bild} = \\text{Verklighet} \\cdot \\mathbf{${ratio}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `\\text{${ans}}` }
+            ],
+            metadata: { variation_key: v, difficulty: 1 }
+        };
     }
 
     private level2_LinearFluency(lang: string, variationKey?: string, options: any = {}): any {

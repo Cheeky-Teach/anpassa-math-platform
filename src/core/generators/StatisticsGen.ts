@@ -20,19 +20,19 @@ export class StatisticsGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
         // Adaptive Fallback: If base concepts are satisfied, push forward to computation chains
         if (level === 1 && options.hideConcept) {
-            return this.level3_Mean(lang, undefined, options);
+            return this.level2_Mean(lang, undefined, options);
         }
 
         let questionData: any;
 
         switch (level) {
-            case 1: questionData = this.level1_Mode(lang, undefined, options); break;
-            case 2: questionData = this.level2_RangeAndMedian(lang, undefined, options); break;
-            case 3: questionData = this.level3_Mean(lang, undefined, options); break;
+            case 1: questionData = this.level1_ModeRange(lang, undefined, options); break;
+            case 2: questionData = this.level2_Mean(lang, undefined, options); break;
+            case 3: questionData = this.level3_Median(lang, undefined, options); break;
             case 4: questionData = this.level4_ReverseMean(lang, undefined, options); break;
-            case 5: questionData = this.level5_TablesAndWeighted(lang, undefined, options); break;
-            case 6: questionData = this.level6_MixedStatistics(lang, options); break;
-            default: questionData = this.level1_Mode(lang, undefined, options); break;
+            case 5: questionData = this.level5_FrequencyTable(lang, undefined, options); break;
+            case 6: questionData = this.level6_RealWorldMixed(lang, undefined, options); break;
+            default: questionData = this.level1_ModeRange(lang, undefined, options); break;
         }
 
         // 🟢 Run through the decorator

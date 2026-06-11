@@ -106,7 +106,8 @@ export class FractionBasicsGen {
                         latex: `\\frac{${p}}{100} = \\frac{${p} \\div ${div}}{100 \\div ${div}} = \\frac{${p/div}}{${100/div}}` 
                     },
                     { 
-                        text: lang === 'sv' ? (p < 50 ? `Eftersom ${p}% är mindre än hälften (50%), blir påståendet "${sLie}" helt felaktigt.` : `Eftersom ${pct}% är mer än hälften (50%), blir påståendet "${sLie}" helt felaktigt.`) : (p < 50 ? `Since ${p}% is less than half (50%), the statement "${sLie}" is completely wrong.` : `Since ${p}% is more than half (50%), the statement "${sLie}" is completely wrong.`), 
+                        // Bytte 'pct' mot 'p'
+                        text: lang === 'sv' ? (p < 50 ? `Eftersom ${p}% är mindre än hälften (50%), blir påståendet "${sLie}" helt felaktigt.` : `Eftersom ${p}% är mer än hälften (50%), blir påståendet "${sLie}" helt felaktigt.`) : (p < 50 ? `Since ${p}% is less than half (50%), the statement "${sLie}" is completely wrong.` : `Since ${p}% is more than half (50%), the statement "${sLie}" is completely wrong.`), 
                         latex: p < 50 ? `${p}\\% < 50\\% \\rightarrow \\mathbf{\\text{Fel: ${sLie}}}` : `${p}\\% > 50\\% \\rightarrow \\mathbf{\\text{Fel: ${sLie}}}` 
                     },
                     { 
@@ -520,7 +521,8 @@ export class FractionBasicsGen {
                         latex: `\\frac{${pair.n}}{${pair.d}} = ${pair.n} \\div ${pair.d}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Utför divisionen: ${pair.n} delat med ${pair.d} ger oss decimalvärdet:` : `Perform the division: ${pair.n} divided by ${b} yields the decimal value:`, 
+                        // Bytte 'b' mot 'pair.d' i den engelska texten
+                        text: lang === 'sv' ? `Utför divisionen: ${pair.n} delat med ${pair.d} ger oss decimalvärdet:` : `Perform the division: ${pair.n} divided by ${pair.d} yields the decimal value:`, 
                         latex: `${pair.n} \\div ${pair.d} = \\mathbf{${decStr}}` 
                     },
                     { 
