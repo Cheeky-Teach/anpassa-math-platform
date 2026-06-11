@@ -96,28 +96,38 @@ export class ExpressionSimplificationGen {
             const a = MathUtils.randomInt(2, 6);
             const b = MathUtils.randomInt(2, 6);
             const sum = a + b;
-            const sLie = `${a}x + ${b}x = ${sum}x${this.toSup(2)}`; 
+            const sLie = `${a}x + ${b}x = ${sum}x^2`; 
             const sTrue = `${a}x + ${b}x = ${sum}x`;
 
             return {
                 renderData: {
                     description: lang === 'sv' ? "Vilket påstående är FALSKT?" : "Which statement is FALSE?",
                     answerType: 'multiple_choice',
-                    options: MathUtils.shuffle([sTrue, sLie, `${a}x + x = ${a+1}x`])
+                    options: MathUtils.shuffle([sTrue, sLie, `${a}x + x = ${(a+1)}x`])
                 },
                 token: this.toBase64(sLie), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: 'Lika termer' är termer av samma sort (t.ex. x-termer)." : "Step 1: 'Like terms' are terms of the same kind (e.g., x-terms)." },
-                    { text: lang === 'sv' ? "Steg 2: Vid addition av lika termer ändras bara antalet (koefficienten)." : "Step 2: When adding like terms, only the count (the coefficient) changes." },
-                    { text: lang === 'sv' ? "Steg 3: Själva variabeln (x) eller dess exponent ändras aldrig vid addition." : "Step 3: The variable (x) itself or its exponent never changes during addition." },
-                    { text: lang === 'sv' ? `Rätt svar borde vara ${sum}x, inte ${sum}x².` : `The correct answer should be ${sum}x, not ${sum}x².` },
-                    { text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}` }
+                    { 
+                        text: lang === 'sv' ? "När vi plussar ihop x-termer ändras bara ANTALET x. Vi rör aldrig den lilla tvåan däruppe!" : "When we add x-terms together, only the COUNT of x changes. We never touch or change the small exponent on top!", 
+                        latex: `${a}x + ${b}x` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Tänk på det som frukter: ${a} äpplen + ${b} äpplen blir ${sum} äpplen. Det blir inte ${sum} "äpplen i kvadrat".` : `Think of it like items: ${a} apples + ${b} apples equals ${sum} apples. It doesn't suddenly become ${sum} "squared apples".`, 
+                        latex: `${a}x + ${b}x = \\mathbf{${sum}x}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det betyder att det här påståendet är en lögn och helt felaktigt:` : `This means that this specific calculation statement is a lie and completely incorrect:`, 
+                        latex: `\\mathbf{${a}x + ${b}x = ${sum}x^2}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}`, 
+                        latex: `\\text{${sLie}}` 
+                    }
                 ]
             };
         }
 
         if (v === 'combine_standard_mixed') {
-            // Restores your healthy mix of randomized legacy terms and operators
             const a = MathUtils.randomInt(10, 20);
             const b = MathUtils.randomInt(10, 20);
             const c = MathUtils.randomInt(2, 8);
@@ -127,30 +137,42 @@ export class ExpressionSimplificationGen {
             const op2 = Math.random() > 0.5 ? '+' : '-';
             const op3 = Math.random() > 0.5 ? '+' : '-';
             
-            // Calculate answers dynamically based on the randomized operators
             const resX = op2 === '+' ? a + c : a - c;
             const resC = op1 === '+' ? (op3 === '+' ? b + d : b - d) : (op3 === '+' ? -b + d : -b - d);
             
-            // Format answer string cleanly
             const ans = `${resX}x ${resC >= 0 ? '+' : '-'} ${Math.abs(resC)}`;
             const expressionStr = `${a}x ${op1} ${b} ${op2} ${c}x ${op3} ${d}`;
 
             return {
                 renderData: {
-                    latex: expressionStr, // 🟢 Delivers the dynamic math framework to the Interceptor pipeline
-                    description: lang === 'sv' ? "Förenkla uttrycket genom att samla termer av samma slag." : "Simplify the expression by gathering like terms.",
+                    latex: expressionStr,
+                    description: lang === 'sv' ? "Förenkla uttrycket genom att sortera och slå ihop sorterna för sig." : "Simplify the expression by sorting and grouping matching types together.",
                     answerType: 'text'
                 },
                 token: this.toBase64(ans.replace(/\s/g, "")), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Identifiera alla termer som innehåller variabeln x." : "Step 1: Identify all terms that contain the variable x." },
-                    { text: lang === 'sv' ? `Steg 2: Beräkna x-termerna: ${a}x ${op2} ${c}x.` : `Step 2: Calculate the x-terms: ${a}x ${op2} ${c}x.`, latex: `${a}x ${op2} ${c}x = ${resX}x` },
-                    { text: lang === 'sv' ? "Steg 3: Identifiera alla siffertermer (konstanter)." : "Step 3: Identify all constant terms." },
-                    { text: lang === 'sv' ? `Steg 4: Beräkna siffertermerna: ${op1}${b} ${op3} ${d}.` : `Step 4: Calculate the constant terms: ${op1}${b} ${op3} ${d}.`, latex: `${op1}${b} ${op3} ${d} = ${resC}` },
-                    { text: lang === 'sv' ? "Steg 5: Sätt ihop de förenklade delarna till ett nytt uttryck." : "Step 5: Put the simplified parts together into a new expression." },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? "Sortera uttrycket så att x-kompisarna står först och de vanliga lösa siffrorna står sist." : "Rearrange the expression so the x-terms stand first and the loose numbers stand at the end.", 
+                        latex: expressionStr 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Kom ihåg att plustecknet eller minustecknet framför en siffra alltid hör ihop med den siffran!" : "Remember that the plus or minus sign in front of a number always belongs to that specific number!", 
+                        latex: `\\mathbf{${a}x ${op2} ${c}x} ${op1} ${b} ${op3} ${d}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut x-sorterna för sig: ${a}x ${op2} ${c}x blir ${resX}x.` : `Calculate the x-terms on their own: ${a}x ${op2} ${c}x equals ${resX}x.`, 
+                        latex: `\\mathbf{${resX}x} ${op1} ${b} ${op3} ${d}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna sedan ut siffer-sorterna för sig: ${op1}${b} ${op3} ${d} blir ${resC >= 0 ? '+' : '-'}${Math.abs(resC)}.` : `Next, calculate the loose number terms on their own: ${op1}${b} ${op3} ${d} equals ${resC >= 0 ? '+' : '-'}${Math.abs(resC)}.`, 
+                        latex: `${resX}x \\mathbf{${resC >= 0 ? '+ ' : '- '}${Math.abs(resC)}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `${ans}` 
+                    }
                 ],
-                metadata: { variation_key: v, difficulty: 1 } // Hardcoded cleanly to its mathematical baseline context
+                metadata: { variation_key: v, difficulty: 1 }
             };
         }
 
@@ -191,11 +213,26 @@ export class ExpressionSimplificationGen {
                 },
                 token: this.toBase64(lie), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Enligt den distributiva lagen ska talet utanför parentesen multipliceras med ALLA termer inuti." : "Step 1: According to the distributive law, the factor outside the parentheses must be multiplied by ALL terms inside." },
-                    { text: lang === 'sv' ? `Steg 2: Beräkna först ${k} · ${a}x.` : `Step 2: First calculate ${k} · ${a}x.`, latex: `${k} · ${a}x = ${k*a}x` },
-                    { text: lang === 'sv' ? `Steg 3: Beräkna sedan ${k} · ${b}.` : `Step 3: Then calculate ${k} · ${b}.`, latex: `${k} · ${b} = ${k*b}` },
-                    { text: lang === 'sv' ? `Eftersom ${b} inte har multiplicerats med ${k} i ett av alternativen, är det felaktigt.` : `Since ${b} was not multiplied by ${k} in one of the options, it is incorrect.` },
-                    { text: lang === 'sv' ? `Svar: ${lie}` : `Answer: ${lie}` }
+                    { 
+                        text: lang === 'sv' ? "När en siffra står direkt utanför en parentes måste den gångras med ALLA kompisar på insidan." : "When a number stands right outside a parenthesis, it must be multiplied by EVERY single item on the inside.", 
+                        latex: `${k}(${a}x + ${b})` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Siffran ${k} ska sprutas in och gångras med både ${a}x och med ${b}.` : `The outer number ${k} must be distributed and multiplied by both ${a}x and ${b}.`, 
+                        latex: `\\mathbf{${k} \\cdot ${a}x + ${k} \\cdot ${b}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det rätta svaret ska alltså bli ${k*a}x + ${k*b}. Det är ett vanligt fuskfel att glömma bort att gångra den sista siffran!` : `The correct answer must therefore turn into ${k*a}x + ${k*b}. It's a common mistake to forget to multiply the last number!`, 
+                        latex: `\\mathbf{${k*a}x + ${k*b}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Därför är den här raden en lögn eftersom sista siffran lämnades helt orörd:` : `Therefore, this specific option row is a lie because the last number was left completely untouched:`, 
+                        latex: `\\mathbf{${lie}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${lie}` : `Answer: ${lie}`, 
+                        latex: `\\text{${lie}}` 
+                    }
                 ]
             };
         }
@@ -203,19 +240,36 @@ export class ExpressionSimplificationGen {
         const a = MathUtils.randomInt(10, 20), b = MathUtils.randomInt(2, 6), c = MathUtils.randomInt(2, 10);
         const isPlus = v === 'distribute_plus';
         const ans = isPlus ? `${a+b}x + ${c}` : `${a-b}x - ${c}`;
+        const baseExpr = `${a}x ${isPlus ? '+' : '-'} (${b}x + ${c})`;
 
         return {
             renderData: {
-                latex: `${a}x ${isPlus ? '+' : '-'} (${b}x + ${c})`,
-                description: lang === 'sv' ? "Ta bort parentesen och förenkla." : "Remove the parentheses and simplify.",
+                latex: baseExpr,
+                description: lang === 'sv' ? "Ta bort parentesen och förenkla uttrycket." : "Remove the parentheses and simplify the expression.",
                 answerType: 'text'
             },
             token: this.toBase64(ans.replace(/\s/g, "")), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? (isPlus ? "Steg 1: Om det står plus framför en parentes kan den tas bort utan att ändra några tecken." : "Steg 1: Om det står minus framför en parentes måste alla tecken inuti ändras när parentesen tas bort.") : (isPlus ? "Step 1: If there is a plus in front of parentheses, they can be removed without changing any signs." : "Step 1: If there is a minus in front of parentheses, all signs inside must be changed when the parentheses are removed.") },
-                { text: lang === 'sv' ? "Steg 2: Skriv uttrycket utan parenteser." : "Step 2: Write the expression without parentheses.", latex: isPlus ? `${a}x + ${b}x + ${c}` : `${a}x - ${b}x - ${c}` },
-                { text: lang === 'sv' ? "Steg 3: Kombinera x-termerna." : "Step 3: Combine the x-terms.", latex: isPlus ? `${a}x + ${b}x = ${a+b}x` : `${a}x - ${b}x = ${a-b}x` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? (isPlus ? "När det står ett plustecken framför en parentes kan du bara sudda bort parenteserna direkt utan att ändra någonting." : "Varning! När det står ett minustecken framför en parentes måste ALLA tecken på insidan vändas och bytas ut när parentesen suddas bort.") : (isPlus ? "When there is a plus sign in front of a parenthesis, you can simply erase the brackets directly without changing anything." : "Warning! When there is a minus sign in front of a parenthesis, EVERY sign on the inside must flip and change when the brackets are erased."), 
+                    latex: baseExpr 
+                },
+                { 
+                    text: lang === 'sv' ? (isPlus ? "Vi skriver raden på nytt utan parentesväggar:" : "Vi plockar bort parentesen och byter plustecknet på insidan till ett minus:") : (isPlus ? "We rewrite the line without the parenthesis walls:" : "We remove the parenthesis and flip the internal plus sign into a minus sign:"), 
+                    latex: isPlus ? `${a}x + ${b}x + ${c}` : `${a}x - ${b}x - ${c}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Slå nu ihop x-kompisarna: ${a}x ${isPlus ? '+' : '-'} ${b}x.` : `Now group and calculate the matching x-terms: ${a}x ${isPlus ? '+' : '-'} ${b}x.`, 
+                    latex: isPlus ? `\\mathbf{${a}x + ${b}x} + ${c}` : `\\mathbf{${a}x - ${b}x} - ${c}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Förenkla färdigt för att nå det sista uttrycket." : "Simplify completely to reach the final expression result.", 
+                    latex: isPlus ? `\\mathbf{${a+b}x} + ${c}` : `\\mathbf{${a-b}x} - ${c}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    latex: `${ans}` 
+                }
             ]
         };
     }
@@ -235,21 +289,40 @@ export class ExpressionSimplificationGen {
             const termX = op === '+' ? k1 + k2 : k1 - k2;
             const termC = op === '+' ? k1 * c1 + k2 * c2 : k1 * c1 - k2 * c2;
             const ans = `${termX === 1 ? '' : termX === -1 ? '-' : termX}x ${termC >= 0 ? '+' : ''}${termC}`;
+            const baseExpr = `${k1}(x + ${c1}) ${op} ${k2}(x + ${c2})`;
 
             return {
                 renderData: {
-                    latex: `${k1}(x + ${c1}) ${op} ${k2}(x + ${c2})`,
-                    description: lang === 'sv' ? "Förenkla uttrycket genom att expandera båda parenteserna." : "Simplify the expression by expanding both parentheses.",
+                    latex: baseExpr,
+                    description: lang === 'sv' ? "Öppna upp båda parenteserna och förenkla uttrycket." : "Open up both sets of parentheses and simplify the expression.",
                     answerType: 'text'
                 },
                 token: this.toBase64(ans.replace(/\s/g, "")), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Använd distributiva lagen på den första parentesen." : "Step 1: Apply the distributive law to the first set of parentheses.", latex: `${k1} · x + ${k1} · ${c1} = ${k1}x + ${k1*c1}` },
-                    { text: lang === 'sv' ? `Steg 2: Använd distributiva lagen på den andra parentesen. Kom ihåg att tecknet är ${op}.` : `Step 2: Apply the distributive law to the second set of parentheses. Remember the sign is ${op}.`, latex: `${op === '-' ? '-' : ''}${k2}x ${op === '-' ? '-' : '+'}${k2*c2}` },
-                    { text: lang === 'sv' ? "Steg 3: Skriv ner hela det expanderade uttrycket." : "Step 3: Write down the entire expanded expression.", latex: `${k1}x + ${k1*c1} ${op === '-' ? '-' : '+'} ${k2}x ${op === '-' ? '-' : '+'} ${k2*c2}` },
-                    { text: lang === 'sv' ? "Steg 4: Samla x-termerna för sig." : "Step 4: Gather the x-terms together.", latex: `${k1}x ${op} ${k2}x = ${termX}x` },
-                    { text: lang === 'sv' ? "Steg 5: Samla siffertermerna för sig." : "Step 5: Gather the constant terms together.", latex: `${k1*c1} ${op} ${k2*c2} = ${termC}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? "Här har vi två olika parenteser. Vi öppnar dem en i taget genom att multiplicera in siffran utanför." : "Here we have two separate sets of brackets. Let's open them one at a time by multiplying the outer number inside.", 
+                        latex: baseExpr 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Gångra in ${k1} i den första parentesen: ${k1} · x och ${k1} · ${c1}.` : `Multiply ${k1} inside the first parenthesis: ${k1} · x and ${k1} · ${c1}.`, 
+                        latex: `\\mathbf{(${k1}x + ${k1 * c1})} ${op} ${k2}(x + ${c2})` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Gångra nu in ${k2} i den andra parentesen. Kom ihåg minustecknet om det står ett minus emellan!` : `Now multiply ${k2} inside the second parenthesis. Watch out if there is a minus sign in between!`, 
+                        latex: `${k1}x + ${k1 * c1} \\mathbf{${op} ${k2}x ${op === '-' ? '-' : '+'} ${k2 * c2}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Sortera raden så att x-termerna hamnar först och vanliga siffror hamnar sist." : "Rearrange the row so that x-terms are placed first and regular numbers are at the end.", 
+                        latex: `\\mathbf{${k1}x ${op} ${k2}x} + \\mathbf{${k1 * c1} ${op === '-' ? '-' : '+'} ${k2 * c2}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut x-biten för sig (${termX}x) och siffer-biten för sig (${termC >= 0 ? '+' : ''}${termC}).` : `Calculate the x-part on its own (${termX}x) and the number part on its own (${termC >= 0 ? '+' : ''}${termC}).`, 
+                        latex: `\\mathbf{${ans}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `${ans}` 
+                    }
                 ]
             };
         }
@@ -258,20 +331,36 @@ export class ExpressionSimplificationGen {
         const d = MathUtils.randomInt(2, 8), op = MathUtils.randomChoice(['+', '-']); 
         const termX = op === '+' ? a * b + d : a * b - d;
         const ansStr = `${termX === 1 ? '' : termX === -1 ? '-' : termX}x + ${a*c}`;
+        const baseExpr = `${a}(${b}x + ${c}) ${op} ${d}x`;
 
         return {
             renderData: {
-                latex: `${a}(${b}x + ${c}) ${op} ${d}x`,
-                description: lang === 'sv' ? "Multiplicera in i parentesen och förenkla sedan." : "Multiply into the parentheses and then simplify.",
+                latex: baseExpr,
+                description: lang === 'sv' ? "Gångra in i parentesen och slå sedan ihop lika sorter." : "Multiply into the parentheses and then combine like terms.",
                 answerType: 'text'
             },
             token: this.toBase64(ansStr.replace(/\s/g, "")), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Börja med att multiplicera in faktorn utanför parentesen." : "Step 1: Start by multiplying the factor outside the parentheses." },
-                { text: lang === 'sv' ? `Uträkning: ${a} · ${b}x + ${a} · ${c}` : `Calculation: ${a} · ${b}x + ${a} · ${c}`, latex: `${a*b}x + ${a*c}` },
-                { text: lang === 'sv' ? "Steg 2: Lägg till den sista termen i uttrycket." : "Step 2: Add the final term to the expression.", latex: `${a*b}x + ${a*c} ${op} ${d}x` },
-                { text: lang === 'sv' ? "Steg 3: Kombinera x-termerna." : "Step 3: Combine the x-terms.", latex: `${a*b}x ${op} ${d}x = ${termX}x` },
-                { text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}` }
+                { 
+                    text: lang === 'sv' ? `Börja alltid med att öppna upp parentesen. Siffran ${a} ska gångras med både ${b}x och med ${c}.` : `Always start by opening up the parenthesis block. The outer factor ${a} must be multiplied by both ${b}x and ${c}.`, 
+                    latex: baseExpr 
+                },
+                { 
+                    text: lang === 'sv' ? `Förenkla parentesmultiplikationen: ${a} · ${b}x blir ${a*b}x, och ${a} · ${c} blir ${a*c}.` : `Simplify the expanded multiplication steps: ${a} · ${b}x becomes ${a*b}x, and ${a} · ${c} becomes ${a*c}.`, 
+                    latex: `\\mathbf{${a*b}x + ${a*c}} ${op} ${d}x` 
+                },
+                { 
+                    text: lang === 'sv' ? `Flytta om och samla x-kompisarna bredvid varandra: ${a*b}x ${op} ${d}x.` : `Rearrange and group the matching x-terms right next to each other: ${a*b}x ${op} ${d}x.`, 
+                    latex: `\\mathbf{${a*b}x ${op} ${d}x} + ${a*c}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut x-subtraktionen eller x-additionen för att få det färdiga uttrycket.` : `Calculate the final x-term total to complete the clean expression layout.`, 
+                    latex: `\\mathbf{${termX}x} + ${a*c}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
+                    latex: `${ansStr}` 
+                }
             ]
         };
     }
@@ -306,19 +395,32 @@ export class ExpressionSimplificationGen {
         const inOp = v === 'sub_block_minus' ? '-' : '+';
         const resOp = inOp === '+' ? '-' : '+';
         const ans = `${startX - subX}x ${resOp} ${subK}`;
+        const baseExpr = `${startX}x - (${subX}x ${inOp} ${subK})`;
 
         return {
             renderData: {
-                latex: `${startX}x - (${subX}x ${inOp} ${subK})`,
-                description: lang === 'sv' ? "Förenkla uttrycket genom att ta bort parentesen." : "Simplify the expression by removing the parentheses.",
+                latex: baseExpr,
+                description: lang === 'sv' ? "Ta bort parentesväggarna och förenkla uttrycket." : "Remove the parenthesis walls and simplify the expression.",
                 answerType: 'text'
             },
             token: this.toBase64(ans.replace(/\s/g, "")), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Notera minustecknet framför parentesen. Alla tecken inuti måste bytas." : "Step 1: Note the minus sign in front of the parentheses. All signs inside must be flipped." },
-                { text: lang === 'sv' ? `Steg 2: Ta bort parentesen. ${inOp} blir ${resOp}.` : `Step 2: Remove the parentheses. ${inOp} becomes ${resOp}.`, latex: `${startX}x - ${subX}x ${resOp} ${subK}` },
-                { text: lang === 'sv' ? "Steg 3: Kombinera x-termerna." : "Step 3: Combine the x-terms.", latex: `${startX}x - ${subX}x = ${startX - subX}x` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? `Se upp! Det står ett minustecken (-) precis framför parentesen. Det tvingar ALLA tecken på insidan att byta plats och vändas.` : `Watch out! There is a minus sign (-) right in front of the parenthesis. This forces EVERY single sign on the inside to flip and invert.`, 
+                    latex: baseExpr 
+                },
+                { 
+                    text: lang === 'sv' ? `När vi tar bort parenteserna förvandlas det invändiga tecknet ${inOp} till ett ${resOp}:` : `When we remove the brackets, the internal operator sign ${inOp} flips over into a ${resOp}:`, 
+                    latex: `${startX}x - ${subX}x \\mathbf{${resOp} ${subK}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Slå nu ihop x-termerna längst fram på raden: ${startX}x minus ${subX}x blir ${startX - subX}x.` : `Now calculate the matching x-terms sitting at the front of the row: ${startX}x minus ${subX}x equals ${startX - subX}x.`, 
+                    latex: `\\mathbf{${startX - subX}x} ${resOp} ${subK}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    latex: `${ans}` 
+                }
             ]
         };
     }

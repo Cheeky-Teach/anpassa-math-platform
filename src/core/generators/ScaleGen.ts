@@ -130,39 +130,62 @@ export class ScaleGen {
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? `På ${scenario.sv} är skalan 1:${ratio}. Vilket påstående är FALSKT?` : `On ${scenario.en}, the scale is 1:${ratio}. Which statement is FALSE?`,
+                    description: lang === 'sv' ? `På ${scenario.sv} är skalan 1:${ratio}. Vilket påstående stämmer INTE?` : `On ${scenario.en}, the scale is 1:${ratio}. Which statement is FALSE?`,
                     answerType: 'multiple_choice', options: MathUtils.shuffle([sLie, sTrue1, sTrue2]),
                     geometry: { type: 'scale_single', label: `1:${ratio}`, shape: 'house' }
                 },
                 token: this.toBase64(sLie), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Siffran 1 i skalan representerar måttet på ritningen." : "The number 1 in the scale represents the measure on the drawing." },
-                    { text: lang === 'sv' ? `Siffran ${ratio} representerar motsvarande mått i verkligheten.` : `The number ${ratio} represents the corresponding measure in reality.` },
-                    { text: lang === 'sv' ? `Verkligheten är ${ratio} gånger större än ritningen.` : `Reality is ${ratio} times larger than the drawing.` },
-                    { text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}` }
+                    { 
+                        text: lang === 'sv' ? `Skalan 1:${ratio} betyder att 1 cm på ritningen motsvarar hela ${ratio} cm ute i verkligheten.` : `The scale 1:${ratio} means that 1 cm on the drawing corresponds to a full ${ratio} cm out in reality.`, 
+                        latex: `1 \\text{ cm på bilden} = ${ratio} \\text{ cm i verkligheten}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det betyder att verkligheten är mycket större, närmare bestämt exakt ${ratio} gånger större än ritningen.` : `This means reality is much larger, more specifically exactly ${ratio} times larger than the drawing.`, 
+                        latex: `\\text{Verklighet} = \\text{Bild} \\cdot \\mathbf{${ratio}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom ritningen är en krympt version, blir påståendet att "bilden visar föremålet i dess verkliga storlek" helt felaktigt.` : `Since the drawing is a shrunken version, stating that "the image shows the object in its real size" is completely false.`, 
+                        latex: `\\mathbf{\\text{Felaktigt: } ${sLie}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}`, latex: `\\text{${sLie}}` }
                 ],
                 metadata: { variation_key: v, difficulty: 1 }
             };
         }
 
-        const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.microscope);
-        const ratio = MathUtils.randomChoice([5, 10, 20]);
-        const scaleStr = `${ratio}:1`;
-        const ans = lang === 'sv' ? `Bilden är ${ratio} gånger större än verkligheten.` : `The image is ${ratio} times larger than reality.`;
-        return {
-            renderData: {
-                description: lang === 'sv' ? `Vad innebär det när ${scenario.sv} har skalan ${scaleStr}?` : `What does it mean when ${scenario.en} has the scale ${scaleStr}?`,
-                answerType: 'multiple_choice', options: MathUtils.shuffle([ans, lang === 'sv' ? "Verkligheten är större än bilden." : "Reality is larger than the image."]),
-                geometry: { type: 'scale_compare', leftLabel: 'Bild', rightLabel: 'Verklighet', leftValue: ratio, rightValue: 1, shape: 'ladybug' }
-            },
-            token: this.toBase64(ans), variationKey: v, type: 'concept',
-            clues: [
-                { text: lang === 'sv' ? "När den första siffran i skalan är störst, handlar det om en förstoring." : "When the first number in the scale is the largest, it is an enlargement." },
-                { text: lang === 'sv' ? `Skalan ${ratio}:1 betyder att bilden har förstorat verkligheten ${ratio} gånger.` : `The scale ${ratio}:1 means the image has enlarged reality ${ratio} times.` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
-            ],
-            metadata: { variation_key: v, difficulty: 1 }
-        };
+        if (v === 'concept_lie') {
+            const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.blueprint);
+            const ratio = MathUtils.randomChoice([20, 50, 100, 500]);
+            const sLie = lang === 'sv' ? `Bilden visar föremålet i dess verkliga storlek.` : `The image shows the object in its real size.`;
+            const sTrue1 = lang === 'sv' ? `Verkligheten är ${ratio} gånger större än bilden.` : `Reality is ${ratio} times larger than the image.`;
+            const sTrue2 = lang === 'sv' ? `Detta är en förminskning.` : `This is a reduction.`;
+
+            return {
+                renderData: {
+                    description: lang === 'sv' ? `På ${scenario.sv} är skalan 1:${ratio}. Vilket påstående stämmer INTE?` : `On ${scenario.en}, the scale is 1:${ratio}. Which statement is FALSE?`,
+                    answerType: 'multiple_choice', options: MathUtils.shuffle([sLie, sTrue1, sTrue2]),
+                    geometry: { type: 'scale_single', label: `1:${ratio}`, shape: 'house' }
+                },
+                token: this.toBase64(sLie), variationKey: v, type: 'concept',
+                clues: [
+                    { 
+                        text: lang === 'sv' ? `Skalan 1:${ratio} betyder att 1 cm på ritningen motsvarar hela ${ratio} cm ute i verkligheten.` : `The scale 1:${ratio} means that 1 cm on the drawing corresponds to a full ${ratio} cm out in reality.`, 
+                        latex: `1 \\text{ cm på bilden} = ${ratio} \\text{ cm i verkligheten}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det betyder att verkligheten är mycket större, närmare bestämt exakt ${ratio} gånger större än ritningen.` : `This means reality is much larger, more specifically exactly ${ratio} times larger than the drawing.`, 
+                        latex: `\\text{Verklighet} = \\text{Bild} \\cdot \\mathbf{${ratio}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom ritningen är en krympt version, blir påståendet att "bilden visar föremålet i dess verkliga storlek" helt felaktigt.` : `Since the drawing is a shrunken version, stating that "the image shows the object in its real size" is completely false.`, 
+                        latex: `\\mathbf{\\text{Felaktigt: } ${sLie}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}`, latex: `\\text{${sLie}}` }
+                ],
+                metadata: { variation_key: v, difficulty: 1 }
+            };
+        }
     }
 
     private level2_LinearFluency(lang: string, variationKey?: string, options: any = {}): any {
@@ -186,9 +209,19 @@ export class ScaleGen {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Skalan 1:${scale} betyder att verkligheten är ${scale} gånger större.` : `The scale 1:${scale} means reality is ${scale} times larger.` },
-                    { text: lang === 'sv' ? "Multiplicera ritningens mått med skalfaktorn." : "Multiply the drawing measure by the scale factor.", latex: `${imgCm} · ${scale} = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans} cm` : `Answer: ${ans} cm` }
+                    { 
+                        text: lang === 'sv' ? `Skalan 1:${scale} betyder att allting är förminskat på papperet. Verkligheten är i själva verket ${scale} gånger större.` : `The scale 1:${scale} means everything is shrunk on the paper. Reality is actually ${scale} times larger.`, 
+                        latex: `1 : ${scale}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `För att förstora upp kartans mått till verklig storlek tar vi bildens centimeter (${imgCm}) och gångrar med ${scale}.` : `To enlarge the map's measurement to real size, take the image centimeters (${imgCm}) and multiply by ${scale}.`, 
+                        latex: `\\text{Verklig längd} = ${imgCm} \\cdot \\mathbf{${scale}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut multiplikationen för att bestämma det verkliga måttet." : "Calculate the multiplication to determine the real measurement.", 
+                        latex: `\\text{Verklig längd} = \\mathbf{${ans}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${ans} cm` : `Answer: ${ans} cm`, latex: `${ans}` }
                 ],
                 metadata: { variation_key: v, difficulty: 2 }
             };
@@ -207,9 +240,19 @@ export class ScaleGen {
                 },
                 token: this.toBase64(imgCm.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Ritningen är ${scale} gånger mindre än verkligheten.` : `The drawing is ${scale} times smaller than reality.` },
-                    { text: lang === 'sv' ? "Dividera det verkliga måttet med skalfaktorn." : "Divide the real measure by the scale factor.", latex: `\\frac{${realCm}}{${scale}} = ${imgCm}` },
-                    { text: lang === 'sv' ? `Svar: ${imgCm} cm` : `Answer: ${imgCm} cm` }
+                    { 
+                        text: lang === 'sv' ? `Skalan 1:${scale} betyder att ritningen ska krympas. Den ska göras exakt ${scale} gånger mindre än verkligheten.` : `The scale 1:${scale} means the drawing should be shrunk. It must be made exactly ${scale} times smaller than reality.`, 
+                        latex: `1 : ${scale}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `För att krympa ner det verkliga måttet (${realCm} cm) till ritningen delar (dividerar) vi med ${scale}.` : `To shrink the real measurement (${realCm} cm) down for the drawing, divide by ${scale}.`, 
+                        latex: `\\text{Längd på ritning} = \\frac{${realCm}}{\\mathbf{${scale}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut divisionen för att få fram hur lång sträckan blir på papperet." : "Calculate the division to find how long the segment will be on the paper.", 
+                        latex: `\\text{Längd på ritning} = \\mathbf{${imgCm}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${imgCm} cm` : `Answer: ${imgCm} cm`, latex: `${imgCm}` }
                 ],
                 metadata: { variation_key: v, difficulty: 2 }
             };
@@ -227,9 +270,19 @@ export class ScaleGen {
             },
             token: this.toBase64(`1:${scale}`), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Dividera det verkliga måttet med bildens mått för att få skalfaktorn." : "Divide the real measure by the image measure to find the scale factor.", latex: `\\frac{${real}}{${img}} = ${scale}` },
-                { text: lang === 'sv' ? `Eftersom verkligheten är ${scale} gånger större är skalan 1:${scale}.` : `Since reality is ${scale} times larger, the scale is 1:${scale}.` },
-                { text: lang === 'sv' ? `Svar: 1:${scale}` : `Answer: 1:${scale}` }
+                { 
+                    text: lang === 'sv' ? "För att hitta hur mycket bilden har krympts kollar vi hur många gånger större verkligheten är jämfört med bilden. Vi delar det verkliga måttet med bildens mått." : "To find out how much the image was shrunk, we check how many times larger reality is compared to the image. Divide the real measurement by the image measurement.", 
+                    latex: `\\text{Hur mycket större} = \\frac{\\text{Verklighet}}{\\text{Bild}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Sätt in måtten: ta verkliga ${real} mm delat med bildens ${img} mm.` : `Insert the measurements: take real ${real} mm divided by the image's ${img} mm.`, 
+                    latex: `\\text{Hur mycket större} = \\frac{${real}}{\\mathbf{${img}}} = \\mathbf{${scale}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Eftersom verkligheten är exakt ${scale} gånger större än bilden, skriver vi skalan som 1:${scale}.` : `Since reality is exactly ${scale} times larger than the image, we write the scale as 1:${scale}.`, 
+                    latex: `\\text{Skala} = \\mathbf{1 : ${scale}}` 
+                },
+                { text: lang === 'sv' ? `Svar: 1:${scale}` : `Answer: 1:${scale}`, latex: `1:${scale}` }
             ],
             metadata: { variation_key: v, difficulty: 2 }
         };
@@ -258,15 +311,27 @@ export class ScaleGen {
                     description: lang === 'sv' 
                         ? `På ${scenario.sv} i skala 1:${this.formatNum(scale)} är ${scenario.contextSv} ${mapCm} cm. Hur långt är detta i verkligheten? Svara i ${useKm ? 'kilometer' : 'meter'}.`
                         : `On ${scenario.en} in scale 1:${this.formatNum(scale)}, ${scenario.contextEn} is ${mapCm} cm. How long is this in reality? Answer in ${useKm ? 'kilometers' : 'meters'}.`,
-                        interceptorToken: `${scale} ; ${mapCm} ; ${ans}`,
-                        answerType: 'numeric', suffix: unit
+                    interceptorToken: `${scale} ; ${mapCm} ; ${ans}`,
+                    answerType: 'numeric', suffix: unit
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Beräkna centimeter: ${mapCm} · ${scale} = ${this.formatNum(realCm)} cm.` : `Calculate centimeters: ${mapCm} · ${scale} = ${this.formatNum(realCm)} cm.` },
-                    { text: lang === 'sv' ? `Omvandla till meter: ${this.formatNum(realCm)} / 100 = ${this.formatNum(realM)} m.` : `Convert to meters: ${this.formatNum(realCm)} / 100 = ${this.formatNum(realM)} m.` },
-                    ...(useKm ? [{ text: lang === 'sv' ? `Omvandla till km: ${this.formatNum(realM)} / 1000 = ${ans} km.` : `Convert to km: ${this.formatNum(realM)} / 1000 = ${ans} km.` }] : []),
-                    { text: lang === 'sv' ? `Svar: ${ans} ${unit}` : `Answer: ${ans} ${unit}` }
+                    { 
+                        text: lang === 'sv' ? `Skala 1:${this.formatNum(scale)} betyder att verkligheten är ${this.formatNum(scale)} gånger större än på kartan. Vi börjar med att räkna ut måttet i centimeter.` : `Scale 1:${this.formatNum(scale)} means reality is ${this.formatNum(scale)} times larger than on the map. Let's start by calculating the measurement in centimeters.`, 
+                        latex: `\\text{Verkliga cm} = ${mapCm} \\cdot \\mathbf{${scale}} = \\mathbf{${this.formatNum(realCm)}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom ${this.formatNum(realCm)} cm är ett jättestort tal, gör vi om det till meter genom att dela med 100 (det går 100 cm på en meter).` : `Since ${this.formatNum(realCm)} cm is a huge number, let's convert it to meters by dividing by 100 (there are 100 cm in a meter).`, 
+                        latex: `\\text{Verkliga meter} = \\frac{${this.formatNum(realCm)}}{\\mathbf{100}} = \\mathbf{${this.formatNum(realM)}} \\text{ m}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom uppgiften ber om kilometer, gör vi om mätartalet till km genom att dela med 1 000 (det går 1 000 meter på en kilometer).` : `Since the problem asks for kilometers, convert the meters to km by dividing by 1,000 (there are 1,000 meters in a kilometer).`, 
+                        latex: `\\text{Verkliga km} = \\frac{${this.formatNum(realM)}}{\\mathbf{1000}} = \\mathbf{${ans}} \\text{ km}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans} ${unit}` : `Answer: ${ans} ${unit}`, 
+                        latex: `${ans}` 
+                    }
                 ],
                 metadata: { variation_key: v, difficulty: 3 }
             };
@@ -287,9 +352,19 @@ export class ScaleGen {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Omvandla verkligheten till cm: ${realM} · 100 = ${realCm} cm.` : `Convert reality to cm: ${realM} · 100 = ${realCm} cm.` },
-                    { text: lang === 'sv' ? `Dividera med skalfaktorn: ${realCm} / ${scale} = ${ans} cm.` : `Divide by the scale factor: ${realCm} / ${scale} = ${ans} cm.` },
-                    { text: lang === 'sv' ? `Svar: ${ans} cm` : `Answer: ${ans} cm` }
+                    { 
+                        text: lang === 'sv' ? `Eftersom skalan mäts i centimeter och vi har ${realM} meter, börjar vi med att göra om metrarna till centimeter (gånger 100).` : `Since the scale is used with centimeters and we have ${realM} meters, let's start by converting meters into centimeters (multiply by 100).`, 
+                        latex: `\\text{Verkliga cm} = ${realM} \\cdot \\mathbf{100} = \\mathbf{${realCm}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `För att krympa ner de ${realCm} centimetrarna till ritningen delar vi med skalan ${scale}.` : `To shrink the ${realCm} centimeters down for the drawing, divide by the scale factor ${scale}.`, 
+                        latex: `\\text{Längd på ritning} = \\frac{${realCm}}{\\mathbf{${scale}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Utför divisionen för att få fram det slutgiltiga svaret." : "Perform the division to reach your final answer.", 
+                        latex: `\\text{Längd på ritning} = \\mathbf{${ans}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${ans} cm` : `Answer: ${ans} cm`, latex: `${ans}` }
                 ],
                 metadata: { variation_key: v, difficulty: 3 }
             };
@@ -308,9 +383,19 @@ export class ScaleGen {
             },
             token: this.toBase64(ansMm.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Bilden är ${scale} gånger större än verkligheten.` : `The image is ${scale} times larger than reality.` },
-                { text: lang === 'sv' ? `Multiplicera: ${realMm} · ${scale} = ${ansMm} mm.` : `Multiply: ${realMm} · ${scale} = ${ansMm} mm.` },
-                { text: lang === 'sv' ? `Svar: ${ansMm} mm` : `Answer: ${ansMm} mm` }
+                { 
+                    text: lang === 'sv' ? `Skalan ${scale}:1 med det stora talet först betyder att det här är en jättestor förstoring. Bilden ska göras ${scale} gånger STÖRRE än verkligheten.` : `The scale ${scale}:1 with the large number first means this is a huge enlargement. The image must be made ${scale} times LARGER than reality.`, 
+                    latex: `${scale} : 1` 
+                },
+                { 
+                    text: lang === 'sv' ? `Gångra (multiplicera) det pyttelilla verkliga måttet (${realMm.toString().replace('.', ',')} mm) med förstoringsfaktorn ${scale}.` : `Multiply the tiny real measurement (${realMm} mm) by the enlargement factor ${scale}.`, 
+                    latex: `\\text{Längd på bild} = ${realMm} \\cdot \\mathbf{${scale}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut gångertalet för att bestämma bildens mått." : "Calculate the multiplication to determine the image measurement.", 
+                    latex: `\\text{Längd på bild} = \\mathbf{${ansMm}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${ansMm} mm` : `Answer: ${ansMm} mm`, latex: `${ansMm}` }
             ],
             metadata: { variation_key: v, difficulty: 3 }
         };
@@ -330,9 +415,19 @@ export class ScaleGen {
             },
             token: this.toBase64(`1:${ratio}`), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Gör om till samma enhet: ${realM} m = ${realM * 100} cm.` : `Convert to the same unit: ${realM} m = ${realM * 100} cm.` },
-                { text: lang === 'sv' ? `Beräkna skalfaktorn: ${realM * 100} / ${imgCm} = ${ratio}.` : `Calculate scale factor: ${realM * 100} / ${imgCm} = ${ratio}.` },
-                { text: lang === 'sv' ? `Svar: 1:${ratio}` : `Answer: 1:${ratio}` }
+                { 
+                    text: lang === 'sv' ? `Vi måste ha samma enhet på båda måtten för att kunna jämföra dem. Gör först om de verkliga metrarna (${realM.toString().replace('.', ',')} m) till centimeter (gånger 100).` : `We must have the same unit on both measurements to compare them. First, convert the real meters (${realM} m) into centimeters (multiply by 100).`, 
+                    latex: `\\text{Verkliga cm} = ${realM} \\cdot \\mathbf{100} = \\mathbf{${realM * 100}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Kolla nu hur många gånger större verkligheten är jämfört med papperet genom att dela de verkliga centimetrarna (${realM * 100}) med bildens centimeter (${imgCm}).` : `Now see how many times larger reality is compared to the paper by dividing the real centimeters (${realM * 100}) by the image centimeters (${imgCm}).`, 
+                    latex: `\\text{Hur mycket större} = \\frac{${realM * 100}}{\\mathbf{${imgCm}}} = \\mathbf{${ratio}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Eftersom verkligheten är exakt ${ratio} gånger större, blir skalan 1:${ratio}.` : `Since reality is exactly ${ratio} times larger, the scale is 1:${ratio}.`, 
+                    latex: `\\text{Skala} = \\mathbf{1 : ${ratio}}` 
+                },
+                { text: lang === 'sv' ? `Svar: 1:${ratio}` : `Answer: 1:${ratio}`, latex: `1:${ratio}` }
             ],
             metadata: { variation_key: v, difficulty: 4 }
         };
@@ -370,9 +465,19 @@ export class ScaleGen {
                 },
                 token: this.toBase64(`1:${L}`), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Areaskalan är ${largeA} / ${smallA} = ${sq}.` : `The area scale is ${largeA} / ${smallA} = ${sq}.` },
-                    { text: lang === 'sv' ? `Längdskalan är kvadratroten ur areaskalan: √${sq} = ${L}.` : `The length scale is the square root of the area scale: √${sq} = ${L}.` },
-                    { text: lang === 'sv' ? `Svar: 1:${L}` : `Answer: 1:${L}` }
+                    { 
+                        text: lang === 'sv' ? `Börja med att ta reda på hur många gånger större YTRAN (arean) har blivit. Dela den stora arean (${largeA}) med den lilla arean (${smallA}).` : `Start by finding out how many times larger the SURFACE (area) has become. Divide the large area (${largeA}) by the small area (${smallA}).`, 
+                        latex: `\\text{Yt-förstoring} = \\frac{${largeA}}{\\mathbf{${smallA}}} = \\mathbf{${sq}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom ytan växer i två riktningar (både på bredden och höjden), är längdskalan kvadratroten (√) ur yt-förstoringen.` : `Since the surface grows in two directions (both width and height), the length scale is the square root (√) of the surface enlargement rate.`, 
+                        latex: `\\text{Längdskala} = \\sqrt{${sq}} = \\mathbf{${L}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom längden på sidorna är ${L} gånger större, skriver vi skalan som 1:${L}.` : `Since the length of the sides is ${L} times larger, we write the scale as 1:${L}.`, 
+                        latex: `\\text{Skala} = \\mathbf{1 : ${L}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: 1:${L}` : `Answer: 1:${L}`, latex: `1:${L}` }
                 ],
                 metadata: { variation_key: v, difficulty: 6 }
             };
@@ -387,9 +492,19 @@ export class ScaleGen {
                 },
                 token: this.toBase64(largeA.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Areaskalan är längdskalan i kvadrat: ${L}² = ${sq}.` : `The area scale is the length scale squared: ${L}² = ${sq}.` },
-                    { text: lang === 'sv' ? `Verkligheten är ${sq} gånger större: ${smallA} · ${sq} = ${largeA}.` : `Reality is ${sq} times larger: ${smallA} · ${sq} = ${largeA}.` },
-                    { text: lang === 'sv' ? `Svar: ${largeA} cm²` : `Answer: ${largeA} cm²` }
+                    { 
+                        text: lang === 'sv' ? `Se upp! Skalan 1:${L} gäller bara för raka sträckor (längder). Eftersom vi räknar på yta (area) måste skalan gångras med sig själv.` : `Watch out! The scale 1:${L} only applies to straight segments (lengths). Since we are calculating surface space (area), the scale must be multiplied by itself.`, 
+                        latex: `\\text{Yt-skala} = ${L}^2 = ${L} \\cdot ${L} = \\mathbf{${sq}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det betyder att den verkliga ytan är hela ${sq} gånger större än ytan på bilden. Gångra bildens area (${smallA}) med ${sq}.` : `This means that the real surface is a full ${sq} times larger than the surface in the image. Multiply the image area (${smallA}) by ${sq}.`, 
+                        latex: `\\text{Verklig area} = ${smallA} \\cdot \\mathbf{${sq}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut multiplikationen för att bestämma den verkliga arean." : "Calculate the multiplication to determine the final real area.", 
+                        latex: `\\text{Verklig area} = \\mathbf{${largeA}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${largeA} cm²` : `Answer: ${largeA} cm²`, latex: `${largeA}` }
                 ],
                 metadata: { variation_key: v, difficulty: 6 }
             };
@@ -404,9 +519,15 @@ export class ScaleGen {
             },
             token: this.toBase64(ansMC), variationKey: v, type: 'concept',
             clues: [
-                { text: lang === 'sv' ? "Areaskalan är alltid längdskalan i kvadrat." : "The area scale is always the length scale squared." },
-                { text: lang === 'sv' ? `Areaskalan = ${L}² = ${sq}.` : `Area scale = ${L}² = ${sq}.` },
-                { text: lang === 'sv' ? `Svar: ${ansMC}` : `Answer: ${ansMC}` }
+                { 
+                    text: lang === 'sv' ? `När sidorna blir ${L} gånger längre, växer ytan (arean) åt två håll samtidigt: både på bredden och på höjden.` : `When the sides become ${L} times longer, the surface space (area) grows in two directions simultaneously: both in width and in height.`, 
+                    latex: `\\text{Ytan växer} = \\text{längd} \\cdot \\text{bredd}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Därför blir ytan alltid längdskalan upphöjt till 2. Vi tar ${L} gånger sig självt.` : `Therefore, the surface always equals the length scale raised to the power of 2. We multiply ${L} by itself.`, 
+                    latex: `\\text{Ytan blir} = ${L}^2 = ${L} \\cdot ${L} = \\mathbf{${sq} \\text{ gånger större}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${ansMC}` : `Answer: ${ansMC}`, latex: `\\text{${ansMC}}` }
             ],
             metadata: { variation_key: v, difficulty: 6 }
         };

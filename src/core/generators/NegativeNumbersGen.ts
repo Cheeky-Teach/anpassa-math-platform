@@ -99,8 +99,9 @@ export class NegativeNumbersGen {
             const steps = MathUtils.randomInt(3, 7);
             const isRight = Math.random() > 0.5;
             const ans = isRight ? start + steps : start - steps;
-            const dirSv = isRight ? "HÖGER (större)" : "VÄNSTER (mindre)";
-            const dirEn = isRight ? "RIGHT (larger)" : "LEFT (smaller)";
+            const dirSv = isRight ? "HÖGER (varmare / större)" : "VÄNSTER (kallare / mindre)";
+            const dirEn = isRight ? "RIGHT (warmer / larger)" : "LEFT (colder / smaller)";
+            const op = isRight ? '+' : '-';
 
             return {
                 renderData: {
@@ -111,11 +112,22 @@ export class NegativeNumbersGen {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Steg 1: Lokalisera startpunkten ${start} på tallinjen.` : `Step 1: Locate the starting point ${start} on the number line.` },
-                    { text: lang === 'sv' ? `Steg 2: Bestäm riktningen. Att gå åt höger är addition (+), att gå åt vänster är subtraktion (-).` : `Step 2: Determine the direction. Moving right is addition (+), moving left is subtraction (-).` },
-                    { text: lang === 'sv' ? `Steg 3: Eftersom vi går åt ${isRight ? 'höger' : 'vänster'} ställer vi upp uträkningen.` : `Step 3: Since we are moving ${isRight ? 'right' : 'left'}, we set up the calculation.`, latex: `${start} ${isRight ? '+' : '-'} ${steps}` },
-                    { text: lang === 'sv' ? `Steg 4: Räkna ut slutpositionen.` : `Step 4: Calculate the final position.`, latex: `${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? `Tänk på tallinjen som en liggande termometer. Vi startar på siffran ${start}.` : `Think of the number line as a horizontal thermometer. We start at the number ${start}.`, 
+                        latex: `\\text{Start} = ${start}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? (isRight ? `Att gå åt höger betyder att det blir varmare. Vi plussar på (+) steg.` : `Att gå åt vänster betyder att det blir kallare. Vi minusar (-) steg.`) : (isRight ? `Moving right means it gets warmer. We add (+) steps.` : `Moving left means it gets colder. We subtract (-) steps.`), 
+                        latex: `\\text{Uträkning: } ${start} \\mathbf{${op}} ${steps}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna stegen längs linjen för att hitta var vi landar till slut.` : `Count the steps along the line to find where we end up at last.`, 
+                        latex: `${start} ${op} ${steps} = \\mathbf{${ans}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `${ans}` 
+                    }
                 ]
             };
         }
@@ -135,11 +147,22 @@ export class NegativeNumbersGen {
                 },
                 token: this.toBase64(ans), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Jämför talens avstånd från noll (deras absoluta värden)." : "Step 1: Compare the numbers' distance from zero (their absolute values)." },
-                    { text: lang === 'sv' ? `Det positiva talet är ${pos} steg från noll. Det negativa talet är ${Math.abs(neg)} steg från noll.` : `The positive number is ${pos} steps from zero. The negative number is ${Math.abs(neg)} steps from zero.` },
-                    { text: lang === 'sv' ? "Steg 2: Det tal som är längst ifrån noll 'bestämmer' tecknet på svaret." : "Step 2: The number furthest from zero 'determines' the sign of the answer." },
-                    { text: lang === 'sv' ? `Eftersom ${Math.abs(neg)} > ${pos} är det negativa talet starkast.` : `Since ${Math.abs(neg)} > ${pos}, the negative number is stronger.` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? "Tänk på detta som en dragkamp mellan det positiva laget och det negativa laget." : "Think of this as a tug-of-war match between the positive team and the negative team.", 
+                        latex: `${pos} + (${neg})` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det positiva laget drar med styrkan ${pos}. Det negativa laget drar åt andra hållet med styrkan ${Math.abs(neg)}.` : `The positive team pulls with a strength of ${pos}. The negative team pulls the other way with a strength of ${Math.abs(neg)}.`, 
+                        latex: `\\text{Styrka: } ${pos} \\quad \\text{mot} \\quad \\mathbf{${Math.abs(neg)}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? (isNegStronger ? `Eftersom ${Math.abs(neg)} är större än ${pos}, vinner det negativa laget kampen.` : `Eftersom ${pos} är större än ${Math.abs(neg)}, vinner det positiva laget kampen.`) : (isNegStronger ? `Since ${Math.abs(neg)} is larger than ${pos}, the negative team wins the pull.` : `Since ${pos} is larger than ${Math.abs(neg)}, the positive team wins the pull.`), 
+                        latex: isNegStronger ? `${Math.abs(neg)} > ${pos} \\rightarrow \\mathbf{\\text{${ans}}}` : `${pos} > ${Math.abs(neg)} \\rightarrow \\mathbf{\\text{${ans}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `\\text{${ans}}` 
+                    }
                 ]
             };
         }
@@ -148,15 +171,27 @@ export class NegativeNumbersGen {
         const lie = `${n1} > ${n2}`;
         return {
             renderData: {
-                description: lang === 'sv' ? "Vilket påstående är FALSKT?" : "Which statement is FALSE?",
+                description: lang === 'sv' ? "Vilket påstående stämmer INTE?" : "Which statement is NOT correct?",
                 answerType: 'multiple_choice', options: MathUtils.shuffle([`${n2} > ${n1}`, lie, "-1 < 0", "0 > -5"])
             },
             token: this.toBase64(lie), variationKey: v, type: 'concept',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: På tallinjen är talen mindre ju längre till vänster de står." : "Step 1: On the number line, numbers are smaller the further left they are." },
-                { text: lang === 'sv' ? `Steg 2: Ett tal som -20 står längre till vänster än -9.` : `Step 2: A number like -20 is further left than -9.` },
-                { text: lang === 'sv' ? `Därför är -20 MINDRE än -9.` : `Therefore, -20 is SMALLER than -9.`, latex: "-20 < -9" },
-                { text: lang === 'sv' ? `Svar: ${lie}` : `Answer: ${lie}` }
+                { 
+                    text: lang === 'sv' ? "På en termometer är talen mindre ju kallare de är (längre ner eller längre till vänster)." : "On a thermometer, numbers are smaller the colder they get (further down or further left).", 
+                    latex: `\\text{Jämför: } ${n1} \\quad \\text{och} \\quad ${n2}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Talet ${n1} är mycket kallare och ligger längre ner än talet ${n2}.` : `The number ${n1} is much colder and sits further down than the number ${n2}.`, 
+                    latex: `${n1} < ${n2}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Eftersom ${n1} är mindre än ${n2}, blir det fel att påstå att ${n1} är större än (>) ${n2}. Det här stämmer alltså inte:` : `Since ${n1} is smaller than ${n2}, claiming that ${n1} is larger than (>) ${n2} is false. This statement is the lie:`, 
+                    latex: `\\mathbf{${lie}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${lie}` : `Answer: ${lie}`, 
+                    latex: `\\text{${lie}}` 
+                }
             ]
         };
     }
@@ -174,19 +209,36 @@ export class NegativeNumbersGen {
             const a = MathUtils.randomInt(-5, 5), b = MathUtils.randomInt(-5, 5);
             const c = MathUtils.randomInt(-5, 5), d = MathUtils.randomInt(-5, 5);
             const res1 = a + b, res2 = res1 - c, res3 = res2 + d;
+            const fullExpr = `${this.p(a)} + ${this.p(b)} - ${this.p(c)} + ${this.p(d)}`;
             
             return {
                 renderData: {
-                    latex: `${this.p(a)} + ${this.p(b)} - ${this.p(c)} + ${this.p(d)}`,
-                    description: lang === 'sv' ? "Beräkna uttryckets värde steg för steg." : "Calculate the value step by step.",
+                    latex: fullExpr,
+                    description: lang === 'sv' ? "Beräkna värdet genom att räkna från vänster till höger." : "Calculate the value by working from left to right.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(res3.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Vi räknar från vänster till höger. Börja med de två första talen." : "Step 1: We calculate from left to right. Start with the first two numbers.", latex: `${this.p(a)} + ${this.p(b)} = ${res1}` },
-                    { text: lang === 'sv' ? "Steg 2: Ta resultatet och utför nästa operation." : "Step 2: Take the result and perform the next operation.", latex: `${res1} - ${this.p(c)} = ${res2}` },
-                    { text: lang === 'sv' ? "Steg 3: Utför den sista operationen." : "Step 3: Perform the final operation.", latex: `${res2} + ${this.p(d)} = ${res3}` },
-                    { text: lang === 'sv' ? `Svar: ${res3}` : `Answer: ${res3}` }
+                    { 
+                        text: lang === 'sv' ? "Ta hand om de två första talen allra längst fram på raden först." : "Take care of the first two numbers at the very front of the line first.", 
+                        latex: `\\mathbf{${this.p(a)} + ${this.p(b)}} - ${this.p(c)} + ${this.p(d)}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut den första biten: ${a} + ${b} blir ${res1}.` : `Calculate that first piece: ${a} + ${b} equals ${res1}.`, 
+                        latex: `\\mathbf{${res1}} - ${this.p(c)} + ${this.p(d)}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Ta med nästa tal i ordningen och räkna ut: ${res1} - ${this.p(c)} blir ${res2}.` : `Include the next number in order and calculate: ${res1} - ${this.p(c)} equals ${res2}.`, 
+                        latex: `\\mathbf{${res1} - ${this.p(c)}} + ${this.p(d)} \\rightarrow \\mathbf{${res2}} + ${this.p(d)}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna till sist ut den sista biten: ${res2} + ${this.p(d)}.` : `Finally, calculate the very last piece remaining: ${res2} + ${this.p(d)}.`, 
+                        latex: `\\mathbf{${res2} + ${this.p(d)}} = \\mathbf{${res3}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${res3}` : `Answer: ${res3}`, 
+                        latex: `${res3}` 
+                    }
                 ]
             };
         }
@@ -196,15 +248,27 @@ export class NegativeNumbersGen {
             const correct = `${a} + ${b}`;
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Vilket uttryck betyder samma sak som $${a} - (-${b})$?` : `Which expression means the same as $${a} - (-${b})$?`,
+                    description: lang === 'sv' ? `Vilket uttryck betyder exakt samma sak som $${a} - (-${b})$?` : `Which expression means exactly the same thing as $${a} - (-${b})$?`,
                     answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${a} - ${b}`, `-${a} + ${b}`])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: När två minustecken står direkt intill varandra (med eller utan parentes) förvandlas de till ett plus." : "Step 1: When two minus signs are directly next to each other, they turn into a plus." },
-                    { text: lang === 'sv' ? "Regel: minus minus blir plus." : "Rule: minus minus becomes plus.", latex: "-(-) \\rightarrow +" },
-                    { text: lang === 'sv' ? `Därför blir ${a} - (-${b}) till ${a} + ${b}.` : `Therefore, ${a} - (-${b}) becomes ${a} + ${b}.` },
-                    { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}` }
+                    { 
+                        text: lang === 'sv' ? "När två minustecken krockar direkt med varandra utan något annat tal emellan, förvandlas de tillsammans till ett vanligt plustecken." : "When two minus signs crash directly into each other with no other number in between, they join together to form a regular plus sign.", 
+                        latex: `${a} \\mathbf{- (-} ${b} )` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Tänk på det som att de två minusstrecken läggs korsvis över varandra och bildar ett kors (+)." : "Think of it as the two minus dashes being placed crosswise over each other to form a cross (+).", 
+                        latex: `\\mathbf{-(-)} \\rightarrow \\mathbf{+}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Därför kan uttrycket skrivas om helt utan parentesväggar som en ren addition:` : `Therefore, the expression can be rewritten entirely without parenthesis walls as a pure addition:`, 
+                        latex: `\\mathbf{${a} + ${b}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}`, 
+                        latex: `\\text{${correct}}` 
+                    }
                 ]
             };
         }
@@ -212,13 +276,25 @@ export class NegativeNumbersGen {
         const a = MathUtils.randomInt(-10, 10), b = MathUtils.randomInt(5, 15);
         const ans = a + b;
         return {
-            renderData: { latex: `${a} - (-${b})`, description: lang === 'sv' ? "Förenkla tecknen och räkna ut svaret." : "Simplify the signs and calculate the answer.", answerType: 'numeric' },
+            renderData: { latex: `${a} - (-${b})`, description: lang === 'sv' ? "Förenkla tecknen emellan och räkna ut svaret." : "Simplify the signs in between and calculate the answer.", answerType: 'numeric' },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Förenkla de dubbla minustecknen i mitten till ett plustecken." : "Step 1: Simplify the double minus signs in the middle to a plus sign." },
-                { text: lang === 'sv' ? "Skriv om uttrycket:" : "Rewrite the expression:", latex: `${a} + ${b}` },
-                { text: lang === 'sv' ? "Steg 2: Utför additionen." : "Step 2: Perform the addition.", latex: `${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? "Börja med att städa bort teckenkrocken i mitten. Två minustecken intill varandra blir till ett plus." : "Start by cleaning up the sign clash in the middle. Two minus signs next to each other turn into a plus.", 
+                    latex: `${a} \\mathbf{- (-} ${b} )` 
+                },
+                { 
+                    text: lang === 'sv' ? "Skriv raden på nytt som ett enkelt plustal på tavlan:" : "Rewrite the row as a simple addition statement on the board:", 
+                    latex: `= ${a} \\mathbf{+} ${b}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna nu ut additionen från startläget ${a}: klättra uppåt med ${b} steg.` : `Now calculate the addition from the starting point ${a}: climb upwards by ${b} steps.`, 
+                    latex: `${a} + ${b} = \\mathbf{${ans}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    latex: `${ans}` 
+                }
             ]
         };
     }
@@ -237,19 +313,32 @@ export class NegativeNumbersGen {
             const f2 = MathUtils.randomInt(-3, 3) || 1;
             const f3 = MathUtils.randomInt(-3, 3) || 1;
             const res1 = f1 * f2, res2 = res1 * f3;
+            const fullExpr = `${this.p(f1)} \\cdot ${this.p(f2)} \\cdot ${this.p(f3)}`;
             
             return {
                 renderData: {
-                    latex: `${this.p(f1)} · ${this.p(f2)} · ${this.p(f3)}`,
-                    description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.",
+                    latex: fullExpr,
+                    description: lang === 'sv' ? "Gångra talen i tur och ordning från vänster till höger." : "Multiply the numbers in order from left to right.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(res2.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Multiplicera de två första faktorerna." : "Step 1: Multiply the first two factors." },
-                    { text: lang === 'sv' ? "Tänk på teckenregeln (lika tecken = plus, olika = minus)." : "Remember the sign rule (same sign = plus, different = minus).", latex: `${this.p(f1)} · ${this.p(f2)} = ${res1}` },
-                    { text: lang === 'sv' ? "Steg 2: Multiplicera resultatet med den sista faktorn." : "Step 2: Multiply the result by the last factor.", latex: `${res1} · ${this.p(f3)} = ${res2}` },
-                    { text: lang === 'sv' ? `Svar: ${res2}` : `Answer: ${res2}` }
+                    { 
+                        text: lang === 'sv' ? "Börja med de två första gångertalen längst fram på raden." : "Start with the first two multiplication factors at the front of the line.", 
+                        latex: `\\mathbf{${this.p(f1)} \\cdot ${this.p(f2)}} \\cdot ${this.p(f3)}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut första biten. Kom ihåg: Lika tecken ger plus, olika tecken ger minus! Det blir ${res1}.` : `Calculate that first piece. Remember: Same signs make a plus, different signs make a minus! It equals ${res1}.`, 
+                        latex: `\\mathbf{${res1}} \\cdot ${this.p(f3)}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Gångra nu det uträknade numret med den sista biten på raden: ${res1} · ${this.p(f3)}.` : `Now multiply that calculated number by the very last factor left on the line: ${res1} · ${this.p(f3)}.`, 
+                        latex: `\\mathbf{${res1} \\cdot ${this.p(f3)}} = \\mathbf{${res2}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${res2}` : `Answer: ${res2}`, 
+                        latex: `${res2}` 
+                    }
                 ]
             };
         }
@@ -261,13 +350,25 @@ export class NegativeNumbersGen {
         const ans = a * b;
 
         return {
-            renderData: { latex: `${this.p(a)} · ${this.p(b)}`, description: lang === 'sv' ? "Multiplicera talen." : "Multiply the numbers.", answerType: 'numeric' },
+            renderData: { latex: `${this.p(a)} \\cdot ${this.p(b)}`, description: lang === 'sv' ? "Räkna ut gångertalet." : "Calculate the product.", answerType: 'numeric' },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Multiplicera siffervärdena först, utan att tänka på tecknen." : "Step 1: Multiply the numerical values first, ignoring the signs.", latex: `${Math.abs(a)} · ${Math.abs(b)} = ${Math.abs(ans)}` },
-                { text: lang === 'sv' ? "Steg 2: Bestäm tecknet. Om båda talen har samma tecken blir svaret positivt. Om de har olika tecken blir det negativt." : "Step 2: Determine the sign. If both numbers have the same sign, the answer is positive. If they have different signs, it is negative." },
-                { text: lang === 'sv' ? (isSame ? "Här är båda negativa, så svaret blir positivt (+)." : "Här är ett negativt och ett positivt, så svaret blir negativt (-).") : (isSame ? "Both are negative, so the answer is positive (+)." : "One is negative and one is positive, so the answer is negative (-).") },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? `Börja med att räkna ut gångertalet som vanligt utan att bry dig om minustecknen: ${Math.abs(a)} · ${Math.abs(b)}.` : `Begin by calculating the multiplication as regular, ignoring any minus signs for now: ${Math.abs(a)} · ${Math.abs(b)}.`, 
+                    latex: `${Math.abs(a)} \\cdot ${Math.abs(b)} = \\mathbf{${Math.abs(ans)}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Bestäm sedan tecknet på svaret med en enkel regel: Likadana tecken ger ett plussvar, olika tecken ger ett minussvar." : "Next, figure out the final sign using a simple rule: Identical signs produce a plus answer, different signs produce a minus answer.", 
+                    latex: isSame ? `\\mathbf{(-) \\cdot (-) \\rightarrow (+)}` : `\\mathbf{(-) \\cdot (+) \\rightarrow (-)}` 
+                },
+                { 
+                    text: lang === 'sv' ? (isSame ? `Eftersom båda talen är negativa (likadana tecken), blir svaret ett glatt plustal: ${Math.abs(ans)}.` : `Eftersom talen har olika tecken (ett minus och ett plus), blir svaret ett kallt minustal: ${ans}.`) : (isSame ? `Since both numbers are negative (identical signs), the output yields a positive number: ${Math.abs(ans)}.` : `Since the numbers hold different signs (one minus and one plus), the output yields a negative number: ${ans}.`), 
+                    latex: `\\text{Resultat} = \\mathbf{${ans}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    latex: `${ans}` 
+                }
             ]
         };
     }
@@ -285,29 +386,54 @@ export class NegativeNumbersGen {
         const ans = a / b;
 
         if (v === 'div_check_logic') {
-            const correct = `${this.p(ans)} · ${this.p(b)} = ${a}`;
+            const correct = `${this.p(ans)} \\cdot ${this.p(b)} = ${a}`;
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Vilket multiplikationssamband bevisar att $${a} / ${b} = ${ans}$?` : `Which multiplication proves that $${a} / ${b} = ${ans}$?`,
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${ans} + ${b} = ${a}`, `${a} · ${b} = ${ans}`])
+                    description: lang === 'sv' ? `Vilket gångersamband bevisar att $\\frac{${a}}{${b}} = ${ans}$?` : `Which multiplication layout proves that $\\frac{${a}}{${b}} = ${ans}$?`,
+                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${ans} + ${b} = ${a}`, `${a} \\cdot ${b} = ${ans}`])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: En division kan alltid kontrolleras genom att multiplicera svaret (kvoten) med nämnaren." : "Step 1: A division can always be checked by multiplying the answer (quotient) by the denominator." },
-                    { text: lang === 'sv' ? "Steg 2: Om $a / b = c$, så måste $c · b = a$." : "Step 2: If $a / b = c$, then $c · b = a$." },
-                    { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}` }
+                    { 
+                        text: lang === 'sv' ? "Vi kan alltid testa om en delning (division) är rätt genom att räkna baklänges med gånger." : "We can always double-check if a division statement is true by running backwards using multiplication.", 
+                        latex: `\\frac{${a}}{${b}} = ${ans}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Att ta ett tal delat med b som blir c, betyder att svaret c gånger bottenbocken b måste träffa täljaren a där uppe." : "Dividing a value by b to reach c means that the answer c times the bottom term b must perfectly strike back to the top term a.", 
+                        latex: `\\frac{a}{b} = c \\iff \\mathbf{c \\cdot b = a}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Sätter vi in våra siffror ser vi att svaret ${ans} gånger bottentalet ${b} ska bli starttalet ${a}:` : `Plugging in our actual numbers shows that the answer ${ans} times the bottom number ${b} must equal the top number ${a}:`, 
+                        latex: `\\mathbf{${correct}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}`, 
+                        latex: `\\text{${correct}}` 
+                    }
                 ]
             };
         }
 
         return {
-            renderData: { latex: `\\frac{${a}}{${b}}`, description: lang === 'sv' ? "Beräkna kvoten." : "Calculate the quotient.", answerType: 'numeric' },
+            renderData: { latex: `\\frac{${a}}{${b}}`, description: lang === 'sv' ? "Räkna ut delningen." : "Calculate the quotient.", answerType: 'numeric' },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Dividera siffervärdena." : "Step 1: Divide the numerical values.", latex: `${Math.abs(a)} / ${Math.abs(b)} = ${Math.abs(ans)}` },
-                { text: lang === 'sv' ? "Steg 2: Använd teckenregeln (samma som för multiplikation)." : "Step 2: Use the sign rule (same as for multiplication)." },
-                { text: lang === 'sv' ? "Ett negativt tal delat med ett positivt tal blir negativt." : "A negative number divided by a positive number is negative.", latex: "(-) / (+) = -" },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? `Dela först siffrorna precis som vanligt utan att titta på minustecknet: ${Math.abs(a)} delat med ${b}.` : `First, divide the numbers as usual without looking at the minus sign: ${Math.abs(a)} divided by ${b}.`, 
+                    latex: `\\frac{${Math.abs(a)}}{${b}} = \\mathbf{${Math.abs(ans)}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Kolla nu på tecknen. Precis som i gånger gäller regeln: Olika tecken ger alltid ett minussvar." : "Now check the signs. Just like in multiplication, the rule applies: Different signs always result in a minus answer.", 
+                    latex: `\\mathbf{\\frac{(-)}{(+)} \\rightarrow (-)}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Eftersom vi delar ett minustal med ett plustal (olika tecken), blir kvoten ett kallt minustal: ${ans}.` : `Since we divide a minus number by a plus number (different signs), the quotient results in a negative number: ${ans}.`, 
+                    latex: `\\text{Resultat} = \\mathbf{${ans}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    latex: `${ans}` 
+                }
             ]
         };
     }

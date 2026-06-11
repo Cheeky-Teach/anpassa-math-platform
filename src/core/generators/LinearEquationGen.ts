@@ -260,17 +260,30 @@ export class LinearEquationGen {
         
         if (v === 'twostep_concept_order') {
             const a = MathUtils.randomInt(2, 5), b = MathUtils.randomInt(2, 10);
-            const correct = lang === 'sv' ? `Subtrahera ${b} först` : `Subtract ${b} first`;
+            const correct = lang === 'sv' ? `Subtrahera ${b} från båda sidor` : `Subtract ${b} from both sides`;
             return {
                 renderData: {
-                    description: lang === 'sv' ? `För $${a}x + ${b} = 20$, vilket steg är bäst att börja med?` : `For $${a}x + ${b} = 20$, which step is best to start with?`,
-                    answerType: 'multiple_choice', options: [correct, lang === 'sv' ? `Dela med ${a}` : `Divide by ${a}`]
+                    description: lang === 'sv' ? `För $${a}x + ${b} = 20$, vilket strategiskt steg är bäst att börja med?` : `For $${a}x + ${b} = 20$, which strategic step is best to start with?`,
+                    answerType: 'multiple_choice', options: [correct, lang === 'sv' ? `Dela båda sidor med ${a}` : `Divide both sides by ${a}`]
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: I en ekvation med två steg är det oftast lättast att börja med additionen eller subtraktionen." : "Step 1: In a two-step equation, it is usually easiest to start with the addition or subtraction." },
-                    { text: lang === 'sv' ? "Steg 2: Genom att 'flytta' siffertermen först får vi variabeltermen ensam på ena sidan." : "Step 2: By 'moving' the constant term first, we isolate the variable term on one side." },
-                    { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}` }
+                    { 
+                        text: lang === 'sv' ? "När vi löser tvåstegsekvationer arbetar vi baklänges enligt prioriteringsreglerna. Vi städar bort 'lösa' siffror först." : "When uncovering multi-step algebraic balances, we execute inverse operations in reverse order, stripping loose constants first.", 
+                        latex: `${a}x + ${b} = 20` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Genom att ta bort siffertermen +${b} först slipper vi krångliga bråkdelar över hela ekvationen.` : `By eliminating the constant addition term +${b} first, we avoid creating messy fractions across the structural equation line.`, 
+                        latex: `${a}x + ${b} \\mathbf{- ${b}} = 20 \\mathbf{- ${b}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Det bästa och renaste första steget på tavlan är därför:" : "The cleanest and most tactical opening execution path on the board is therefore:", 
+                        latex: `\\mathbf{\\text{${correct}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}`, 
+                        latex: `\\text{${correct}}` 
+                    }
                 ],
                 metadata: { variation_key: v, difficulty: 2 }
             };

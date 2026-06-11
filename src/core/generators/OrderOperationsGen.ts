@@ -58,82 +58,84 @@ export class OrderOperationsGen {
         const usePlus = Math.random() > 0.5;
         const op = usePlus ? '+' : '-';
 
-        let a, b, c, result, latex, step1Latex, step2Latex;
-        const multSym = "·";
+        let a = 0, b = 0, c = 0, result = 0, latex = "", step1Latex = "", step2Latex = "";
+        
+        // 🟢 FIXED: Declare variables at the root function scope so clues can read them without block errors
+        let product = 0;
+        let quotient = 0;
 
         if (useMult) {
             a = MathUtils.randomInt(3, 7);
             b = MathUtils.randomInt(2, 6);
-            const product = a * b;
+            product = a * b; // 🚀 Assigned to outer scoped variable
 
             if (usePlus) {
                 c = MathUtils.randomInt(2, 10);
                 result = product + c;
             } else {
-                // For subtraction, ensure result is non-negative
                 if (isPrioFirst) {
-                    // product - c
                     c = MathUtils.randomInt(1, product);
                     result = product - c;
                 } else {
-                    // c - product
                     c = product + MathUtils.randomInt(1, 10);
                     result = c - product;
                 }
             }
 
-            // FINAL ASSIGNMENT: Generate latex after c and result are confirmed
             if (isPrioFirst) {
                 latex = `${a} · ${b} ${op} ${c}`;
-                step1Latex = `${a} · ${b} = ${product}`;
-                step2Latex = `${product} ${op} ${c} = ${result}`;
             } else {
                 latex = `${c} ${op} ${a} · ${b}`;
-                step1Latex = `${a} · ${b} = ${product}`;
-                step2Latex = `${c} ${op} ${product} = ${result}`;
             }
 
         } else {
             b = MathUtils.randomInt(2, 5);
-            const quotient = MathUtils.randomInt(2, 8);
+            quotient = MathUtils.randomInt(2, 8); // 🚀 Assigned to outer scoped variable
             a = b * quotient;
 
             if (usePlus) {
                 c = MathUtils.randomInt(2, 12);
                 result = quotient + c;
             } else {
-                // For subtraction, ensure result is non-negative
                 if (isPrioFirst) {
-                    // quotient - c
                     c = MathUtils.randomInt(1, quotient);
                     result = quotient - c;
                 } else {
-                    // c - quotient
                     c = quotient + MathUtils.randomInt(1, 10);
                     result = c - quotient;
                 }
             }
 
-            // FINAL ASSIGNMENT: Generate latex after c and result are confirmed
             if (isPrioFirst) {
                 latex = `\\frac{${a}}{${b}} ${op} ${c}`;
-                step1Latex = `\\frac{${a}}{${b}} = ${quotient}`;
-                step2Latex = `${quotient} ${op} ${c} = ${result}`;
             } else {
                 latex = `${c} ${op} \\frac{${a}}{${b}}`;
-                step1Latex = `\\frac{${a}}{${b}} = ${quotient}`;
-                step2Latex = `${c} ${op} ${quotient} = ${result}`;
             }
         }
 
+        // 🟢 FIXED: Now clues can evaluate cleanly because both tracking variables are fully visible!
         return {
-            renderData: { latex, description: lang === 'sv' ? "Beräkna värdet. Följ prioriteringsreglerna." : "Calculate the value using the correct order of operations.", answerType: 'numeric' },
+            renderData: { latex, description: lang === 'sv' ? "Räkna ut värdet i rätt ordning." : "Calculate the value using the correct order of operations.", answerType: 'numeric' },
             token: this.toBase64(result.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Identifiera prioriterade operationer. ${useMult ? 'Multiplikation' : 'Division'} går alltid före ${usePlus ? 'addition' : 'subtraktion'}.` : `Step 1: Identify prioritized operations. ${useMult ? 'Multiplication' : 'Division'} always comes before ${usePlus ? 'addition' : 'subtraction'}.` },
-                { text: lang === 'sv' ? `Räkna ut ${useMult ? 'produkten' : 'kvoten'} först:` : `Calculate the ${useMult ? 'product' : 'quotient'} first:`, latex: step1Latex },
-                { text: lang === 'sv' ? "Steg 2: Utför nu den sista räkneoperationen med resultatet." : "Step 2: Now perform the final operation with the result.", latex: step2Latex },
-                { text: lang === 'sv' ? `Svar: ${result}` : `Answer: ${result}` }
+                { 
+                    text: lang === 'sv' ? `Tänk på "Räknestegen": Gånger (·) och delat (/) står på ett högre steg än plus och minus. Vi måste städa bort dem först!` : `Think of the "math ladder": Multiplication (·) and division (/) sit on a higher step than plus and minus. We must clear them away first!`, 
+                    latex 
+                },
+                { 
+                    text: lang === 'sv' ? (useMult ? `Räkna ut multiplikationen ${a} · ${b} först. Det blir ${product}.` : `Räkna ut delningstalet först: ${a} delat med ${b} blir ${quotient}.`) : (useMult ? `Calculate the multiplication ${a} · ${b} first. That equals ${product}.` : `Calculate the division first: ${a} divided by ${b} equals ${quotient}.`), 
+                    latex: isPrioFirst 
+                        ? (useMult ? `\\mathbf{${a} \\cdot ${b}} ${op} ${c} = \\mathbf{${product}} ${op} ${c}` : `\\mathbf{\\frac{${a}}{${b}}} ${op} ${c} = \\mathbf{${quotient}} ${op} ${c}`)
+                        : (useMult ? `${c} ${op} \\mathbf{${a} \\cdot ${b}} = ${c} ${op} \\mathbf{${product}}` : `${c} ${op} \\mathbf{\\frac{${a}}{${b}}} = ${c} ${op} \\mathbf{${quotient}}`)
+                },
+                { 
+                    text: lang === 'sv' ? `Nu är det bara plussandet eller minussandet kvar. Räkna ut slutsvaret:` : `Now only the addition or subtraction remains. Calculate the final answer:`, 
+                    latex: isPrioFirst ? `\\mathbf{${useMult ? product : quotient} ${op} ${c}} = ${result}` : `\\mathbf{${c} ${op} ${useMult ? product : quotient}} = ${result}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${result}` : `Answer: ${result}`, 
+                    latex: `${result}` 
+                }
             ],
             metadata: { variation_key: v, difficulty: 1 }
         };
@@ -146,38 +148,60 @@ export class OrderOperationsGen {
         const c = MathUtils.randomInt(2, 4); // Keep c small so b-c is positive
         const d = MathUtils.randomInt(1, 10);
         
-        const templates = [
+        const isTemplateOne = Math.random() > 0.5;
+        const latex = isTemplateOne ? `(${a} + ${b}) \\cdot ${c} - ${d}` : `${d} + ${a} \\cdot (${b} - ${c})`;
+        const ans = isTemplateOne ? (a + b) * c - d : d + a * (b - c);
+
+        if (ans < 0) return this.level2_Parentheses(lang, variationKey, options);
+
+        const clues = isTemplateOne ? [
             {
-                latex: `(${a} + ${b}) · ${c} - ${d}`,
-                ans: (a + b) * c - d,
-                steps: [
-                    { sv: "Prioritera det som står inom parentesen först.", en: "Prioritize what is inside the parentheses first.", l: `${a} + ${b} = ${a + b}` },
-                    { sv: "Multiplicera därefter resultatet med siffran utanför.", en: "Then multiply the result by the number outside.", l: `${a + b} · ${c} = ${(a + b) * c}` },
-                    { sv: "Slutför genom att dra bort det sista talet.", en: "Finish by subtracting the last number.", l: `${(a+b)*c} - ${d} = ${(a + b) * c - d}` }
-                ]
+                text: lang === 'sv' ? "Parentesväggar skyddar det som står på insidan. Allt som gömmer sig inom en parentes måste ALLTID räknas ut allra först!" : "Parenthesis walls protect what is inside. Everything hiding inside a parenthesis must ALWAYS be calculated first!",
+                latex
             },
             {
-                latex: `${d} + ${a} · (${b} - ${c})`,
-                ans: d + a * (b - c),
-                steps: [
-                    { sv: "Räkna ut värdet i parentesen först.", en: "Calculate the value in the parentheses first.", l: `${b} - ${c} = ${b - c}` },
-                    { sv: "Utför multiplikationen innan du adderar.", en: "Perform the multiplication before adding.", l: `${a} · ${b - c} = ${a * (b - c)}` },
-                    { sv: "Lägg slutligen ihop resultaten.", en: "Finally, add the results together.", l: `${d} + ${a*(b-c)} = ${d + a * (b - c)}` }
-                ]
+                text: lang === 'sv' ? `Räkna ut parentesen: ${a} + ${b} blir ${a + b}.` : `Calculate inside the parentheses: ${a} + ${b} equals ${a + b}.`,
+                latex: `\\mathbf{(${a} + ${b})} \\cdot ${c} - ${d} = \\mathbf{${a + b}} \\cdot ${c} - ${d}`
+            },
+            {
+                text: lang === 'sv' ? `Nu har vi en multiplikation och en subtraktion kvar. Gånger står högre upp på stegen, så vi räknar ut ${a + b} · ${c} = ${(a + b) * c}.` : `Now we have a multiplication and a subtraction left. Multiplication sits higher on the ladder, so we compute ${a + b} · ${c} = ${(a + b) * c}.`,
+                latex: `\\mathbf{${a + b} \\cdot ${c}} - ${d} = \\mathbf{${(a + b) * c}} - ${d}`
+            },
+            {
+                text: lang === 'sv' ? "Slutför genom att göra den sista subtraktionen." : "Finish by performing the final subtraction step.",
+                latex: `\\mathbf{${(a + b) * c} - ${d}} = ${ans}`
+            },
+            {
+                text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                latex: `${ans}`
+            }
+        ] : [
+            {
+                text: lang === 'sv' ? "Parentesväggar är viktigast av allt! Allt som gömmer sig inom en parentes måste ALLTID räknas ut allra först!" : "Parentheses are the most important thing of all! Everything hiding inside a parenthesis must ALWAYS be calculated first!",
+                latex
+            },
+            {
+                text: lang === 'sv' ? `Räkna ut parentesen: ${b} - ${c} blir ${b - c}.` : `Calculate inside the parentheses: ${b} - ${c} equals ${b - c}.`,
+                latex: `${d} + ${a} \\cdot \\mathbf{(${b} - ${c})} = ${d} + ${a} \\cdot \\mathbf{${b - c}}`
+            },
+            {
+                text: lang === 'sv' ? `Nu har vi ett plustal och ett gångertal kvar. Gånger går alltid före plus, så räkna ut ${a} · ${b - c} först.` : `Now we have an addition and a multiplication left. Multiplication always comes before addition, so compute ${a} · ${b - c} first.`,
+                latex: `${d} + \\mathbf{${a} \\cdot ${b - c}} = ${d} + \\mathbf{${a * (b - c)}}`
+            },
+            {
+                text: lang === 'sv' ? "Slutför genom att plussa ihop de sista siffrorna." : "Finish by adding the final remaining numbers together.",
+                latex: `\\mathbf{${d} + ${a * (b - c)}} = ${ans}`
+            },
+            {
+                text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                latex: `${ans}`
             }
         ];
 
-        const p = MathUtils.randomChoice(templates);
-        // Safety for negatives in Level 2: Re-generate if template 1 results in negative
-        if (p.ans < 0) return this.level2_Parentheses(lang, variationKey, options);
-
-        const finalClues = p.steps.map((s, i) => ({ text: lang === 'sv' ? `Steg ${i+1}: ${s.sv}` : `Step ${i+1}: ${s.en}`, latex: s.l }));
-        finalClues.push({ text: lang === 'sv' ? `Svar: ${p.ans}` : `Answer: ${p.ans}` });
-
         return {
-            renderData: { latex: p.latex, description: lang === 'sv' ? "Beräkna uttrycket." : "Calculate the expression.", answerType: 'numeric' },
-            token: this.toBase64(p.ans.toString()), variationKey: 'order_paren', type: 'calculate',
-            clues: finalClues,
+            renderData: { latex, description: lang === 'sv' ? "Beräkna uttrycket i rätt ordning." : "Calculate the expression using the correct order of operations.", answerType: 'numeric' },
+            token: this.toBase64(ans.toString()), variationKey: 'order_paren', type: 'calculate',
+            clues,
             metadata: { variation_key: 'order_paren', difficulty: 2 }
         };
     }
@@ -275,30 +299,45 @@ export class OrderOperationsGen {
 
         const rewriteLatex = `${t1.val} ${op1} ${t2.val} ${op2} ${t3.val}`;
 
+        // First, transform the dynamic helpers inside complexTerm to map clean visual replacements
+        const step1Text = complexTerm.type === 'fraction'
+            ? (lang === 'sv' ? "Ett långt bråkstreck fungerar precis som en skyddande parentes. Vi måste addera ihop täljaren där uppe allra först!" : "A long fraction bar acts exactly like a protective parenthesis. We must add the numerator on top together first!")
+            : (lang === 'sv' ? "Börja med den skyddade parentesen på stegen. Räkna ut plusset på insidan först." : "Start with the protected parenthesis on the ladder. Calculate the addition on the inside first.");
+
+        const step2Text = complexTerm.type === 'fraction'
+            ? (lang === 'sv' ? "Nu kan vi räkna ut bråkdelningen: ta det samlade toppnumret delat med bottentalet." : "Now we can calculate the fraction division: take the combined top number divided by the bottom number.")
+            : (lang === 'sv' ? "Gångra sedan parentesens svar med siffran som står precis utanför." : "Then multiply the parenthesis answer by the number standing directly outside.");
+
         return {
             renderData: { 
                 latex, 
-                description: lang === 'sv' ? "Beräkna värdet. Följ prioriteringsreglerna." : "Follow the order of operations to solve the expression.", 
+                description: lang === 'sv' ? "Lös det långa uttrycket bit för bit." : "Follow the order of operations to solve the expression.", 
                 answerType: 'numeric' 
             },
             token: this.toBase64(ans.toString()), 
             variationKey: 'order_fraction', 
             type: 'calculate',
             clues: [
-                ...complexTerm.clues, // Dynamically insert Step 1 and 2 based on chosen term type
+                { text: step1Text, latex },
                 { 
-                    text: lang === 'sv' ? "Steg 3: Utför multiplikationen separat." : "Step 3: Perform the multiplication separately.", 
-                    latex: `${m1} · ${m2} = ${product}` 
+                    text: step2Text, 
+                    latex: complexTerm.type === 'fraction'
+                        ? `\\dots = \\mathbf{\\frac{${complexTerm.clues[0].latex.split('=')[1].trim()}}{${complexTerm.latex.split('}{')[1].slice(0,-1)}}} \\dots`
+                        : `\\dots = \\mathbf{${complexTerm.clues[0].latex.split('=')[1].trim()} \\cdot ${complexTerm.latex.split('·')[1].trim()}} \\dots`
                 },
                 { 
-                    text: lang === 'sv' ? "Steg 4: Skriv om uttrycket med de nya värdena." : "Step 4: Rewrite the expression with the new values.", 
-                    latex: rewriteLatex 
+                    text: lang === 'sv' ? `Gå vidare till nästa del på raden och städa bort den fristående multiplikationen: ${m1} · ${m2} blir ${product}.` : `Move to the next part on the line and clear away the standalone multiplication: ${m1} · ${m2} equals ${product}.`, 
+                    latex: `\\dots + \\mathbf{${m1} \\cdot ${m2}} \\dots = \\dots + \\mathbf{${product}} \\dots` 
                 },
                 { 
-                    text: lang === 'sv' ? "Steg 5: Slutför genom att addera och subtrahera från vänster till höger." : "Step 5: Finish by adding and subtracting from left to right.", 
-                    latex: `${rewriteLatex} \\rightarrow ${intermediate} ${op2} ${t3.val} = ${ans}` 
+                    text: lang === 'sv' ? "Nu när alla parenteser, bråk och gångertecken är borta skriver vi ut den rena, enkla sifferraden:" : "Now that all parentheses, fractions, and multiplication dots are gone, let's write out the clean, simple row of numbers:", 
+                    latex: `= ${rewriteLatex}` 
                 },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? `Eftersom plus och minus står på samma trappsteg räknar vi helt enkelt i ordning från vänster till höger.` : `Since plus and minus are on the same ladder step, we simply calculate in order from left to right.`, 
+                    latex: `\\mathbf{${t1.val} ${op1} ${t2.val}} ${op2} ${t3.val} = \\mathbf{${intermediate}} ${op2} ${t3.val} = ${ans}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `${ans}` }
             ],
             metadata: { variation_key: 'order_fraction', difficulty: 3 }
         };
@@ -383,29 +422,49 @@ export class OrderOperationsGen {
 
         const rewriteLatex = `${t1.val} ${op1} ${t2.val} ${op2} ${t3.val}`;
 
-        // 6. Generate Priority-Ordered Clues
-        const clues = [];
-        clues.push({ text: lang === 'sv' ? "Steg 1: Följ prioriteringsreglerna. Räkna ut parenteser (bråkstreck) och potenser först." : "Step 1: Follow the order of operations. Calculate parentheses (fractions) and powers first." });
+        // 6. Generate Priority-Ordered Clues matching the single cumulative line rule
+        const clues = [
+            {
+                text: lang === 'sv' ? 'Nu lägger vi till ett ännu högre trappsteg på Räknestegen: Potenser (små upphöjda tal) står ALLRA HÖGST upp tillsammans med parenteser!' : 'Now we introduce an even higher step on our math ladder: Powers (small exponent numbers) sit at the ABSOLUTE TOP along with parentheses!',
+                latex
+            }
+        ];
         
-        // Always show fraction clue first if it exists, then power
-        if (useFraction) clues.push({ text: secondTerm.clue[lang], latex: secondTerm.latex + " = " + secondTerm.val });
-        clues.push({ text: powerTerm.clue[lang], latex: powerTerm.latex + " = " + powerTerm.val });
-        
-        if (!useFraction) {
-            clues.push({ text: lang === 'sv' ? "Steg 2: Gå vidare till multiplikation." : "Step 2: Proceed to multiplication." });
-            clues.push({ text: secondTerm.clue[lang], latex: secondTerm.latex + " = " + secondTerm.val });
+        if (useFraction) {
+            clues.push({
+                text: lang === 'sv' ? `Börja med bråkgruppen. Addera täljaren först och dela sedan med botten så att du frigör värdet ${secondTerm.val}.` : `Start with the fraction block. Add the numerator first, then divide by the bottom to unlock the value ${secondTerm.val}.`,
+                latex: `\\dots \\mathbf{${secondTerm.latex}} \\dots = \\dots \\mathbf{${secondTerm.val}} \\dots`
+            });
         }
 
-        clues.push({ 
-            text: lang === 'sv' ? "Steg 3: Skriv om uttrycket och räkna från vänster till höger." : "Step 3: Rewrite the expression and calculate from left to right.",
-            latex: `${rewriteLatex} \\rightarrow ${intermediate} ${op2} ${t3.val} = ${ans}`
+        clues.push({
+            text: lang === 'sv' ? `Räkna nu ut potensen uppe i hörnet: ${base} gånger sig själv blir ${pVal}.` : `Now calculate the corner power piece: ${base} times itself equals ${pVal}.`,
+            latex: `\\dots \\mathbf{${powerTerm.latex}} \\dots = \\dots \\mathbf{${pVal}} \\dots`
         });
-        clues.push({ text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` });
+
+        if (!useFraction) {
+            clues.push({
+                text: lang === 'sv' ? `Gå ner ett steg på räknestegen och städa bort gångertecknet: ${secondTerm.latex} blir ${secondTerm.val}.` : `Move one step down the ladder and clear away the multiplication dot: ${secondTerm.latex} equals ${secondTerm.val}.`,
+                latex: `\\dots \\mathbf{${secondTerm.latex}} \\dots = \\dots \\mathbf{${secondTerm.val}} \\dots`
+            });
+        }
+
+        clues.push({
+            text: lang === 'sv' ? "Nu när alla höga steg är rensade, skriver vi ut den enkla sifferraden på tavlan:" : "Now that all high-priority steps are cleared, let's write out the simple number chain on the board:",
+            latex: `= ${rewriteLatex}`
+        });
+
+        clues.push({
+            text: lang === 'sv' ? `Räkna till sist raden i ordning från vänster till höger för att få fram slutsvar.` : `Finally, calculate the row in straight order from left to right to discover the final answer code.`,
+            latex: `\\mathbf{${t1.val} ${op1} ${t2.val}} ${op2} ${t3.val} = \\mathbf{${intermediate}} ${op2} ${t3.val} = ${ans}`
+        });
+
+        clues.push({ text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `${ans}` });
 
         return {
             renderData: { 
                 latex, 
-                description: lang === 'sv' ? "Prioritera rätt operationer." : "Prioritize the correct operations.", 
+                description: lang === 'sv' ? "Beräkna värdet med rätt ordning på stegen." : "Prioritize the correct steps to calculate the expression value.", 
                 answerType: 'numeric' 
             },
             token: this.toBase64(ans.toString()), 

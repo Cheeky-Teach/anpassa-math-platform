@@ -117,11 +117,26 @@ export class GeometryGenerator {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Omkretsen är den totala sträckan runt en figurs alla sidor." : "Perimeter is the total distance around all sides of a figure." },
-                    { text: lang === 'sv' ? "En kvadrat har fyra sidor som alla är lika långa." : "A square has four sides that are all the same length." },
-                    { text: lang === 'sv' ? `Eftersom sidan är ${s} cm, multiplicerar vi längden med 4.` : `Since the side is ${s} cm, we multiply the length by 4.`, latex: `4 · ${s}` },
-                    { text: lang === 'sv' ? `Uträkning: ${s} + ${s} + ${s} + ${s} = ${ans}` : `Calculation: ${s} + ${s} + ${s} + ${s} = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    {
+                        text: lang === 'sv' ? "Omkretsen betyder hela varvet runt figurens ytterkanter." : "The perimeter means the entire path around the figure's outer edges.",
+                        latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3 + \\text{sida}_4`
+                    },
+                    {
+                        text: lang === 'sv' ? `En kvadrat har 4 lika långa sidor. Varje sida är ${s} cm.` : `A square has 4 sides of equal length. Each side is ${s} cm.`,
+                        latex: `\\text{Omkrets} = ${s} + ${s} + ${s} + ${s}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Vi kan skriva om pluskedjan till ett snabbare gångertal: 4 gånger ${s}.` : `We can rewrite the addition chain into a faster multiplication layout: 4 times ${s}.`,
+                        latex: `\\text{Omkrets} = \\mathbf{4 \\cdot ${s}}`
+                    },
+                    {
+                        text: lang === 'sv' ? "Räkna ut multiplikationen för att bestämma totalsvaret." : "Calculate the multiplication to determine the total answer.",
+                        latex: `\\text{Omkrets} = \\mathbf{${ans}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                        latex: `${ans}`
+                    }
                 ]
             };
         }
@@ -138,12 +153,34 @@ export class GeometryGenerator {
                 },
                 token: this.toBase64(h.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "En rektangel har två baser och två höjder." : "A rectangle has two bases and two heights." },
-                    { text: lang === 'sv' ? "Börja med att dra bort de två kända baserna från den totala omkretsen." : "Start by subtracting the two known bases from the total perimeter.", latex: `2 · ${b} = ${2 * b}` },
-                    { text: lang === 'sv' ? `Subtrahera: ${p} - ${2 * b} = ${p - 2 * b}` : `Subtract: ${p} - ${2 * b} = ${p - 2 * b}` },
-                    { text: lang === 'sv' ? "Det som är kvar motsvarar de två höjderna tillsammans." : "What remains corresponds to the two heights combined." },
-                    { text: lang === 'sv' ? "Dela det resultatet med 2 för att hitta längden på en höjd." : "Divide that result by 2 to find the length of one height.", latex: `\\frac{${p - 2 * b}}{2} = ${h}` },
-                    { text: lang === 'sv' ? `Svar: ${h}` : `Answer: ${h}` }
+                    {
+                        text: lang === 'sv' ? `Hela varvet runt rektangeln är ${p} cm. Den består av två likadana bottensidor och två stående höjder.` : `The whole loop around the rectangle is ${p} cm. It consists of two matching base lines and two vertical heights.`,
+                        latex: `2 \\cdot \\text{botten} + 2 \\cdot \\text{höjd} = ${p}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Räkna ut vad de två kända bottensidorna blir tillsammans: 2 gånger ${b} cm.` : `Calculate what the two known base lines equal together: 2 times ${b} cm.`,
+                        latex: `\\mathbf{2 \\cdot ${b}} + 2 \\cdot \\text{höjd} = ${p} \\rightarrow \\mathbf{${2 * b}} + 2 \\cdot \\text{höjd} = ${p}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Dra bort bottensidorna (${2 * b}) från hela omkretsen ${p} för att se vad som blir kvar till höjderna.` : `Subtract the base lines (${2 * b}) from the total perimeter ${p} to see what is left over for the heights.`,
+                        latex: `2 \\cdot \\text{höjd} = ${p} \\mathbf{- ${2 * b}}`
+                    },
+                    {
+                        text: lang === 'sv' ? "Förenkla subtraktionen:" : "Simplify the subtraction:",
+                        latex: `2 \\cdot \\text{höjd} = \\mathbf{${p - 2 * b}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Dela svaret (${p - 2 * b}) på 2, eftersom de två stående höjderna delar på resten av sträckan.` : `Divide the value (${p - 2 * b}) by 2, since the two vertical heights share the rest of the distance equally.`,
+                        latex: `\\text{höjd} = \\frac{${p - 2 * b}}{\\mathbf{2}}`
+                    },
+                    {
+                        text: lang === 'sv' ? "Slutför divisionen för att hitta den saknade höjdsidan." : "Complete the final division to find the missing height parameter.",
+                        latex: `\\text{höjd} = \\mathbf{${h}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${h}` : `Answer: ${h}`,
+                        latex: `${h}`
+                    }
                 ]
             };
         }
@@ -159,7 +196,6 @@ export class GeometryGenerator {
                     type: isParallel ? 'parallelogram' : 'rectangle', 
                     width: b, 
                     height: h, 
-                    // Map 'h' to 's' for parallelograms so GeometryShapes.jsx labels the slant side
                     labels: isParallel ? { b, s: h } : { b, h } 
                 },
                 description: lang === 'sv' ? "Beräkna omkretsen." : "Calculate the perimeter.",
@@ -167,10 +203,26 @@ export class GeometryGenerator {
             },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Omkretsen beräknas genom att addera alla ytterkanter." : "Perimeter is calculated by adding all outer edges." },
-                { text: lang === 'sv' ? "Figuren har två baser och två sidor." : "The figure has two bases and two sides." },
-                { text: lang === 'sv' ? `Summera: ${b} + ${h} + ${b} + ${h}` : `Sum: ${b} + ${h} + ${b} + ${h}`, latex: `2 · (${b} + ${h})` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                {
+                    text: lang === 'sv' ? "Omkretsen betyder hela sträckan runt figurens alla ytterkanter." : "The perimeter means the total distance around all the outer edges of the figure.",
+                    latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3 + \\text{sida}_4`
+                },
+                {
+                    text: lang === 'sv' ? `Figuren har två likadana vågräta sidor (${b} cm) och två likadana sneda/stående sidor (${h} cm).` : `The figure has two identical horizontal lines (${b} cm) and two identical vertical/slant lines (${h} cm).`,
+                    latex: `\\text{Omkrets} = ${b} + ${h} + ${b} + ${h}`
+                },
+                {
+                    text: lang === 'sv' ? "Sortera raden genom att lägga ihop de matchande sidparen var för sig." : "Group the expression by adding the matching side pairs separately.",
+                    latex: `\\text{Omkrets} = \\mathbf{(${b} + ${b})} + \\mathbf{(${h} + ${h})} \\rightarrow \\mathbf{${2*b}} + \\mathbf{${2*h}}`
+                },
+                {
+                    text: lang === 'sv' ? "Addera de två delsummorna för att få fram det slutgiltiga svaret." : "Add the two partial sums together to reach the final answer value.",
+                    latex: `\\text{Omkrets} = \\mathbf{${ans}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                    latex: `${ans}`
+                }
             ]
         };
     }
@@ -194,10 +246,22 @@ export class GeometryGenerator {
             },
             token: this.toBase64((b * h).toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Arean är storleken på ytan inuti en figur." : "Area is the size of the surface inside a figure." },
-                { text: lang === 'sv' ? "För en fyrhörning beräknas arean genom att multiplicera basen med den vinkelräta höjden." : "For a quadrilateral, area is calculated by multiplying the base by the perpendicular height.", latex: "A = b · h" },
-                { text: lang === 'sv' ? `Multiplicera: ${b} · ${h}` : `Multiply: ${b} · ${h}`, latex: `${b} · ${h} \\rightarrow ${b * h}` },
-                { text: lang === 'sv' ? `Svar: ${b * h}` : `Answer: ${b * h}` }
+                {
+                    text: lang === 'sv' ? "Area betyder storleken på själva golvytan inuti figuren." : "Area means the size of the internal surface or floor space inside the figure.",
+                    latex: `\\text{Area} = \\text{bredd} \\cdot \\text{höjd}`
+                },
+                {
+                    text: lang === 'sv' ? `Gångra (multiplicera) den platta bottensidan (${b} cm) med den raka höjden uppåt (${h} cm).` : `Multiply the flat baseline dimension (${b} cm) by the straight upward height value (${h} cm).`,
+                    latex: `\\text{Area} = \\mathbf{${b} \\cdot ${h}}`
+                },
+                {
+                    text: lang === 'sv' ? "Utför multiplikationen för att räkna ut ytan." : "Execute the multiplication to compute the internal surface score.",
+                    latex: `\\text{Area} = \\mathbf{${b * h}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${b * h}` : `Answer: ${b * h}`,
+                    latex: `${b * h}`
+                }
             ]
         };
     }
@@ -211,7 +275,6 @@ export class GeometryGenerator {
         const v = variationKey || this.getVariation(pool, options);
 
         if (v === 'perimeter_triangle_right') {
-            // pythagorean triple logic
             const m = MathUtils.randomInt(2, 5), n = 1;
             const a = m*m - n*n, b = 2*m*n, c = m*m + n*n;
             const ans = a + b + c;
@@ -223,10 +286,22 @@ export class GeometryGenerator {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Omkretsen är den sammanlagda längden av triangelns tre sidor." : "Perimeter is the combined length of the triangle's three sides." },
-                    { text: lang === 'sv' ? "Identifiera de tre sidorna: basen, höjden och hypotenusan." : "Identify the three sides: base, height, and hypotenuse." },
-                    { text: lang === 'sv' ? `Addera sidorna: ${a} + ${b} + ${c}` : `Add the sides: ${a} + ${b} + ${c}`, latex: `${a} + ${b} + ${c} \\rightarrow ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    {
+                        text: lang === 'sv' ? "Omkretsen får vi genom att plussa ihop triangelns tre yttre kanter." : "We find the perimeter by adding together the three outer edges of the triangle.",
+                        latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3`
+                    },
+                    {
+                        text: lang === 'sv' ? `Lägg ihop de tre kända sidlängderna från figuren: ${a} cm, ${b} cm och den långa sneda linjen på ${c} cm.` : `Add the three known side lengths from the figure: ${a} cm, ${b} cm, and the long diagonal line of ${c} cm.`,
+                        latex: `\\text{Omkrets} = \\mathbf{${a} + ${b} + ${c}}`
+                    },
+                    {
+                        text: lang === 'sv' ? "Förenkla additionen för att räkna ut den totala sträckan runt om." : "Simplify the addition step to calculate the complete loop distance score total.",
+                        latex: `\\text{Omkrets} = \\mathbf{${ans}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                        latex: `${ans}`
+                    }
                 ]
             };
         }
@@ -241,10 +316,26 @@ export class GeometryGenerator {
             },
             token: this.toBase64(area.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Arean av en triangel är alltid hälften av en rektangel med samma bas och höjd." : "The area of a triangle is always half of a rectangle with the same base and height.", latex: "A = \\frac{b · h}{2}" },
-                { text: lang === 'sv' ? "Steg 1: Multiplicera basen med höjden." : "Step 1: Multiply the base by the height.", latex: `${base} · ${height} = ${base * height}` },
-                { text: lang === 'sv' ? "Steg 2: Dela resultatet med 2." : "Step 2: Divide the result by 2.", latex: `\\frac{${base * height}}{2} = ${area}` },
-                { text: lang === 'sv' ? `Svar: ${area}` : `Answer: ${area}` }
+                {
+                    text: lang === 'sv' ? "En triangel rymmer alltid exakt hälften så mycket yta som en vanlig fyrkant med samma mått." : "A triangle always holds exactly half the space surface of a standard rectangle with the same measurements.",
+                    latex: `\\text{Area} = \\frac{\\text{basen} \\cdot \\text{höjden}}{2}`
+                },
+                {
+                    text: lang === 'sv' ? `Gör uppställningen genom att sätta in basen (${base} cm) och den raka höjden (${height} cm) i täljaren:` : `Set up the structure by inserting the base (${base} cm) and the vertical height (${height} cm) inside the numerator position:`,
+                    latex: `\\text{Area} = \\frac{\\mathbf{${base} \\cdot ${height}}}{2}`
+                },
+                {
+                    text: lang === 'sv' ? `Räkna ut gångertalet däruppe i täljaren först: ${base} gånger ${height} blir ${base * height}.` : `Calculate the multiplication on top inside the numerator track first: ${base} times ${height} equals ${base * height}.`,
+                    latex: `\\text{Area} = \\frac{\\mathbf{${base * height}}}{2}`
+                },
+                {
+                    text: lang === 'sv' ? `Dela nu resultatet med 2 för att halvera ytan och hitta slutsvaret.` : `Now divide that result score by 2 to split the surface layer and find your solution answer.`,
+                    latex: `\\text{Area} = \\mathbf{${area}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${area}` : `Answer: ${area}`,
+                    latex: `${area}`
+                }
             ]
         };
     }
@@ -266,9 +357,42 @@ export class GeometryGenerator {
 
         // --- FULL CIRCLE AREA ---
         if (v === 'circle_area') {
-            // FIX: Use Math.random for boolean to avoid missing MathUtils method
             const isDiameter = Math.random() < 0.5;
             const ans = Math.round((pi * r * r) * 100) / 100;
+            
+            const sharedClues = [
+                {
+                    text: lang === 'sv' ? "Arean för en cirkel räknar vi ut genom att ta: radien gånger radien gånger 3,14 (pi)." : "We find the area of a circle by taking: radius times radius times 3.14 (pi).",
+                    latex: `\\text{Area} = \\text{radie} \\cdot \\text{radie} \\cdot 3{,}14`
+                }
+            ];
+
+            if (isDiameter) {
+                sharedClues.push({
+                    text: lang === 'sv' ? `Figuren visar hela diametern (${d} cm). Vi måste halvera den först för att hitta radien från mitten ut till kanten.` : `The figure shows the full diameter (${d} cm). We must cut it in half first to establish the radius from the center to the edge.`,
+                    latex: `\\text{radie} = \\frac{${d}}{2} = \\mathbf{${r}}`
+                });
+            }
+
+            sharedClues.push(
+                {
+                    text: lang === 'sv' ? `Sätt in radien (${r} cm) i uppställningen: Ta ${r} · ${r} · 3,14.` : `Insert the radius value (${r} cm) into our framework layout: Take ${r} · ${r} · 3.14.`,
+                    latex: `\\text{Area} = \\mathbf{${r} \\cdot ${r} \\cdot 3{,}14}`
+                },
+                {
+                    text: lang === 'sv' ? `Räkna ut radie-multiplikationen först: ${r} gånger ${r} blir ${r * r}.` : `Calculate the radius multiplication frame first: ${r} times ${r} equals ${r * r}.`,
+                    latex: `\\text{Area} = \\mathbf{${r * r}} \\cdot 3{,}14`
+                },
+                {
+                    text: lang === 'sv' ? `Gångra till sist med 3,14 för att beräkna den färdiga ytan.` : `Finally, multiply by 3.14 to calculate the completed inner surface space total.`,
+                    latex: `\\text{Area} = \\mathbf{${ans}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                    latex: `${ans}`
+                }
+            );
+
             return {
                 renderData: {
                     geometry: { type: 'circle', radius: r, labels: isDiameter ? { diameter: d } : { r }, show: isDiameter ? 'diameter' : 'radius' },
@@ -276,14 +400,7 @@ export class GeometryGenerator {
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
-                clues: isDiameter ? [
-                    { text: lang === 'sv' ? `Diametern är ${d}. Radien (r) är hälften.` : `The diameter is ${d}. The radius (r) is half.`, latex: `r = \\frac{${d}}{2} = ${r}` },
-                    { text: lang === 'sv' ? `Area = pi · r²` : `Area = pi · r²`, latex: `3,14 · ${r}^2 = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
-                ] : [
-                    { text: lang === 'sv' ? "Använd formeln pi gånger radien i kvadrat." : "Use the formula pi times the radius squared.", latex: `3,14 · ${r}^2 = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
-                ]
+                clues: sharedClues
             };
         }
 
@@ -291,6 +408,36 @@ export class GeometryGenerator {
         if (v === 'circle_perimeter') {
             const isDiameter = Math.random() < 0.5;
             const ans = Math.round((pi * d) * 100) / 100;
+            
+            const sharedClues = [
+                {
+                    text: lang === 'sv' ? "Omkretsen runt en cirkel kallas för omkretslinjen. Den beräknas som hela diametern tvärsöver gånger 3,14 (pi)." : "The distance around a circle is called the circumference. It is calculated as the full diameter across times 3.14 (pi).",
+                    latex: `\\text{Omkrets} = \\text{diameter} \\cdot 3{,}14`
+                }
+            ];
+
+            if (!isDiameter) {
+                sharedClues.push({
+                    text: lang === 'sv' ? `Figuren ger oss bara radien (${r} cm). Vi fördubblar den för att hitta hela diametern tvärsöver cirkeln.` : `The figure only provides the single radius line (${r} cm). We double it to find the full diameter across the circle.`,
+                    latex: `\\text{diameter} = ${r} \\cdot 2 = \\mathbf{${d}}`
+                });
+            }
+
+            sharedClues.push(
+                {
+                    text: lang === 'sv' ? `Gångra nu diametern (${d} cm) med 3,14 för att mäta längden runt om.` : `Now multiply the diameter value (${d} cm) by 3.14 to calculate the outer length around the loop.`,
+                    latex: `\\text{Omkrets} = \\mathbf{${d} \\cdot 3{,}14}`
+                },
+                {
+                    text: lang === 'sv' ? "Utför multiplikationen för att fastställa omkretsen." : "Complete the final decimal multiplication to determine the circumference score.",
+                    latex: `\\text{Omkrets} = \\mathbf{${ans}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                    latex: `${ans}`
+                }
+            );
+
             return {
                 renderData: {
                     geometry: { type: 'circle', radius: r, labels: isDiameter ? { diameter: d } : { r }, show: isDiameter ? 'diameter' : 'radius' },
@@ -298,14 +445,7 @@ export class GeometryGenerator {
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
-                clues: isDiameter ? [
-                    { text: lang === 'sv' ? "Omkretsen är diametern gånger pi." : "The circumference is the diameter times pi.", latex: `3,14 · ${d} = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
-                ] : [
-                    { text: lang === 'sv' ? `Diametern är dubbla radien: ${d}.` : `The diameter is twice the radius: ${d}.` },
-                    { text: lang === 'sv' ? "Omkretsen är diametern gånger pi." : "The circumference is the diameter times pi.", latex: `3,14 · ${d} = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
-                ]
+                clues: sharedClues
             };
         }
 
@@ -320,10 +460,26 @@ export class GeometryGenerator {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "En halvcirkel är hälften av en hel cirkel." : "A semicircle is half of a full circle." },
-                    { text: lang === 'sv' ? `Hela cirkelns area: 3,14 · ${r}² = ${fullArea}` : `Full circle area: 3.14 · ${r}² = ${fullArea}` },
-                    { text: lang === 'sv' ? `Halvera: ${fullArea} / 2 = ${ans}` : `Halve: ${fullArea} / 2 = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    {
+                        text: lang === 'sv' ? "En halvcirkel är exakt hälften så stor som en hel vanlig cirkel." : "A semicircle is exactly half the size of a standard full circle.",
+                        latex: `\\text{Area} = \\frac{\\text{Hela cirkelns area}}{2}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Räkna först ut arean för en hel cirkel med radien ${r} cm: ${r} · ${r} · 3,14.` : `First, calculate the area for a full circle with radius ${r} cm: ${r} · ${r} · 3.14.`,
+                        latex: `\\text{Hela cirkelns area} = ${r} \\cdot ${r} \\cdot 3{,}14 = \\mathbf{${fullArea}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Dela nu hela cirkelns yta (${fullArea}) med 2 eftersom figuren bara är en halva.` : `Now divide the full circle's area (${fullArea}) by 2 since the figure is only one half.`,
+                        latex: `\\text{Area} = \\frac{\\mathbf{${fullArea}}}{\\mathbf{2}}`
+                    },
+                    {
+                        text: lang === 'sv' ? "Förenkla divisionen för att få fram golvytan i halvcirkeln." : "Simplify the division to calculate the floor area inside the semicircle.",
+                        latex: `\\text{Area} = \\mathbf{${ans}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                        latex: `${ans}`
+                    }
                 ]
             };
         }
@@ -339,10 +495,26 @@ export class GeometryGenerator {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Omkretsen är bågen plus den raka diametern." : "The perimeter is the arc plus the straight diameter." },
-                    { text: lang === 'sv' ? `Bågen (halv omkrets): (3,14 · ${d})/2 = ${arc}` : `Arc (half circumference): (3.14 · ${d})/2 = ${arc}` },
-                    { text: lang === 'sv' ? `Total: ${arc} + ${d} = ${ans}` : `Total: ${arc} + ${d} = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    {
+                        text: lang === 'sv' ? "Hela varvet runt en halvcirkel består av två delar: den runda svängda kanten och den platta bottenlinjen." : "The whole path around a semicircle consists of two sections: the round curved edge and the flat baseline.",
+                        latex: `\\text{Omkrets} = \\text{runda kanten} + \\text{platta botten}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Räkna först ut den runda kanten (hälften av en hel cirkelomkrets): diametern ${d} gånger 3,14 delat på 2.` : `First, calculate the curved edge (half of a full circle loop): diameter ${d} times 3.14 divided by 2.`,
+                        latex: `\\text{runda kanten} = \\frac{${d} \\cdot 3{,}14}{2} = \\mathbf{${arc}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Plussa nu ihop den runda kanten (${arc} cm) med den platta bottenlinjen (${d} cm) som stänger figuren.` : `Now add the round edge (${arc} cm) and the flat baseline (${d} cm) together to close the shape loop.`,
+                        latex: `\\text{Omkrets} = \\mathbf{${arc} + ${d}}`
+                    },
+                    {
+                        text: lang === 'sv' ? "Slutför additionen för att bestämma den totala sträckan runt om." : "Complete the final addition to determine the total outer boundary distance.",
+                        latex: `\\text{Omkrets} = \\mathbf{${ans}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                        latex: `${ans}`
+                    }
                 ]
             };
         }
@@ -358,9 +530,26 @@ export class GeometryGenerator {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Hela cirkelns area: 3,14 · ${r}² = ${fullArea}` : `Full circle area: 3.14 · ${r}² = ${fullArea}` },
-                    { text: lang === 'sv' ? `Dela på fyra: ${fullArea} / 4 = ${ans}` : `Divide by four: ${fullArea} / 4 = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    {
+                        text: lang === 'sv' ? "En kvartscirkel är exakt en fjärdedel (en tårtbit) av en hel vanlig cirkel." : "A quarter circle is exactly one-fourth (a single slice) of a standard full circle.",
+                        latex: `\\text{Area} = \\frac{\\text{Hela cirkelns area}}{4}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Räkna ut ytan för hela cirkeln först med radien ${r} cm: ${r} · ${r} · 3,14.` : `Calculate the surface area for the full circle first using radius ${r} cm: ${r} · ${r} · 3.14.`,
+                        latex: `\\text{Hela cirkelns area} = ${r} \\cdot ${r} \\cdot 3{,}14 = \\mathbf{${fullArea}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Dela hela cirkelytan (${fullArea}) med 4 eftersom figuren bara är en fjärdedels tårtbit.` : `Divide the full circle area (${fullArea}) by 4 since the figure is only a one-fourth cake slice.`,
+                        latex: `\\text{Area} = \\frac{\\mathbf{${fullArea}}}{\\mathbf{4}}`
+                    },
+                    {
+                        text: lang === 'sv' ? "Utför divisionen för att bestämma kvartscirkelns färdiga yta." : "Execute the division step to determine the quarter circle's completed area.",
+                        latex: `\\text{Area} = \\mathbf{${ans}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                        latex: `${ans}`
+                    }
                 ]
             };
         }
@@ -376,10 +565,26 @@ export class GeometryGenerator {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Kvartscirkeln har en båge plus två raka radier." : "The quarter circle has one arc plus two straight radii." },
-                    { text: lang === 'sv' ? `Bågen: (3,14 · ${d})/4 = ${arc}` : `Arc: (3.14 · ${d})/4 = ${arc}` },
-                    { text: lang === 'sv' ? `Total: ${arc} + ${r} + ${r} = ${ans}` : `Total: ${arc} + ${r} + ${r} = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    {
+                        text: lang === 'sv' ? "Kvartscirkelns omkrets består av tre delar: den runda svängda tårtkanten och de två raka sidoväggarna (radierna) som möts i mitten." : "The perimeter of a quarter circle consists of three parts: the round curved crust edge and the two straight side walls (radii) meeting in the corner.",
+                        latex: `\\text{Omkrets} = \\text{runda kanten} + \\text{rak vägg}_1 + \\text{rak vägg}_2`
+                    },
+                    {
+                        text: lang === 'sv' ? `Räkna först ut den runda kanten (en fjärdedel av ett helt cirkelvarv): diametern ${d} gånger 3,14 delat på 4.` : `First, calculate the curved crust edge (one-fourth of a full circle loop): diameter ${d} times 3.14 divided by 4.`,
+                        latex: `\\text{runda kanten} = \\frac{${d} \\cdot 3{,}14}{4} = \\mathbf{${arc}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Plussa ihop den runda kanten (${arc} cm) med de två raka väggarna som båda är lika långa som radien (${r} cm).` : `Add the round edge (${arc} cm) and the two straight inner walls that are both equal to the radius length (${r} cm).`,
+                        latex: `\\text{Omkrets} = \\mathbf{${arc} + ${r} + ${r}}`
+                    },
+                    {
+                        text: lang === 'sv' ? "Räkna ut hela summan för att hitta den totala sträckan runt om tårtbiten." : "Calculate the final sum to find the complete boundary path loop around the wedge slice.",
+                        latex: `\\text{Omkrets} = \\mathbf{${ans}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                        latex: `${ans}`
+                    }
                 ]
             };
         }
@@ -421,12 +626,28 @@ export class GeometryGenerator {
             description = lang === 'sv' 
                 ? "Beräkna arean av den sammansatta figuren." 
                 : "Calculate the area of the composite figure.";
+                
             clues = [
-                { text: lang === 'sv' ? "Sammansatta figurer kan delas upp i mindre rektanglar." : "Composite figures can be divided into smaller rectangles." },
-                { text: lang === 'sv' ? "Steg 1: Dela figuren i två delar. Beräkna arean för den vertikala rektangeln." : "Step 1: Divide the figure into two parts. Calculate the area for the vertical rectangle.", latex: `${vW} · ${vH} = ${vW * vH}` },
-                { text: lang === 'sv' ? "Steg 2: Beräkna arean för den horisontella rektangeln." : "Step 2: Calculate the area for the horizontal rectangle.", latex: `${hW} · ${hH} = ${hW * hH}` },
-                { text: lang === 'sv' ? "Steg 3: Addera de två delarna för att få hela figurens yta." : "Step 3: Add the two parts to get the total area of the figure.", latex: `${vW * vH} + ${hW * hH} = ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                {
+                    text: lang === 'sv' ? "Vi beräknar ytan lättast genom att dela upp hela figuren i två vanliga rektanglar." : "We calculate the surface easiest by breaking the entire figure into two standard rectangles.",
+                    latex: `\\text{Total Area} = \\text{Area}_{\\text{figur 1}} + \\text{Area}_{\\text{figur 2}}`
+                },
+                {
+                    text: lang === 'sv' ? `Räkna ut ytan för den stående rektangeln till vänster: ${vW} gånger ${vH} blir ${vW * vH}.` : `Calculate the surface space of the vertical rectangle on the left: ${vW} times ${vH} equals ${vW * vH}.`,
+                    latex: `\\text{Total Area} = \\mathbf{(${vW} \\cdot ${vH})} + \\text{Area}_{\\text{figur 2}} \\rightarrow \\mathbf{${vW * vH}} + \\text{Area}_{\\text{figur 2}}`
+                },
+                {
+                    text: lang === 'sv' ? `Räkna ut ytan för den liggande rektangeln till höger: ${hW} gånger ${hH} blir ${hW * hH}.` : `Calculate the surface space of the horizontal rectangle on the right: ${hW} times ${hH} equals ${hW * hH}.`,
+                    latex: `\\text{Total Area} = ${vW * vH} + \\mathbf{(${hW} \\cdot ${hH})} \\rightarrow ${vW * vH} + \\mathbf{${hW * hH}}`
+                },
+                {
+                    text: lang === 'sv' ? `Plussa ihop de två uträknade delarna för att bestämma den totala sammanlagda ytan.` : `Add the two calculated parts together to determine the total combined internal surface area.`,
+                    latex: `\\text{Total Area} = \\mathbf{${vW * vH} + ${hW * hH}} = \\mathbf{${ans}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                    latex: `${ans}`
+                }
             ];
         } 
         // B. Handle Rectangle + Right-Angled Triangle Configuration
@@ -440,12 +661,28 @@ export class GeometryGenerator {
             description = lang === 'sv' 
                 ? "Figuren består av en rektangel och en triangel. Vad är totalarean?" 
                 : "The figure consists of a rectangle and a triangle. What is the total area?";
+                
             clues = [
-                { text: lang === 'sv' ? "Dela upp uppgiften genom att räkna ut varje form för sig." : "Split the task by calculating each shape separately." },
-                { text: lang === 'sv' ? "Steg 1: Beräkna rektangelns area (bas · höjd)." : "Step 1: Calculate the area of the rectangle (base · height).", latex: `${rw} · ${rh} = ${rw * rh}` },
-                { text: lang === 'sv' ? "Steg 2: Beräkna triangelns area (bas · höjd / 2)." : "Step 2: Calculate the area of the triangle (base · height / 2).", latex: `\\frac{${tb} · ${rh}}{2} = ${(tb * rh) / 2}` },
-                { text: lang === 'sv' ? "Steg 3: Summera ytorna." : "Step 3: Sum the areas.", latex: `${rw * rh} + ${(tb * rh) / 2} = ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                {
+                    text: lang === 'sv' ? "Dela upp uppgiften genom att räkna ut rektangelns yta och triangelns yta var för sig." : "Split the task by calculating the area of the rectangle and the area of the triangle separately.",
+                    latex: `\\text{Total Area} = \\text{Area}_{\\text{rektangel}} + \\text{Area}_{\\text{triangel}}`
+                },
+                {
+                    text: lang === 'sv' ? `Steg 1: Beräkna den fyrkantiga rektangelns yta: basen ${rw} gånger höjden ${rh}.` : `Step 1: Calculate the square rectangle's surface: base ${rw} times height ${rh}.`,
+                    latex: `\\text{Total Area} = \\mathbf{(${rw} \\cdot ${rh})} + \\text{Area}_{\\text{triangel}} \\rightarrow \\mathbf{${rw * rh}} + \\text{Area}_{\\text{triangel}}`
+                },
+                {
+                    text: lang === 'sv' ? `Steg 2: Beräkna triangelns yta bredvid: basen ${tb} gånger höjden ${rh}, och dela sedan med 2.` : `Step 2: Calculate the triangle's surface next to it: base ${tb} times height ${rh}, then divide by 2.`,
+                    latex: `\\text{Total Area} = ${rw * rh} + \\mathbf{\\frac{${tb} \\cdot ${rh}}{2}} \\rightarrow ${rw * rh} + \\mathbf{${(tb * rh) / 2}}`
+                },
+                {
+                    text: lang === 'sv' ? "Plussa samman de två uträknade bitarna för att hitta det slutgiltiga svaret." : "Add those two calculated surface components together to find the final unified answer.",
+                    latex: `\\text{Total Area} = \\mathbf{${rw * rh} + ${(tb * rh) / 2}} = \\mathbf{${ans}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                    latex: `${ans}`
+                }
             ];
         } 
         // C. Handle House Configuration
@@ -457,45 +694,69 @@ export class GeometryGenerator {
             subtype = "house";
             labelsObj = { w: rw, h: rh, h_roof: hr };
             description = lang === 'sv' ? "Beräkna husets totala area." : "Calculate the total area of the house.";
+            
             clues = [
-                { text: lang === 'sv' ? "Dela upp huset i en rektangel (väggarna) och en triangel (taket)." : "Divide the house into a rectangle (walls) and a triangle (roof)." },
-                { text: lang === 'sv' ? "Steg 1: Beräkna rektangelns yta." : "Step 1: Calculate the rectangle's surface.", latex: `${rw} · ${rh} = ${rw * rh}` },
-                { text: lang === 'sv' ? "Steg 2: Beräkna triangelns yta." : "Step 2: Calculate the triangle's surface.", latex: `\\frac{${rw} · ${hr}}{2} = ${(rw * hr) / 2}` },
-                { text: lang === 'sv' ? "Steg 3: Lägg ihop areorna för att få totalsvaret." : "Step 3: Add the areas together to get the final total.", latex: `${rw * rh} + ${(rw * hr) / 2} = ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                {
+                    text: lang === 'sv' ? "Dela upp huset i två välkända bitar: en rektangel (väggarna nertill) och en triangel (taket upptill)." : "Divide the house into two well-known sections: a rectangle (the walls below) and a triangle (the roof on top).",
+                    latex: `\\text{Total Area} = \\text{Area}_{\\text{väggar}} + \\text{Area}_{\\text{tak}}`
+                },
+                {
+                    text: lang === 'sv' ? `Räkna ut väggytan nertill: bredden ${rw} gånger höjden ${rh}.` : `Compute the wall surface below: width ${rw} times height ${rh}.`,
+                    latex: `\\text{Total Area} = \\mathbf{(${rw} \\cdot ${rh})} + \\text{Area}_{\\text{tak}} \\rightarrow \\mathbf{${rw * rh}} + \\text{Area}_{\\text{tak}}`
+                },
+                {
+                    text: lang === 'sv' ? `Räkna ut takytan upptill: basen ${rw} gånger takhöjden ${hr}, delat med 2.` : `Compute the roof surface on top: base width ${rw} times roof height ${hr}, divided by 2.`,
+                    latex: `\\text{Total Area} = ${rw * rh} + \\mathbf{\\frac{${rw} \\cdot ${hr}}{2}} \\rightarrow ${rw * rh} + \\mathbf{${(rw * hr) / 2}}`
+                },
+                {
+                    text: lang === 'sv' ? "Lägg ihop de två uträknade delområdena för att få husets totala area." : "Combine those two calculated component spaces to establish the house's total area profile.",
+                    latex: `\\text{Total Area} = \\mathbf{${rw * rh} + ${(rw * hr) / 2}} = \\mathbf{${ans}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                    latex: `${ans}`
+                }
             ];
         } else if (v === 'perimeter_house') {
-            // Perimeter House Calculation
-            const rw = MathUtils.randomInt(6, 12);     // Base width
-            const rh = MathUtils.randomInt(5, 10);     // Wall height
-            const roof_slant = MathUtils.randomInt(4, 8); // Slant side length of isosceles roof
+            const rw = MathUtils.randomInt(6, 12);
+            const rh = MathUtils.randomInt(5, 10);
+            const roof_slant = MathUtils.randomInt(4, 8);
             
-            // To ensure it's a physically possible triangle, slant + slant must be > base width
             if (roof_slant * 2 <= rw) {
-                return this.generateCompositeShape(lang, isAdvancedLevel, v, options); // Re-roll safely
+                return this.generateCompositeShape(lang, isAdvancedLevel, v, options);
             }
 
-            // Perimeter = width + 2*height + 2*slant
             ans = rw + (2 * rh) + (2 * roof_slant);
-            subtype = "house_perimeter"; // Custom safe subtype token
-            labelsObj = { w: rw, h: rh, s: roof_slant }; // s = slant side matching target
+            subtype = "house_perimeter";
+            labelsObj = { w: rw, h: rh, s: roof_slant };
             
             description = lang === 'sv'
                 ? "Beräkna husets omkrets."
                 : "Calculate the perimeter of the house.";
                 
             clues = [
-                { text: lang === 'sv' ? "Omkretsen är summan av alla ytterkanter runt figuren." : "Perimeter is the sum of all outer edges around the figure." },
-                { text: lang === 'sv' ? `Husets ytterkanter består av basen (${rw} cm), två väggar (${rh} cm var) och två taksidor (${roof_slant} cm var).` : `The outer edges consist of the base (${rw} cm), two walls (${rh} cm each), and two roof sides (${roof_slant} cm each).` },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${rw} + ${rh} + ${rh} + ${roof_slant} + ${roof_slant} = ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans} cm` : `Answer: ${ans} cm` }
+                {
+                    text: lang === 'sv' ? "Omkretsen betyder hela varvet runt husets yttre kanter. Vi räknar inte med några streck på insidan!" : "The perimeter means the entire path around the house's outer edges. We do not count any lines on the inside!",
+                    latex: `\\text{Omkrets} = \\text{bas} + 2 \\cdot \\text{vägg} + 2 \\cdot \\text{taksida}`
+                },
+                {
+                    text: lang === 'sv' ? `Plussa ihop alla de yttre begränsningslinjerna: marken (${rw} cm), två väggar (${rh} cm var) och två snett lutande taksidor (${roof_slant} cm var).` : `Add up all the outer boundary lines: the ground (${rw} cm), two walls (${rh} cm each), and two slanted roof lines (${roof_slant} cm each).`,
+                    latex: `\\text{Omkrets} = \\mathbf{${rw} + ${rh} + ${rh} + ${roof_slant} + ${roof_slant}}`
+                },
+                {
+                    text: lang === 'sv' ? "Förenkla hela additionskedjan för att räkna fram totalsumman." : "Simplify the whole addition chain layout row to evaluate the total perimeter score.",
+                    latex: `\\text{Omkrets} = \\mathbf{${ans}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${ans} cm` : `Answer: ${ans} cm`,
+                    latex: `${ans}`
+                }
             ];
         } else if (v === 'perimeter_portal') {
-            // 🏛️ RESTORED: Perimeter Portal Calculation
-            const rw = MathUtils.randomInt(6, 14) * 2; // Width (even for clean radius)
-            const rh = MathUtils.randomInt(5, 12);     // Height
+            const rw = MathUtils.randomInt(6, 14) * 2;
+            const rh = MathUtils.randomInt(5, 12);
             const r = rw / 2;
-            const arcLength = Math.round(3.14 * r);    // Semi-circle arc circumference
+            const arcLength = Math.round(3.14 * r);
             
             ans = arcLength + rw + (2 * rh);
             subtype = "portal_perimeter";
@@ -506,13 +767,28 @@ export class GeometryGenerator {
                 : "Calculate the total perimeter of the portal (around the outer edges).";
                 
             clues = [
-                { text: lang === 'sv' ? "Omkretsen består av basen, de två raka sidorna och den svängda bågen överst." : "The perimeter consists of the base, the two straight sides, and the curved arc on top." },
-                { text: lang === 'sv' ? `Bågens längd är ungefär ${arcLength} cm.` : `The arc length is approximately ${arcLength} cm.` },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${rw} + ${rh} + ${rh} + ${arcLength} = ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans} cm` : `Answer: ${ans} cm` }
+                {
+                    text: lang === 'sv' ? "Omkretsen runt portalen består av den platta basen nertill, två stående sidoväggar och den svängda runda bågen överst." : "The perimeter around the portal consists of the flat baseline below, two vertical side walls, and the curved round arc on top.",
+                    latex: `\\text{Omkrets} = \\text{bas} + 2 \\cdot \\text{sidovägg} + \\text{båglängd}`
+                },
+                {
+                    text: lang === 'sv' ? `Räkna ut bågsträckan överst (en halv cirkelomkrets): 3,14 gånger radien ${r} cm ger ungefär ${arcLength} cm.` : `Compute the top arc track (half a circle loop): 3.14 times the radius ${r} cm yields approximately ${arcLength} cm.`,
+                    latex: `\\text{båglängd} = 3{,}14 \\cdot ${r} = \\mathbf{${arcLength}}`
+                },
+                {
+                    text: lang === 'sv' ? `Addera nu alla portalens ytterkanter tillsammans på raden: ${rw} + ${rh} + ${rh} + ${arcLength}.` : `Now add all the portal's outer edges together on the line: ${rw} + ${rh} + ${rh} + ${arcLength}.`,
+                    latex: `\\text{Omkrets} = \\mathbf{${rw} + ${rh} + ${rh} + ${arcLength}}`
+                },
+                {
+                    text: lang === 'sv' ? "Förenkla additionsraden för att beräkna slutgiltig omkrets." : "Simplify the addition row to calculate the final total loop distance.",
+                    latex: `\\text{Omkrets} = \\mathbf{${ans}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${ans} cm` : `Answer: ${ans} cm`,
+                    latex: `${ans}`
+                }
             ];
         } else {
-            // Standard area_portal remains safely unchanged here as final fallback lane
             const rw = MathUtils.randomInt(20, 30) * 2; 
             const rh = MathUtils.randomInt(30, 45);
             const r = rw / 2;
@@ -524,16 +800,31 @@ export class GeometryGenerator {
             subtype = "portal";
             labelsObj = { w: rw, h: rh };
             description = lang === 'sv' ? "Beräkna figurens totala area." : "Calculate the total area of the figure.";
+            
             clues = [
-                { text: lang === 'sv' ? "Figuren består av en rektangel nertill och en halvcirkel upptill." : "The figure consists of a rectangle at the bottom and a semicircle on top." },
-                { text: lang === 'sv' ? "Steg 1: Beräkna rektangelns area." : "Step 1: Calculate the area of the rectangle.", latex: `${rw} · ${rh} = ${rectA}` },
-                { text: lang === 'sv' ? "Steg 2: Beräkna halvcirkelns area." : "Step 2: Calculate the area of the semicircle.", latex: `\\frac{3,14 · ${r}^2}{2} = ${semiA}` },
-                { text: lang === 'sv' ? "Steg 3: Summera ytorna." : "Step 3: Sum the areas.", latex: `${rectA} + ${semiA} = ${ans}` }, 
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                {
+                    text: lang === 'sv' ? "Figuren är sammansatt av en vanlig rektangel nertill och en rund halvcirkel på toppen." : "The figure is composed of a standard rectangle at the bottom and a round semicircle on top.",
+                    latex: `\\text{Total Area} = \\text{Area}_{\\text{rektangel}} + \\text{Area}_{\\text{halvcirkel}}`
+                },
+                {
+                    text: lang === 'sv' ? `Steg 1: Beräkna rektangelns yta nertill genom att ta bredden ${rw} gånger höjden ${rh}.` : `Step 1: Calculate the rectangle surface below by taking width ${rw} times height ${rh}.`,
+                    latex: `\\text{Total Area} = \\mathbf{(${rw} \\cdot ${rh})} + \\text{Area}_{\\text{halvcirkel}} \\rightarrow \\mathbf{${rectA}} + \\text{Area}_{\\text{halvcirkel}}`
+                },
+                {
+                    text: lang === 'sv' ? `Steg 2: Beräkna halvcirkelytan på toppen: radien gånger radien gånger 3,14, och dela sedan med 2.` : `Step 2: Calculate the semicircle surface on top: radius times radius times 3.14, then divide by 2.`,
+                    latex: `\\text{Total Area} = ${rectA} + \\mathbf{\\frac{3{,}14 \\cdot ${r} \\cdot ${r}}{2}} \\rightarrow ${rectA} + \\mathbf{${semiA}}`
+                },
+                {
+                    text: lang === 'sv' ? "Summera de två uträknade områdesytorna för att bestämma det totala slutresultatet." : "Sum those two calculated space regions together to determine the total final result score balance.",
+                    latex: `\\text{Total Area} = \\mathbf{${rectA} + ${semiA}} = \\mathbf{${ans}}`
+                },
+                {
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                    latex: `${ans}`
+                }
             ];
         }
 
-        // Double-nested wrapper guarantees layout validation coverage
         return {
             renderData: {
                 geometry: {
@@ -541,23 +832,14 @@ export class GeometryGenerator {
                     subtype: subtype,       
                     width: rawW,
                     height: rawH,
-                    dims: {
-                        subtype: subtype,   
-                        width: rawW,
-                        height: rawH
-                    },
+                    dims: { subtype: subtype, width: rawW, height: rawH },
                     labels: labelsObj
                 },
-                // Added explicit root height/width fallbacks matching standard layout expects
                 type: "composite",
                 subtype: subtype,
                 width: rawW,
                 height: rawH,
-                dims: {
-                    subtype: subtype,
-                    width: rawW,
-                    height: rawH
-                },
+                dims: { subtype: subtype, width: rawW, height: rawH },
                 labels: labelsObj,
                 description: description,
                 answerType: "numeric",
