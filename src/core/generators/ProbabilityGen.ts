@@ -67,20 +67,21 @@ export class ProbabilityGen {
         let questionData: any;
 
         switch (level) {
-            case 1: questionData = this.level1_DiscretePools(lang, undefined, options); break;
-            case 2: questionData = this.level2_DiceFluency(lang, undefined, options); break;
-            case 3: questionData = this.level3_RatiosAndGroups(lang, undefined, options); break;
-            case 4: questionData = this.level4_ComplementaryEvents(lang, undefined, options); break;
-            case 5: questionData = this.level5_TreeDiagrams(lang, undefined, options); break;
-            case 6: questionData = this.level6_PathwaysGrid(lang, undefined, options); break;
-            default: questionData = this.level1_DiscretePools(lang, undefined, options); break;
+            case 1: questionData = this.level1_Visuals(lang, undefined, options); break;
+            case 2: questionData = Math.random() > 0.5 ? this.level2_Dice(lang, undefined, options) : this.level2_StandardGroups(lang, undefined, options); break;
+            case 3: questionData = this.level3_ConceptsAndLogic(lang, undefined, options); break;
+            case 4: questionData = this.level5_ProbabilityTree(lang, undefined, options); break; 
+            case 5: questionData = this.level6_EventChains(lang, undefined, options); break;
+            case 6: questionData = this.level7_Combinatorics(lang, undefined, options); break;
+            case 7: questionData = this.level8_CombinatoricsComplex(lang, undefined, options); break;
+            default: questionData = this.level1_Visuals(lang, undefined, options); break;
         }
 
         // 🟢 Run through the decorator
         enrichQuestionMetadata(questionData);
 
         // 🟢 Practice Mode Level-Wide Override
-        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4];
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4, 5, 6, 7];
         if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
             if (!questionData.metadata) questionData.metadata = {};
             questionData.metadata.levelSupportsWordProblems = true;
