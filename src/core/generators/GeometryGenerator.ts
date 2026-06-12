@@ -126,11 +126,11 @@ export class GeometryGenerator {
                         latex: `\\text{Omkrets} = ${s} + ${s} + ${s} + ${s}`
                     },
                     {
-                        text: lang === 'sv' ? `Vi kan skriva om pluskedjan till ett snabbare gångertal: 4 gånger ${s}.` : `We can rewrite the addition chain into a faster multiplication layout: 4 times ${s}.`,
+                        text: lang === 'sv' ? `Vi kan skriva om pluskedjan som multiplikation istället: 4 gånger ${s}.` : `We can rewrite the addition as multiplication instead: 4 times ${s}.`,
                         latex: `\\text{Omkrets} = \\mathbf{4 \\cdot ${s}}`
                     },
                     {
-                        text: lang === 'sv' ? "Räkna ut multiplikationen för att bestämma totalsvaret." : "Calculate the multiplication to determine the total answer.",
+                        text: lang === 'sv' ? "Räkna ut multiplikationen." : "Calculate the multiplication.",
                         latex: `\\text{Omkrets} = \\mathbf{${ans}}`
                     },
                     {
@@ -174,7 +174,7 @@ export class GeometryGenerator {
                         latex: `\\text{höjd} = \\frac{${p - 2 * b}}{\\mathbf{2}}`
                     },
                     {
-                        text: lang === 'sv' ? "Slutför divisionen för att hitta den saknade höjdsidan." : "Complete the final division to find the missing height parameter.",
+                        text: lang === 'sv' ? "Dividera för att beräkna höjden." : "Divide to find the height.",
                         latex: `\\text{höjd} = \\mathbf{${h}}`
                     },
                     {
@@ -212,11 +212,11 @@ export class GeometryGenerator {
                     latex: `\\text{Omkrets} = ${b} + ${h} + ${b} + ${h}`
                 },
                 {
-                    text: lang === 'sv' ? "Sortera raden genom att lägga ihop de matchande sidparen var för sig." : "Group the expression by adding the matching side pairs separately.",
+                    text: lang === 'sv' ? "Lägg ihop de matchande sidparen var för sig." : "Group the expression by adding the matching side pairs separately.",
                     latex: `\\text{Omkrets} = \\mathbf{(${b} + ${b})} + \\mathbf{(${h} + ${h})} \\rightarrow \\mathbf{${2*b}} + \\mathbf{${2*h}}`
                 },
                 {
-                    text: lang === 'sv' ? "Addera de två delsummorna för att få fram det slutgiltiga svaret." : "Add the two partial sums together to reach the final answer value.",
+                    text: lang === 'sv' ? "Addera för att få fram svaret." : "Add to get the answer.",
                     latex: `\\text{Omkrets} = \\mathbf{${ans}}`
                 },
                 {
@@ -247,15 +247,15 @@ export class GeometryGenerator {
             token: this.toBase64((b * h).toString()), variationKey: v, type: 'calculate',
             clues: [
                 {
-                    text: lang === 'sv' ? "Area betyder storleken på själva golvytan inuti figuren." : "Area means the size of the internal surface or floor space inside the figure.",
+                    text: lang === 'sv' ? "Area betyder storleken på själva ytan inuti figuren." : "Area means the size of space inside the shape.",
                     latex: `\\text{Area} = \\text{bredd} \\cdot \\text{höjd}`
                 },
                 {
-                    text: lang === 'sv' ? `Gångra (multiplicera) den platta bottensidan (${b} cm) med den raka höjden uppåt (${h} cm).` : `Multiply the flat baseline dimension (${b} cm) by the straight upward height value (${h} cm).`,
+                    text: lang === 'sv' ? `Multiplicera (multiplicera) den platta bottensidan (${b} cm) med den raka höjden uppåt (${h} cm).` : `Multiply the flat baseline dimension (${b} cm) by the straight upward height value (${h} cm).`,
                     latex: `\\text{Area} = \\mathbf{${b} \\cdot ${h}}`
                 },
                 {
-                    text: lang === 'sv' ? "Utför multiplikationen för att räkna ut ytan." : "Execute the multiplication to compute the internal surface score.",
+                    text: lang === 'sv' ? "Multiplicera för att räkna ut arean." : "Multiply to find the area.",
                     latex: `\\text{Area} = \\mathbf{${b * h}}`
                 },
                 {
@@ -287,7 +287,7 @@ export class GeometryGenerator {
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     {
-                        text: lang === 'sv' ? "Omkretsen får vi genom att plussa ihop triangelns tre yttre kanter." : "We find the perimeter by adding together the three outer edges of the triangle.",
+                        text: lang === 'sv' ? "Omkretsen får vi genom att plussa ihop triangelns tre kanter." : "We find the perimeter by adding together the three outer edges of the triangle.",
                         latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3`
                     },
                     {
@@ -317,19 +317,19 @@ export class GeometryGenerator {
             token: this.toBase64(area.toString()), variationKey: v, type: 'calculate',
             clues: [
                 {
-                    text: lang === 'sv' ? "En triangel rymmer alltid exakt hälften så mycket yta som en vanlig fyrkant med samma mått." : "A triangle always holds exactly half the space surface of a standard rectangle with the same measurements.",
+                    text: lang === 'sv' ? "Arean till en triangel är hälften av en fyrhörning." : "The area of a triangle is half of a rectangle..",
                     latex: `\\text{Area} = \\frac{\\text{basen} \\cdot \\text{höjden}}{2}`
                 },
                 {
-                    text: lang === 'sv' ? `Gör uppställningen genom att sätta in basen (${base} cm) och den raka höjden (${height} cm) i täljaren:` : `Set up the structure by inserting the base (${base} cm) and the vertical height (${height} cm) inside the numerator position:`,
+                    text: lang === 'sv' ? `Gör uppställningen genom att sätta in basen (${base} cm) och den raka höjden (${height} cm) i täljaren:` : `Set up the problem by writing the base (${base} cm) and the vertical height (${height} cm) inside the numerator:`,
                     latex: `\\text{Area} = \\frac{\\mathbf{${base} \\cdot ${height}}}{2}`
                 },
                 {
-                    text: lang === 'sv' ? `Räkna ut gångertalet däruppe i täljaren först: ${base} gånger ${height} blir ${base * height}.` : `Calculate the multiplication on top inside the numerator track first: ${base} times ${height} equals ${base * height}.`,
+                    text: lang === 'sv' ? `Räkna ut multiplikationen däruppe i täljaren först: ${base} gånger ${height} blir ${base * height}.` : `Calculate the multiplication on top inside the numerator track first: ${base} times ${height} equals ${base * height}.`,
                     latex: `\\text{Area} = \\frac{\\mathbf{${base * height}}}{2}`
                 },
                 {
-                    text: lang === 'sv' ? `Dela nu resultatet med 2 för att halvera ytan och hitta slutsvaret.` : `Now divide that result score by 2 to split the surface layer and find your solution answer.`,
+                    text: lang === 'sv' ? `Dela nu resultatet med 2 för att halvera ytan och få svaret.` : `Now divide by 2 to get the answer.`,
                     latex: `\\text{Area} = \\mathbf{${area}}`
                 },
                 {
@@ -362,14 +362,14 @@ export class GeometryGenerator {
             
             const sharedClues = [
                 {
-                    text: lang === 'sv' ? "Arean för en cirkel räknar vi ut genom att ta: radien gånger radien gånger 3,14 (pi)." : "We find the area of a circle by taking: radius times radius times 3.14 (pi).",
+                    text: lang === 'sv' ? "Formeln till cirkelns area: radien gånger radien gånger 3,14 (pi)." : "We find the area of a circle by taking: radius times radius times 3.14 (pi).",
                     latex: `\\text{Area} = \\text{radie} \\cdot \\text{radie} \\cdot 3{,}14`
                 }
             ];
 
             if (isDiameter) {
                 sharedClues.push({
-                    text: lang === 'sv' ? `Figuren visar hela diametern (${d} cm). Vi måste halvera den först för att hitta radien från mitten ut till kanten.` : `The figure shows the full diameter (${d} cm). We must cut it in half first to establish the radius from the center to the edge.`,
+                    text: lang === 'sv' ? `Figuren visar hela diametern (${d} cm). Vi måste halvera den först för att hitta radien.` : `The figure shows the full diameter (${d} cm). We must cut it in half first to establish the radius from the center to the edge.`,
                     latex: `\\text{radie} = \\frac{${d}}{2} = \\mathbf{${r}}`
                 });
             }
@@ -384,7 +384,7 @@ export class GeometryGenerator {
                     latex: `\\text{Area} = \\mathbf{${r * r}} \\cdot 3{,}14`
                 },
                 {
-                    text: lang === 'sv' ? `Gångra till sist med 3,14 för att beräkna den färdiga ytan.` : `Finally, multiply by 3.14 to calculate the completed inner surface space total.`,
+                    text: lang === 'sv' ? `Multiplicera till sist med 3,14 för att beräkna den färdiga ytan.` : `Finally, multiply by 3.14 to calculate the completed inner surface space total.`,
                     latex: `\\text{Area} = \\mathbf{${ans}}`
                 },
                 {
@@ -411,25 +411,25 @@ export class GeometryGenerator {
             
             const sharedClues = [
                 {
-                    text: lang === 'sv' ? "Omkretsen runt en cirkel kallas för omkretslinjen. Den beräknas som hela diametern tvärsöver gånger 3,14 (pi)." : "The distance around a circle is called the circumference. It is calculated as the full diameter across times 3.14 (pi).",
+                    text: lang === 'sv' ? "Omkretsen runt en cirkel beräknas genom att multiplicera diametern och 3,14 (pi)." : "The distance around a circle is called the circumference. It is calculated by multiplying the diameter with 3.14 (pi).",
                     latex: `\\text{Omkrets} = \\text{diameter} \\cdot 3{,}14`
                 }
             ];
 
             if (!isDiameter) {
                 sharedClues.push({
-                    text: lang === 'sv' ? `Figuren ger oss bara radien (${r} cm). Vi fördubblar den för att hitta hela diametern tvärsöver cirkeln.` : `The figure only provides the single radius line (${r} cm). We double it to find the full diameter across the circle.`,
+                    text: lang === 'sv' ? `Figuren ger oss bara radien (${r} cm). Vi fördubblar den för att hitta hela diametern till cirkeln.` : `The figure only provides the single radius line (${r} cm). We double it to find the full diameter across the circle.`,
                     latex: `\\text{diameter} = ${r} \\cdot 2 = \\mathbf{${d}}`
                 });
             }
 
             sharedClues.push(
                 {
-                    text: lang === 'sv' ? `Gångra nu diametern (${d} cm) med 3,14 för att mäta längden runt om.` : `Now multiply the diameter value (${d} cm) by 3.14 to calculate the outer length around the loop.`,
+                    text: lang === 'sv' ? `Multiplicera diametern (${d} cm) med 3,14 för att mäta längden runt om.` : `Now multiply the diameter value (${d} cm) by 3.14 to calculate the outer length around the loop.`,
                     latex: `\\text{Omkrets} = \\mathbf{${d} \\cdot 3{,}14}`
                 },
                 {
-                    text: lang === 'sv' ? "Utför multiplikationen för att fastställa omkretsen." : "Complete the final decimal multiplication to determine the circumference score.",
+                    text: lang === 'sv' ? "Multiplicera för att beräkna omkretsen." : "Complete the final decimal multiplication to determine the circumference score.",
                     latex: `\\text{Omkrets} = \\mathbf{${ans}}`
                 },
                 {
@@ -473,7 +473,7 @@ export class GeometryGenerator {
                         latex: `\\text{Area} = \\frac{\\mathbf{${fullArea}}}{\\mathbf{2}}`
                     },
                     {
-                        text: lang === 'sv' ? "Förenkla divisionen för att få fram golvytan i halvcirkeln." : "Simplify the division to calculate the floor area inside the semicircle.",
+                        text: lang === 'sv' ? "Förenkla divisionen för att få fram ytan i halvcirkeln." : "Simplify the division to calculate the floor area inside the semicircle.",
                         latex: `\\text{Area} = \\mathbf{${ans}}`
                     },
                     {
@@ -496,7 +496,7 @@ export class GeometryGenerator {
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     {
-                        text: lang === 'sv' ? "Hela varvet runt en halvcirkel består av två delar: den runda svängda kanten och den platta bottenlinjen." : "The whole path around a semicircle consists of two sections: the round curved edge and the flat baseline.",
+                        text: lang === 'sv' ? "Hela varvet runt en halvcirkel består av två delar: den runda kanten och den platta bottenlinjen." : "The whole path around a semicircle consists of two sections: the round curved edge and the flat baseline.",
                         latex: `\\text{Omkrets} = \\text{runda kanten} + \\text{platta botten}`
                     },
                     {
@@ -508,7 +508,7 @@ export class GeometryGenerator {
                         latex: `\\text{Omkrets} = \\mathbf{${arc} + ${d}}`
                     },
                     {
-                        text: lang === 'sv' ? "Slutför additionen för att bestämma den totala sträckan runt om." : "Complete the final addition to determine the total outer boundary distance.",
+                        text: lang === 'sv' ? "Addera för att beräkna den totala sträckan runt om." : "Add to determine the total distance around the shape.",
                         latex: `\\text{Omkrets} = \\mathbf{${ans}}`
                     },
                     {
@@ -543,7 +543,7 @@ export class GeometryGenerator {
                         latex: `\\text{Area} = \\frac{\\mathbf{${fullArea}}}{\\mathbf{4}}`
                     },
                     {
-                        text: lang === 'sv' ? "Utför divisionen för att bestämma kvartscirkelns färdiga yta." : "Execute the division step to determine the quarter circle's completed area.",
+                        text: lang === 'sv' ? "Dividera för att bestämma kvartscirkelns yta." : "Divide to find the quarter circle's area.",
                         latex: `\\text{Area} = \\mathbf{${ans}}`
                     },
                     {
@@ -566,7 +566,7 @@ export class GeometryGenerator {
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     {
-                        text: lang === 'sv' ? "Kvartscirkelns omkrets består av tre delar: den runda svängda tårtkanten och de två raka sidoväggarna (radierna) som möts i mitten." : "The perimeter of a quarter circle consists of three parts: the round curved crust edge and the two straight side walls (radii) meeting in the corner.",
+                        text: lang === 'sv' ? "Kvartscirkelns omkrets består av tre delar: den runda kurvan och de två raka sidoväggarna (radierna) som möts i mitten." : "The perimeter of a quarter circle consists of three parts: the round curved crust edge and the two straight side walls (radii) meeting in the corner.",
                         latex: `\\text{Omkrets} = \\text{runda kanten} + \\text{rak vägg}_1 + \\text{rak vägg}_2`
                     },
                     {
@@ -768,7 +768,7 @@ export class GeometryGenerator {
                 
             clues = [
                 {
-                    text: lang === 'sv' ? "Omkretsen runt portalen består av den platta basen nertill, två stående sidoväggar och den svängda runda bågen överst." : "The perimeter around the portal consists of the flat baseline below, two vertical side walls, and the curved round arc on top.",
+                    text: lang === 'sv' ? "Omkretsen runt portalen består av den platta basen nertill, två stående sidoväggar och den runda bågen överst." : "The perimeter around the portal consists of the flat baseline below, two vertical side walls, and the curved round arc on top.",
                     latex: `\\text{Omkrets} = \\text{bas} + 2 \\cdot \\text{sidovägg} + \\text{båglängd}`
                 },
                 {
