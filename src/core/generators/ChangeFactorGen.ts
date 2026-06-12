@@ -111,9 +111,26 @@ export class ChangeFactorGen {
                 token: this.toBase64(factor.toString()),
                 variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Vi utgår från 100% (det hela), vilket motsvarar talet 1,0 i decimalform." : "Step 1: We start with 100% (the whole), which corresponds to the number 1.0 in decimal form.", latex: "100\\% = 1.0" },
-                    { text: lang === 'sv' ? (isIncrease ? `Addera ökningen (${pct}%) till basen (1,0).` : `Dra bort minskningen (${pct}%) från basen (1,0).`) : (isIncrease ? `Add the increase (${pct}%) to the base (1.0).` : `Subtract the decrease (${pct}%) from the base (1.0).`), latex: isIncrease ? `1.0 + ${pct/100} \\\\ ${factor}` : `1.0 - ${pct/100} \\\\ ${factor}` },
-                    { text: lang === 'sv' ? `Svar: ${factor}` : `Answer: ${factor}` }
+                    { 
+                        text: lang === 'sv' ? "Vi utgår alltid från 100%, vilket betyder hela ursprungsvärdet (1,00 i decimalform)." : "We always start with 100%, which represents the full original value (1.00 in decimal form).", 
+                        latex: `100\\% = 1.00` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Gör om procentsatsen ${pct}% till decimalform genom att dela med 100.` : `Convert the percentage ${pct}% to decimal form by dividing it by 100.`, 
+                        latex: `${pct}\\% = \\mathbf{${pct / 100}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? (isIncrease ? `Eftersom värdet ökar plussar vi på decimalen till 1,00.` : `Eftersom värdet minskar drar vi bort decimalen från 1,00.`) : (isIncrease ? `Since the value increases, add the decimal to 1.00.` : `Since the value decreases, subtract the decimal from 1.00.`), 
+                        latex: isIncrease ? `\\text{Förändringsfaktor} = 1.0 + \\mathbf{${pct / 100}}` : `\\text{Förändringsfaktor} = 1.0 - \\mathbf{${pct / 100}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut summan eller skillnaden för att få fram slutsvar." : "Calculate the sum or difference to reach the final answer value.", 
+                        latex: `\\text{Förändringsfaktor} = \\mathbf{${factor}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${factor}` : `Answer: ${factor}`, 
+                        latex: `${factor}` 
+                    }
                 ],
                 metadata: { variation_key: v, difficulty: 1 }
             };
@@ -129,9 +146,26 @@ export class ChangeFactorGen {
                 token: this.toBase64(diffPct.toString()),
                 variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Jämför förändringsfaktorn med 1,0 för att se hur stor skillnaden är." : "Step 1: Compare the change factor with 1.0 to see the size of the difference.", latex: factor > 1 ? `${factor} - 1.0 \\\\ ${diff.toFixed(2)}` : `1.0 - ${factor} \\\\ ${diff.toFixed(2)}` },
-                    { text: lang === 'sv' ? "Gör om skillnaden till procent genom att multiplicera med 100." : "Convert the difference to a percentage by multiplying by 100.", latex: `${diff.toFixed(2)} · 100 \\\\ ${diffPct}\\%` },
-                    { text: lang === 'sv' ? `Svar: ${diffPct}` : `Answer: ${diffPct}` }
+                    { 
+                        text: lang === 'sv' ? "Vi jämför förändringsfaktorn med talet 1,00 (vilket motsvarar 100%)." : "We compare the change factor against the base number 1.00 (which matches 100%).", 
+                        latex: `\\text{Bas} = 1,00` 
+                    },
+                    { 
+                        text: lang === 'sv' ? (isIncrease ? `Minska med 1,00 för att se hur mycket större talet är.` : `Ta bort talet från 1,0 för att se hur mycket som saknas.`) : (isIncrease ? `Subtract 1.0 to find out how much larger the factor is.` : `Subtract the factor from 1.0 to find out how much is missing.`), 
+                        latex: isIncrease ? `\\text{Skillnad} = ${factor} - 1,00` : `\\text{Skillnad} = 1.0 - ${factor}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Förenkla subtraktionen för att hitta skillnaden i decimalform." : "Simplify the subtraction to discover the difference in decimal form.", 
+                        latex: `\\text{Skillnad} = \\mathbf{${diff.toFixed(2)}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Gör om decimaltalet till procent genom att flytta kommatecknet två steg åt höger (gånger 100)." : "Convert the decimal value to a percentage by moving the decimal point two steps to the right (multiply by 100).", 
+                        latex: `${diff.toFixed(2)} \\cdot 100 = \\mathbf{${diffPct}\\%}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${diffPct}` : `Answer: ${diffPct}`, 
+                        latex: `${diffPct}` 
+                    }
                 ],
                 metadata: { variation_key: v, difficulty: 1 }
             };
@@ -171,9 +205,26 @@ export class ChangeFactorGen {
             variationKey: v, 
             type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Hitta förändringsfaktorn för en ${pct}% ${isIncrease ? 'höjning' : 'sänkning'}.` : `Step 1: Find the change factor for a ${pct}% ${isIncrease ? 'increase' : 'decrease'}.`, latex: isIncrease ? `1.0 + ${pct/100} \\\\ ${factor}` : `1.0 - ${pct/100} \\\\ ${factor}` },
-                { text: lang === 'sv' ? "Multiplicera det gamla värdet med förändringsfaktorn." : "Multiply the old value by the change factor.", latex: `${base} · ${factor} \\\\ ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? (isIncrease ? `Börja med att hitta förändringsfaktorn för en ökning på ${pct}%.` : `Börja med att hitta förändringsfaktorn för en minskning på ${pct}%.`) : (isIncrease ? `Start by finding the change factor for an increase of ${pct}%.` : `Start by finding the change factor for a decrease of ${pct}%.`), 
+                    latex: isIncrease ? `\\text{Förändringsfaktor} = 1,00 + ${pct / 100}` : `\\text{Förändringsfaktor} = 1.00 - ${pct / 100}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut förändringsfaktorn:" : "Calculate the change factor:", 
+                    latex: `\\text{Förändringsfaktor} = \\mathbf{${factor}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Multiplicera nu det gamla ursprungliga priset (${base} kr) med förändringsfaktorn.` : `Now multiply the old original value (${base} kr) by the change factor.`, 
+                    latex: `\\text{Nytt pris} = ${base} \\cdot \\mathbf{${factor}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Utför multiplikationen för att räkna ut det nya priset." : "Perform the multiplication to compute the new final price.", 
+                    latex: `\\text{Nytt pris} = \\mathbf{${ans}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    latex: `${ans}` 
+                }
             ],
             metadata: { variation_key: v, difficulty: isIncrease ? 1 : 2 }
         };
@@ -212,9 +263,22 @@ export class ChangeFactorGen {
             variationKey: v, 
             type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Hitta förändringsfaktorn för en ${pct}% ${isIncrease ? 'höjning' : 'sänkning'}.` : `Step 1: Find the change factor for a ${pct}% ${isIncrease ? 'increase' : 'decrease'}.`, latex: `f = ${factor}` },
-                { text: lang === 'sv' ? "För att hitta ursprungsvärdet dividerar vi det nya värdet med förändringsfaktorn." : "To find the original value, divide the new value by the change factor.", latex: `\\frac{${newPrice}}{${factor}} \\\\ ${original}` },
-                { text: lang === 'sv' ? `Svar: ${original}` : `Answer: ${original}` }
+                { 
+                    text: lang === 'sv' ? (isIncrease ? `Börja med att bestämma förändringsfaktorn för en ökning på ${pct}%.` : `Börja med att bestämma förändringsfaktorn för en minskning på ${pct}%.`) : (isIncrease ? `Start by determining the change factor for an increase of ${pct}%.` : `Start by determining the change factor for a decrease of ${pct}%.`), 
+                    latex: isIncrease ? `\\text{Förändringsfaktor} = 1,00 + ${pct / 100} = \\mathbf{${factor}}` : `\\text{Förändringsfaktor} = 1.00 - ${pct / 100} = \\mathbf{${factor}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "För att räkna baklänges och hitta startpriset delar vi det nya priset med förändringsfaktorn." : "To work backwards and find the starting original price, we divide the new price by the change factor.", 
+                    latex: `\\text{Ursprungligt pris} = \\frac{${newPrice}}{\\mathbf{${factor}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut divisionen för att hitta vad varan kostade från början." : "Calculate the division to figure out what the item cost originally from the start.", 
+                    latex: `\\text{Ursprungligt pris} = \\mathbf{${original}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${original}` : `Answer: ${original}`, 
+                    latex: `${original}` 
+                }
             ],
             metadata: { variation_key: v, difficulty: 3 }
         };
@@ -253,9 +317,26 @@ export class ChangeFactorGen {
             variationKey: v, 
             type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Vid flera förändringar efter varandra multiplicerar vi förändringsfaktorerna med varandra." : "Step 1: For multiple changes in sequence, multiply the change factors together.", latex: `F_1 = ${f1}, \\; F_2 = ${f2}` },
-                { text: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.", latex: `${f1} · ${f2} \\\\ ${totalFactor}` },
-                { text: lang === 'sv' ? `Svar: ${totalFactor}` : `Answer: ${totalFactor}` }
+                { 
+                    text: lang === 'sv' ? `Börja med att ta fram förändringsfaktorerna för de två stegen var för sig: (${inc1 ? '+' : '-'}${pct1}% och ${inc2 ? '+' : '-'}${pct2}%).` : `Start by finding the individual change factors for the two separate steps: (${inc1 ? '+' : '-'}${pct1}% and ${inc2 ? '+' : '-'}${pct2}%).`, 
+                    latex: `f_1 = ${f1}, \\quad f_2 = ${f2}` 
+                },
+                { 
+                    text: lang === 'sv' ? "När ändringar sker efter varandra räknar vi ut den totala effekten genom att multiplicera faktorerna." : "When changes happen sequentially one after another, we find the combined total change by multiplying the factors together.", 
+                    latex: `\\text{Total förändringsfaktor} = {f_1} \\cdot {f_2}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Sätt in värdena och multiplicera: ${f1} gånger ${f2}.` : `Insert the values and multiply: ${f1} times ${f2}.`, 
+                    latex: `\\text{Total förändringsfaktor} = ${f1} \\cdot \\mathbf{${f2}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Förenkla multiplikationen för att fastställa det slutgiltiga svaret." : "Simplify the multiplication to settle the final compounding value result.", 
+                    latex: `\\text{Total förändringsfaktor} = \\mathbf{${totalFactor}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${totalFactor}` : `Answer: ${totalFactor}`, 
+                    latex: `${totalFactor}` 
+                }
             ],
             metadata: { variation_key: v, difficulty: 4 }
         };

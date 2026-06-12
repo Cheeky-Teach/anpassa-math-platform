@@ -10,6 +10,8 @@ import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
 import AngleVisual from '../visuals/AngleComponents';
 import CluePanel from '../practice/CluePanel';
 import HistoryList from '../practice/HistoryList';
+import { useMyCoach } from '../../hooks/useMyCoach';
+import MyCoachModal from '../modals/MyCoachModal';
 import LevelUpModal from '../modals/LevelUpModal';
 import { LEVEL_DESCRIPTIONS, CATEGORIES } from '../../constants/localization'; 
 import { FractionInput, ScientificInput, ExponentInput } from '../ui/InputComponents';
@@ -28,6 +30,9 @@ const PracticeView = ({
     const [shake, setShake] = useState(false);
     const [isHistoryExpanded, setIsHistoryExpanded] = useState(false); // NEW: Controls the history collapse
     const retryRef = useRef(actions.retry);
+
+    // NEW: INITIALIZE THE MY COACH PLAYER ENGINE
+    const { isOpen: isCoachOpen, openCoach, closeCoach, coachProps } = useMyCoach(question, lang);
 
     // --- 1. EARLY DEFINITIONS (Prevents ReferenceErrors) ---
     const cluesLabel = ui.hintsTitle || (lang === 'sv' ? "Ledtrådar" : "Hints");
@@ -383,12 +388,13 @@ const PracticeView = ({
                                     <Zap size={12}/> {ui.btnHint}
                                 </button>
 
-                                <button 
-                                    onClick={handleSolution} 
-                                    disabled={!question.clues || isSolutionRevealed} 
-                                    className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-white text-slate-400 border-2 border-slate-100 disabled:opacity-30 transition-all shadow-sm"
+                                {/* 🟢 NEW: FULL-WIDTH PERSONAL COACH TRIGGER BUTTON */}
+                                <button
+                                    onClick={openCoach}
+                                    className="flex items-center justify-center gap-4 py-3 px-2 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer shadow-md border-b-2 border-purple-800"
+                                    title={lang === 'sv' ? "Starta tavel-repris och få hjälp" : "Start interactive step guide"}
                                 >
-                                    <Info size={12}/> {ui.btnSolution}
+                                    {lang === 'sv' ? "Hjälp!" : "Help!"}
                                 </button>
 
                                 <button 
@@ -561,6 +567,16 @@ const PracticeView = ({
                     <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-emerald-100"></path>
                 </svg>
             </div>
+
+            {/* 🟢 NEW: MY COACH INTERACTIVE WHITEBOARD REPLAY MODAL MOUNT */}
+            {isCoachOpen && (
+                <MyCoachModal 
+                    lang={lang} 
+                    onClose={closeCoach} 
+                    question={question}
+                    {...coachProps} 
+                />
+            )}
         </div>
     );
 };

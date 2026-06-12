@@ -134,17 +134,54 @@ export class UnitConversionGen {
             ? `Omvandla från ${this.getUnitName(from, 'sv')} till ${this.getUnitName(to, 'sv')}.`
             : `Convert from ${this.getUnitName(from, 'en')} to ${this.getUnitName(to, 'en')}.`;
 
-        const factorText = lang === 'sv'
-            ? `Det går ${factor} ${this.getUnitName(isMultiplying ? to : from, 'sv')} på varje ${this.getUnitName(isMultiplying ? from : to, 'sv')}.`
-            : `There are ${factor} ${this.getUnitName(isMultiplying ? to : from, 'en')} in every ${this.getUnitName(isMultiplying ? from : to, 'en')}.`;
-
-        const moveText = lang === 'sv'
-            ? `Vid omvandling till en ${isMultiplying ? 'mindre' : 'större'} enhet ska decimaltecknet flyttas ${steps} steg åt ${direction}.`
-            : `When converting to a ${isMultiplying ? 'smaller' : 'larger'} unit, the decimal point should move ${steps} ${steps === 1 ? 'step' : 'steps'} to the ${direction}.`;
-
         const mathOp = isMultiplying 
-            ? `${valStr} · ${factor} = ${ansStr}` 
-            : `\\frac{${valStr}}{${factor}} = ${ansStr}`;
+            ? `${valStr} \\cdot ${factor} = \\mathbf{${ansStr}}` 
+            : `\\frac{${valStr}}{${factor}} = \\mathbf{${ansStr}}`;
+
+        // 🚀 Unified, conversational clues built perfectly row-by-row for the digital chalkboard
+        const clues = lang === 'sv' ? [
+            {
+                text: `Kolla på sambandet mellan enheterna: Det går exakt ${factor} ${this.getUnitName(isMultiplying ? to : from, 'sv')} på varje ${this.getUnitName(isMultiplying ? from : to, 'sv')}.`,
+                latex: `1 \\text{ ${isMultiplying ? from : to}} = ${factor} \\text{ ${isMultiplying ? to : from}}`
+            },
+            {
+                text: isMultiplying
+                    ? `Eftersom vi byter till en mindre enhet (${this.getUnitName(to, 'sv')}) behöver vi fler bitar. Talet ska göras STÖRRE! Vi låter kommatecknet hoppa ${steps} ${steps === 1 ? 'steg' : 'steg'} åt höger.`
+                    : `Eftersom vi byter till en större enhet (${this.getUnitName(to, 'sv')}) samlar vi ihop bitarna. Talet ska göras MINDRE! Vi låter kommatecknet hoppa ${steps} ${steps === 1 ? 'steg' : 'steg'} åt vänster.`,
+                latex: isMultiplying 
+                    ? `${valStr} \\rightarrow \\text{Flytta kommat } \\mathbf{${steps} \\text{ steg } \\rightarrow}` 
+                    : `${valStr} \\rightarrow \\text{Flytta kommat } \\mathbf{\\leftarrow ${steps} \\text{ steg}}`
+            },
+            {
+                text: `Räkna ut värdet genom att utföra enhetsbytet på raden. Fyll i med extra nollor om platserna tar slut.`,
+                latex: mathOp
+            },
+            {
+                text: `Svar: ${ansStr} ${to}`,
+                latex: `${ansStr} \\text{ ${to}}`
+            }
+        ] : [
+            {
+                text: `Check the relationship between the units: There are exactly ${factor} ${this.getUnitName(isMultiplying ? to : from, 'en')} in every ${this.getUnitName(isMultiplying ? from : to, 'en')}.`,
+                latex: `1 \\text{ ${isMultiplying ? from : to}} = ${factor} \\text{ ${isMultiplying ? to : from}}`
+            },
+            {
+                text: isMultiplying
+                    ? `Since we are converting to a smaller unit (${this.getUnitName(to, 'en')}), we need more pieces. The number must get LARGER! Move the decimal point ${steps} ${steps === 1 ? 'step' : 'steps'} to the right.`
+                    : `Since we are converting to a larger unit (${this.getUnitName(to, 'en')}), we pack the pieces together. The number must get SMALLER! Move the decimal point ${steps} ${steps === 1 ? 'step' : 'steps'} to the left.`,
+                latex: isMultiplying 
+                    ? `${valStr} \\rightarrow \\text{Move decimal } \\mathbf{${steps} \\text{ steps } \\rightarrow}` 
+                    : `${valStr} \\rightarrow \\text{Move decimal } \\mathbf{\\leftarrow ${steps} \\text{ steps}}`
+            },
+            {
+                text: `Calculate the final value by executing the change on the board. Fill in with zeros if you run out of spaces.`,
+                latex: mathOp
+            },
+            {
+                text: `Answer: ${ansStr} ${to}`,
+                latex: `${ansStr} \\text{ ${to}}`
+            }
+        ];
 
         return {
             renderData: {
@@ -155,11 +192,7 @@ export class UnitConversionGen {
             token: this.toBase64(ans.toString()),
             variationKey: v,
             type: 'calculate',
-            clues: [
-                { text: `Steg 1: ${factorText}` },
-                { text: `Steg 2: ${moveText}`, latex: mathOp },
-                { text: `${lang === 'sv' ? 'Svar' : 'Answer'}: ${ansStr} ${to}` }
-            ]
+            clues
         };
     }
 

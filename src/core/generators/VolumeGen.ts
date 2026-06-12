@@ -115,10 +115,19 @@ export class VolumeGen {
                 },
                 token: this.toBase64(h.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Volymen av ett rätblock beräknas som bottenarean multiplicerat med höjden." : "Step 1: The volume of a rectangular prism is calculated as base area multiplied by height.", latex: "V = B · h" },
-                    { text: lang === 'sv' ? "Steg 2: För att hitta höjden måste vi dividera den totala volymen med bottenarean." : "Step 2: To find the height, we must divide the total volume by the base area." },
-                    { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `h = \\frac{${vol}}{${baseArea}}` },
-                    { text: lang === 'sv' ? `Svar: ${h}` : `Answer: ${h}` }
+                    { 
+                        text: lang === 'sv' ? "Vi ska räkna baklänges! Volymen är alltid basytan multiplicerat med höjden." : "We need to work backwards! The volume (all space inside) is always the base's area at the bottom multiplied by the height.", 
+                        latex: `\\text{Volym} = \\text{basyta} \\cdot \\text{höjd}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `För att kasta om formeln och hitta den dolda höjden, tar vi hela volymen (${vol}) och delar (dividerar) med den kända basytan (${baseArea}).` : `To reverse the formula and find the hidden height, take the total volume (${vol}) and divide by the known base's area (${baseArea}).`, 
+                        latex: `\\text{höjd} = \\frac{\\text{Volym}}{\\text{basyta}} = \\frac{${vol}}{\\mathbf{${baseArea}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut divisionen för att låsa upp höjden." : "Calculate the division step to unlock the height.", 
+                        latex: `\\text{höjd} = \\mathbf{${h}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${h}` : `Answer: ${h}`, latex: `${h}` }
                 ]
             };
         }
@@ -133,9 +142,19 @@ export class VolumeGen {
                 },
                 token: this.toBase64(ansText), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Titta på formeln $V = B · h$." : "Step 1: Look at the formula $V = B · h$." },
-                    { text: lang === 'sv' ? `Steg 2: Eftersom höjden (h) multipliceras med ${factor}, kommer hela resultatet också att multipliceras med ${factor}.` : `Step 2: Since the height (h) is multiplied by ${factor}, the whole result will also be multiplied by ${factor}.` },
-                    { text: lang === 'sv' ? `Svar: ${ansText}` : `Answer: ${ansText}` }
+                    { 
+                        text: lang === 'sv' ? "Volymen (luftutrymmet) byggs upp av formeln: basytan gånger höjden." : "The volume (the air space) is built up by the formula: base's area at the bottom times the height.", 
+                        latex: `\\text{Volym} = \\text{basyta} \\cdot \\text{höjd}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom vi behåller samma basyta men bygger huset exakt ${factor} gånger högre rakt upp, kommer det att få plats exakt ${factor} gånger så mycket luft inuti.` : `Since we keep the exact same base's area but build the house exactly ${factor} times taller straight up, it will hold exactly ${factor} times as much air inside.`, 
+                        latex: `\\text{Ny Volym} = \\text{basyta} \\cdot \\mathbf{(${factor} \\cdot \\text{höjd})}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Hela volymutrymmet växer alltså i exakt samma takt som höjden, det vill säga ${factor} gånger.` : `The entire volume space grows at the exact same rate as the height, meaning ${factor} times.`, 
+                        latex: `\\text{Resultat} = \\mathbf{${factor} \\text{ gånger större}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${ansText}` : `Answer: ${ansText}`, latex: `\\text{${ansText}}` }
                 ]
             };
         }
@@ -149,15 +168,28 @@ export class VolumeGen {
             },
             token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Volymen beräknas genom att multiplicera längden, bredden och höjden." : "Step 1: The volume is calculated by multiplying the length, width, and height.", latex: "V = l · b · h" },
-                { text: lang === 'sv' ? `Steg 2: Beräkna bottenarean först (${w} · ${d}).` : `Step 2: Calculate the base area first (${w} · ${d}).`, latex: `${w} · ${d} = ${baseArea}` },
-                { text: lang === 'sv' ? `Steg 3: Multiplicera bottenarean med höjden (${h}).` : `Step 3: Multiply the base area by the height (${h}).`, latex: `${baseArea} · ${h} = ${vol}` },
-                { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}` }
+                { 
+                    text: lang === 'sv' ? "För att hitta volymen (hur mycket som får plats inuti boxen) gångrar (multiplicerar) vi bredden, djupet och höjden med varandra." : "To find the volume (how much fits inside the box), we multiply the width, depth, and height with each other.", 
+                    latex: `\\text{Volym} = \\text{bredd} \\cdot \\text{djup} \\cdot \\text{höjd}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna först ut basytan av boxen genom att ta bredden (${w}) gånger djupet (${d}).` : `First, calculate the base's area at the bottom of the box by taking the width (${w}) times the depth (${d}).`, 
+                    latex: `\\text{basyta} = ${w} \\cdot ${d} = \\mathbf{${baseArea}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Gångra sedan basytan (${baseArea}) med hur hög boxen är (${h}) för att fylla hela utrymmet.` : `Then multiply the base's area (${baseArea}) by how tall the box is (${h}) to fill the entire space.`, 
+                    latex: `\\text{Volym} = \\mathbf{${baseArea}} \\cdot ${h}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Multiplicera." : "Multiply.", 
+                    latex: `\\text{Volym} = \\mathbf{${vol}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}`, latex: `${vol}` }
             ]
         };
     }
 
-    // --- LEVEL 2: TRIANGULAR PRISM (Prisma) ---
+        // --- LEVEL 2: TRIANGULAR PRISM (Prisma) ---
     private level2_TriPrism(lang: string, variationKey?: string, options: any = {}): any {
         const b = MathUtils.randomInt(4, 12), hTri = MathUtils.randomInt(5, 12), length = MathUtils.randomInt(8, 17);
         const baseArea = (b * hTri) / 2;
@@ -166,19 +198,33 @@ export class VolumeGen {
         return {
             renderData: {
                 geometry: { type: 'triangular_prism', labels: { b, h: hTri, l: length } },
-                description: lang === 'sv' ? "Beräkna volymen för det triangulära prismat." : "Calculate the volume of the triangular prism.",
+                description: lang === 'sv' ? "Beräkna volymen for det triangulära prismat." : "Calculate the volume of the triangular prism.",
                 interceptorToken: `${b} ; ${hTri} ; ${length}`, 
                 answerType: 'numeric', suffix: 'cm³'
             },
             token: this.toBase64(vol.toString()), variationKey: 'vol_tri_prism_std', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Identifiera basytan. För ett prisma är volymen bottenarean (triangeln) multiplicerat med längden." : "Step 1: Identify the base surface. For a prism, the volume is the base area (the triangle) multiplied by the length." },
-                { text: lang === 'sv' ? "Steg 2: Beräkna triangelns area (basen · höjden / 2)." : "Step 2: Calculate the area of the triangle (base · height / 2).", latex: `\\frac{${b} · ${hTri}}{2} = ${baseArea}` },
-                { text: lang === 'sv' ? `Steg 3: Multiplicera basarean (${baseArea}) med prismats längd (${length}).` : `Step 3: Multiply the base area (${baseArea}) by the length of the prism (${length}).`, latex: `${baseArea} · ${length} = ${vol}` },
-                { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}` }
+                { 
+                    text: lang === 'sv' ? "Volymen för ett prisma räknas ut genom att ta basytan (som här är en triangel) och gångra med hur lång figuren är." : "The volume of a prism is calculated by taking the base's area at the bottom (which here is a triangle) and multiplying by how long the shape is.", 
+                    latex: `\\text{Volym} = \\text{Triangelns basyta} \\cdot \\text{längd}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut triangelns basyta först: basen (${b}) gånger höjden (${hTri}) delat på 2.` : `Calculate the triangle's base's area first: base (${b}) times height (${hTri}) divided by 2.`, 
+                    latex: `\\text{Triangelns basyta} = \\frac{${b} \\cdot ${hTri}}{2} = \\mathbf{${baseArea}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Gångra nu denna basyta (${baseArea}) med prismats hela längd (${length}) för att få rymden.` : `Now multiply this base's area (${baseArea}) by the prism's entire length (${length}) to get the volume capacity.`, 
+                    latex: `\\text{Volym} = \\mathbf{${baseArea}} \\cdot ${length}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Slutför uträkningen för att fastställa rymden." : "Complete the calculation step to establish the total capacity volume.", 
+                    latex: `\\text{Volym} = \\mathbf{${vol}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}`, latex: `${vol}` }
             ]
         };
     }
+    
 
     // --- LEVEL 3: CYLINDER (Cylinder) ---
     private level3_Cylinder(lang: string, variationKey?: string, options: any = {}): any {
@@ -196,11 +242,27 @@ export class VolumeGen {
             },
             token: this.toBase64(vol.toString()), variationKey: 'vol_cyl_std', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Volymen för en cylinder är basarean (cirkeln) multiplicerat med höjden." : "Step 1: The volume of a cylinder is the base area (the circle) multiplied by the height.", latex: "V = \\pi · r^2 · h" },
-                ...(useDiameter ? [{ text: lang === 'sv' ? `Steg 2: Eftersom diametern är ${displayVal} cm är radien hälften, alltså ${r} cm.` : `Step 2: Since the diameter is ${displayVal} cm, the radius is half, which is ${r} cm.`, latex: `r = \\frac{${displayVal}}{2} = ${r}` }] : []),
-                { text: lang === 'sv' ? `Steg 3: Beräkna cirkelns area ($\\pi · r^2$).` : `Step 3: Calculate the area of the circle ($\\pi · r^2$).`, latex: `3,14 · ${r}^2 = ${3.14 * r * r}` },
-                { text: lang === 'sv' ? `Steg 4: Multiplicera arean med höjden (${h}).` : `Step 4: Multiply the area by the height (${h}).`, latex: `${3.14 * r * r} · ${h} \\approx ${vol}` },
-                { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}` }
+                { 
+                    text: lang === 'sv' ? "Volymen för ett runt rör (en cylinder) räknas ut genom att ta den runda basytan och gångra med höjden." : "The volume of a cylinder is calculated by taking the round base's area at the bottom and multiplying by the height.", 
+                    latex: `\\text{Volym} = \\text{Runda basytan} \\cdot \\text{höjd}` 
+                },
+                ...(useDiameter ? [{ 
+                    text: lang === 'sv' ? `Måttet i bilden visar hela bredden (diametern) som är ${displayVal} cm. Radien (avståndet från mitten) är hälften, alltså ${r} cm.` : `The dimension in the image shows the full width (diameter) which is ${displayVal} cm. The radius (distance from the center) is half, which is ${r} cm.`, 
+                    latex: `r = \\frac{${displayVal}}{2} = \\mathbf{${r}}` 
+                }] : []),
+                { 
+                    text: lang === 'sv' ? `Räkna ut den runda cirkelns basyta: radien i kvadrat (${r} · ${r}) gånger pi (3,14).` : `Calculate the area of the round circle floor: radius squared (${r} · ${r}) times pi (3.14).`, 
+                    latex: `\\text{Runda basytan} = 3{,}14 \\cdot ${r} \\cdot ${r} = \\mathbf{${3.14 * r * r}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Gångra nu denna runda basyta (${3.14 * r * r}) med rörets hela höjd (${h}).` : `Now multiply this round base's area (${3.14 * r * r}) by the tube's full height (${h}).`, 
+                    latex: `\\text{Volym} = \\mathbf{${3.14 * r * r}} \\cdot ${h}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Avrunda räkningen till närmaste heltal för att få slutsvaret." : "Round the calculation to the nearest whole number to get the final answer.", 
+                    latex: `\\text{Volym} \\approx \\mathbf{${vol}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}`, latex: `${vol}` }
             ]
         };
     }
@@ -223,10 +285,23 @@ export class VolumeGen {
                 },
                 token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: En spetsig figur (som en pyramid) rymmer bara en tredjedel av vad ett rätblock med samma bas och höjd gör." : "Step 1: A pointed shape (like a pyramid) holds only one third of what a rectangular prism with the same base and height does.", latex: "V = \\frac{B · h}{3}" },
-                    { text: lang === 'sv' ? `Steg 2: Beräkna basytans area (${s} · ${s}).` : `Step 2: Calculate the area of the base (${s} · ${s}).`, latex: `B = ${baseArea}` },
-                    { text: lang === 'sv' ? `Steg 3: Multiplicera basarean med höjden (${h}) och dela sedan med 3.` : `Step 3: Multiply the base area by the height (${h}) and then divide by 3.`, latex: `\\frac{${baseArea} · ${h}}{3} = ${vol}` },
-                    { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}` }
+                    { 
+                        text: lang === 'sv' ? "Kom ihåg guldregeln för spetsiga figurer: En pyramids volym är en tredjedel (dividera med 3) av ett rätblocks volym om de har samma basyta." : "Remember the golden rule for pointed shapes: A pyramid holds exactly one third (divided by 3) compared to a box with the same base.", 
+                        latex: `\\text{Volym} = \\frac{\\text{basyta} \\cdot \\text{höjd}}{3}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut kvadratens basyta i botten: ${s} gånger ${s} blir ${baseArea}.` : `Calculate the square base's area at the bottom: ${s} times ${s} equals ${baseArea}.`, 
+                        latex: `\\text{basyta} = ${s} \\cdot ${s} = \\mathbf{${baseArea}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Gångra basytan (${baseArea}) med höjden (${h}) och glöm inte att dela med 3 i slutet eftersom figuren är spetsig.` : `Multiply the base's area (${baseArea}) by the height (${h}) and don't forget to divide by 3 at the end because the shape is pointed.`, 
+                        latex: `\\text{Volym} = \\frac{\\mathbf{${baseArea}} \\cdot ${h}}{3}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut divisionen för att få fram pyramidens färdiga rymd." : "Calculate the division to get the pyramid's final volumetric capacity.", 
+                        latex: `\\text{Volym} = \\mathbf{${vol}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}`, latex: `${vol}` }
                 ]
             };
         }
@@ -243,10 +318,23 @@ export class VolumeGen {
             },
             token: this.toBase64(vol.toString()), variationKey: 'vol_cone_std', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: En kon rymmer en tredjedel av vad en cylinder med samma bas och höjd gör." : "Step 1: A cone holds one third of what a cylinder with the same base and height does.", latex: "V = \\frac{\\pi · r^2 · h}{3}" },
-                { text: lang === 'sv' ? "Steg 2: Beräkna bottenytans area." : "Step 2: Calculate the base area.", latex: `3,14 · ${r}^2 = ${baseArea}` },
-                { text: lang === 'sv' ? `Steg 3: Multiplicera arean med höjden (${h}) och dela med 3.` : `Step 3: Multiply the area by the height (${h}) and divide by 3.`, latex: `\\frac{${baseArea} · ${h}}{3} \\approx ${vol}` },
-                { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}` }
+                { 
+                    text: lang === 'sv' ? "En kons volym är en tredjedel (dividera med 3) av en cylinders volym om de har samma basyta." : "A pointed ice cream cone holds exactly one third (divided by 3) compared to a straight cylinder with the same round base.", 
+                    latex: `\\text{Volym} = \\frac{\\text{Runda basytan} \\cdot \\text{höjd}}{3}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut den runda bottenytans area: radien i kvadrat (${r} · ${r}) gånger 3,14.` : `Calculate the round base area: radius squared (${r} · ${r}) times 3.14.`, 
+                    latex: `\\text{Runda basytan} = 3{,}14 \\cdot ${r} \\cdot ${r} = \\mathbf{${baseArea}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Gångra nu denna runda yta (${baseArea}) med höjden (${h}) och dela med 3 eftersom struten smalnar av till en spets.` : `Multiply this round area (${baseArea}) by the height (${h}) and divide by 3 because the cone narrows down to a point.`, 
+                    latex: `\\text{Volym} = \\frac{\\mathbf{${baseArea}} \\cdot ${h}}{3}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Avrunda summan till närmaste heltal för att få fram svaret." : "Round the sum to the nearest whole number to get the final answer state.", 
+                    latex: `\\text{Volym} \\approx \\mathbf{${vol}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}`, latex: `${vol}` }
             ]
         };
     }
@@ -262,16 +350,29 @@ export class VolumeGen {
             return {
                 renderData: {
                     geometry: { type: 'sphere', labels: { r } },
-                    description: lang === 'sv' ? `Beräkna klotets volym med radien ${r} cm.` : `Calculate the volume of the sphere with radius ${r} cm.,`,
+                    description: lang === 'sv' ? `Beräkna klotets volym med radien ${r} cm.` : `Calculate the volume of the sphere with radius ${r} cm.`,
                     interceptorToken: `${r}`, 
                     answerType: 'numeric', suffix: 'cm³'
                 },
                 token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Använd formeln för klotets volym." : "Step 1: Use the formula for the volume of a sphere.", latex: "V = \\frac{4 \\pi r^3}{3}" },
-                    { text: lang === 'sv' ? `Steg 2: Räkna ut radien i kub ($r^3 = ${r} · ${r} · ${r}$).` : `Step 2: Calculate the radius cubed ($r^3 = ${r} · ${r} · ${r}$).`, latex: `${r}^3 = ${Math.pow(r, 3)}` },
-                    { text: lang === 'sv' ? "Steg 3: Sätt in värdena och räkna ut resultatet." : "Step 3: Plug in the values and calculate the result.", latex: `\\frac{4 · 3,14 · ${Math.pow(r, 3)}}{3} \\approx ${vol}` },
-                    { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}` }
+                    { 
+                        text: lang === 'sv' ? "För att räkna ut volymen till ett klot använder vi formeln." : "To calculate the space inside a perfectly round ball (a sphere), we use a standard layout template on the board.", 
+                        latex: `\\text{Volym} = \\frac{4 \\cdot \\pi \\cdot r^3}{3}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Börja med att räkna ut radien i kub ($r^3$), vilket betyder radien gånger sig själv tre gånger: ${r} · ${r} · ${r}.` : `Begin by calculating the radius cubed ($r^3$), which means the radius times itself three times: ${r} · ${r} · ${r}.`, 
+                        latex: `r^3 = ${r} \\cdot ${r} \\cdot ${r} = \\mathbf{${Math.pow(r, 3)}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Sätt in siffrorna i mallen: ta 4 gånger pi (3,14) gånger ditt kubik-tal (${Math.pow(r, 3)}) och dela allt med 3.` : `Plug the numbers into the template: multiply 4 by pi (3.14) by your cubed value (${Math.pow(r, 3)}) and divide everything by 3.`, 
+                        latex: `\\text{Volym} = \\frac{4 \\cdot 3{,}14 \\cdot \\mathbf{${Math.pow(r, 3)}}}{3}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut hela uttrycket och avrunda till närmaste heltal." : "Calculate the entire expression and round it to the nearest whole integer.", 
+                        latex: `\\text{Volym} \\approx \\mathbf{${vol}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}`, latex: `${vol}` }
                 ]
             };
         }
@@ -289,11 +390,23 @@ export class VolumeGen {
             },
             token: this.toBase64(total.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Dela upp figuren i två delar (halvklot + cylinder/kon)." : "Step 1: Split the figure into two parts (hemisphere + cylinder/cone)." },
-                { text: lang === 'sv' ? `Steg 2: Beräkna halvklotets volym.` : `Step 2: Calculate the volume of the hemisphere.`, latex: `V_1 = \\frac{2 · 3,14 · ${r}^3}{3} = ${vHemi}` },
-                { text: lang === 'sv' ? `Steg 3: Beräkna den andra delens volym.` : `Step 3: Calculate the volume of the other part.`, latex: `V_2 = ${vMain}` },
-                { text: lang === 'sv' ? "Steg 4: Addera de två volymerna." : "Step 4: Add the two volumes together.", latex: `${vHemi} + ${vMain} = ${total}` },
-                { text: lang === 'sv' ? `Svar: ${total}` : `Answer: ${total}` }
+                { 
+                    text: lang === 'sv' ? "Vi delar upp den här konstiga figuren i två välkända bitar: ett halvklot på toppen, plus den undre kroppen." : "We split this strange shape into two well-known pieces: a hemisphere on top, plus the lower body element.", 
+                    latex: `\\text{Total Volym} = \\text{Volym}_{(\\text{halvklot})} + \\text{Volym}_{(\\text{underdel})}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut det runda halvklotet först. Det är exakt hälften så stort som en hel boll.` : `Calculate the round hemisphere top first. It is exactly half the size of a full round ball element.`, 
+                    latex: `\\text{Volym}_{(\\text{halvklot})} = \\frac{2 \\cdot 3{,}14 \\cdot ${r}^3}{3} = \\mathbf{${vHemi}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna sedan ut underdelen som är en ren ${v === 'vol_silo_std' ? 'cylinder' : 'kon'}:` : `Next, calculate the lower part which is a pure ${v === 'vol_silo_std' ? 'cylinder' : 'cone'}:`, 
+                    latex: `\\text{Volym}_{(\\text{underdel})} = \\mathbf{${vMain}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Plussa till sist ihop de två uträknade delarna (${vHemi} + ${vMain}) för att få fram totalen.` : `Finally, add the two calculated sections (${vHemi} + ${vMain}) together to reach the absolute grand total.`, 
+                    latex: `\\text{Total Volym} = \\mathbf{${vHemi} + ${vMain}} = \\mathbf{${total}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${total}` : `Answer: ${total}`, latex: `${total}` }
             ]
         };
     }
@@ -318,19 +431,28 @@ export class VolumeGen {
         const p = MathUtils.randomChoice(pairs);
         const val = p.factor === 1 ? MathUtils.randomInt(2, 500) : (p.factor < 1 ? MathUtils.randomChoice([500, 1500, 2500, 5000]) : MathUtils.randomChoice([0.5, 1.5, 2, 5]));
         const ans = val * p.factor;
+        const valStr = val.toString().replace('.', ',');
+        const ansStr = ans.toString().replace('.', ',');
 
         return {
             renderData: {
-                description: lang === 'sv' ? `Omvandla ${val} ${p.from} till ${p.to}.` : `Convert ${val} ${p.from} to ${p.to}.`,
-                latex: `${val.toString().replace('.', ',')} \\text{ ${p.from}} = \\text{\\_\\_\\_} \\text{ ${p.to}}`,
+                description: lang === 'sv' ? `Omvandla ${valStr} ${p.from} till ${p.to}.` : `Convert ${val} ${p.from} to ${p.to}.`,
+                latex: `${valStr} \\text{ ${p.from}} = \\text{\\_\\_\\_} \\text{ ${p.to}}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()),
             variationKey: 'vol_unit_conv',
             type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Kom ihåg: ${p.note}` : `Remember: ${p.note}` },
-                { text: lang === 'sv' ? `Svar: ${ans.toString().replace('.', ',')} ${p.to}` : `Answer: ${ans} ${p.to}` }
+                { 
+                    text: lang === 'sv' ? `Titta på den gyllene översättningsregeln för dessa volymenheter på tavlan:` : `Look closely at the golden conversion bridge translation rule for these volume types:`, 
+                    latex: `\\mathbf{${p.note}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Använd regeln för att växla enheten till ${p.to}. Flytta kommatecknet om det behövs.` : `Apply the bridge rule to swap the target unit system to ${p.to}. Shift the decimal point if necessary.`, 
+                    latex: `${valStr} \\text{ ${p.from}} = \\mathbf{${ansStr}} \\text{ ${p.to}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${ansStr} ${p.to}` : `Answer: ${ans} ${p.to}`, latex: `${ansStr}` }
             ]
         };
     }
@@ -396,12 +518,13 @@ export class VolumeGen {
             ? (lang === 'sv' ? `med bredden ${labels.w} ${startUnit}, höjden ${labels.h} ${startUnit} och djupet ${labels.d} ${startUnit}` : `with width ${labels.w} ${startUnit}, height ${labels.h} ${startUnit} and depth ${labels.d} ${startUnit}`)
             : (lang === 'sv' ? `med radien ${labels.r} ${startUnit} och höjden ${labels.h} ${startUnit}` : `with radius ${labels.r} ${startUnit} and height ${labels.h} ${startUnit}`);
 
+        const formattedAns = roundedAns.toString().replace('.', ',');
+
         return {
             renderData: {
-                // FIXED: Dimensions are now passed in a 'labels' object [Requirement 2]
                 geometry: { type: shape, labels: labels },
                 description: lang === 'sv' 
-                    ? `${obj.sv.charAt(0).toUpperCase() + obj.sv.slice(1)} har formen av en ${shape === 'cuboid' ? 'rätblock' : shape === 'cylinder' ? 'cylinder' : 'kon'} ${dimDesc}. Vad är dess volym i ${targetUnit}?` 
+                    ? `${obj.sv.charAt(0).toUpperCase() + obj.sv.slice(1)} har formen av ett ${shape === 'cuboid' ? 'rätblock' : shape === 'cylinder' ? 'cylinder' : 'kon'} ${dimDesc}. Vad är dess volym i ${targetUnit}?` 
                     : `${obj.en.charAt(0).toUpperCase() + obj.en.slice(1)} is shaped like a ${shape} ${dimDesc}. What is its volume in ${targetUnit === 'liter' ? 'liters' : 'milliliters'}?`,
                 answerType: 'numeric',
                 suffix: targetUnit === 'liter' ? 'l' : 'ml'
@@ -410,9 +533,19 @@ export class VolumeGen {
             variationKey: 'vol_word_unit',
             type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Beräkna volymen i ${startUnit}³.` : `Step 1: Calculate the volume in ${startUnit}³.`, latex },
-                { text: lang === 'sv' ? `Steg 2: Omvandla till ${targetUnit}. (1 dm³ = 1 l, 1 cm³ = 1 ml)` : `Step 2: Convert to ${targetUnit}. (1 dm³ = 1 l, 1000 cm³ = 1 l)` },
-                { text: `${lang === 'sv' ? 'Svar' : 'Answer'}: ${roundedAns.toString().replace('.', ',')} ${targetUnit === 'liter' ? 'l' : 'ml'}` }
+                { 
+                    text: lang === 'sv' ? `Börja med att räkna ut figurens volym i den vanliga måttenheten ${startUnit}³ först.` : `Begin by calculating the shape's geometric volume inside the standard measurements layer ${startUnit}³ first.`, 
+                    latex: `\\text{Volym} = \\mathbf{${latex}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Nu ska vi växla enheten till vätskemåttet ${targetUnit}. Kom ihåg att 1 dm³ motsvarar exakt 1 liter, och 1 cm³ motsvarar exakt 1 ml.` : `Now we need to swap our structural units to fluid ${targetUnit} metrics. Remember that 1 dm³ matches exactly 1 liter, and 1 cm³ maps exactly to 1 ml.`, 
+                    latex: `1 \\text{ dm}^3 = 1 \\text{ l} \\quad \\text{och} \\quad 1 \\text{ cm}^3 = 1 \\text{ ml}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Gör om ditt mätartal till ${targetUnit} genom att flytta kommatecknet åt rätt håll.` : `Convert your measurement total code to ${targetUnit} format by shifting the decimal point accordingly.`, 
+                    latex: `\\text{Volym} = \\mathbf{${formattedAns}} \\text{ ${targetUnit === 'liter' ? 'l' : 'ml'}}` 
+                },
+                { text: `${lang === 'sv' ? 'Svar' : 'Answer'}: ${formattedAns} ${targetUnit === 'liter' ? 'l' : 'ml'}`, latex: `${formattedAns}` }
             ]
         };
     }
@@ -427,15 +560,28 @@ export class VolumeGen {
             return {
                 renderData: {
                     geometry: { type: 'cuboid', labels: { w, d, h } },
-                    description: lang === 'sv' ? "Beräkna rätblockets begränsningsarea (ytarean av alla sex sidor)." : "Calculate the surface area of the rectangular prism (the area of all six sides).",
+                    description: lang === 'sv' ? "Beräkna rätblockets ytarea (arean av alla sex sidor sammanlagt)." : "Calculate the surface area of the rectangular prism (the area of all six sides).",
                     answerType: 'numeric', suffix: 'cm²'
                 },
                 token: this.toBase64(area.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Ett rätblock har sex sidor som parvis är lika stora (botten/lock, fram/bak, höger/vänster)." : "Step 1: A rectangular prism has six sides that are equal in pairs (top/bottom, front/back, left/right)." },
-                    { text: lang === 'sv' ? `Steg 2: Beräkna arean för de tre unika sidorna: ${w}·${d}=${w*d}, ${w}·${h}=${w*h}, ${d}·${h}=${d*h}.` : `Step 2: Calculate the area for the three unique sides: ${w}·${d}=${w*d}, ${w}·${h}=${w*h}, ${d}·${h}=${d*h}.` },
-                    { text: lang === 'sv' ? "Steg 3: Summera dessa areor och multiplicera med 2." : "Step 3: Sum these areas and multiply by 2.", latex: `2 · (${w*d} + ${w*h} + ${d*h}) = ${area}` },
-                    { text: lang === 'sv' ? `Svar: ${area}` : `Answer: ${area}` }
+                    { 
+                        text: lang === 'sv' ? "Ytarean betyder att vi räknar ut arean för papperet som behövs om du ska slå in hela rätblocket som ett paket. Det har 6 platta sidor totalt, som är likadana två och två (botten/lock, fram/bak, sidoväggar)." : "Surface area means calculating the paper needed if you wrap the entire box like a gift. It features 6 flat sides total, matching in duplicate pairs (top/bottom, front/back, side walls).", 
+                        latex: `\\text{Ytarea} = 2 \\cdot (\\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3)` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut ytan för de tre unika rektanglarna: golvet (${w}·${d}), framväggen (${w}·${h}) och sidoväggen (${d}·${h}).` : `Calculate the area space for the three unique flat layouts: floor (${w}·${d}), front wall (${w}·${h}), and side profile (${d}·${h}).`, 
+                        latex: `\\text{Areor} = \\mathbf{${w*d}} \\text{ och } \\mathbf{${w*h}} \\text{ och } \\mathbf{${d*h}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Plussa ihop de tre unika väggarna och gångra med 2 i slutet eftersom det finns två av varje sort.` : `Sum the three unique values together and multiply by 2 at the end since there are two of each layout type inside the box scope.`, 
+                        latex: `\\text{Ytarea} = 2 \\cdot (\\mathbf{${w*d} + ${w*h} + ${d*h}})` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Slutför beräkningen för att få fram den totala ytan runt om." : "Complete the calculation string row to discover the final outer surface area balance.", 
+                        latex: `\\text{Ytarea} = \\mathbf{${area}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${area}` : `Answer: ${area}`, latex: `${area}` }
                 ]
             };
         }
@@ -445,14 +591,24 @@ export class VolumeGen {
         return {
             renderData: {
                 geometry: { type: 'sphere', labels: { r } },
-                description: lang === 'sv' ? `Beräkna ytarean (begränsningsarean) för ett klot med radien ${r} cm.` : `Calculate the surface area for a sphere with radius ${r} cm.`,
+                description: lang === 'sv' ? `Beräkna ytarean för ett klot med radien ${r} cm.` : `Calculate the surface area for a sphere with radius ${r} cm.`,
                 answerType: 'numeric', suffix: 'cm²'
             },
             token: this.toBase64(sa.toString()), variationKey: 'sa_sphere', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Använd formeln för klotets ytarea." : "Step 1: Use the formula for the surface area of a sphere.", latex: "A = 4 \\pi r^2" },
-                { text: lang === 'sv' ? "Steg 2: Sätt in radien och beräkna." : "Step 2: Plug in the radius and calculate.", latex: `4 · 3,14 · ${r}^2 \\approx ${sa}` },
-                { text: lang === 'sv' ? `Svar: ${sa}` : `Answer: ${sa}` }
+                { 
+                    text: lang === 'sv' ? "För att räkna ut ytan runt om en helt rund boll (presentpapperet som täcker utsidan) använder vi en fast formel på tavlan." : "To calculate the surface covering a perfectly round ball (the gift wrapping covering the outside area), we use a fixed blueprint template.", 
+                    latex: `\\text{Ytarea} = 4 \\cdot \\pi \\cdot r^2` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut radien i kvadrat först (${r} · ${r} = ${r*r}) och multiplicera sedan med 4 och med pi (3,14).` : `Calculate the radius squared first (${r} · ${r} = ${r*r}) and then multiply the layout by 4 and by pi (3.14).`, 
+                    latex: `\\text{Ytarea} = 4 \\cdot 3{,}14 \\cdot \\mathbf{${r*r}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut hela raden och avrunda till närmaste heltal." : "Execute the multiplication line and round the outcome to the nearest whole integer.", 
+                    latex: `\\text{Ytarea} \\approx \\mathbf{${sa}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${sa}` : `Answer: ${sa}`, latex: `${sa}` }
             ]
         };
     }

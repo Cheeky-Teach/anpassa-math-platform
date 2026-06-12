@@ -107,29 +107,35 @@ export class FractionArithGen {
         const clues = [
             {
                 text: lang === 'sv' 
-                    ? `Steg 1: Eftersom nämnarna är lika (${d}), behåller vi nämnaren och fokuserar på täljarna.` 
-                    : `Step 1: Since the denominators are the same (${d}), we keep the denominator and focus on the numerators.`,
-                latex: `${n1} ${op} ${n2}`
+                    ? `När de nedre siffrorna (nämnarna) är likadana rör vi dem inte. Vi adderar eller subtraherar bara siffrorna där uppe.` 
+                    : `When the bottom numbers (denominators) are identical, we leave them untouched. We only add or subtract the top numbers.`,
+                latex: `\\frac{${n1}}{${d}} ${op} \\frac{${n2}}{${d}}`
             },
             {
                 text: lang === 'sv'
-                    ? `Steg 2: Räkna ut resultatet för täljarna. Just nu har vi:`
-                    : `Step 2: Calculate the result for the numerators. Right now we have:`,
-                latex: `\\frac{${n1} ${op} ${n2}}{${d}} = \\frac{${rawRes}}{${d}}`
+                    ? `Ställ upp täljarna tillsammans på ett och samma bråkstreck:`
+                    : `Put the top numbers together over a single fraction bar:`,
+                latex: `= \\frac{\\mathbf{${n1} ${op} ${n2}}}{${d}}`
+            },
+            {
+                text: lang === 'sv'
+                    ? `Räkna ut svaret där uppe: ${n1} ${op} ${n2} blir ${rawRes}.`
+                    : `Calculate the top numbers: ${n1} ${op} ${n2} equals ${rawRes}.`,
+                latex: `= \\frac{\\mathbf{${rawRes}}}{${d}}`
             }
         ];
 
         if (simp.gcd > 1) {
             clues.push({
                 text: lang === 'sv'
-                    ? `Steg 3: Vi kan förenkla bråket genom att dividera både täljare och nämnare med ${simp.gcd}. Just nu har vi:`
-                    : `Step 3: We can simplify the fraction by dividing both numerator and denominator by ${simp.gcd}. Right now we have:`,
-                latex: `\\frac{${rawRes} \\div ${simp.gcd}}{${d} \\div ${simp.gcd}} = \\frac{${simp.n}}{${simp.d}}`
+                    ? `Gör bråket enklare att läsa genom att dela (förkorta) både uppe och nere med talet ${simp.gcd}.`
+                    : `Make the fraction simpler to read by dividing both the top and bottom by ${simp.gcd}.`,
+                latex: `= \\frac{${rawRes} \\mathbf{\\div ${simp.gcd}}}{${d} \\mathbf{\\div ${simp.gcd}}} = \\frac{\\mathbf{${simp.n}}}{\\mathbf{${simp.d}}}`
             });
         }
 
         clues.push({
-            text: lang === 'sv' ? `Svaret är: ` : `The answer is: `,
+            text: lang === 'sv' ? `Svar: ` : `Answer: `,
             latex: `\\frac{${simp.n}}{${simp.d}}`
         });
 
@@ -190,41 +196,47 @@ export class FractionArithGen {
         const clues = [
             {
                 text: lang === 'sv'
-                    ? `Steg 1: Hitta den minsta gemensamma nämnaren (MGN) för ${d1} och ${d2}.`
-                    : `Step 1: Find the lowest common denominator (LCD) for ${d1} and ${d2}.`,
-                latex: `MGN = ${lcd}`
+                    ? `Vi kan inte plussa eller minusa bråk när de nedre siffrorna är olika. Vi måste ändra dem så att båda får nämnaren ${lcd}.`
+                    : `We cannot add or subtract fractions when the bottom numbers are different. We must change them so both get the denominator ${lcd}.`,
+                latex: `\\frac{${n1}}{${d1}} ${op} \\frac{${n2}}{${d2}}`
             },
             {
                 text: lang === 'sv'
-                    ? `Steg 2: Förläng det första bråket med ${f1} så att nämnaren blir ${lcd}.`
-                    : `Step 2: Extend the first fraction by ${f1} so the denominator becomes ${lcd}.`,
-                latex: `\\frac{${n1} \\cdot ${f1}}{${d1} \\cdot ${f1}} = \\frac{${ext1}}{${lcd}}`
+                    ? `Gör om det första bråket genom att gångra (förlänga) både uppe och nere med ${f1}.`
+                    : `Change the first fraction by multiplying both top and bottom by ${f1}.`,
+                latex: `= \\frac{${n1} \\mathbf{\\cdot ${f1}}}{${d1} \\mathbf{\\cdot ${f1}}} ${op} \\frac{${n2}}{${d2}}`
             },
             {
                 text: lang === 'sv'
-                    ? `Steg 3: Förläng det andra bråket med ${f2} så att nämnaren blir ${lcd}.`
-                    : `Step 3: Extend the second fraction by ${f2} so the denominator becomes ${lcd}.`,
-                latex: `\\frac{${n2} \\cdot ${f2}}{${d2} \\cdot ${f2}} = \\frac{${ext2}}{${lcd}}`
+                    ? `Gör om det andra bråket genom att gångra (förlänga) både uppe och nere med ${f2}.`
+                    : `Change the second fraction by multiplying both top and bottom by ${f2}.`,
+                latex: `= \\frac{${ext1}}{${lcd}} ${op} \\frac{${n2} \\mathbf{\\cdot ${f2}}}{${d2} \\mathbf{\\cdot ${f2}}}`
             },
             {
                 text: lang === 'sv'
-                    ? `Steg 4: Nu när nämnarna är lika kan vi ${isSub ? 'subtrahera' : 'addera'} täljarna.`
-                    : `Step 4: Now that the denominators are equal, we can ${isSub ? 'subtract' : 'add'} the numerators.`,
-                latex: `\\frac{${ext1}}{${lcd}} ${op} \\frac{${ext2}}{${lcd}} = \\frac{${rawRes}}{${lcd}}`
+                    ? `Nu när de nedre siffrorna matchar kan vi sätta ihop de övre siffrorna på ett gemensamt bråkstreck:`
+                    : `Now that the bottom numbers match, we can combine the top numbers over a single fraction bar:`,
+                latex: `= \\frac{\\mathbf{${ext1} ${op} ${ext2}}}{${lcd}}`
+            },
+            {
+                text: lang === 'sv'
+                    ? `Räkna ut svaret där uppe: ${ext1} ${op} ${ext2} blir ${rawRes}.`
+                    : `Calculate the top numbers: ${ext1} ${op} ${ext2} equals ${rawRes}.`,
+                latex: `= \\frac{\\mathbf{${rawRes}}}{${lcd}}`
             }
         ];
 
         if (simp.gcd > 1) {
             clues.push({
                 text: lang === 'sv'
-                    ? `Steg 5: Förenkla bråket genom att dividera med ${simp.gcd}.`
-                    : `Step 5: Simplify the fraction by dividing by ${simp.gcd}.`,
-                latex: `\\frac{${rawRes} \\div ${simp.gcd}}{${lcd} \\div ${simp.gcd}} = \\frac{${simp.n}}{${simp.d}}`
+                    ? `Gör bråket enklare genom jag delar (förkortar) täljaren och nämnaren med ${simp.gcd}.`
+                    : `Make the fraction simpler by dividing both the top and bottom by ${simp.gcd}.`,
+                latex: `= \\frac{${rawRes} \\mathbf{\\div ${simp.gcd}}}{${lcd} \\mathbf{\\div ${simp.gcd}}} = \\frac{\\mathbf{${simp.n}}}{\\mathbf{${simp.d}}}`
             });
         }
 
         clues.push({
-            text: lang === 'sv' ? `Svaret är: ` : `The answer is: `,
+            text: lang === 'sv' ? `Svar: ` : `Answer: `,
             latex: `\\frac{${simp.n}}{${simp.d}}`
         });
 
@@ -319,24 +331,36 @@ export class FractionArithGen {
 
         const clues = [
             {
-                text: lang === 'sv' ? `Steg 1: Vid multiplikation multiplicerar vi täljare med täljare.` : `Step 1: In multiplication, we multiply numerator by numerator.`,
-                latex: `${n1} \\cdot ${n2} = ${resN}`
+                text: lang === 'sv'
+                    ? `Att gångra bråk är jätte-enkelt! Vi behöver inte ändra några nämnare. Vi gångrar bara rakt över: uppe med uppe och nere med nere.`
+                    : `Multiplying fractions is super simple! We don't need to change any denominators. We just multiply straight across: top times top, bottom times bottom.`,
+                latex: `\\frac{${n1}}{${d1}} \\cdot \\frac{${n2}}{${d2}}`
             },
             {
-                text: lang === 'sv' ? `Steg 2: Multiplicera sedan nämnare med nämnare. Just nu har vi:` : `Step 2: Then multiply denominator by denominator. Right now we have:`,
-                latex: `${d1} \\cdot ${d2} = ${resD} \\rightarrow \\frac{${resN}}{${resD}}`
+                text: lang === 'sv'
+                    ? `Skriv ut multiplikationerna på ett och samma bråkstreck:`
+                    : `Write out the multiplication paths on a unified single fraction bar:`,
+                latex: `= \\frac{\\mathbf{${n1} \\cdot ${n2}}}{\\mathbf{${d1} \\cdot ${d2}}}`
+            },
+            {
+                text: lang === 'sv'
+                    ? `Räkna ut täljaren (${n1} · ${n2} = ${resN}) och nämnaren (${d1} · ${d2} = ${resD}):`
+                    : `Perform the arithmetic steps for the top (${n1} · ${n2} = ${resN}) and bottom (${d1} · ${d2} = ${resD}):`,
+                latex: `= \\frac{\\mathbf{${resN}}}{\\mathbf{${resD}}}`
             }
         ];
 
         if (simp.gcd > 1) {
             clues.push({
-                text: lang === 'sv' ? `Steg 3: Förenkla bråket genom att dividera med ${simp.gcd}. Just nu har vi:` : `Step 3: Simplify the fraction by dividing by ${simp.gcd}. Right now we have:`,
-                latex: `\\frac{${simp.n}}{${simp.d}}`
+                text: lang === 'sv'
+                    ? `Gör bråket enklare genom att dela täljaren och nämnaren med ${simp.gcd}.`
+                    : `Make the fraction simpler by dividing both the top and bottom by ${simp.gcd}.`,
+                latex: `= \\frac{${resN} \\mathbf{\\div ${simp.gcd}}}{${resD} \\mathbf{\\div ${simp.gcd}}} = \\frac{\\mathbf{${simp.n}}}{\\mathbf{${simp.d}}}`
             });
         }
 
         clues.push({
-            text: lang === 'sv' ? `Svaret är: ` : `The answer is: `,
+            text: lang === 'sv' ? `Svar: ` : `Answer: `,
             latex: `\\frac{${simp.n}}{${simp.d}}`
         });
 
@@ -360,31 +384,39 @@ export class FractionArithGen {
 
         const clues = [
             {
-                text: lang === 'sv' ? `Steg 1: Att dividera med ett bråk är samma sak som att multiplicera med det inverterade bråket ("vända upp och ner").` : `Step 1: Dividing by a fraction is the same as multiplying by its reciprocal ("flipping it upside down").`,
-                latex: `\\frac{${n2}}{${d2}} \\rightarrow \\frac{${d2}}{${n2}}`
+                text: lang === 'sv'
+                    ? `När vi delar två bråk använder vi ett smart trick: Behåll det första bråket, ändra till gånger, och vänd det andra bråket upp-och-ner.`
+                    : `When dividing two fractions, we use a neat trick: Keep the first fraction unchanged, switch the operator to multiplication, and flip the second fraction upside down.`,
+                latex: `\\frac{${n1}}{${d1}} \\div \\frac{${n2}}{${d2}}`
             },
             {
-                text: lang === 'sv' ? `Steg 2: Skriv om uppgiften till multiplikation. Just nu har vi:` : `Step 2: Rewrite the problem as multiplication. Right now we have:`,
-                latex: `\\frac{${n1}}{${d1}} \\cdot \\frac{${d2}}{${n2}}`
+                text: lang === 'sv'
+                    ? `Vänd på det andra bråket så att det blir \\frac{${d2}}{${n2}} och ändra divisionstecknet till ett gångertecken:`
+                    : `Flip the second fraction to get \\frac{${d2}}{${n2}} and change the division symbol to multiplication:`,
+                latex: `= \\frac{${n1}}{${d1}} \\mathbf{\\cdot \\frac{${d2}}{${n2}}}`
             },
             {
-                text: lang === 'sv' ? `Steg 3: Multiplicera täljare för sig och nämnare för sig.` : `Step 3: Multiply the numerators and denominators separately.`,
-                latex: `\\frac{${n1} \\cdot ${d2}}{${d1} \\cdot ${n2}} = \\frac{${resN}}{${resD}}`
+                text: lang === 'sv'
+                    ? `Gångra nu rakt över: täljare med täljare (${n1} · ${d2}) och nämnare med nämnare (${d1} · ${n2}).`
+                    : `Now multiply straight across: top times top (${n1} · ${d2}) and bottom times bottom (${d1} · ${n2}).`,
+                latex: `= \\frac{\\mathbf{${n1} \\cdot ${d2}}}{\\mathbf{${d1} \\cdot ${n2}}} = \\frac{\\mathbf{${resN}}}{\\mathbf{${resD}}}`
             }
         ];
 
         if (simp.gcd > 1) {
             clues.push({
-                text: lang === 'sv' ? `Steg 4: Förenkla bråket. Just nu har vi:` : `Step 4: Simplify the fraction. Right now we have:`,
-                latex: `\\frac{${simp.n}}{${simp.d}}`
+                text: lang === 'sv'
+                    ? `Gör svaret enklare genom att dela (förkorta) både täljaren och nämnaren med ${simp.gcd}.`
+                    : `Make the answer simpler by dividing both the top and bottom by ${simp.gcd}.`,
+                latex: `= \\frac{${resN} \\mathbf{\\div ${simp.gcd}}}{${resD} \\mathbf{\\div ${simp.gcd}}} = \\frac{\\mathbf{${simp.n}}}{\\mathbf{${simp.d}}}`
             });
         }
 
         clues.push({
-            text: lang === 'sv' ? `Svaret är: ` : `The answer is: `,
+            text: lang === 'sv' ? `Svar: ` : `Answer: `,
             latex: `\\frac{${simp.n}}{${simp.d}}`
         });
-
+        
         return {
             renderData: { description: lang === 'sv' ? "Beräkna kvoten. Svara i bråkform." : "Calculate the quotient.", latex: `\\frac{${n1}}{${d1}} \\div \\frac{${n2}}{${d2}}`, answerType: 'fraction' },
             token: this.toBase64(`${simp.n}/${simp.d}`), variationKey: v, clues

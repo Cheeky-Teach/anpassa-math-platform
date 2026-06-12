@@ -99,8 +99,8 @@ export class PercentGen {
 
         if (v === 'equivalence_basic_frac') {
             const facts = [
-                { f: "1/2", p: "50", d: 2 }, { f: "1/4", p: "25", d: 4 }, 
-                { f: "1/5", p: "20", d: 5 }, { f: "1/10", p: "10", d: 10 }
+                { f: "1/2", p: "50", d: 2 }, { f: "1/3", p: "33", d: 3 }, { f: "1/4", p: "25", d: 4 },
+                { f: "1/5", p: "20", d: 5 }, { f: "1/10", p: "10", d: 10 }, { f: "1/100", p: "1", d: 100 },
             ];
             const item = MathUtils.randomChoice(facts);
             return {
@@ -110,11 +110,22 @@ export class PercentGen {
                 },
                 token: this.toBase64(item.p), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Procent betyder 'per hundra' eller hundradelar." : "Step 1: Percent means 'per hundred' or hundredths." },
-                    { text: lang === 'sv' ? `Steg 2: För att göra om ett bråk till procent kan vi försöka få nämnaren till 100.` : `Step 2: To convert a fraction to percent, we can try to make the denominator 100.` },
-                    { text: lang === 'sv' ? `Multiplicera både täljare och nämnare med ett tal så att nämnaren blir 100.` : `Multiply both numerator and denominator by a number so the denominator becomes 100.`, latex: `\\frac{1 · ${100/item.d}}{${item.d} · ${100/item.d}} = \\frac{${item.p}}{100}` },
-                    { text: lang === 'sv' ? `Steg 3: Eftersom vi nu har ${item.p} hundradelar, är svaret ${item.p}%.` : `Step 3: Since we now have ${item.p} hundredths, the answer is ${item.p}%.` },
-                    { text: lang === 'sv' ? `Svar: ${item.p}%` : `Answer: ${item.p}%` }
+                    { 
+                        text: lang === 'sv' ? "Procent betyder hundradelar. Vi vill ändra bråket så att det står 100 i botten." : "Percent means hundredths. We want to change the fraction so that it has 100 at the bottom.", 
+                        latex: `\\frac{1}{${item.d}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Gångra (förläng) både uppe och nere med ${100 / item.d} för att få 100 i botten.` : `Multiply both top and bottom by ${100 / item.d} to get 100 at the bottom.`, 
+                        latex: `\\frac{1 \\mathbf{\\cdot ${100 / item.d}}}{${item.d} \\mathbf{\\cdot ${100 / item.d}}} = \\frac{\\mathbf{${item.p}}}{100}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Nu ser vi att vi har ${item.p} hundradelar, vilket är exakt ${item.p}%.` : `Now we can see we have ${item.p} hundredths, which is exactly ${item.p}%.`, 
+                        latex: `\\frac{${item.p}}{100} = \\mathbf{${item.p}\\%}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${item.p}%` : `Answer: ${item.p}%`, 
+                        latex: `${item.p}\\%` 
+                    }
                 ]
             };
         }
@@ -129,10 +140,22 @@ export class PercentGen {
                 },
                 token: this.toBase64(colored.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Ett helt rutnät består av 10x10 = 100 rutor." : "Step 1: A full grid consists of 10x10 = 100 squares." },
-                    { text: lang === 'sv' ? "Steg 2: Varje enskild ruta representerar 1 hundradel, vilket är samma sak som 1%." : "Step 2: Each individual square represents 1 hundredth, which is the same as 1%." },
-                    { text: lang === 'sv' ? `Steg 3: Räkna de färgade rutorna. Det finns ${colored} stycken.` : `Step 3: Count the colored squares. There are ${colored} of them.` },
-                    { text: lang === 'sv' ? `Svar: ${colored}%` : `Answer: ${colored}%` }
+                    { 
+                        text: lang === 'sv' ? "Hela det stora nätet har exakt 100 små rutor totalt." : "The entire large grid has exactly 100 small squares in total.", 
+                        latex: `\\text{Hela nätet} = 100 \\text{ rutor}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Eftersom det finns 100 rutor totalt, är varje enskild färgad ruta värd exakt 1%." : "Since there are 100 squares in total, each individual colored square is worth exactly 1%.", 
+                        latex: `1 \\text{ ruta} = 1\\%` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räknar vi de färgade rutorna får vi det till ${colored} stycken. Det betyder ${colored} hundradelar.` : `Counting the colored squares gives us exactly ${colored}. That means ${colored} hundredths.`, 
+                        latex: `\\text{Andel färgade} = \\frac{\\mathbf{${colored}}}{100} = \\mathbf{${colored}\\%}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${colored}%` : `Answer: ${colored}%`, 
+                        latex: `${colored}\\%` 
+                    }
                 ]
             };
         }
@@ -147,11 +170,18 @@ export class PercentGen {
             },
             token: this.toBase64(dec), variationKey: 'equivalence', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Procent betyder hundradelar." : "Step 1: Percent means hundredths." },
-                { text: lang === 'sv' ? `Steg 2: Skriv ${p}% som ett bråk med 100 i nämnaren.` : `Step 2: Write ${p}% as a fraction with 100 in the denominator.`, latex: `\\frac{${p}}{100}` },
-                { text: lang === 'sv' ? "Steg 3: Dividera täljaren med 100 genom att flytta decimaltecknet två steg åt vänster." : "Step 3: Divide the numerator by 100 by moving the decimal point two places to the left." },
-                { text: lang === 'sv' ? `Uträkning: ${p} / 100 = ${p/100}` : `Calculation: ${p} / 100 = ${p/100}` },
-                { text: lang === 'sv' ? `Svar: ${dec}` : `Answer: ${p/100}` }
+                { 
+                    text: lang === 'sv' ? "Procent betyder hundradelar. Vi skriver om procentsatsen som ett bråk delat med 100." : "Percent means hundredths. We rewrite the percentage as a fraction divided by 100.", 
+                    latex: `${p}\\% = \\frac{${p}}{100}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Dela ${p} med 100 genom att flytta kommatecknet två steg åt vänster.` : `Divide ${p} by 100 by moving the decimal point two places to the left.`, 
+                    latex: `${p}\\% = \\mathbf{${(p / 100).toString().replace('.', ',')}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${dec}` : `Answer: ${(p / 100).toString().replace('.', ',')}`, 
+                    latex: `${dec}` 
+                }
             ]
         };
     }
@@ -178,11 +208,19 @@ export class PercentGen {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Steg 1: Tänk på ${pct}% som en bråkdel av det hela.` : `Step 1: Think of ${pct}% as a fraction of the whole.` },
-                    { text: lang === 'sv' ? (pct === 10 ? "10% är samma sak som en tiondel (1/10)." : pct === 25 ? "25% är samma sak som en fjärdedel (1/4)." : "50% är samma sak som hälften (1/2).") : (pct === 10 ? "10% is the same as one tenth (1/10)." : pct === 25 ? "25% is the same as one fourth (1/4)." : "50% is the same as half (1/2).") },
-                    { text: lang === 'sv' ? `Steg 2: Dela talet ${base} med ${divisor}.` : `Step 2: Divide the number ${base} by ${divisor}.` },
-                    { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `\\frac{${base}}{${divisor}} = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? (pct === 10 ? "Ett enkelt trick: 10% är exakt samma sak som en tiondel." : pct === 25 ? "Ett enkelt trick: 25% är exakt samma sak som en fjärdedel." : "Ett enkelt trick: 50% är exakt samma sak som hälften.") : (pct === 10 ? "A simple trick: 10% is exactly the same as one tenth." : pct === 25 ? "A simple trick: 25% is exactly the same as one fourth." : "A simple trick: 50% is exactly the same as half."), 
+                        latex: `${pct}\\% = \\frac{1}{${divisor}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Dela därför bara hela talet ${base} med ${divisor} för att hitta svaret.` : `Therefore, just divide the total number ${base} by ${divisor} to find the answer.`, 
+                        latex: `\\text{Resultat} = \\frac{${base}}{\\mathbf{${divisor}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut divisionen:" : "Calculate the division:", 
+                        latex: `\\text{Resultat} = \\mathbf{${ans}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `${ans}` }
                 ]
             };
         }
@@ -200,11 +238,23 @@ export class PercentGen {
             },
             token: this.toBase64(total.toString()), variationKey: 'benchmark_inverse', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Vi vet att ${pctInv}% motsvarar värdet ${part}.` : `Step 1: We know that ${pctInv}% corresponds to the value ${part}.` },
-                { text: lang === 'sv' ? `Steg 2: Räkna ut hur många sådana delar som behövs för att nå 100%.` : `Step 2: Calculate how many such parts are needed to reach 100%.` },
-                { text: lang === 'sv' ? `Det behövs ${mult} stycken delar (eftersom ${mult} · ${pctInv} = 100).` : `There are ${mult} such parts needed (since ${mult} · ${pctInv} = 100).` },
-                { text: lang === 'sv' ? `Steg 3: Multiplicera delens värde (${part}) med ${mult}.` : `Step 3: Multiply the value of the part (${part}) by ${mult}.`, latex: `${part} · ${mult} = ${total}` },
-                { text: lang === 'sv' ? `Svar: ${total}` : `Answer: ${total}` }
+                { 
+                    text: lang === 'sv' ? `Vi vet att en liten bit på ${pctInv}% är värd ${part}.` : `We know that a small piece of ${pctInv}% is worth ${part}.`, 
+                    latex: `${pctInv}\\% = ${part}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut hur många sådana bitar det går på hela talet (100%). Det går exakt ${mult} stycken bitar.` : `Find out how many such pieces fit into the whole number (100%). Exactly ${mult} pieces fit inside.`, 
+                    latex: `${mult} \\cdot ${pctInv}\\% = 100\\%` 
+                },
+                { 
+                    text: lang === 'sv' ? `Gångra (multiplicera) därför bitens värde (${part}) med ${mult} för att hitta hela talet.` : `Therefore, multiply the piece value (${part}) by ${mult} to find the full whole number total.`, 
+                    latex: `100\\% = ${part} \\cdot \\mathbf{${mult}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut gångertalet:" : "Calculate the multiplication:", 
+                    latex: `100\\% = \\mathbf{${total}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${total}` : `Answer: ${total}`, latex: `${total}` }
             ]
         };
     }
@@ -229,9 +279,19 @@ export class PercentGen {
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Hitta värdet för 10% genom att dela det hela med 10." : "Step 1: Find the value of 10% by dividing the whole by 10.", latex: `10\\% = \\frac{${base}}{10} = ${base/10}` },
-                    { text: lang === 'sv' ? `Steg 2: Eftersom du söker ${pct}%, multiplicerar vi 10-procentsvärdet med ${pct/10}.` : `Step 2: Since you are looking for ${pct}%, multiply the 10-percent value by ${pct/10}.`, latex: `${base/10} · ${pct/10} = ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? `Hitta en smidig hjälp-byggsten på 10% först genom att dela hela talet ${base} med 10.` : `Find a convenient 10% helper building block first by dividing the full number ${base} by 10.`, 
+                        latex: `10\\% = \\frac{${base}}{10} = \\mathbf{${base / 10}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom du söker ${pct}%, behöver vi exakt ${pct / 10} stycken sådana byggstenar. Gångra därför värdet med ${pct / 10}.` : `Since you are looking for ${pct}%, we need exactly ${pct / 10} of those building blocks. Therefore, multiply the value by ${pct / 10}.`, 
+                        latex: `${pct}\\% = ${base / 10} \\cdot \\mathbf{${pct / 10}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut gångertalet för att hitta slutsvaret." : "Calculate the multiplication to find the final total answer.", 
+                        latex: `${pct}\\% = \\mathbf{${ans}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `${ans}` }
                 ]
             };
         }
@@ -271,19 +331,29 @@ export class PercentGen {
         return {
             renderData: { 
                 description: desc, 
-                // 🟢 Handshake anchor injection added
                 latex: `\\frac{${part}}{${w}}`,
                 answerType: 'numeric', 
                 suffix: '%' 
             },            
             token: this.toBase64(p.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Identifiera 'delen' och 'det hela'." : "Step 1: Identify the 'part' and the 'whole'." },
-                { text: lang === 'sv' ? `Delen är ${part} och det hela är ${w}.` : `The part is ${part} and the whole is ${w}.` },
-                { text: lang === 'sv' ? "Steg 2: Ställ upp bråket (Delen / Helheten)." : "Step 2: Set up the fraction (Part / Whole).", latex: `\\frac{${part}}{${w}}` },
-                { text: lang === 'sv' ? "Steg 3: Utför divisionen för att få andelen i decimalform." : "Step 3: Perform the division to get the share in decimal form.", latex: `${part} / ${w} = ${part/w}` },
-                { text: lang === 'sv' ? "Steg 4: Multiplicera med 100 för att få procentsatsen." : "Step 4: Multiply by 100 to get the percentage.", latex: `${part/w} · 100 = ${p}` },
-                { text: lang === 'sv' ? `Svar: ${p}%` : `Answer: ${p}%` }
+                { 
+                    text: lang === 'sv' ? "För att hitta andelen i procent sätter vi alltid delen där uppe på bråkstrecket, och det hela totalt där nere." : "To find the percentage rate, we always place the smaller part on top of the fraction line, and the full total at the bottom.", 
+                    latex: `\\text{Andel} = \\frac{\\text{Delen}}{\\text{Hela totalt}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Ställ upp bitarna: delen är ${part} och hela utgångsvärdet är ${w}.` : `Set up the pieces: the part is ${part} and the full baseline total is ${w}.`, 
+                    latex: `\\text{Andel} = \\frac{\\mathbf{${part}}}{\\mathbf{${w}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Dela (dividera) täljaren med nämnaren för att räkna ut talet i vanlig decimalform." : "Divide the top number by the bottom number to compute the value in regular decimal format.", 
+                    latex: `\\text{Andel} = \\mathbf{${(part / w).toString().replace('.', ',')}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Gör om till procent genom att flytta kommatecknet två steg åt höger (vilket är samma sak som att gångra med 100)." : "Convert to percent by shifting the decimal point two steps to the right (which is exactly the same as multiplying by 100).", 
+                    latex: `${(part / w).toString().replace('.', ',')} \\cdot 100 = \\mathbf{${p}\\%}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${p}%` : `Answer: ${p}%`, latex: `${p}\\%` }
             ]
         };
     }
@@ -302,11 +372,23 @@ export class PercentGen {
             },
             token: this.toBase64(w.toString()), variationKey: 'reverse_find_whole', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Vi vet att ${p}% motsvarar ${part} kr.` : `Step 1: We know that ${p}% corresponds to ${part} kr.` },
-                { text: lang === 'sv' ? `Steg 2: Hur många gånger går ${p}% i 100%?` : `Step 2: How many times does ${p}% fit into 100%?` },
-                { text: lang === 'sv' ? `Det går ${multiplier} stycken delar (eftersom ${multiplier} · ${p} = 100).` : `It fits ${multiplier} times (since ${multiplier} · ${p} = 100).` },
-                { text: lang === 'sv' ? `Steg 3: För att få 100% multiplicerar vi därför värdet för delen (${part}) med ${multiplier}.` : `Step 3: To find 100%, we multiply the value of the part (${part}) by ${multiplier}.`, latex: `100\\% = ${part} · ${multiplier} = ${w}` },
-                { text: lang === 'sv' ? `Svar: ${w} kr` : `Answer: ${w} kr` }
+                { 
+                    text: lang === 'sv' ? `Vi vet att en liten bit på ${p}% är värd exakt ${part} kr.` : `We know that a small piece of ${p}% is worth exactly ${part} kr.`, 
+                    latex: `${p}\\% = ${part}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut hur många sådana bitar det går på hela talet (100%). Det går exakt ${multiplier} stycken bitar.` : `Find out how many such pieces fit into the full total (100%). Exactly ${multiplier} pieces fit inside.`, 
+                    latex: `${multiplier} \\cdot ${p}\\% = 100\\%` 
+                },
+                { 
+                    text: lang === 'sv' ? `Gångra (multiplicera) därför delens värde (${part}) med ${multiplier} för att hitta vad hela summan var från början.` : `Therefore, multiply the piece value (${part}) by ${multiplier} to calculate what the full total sum was at the start.`, 
+                    latex: `100\\% = ${part} \\cdot \\mathbf{${multiplier}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut gångertalet för att få fram slutsvar." : "Calculate the multiplication to reach your final answer total.", 
+                    latex: `100\\% = \\mathbf{${w}}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${w} kr` : `Answer: ${w} kr`, latex: `${w}` }
             ]
         };
     }
@@ -332,10 +414,23 @@ export class PercentGen {
                 },
                 token: this.toBase64(ansStr), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Utgå från helheten 100%, vilket motsvaras av faktorn 1,00." : "Step 1: Start from the whole 100%, which corresponds to the factor 1.00." },
-                    { text: lang === 'sv' ? (isInc ? `Steg 2: Vid en ökning adderar vi procentsatsen (${p}%) till 100%.` : `Steg 2: At a decrease, we subtract the percentage (${p}%) from 100%.`) : (isInc ? `Step 2: At an increase, we add the percentage (${p}%) to 100%.` : `Step 2: At a decrease, we subtract the percentage (${p}%) from 100%.`), latex: isInc ? `1,00 + ${p/100}` : `1,00 - ${p/100}` },
-                    { text: lang === 'sv' ? `Steg 3: Beräkna faktorn.` : `Step 3: Calculate the factor.`, latex: `${ansStr}` },
-                    { text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}` }
+                    { 
+                        text: lang === 'sv' ? "Vi utgår alltid från 100%, vilket betyder hela ursprungsvärdet (1,00 i decimalform)." : "We always start with 100%, which represents the full original value (1.00 in decimal form).", 
+                        latex: `100\\% = 1,00` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Gör om procentsatsen ${p}% till decimalform genom att dela med 100. Det blir ${(p / 100).toString().replace('.', ',')}.` : `Convert the percentage ${p}% to decimal form by dividing it by 100. That equals ${(p / 100).toString().replace('.', ',')}.`, 
+                        latex: `${p}\\% = \\frac{${p}}{100} = \\mathbf{${(p / 100).toString().replace('.', ',')}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? (isInc ? `Eftersom värdet ökar plussar vi på decimalen till basen 1,00.` : `Eftersom värdet minskar drar vi bort decimalen från basen 1,00.`) : (isInc ? `Since the value increases, add the decimal to the base 1.00.` : `Since the value decreases, subtract the decimal from the base 1.00.`), 
+                        latex: isInc ? `\\text{Förändringsfaktor} = 1,00 + \\mathbf{${(p / 100).toString().replace('.', ',')}}` : `\\text{Förändringsfaktor} = 1,00 - \\mathbf{${(p / 100).toString().replace('.', ',')}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut plusset eller minusset för att få fram det färdiga decimaltalet." : "Calculate the addition or subtraction to determine the final decimal answer.", 
+                        latex: `\\text{Förändringsfaktor} = \\mathbf{${ansStr}}` 
+                    },
+                    { text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, latex: `\\text{${ansStr}}` }
                 ]
             };
         }
@@ -355,11 +450,23 @@ export class PercentGen {
             },
             token: this.toBase64(p.toString()), variationKey: 'change_calc', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Beräkna skillnaden (förändringen) i kronor." : "Step 1: Calculate the difference (change) in money.", latex: `${Math.max(oldV, newV)} - ${Math.min(oldV, newV)} = ${diff}` },
-                { text: lang === 'sv' ? "Steg 2: Dividera förändringen med det URSPRUNGLIGA värdet." : "Step 2: Divide the change by the ORIGINAL value.", latex: `\\frac{${diff}}{${oldV}}` },
-                { text: lang === 'sv' ? "Steg 3: Utför divisionen för att få andelen i decimalform." : "Step 3: Perform the division to get the share in decimal form.", latex: `${diff} / ${oldV} = ${diff/oldV}` },
-                { text: lang === 'sv' ? "Steg 4: Gör om till procent genom att multiplicera med 100." : "Step 4: Convert to percent by multiplying by 100.", latex: `${diff/oldV} · 100 = ${p}` },
-                { text: lang === 'sv' ? `Svar: ${p}%` : `Answer: ${p}%` }
+                { 
+                    text: lang === 'sv' ? `Ta först reda på prisskillnaden i kronor genom att ta det stora priset minus det lilla priset.` : `First, find the price difference in money by subtracting the smaller price from the larger price.`, 
+                    latex: `\\text{Skillnad} = ${Math.max(oldV, newV)} - ${Math.min(oldV, newV)} = \\mathbf{${diff}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Dela alltid den uträknade prisskillnaden (${diff}) med vad varan kostade FRÅN BÖRJAN (${oldV} kr).` : `Always divide the calculated difference (${diff}) by what the item cost ORIGINALLY at the start (${oldV} kr).`, 
+                    latex: `\\text{Andel} = \\frac{\\mathbf{${diff}}}{\\mathbf{${oldV}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut divisionen för att få fram förändringen i vanlig decimalform." : "Calculate the division to find the change in regular decimal format.", 
+                    latex: `\\text{Andel} = \\mathbf{${(diff / oldV).toString().replace('.', ',')}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Gör om decimaltalet till procent genom att flytta kommatecknet två steg åt höger (gånger 100)." : "Convert the decimal value to a percentage by moving the decimal point two steps to the right (multiply by 100).", 
+                    latex: `${(diff / oldV).toString().replace('.', ',')} \\cdot 100 = \\mathbf{${p}\\%}` 
+                },
+                { text: lang === 'sv' ? `Svar: ${p}%` : `Answer: ${p}%`, latex: `${p}\\%` }
             ]
         };
     }

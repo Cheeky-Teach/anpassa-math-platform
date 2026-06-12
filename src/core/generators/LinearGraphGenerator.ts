@@ -71,6 +71,7 @@ export class LinearGraphGenerator {
     }
 
     // --- LEVEL 1: Intercept (m) ---
+    // --- LEVEL 1: Intercept (m) ---
     private level1_FindM(lang: string, variationKey?: string, options: any = {}): any {
         const v = variationKey || 'intercept_id';
         const m = MathUtils.randomInt(-6, 6);
@@ -80,37 +81,81 @@ export class LinearGraphGenerator {
             renderData: {
                 graph: { range: 10, lines: [{ slope: k, intercept: m, color: '#2563eb' }] },
                 description: lang === 'sv' 
-                    ? "Var skär linjen den vertikala y-axeln? Bestäm linjens m-värde." 
-                    : "Where does the line intersect the vertical y-axis? Determine the m-value.",
+                    ? "Var krockar linjen med den stående y-axeln? Bestäm linjens m-värde." 
+                    : "Where does the line crash into the vertical y-axis? Find the m-value.",
                 interceptorToken: `${m} ; ${k}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(m.toString()),
             variationKey: v, type: 'concept',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: m-värdet är y-koordinaten där linjen korsar y-axeln." : "Step 1: The m-value is the y-coordinate where the line crosses the y-axis." },
-                { text: lang === 'sv' ? "Hitta den vertikala linjen i mitten av koordinatsystemet (y-axeln)." : "Find the vertical line in the center of the coordinate system (the y-axis)." },
-                { text: lang === 'sv' ? "Följ y-axeln tills du ser var den blå linjen skär den." : "Follow the y-axis until you see where the blue line intersects it.", latex: "(0, m)" },
-                { text: lang === 'sv' ? `Linjen skär axeln vid värdet ${m}.` : `The line intersects the axis at the value ${m}.` },
-                { text: lang === 'sv' ? `Svar: m = ${m}` : `Answer: m = ${m}` }
+                { 
+                    text: lang === 'sv' ? "Bokstaven m är linjens startport. Det är den höjd där den blå linjen krockar med den stående mittlinjen (y-axeln)." : "The letter m is the line's starting gate. It is the exact height where the blue line crashes through the vertical center line (y-axis).", 
+                    latex: `\\text{Startpunkt: } (0, m)` 
+                },
+                { 
+                    text: lang === 'sv' ? "Leta upp den stående mittlinjen och följ den med fingret tills den möter den blå linjen." : "Find the vertical center line and follow it with your finger until it intersects with the blue line.", 
+                    latex: `\\text{Kolla längs stående axeln}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Vi ser att linjen krockar med mittlinjen på höjden ${m}. Detta är vårt m-värde.` : `We see that the line hits the center axis at the height of ${m}. This is our m-value.`, 
+                    latex: `m = \\mathbf{${m}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: m = ${m}` : `Answer: m = ${m}`, 
+                    latex: `m = ${m}` 
+                }
             ],
             metadata: { variation_key: v, difficulty: 1 }
         };
     }
 
     // --- LEVEL 2 & 3: Slope (k) ---
+    // --- LEVEL 2 & 3: Slope (k) ---
     private getDetailedSlopeClues(k: number, kDisplay: string, lang: string, dy: number, dx: number) {
         const isPos = k > 0;
-        const dir = isPos ? (lang === 'sv' ? "uppåt" : "upward") : (lang === 'sv' ? "nedåt" : "downward");
-        
+        const actionTextSv = isPos 
+            ? `klättra UPPÅT med ${Math.abs(dy)} steg` 
+            : `klättra NEDÅT med ${Math.abs(dy)} steg`;
+        const actionTextEn = isPos 
+            ? `climb UPWARDS by ${Math.abs(dy)} steps` 
+            : `climb DOWNWARDS by ${Math.abs(dy)} steps`;
+
         return [
-            { text: lang === 'sv' ? "Steg 1: k-värdet (lutningen) beskriver hur mycket linjen förändras i höjdled för varje steg åt höger." : "Step 1: The k-value (slope) describes how much the line changes vertically for every step to the right." },
-            { text: lang === 'sv' ? "Välj en punkt på linjen som ligger exakt i ett hörn i rutnätet." : "Pick a point on the line that lies exactly on a corner in the grid." },
-            { text: lang === 'sv' ? `Gå ${dx} steg åt höger i rutnätet.` : `Move ${dx} steps to the right in the grid.`, latex: `\\Delta x = ${dx}` },
-            { text: lang === 'sv' ? `Räkna hur många steg du måste gå ${dir} för att hamna på linjen igen.` : `Count how many steps you must move ${dir} to land on the line again.` },
-            { text: lang === 'sv' ? `Förändringen i höjdled är ${Math.abs(dy)} steg.` : `The vertical change is ${Math.abs(dy)} steps.`, latex: `\\Delta y = ${dy}` },
-            { text: lang === 'sv' ? "Använd formeln för lutning: k = Δy / Δx." : "Use the formula for slope: k = Δy / Δx.", latex: `k = \\frac{${dy}}{${dx}}` },
-            { text: lang === 'sv' ? `Svar: k = ${kDisplay}` : `Answer: k = ${kDisplay}` }
+            { 
+                text: lang === 'sv' 
+                    ? "Bokstaven k beskriver linjens trappsteg. Det talar om hur många steg vi klättrar upp eller ner när vi tar kliv åt höger." 
+                    : "The letter k describes the line's steps. It tells us how many spaces we climb up or down when we take steps to the right.", 
+                latex: `k = \\frac{\\text{steg i höjdled}}{\\text{steg åt höger}}` 
+            },
+            { 
+                text: lang === 'sv' 
+                    ? "Hitta ett ställe där linjen korsar ett hörn i rutnätet helt perfekt och starta där." 
+                    : "Find a spot where the line crosses a grid corner perfectly and start tracking from there.", 
+                latex: `\\text{Hitta ett rent rutan-hörn}` 
+            },
+            { 
+                text: lang === 'sv' 
+                    ? `Ta nu exakt ${dx} steg åt höger i rutnätet.` 
+                    : `Now move exactly ${dx} steps to the right along the grid squares.`, 
+                latex: `\\text{Steg åt höger} = \\mathbf{${dx}}` 
+            },
+            { 
+                text: lang === 'sv' 
+                    ? `För att träffa linjen igen måste vi ${actionTextSv}.` 
+                    : `To land back on the line again, we must ${actionTextEn}.`, 
+                latex: `\\text{Steg i höjdled} = \\mathbf{${dy}}` 
+            },
+            { 
+                text: lang === 'sv' 
+                    ? "Skriv ut bråket genom att sätta höjd-stegen däruppe och höger-stegen där nere:" 
+                    : "Write out the step fraction by putting the height steps on top and the right steps on the bottom:", 
+                latex: `k = \\frac{\\mathbf{${dy}}}{\\mathbf{${dx}}}` 
+            },
+            { 
+                text: lang === 'sv' ? `Det ger oss lutningen k = ${kDisplay}.` : `This gives us the slope k = ${kDisplay}.`, 
+                latex: `k = \\mathbf{${kDisplay}}` 
+            }
         ];
     }
 
@@ -217,12 +262,44 @@ export class LinearGraphGenerator {
             token: this.toBase64(eq.replace(/\s/g, "")),
             variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Hitta m-värdet (där linjen korsar y-axeln)." : "Step 1: Find the m-value (where the line crosses the y-axis)." },
-                { text: lang === 'sv' ? `Linjen skär y-axeln i ${m}, så m = ${m}.` : `The line cuts the y-axis at ${m}, so m = ${m}.`, latex: `m = ${m}` },
-                { text: lang === 'sv' ? "Steg 2: Beräkna k-värdet (lutningen) genom att gå ett steg åt höger." : "Step 2: Calculate the k-value (slope) by moving one step to the right." },
-                { text: lang === 'sv' ? `För varje steg åt höger ändras y med ${k}.` : `For every step to the right, y changes by ${k}.`, latex: `k = ${k}` },
-                { text: lang === 'sv' ? "Steg 3: Sätt in värdena i formeln y = kx + m." : "Step 3: Insert the values into the formula y = kx + m." },
-                { text: lang === 'sv' ? `Svar: ${eq}` : `Answer: ${eq}` }
+                { 
+                    text: lang === 'sv' 
+                        ? "Hela formeln byggs pussel-likt genom att leta reda på två dolda pusselbitar: startporten (m) och trappsteget (k)." 
+                        : "The entire formula is built puzzle-style by finding two hidden pieces: the starting gate (m) and the step-rate (k).", 
+                    latex: `y = kx + m` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Pusselbit 1: Kolla var den lila linjen krockar med den stående mittlinjen. Den träffar på höjden ${m}, så m = ${m}.` 
+                        : `Puzzle Piece 1: Check where the purple line crashes through the vertical center axis. It hits at height ${m}, so m = ${m}.`, 
+                    latex: `m = \\mathbf{${m}}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? (k === 0 
+                            ? "Pusselbit 2: Linjen är helt platt! Det betyder att den varken klättrar upp eller ner när vi går åt höger. Steget k är noll." 
+                            : `Pusselbit 2: Starta i en punkt och ta ett kliv till höger i rutorna. Vi tvingas klättra med ${k} steg för att hamna på linjen igen, så k = ${k}.`)
+                        : (k === 0 
+                            ? "Puzzle Piece 2: The line is completely flat! This means it neither climbs up nor down when moving right. The step-rate k is zero." 
+                            : `Puzzle Piece 2: Start at a point and take one step right in the grid. We must climb by ${k} spaces to find the line again, so k = ${k}.`), 
+                    latex: `k = \\mathbf{${k}}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Pussla ihop delarna i mallen y = kx + m genom att byta ut k mot ${k} och m mot ${m}.` 
+                        : `Assemble the pieces into the y = kx + m template by replacing k with ${k} and m with ${m}.`, 
+                    latex: `y = \\mathbf{(${k})x + (${m})}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? "Städa bort osynliga ettor eller nollor för att skriva det färdiga, rena uttrycket." 
+                        : "Clean up any hidden ones or zeroes to express the final clean equation state.", 
+                    latex: `\\mathbf{${eq}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${eq}` : `Answer: ${eq}`, 
+                    latex: `${eq}` 
+                }
             ],
             metadata: { variation_key: v, difficulty: 4 }
         };
