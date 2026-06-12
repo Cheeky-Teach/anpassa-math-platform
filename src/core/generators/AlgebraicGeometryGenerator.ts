@@ -59,7 +59,7 @@ export class AlgebraicGeometryGenerator {
             ans = `${2*a}x+${2*b}`;
             clues = [
                 {
-                    text: lang === 'sv' ? "Omkretsen är summan av en figurs alla yttre sidor." : "The perimeter is the sum of all outer sides of a figure.",
+                    text: lang === 'sv' ? "Omkretsen är summan av en figurs sidor." : "The perimeter is the sum of all outer sides of a figure.",
                     latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3 + \\text{sida}_4`
                 },
                 {
@@ -83,7 +83,7 @@ export class AlgebraicGeometryGenerator {
             ans = `${4*a}x+${4*b}`;
             clues = [
                 {
-                    text: lang === 'sv' ? "En kvadrat har fyra sidor som alla är lika långa." : "A square has four sides that are all the same length.",
+                    text: lang === 'sv' ? "En kvadrat har fyra sidor som är lika långa." : "A square has four sides that are all the same length.",
                     latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3 + \\text{sida}_4`
                 },
                 {
@@ -106,7 +106,7 @@ export class AlgebraicGeometryGenerator {
             ans = `${3*a}x`;
             clues = [
                 {
-                    text: lang === 'sv' ? "En liksidig triangel har tre sidor som alla är lika långa." : "An equilateral triangle has three sides that are all the same length.",
+                    text: lang === 'sv' ? "En liksidig triangel har tre sidor som är lika långa." : "An equilateral triangle has three sides that are all the same length.",
                     latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3`
                 },
                 {
@@ -126,7 +126,7 @@ export class AlgebraicGeometryGenerator {
             ans = `${a+b+c}x`;
             clues = [
                 {
-                    text: lang === 'sv' ? "Omkretsen får vi om vi adderar alla triangelns tre yttre sidor." : "We get the perimeter by adding all three outer sides of the triangle together.",
+                    text: lang === 'sv' ? "Omkretsen får vi om vi adderar alla tre sidor." : "We get the perimeter by adding all three outer sides of the triangle together.",
                     latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3`
                 },
                 {
@@ -134,7 +134,7 @@ export class AlgebraicGeometryGenerator {
                     latex: `\\text{Omkrets} = ${a}x + ${b}x + ${c}x`
                 },
                 {
-                    text: lang === 'sv' ? "Förenkla genom att slå ihop alla x-termer till ett gemensamt slutsvar." : "Simplify by combining all x-terms into a single final answer.",
+                    text: lang === 'sv' ? "Förenkla genom att slå ihop alla x-termer." : "Simplify by combining all x-terms into a single final answer.",
                     latex: `\\text{Omkrets} = \\mathbf{${ans}}`
                 }
             ];
@@ -188,7 +188,7 @@ export class AlgebraicGeometryGenerator {
                     latex: `\\frac{2x}{\\mathbf{2}} = \\frac{${totalP - (2*a + 2*b)}}{\\mathbf{2}}`
                 },
                 {
-                    text: lang === 'sv' ? "Räkna ut divisionen för att få fram det slutgiltiga värdet på x." : "Calculate the division to find the final value of x.",
+                    text: lang === 'sv' ? "Räkna ut divisionen för att få värdet på x." : "Calculate the division to find the final value of x.",
                     latex: `x = \\mathbf{${targetX}}`
                 },
                 {
@@ -212,11 +212,11 @@ export class AlgebraicGeometryGenerator {
                     latex: `\\mathbf{${4*a}}x = ${totalP}`
                 },
                 {
-                    text: lang === 'sv' ? `Steg 1: Dela med x-koefficienten ${4*a} på båda sidor för att få x helt fritt.` : `Step 1: Divide by the x-coefficient ${4*a} on both sides to leave x completely isolated.`,
+                    text: lang === 'sv' ? `Steg 1: Dela med x-koefficienten ${4*a} på båda sidor för att få x ensam.` : `Step 1: Divide by the x-coefficient ${4*a} on both sides to leave x completely isolated.`,
                     latex: `\\frac{${4*a}x}{\\mathbf{${4*a}}} = \\frac{${totalP}}{\\mathbf{${4*a}}}`
                 },
                 {
-                    text: lang === 'sv' ? "Utför divisionen för att räkna ut det slutgiltiga svaret." : "Perform the division to compute the final answer.",
+                    text: lang === 'sv' ? "Utför divisionen för att räkna ut värdet på x." : "Perform the division to find the final answer.",
                     latex: `x = \\mathbf{${targetX}}`
                 },
                 {
@@ -233,7 +233,7 @@ export class AlgebraicGeometryGenerator {
             desc = lang === 'sv' ? `En liksidig triangels omkrets är ${totalP} cm. Beräkna x.` : `The triangle's perimeter is ${totalP} cm. Calculate x.`;
             clues = [
                 {
-                    text: lang === 'sv' ? "En liksidig triangel har tre sidor som alla är lika långa. Vi sätter upp summan:" : "An equilateral triangle has three sides that are all the same length. We set up the sum:",
+                    text: lang === 'sv' ? "En liksidig triangel har tre sidor som är lika långa. Vi sätter upp summan:" : "An equilateral triangle has three sides that are all the same length. We set up the sum:",
                     latex: `(${sText}) + (${sText}) + (${sText}) = ${totalP}`
                 },
                 {
@@ -300,11 +300,11 @@ export class AlgebraicGeometryGenerator {
                     latex: `\\text{Area} = (${a}x + ${b}) \\cdot ${c}`
                 },
                 {
-                    text: lang === 'sv' ? `Multiplicera in konstanten ${c} med varje term inuti parentesen:` : `Distribute the constant factor ${c} into each term inside the parentheses:`,
+                    text: lang === 'sv' ? `Multiplicera in ${c} med varje term inuti parentesen:` : `Distribute (multiply) ${c} into each term inside the parentheses:`,
                     latex: `\\text{Area} = \\mathbf{${c} \\cdot ${a}x + ${c} \\cdot ${b}}`
                 },
                 {
-                    text: lang === 'sv' ? "Förenkla multiplikationen för att bygga det färdiga uttrycket:" : "Simplify the multiplication steps to reveal the final expression:",
+                    text: lang === 'sv' ? "Förenkla:" : "Simplify:",
                     latex: `\\text{Area} = \\mathbf{${ans}}`
                 }
             ];
@@ -325,11 +325,11 @@ export class AlgebraicGeometryGenerator {
                     latex: `\\text{Area} = \\frac{${a}x \\cdot ${c}}{2}`
                 },
                 {
-                    text: lang === 'sv' ? "Multiplicera ihop faktorerna uppe i täljaren först:" : "Multiply the numerical coefficient factors inside the numerator position first:",
+                    text: lang === 'sv' ? "Multiplicera ihop faktorerna uppe i täljaren först:" : "Multiply the factors in the numerator first:",
                     latex: `\\text{Area} = \\frac{\\mathbf{${a*c}}x}{2}`
                 },
                 {
-                    text: lang === 'sv' ? "Slutför divisionen med 2 för att beräkna det förenklade uttrycket:" : "Complete the final division by 2 to generate the simplified expression:",
+                    text: lang === 'sv' ? "Slutför divisionen med 2:" : "Complete the final division by 2:",
                     latex: `\\text{Area} = \\mathbf{${ans}}`
                 }
             ];
@@ -367,7 +367,7 @@ export class AlgebraicGeometryGenerator {
                     latex: `\\mathbf{${c} \\cdot x + ${c} \\cdot ${a}} = ${totalA}`
                 },
                 {
-                    text: lang === 'sv' ? "Förenkla parentesexpansionen för att bygga en vanlig tvåstegsekvation:" : "Simplify the expanded parenthesis layout into a standard two-step equation:",
+                    text: lang === 'sv' ? "Förenkla:" : "Simplify:",
                     latex: `${c}x + \\mathbf{${c*a}} = ${totalA}`
                 },
                 {
@@ -407,15 +407,15 @@ export class AlgebraicGeometryGenerator {
                     latex: `\\frac{\\mathbf{${a*c}}x}{2} = ${totalA}`
                 },
                 {
-                    text: lang === 'sv' ? "Utför divisionen med 2 på vänster sida för att få en ren enstegsekvation:" : "Perform the division by 2 on the left side to compile down to a clean one-step equation format:",
+                    text: lang === 'sv' ? "Utför divisionen med 2 på vänster sida:" : "Perform the division by 2 on the left side:",
                     latex: `\\mathbf{${(a*c)/2}}x = ${totalA}`
                 },
                 {
-                    text: lang === 'sv' ? `Steg 1: Dela med x-koefficienten ${(a*c)/2} på båda sidor för att lösa ut x.` : `Step 1: Divide both sides by the core x-coefficient multiplier ${(a*c)/2} to isolate x.`,
+                    text: lang === 'sv' ? `Steg 1: Dela med ${(a*c)/2} på båda sidor för att lösa ut x.` : `Step 1: Divide both sides by the core x-coefficient multiplier ${(a*c)/2} to isolate x.`,
                     latex: `\\frac{${(a*c)/2}x}{\\mathbf{${(a*c)/2}}} = \\frac{${totalA}}{\\mathbf{${(a*c)/2}}}`
                 },
                 {
-                    text: lang === 'sv' ? "Räkna ut divisionen på höger sida för att få fram slutsvar." : "Calculate the final division on the right side to establish the output answer value.",
+                    text: lang === 'sv' ? "Räkna ut divisionen på höger sida." : "Calculate the final division on the right side.",
                     latex: `x = \\mathbf{${targetX}}`
                 },
                 {

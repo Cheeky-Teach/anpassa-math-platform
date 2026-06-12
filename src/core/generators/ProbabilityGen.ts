@@ -601,7 +601,7 @@ export class ProbabilityGen {
 
     // --- LEVEL 7: COMBINATORICS ---
     private level7_Combinatorics(lang: string, variationKey?: string, options: any = {}): any {
-        const c1 = MathUtils.randomInt(10, 25);
+        const c1 = MathUtils.randomInt(5, 15);
         const c2 = MathUtils.randomInt(8, 20);
         const ans = c1 * c2;
         return {
