@@ -118,19 +118,46 @@ export class BasicArithmeticGen {
             const isVertical = v === 'add_std_vertical';
             const ans = a + b;
             
+            // Extract place values for step-by-step visual distribution strategy
+            const aHundreds = Math.floor(a / 100) * 100, bHundreds = Math.floor(b / 100) * 100;
+            const aTens = Math.floor((a % 100) / 10) * 10, bTens = Math.floor((b % 100) / 10) * 10;
+            const aOnes = a % 10, bOnes = b % 10;
+            const baseExpression = isVertical ? this.makeVertical(a, b, '+') : `${a} + ${b}`;
+
             return {
                 renderData: {
                     description: lang === 'sv' ? "Beräkna summan." : "Calculate the sum.",
-                    latex: isVertical ? this.makeVertical(a, b, '+') : `${a} + ${b}`,
-                    interceptorToken: `${a} + ${b}`, // Added background channel token
+                    latex: baseExpression,
+                    interceptorToken: `${a} + ${b}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()),
                 variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Addition innebär att vi lägger samman delar för att hitta en total summa." : "Step 1: Addition involves combining parts to find a total sum." },
-                    { text: lang === 'sv' ? "Addera talen genom att lägga ihop de olika talsorterna." : "Add the numbers by combining the different place values.", latex: `${a} + ${b} \\\\ ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? "Vi beräknar additionen genom att dela upp talen i hundratal, tiotal och ental." : "We calculate the addition by breaking the numbers into hundreds, tens, and ones.", 
+                        latex: baseExpression 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Börja med att addera hundratalen tillsammans: ${aHundreds} + ${bHundreds}` : `Start by adding the hundreds place values together: ${aHundreds} + ${bHundreds}`, 
+                        latex: `\\mathbf{${aHundreds} + ${bHundreds}} + ${aTens} + ${bTens} + ${aOnes} + ${bOnes}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Addera nu tiotalen tillsammans: ${aTens} + ${bTens}` : `Now add the tens place values together: ${aTens} + ${bTens}`, 
+                        latex: `${aHundreds + bHundreds} + \\mathbf{${aTens} + ${bTens}} + ${aOnes} + ${bOnes}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Addera till sist entalen tillsammans: ${aOnes} + ${bOnes}` : `Finally, add the ones place values together: ${aOnes} + ${bOnes}`, 
+                        latex: `${aHundreds + bHundreds} + ${aTens + bTens} + \\mathbf{${aOnes} + ${bOnes}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Slå ihop delsummorna för att få fram det slutgiltiga svaret." : "Combine the partial sums together to reach the final calculated total.", 
+                        latex: `\\mathbf{${aHundreds + bHundreds} + ${aTens + bTens} + ${aOnes + bOnes}} = ${ans}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `${ans}` 
+                    }
                 ]
             };
         }
@@ -142,14 +169,31 @@ export class BasicArithmeticGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? "Vilket tal saknas för att summan ska stämma?" : "What number is missing to make the sum correct?",
-                    latex: `${a} + \\text{\\_\\_\\_} = ${sum}`, answerType: 'numeric'
+                    latex: `${a} + x = ${sum}`, answerType: 'numeric'
                 },
                 token: this.toBase64(x.toString()),
                 variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: För att hitta en saknad term använder vi subtraktion: Summan - Känd term." : "Step 1: To find a missing term, use subtraction: Sum - Known term." },
-                    { text: lang === 'sv' ? "Räkna ut skillnaden." : "Calculate the difference.", latex: `${sum} - ${a} \\\\ ${x}` },
-                    { text: lang === 'sv' ? `Svar: ${x}` : `Answer: ${x}` }
+                    { 
+                        text: lang === 'sv' ? "För att hitta ett okänt tal i en addition gör vi det motsatta, vilket är subtraktion." : "To find an unknown missing term in an addition equation, we perform the inverse action, which is subtraction.", 
+                        latex: `${a} + x = ${sum}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Ta bort ${a} från vänster sida genom att subtrahera ${a} på båda sidor.` : `Isolate x by subtracting the known number ${a} from both sides of the equation.`, 
+                        latex: `${a} \\mathbf{- ${a}} + x = ${sum} \\mathbf{- ${a}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut subtraktionen på höger sida för att hitta det saknade värdet.` : `Calculate the subtraction on the right side to discover the value of the missing piece.`, 
+                        latex: `x = \\mathbf{${sum} - ${a}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Förenkla raden för att få fram slutsvar.` : `Simplify the line to reach your final answer key value.`, 
+                        latex: `x = \\mathbf{${x}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${x}` : `Answer: ${x}`, 
+                        latex: `x = ${x}` 
+                    }
                 ]
             };
         }
@@ -160,16 +204,29 @@ export class BasicArithmeticGen {
         const sFalse = `${n1} + ${n2} = ${n1 + n2 + MathUtils.randomChoice([-2, 1, 2])}`;
         return {
             renderData: {
-                description: lang === 'sv' ? "Vilken uträkning är FELAKTIG?" : "Which calculation is INCORRECT?",
+                description: lang === 'sv' ? "Vilken uträkning är felaktig?" : "Which calculation is incorrect?",
                 answerType: 'multiple_choice',
                 options: MathUtils.shuffle([sTrue, `${MathUtils.randomInt(10,30)} + 10 = ${MathUtils.randomInt(45,60)}`, sFalse])
             },
             token: this.toBase64(sFalse),
             variationKey: v, type: 'concept',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Kontrollera varje uträkning genom att addera entalen och tiotalen var för sig." : "Step 1: Check each calculation by adding the ones and tens separately." },
-                { text: lang === 'sv' ? "Denna uträkning stämmer inte:" : "This calculation is incorrect:", latex: sFalse },
-                { text: lang === 'sv' ? `Svar: ${sFalse}` : `Answer: ${sFalse}` }
+                { 
+                    text: lang === 'sv' ? "Testa alternativen genom att addera tiotalen och entalen för sig." : "Test the options by adding the tens and ones separately.", 
+                    latex: `\\text{Kontrollera: } ${n1} + ${n2}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Lägg ihop tiotalen (${Math.floor(n1/10)*10} + ${Math.floor(n2/10)*10}) och entalen (${n1%10} + ${n2%10}).` : `Add the tens (${Math.floor(n1/10)*10} + ${Math.floor(n2/10)*10}) and the ones (${n1%10} + ${n2%10}).`, 
+                    latex: `(${Math.floor(n1/10)*10} + ${Math.floor(n2/10)*10}) + (${n1%10} + ${n2%10}) = ${n1 + n2}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svaret ska bli ${n1 + n2}, vilket betyder att den här uträkningen är fel:` : `The answer should be ${n1 + n2}, which means this calculation is wrong:`, 
+                    latex: `\\mathbf{${sFalse}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${sFalse}` : `Answer: ${sFalse}`, 
+                    latex: `\\text{${sFalse}}` 
+                }
             ]
         };
     }
@@ -185,30 +242,73 @@ export class BasicArithmeticGen {
         const a = MathUtils.randomInt(50, 200), b = MathUtils.randomInt(10, a - 1), ans = a - b;
 
         if (v === 'sub_std_vertical' || v === 'sub_std_horizontal') {
+            const isVertical = v === 'sub_std_vertical';
+            const baseExpression = isVertical ? this.makeVertical(a, b, '-') : `${a} - ${b}`;
+            
+            // Refactored pedagogical strategy: Horizontal jump adjustments to eliminate borrowing confusion
+            const nearestTen = Math.ceil(b / 10) * 10;
+            const jumpToTen = nearestTen - b;
+            const jumpToTarget = a - nearestTen;
+
             return {
                 renderData: {
                     description: lang === 'sv' ? "Beräkna differensen." : "Calculate the difference.",
-                    latex: v === 'sub_std_vertical' ? this.makeVertical(a, b, '-') : `${a} - ${b}`,
-                    interceptorToken: `${a} - ${b}`, // 🟢 Added background channel token
+                    latex: baseExpression,
+                    interceptorToken: `${a} - ${b}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Subtraktion innebär att vi tar bort ett värde för att hitta skillnaden (differensen)." : "Step 1: Subtraction means removing a value to find the difference." },
-                    { text: lang === 'sv' ? "Räkna ut skillnaden." : "Calculate the difference.", latex: `${a} - ${b} \\\\ ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? "Ett smart sätt att räkna subtraktion är att mäta avståndet (hoppa) från det minsta talet upp till det största." : "A clever tracking strategy for subtraction is measuring the step-by-step jump distance upwards from the smaller number to the larger number.", 
+                        latex: baseExpression 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Steg 1: Räkna ut hoppet från ${b} upp till närmaste jämna tiotal (${nearestTen}).` : `Step 1: Calculate the distance from ${b} up to the nearest clean multiple of ten (${nearestTen}).`, 
+                        latex: `${b} + \\mathbf{${jumpToTen}} = ${nearestTen}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Steg 2: Räkna ut hoppet från ${nearestTen} hela vägen upp till målet ${a}.` : `Step 2: Calculate the remaining jump from ${nearestTen} all the way up to the final target number ${a}.`, 
+                        latex: `${nearestTen} + \\mathbf{${jumpToTarget}} = ${a}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Steg 3: Lägg ihop de två hoppen (${jumpToTen} + ${jumpToTarget}) för att få fram den totala skillnaden.` : `Step 3: Combine your two separate jump values (${jumpToTen} + ${jumpToTarget}) to find the total combined difference.`, 
+                        latex: `\\text{Differens} = \\mathbf{${jumpToTen} + ${jumpToTarget}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Förenkla additionen för att hitta det slutgiltiga svaret." : "Simplify the addition row to calculate the final scalar response.", 
+                        latex: `\\text{Differens} = \\mathbf{${ans}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `${ans}` 
+                    }
                 ]
             };
         }
 
         const x = MathUtils.randomInt(20, 80), start = x + MathUtils.randomInt(20, 100);
+        const resultVal = start - x;
         return {
-            renderData: { description: lang === 'sv' ? "Vilket tal saknas?" : "Find the missing number.", latex: `${start} - \\text{\\_\\_\\_} = ${start - x}`, answerType: 'numeric' },
+            renderData: { description: lang === 'sv' ? "Vilket tal saknas?" : "Find the missing number.", latex: `${start} - x = ${resultVal}`, answerType: 'numeric' },
             token: this.toBase64(x.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Talet som saknas är skillnaden mellan starttalet och resultatet." : "Step 1: The missing number is the difference between the starting value and the result." },
-                { text: lang === 'sv' ? "Beräkna x genom subtraktion." : "Calculate x using subtraction.", latex: `${start} - ${start-x} \\\\ ${x}` },
-                { text: lang === 'sv' ? `Svar: ${x}` : `Answer: ${x}` }
+                { 
+                    text: lang === 'sv' ? "För att hitta ett subtraherat dolt tal, vill vi kika på skillnaden mellan starttalet och målet." : "To find a missing term that is being subtracted, we examine the distance balance between our starting number and the result output value.", 
+                    latex: `${start} - x = ${resultVal}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Vi kan skriva om ekvationen genom att byta plats på x och ${resultVal}:` : `We can restructure this line horizontally by swapping the variable position with the product limit value:`, 
+                    latex: `${start} - \\mathbf{${resultVal}} = x` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut subtraktionen för att frigöra och beräkna variabeln x.` : `Perform the calculation on the left side to isolate and reveal the value of x.`, 
+                    latex: `\\mathbf{${start - resultVal}} = x` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: x = ${x}` : `Answer: x = ${x}`, 
+                    latex: `x = ${x}` 
+                }
             ]
         };
     }
@@ -227,6 +327,10 @@ export class BasicArithmeticGen {
         const val2 = op === '+' ? b : Math.min(a, b);
         const ans = Math.round((op === '+' ? val1 + val2 : val1 - val2) * 100) / 100;
 
+        // add_spot_the_lie
+        const n1 = MathUtils.randomInt(10, 50), n2 = MathUtils.randomInt(10, 50);
+        const sTrue = `${n1} + ${n2} = ${n1 + n2}`;
+        const sFalse = `${n1} + ${n2} = ${n1 + n2 + MathUtils.randomChoice([-2, 1, 2])}`;
         return {
             renderData: {
                 description: lang === 'sv' ? "Ställ upp och beräkna." : "Calculate.",
@@ -234,9 +338,22 @@ export class BasicArithmeticGen {
             },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Vid decimalräkning är det viktigaste att decimaltecknen hamnar rakt under varandra." : "Step 1: In decimal calculation, the most important thing is that the decimal points align vertically." },
-                { text: lang === 'sv' ? "Räkna nu talsort för talsort." : "Now calculate place value by place value.", latex: `${val1} ${op} ${val2} \\\\ ${ans}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                { 
+                    text: lang === 'sv' ? "Se till att kommatecknen hamnar rakt under varandra." : "Make sure the decimal points align straight under each other.", 
+                    latex: `${val1} ${op} ${val2}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Lägg till en nolla i slutet om det behövs så att talen blir lika långa." : "Add a zero at the end if needed so the numbers are the same length.", 
+                    latex: `${val1.toString().includes('.') && val1.toString().split('.')[1].length === 1 ? val1 + '0' : val1} ${op} ${val2.toString().includes('.') && val2.toString().split('.')[1].length === 1 ? val2 + '0' : val2}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna nu talsort för talsort för att få fram svaret." : "Now calculate place value by place value to find the answer.", 
+                    latex: `${val1} ${op} ${val2} = \\mathbf{${ans}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    latex: `${ans}` 
+                }
             ]
         };
     }
@@ -251,23 +368,44 @@ export class BasicArithmeticGen {
         const a = MathUtils.randomInt(2, 10), b = MathUtils.randomInt(2, 10);
 
         if (v === 'mult_table_std') {
+            // Refactored strategy: Anchor breakdown grids to show struggling students landmark combinations (like 5x or 10x)
+            const intermediateFactor = a > 5 ? 5 : 2;
+            const remainderFactor = a - intermediateFactor;
+
             return {
                 renderData: { 
                     description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.", 
-                    latex: `${a} · ${b}`, 
-                    interceptorToken: `${a} · ${b}`, // 🟢 Added background channel token
+                    latex: `${a} \\cdot ${b}`, 
+                    interceptorToken: `${a} · ${b}`,
                     answerType: 'numeric' 
                 },
                 token: this.toBase64((a * b).toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Multiplikation är upprepad addition." : "Step 1: Multiplication is repeated addition." },
-                    { text: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.", latex: `${a} · ${b} \\\\ ${a*b}` },
-                    { text: lang === 'sv' ? `Svar: ${a*b}` : `Answer: ${a*b}` }
+                    { 
+                        text: lang === 'sv' ? `Om multiplikationstabellen känns klurig kan vi dela upp ${a} i enklare delar, t.ex. (${intermediateFactor} + ${remainderFactor}).` : `If the full multiplication table feels tricky, we can decompose ${a} into manageable components, like (${intermediateFactor} + ${remainderFactor}).`, 
+                        latex: `${a} \\cdot ${b} = (${intermediateFactor} + ${remainderFactor}) \\cdot ${b}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Multiplicera in i parentesen: Räkna ut ${intermediateFactor} · ${b} och ${remainderFactor} · ${b} var för sig.` : `Distribute across the brackets: Calculate ${intermediateFactor} · ${b} and ${remainderFactor} · ${b} independently.`, 
+                        latex: `= \\mathbf{${intermediateFactor} \\cdot ${b}} + \\mathbf{${remainderFactor} \\cdot ${b}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Skriv ut delprodukterna (${intermediateFactor * b} och ${remainderFactor * b}):` : `Evaluate those individual helper multiplication pieces (${intermediateFactor * b} and ${remainderFactor * b}):`, 
+                        latex: `= \\mathbf{${intermediateFactor * b}} + \\mathbf{${remainderFactor * b}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Addera ihop delarna för att få fram det färdiga svaret." : "Add the two products together to get the final unified response value.", 
+                        latex: `= \\mathbf{${a * b}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${a * b}` : `Answer: ${a * b}`, 
+                        latex: `${a * b}` 
+                    }
                 ]
             };
         }
 
-        const correct = `${b} · ${a}`;
+        const correct = `${b} \\cdot ${a}`;
         return {
             renderData: {
                 description: lang === 'sv' ? `Vilket uttryck ger samma svar som ${a} · ${b}?` : `Which expression gives the same answer as ${a} · ${b}?`,
@@ -275,9 +413,22 @@ export class BasicArithmeticGen {
             },
             token: this.toBase64(correct), variationKey: v, type: 'concept',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Den kommutativa lagen innebär att talens ordning inte spelar någon roll vid multiplikation." : "Step 1: The commutative law means that the order of factors does not matter in multiplication." },
-                { text: lang === 'sv' ? "Växla plats på faktorerna." : "Swap the places of the factors.", latex: `${a} · ${b} \\\\ ${b} · ${a}` },
-                { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}` }
+                { 
+                    text: lang === 'sv' ? "Vid multiplikation spelar det ingen roll i vilken ordning du tar talen." : "In multiplication, it does not matter which order you multiply the numbers.", 
+                    latex: `${a} \\cdot ${b}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Det betyder att vi kan byta plats på siffrorna och ändå få exakt samma svar." : "This means we can swap the places of the numbers and still get the exact same answer.", 
+                    latex: `${a} \\cdot ${b} = \\mathbf{${b} \\cdot ${a}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Båda sätten ger svaret ${a * b}, så det rätta alternativet är:` : `Both ways give the answer ${a * b}, so the correct option is:`, 
+                    latex: `\\mathbf{${correct}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}`, 
+                    latex: `\\mathbf{${correct}}` 
+                }
             ]
         };
     }
@@ -290,27 +441,61 @@ export class BasicArithmeticGen {
         ];
         const v = variationKey || this.getVariation(pool, options);
         const a = MathUtils.randomInt(12, 45), b = MathUtils.randomInt(3, 9);
+        const p1 = Math.floor(a / 10) * 10, p2 = a % 10;
 
         if (v === 'mult_2x1_vertical') {
             return {
                 renderData: { description: lang === 'sv' ? "Beräkna." : "Calculate.", latex: this.makeVertical(a, b, '\\times'), answerType: 'numeric' },
                 token: this.toBase64((a * b).toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Multiplicera entalet först, sedan tiotalet." : "Step 1: Multiply the ones digit first, then the tens digit." },
-                    { text: lang === 'sv' ? "Räkna ut produkten." : "Calculate the product.", latex: `${a} · ${b} \\\\ ${a*b}` },
-                    { text: lang === 'sv' ? `Svar: ${a*b}` : `Answer: ${a*b}` }
+                    { 
+                        text: lang === 'sv' ? `Dela upp talet ${a} i tiotal (${p1}) och ental (${p2}) för att göra det enklare.` : `Break the number ${a} into tens (${p1}) and ones (${p2}) to make it easier.`, 
+                        latex: `${a} \\cdot ${b} = (${p1} + ${p2}) \\cdot ${b}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Gångra först entalet med ${b}: ${p2} · ${b} = ${p2 * b}` : `First, multiply the ones digit by ${b}: ${p2} · ${b} = ${p2 * b}`, 
+                        latex: `= ${p1} \\cdot ${b} + \\mathbf{${p2} \\cdot ${b}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Gångra sedan tiotalet med ${b}: ${p1} · ${b} = ${p1 * b}` : `Next, multiply the tens digit by ${b}: ${p1} · ${b} = ${p1 * b}`, 
+                        latex: `= \\mathbf{${p1} \\cdot ${b}} + ${p2 * b}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Plussa ihop de två svaren (${p1 * b} + ${p2 * b}) för att få slutsvaret.` : `Add the two answers (${p1 * b} + ${p2 * b}) together to get the final total.`, 
+                        latex: `= \\mathbf{${p1 * b} + ${p2 * b}} = ${a * b}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${a * b}` : `Answer: ${a * b}`, 
+                        latex: `${a * b}` 
+                    }
                 ]
             };
         }
 
-        const p1 = Math.floor(a / 10) * 10, p2 = a % 10;
         return {
             renderData: { description: lang === 'sv' ? `Beräkna ${p1+p2}·${b} genom att göra så här: (${p1}·${b})+(${p2}·${b})` : `Calculate ${p1+p2}·${b} by splitting the factors like this: (${p1}·${b})+(${p2}·${b})`, answerType: 'numeric' },
             token: this.toBase64((a * b).toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Detta kallas den distributiva lagen. Räkna ut parenteserna först." : "Step 1: This is the distributive law. Solve the parentheses first." },
-                { text: lang === 'sv' ? "Addera resultaten." : "Add the results.", latex: `${p1*b} + ${p2*b} \\\\ ${a*b}` },
-                { text: lang === 'sv' ? `Svar: ${a*b}` : `Answer: ${a*b}` }
+                { 
+                    text: lang === 'sv' ? "Räkna ut det första gångertalet i den vänstra parentesen först." : "Calculate the first multiplication inside the left parentheses first.", 
+                    latex: `\\mathbf{(${p1} \\cdot ${b})} + (${p2} \\cdot ${b})` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna sedan ut det andra gångertalet i den högra parentesen." : "Next, calculate the second multiplication inside the right parentheses.", 
+                    latex: `${p1 * b} + \\mathbf{(${p2} \\cdot ${b})}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Plussa till sist ihop de två svaren (${p1 * b} + ${p2 * b}).` : `Finally, add those two answers (${p1 * b} + ${p2 * b}) together.`, 
+                    latex: `\\mathbf{${p1 * b} + ${p2 * b}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Slutför plussandet för att få fram det färdiga resultatet." : "Complete the addition to reach your final answer.", 
+                    latex: `\\mathbf{${a * b}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${a * b}` : `Answer: ${a * b}`, 
+                    latex: `${a * b}` 
+                }
             ]
         };
     }
@@ -323,26 +508,54 @@ export class BasicArithmeticGen {
         ];
         const v = variationKey || this.getVariation(pool, options);
         const a = MathUtils.randomInt(1, 9) / 10, b = MathUtils.randomInt(3, 15), ans = Math.round(a * b * 100) / 100;
+        const wholeA = Math.round(a * 10);
 
         if (v === 'mult_decimal_std') {
             return {
-                renderData: { description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.", latex: `${a} · ${b}`, answerType: 'numeric' },
+                renderData: { description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.", latex: `${a} \\cdot ${b}`, answerType: 'numeric' },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Multiplicera som heltal först, räkna sedan decimalerna i faktorerna." : "Step 1: Multiply as integers first, then count the decimals in the factors." },
-                    { text: lang === 'sv' ? "Placera kommatecknet i svaret." : "Place the decimal point in the result.", latex: `${a*10} · ${b} = ${a*10*b} \\\\ ${ans}` },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
+                    { 
+                        text: lang === 'sv' ? `Tänk bort kommatecknet först och räkna som ett vanligt gångertal: ${wholeA} · ${b}.` : `Ignore the decimal point first and calculate as a regular multiplication: ${wholeA} · ${b}.`, 
+                        latex: `\\mathbf{${wholeA}} \\cdot ${b}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut svaret: ${wholeA} gånger ${b} blir ${wholeA * b}.` : `Calculate the answer: ${wholeA} times ${b} equals ${wholeA * b}.`, 
+                        latex: `${wholeA} \\cdot ${b} = \\mathbf{${wholeA * b}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Sätt tillbaka kommatecknet. Eftersom ${a} har en siffra efter kommat ska även svaret ha det.` : `Put the decimal point back. Since ${a} has one digit after the comma, the answer must also have one digit after the comma.`, 
+                        latex: `\\frac{${wholeA * b}}{\\mathbf{10}} = \\mathbf{${ans}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `${ans}` 
+                    }
                 ]
             };
         }
 
-        const correctStr = `${a} · ${b} = ${ans}`;
+        const correctStr = `${a} \\cdot ${b} = ${ans}`;
         return {
             renderData: { description: lang === 'sv' ? "Vilken uträkning har placerat kommatecknet rätt?" : "Which calculation placed the decimal point correctly?", answerType: 'multiple_choice', options: MathUtils.shuffle([correctStr, `${a} · ${b} = ${ans*10}`, `${a} · ${b} = ${ans/10}`]) },
             token: this.toBase64(correctStr), variationKey: v, type: 'concept',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Produktsvaret ska ha lika många decimaler som faktorerna har tillsammans (här 1 st).` : `Step 1: The product should have as many decimals as the factors have combined (here, 1 total).` },
-                { text: lang === 'sv' ? `Svar: ${correctStr}` : `Answer: ${correctStr}` }
+                { 
+                    text: lang === 'sv' ? "Räkna hur många decimaler (siffror efter kommat) det finns i talen totalt." : "Count how many decimals (digits after the comma) there are in the numbers in total.", 
+                    latex: `${a} \\cdot ${b}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Talet ${a} har 1 decimal och ${b} har 0 decimaler. Svaret måste ha exakt 1 decimal.` : `The number ${a} has 1 decimal and ${b} has 0 decimals. The answer must have exactly 1 decimal.`, 
+                    latex: `1 + 0 = \\mathbf{1 \\text{ decimal}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Bland alternativen är det bara en uträkning som har exakt 1 siffra efter kommat:` : `Among the options, only one calculation has exactly 1 digit after the comma:`, 
+                    latex: `\\mathbf{${correctStr}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${correctStr}` : `Answer: ${correctStr}`, 
+                    latex: `\\text{${correctStr}}` 
+                }
             ]
         };
     }
@@ -361,14 +574,31 @@ export class BasicArithmeticGen {
                 renderData: { 
                     description: lang === 'sv' ? "Beräkna kvoten." : "Calculate the quotient.", 
                     latex: `\\frac{${prod}}{${f1}}`, 
-                    interceptorToken: `${prod} / ${f1}`, // 🟢 Added flat background division token to cleanly map regex without LaTeX backslash issues
+                    interceptorToken: `${prod} / ${f1}`,
                     answerType: 'numeric' 
                 },
                 token: this.toBase64(f2.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Division är multiplikation baklänges." : "Step 1: Division is multiplication in reverse." },
-                    { text: lang === 'sv' ? `Tänk: Vilket tal · ${f1} blir ${prod}?` : `Think: What number · ${f1} is ${prod}?`, latex: `${f1} · ? = ${prod}` },
-                    { text: lang === 'sv' ? `Svar: ${f2}` : `Answer: ${f2}` }
+                    { 
+                        text: lang === 'sv' ? "Division betyder att vi letar efter hur många gånger nämnaren får plats i täljaren. Det är multiplikation baklänges!" : "Division means finding how many times the denominator fits inside the numerator. Think of it as multiplication in reverse!", 
+                        latex: `\\frac{${prod}}{${f1}} = x` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Vi kan skriva om bråket till en multiplikationsfråga: Vilket tal multiplicerat med ${f1} blir ${prod}?` : `We can flip this fraction into a multiplication balancing question: What number multiplied by ${f1} equals ${prod}?`, 
+                        latex: `${f1} \\cdot \\mathbf{x} = ${prod}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom vi vet från multiplikationstabellen att ${f1} · ${f2} = ${prod}, så är kvoten lika med ${f2}.` : `Since we know from standard multiplication tables that ${f1} · ${f2} = ${prod}, the unknown quotient variable matches ${f2}.`, 
+                        latex: `${f1} \\cdot \\mathbf{${f2}} = ${prod}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Slutför uppgiften genom att skriva ner kvoten ensam." : "Complete the task by setting the quotient isolated on the board.", 
+                        latex: `x = \\mathbf{${f2}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${f2}` : `Answer: ${f2}`, 
+                        latex: `${f2}` 
+                    }
                 ]
             };
         }
@@ -377,9 +607,22 @@ export class BasicArithmeticGen {
             renderData: { description: lang === 'sv' ? `Om vi vet att ${f1} · ${f2} = ${prod}, vad är då ${prod} / ${f1}?` : `If we know ${f1} · ${f2} = ${prod}, what is ${prod} / ${f1}?`, answerType: 'numeric' },
             token: this.toBase64(f2.toString()), variationKey: v, type: 'concept',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Eftersom multiplikation och division hör ihop finns svaret redan i den givna uträkningen." : "Step 1: Since multiplication and division are related, the answer is already provided in the context." },
-                { text: lang === 'sv' ? "Den andra faktorn är svaret." : "The other factor is the result.", latex: `${f2}` },
-                { text: lang === 'sv' ? `Svar: ${f2}` : `Answer: ${f2}` }
+                { 
+                    text: lang === 'sv' ? "Gånger och delat hör ihop i samma talfamilj." : "Multiplication and division belong together in the same number family.", 
+                    latex: `${f1} \\cdot ${f2} = ${prod}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Om ${f1} gånger ${f2} blir ${prod}, så blir ${prod} delat med ${f1} det tal som blir över.` : `If ${f1} times ${f2} equals ${prod}, then ${prod} divided by ${f1} gives the number that is left over.`, 
+                    latex: `\\frac{${prod}}{${f1}} = \\mathbf{x}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Tittar vi på sambandet ser vi direkt att det tal som saknas är den andra siffran:` : `Looking at the relationship, we can see directly that the missing number is the other digit:`, 
+                    latex: `x = \\mathbf{${f2}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${f2}` : `Answer: ${f2}`, 
+                    latex: `${f2}` 
+                }
             ]
         };
     }

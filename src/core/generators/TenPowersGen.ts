@@ -111,22 +111,36 @@ export class TenPowersGen {
 
             const numStr = num.toString().replace('.', ',');
             const ansStr = ans.toString().replace('.', ',');
+            const currentLatex = isMult ? `${numStr} \\cdot ${power}` : `\\frac{${numStr}}{${power}}`;
 
             return {
-                renderData: {
-                    latex: isMult ? `${numStr} · ${power}` : `\\frac{${numStr}}{${power}}`,
-                    description: lang === 'sv' ? "Beräkna uttryckets värde." : "Calculate the value of the expression.",
-                    answerType: 'numeric'
+            renderData: {
+                latex: currentLatex,
+                description: lang === 'sv' ? "Räkna ut värdet genom att flytta kommatecknet." : "Calculate the value by shifting the decimal point.",
+                answerType: 'numeric'
+            },
+            token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+            clues: [
+                { 
+                    text: lang === 'sv' ? `Kolla på nollorna i talet ${power}. Det har exakt ${zeros} nollor i slutet, vilket betyder att vi ska hoppa med kommatecknet ${zeros} steg.` : `Look at the zeroes in the number ${power}. It has exactly ${zeros} zeroes at the end, which means we will jump with the decimal point ${zeros} steps.`, 
+                    latex: `\\text{Antal nollor} = \\mathbf{${zeros}}` 
                 },
-                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
-                clues: [
-                    { text: lang === 'sv' ? `Steg 1: Titta på tiopotensen (${power}). Räkna hur många nollor den har.` : `Step 1: Look at the power of ten (${power}). Count how many zeros it has.` },
-                    { text: lang === 'sv' ? `Det finns ${zeros} nollor. Det betyder att vi ska flytta kommatecknet ${zeros} steg.` : `There are ${zeros} zeros. This means we should move the decimal point ${zeros} places.` },
-                    { text: lang === 'sv' ? (isMult ? "Steg 2: Vid multiplikation blir talet större. Flytta kommat åt HÖGER." : "Steg 2: Vid division blir talet mindre. Flytta kommat åt VÄNSTER.") : (isMult ? "Step 2: In multiplication, the number gets larger. Move the decimal to the RIGHT." : "Step 2: In division, the number gets smaller. Move the decimal to the LEFT.") },
-                    { text: lang === 'sv' ? `Steg 3: Flytta kommat i ${numStr} exakt ${zeros} steg.` : `Step 3: Move the decimal in ${numStr} exactly ${zeros} places.` },
-                    { text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ans}` }
-                ]
-            };
+                { 
+                    text: lang === 'sv' 
+                        ? (isMult ? `Eftersom vi gångrar (multiplicerar) ska talet bli mycket STÖRRE. Vi flyttar kommatecknet åt HÖGER.` : `Eftersom vi delar (dividerar) ska talet bli mycket MINDRE. Vi flyttar kommatecknet åt VÄNSTER.`)
+                        : (isMult ? `Since we are multiplying, the number needs to get much LARGER. We move the decimal point to the RIGHT.` : `Since we are dividing, the number needs to get much SMALLER. We move the decimal point to the LEFT.`), 
+                    latex: isMult ? `\\text{Riktning} = \\mathbf{\\rightarrow \\text{ HÖGER}}` : `\\text{Riktning} = \\mathbf{\\leftarrow \\text{ VÄNSTER}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Ta starttalet ${numStr} och låt kommatecknet hoppa exakt ${zeros} steg åt ${isMult ? 'höger' : 'vänster'}. Fyll i med extra nollor om platserna tar slut.` : `Take the starting number ${numStr} and let the decimal point jump exactly ${zeros} steps to the ${isMult ? 'right' : 'left'}. Fill in with extra zeroes if you run out of spaces.`, 
+                    latex: `${currentLatex} = \\mathbf{${ansStr}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
+                    latex: `${ansStr}` 
+                }
+            ]
+        };
         }
 
         if (v === 'big_missing_factor') {
@@ -137,38 +151,65 @@ export class TenPowersGen {
 
             const numStr = num.toString().replace('.', ',');
             const resStr = res.toString().replace('.', ',');
+            const currentLatex = isMult ? `${numStr} \\cdot ? = ${resStr}` : `\\frac{${numStr}}{?} = ${resStr}`;
+            const steps = Math.abs(Math.round(Math.log10(res / num)));
 
             return {
                 renderData: {
-                    latex: isMult ? `${numStr} · ? = ${resStr}` : `\\frac{${numStr}}{?} = ${resStr}`,
-                    description: lang === 'sv' ? "Vilken tiopotens (10, 100, 1000 eller 10000) saknas?" : "Which power of ten (10, 100, 1000, or 10000) is missing?",
+                    latex: currentLatex,
+                    description: lang === 'sv' ? "Vilket tal (10, 100, 1000 eller 10000) gömmer sig bakom frågetecknet?" : "Which number (10, 100, 1000, or 10000) hides behind the question mark?",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(power.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Steg 1: Jämför talet ${numStr} med resultatet ${resStr}.` : `Step 1: Compare the number ${numStr} with the result ${resStr}.` },
-                    { text: lang === 'sv' ? "Steg 2: Räkna hur många steg kommatecknet har flyttats mellan de två talen." : "Step 2: Count how many places the decimal point has been moved between the two numbers." },
-                    { text: lang === 'sv' ? `Kommat har flyttats ${Math.abs(Math.round(Math.log10(res/num)))} steg.` : `The decimal point has moved ${Math.abs(Math.round(Math.log10(res/num)))} places.` },
-                    { text: lang === 'sv' ? `Steg 3: Eftersom det är ${Math.abs(Math.round(Math.log10(res/num)))} steg, är tiopotensen en etta följt av ${Math.abs(Math.round(Math.log10(res/num)))} nollor.` : `Step 3: Since it moved ${Math.abs(Math.round(Math.log10(res/num)))} places, the power of ten is a one followed by ${Math.abs(Math.round(Math.log10(res/num)))} zeros.` },
-                    { text: lang === 'sv' ? `Svar: ${power}` : `Answer: ${power}` }
+                    { 
+                        text: lang === 'sv' ? `Jämför starttalet ${numStr} med det färdiga svaret ${resStr} och räkna hur många steg kommatecknet har tvingats hoppa.` : `Compare the starting number ${numStr} with the final result ${resStr} and count how many steps the decimal point had to jump.`, 
+                        latex: `\\text{Mät avståndet mellan kommatecknen}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Vi ser att kommatecknet har flyttat på sig exakt ${steps} steg för att förvandla ${numStr} till ${resStr}.` : `We can see that the decimal point has shifted exactly ${steps} steps to transform ${numStr} into ${resStr}.`, 
+                        latex: `\\text{Hopp} = \\mathbf{${steps} \\text{ steg}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det dolda talet måste därför vara en etta följt av exakt ${steps} nollor.` : `The hidden number must therefore be a one followed by exactly ${steps} zeroes.`, 
+                        latex: `\\text{Det gömda talet} = \\mathbf{${power}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${power}` : `Answer: ${power}`, 
+                        latex: `${power}` 
+                    }
                 ]
             };
         }
 
         const exp = MathUtils.randomInt(2, 5);
         const val = Math.pow(10, exp);
+        const formattedVal = val.toLocaleString('sv-SE');
+
         return {
             renderData: {
-                description: lang === 'sv' ? `Skriv talet ${val.toLocaleString('sv-SE')} som en tiopotens.` : `Write the number ${val.toLocaleString()} as a power of ten.`,
-                latex: `${val.toLocaleString('sv-SE')} = 10^{?}`,
+                description: lang === 'sv' ? `Skriv talet ${formattedVal} i formen $10^{?}$ genom att hitta den lilla upphöjda siffran.` : `Write the number ${val.toLocaleString()} in the form $10^{?}$ by finding the small upper exponent index.`,
+                latex: `${formattedVal} = 10^{?}`,
                 answerType: 'structured_power'
             },
             token: this.toBase64(`10^${exp}`), variationKey: 'power_discovery', type: 'concept',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Räkna antalet nollor som står efter siffran 1." : "Step 1: Count the number of zeros that follow the digit 1." },
-                { text: lang === 'sv' ? `Det finns ${exp} nollor.` : `There are ${exp} zeros.` },
-                { text: lang === 'sv' ? `Steg 2: Antalet nollor motsvarar direkt exponenten i tiopotensen.` : `Step 2: The number of zeros corresponds directly to the exponent in the power of ten.` },
-                { text: lang === 'sv' ? `Svar: 10${this.toSup(exp)}` : `Answer: 10${this.toSup(exp)}` }
+                { 
+                    text: lang === 'sv' ? `Det lilla upphöjda talet över tian fungerar som en direkt räknare. Den talar helt enkelt om hur många nollor som ska ritas efter ettan.` : `The small raised number above the ten acts as a direct counter. It simply tells us how many zeroes should be drawn right after the digit one.`, 
+                    latex: `10^{\\mathbf{?}} = 1 \\text{ följt av (?) nollor}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna antalet nollor i talet ${formattedVal}. Det finns exakt ${exp} nollor på rad.` : `Count the number of zeroes inside the value ${formattedVal}. There are exactly ${exp} zeroes in a row.`, 
+                    latex: `\\text{Antal nollor i } ${formattedVal} = \\mathbf{${exp}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Eftersom det finns ${exp} nollor ska den lilla upphöjda siffran vara just en ${exp}:a.` : `Since there are ${exp} zeroes, that small raised digit must be exactly a ${exp}.`, 
+                    latex: `${formattedVal} = 10^{\\mathbf{${exp}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: 10${this.toSup(exp)}` : `Answer: 10${this.toSup(exp)}`, 
+                    latex: `10^{${exp}}` 
+                }
             ]
         };
     }
@@ -189,19 +230,35 @@ export class TenPowersGen {
             ];
             const s = MathUtils.randomChoice(scenarios);
             const isMult = Math.random() > 0.5;
+            const valFormatted = s.val.toString().replace('.', ',');
 
             return {
                 renderData: {
                     description: lang === 'sv' 
-                        ? `Att ${isMult ? 'multiplicera' : 'dividera'} med ${s.val.toString().replace('.', ',')} ger samma resultat som att ${isMult ? 'dividera' : 'multiplicera'} med...` 
+                        ? `Att ${isMult ? 'multiplicera' : 'dividera'} med ${valFormatted} ger exakt samma svar som att ${isMult ? 'dividera' : 'multiplicera'} med...` 
                         : `Multiplying by ${s.val} gives the same result as dividing by...`,
                     answerType: 'multiple_choice', options: MathUtils.shuffle(["10", "100", "1000", "0,1", "0,01", "0,001"])
                 },
                 token: this.toBase64(s.equiv.toString()), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? `Steg 1: Kom ihåg att ${s.nameSv} är samma sak som 1/${s.equiv}.` : `Step 1: Remember that ${s.nameEn} is the same as 1/${s.equiv}.`, latex: `${s.val.toString().replace('.', ',')} = \\frac{1}{${s.equiv}}` },
-                    { text: lang === 'sv' ? `Steg 2: Att multiplicera med en ${s.nameSv} är matematiskt identiskt med att dividera med ${s.equiv}.` : `Step 2: Multiplying by ${s.nameEn} is mathematically identical to dividing by ${s.equiv}.` },
-                    { text: lang === 'sv' ? `Svar: ${s.equiv}` : `Answer: ${s.equiv}` }
+                    { 
+                        text: lang === 'sv' ? `Kom ihåg att ett decimaltal som ${valFormatted} är exakt samma sak som en bråkdel delat med ${s.equiv}.` : `Remember that a decimal value like ${s.val} is exactly the same as a fraction split shared by ${s.equiv}.`, 
+                        latex: `${valFormatted} = \\frac{1}{${s.equiv}}` 
+                    },
+                    { 
+                        text: lang === 'sv' 
+                            ? (isMult ? `Att ta något gånger en ${s.nameSv} (delat med ${s.equiv}) är därför precis samma sak som att göra en vanlig division med ${s.equiv}.` : `Att dela med en ${s.nameSv} fungerar baklänges, och ger samma lyftande effekt som att göra en vanlig multiplikation med ${s.equiv}.`) 
+                            : (isMult ? `Multiplying something by ${s.nameEn} (divided by ${s.equiv}) is therefore exactly the same as performing a regular division by ${s.equiv}.` : `Dividing something by ${s.nameEn} runs backwards, and delivers the same magnifying effect as performing a standard multiplication by ${s.equiv}.`), 
+                        latex: isMult ? `\\text{Gångra med } ${valFormatted} \\iff \\text{Dela med } \\mathbf{${s.equiv}}` : `\\text{Dela med } ${valFormatted} \\iff \\text{Gångra med } \\mathbf{${s.equiv}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det betyder att rätt svar i rutan är ${s.equiv}.` : `This means the correct answer token inside the block is ${s.equiv}.`, 
+                        latex: `\\text{Svar} = \\mathbf{${s.equiv}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${s.equiv}` : `Answer: ${s.equiv}`, 
+                        latex: `${s.equiv}` 
+                    }
                 ]
             };
         }
@@ -210,16 +267,28 @@ export class TenPowersGen {
         const sLie = `${num} · 0,1 = ${num * 10}`;
         return {
             renderData: {
-                description: lang === 'sv' ? "Vilket påstående om tiopotenser är FALSKT?" : "Which statement about powers of ten is FALSE?",
+                description: lang === 'sv' ? "Vilket påstående stämmer INTE?" : "Which statement is NOT correct?",
                 answerType: 'multiple_choice', 
                 options: MathUtils.shuffle([sLie, `${num} · 0,1 = ${num/10}`, `${num} / 0,1 = ${num*10}`])
             },
             token: this.toBase64(sLie), variationKey: v, type: 'concept',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Analysera påståendet: talet multipliceras med 0,1." : "Step 1: Analyze the statement: the number is multiplied by 0.1." },
-                { text: lang === 'sv' ? "Steg 2: När vi multiplicerar med ett tal mindre än 1, ska resultatet bli mindre än ursprungstalet." : "Step 2: When we multiply by a number less than 1, the result should be smaller than the starting number." },
-                { text: lang === 'sv' ? `Multiplikation med 0,1 innebär att man tar en tiondel. ${num} · 0,1 ska bli ${num/10}.` : `Multiplication by 0.1 means taking one tenth. ${num} · 0.1 should be ${num/10}.` },
-                { text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}` }
+                { 
+                    text: lang === 'sv' ? "Leta efter den rad som har räknat helt fel. Kolla vad som händer när vi tar ett tal gånger 0,1." : "Look for the row that calculated completely incorrectly. Let's look at what happens when multiplying a number by 0.1.", 
+                    latex: `${num} \\cdot 0,1` 
+                },
+                { 
+                    text: lang === 'sv' ? "Att gångra med 0,1 är som en hemlig instruktion att ta en tiondel av talet (dela med 10). Svaret ska alltså bli mindre, inte större!" : "Multiplying by 0.1 is like a secret instruction to take one-tenth of the number (divide by 10). The result should get smaller, not larger!", 
+                    latex: `${num} \\cdot 0,1 = \\frac{${num}}{10} = \\mathbf{${num / 10}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Att påstå att svaret skulle blåsas upp och bli till ${num * 10} är därför en ren lögn. Den här raden stämmer inte:` : `Claiming that the result would explode into ${num * 10} is therefore a total lie. This statement is the error choice row:`, 
+                    latex: `\\mathbf{${num} \\cdot 0,1 = ${num * 10}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}`, 
+                    latex: `\\text{Lögn: } ${num} \\cdot 0,1 = ${num * 10}` 
+                }
             ]
         };
     }
@@ -231,9 +300,13 @@ export class TenPowersGen {
             { key: 'decimal_div_std', type: 'calculate' }
         ];
         const v = variationKey || this.getVariation(pool, options);
-        const factor = MathUtils.randomChoice([0.1, 0.01, 0.001]);
+        
+        // Hantera fällan dynamiskt om nyckeln skickas in, annars slumpa 0.1, 0.01, 0.001
+        const factor = v === 'decimal_logic_trap' ? 0.1 : MathUtils.randomChoice([0.1, 0.01, 0.001]);
         const num = this.generateNum();
-        const isMult = v === 'decimal_mult_std';
+        
+        // Om det är en fälla låtsas vi att det är multiplikation men sätter upp en klurig text
+        const isMult = v === 'decimal_logic_trap' ? true : v === 'decimal_mult_std';
         const ans = isMult ? this.fixFloat(num * factor) : this.fixFloat(num / factor);
         const steps = Math.abs(Math.round(Math.log10(factor)));
 
@@ -241,19 +314,34 @@ export class TenPowersGen {
         const factorStr = factor.toString().replace('.', ',');
         const ansStr = ans.toString().replace('.', ',');
 
+        const currentLatex = isMult ? `${numStr} \\cdot ${factorStr}` : `\\frac{${numStr}}{${factorStr}}`;
+
         return {
             renderData: {
-                latex: isMult ? `${numStr} · ${factorStr}` : `\\frac{${numStr}}{${factorStr}}`,
-                description: lang === 'sv' ? "Beräkna värdet." : "Calculate the value.",
+                latex: currentLatex,
+                description: lang === 'sv' ? "Räkna ut värdet genom att flytta kommatecknet." : "Calculate the value by shifting the decimal point.",
                 answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Identifiera faktorn (${factorStr}). Den har ${steps} decimalplatser.` : `Step 1: Identify the factor (${factorStr}). It has ${steps} decimal places.` },
-                { text: lang === 'sv' ? (isMult ? "Steg 2: Vid multiplikation med 0,1/0,01/0,001 blir talet mindre. Flytta kommat åt VÄNSTER." : "Steg 2: Vid division med 0,1/0,01/0,001 blir talet större. Flytta kommat åt HÖGER.") : (isMult ? "Step 2: In multiplication by 0.1/0.01/0.001, the number gets smaller. Move the decimal to the LEFT." : "Step 2: In division by 0.1/0.01/0.001, the number gets larger. Move the decimal to the RIGHT.") },
-                { text: lang === 'sv' ? `Steg 3: Flytta kommat i ${numStr} exakt ${steps} steg.` : `Step 3: Move the decimal in ${numStr} exactly ${steps} places.` },
-                { text: lang === 'sv' ? `Uträkning: ${numStr} blir ${ansStr}.` : `Calculation: ${numStr} becomes ${ansStr}.` },
-                { text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}` }
+                { 
+                    text: lang === 'sv' ? `Kolla på det lilla decimalnumret ${factorStr}. Det hat exakt ${steps} stycken nollor och decimalsteg gömda i sig, vilket talar om hur många kliv kommatecknet ska ta.` : `Look closely at the small decimal number ${factorStr}. It features exactly ${steps} zeroes and decimal places hidden inside, which tells us how many steps our decimal point should take.`, 
+                    latex: `\\text{Hopp} = \\mathbf{${steps} \\text{ steg}}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? (isMult ? `Att gångra (multiplicera) med småbitar som ${factorStr} gör att talet blir MINDRE. Vi flyttar kommatecknet åt VÄNSTER.` : `Att dela (dividerar) med småbitar som ${factorStr} gör baklänges att talet blir mycket STÖRRE. Vi flyttar kommatecknet åt HÖGER.`)
+                        : (isMult ? `Multiplying by small parts like ${factorStr} makes the number SMALLER. We move the decimal point to the LEFT.` : `Dividing by small parts like ${factorStr} does the opposite and makes the number LARGER. We move the decimal point to the RIGHT.`), 
+                    latex: isMult ? `\\text{Riktning} = \\mathbf{\\leftarrow \\text{ VÄNSTER}}` : `\\text{Riktning} = \\mathbf{\\rightarrow \\text{ HÖGER}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Ta nu startnumret ${numStr} och hoppa med kommatecknet exakt ${steps} steg åt ${isMult ? 'vänster' : 'höger'} på tavlan.` : `Now take the starting number ${numStr} and shift the decimal point exactly ${steps} steps to the ${isMult ? 'left' : 'right'} across the board.`, 
+                    latex: `${currentLatex} = \\mathbf{${ansStr}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
+                    latex: `${ansStr}` 
+                }
             ]
         };
     }

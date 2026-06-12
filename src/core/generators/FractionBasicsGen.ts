@@ -82,23 +82,38 @@ export class FractionBasicsGen {
             const p = MathUtils.randomChoice([20, 25, 40, 50, 60, 75, 80]);
             const div = this.gcd(p, 100);
             const sFrac = `${p / div}/${100 / div}`;
-            const sLie = p < 50 ? (lang === 'sv' ? "Mer än hälften" : "More than half") : (lang === 'sv' ? "Mindre än hälften" : "Less than half");
+            const sLie = p < 50 ? (lang === 'sv' ? "Mer än hälften" : "More than half") : (lang === 'sv' ? "More than half" : "Less than half");
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Titta på figuren. Vilket påstående är FALSKT?" : "Look at the figure. Which statement is FALSE?",
+                    description: lang === 'sv' ? "Titta på rutan. Vilket påstående stämmer INTE?" : "Look at the grid. Which statement is NOT correct?",
                     answerType: 'multiple_choice',
-                    options: MathUtils.shuffle([`${p}%`, sFrac, sLie]),
+                    options: MathUtils.shuffle([`${p}\\%`, `\\frac{${p / div}}{${100 / div}}`, sLie]),
                     geometry: { type: 'percent_grid', total: 100, colored: p }
                 },
                 token: this.toBase64(sLie), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: En hundraruta representerar 'det hela' (100%)." : "Step 1: A hundred-grid represents 'the whole' (100%)." },
-                    { text: lang === 'sv' ? `Steg 2: Räkna de färgade rutorna. Det är ${p} stycken.` : `Step 2: Count the colored squares. There are ${p} of them.` },
-                    { text: lang === 'sv' ? `Steg 3: ${p} av 100 skrivs som bråket ${p}/100.` : `Step 3: ${p} out of 100 is written as the fraction ${p}/100.`, latex: `\\frac{${p}}{100}` },
-                    { text: lang === 'sv' ? `Steg 4: Bråket kan förkortas till ${sFrac}.` : `Step 4: The fraction can be simplified to ${sFrac}.`, latex: `\\frac{${p}}{100} = \\frac{${p/div}}{${100/div}}` },
-                    { text: lang === 'sv' ? `Steg 5: Jämför med hälften (50%). ${p}% är ${p < 50 ? 'mindre' : 'mer'} än hälften.` : `Step 5: Compare with half (50%). ${p}% is ${p < 50 ? 'less' : 'more'} than half.` },
-                    { text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}` }
+                    { 
+                        text: lang === 'sv' ? "Hela stora rutan har 100 småbitar totalt, vilket motsvarar 100%." : "The whole large grid has 100 small squares in total, matching 100%.", 
+                        latex: `\\text{Totalt} = 100\\%` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räknar vi de färgade rutorna får vi det till ${p} stycken, vilket kan skrivas som bråket \\frac{${p}}{100}.` : `Counting the colored squares gives us exactly ${p}, which can be written as the fraction \\frac{${p}}{100}.`, 
+                        latex: `\\text{Färgade} = \\frac{${p}}{100}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Dela (förkorta) bråket uppe och nere med ${div} för att göra det lättare att läsa: det blir \\frac{${p/div}}{${100/div}}.` : `Divide the fraction top and bottom by ${div} to make it simpler: it becomes \\frac{${p/div}}{${100/div}}.`, 
+                        latex: `\\frac{${p}}{100} = \\frac{${p} \\div ${div}}{100 \\div ${div}} = \\frac{${p/div}}{${100/div}}` 
+                    },
+                    { 
+                        // Bytte 'pct' mot 'p'
+                        text: lang === 'sv' ? (p < 50 ? `Eftersom ${p}% är mindre än hälften (50%), blir påståendet "${sLie}" helt felaktigt.` : `Eftersom ${p}% är mer än hälften (50%), blir påståendet "${sLie}" helt felaktigt.`) : (p < 50 ? `Since ${p}% is less than half (50%), the statement "${sLie}" is completely wrong.` : `Since ${p}% is more than half (50%), the statement "${sLie}" is completely wrong.`), 
+                        latex: p < 50 ? `${p}\\% < 50\\% \\rightarrow \\mathbf{\\text{Fel: ${sLie}}}` : `${p}\\% > 50\\% \\rightarrow \\mathbf{\\text{Fel: ${sLie}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}`, 
+                        latex: `\\text{${sLie}}` 
+                    }
                 ]
             };
         }
@@ -114,10 +129,18 @@ export class FractionBasicsGen {
                 },
                 token: this.toBase64(count.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Steg 1: Att hitta en ${d}-del innebär att man delar upp det hela i ${d} lika stora grupper.` : `Step 1: Finding one ${d}-th means dividing the whole into ${d} equal groups.` },
-                    { text: lang === 'sv' ? `Steg 2: Dela det totala antalet (${total}) med nämnaren (${d}).` : `Step 2: Divide the total number (${total}) by the denominator (${d}).` },
-                    { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${total} / ${d} = ${count}` },
-                    { text: lang === 'sv' ? `Svar: ${count}` : `Answer: ${count}` }
+                    { 
+                        text: lang === 'sv' ? `Att hitta en ${d}-del av någonting betyder helt enkelt att vi delar upp hela högen i ${d} lika stora grupper.` : `Finding a ${d}-th of something simply means dividing the whole pile into ${d} equal groups.`, 
+                        latex: `\\text{Totalt} = ${total}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Dela startantalet (${total}) med siffran där nere (${d}) för att få reda på storleken på en grupp.` : `Divide the starting number (${total}) by the bottom number (${d}) to find out the size of one single group.`, 
+                        latex: `\\frac{${total}}{\\mathbf{${d}}} = \\mathbf{${count}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${count}` : `Answer: ${count}`, 
+                        latex: `${count}` 
+                    }
                 ]
             };
         }
@@ -136,11 +159,26 @@ export class FractionBasicsGen {
             },
             token: this.toBase64(`${cVal}/${tot}`), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: En andel (ett bråk) skrivs som: 'Delen dividerat med Helheten'." : "Step 1: A share (a fraction) is written as: 'Part divided by Whole'." },
-                { text: lang === 'sv' ? `Steg 2: Räkna hur många kulor som är ${cName}. Det finns ${cVal} stycken.` : `Step 2: Count how many marbles are ${cName}. There are ${cVal}.` },
-                { text: lang === 'sv' ? `Steg 3: Räkna totala antalet kulor i bilden. Det är ${tot} stycken.` : `Step 3: Count the total number of marbles in the image. There are ${tot}.` },
-                { text: lang === 'sv' ? "Steg 4: Ställ upp bråket med antalet sökta kulor i täljaren." : "Step 4: Set up the fraction with the sought number in the numerator.", latex: `\\frac{${cVal}}{${tot}}` },
-                { text: lang === 'sv' ? `Svar: ${cVal}/${tot}` : `Answer: ${cVal}/${tot}` }
+                { 
+                    text: lang === 'sv' ? "Bråk handlar om andelar. Vi skriver det alltid som: Siffran vi söker däruppe, och Alla bitar totalt där nere." : "Fractions are about shares. We always write it as: The count we are looking for on top, and All pieces in total on the bottom.", 
+                    latex: `\\text{Andel} = \\frac{\\text{Delen}}{\\text{Hela totalt}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna först hur många kulor som är ${cName}. Det finns exakt ${cVal} stycken.` : `First, count how many marbles are ${cName}. There are exactly ${cVal} of them.`, 
+                    latex: `\\text{Sökta delar} = \\mathbf{${cVal}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna sedan ut hur många kulor det finns i bilden totalt: ${r} + ${b} + ${g} blir ${tot}.` : `Next, figure out how many marbles there are in the image in total: ${r} + ${b} + ${g} equals ${tot}.`, 
+                    latex: `\\text{Hela totalt} = ${r} + ${b} + ${g} = \\mathbf{${tot}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Ställ upp bråkstrecket med dina två räknade siffror:" : "Set up the fraction bar with your two calculated numbers:", 
+                    latex: `\\text{Andel} = \\frac{\\mathbf{${cVal}}}{\\mathbf{${tot}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${cVal}/${tot}` : `Answer: ${cVal}/${tot}`, 
+                    latex: `\\frac{${cVal}}{${tot}}` 
+                }
             ]
         };
     }
@@ -159,15 +197,27 @@ export class FractionBasicsGen {
             const correct = `1/${d1}`;
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Vilket bråk representerar den STÖRSTA delen?" : "Which fraction represents the LARGEST part?",
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `1/${d2}`, `1/${d2 + 2}`])
+                    description: lang === 'sv' ? "Vilket bråk ger dig den STÖRSTA tårtbiten?" : "Which fraction gives you the LARGEST slice of cake?",
+                    answerType: 'multiple_choice', options: MathUtils.shuffle([`\\frac{1}{${d1}}`, `\\frac{1}{${d2}}`, `\\frac{1}{${d2 + 2}}`])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Nämnaren talar om i hur många delar vi har delat det hela." : "Step 1: The denominator tells us into how many parts we have divided the whole." },
-                    { text: lang === 'sv' ? "Steg 2: Ju FLER delar vi delar något i (större nämnare), desto MINDRE blir varje del." : "Step 2: The MORE parts we divide something into (larger denominator), the SMALLER each part becomes." },
-                    { text: lang === 'sv' ? `Steg 3: Eftersom ${d1} är mindre än ${d2}, är bitarna i 1/${d1} större.` : `Step 3: Since ${d1} is smaller than ${d2}, the pieces in 1/${d1} are larger.` },
-                    { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}` }
+                    { 
+                        text: lang === 'sv' ? "Siffran där nere berättar hur många bitar vi har delat tårtan i totalt." : "The number at the bottom tells us how many pieces we divided the cake into in total.", 
+                        latex: `\\text{Botten} = \\text{Antal delningar}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Tänk efter själv: Ju FLER kompisar du delar tårtan med (större siffra i botten), desto MINDRE blir varje enskild bit!" : "Think about it: The MORE friends you share the cake with (larger number at the bottom), the SMALLER each individual slice becomes!", 
+                        latex: `\\frac{1}{${d1}} \\quad \\text{vs} \\quad \\frac{1}{${d2}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom talet ${d1} är mindre än ${d2}, betyder det att tårtan delas i färre bitar. Därför är bitarna i det här bråket mycket större:` : `Since the number ${d1} is smaller than ${d2}, it means the cake is split into fewer pieces. Therefore, the slices in this fraction are much larger:`, 
+                        latex: `\\mathbf{\\frac{1}{${d1}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: 1/${d1}` : `Answer: 1/${d1}`, 
+                        latex: `\\frac{1}{${d1}}` 
+                    }
                 ]
             };
         }
@@ -178,13 +228,25 @@ export class FractionBasicsGen {
 
         if (v === 'part_inverse') {
             return {
-                renderData: { description: lang === 'sv' ? `Om 1/${d} av ett tal är ${partVal}, vad är då hela talet?` : `If 1/${d} of a number is ${partVal}, what is the whole number?`, answerType: 'numeric' },
+                renderData: { description: lang === 'sv' ? `Om en ${d}-del (1/${d}) av ett dolt tal är ${partVal}, vad är då hela talet totalt?` : `If one ${d}-th (1/${d}) of a hidden number is ${partVal}, what is the whole number in total?`, answerType: 'numeric' },
                 token: this.toBase64(total.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? `Steg 1: Om en del utav ${d} är värd ${partVal}, så består helheten av ${d} sådana delar.` : `Step 1: If one part out of ${d} is worth ${partVal}, then the whole consists of ${d} such parts.` },
-                    { text: lang === 'sv' ? "Steg 2: För att hitta totalen multiplicerar vi delens värde med antalet delar." : "Step 2: To find the total, we multiply the value of the part by the number of parts." },
-                    { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${partVal} · ${d} = ${total}` },
-                    { text: lang === 'sv' ? `Svar: ${total}` : `Answer: ${total}` }
+                    { 
+                        text: lang === 'sv' ? `Om en enda ensam bit är värd ${partVal}, och hela figuren består av totalt ${d} likadana bitar:` : `If one single piece is worth ${partVal}, and the entire figure consists of a total of ${d} identical pieces:`, 
+                        latex: `\\frac{1}{${d}} = ${partVal}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Då hittar vi hela talet genom att köra baklänges och gångra bitens värde med det totala antalet bitar (${d}).` : `Then we find the whole number by working backwards and multiplying the piece value by the total number of parts (${d}).`, 
+                        latex: `\\text{Hela talet} = ${partVal} \\mathbf{\\cdot ${d}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut gångertalet för att få fram slutsvar." : "Calculate the multiplication to reach your final answer total.", 
+                        latex: `\\text{Hela talet} = \\mathbf{${total}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${total}` : `Answer: ${total}`, 
+                        latex: `${total}` 
+                    }
                 ]
             };
         }
@@ -193,10 +255,22 @@ export class FractionBasicsGen {
             renderData: { description: lang === 'sv' ? `Beräkna 1/${d} av ${total}.` : `Calculate 1/${d} of ${total}.`, answerType: 'numeric' },
             token: this.toBase64(partVal.toString()), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Att hitta 1/${d} innebär att du ska dela ${total} i ${d} lika stora delar.` : `Step 1: Finding 1/${d} means you should divide ${total} into ${d} equal parts.` },
-                { text: lang === 'sv' ? "Steg 2: Utför divisionen." : "Step 2: Perform the division." },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${total} / ${d} = ${partVal}` },
-                { text: lang === 'sv' ? `Svar: ${partVal}` : `Answer: ${partVal}` }
+                { 
+                    text: lang === 'sv' ? `Att räkna ut 1/${d} av ett värde betyder helt enkelt att du ska dela upp talet ${total} i ${d} lika stora bitar.` : `Calculating 1/${d} of a value simply means you should divide the number ${total} into ${d} equal pieces.`, 
+                    latex: `\\frac{1}{${d}} \\cdot ${total}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Utför divisionen direkt genom att ta talet delat med ${d}:` : `Perform the division directly by taking the value divided by ${d}:`, 
+                    latex: `= \\frac{${total}}{\\mathbf{${d}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut bråket för att få fram svaret." : "Calculate the fraction result to reach your answer.", 
+                    latex: `= \\mathbf{${partVal}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${partVal}` : `Answer: ${partVal}`, 
+                    latex: `${partVal}` 
+                }
             ]
         };
     }
@@ -216,42 +290,84 @@ export class FractionBasicsGen {
             const correct = `${w} och ${w + 1}`;
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Mellan vilka två heltal ligger bråket ${impN}/${d}?` : `Between which two integers does the fraction ${impN}/${d} lie?`,
+                    description: lang === 'sv' ? `Mellan vilka två hela siffror ligger bråket \\frac{${impN}}{${d}}?` : `Between which two whole numbers does the fraction \\frac{${impN}}{${d}} lie?`,
                     answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${w - 1} och ${w}`, `${w + 1} och ${w + 2}`])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Ta reda på hur många 'hela' som ryms i bråket genom division." : "Step 1: Find out how many 'wholes' fit in the fraction by dividing." },
-                    { text: lang === 'sv' ? `${impN} dividerat med ${d} är ${w} med en rest.` : `${impN} divided by ${d} is ${w} with a remainder.`, latex: `${impN} / ${d} = ${w} \\text{ rest } ${n}` },
-                    { text: lang === 'sv' ? `Steg 2: Detta betyder att talet är större än ${w} men mindre än nästa heltal (${w+1}).` : `Step 2: This means the number is larger than ${w} but smaller than the next integer (${w+1}).` },
-                    { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${w} and ${w+1}` }
+                    { 
+                        text: lang === 'sv' ? `Ett tungt bråk betyder division. Vi kollar helt enkelt hur många hela pajer vi kan pussla ihop av ${impN} bitar om varje paj har ${d} bitar.` : `A top-heavy fraction means division. Let's see how many whole pies we can build out of ${impN} slices if each pie contains ${d} slices.`, 
+                        latex: `\\frac{${impN}}{${d}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Dela täljaren med ${d}: Det går ${w} hela gånger, och sedan får vi några småbitar kvar över (en rest på ${n}).` : `Divide the top by ${d}: It goes ${w} whole times, and then we have a few loose slices left over (a remainder of ${n}).`, 
+                        latex: `\\frac{${impN}}{${d}} = \\mathbf{${w}} \\quad \\text{med rest } ${n}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom talet är lite mer än ${w} hela pajer, men inte tillräckligt för en till paj, ligger det mellan:` : `Since the value represents slightly more than ${w} whole pies, but not enough to make another full pie, it lies between:`, 
+                        latex: `\\mathbf{${w} \\text{ och } ${w + 1}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${w} och ${w + 1}` : `Answer: ${w} and ${w + 1}`, 
+                        latex: `\\text{${correct}}` 
+                    }
                 ]
             };
         }
 
         if (v === 'mixed_convert_imp') {
             return {
-                renderData: { description: lang === 'sv' ? "Skriv om från blandad form till bråkform." : "Rewrite from mixed form to an improper fraction.", latex: `${w}\\frac{${n}}{${d}}`, answerType: 'fraction' },
+                renderData: { description: lang === 'sv' ? "Skriv om det här talet så att det bara blir ett enda rent bråk." : "Rewrite this expression as a single pure fraction.", latex: `${w}\\frac{${n}}{${d}}`, answerType: 'fraction' },
                 token: this.toBase64(`${impN}/${d}`), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Varje heltal består av nämnarens antal delar." : "Step 1: Each whole consists of the number of parts indicated by the denominator." },
-                    { text: lang === 'sv' ? `Steg 2: Multiplicera antalet hela (${w}) med nämnaren (${d}).` : `Step 2: Multiply the number of wholes (${w}) by the denominator (${d}).`, latex: `${w} · ${d} = ${w*d}` },
-                    { text: lang === 'sv' ? `Steg 3: Lägg till de extra delarna i täljaren (${n}).` : `Step 3: Add the extra parts in the numerator (${n}).`, latex: `${w*d} + ${n} = ${impN}` },
-                    { text: lang === 'sv' ? "Steg 4: Behåll samma nämnare i svaret." : "Step 4: Keep the same denominator in the answer." },
-                    { text: lang === 'sv' ? `Svar: ${impN}/${d}` : `Answer: ${impN}/${d}` }
+                    { 
+                        text: lang === 'sv' ? `Vi vill göra om hela det här blandade paketet till lösa bitar. Varje hel (${w}) består av exakt ${d} stycken bitar.` : `We want to change this mixed package entirely into loose slices. Every single whole (${w}) consists of exactly ${d} individual slices.`, 
+                        latex: `${w}\\frac{${n}}{${d}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Gångra antalet hela med bottensiffran för att räkna ihop bitarna: ${w} · ${d} blir ${w * d} bitar.` : `Multiply the number of wholes by the bottom number to count up those slices: ${w} · ${d} equals ${w * d} slices.`, 
+                        latex: `= \\frac{\\mathbf{${w} \\cdot ${d}} + ${n}}{${d}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Plussa nu på de extra ${n} bitarna som redan stod där uppe på bråkstrecket:` : `Now add the extra ${n} slices that were already sitting on top of the fraction bar:`, 
+                        latex: `= \\frac{${w * d} \\mathbf{+ ${n}}}{${d}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Förenkla täljaren för att få det färdiga bråket. Bottensiffran ändras aldrig!" : "Simplify the top to reveal the final fraction. The bottom number never changes!", 
+                        latex: `= \\frac{\\mathbf{${impN}}}{${d}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${impN}/${d}` : `Answer: ${impN}/${d}`, 
+                        latex: `\\frac{${impN}}{${d}}` 
+                    }
                 ]
             };
         }
 
         return {
-            renderData: { description: lang === 'sv' ? "Skriv om bråket till blandad form." : "Rewrite the fraction to mixed form.", latex: `\\frac{${impN}}{${d}}`, answerType: 'fraction' },
+            renderData: { description: lang === 'sv' ? "Plocka ut alla hela pajer och skriv om till blandad form." : "Extract all whole pies and rewrite in mixed form.", latex: `\\frac{${impN}}{${d}}`, answerType: 'fraction' },
             token: this.toBase64(`${w} ${n}/${d}`), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Se hur många hela gånger nämnaren går i täljaren." : "Step 1: See how many whole times the denominator goes into the numerator." },
-                { text: lang === 'sv' ? "Steg 2: Utför divisionen." : "Step 2: Perform the division.", latex: `${impN} / ${d} = ${w} \\text{ hela}` },
-                { text: lang === 'sv' ? `Steg 3: Räkna ut resten. Det är vad som blir kvar.` : `Step 3: Calculate the remainder. That is what is left over.`, latex: `${impN} - (${w} · ${d}) = ${n}` },
-                { text: lang === 'sv' ? "Steg 4: Skriv heltalen först och resten som ett bråk efteråt." : "Step 4: Write the wholes first and the remainder as a fraction after." },
-                { text: lang === 'sv' ? `Svar: ${w} ${n}/${d}` : `Answer: ${w} ${n}/${d}` }
+                { 
+                    text: lang === 'sv' ? `Det här bråket är tungt i toppen. Vi letar efter hur många hela paket (${d}/${d}) som gömmer sig inuti ${impN}.` : `This fraction is heavy on top. Let's find out how many whole packages (${d}/${d}) are hiding inside ${impN}.`, 
+                    latex: `\\frac{${impN}}{${d}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Kolla hur många gånger ${d} går jämnt upp i ${impN}. Det går exakt ${w} hela gånger.` : `See how many whole times ${d} divides evenly into ${impN}. It goes exactly ${w} whole times.`, 
+                    latex: `= \\mathbf{${w}} \\text{ hela} + \\text{resten}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut hur många småbitar som blir över som en rest: ${impN} minus de använda (${w} · ${d}) lämnar ${n} bitar kvar.` : `Calculate how many small slices are left over as a remainder: ${impN} minus the used ones (${w} · ${d}) leaves ${n} slices.`, 
+                    latex: `\\text{Rest} = ${impN} - \\mathbf{(${w} \\cdot ${d})} = \\mathbf{${n}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Skriv ut de stora hela siffrorna först och sätt resten som ett litet bråk precis efteråt:" : "Write down the large whole numbers first and attach the remaining slices as a small fraction right after:", 
+                    latex: `= \\mathbf{${w}\\frac{${n}}{${d}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${w} ${n}/${d}` : `Answer: ${w} ${n}/${d}`, 
+                    latex: `${w}\\frac{${n}}{${d}}` 
+                }
             ]
         };
     }
@@ -269,14 +385,23 @@ export class FractionBasicsGen {
         while (this.gcd(n, d) !== 1) { n = MathUtils.randomInt(1, 5); d = MathUtils.randomInt(n + 1, 10); }
 
         if (v === 'simplify_concept') {
-            const opts = lang === 'sv' ? ["Värdet är detsamma", "Värdet blir större", "Värdet blir mindre"] : ["The value remains the same", "The value becomes larger", "The value becomes smaller"];
+            const opts = lang === 'sv' ? ["Storleken förblir exakt densamma", "Värdet blir mycket större", "Värdet blir mycket mindre"] : ["The value remains exactly the same", "The value becomes larger", "The value becomes smaller"];
             return {
-                renderData: { description: lang === 'sv' ? "Vad händer med ett bråks värde om vi förlänger det?" : "What happens to a fraction's value if we extend it?", answerType: 'multiple_choice', options: MathUtils.shuffle(opts) },
+                renderData: { description: lang === 'sv' ? "Vad händer med ett bråks verkliga värde om vi förlänger det?" : "What happens to a fraction's actual value if we extend it?", answerType: 'multiple_choice', options: MathUtils.shuffle(opts) },
                 token: this.toBase64(opts[0]), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Att förlänga innebär att vi multiplicerar både täljare och nämnare med samma tal." : "Step 1: Extending means multiplying both numerator and denominator by the same number." },
-                    { text: lang === 'sv' ? "Steg 2: Vi ändrar hur bråket skrivs (fler bitar, men mindre bitar), men den totala mängden ändras inte." : "Step 2: We change how the fraction is written (more pieces, but smaller pieces), but the total amount does not change." },
-                    { text: lang === 'sv' ? `Svar: ${opts[0]}` : `Answer: ${opts[0]}` }
+                    { 
+                        text: lang === 'sv' ? "Att förlänga betyder bara att vi skär tårtan i FLER bitar, men varje bit blir samtidigt på motsvarande sätt MINDRE." : "Extending simply means cutting the pie into MORE pieces, but each slice simultaneously becomes correspondingly SMALLER.", 
+                        latex: `\\frac{1}{2} = \\frac{1 \\cdot 2}{2 \\cdot 2} = \\frac{2}{4}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Eftersom vi har fler bitar men mindre storlek, ändras aldrig mängden mat på tallriken. Värdet är ständigt detsamma!" : "Since we have more pieces but a smaller size, the total amount of food on the plate never changes. The value remains exactly identical!", 
+                        latex: `\\frac{1}{2} = \\mathbf{\\frac{2}{4}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${opts[0]}` : `Answer: ${opts[0]}`, 
+                        latex: `\\text{${opts[0]}}` 
+                    }
                 ]
             };
         }
@@ -284,28 +409,53 @@ export class FractionBasicsGen {
         const f = MathUtils.randomInt(2, 6);
         if (v === 'simplify_missing') {
             return {
-                renderData: { description: lang === 'sv' ? "Hitta det tal som saknas för att likheten ska stämma." : "Find the missing number for the equality to be true.", latex: `\\frac{${n}}{${d}} = \\frac{?}{${d*f}}`, answerType: 'numeric' },
-                token: this.toBase64((n*f).toString()), variationKey: v, type: 'calculate',
+                renderData: { description: lang === 'sv' ? "Hitta den siffra som saknas på platsen för frågetecknet." : "Find the missing digit in place of the question mark.", latex: `\\frac{${n}}{${d}} = \\frac{?}{${d * f}}`, answerType: 'numeric' },
+                token: this.toBase64((n * f).toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: För att två bråk ska vara lika värda måste de ha skalats med samma faktor." : "Step 1: For two fractions to be equal, they must have been scaled by the same factor." },
-                    { text: lang === 'sv' ? `Steg 2: Titta på nämnarna. Vad har ${d} multiplicerats med för att bli ${d*f}?` : `Step 2: Look at the denominators. What has ${d} been multiplied by to become ${d*f}?` },
-                    { text: lang === 'sv' ? "Division:" : "Division:", latex: `${d*f} / ${d} = ${f}` },
-                    { text: lang === 'sv' ? `Steg 3: Eftersom nämnaren multiplicerats med ${f}, måste täljaren också multipliceras med ${f}.` : `Step 3: Since the denominator was multiplied by ${f}, the numerator must also be multiplied by ${f}.` },
-                    { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${n} · ${f} = ${n*f}` },
-                    { text: lang === 'sv' ? `Svar: ${n*f}` : `Answer: ${n*f}` }
+                    { 
+                        text: lang === 'sv' ? "För att två bråk ska ha exakt samma värde, måste de ha skalats upp eller ner med samma dolda faktor." : "For two fractions to carry exactly the same value, they must be scaled up or down by the same hidden scaling factor.", 
+                        latex: `\\frac{${n}}{${d}} = \\frac{?}{${d * f}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Kika på bottensiffrorna. Vad har ${d} gångrats med för att förvandlas till ${d * f}? Det har gångrats med ${f}.` : `Look closely at the bottom digits. What has ${d} been multiplied by to turn into ${d * f}? It was multiplied by ${f}.`, 
+                        latex: `${d} \\cdot \\mathbf{${f}} = ${d * f}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Eftersom botten har skalats upp med ${f}, måste vi göra exakt samma sak där uppe och gångra ${n} med ${f}.` : `Since the bottom has been scaled up by ${f}, we must execute exactly the same step on top and multiply ${n} by ${f}.`, 
+                        latex: `? = ${n} \\cdot \\mathbf{${f}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Räkna ut multiplikationen för att avslöja det saknade talet." : "Compute the multiplication to reveal the missing number.", 
+                        latex: `? = \\mathbf{${n * f}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${n * f}` : `Answer: ${n * f}`, 
+                        latex: `${n * f}` 
+                    }
                 ]
             };
         }
 
         return {
-            renderData: { description: lang === 'sv' ? "Förkorta bråket så långt som möjligt (enklaste form)." : "Simplify the fraction as much as possible (simplest form).", latex: `\\frac{${n*f}}{${d*f}}`, answerType: 'fraction' },
+            renderData: { description: lang === 'sv' ? "Gör bråket så enkelt som möjligt genom att förkorta bort gemensamma gånger-faktorer." : "Make the fraction as simple as possible by dividing away common multiplier factors.", latex: `\\frac{${n * f}}{${d * f}}`, answerType: 'fraction' },
             token: this.toBase64(`${n}/${d}`), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Att förkorta innebär att vi letar efter ett tal som båda siffrorna kan delas med." : "Step 1: Simplifying means looking for a number that both digits can be divided by." },
-                { text: lang === 'sv' ? `Steg 2: Hitta det största talet (största gemensamma delare) för ${n*f} och ${d*f}.` : `Step 2: Find the largest number (greatest common divisor) for ${n*f} and ${d*f}.` },
-                { text: lang === 'sv' ? `Steg 3: Dividera både täljare och nämnare med ${f}.` : `Step 3: Divide both the numerator and the denominator by ${f}.` },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `\\frac{${n*f} / ${f}}{${d*f} / ${f}} = \\frac{${n}}{${d}}` },
-                { text: lang === 'sv' ? `Svar: ${n}/${d}` : `Answer: ${n}/${d}` }
+                { 
+                    text: lang === 'sv' ? "Att förkorta betyder att vi letar efter en siffra som vi kan dela (dividera) både täljaren och nämnaren med." : "Simplifying means searching for a number that we can cleanly divide both the top and bottom digits by.", 
+                    latex: `\\frac{${n * f}}{${d * f}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Vi ser att både ${n * f} och ${d * f} finns med i ${f}-ans multiplikationstabell. Vi kan dela båda sidor med ${f}.` : `We spot that both ${n * f} and ${d * f} belong to the ${f}-times multiplication table. We can divide both positions by ${f}.`, 
+                    latex: `= \\frac{${n * f} \\mathbf{\\div ${f}}}{${d * f} \\mathbf{\\div ${f}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Räkna ut divisionerna för att skala ner bråket till sin allra enklaste form:" : "Compute the divisions to scale down the fraction to its absolute simplest form:", 
+                    latex: `= \\mathbf{\\frac{${n}}{${d}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${n}/${d}` : `Answer: ${n}/${d}`, 
+                    latex: `\\frac{${n}}{${d}}` 
+                }
             ]
         };
     }
@@ -331,45 +481,78 @@ export class FractionBasicsGen {
             const offset = MathUtils.randomChoice([-0.1, 0.05, 0.1]);
             const compareVal = Math.round((pair.dec + offset) * 100) / 100;
             const correct = pair.dec > compareVal ? '>' : '<';
+            const compStr = compareVal.toString().replace('.', ',');
+
             return {
                 renderData: { 
-                    description: lang === 'sv' ? "Vilket tecken passar bäst i cirkeln?" : "Which sign fits best in the circle?", 
-                    latex: `\\frac{${pair.n}}{${pair.d}} \\quad \\bigcirc \\quad ${compareVal.toString().replace('.', ',')}`, 
+                    description: lang === 'sv' ? "Vilken näbb eller tecken passar bäst i cirkeln?" : "Which inequality sign fits best inside the circle?", 
+                    latex: `\\frac{${pair.n}}{${pair.d}} \\quad \\bigcirc \\quad ${compStr}`, 
                     answerType: 'multiple_choice', options: ['<', '>', '='] 
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Omvandla bråket till ett decimaltal för att lättare kunna jämföra." : "Step 1: Convert the fraction to a decimal to compare more easily." },
-                    { text: lang === 'sv' ? `Steg 2: Bråket ${pair.n}/${pair.d} motsvarar decimaltalet ${decStr}.` : `Step 2: The fraction ${pair.n}/${pair.d} corresponds to the decimal ${decStr}.` },
-                    { text: lang === 'sv' ? `Steg 3: Jämför nu ${decStr} med ${compareVal.toString().replace('.', ',')}.` : `Step 3: Now compare ${decStr} with ${compareVal.toString().replace('.', ',')}.` },
-                    { text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}` }
+                    { 
+                        text: lang === 'sv' ? "För att enkelt kunna jämföra bråket med decimaltalet gör vi om bråkbiten till vanliga fula decimalsiffror först." : "To easily compare the fraction against the decimal value, let's convert the fraction slice into regular decimal format first.", 
+                        latex: `\\frac{${pair.n}}{${pair.d}} \\quad \\bigcirc \\quad ${compStr}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Kom ihåg tabellvärdet: Bråket \\frac{${pair.n}}{${pair.d}} motsvarar decimaltalet ${decStr}.` : `Recall the standard grid value: The fraction \\frac{${pair.n}}{${pair.d}} corresponds exactly to the decimal ${decStr}.`, 
+                        latex: `\\mathbf{${decStr}} \\quad \\bigcirc \\quad ${compStr}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Jämför nu siffrorna precis som kronor och ören: Är ${decStr} kr mer eller mindre än ${compStr} kr?` : `Now compare those tracking values just like cash: Is ${decStr} larger or smaller than ${compStr}?`, 
+                        latex: `${decStr} \\mathbf{${correct}} ${compStr}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}`, 
+                        latex: `\\text{${correct}}` 
+                    }
                 ]
             };
         }
 
         if (v === 'decimal_to_dec') {
             return {
-                renderData: { description: lang === 'sv' ? "Skriv bråket som ett decimaltal." : "Write the fraction as a decimal.", latex: `\\frac{${pair.n}}{${pair.d}}`, answerType: 'numeric' },
+                renderData: { description: lang === 'sv' ? "Gör om det här bråket till ett decimaltal." : "Convert this fraction into a decimal number.", latex: `\\frac{${pair.n}}{${pair.d}}`, answerType: 'numeric' },
                 token: this.toBase64(pair.dec.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { text: lang === 'sv' ? "Steg 1: Bråkstrecket betyder division. Vi ska dividera täljaren med nämnaren." : "Step 1: The fraction bar means division. We divide the numerator by the denominator." },
-                    { text: lang === 'sv' ? `Steg 2: Räkna ut ${pair.n} / ${pair.d}.` : `Step 2: Calculate ${pair.n} / ${pair.d}.` },
-                    { text: lang === 'sv' ? "Tips: Vissa bråk är bra att ha memorerade, som detta." : "Tip: Certain fractions are good to have memorized, like this one." },
-                    { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `${pair.n} / ${pair.d} = ${pair.dec}` },
-                    { text: lang === 'sv' ? `Svar: ${decStr}` : `Answer: ${pair.dec}` }
+                    { 
+                        text: lang === 'sv' ? "Kom ihåg att bråkstrecket egentligen bara betyder delat med (division). Vi ska dela täljaren med nämnaren." : "Remember that a fraction bar actually just means divided by (division). We simply divide the top number by the bottom number.", 
+                        latex: `\\frac{${pair.n}}{${pair.d}} = ${pair.n} \\div ${pair.d}` 
+                    },
+                    { 
+                        // Bytte 'b' mot 'pair.d' i den engelska texten
+                        text: lang === 'sv' ? `Utför divisionen: ${pair.n} delat med ${pair.d} ger oss decimalvärdet:` : `Perform the division: ${pair.n} divided by ${pair.d} yields the decimal value:`, 
+                        latex: `${pair.n} \\div ${pair.d} = \\mathbf{${decStr}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${decStr}` : `Answer: ${pair.dec}`, 
+                        latex: `${decStr}` 
+                    }
                 ]
             };
         }
 
         return {
-            renderData: { description: lang === 'sv' ? "Skriv decimaltalet som ett bråk i enklaste form." : "Write the decimal as a fraction in simplest form.", latex: decStr, answerType: 'fraction' },
+            renderData: { description: lang === 'sv' ? "Gör om det här decimaltalet till ett bråk i sin allra enklaste form." : "Convert this decimal value into a fraction in its absolute simplest form.", latex: decStr, answerType: 'fraction' },
             token: this.toBase64(`${pair.n}/${pair.d}`), variationKey: v, type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? `Steg 1: Läs ut decimaltalet. ${decStr} motsvarar en viss andel av helheten.` : `Step 1: Read the decimal. ${decStr} corresponds to a certain share of the whole.` },
-                { text: lang === 'sv' ? "Steg 2: Skriv decimaltalet som ett bråk med t.ex. 100 som nämnare." : "Step 2: Write the decimal as a fraction with e.g. 100 as the denominator.", latex: `\\frac{${pair.dec * 100}}{100}` },
-                { text: lang === 'sv' ? "Steg 3: Förkorta bråket så långt det går." : "Step 3: Simplify the fraction as much as possible." },
-                { text: lang === 'sv' ? "Uträkning:" : "Calculation:", latex: `\\frac{${pair.n}}{${pair.d}}` },
-                { text: lang === 'sv' ? `Svar: ${pair.n}/${pair.d}` : `Answer: ${pair.n}/${pair.d}` }
+                { 
+                    text: lang === 'sv' ? `Vi läser ut decimaltalet: Siffran ${decStr} betyder ${pair.dec * 100} hundradelar av en helhet.` : `Let's read the decimal value aloud: The layout ${decStr} represents exactly ${pair.dec * 100} hundredths of a whole piece.`, 
+                    latex: `${decStr} = \\frac{${pair.dec * 100}}{100}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Nu ska vi skala ner (förkorta) det här bråket så långt det bara går genom att dela uppe och nere tills det blir helt stopp.` : `Now we must scale down (simplify) this fraction as far as possible by dividing top and bottom positions until it cannot reduce further.`, 
+                    latex: `\\frac{${pair.dec * 100}}{100} = \\frac{${pair.dec * 100} \\div \\mathbf{${100 / pair.d}}}{100 \\div \\mathbf{${100 / pair.d}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Förenkla divisionerna för att få fram det slutgiltiga bråket:" : "Simplify the division calculations to yield the final targeted fraction mapping:", 
+                    latex: `= \\mathbf{\\frac{${pair.n}}{${pair.d}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${pair.n}/${pair.d}` : `Answer: ${pair.n}/${pair.d}`, 
+                    latex: `\\frac{${pair.n}}{${pair.d}}` 
+                }
             ]
         };
     }
