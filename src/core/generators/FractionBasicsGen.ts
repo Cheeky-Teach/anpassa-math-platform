@@ -240,7 +240,7 @@ export class FractionBasicsGen {
                         latex: `\\text{Hela talet} = ${partVal} \\mathbf{\\cdot ${d}}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Räkna ut gångertalet för att få fram slutsvar." : "Calculate the multiplication to reach your final answer total.", 
+                        text: lang === 'sv' ? "Räkna ut gångertalet för att få fram svar." : "Calculate the multiplication to reach your final answer total.", 
                         latex: `\\text{Hela talet} = \\mathbf{${total}}` 
                     },
                     { 
@@ -555,7 +555,7 @@ export class FractionBasicsGen {
                     latex: `\\frac{${pair.dec * 100}}{100} = \\frac{${pair.dec * 100} \\div \\mathbf{${100 / pair.d}}}{100 \\div \\mathbf{${100 / pair.d}}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Förenkla divisionerna för att få fram det slutgiltiga bråket:" : "Simplify the division calculations to yield the final targeted fraction mapping:", 
+                    text: lang === 'sv' ? "Förenkla att få fram svaret:" : "Simplify to get the answer:", 
                     latex: `= \\mathbf{\\frac{${pair.n}}{${pair.d}}}` 
                 },
                 { 

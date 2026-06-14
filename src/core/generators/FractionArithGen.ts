@@ -196,19 +196,19 @@ export class FractionArithGen {
         const clues = [
             {
                 text: lang === 'sv'
-                    ? `Vi kan inte plussa eller minusa bråk när de nedre siffrorna är olika. Vi måste ändra dem så att båda får nämnaren ${lcd}.`
+                    ? `Vi kan inte addera eller subtrahera bråk när nämnarna (talen under bråkstrecket) är olika. Vi måste ändra dem så att båda får nämnaren ${lcd}.`
                     : `We cannot add or subtract fractions when the bottom numbers are different. We must change them so both get the denominator ${lcd}.`,
                 latex: `\\frac{${n1}}{${d1}} ${op} \\frac{${n2}}{${d2}}`
             },
             {
                 text: lang === 'sv'
-                    ? `Gör om det första bråket genom att gångra (förlänga) både uppe och nere med ${f1}.`
+                    ? `Gör om det första bråket genom att multiplicera (förlänga) både uppe och nere med ${f1}.`
                     : `Change the first fraction by multiplying both top and bottom by ${f1}.`,
                 latex: `= \\frac{${n1} \\mathbf{\\cdot ${f1}}}{${d1} \\mathbf{\\cdot ${f1}}} ${op} \\frac{${n2}}{${d2}}`
             },
             {
                 text: lang === 'sv'
-                    ? `Gör om det andra bråket genom att gångra (förlänga) både uppe och nere med ${f2}.`
+                    ? `Gör om det andra bråket genom att multiplicera (förlänga) både uppe och nere med ${f2}.`
                     : `Change the second fraction by multiplying both top and bottom by ${f2}.`,
                 latex: `= \\frac{${ext1}}{${lcd}} ${op} \\frac{${n2} \\mathbf{\\cdot ${f2}}}{${d2} \\mathbf{\\cdot ${f2}}}`
             },
@@ -332,7 +332,7 @@ export class FractionArithGen {
         const clues = [
             {
                 text: lang === 'sv'
-                    ? `Att gångra bråk är jätte-enkelt! Vi behöver inte ändra några nämnare. Vi gångrar bara rakt över: uppe med uppe och nere med nere.`
+                    ? `Att multiplicera bråk är jätte-enkelt! Vi behöver inte ändra några nämnare. Vi multiplicerar bara rakt över: uppe med uppe och nere med nere.`
                     : `Multiplying fractions is super simple! We don't need to change any denominators. We just multiply straight across: top times top, bottom times bottom.`,
                 latex: `\\frac{${n1}}{${d1}} \\cdot \\frac{${n2}}{${d2}}`
             },
@@ -397,7 +397,7 @@ export class FractionArithGen {
             },
             {
                 text: lang === 'sv'
-                    ? `Gångra nu rakt över: täljare med täljare (${n1} · ${d2}) och nämnare med nämnare (${d1} · ${n2}).`
+                    ? `multiplicera nu rakt över: täljare med täljare (${n1} · ${d2}) och nämnare med nämnare (${d1} · ${n2}).`
                     : `Now multiply straight across: top times top (${n1} · ${d2}) and bottom times bottom (${d1} · ${n2}).`,
                 latex: `= \\frac{\\mathbf{${n1} \\cdot ${d2}}}{\\mathbf{${d1} \\cdot ${n2}}} = \\frac{\\mathbf{${resN}}}{\\mathbf{${resD}}}`
             }

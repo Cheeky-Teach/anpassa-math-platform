@@ -129,7 +129,7 @@ export class OrderOperationsGen {
                         : (useMult ? `${c} ${op} \\mathbf{${a} \\cdot ${b}} = ${c} ${op} \\mathbf{${product}}` : `${c} ${op} \\mathbf{\\frac{${a}}{${b}}} = ${c} ${op} \\mathbf{${quotient}}`)
                 },
                 { 
-                    text: lang === 'sv' ? `Nu är det bara plussandet eller minussandet kvar. Räkna ut slutsvaret:` : `Now only the addition or subtraction remains. Calculate the final answer:`, 
+                    text: lang === 'sv' ? `Nu är det bara ett steg kvar. Räkna ut slutsvaret:` : `Now only one step remains. Calculate the final answer:`, 
                     latex: isPrioFirst ? `\\mathbf{${useMult ? product : quotient} ${op} ${c}} = ${result}` : `\\mathbf{${c} ${op} ${useMult ? product : quotient}} = ${result}` 
                 },
                 { 
@@ -189,7 +189,7 @@ export class OrderOperationsGen {
                 latex: `${d} + \\mathbf{${a} \\cdot ${b - c}} = ${d} + \\mathbf{${a * (b - c)}}`
             },
             {
-                text: lang === 'sv' ? "Slutför genom att plussa ihop de sista siffrorna." : "Finish by adding the final remaining numbers together.",
+                text: lang === 'sv' ? "Addera ihop de sista siffrorna." : "Finish by adding the final remaining numbers together.",
                 latex: `\\mathbf{${d} + ${a * (b - c)}} = ${ans}`
             },
             {
@@ -455,7 +455,7 @@ export class OrderOperationsGen {
         });
 
         clues.push({
-            text: lang === 'sv' ? `Räkna till sist raden i ordning från vänster till höger för att få fram slutsvar.` : `Finally, calculate the row in straight order from left to right to discover the final answer code.`,
+            text: lang === 'sv' ? `Räkna till sist raden i ordning från vänster till höger för att få fram svaret.` : `Finally, calculate the row in straight order from left to right to discover the final answer code.`,
             latex: `\\mathbf{${t1.val} ${op1} ${t2.val}} ${op2} ${t3.val} = \\mathbf{${intermediate}} ${op2} ${t3.val} = ${ans}`
         });
 
