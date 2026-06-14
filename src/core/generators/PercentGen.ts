@@ -423,7 +423,7 @@ export class PercentGen {
                         latex: `${p}\\% = \\frac{${p}}{100} = \\mathbf{${(p / 100).toString().replace('.', ',')}}` 
                     },
                     { 
-                        text: lang === 'sv' ? (isInc ? `Eftersom värdet ökar plussar vi på decimalen till basen 1,00.` : `Eftersom värdet minskar drar vi bort decimalen från basen 1,00.`) : (isInc ? `Since the value increases, add the decimal to the base 1.00.` : `Since the value decreases, subtract the decimal from the base 1.00.`), 
+                        text: lang === 'sv' ? (isInc ? `Eftersom värdet ökar adderar vi på decimalen till basen 1,00.` : `Eftersom värdet minskar drar vi bort decimalen från basen 1,00.`) : (isInc ? `Since the value increases, add the decimal to the base 1.00.` : `Since the value decreases, subtract the decimal from the base 1.00.`), 
                         latex: isInc ? `\\text{Förändringsfaktor} = 1,00 + \\mathbf{${(p / 100).toString().replace('.', ',')}}` : `\\text{Förändringsfaktor} = 1,00 - \\mathbf{${(p / 100).toString().replace('.', ',')}}` 
                     },
                     { 

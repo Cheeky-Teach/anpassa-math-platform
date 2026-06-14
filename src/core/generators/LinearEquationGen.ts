@@ -336,7 +336,7 @@ export class LinearEquationGen {
                     : `\\frac{x}{${a}} \\mathbf{\\cdot ${a}} = ${intermediate} \\mathbf{\\cdot ${a}}`
             },
             { 
-                text: lang === 'sv' ? "Förenkla raden för att beräkna det slutgiltiga värdet på x." : "Simplify the line to calculate the final value of x.", 
+                text: lang === 'sv' ? "Förenkla raden för att beräkna värdet på x." : "Simplify the line to calculate the final value of x.", 
                 latex: `x = \\mathbf{${x}}` 
             },
             { 
@@ -435,7 +435,7 @@ export class LinearEquationGen {
                     latex: `\\frac{${a}x}{\\mathbf{${a}}} = \\frac{${diff}}{\\mathbf{${a}}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Utför divisionen för att räkna ut det slutgiltiga svaret." : "Perform the division to compute the final answer.", 
+                    text: lang === 'sv' ? "Utför divisionen för att räkna ut svaret." : "Perform the division to compute the final answer.", 
                     latex: `x = \\mathbf{${x}}` 
                 },
                 { 
@@ -514,7 +514,7 @@ export class LinearEquationGen {
                     latex: `\\frac{${diffX}x}{\\mathbf{${diffX}}} = \\frac{${diffConst}}{\\mathbf{${diffX}}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Slutför divisionen för att få fram det slutgiltiga värdet på x." : "Complete the division to reveal the final value of x.", 
+                    text: lang === 'sv' ? "Dividera för att få fram värdet på x." : "Divide to reveal the final value of x.", 
                     latex: `x = \\mathbf{${x}}` 
                 },
                 { 
