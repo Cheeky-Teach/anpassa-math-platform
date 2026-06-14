@@ -129,7 +129,7 @@ export class OrderOperationsGen {
                         : (useMult ? `${c} ${op} \\mathbf{${a} \\cdot ${b}} = ${c} ${op} \\mathbf{${product}}` : `${c} ${op} \\mathbf{\\frac{${a}}{${b}}} = ${c} ${op} \\mathbf{${quotient}}`)
                 },
                 { 
-                    text: lang === 'sv' ? `Nu är det bara plussandet eller minussandet kvar. Räkna ut slutsvaret:` : `Now only the addition or subtraction remains. Calculate the final answer:`, 
+                    text: lang === 'sv' ? `Nu är det bara additionen eller subtraktionen kvar. Räkna ut svaret:` : `Now only the addition or subtraction remains. Calculate the answer:`, 
                     latex: isPrioFirst ? `\\mathbf{${useMult ? product : quotient} ${op} ${c}} = ${result}` : `\\mathbf{${c} ${op} ${useMult ? product : quotient}} = ${result}` 
                 },
                 { 
@@ -189,7 +189,7 @@ export class OrderOperationsGen {
                 latex: `${d} + \\mathbf{${a} \\cdot ${b - c}} = ${d} + \\mathbf{${a * (b - c)}}`
             },
             {
-                text: lang === 'sv' ? "Slutför genom att plussa ihop de sista siffrorna." : "Finish by adding the final remaining numbers together.",
+                text: lang === 'sv' ? "Slutför genom att addera ihop de sista siffrorna." : "Finish by adding the final remaining numbers together.",
                 latex: `\\mathbf{${d} + ${a * (b - c)}} = ${ans}`
             },
             {

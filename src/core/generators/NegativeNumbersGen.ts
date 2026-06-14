@@ -117,7 +117,7 @@ export class NegativeNumbersGen {
                         latex: `\\text{Start} = ${start}` 
                     },
                     { 
-                        text: lang === 'sv' ? (isRight ? `Att gå åt höger betyder att det blir varmare. Vi plussar på (+) steg.` : `Att gå åt vänster betyder att det blir kallare. Vi minusar (-) steg.`) : (isRight ? `Moving right means it gets warmer. We add (+) steps.` : `Moving left means it gets colder. We subtract (-) steps.`), 
+                        text: lang === 'sv' ? (isRight ? `Att gå åt höger betyder att det blir varmare. Vi adderar (+) steg.` : `Att gå åt vänster betyder att det blir kallare. Vi subtrahera (-) steg.`) : (isRight ? `Moving right means it gets warmer. We add (+) steps.` : `Moving left means it gets colder. We subtract (-) steps.`), 
                         latex: `\\text{Uträkning: } ${start} \\mathbf{${op}} ${steps}` 
                     },
                     { 

@@ -134,7 +134,7 @@ export class PercentGen {
             const colored = MathUtils.randomInt(5, 95);
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Hur många procent av rutnätet är färgat?" : "What percentage of the grid is colored?",
+                    description: lang === 'sv' ? "Hur många procent är färgat?" : "What percentage of the grid is colored?",
                     answerType: 'numeric', suffix: '%',
                     geometry: { type: 'percent_grid', total: 100, colored: colored }
                 },
