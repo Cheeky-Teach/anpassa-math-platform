@@ -228,7 +228,7 @@ export class FractionBasicsGen {
 
         if (v === 'part_inverse') {
             return {
-                renderData: { description: lang === 'sv' ? `Om en ${d}-del (1/${d}) av ett dolt tal är ${partVal}, vad är då hela talet totalt?` : `If one ${d}-th (1/${d}) of a hidden number is ${partVal}, what is the whole number in total?`, answerType: 'numeric' },
+                renderData: { description: lang === 'sv' ? `Om en ${d}-del (1/${d}) av ett okänt tal är ${partVal}, vad är då hela talet totalt?` : `If one ${d}-th (1/${d}) of a hidden number is ${partVal}, what is the whole number in total?`, answerType: 'numeric' },
                 token: this.toBase64(total.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
@@ -296,15 +296,15 @@ export class FractionBasicsGen {
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? `Ett tungt bråk betyder division. Vi kollar helt enkelt hur många hela pajer vi kan pussla ihop av ${impN} bitar om varje paj har ${d} bitar.` : `A top-heavy fraction means division. Let's see how many whole pies we can build out of ${impN} slices if each pie contains ${d} slices.`, 
+                        text: lang === 'sv' ? `När täljaren är större än nämnaren behöver vi dela. Vi kollar helt enkelt hur många gånger nämnaren får plats i täljaren.` : `An improper fraction is when the numerator is bigger than the denominator. We need to find how many times the denominator can divide the numerator.`, 
                         latex: `\\frac{${impN}}{${d}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Dela täljaren med ${d}: Det går ${w} hela gånger, och sedan får vi några småbitar kvar över (en rest på ${n}).` : `Divide the top by ${d}: It goes ${w} whole times, and then we have a few loose slices left over (a remainder of ${n}).`, 
+                        text: lang === 'sv' ? `Dela täljaren med ${d}: Det går ${w} gånger, och sedan får vi en rest på ${n}.` : `Divide the top by ${d}: It goes ${w} whole times and then we have a remainder of ${n}.`, 
                         latex: `\\frac{${impN}}{${d}} = \\mathbf{${w}} \\quad \\text{med rest } ${n}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Eftersom talet är lite mer än ${w} hela pajer, men inte tillräckligt för en till paj, ligger det mellan:` : `Since the value represents slightly more than ${w} whole pies, but not enough to make another full pie, it lies between:`, 
+                        text: lang === 'sv' ? `Eftersom talet är lite mer än ${w} hela, ligger det mellan:` : `Since the value represents slightly more than ${w}, it lies between:`, 
                         latex: `\\mathbf{${w} \\text{ och } ${w + 1}}` 
                     },
                     { 
@@ -317,23 +317,28 @@ export class FractionBasicsGen {
 
         if (v === 'mixed_convert_imp') {
             return {
-                renderData: { description: lang === 'sv' ? "Skriv om det här talet så att det bara blir ett enda rent bråk." : "Rewrite this expression as a single pure fraction.", latex: `${w}\\frac{${n}}{${d}}`, answerType: 'fraction' },
+                renderData: { description: lang === 'sv' ? "Skriv om från blandad form till bråkform." 
+                    : "Convert from a mixed fraction to an improper fraction.", latex: `${w}\\frac{${n}}{${d}}`, answerType: 'fraction' },
                 token: this.toBase64(`${impN}/${d}`), variationKey: v, type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? `Vi vill göra om hela det här blandade paketet till lösa bitar. Varje hel (${w}) består av exakt ${d} stycken bitar.` : `We want to change this mixed package entirely into loose slices. Every single whole (${w}) consists of exactly ${d} individual slices.`, 
+                        text: lang === 'sv' ? `Vi vill göra om blandad form till bråkform. Varje hel (${w}) består av exakt ${d} stycken bitar.` 
+                        : `We want to change this mixed fraction to an improper fraction. Every single whole (${w}) consists of exactly ${d} individual pieces.`, 
                         latex: `${w}\\frac{${n}}{${d}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Gångra antalet hela med bottensiffran för att räkna ihop bitarna: ${w} · ${d} blir ${w * d} bitar.` : `Multiply the number of wholes by the bottom number to count up those slices: ${w} · ${d} equals ${w * d} slices.`, 
+                        text: lang === 'sv' ? `Multiplicera antalet hela med nämnaren: ${w} · ${d} blir ${w * d}.` 
+                        : `Multiply the number of wholes by the bottom number: ${w} · ${d} equals ${w * d}.`, 
                         latex: `= \\frac{\\mathbf{${w} \\cdot ${d}} + ${n}}{${d}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Plussa nu på de extra ${n} bitarna som redan stod där uppe på bråkstrecket:` : `Now add the extra ${n} slices that were already sitting on top of the fraction bar:`, 
+                        text: lang === 'sv' ? `Addera nu på de extra ${n} som redan stod i täljarens plats:` 
+                        : `Now add the extra ${n} that we sitting in the numerator:`, 
                         latex: `= \\frac{${w * d} \\mathbf{+ ${n}}}{${d}}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Förenkla täljaren för att få det färdiga bråket. Bottensiffran ändras aldrig!" : "Simplify the top to reveal the final fraction. The bottom number never changes!", 
+                        text: lang === 'sv' ? "Förenkla täljaren för att få det färdiga bråket. Nämnaren ändras aldrig!" 
+                        : "Simplify the top to reveal the final fraction. The numerator number never changes!", 
                         latex: `= \\frac{\\mathbf{${impN}}}{${d}}` 
                     },
                     { 
@@ -345,23 +350,27 @@ export class FractionBasicsGen {
         }
 
         return {
-            renderData: { description: lang === 'sv' ? "Plocka ut alla hela pajer och skriv om till blandad form." : "Extract all whole pies and rewrite in mixed form.", latex: `\\frac{${impN}}{${d}}`, answerType: 'fraction' },
+            renderData: { description: lang === 'sv' ? "Skriv om från bråkform till blandad form." : "Convert from improper fraction to mixed fraction.", latex: `\\frac{${impN}}{${d}}`, answerType: 'fraction' },
             token: this.toBase64(`${w} ${n}/${d}`), variationKey: v, type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? `Det här bråket är tungt i toppen. Vi letar efter hur många hela paket (${d}/${d}) som gömmer sig inuti ${impN}.` : `This fraction is heavy on top. Let's find out how many whole packages (${d}/${d}) are hiding inside ${impN}.`, 
+                    text: lang === 'sv' ? `För att ändra från bråkform till blandad form behöver vi dela. Vi letar efter hur många hela (${d}/${d}) är i ${impN}.` 
+                    : `To convert from improper to mixed fractions we need to divide and see how many (${d}/${d})s are in ${impN}.`, 
                     latex: `\\frac{${impN}}{${d}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Kolla hur många gånger ${d} går jämnt upp i ${impN}. Det går exakt ${w} hela gånger.` : `See how many whole times ${d} divides evenly into ${impN}. It goes exactly ${w} whole times.`, 
+                    text: lang === 'sv' ? `Kolla hur många gånger ${d} går i ${impN}. Det går exakt ${w} gånger.` 
+                    : `See how many whole times ${d} divides evenly into ${impN}. It goes exactly ${w} times.`, 
                     latex: `= \\mathbf{${w}} \\text{ hela} + \\text{resten}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Räkna ut hur många småbitar som blir över som en rest: ${impN} minus de använda (${w} · ${d}) lämnar ${n} bitar kvar.` : `Calculate how many small slices are left over as a remainder: ${impN} minus the used ones (${w} · ${d}) leaves ${n} slices.`, 
+                    text: lang === 'sv' ? `Räkna ut hur många blir över som en rest: ${impN} minus de använda (${w} · ${d}) lämnar ${n} kvar.` 
+                    : `Calculate how many are left over as a remainder: ${impN} minus the used ones (${w} · ${d}) leaves ${n} left.`, 
                     latex: `\\text{Rest} = ${impN} - \\mathbf{(${w} \\cdot ${d})} = \\mathbf{${n}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Skriv ut de stora hela siffrorna först och sätt resten som ett litet bråk precis efteråt:" : "Write down the large whole numbers first and attach the remaining slices as a small fraction right after:", 
+                    text: lang === 'sv' ? "Skriv ut de stora hela siffrorna först och sätt resten som ett litet bråk precis efteråt:" 
+                    : "Write down the large whole numbers first and attach the remaining slices as a small fraction right after:", 
                     latex: `= \\mathbf{${w}\\frac{${n}}{${d}}}` 
                 },
                 { 
@@ -409,7 +418,7 @@ export class FractionBasicsGen {
         const f = MathUtils.randomInt(2, 6);
         if (v === 'simplify_missing') {
             return {
-                renderData: { description: lang === 'sv' ? "Hitta den siffra som saknas på platsen för frågetecknet." : "Find the missing digit in place of the question mark.", latex: `\\frac{${n}}{${d}} = \\frac{?}{${d * f}}`, answerType: 'numeric' },
+                renderData: { description: lang === 'sv' ? "Vilket tal saknas?." : "Which number is missing?.", latex: `\\frac{${n}}{${d}} = \\frac{?}{${d * f}}`, answerType: 'numeric' },
                 token: this.toBase64((n * f).toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
@@ -449,7 +458,7 @@ export class FractionBasicsGen {
                     latex: `= \\frac{${n * f} \\mathbf{\\div ${f}}}{${d * f} \\mathbf{\\div ${f}}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Räkna ut divisionerna för att skala ner bråket till sin allra enklaste form:" : "Compute the divisions to scale down the fraction to its absolute simplest form:", 
+                    text: lang === 'sv' ? "Dividera för att förkorta bråket till  enklaste form:" : "Divide to simplify the fraction to its simplest form:", 
                     latex: `= \\mathbf{\\frac{${n}}{${d}}}` 
                 },
                 { 
@@ -513,7 +522,7 @@ export class FractionBasicsGen {
 
         if (v === 'decimal_to_dec') {
             return {
-                renderData: { description: lang === 'sv' ? "Gör om det här bråket till ett decimaltal." : "Convert this fraction into a decimal number.", latex: `\\frac{${pair.n}}{${pair.d}}`, answerType: 'numeric' },
+                renderData: { description: lang === 'sv' ? "Skriv om bråket som ett decimaltal." : "Convert this fraction into a decimal number.", latex: `\\frac{${pair.n}}{${pair.d}}`, answerType: 'numeric' },
                 token: this.toBase64(pair.dec.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
@@ -534,7 +543,7 @@ export class FractionBasicsGen {
         }
 
         return {
-            renderData: { description: lang === 'sv' ? "Gör om det här decimaltalet till ett bråk i sin allra enklaste form." : "Convert this decimal value into a fraction in its absolute simplest form.", latex: decStr, answerType: 'fraction' },
+            renderData: { description: lang === 'sv' ? "Skriv om decimaltalet till ett bråktal i enklaste form." : "Convert this decimal value into a fraction in simplest form.", latex: decStr, answerType: 'fraction' },
             token: this.toBase64(`${pair.n}/${pair.d}`), variationKey: v, type: 'calculate',
             clues: [
                 { 

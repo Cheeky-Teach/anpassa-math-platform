@@ -108,7 +108,7 @@ export class ExpressionSimplificationGen {
                 token: this.toBase64(sLie), variationKey: v, type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "När vi plussar ihop x-termer ändras bara ANTALET x. Vi rör aldrig den lilla tvåan däruppe!" : "When we add x-terms together, only the COUNT of x changes. We never touch or change the small exponent on top!", 
+                        text: lang === 'sv' ? "När vi adderar ihop x-termer ändras bara ANTALET x. Vi rör aldrig den lilla tvåan däruppe!" : "When we add x-terms together, only the COUNT of x changes. We never touch or change the small exponent on top!", 
                         latex: `${a}x + ${b}x` 
                     },
                     { 
