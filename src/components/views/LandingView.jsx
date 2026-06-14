@@ -126,7 +126,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             live_desc: "Teacher Live View ger dig fullständig överblick. Se precis när en elev fastnar, vilken uppgift som ställer till det, och vem som är redo för en utmaning – allt medan lektionen pågår.",
             testlab_title: "Differentierade prov.",
             testlab_subtitle: "Ett knapptryck bort.",
-            testlab_desc: "Välj svårighetsgrad, klicka i ämnesområden och generera unika provkoder. Test Lab skapar individuella prov där ingen elev får exakt samma siffror, vilket gör fusk omöjligt.",
+            testlab_desc: "Välj svårighetsgrad, klicka i ämnesområden och generera unika provkoder. Test Lab skapar individuella prov där man får olika uppgifter med nya siffror varje gång.",
             btn_generate: "Generera provkod",
         },
         en: {
@@ -162,7 +162,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             live_desc: "Teacher Live View gives you complete oversight. See exactly when a student gets stuck, which specific task is causing trouble, and who is ready for a challenge.",
             testlab_title: "Differentiated tests.",
             testlab_subtitle: "One click away.",
-            testlab_desc: "Select difficulty, pick subjects, and generate unique test codes. Test Lab creates individualized tests where no student gets the exact same numbers, making cheating impossible.",
+            testlab_desc: "Select difficulty, pick subjects, and generate unique test codes. Test Lab creates individualized practice tests where no student gets the exact same practice test. Different questions and numbers every time.",
             btn_generate: "Generate Code",
         }
     }[lang];
