@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-    Zap, FileText, Grid3X3, Users, Globe, ArrowRight, CheckCircle2,
-    Sparkles, Layers, MousePointer2, HelpCircle, ShieldCheck, Smartphone,
-    ChevronRight, BookOpen, Target, GraduationCap, PlayCircle, Pencil,
-    Monitor, Signal, Check, X
+    Zap, FileText, Grid3X3, Users, Globe, CheckCircle2,
+    Sparkles, Layers, ShieldCheck, Target, GraduationCap, 
+    Monitor, Signal, Check, XCircle, RefreshCcw, Calculator, Shuffle, Loader2
 } from 'lucide-react';
-import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents.jsx';
+
+// Reusing the actual visual components for the interactive miniatures
+// FIXED: Reverted VolumeVisualization to GeometryVisual to prevent rendering crashes
+import { GeometryVisual, GraphCanvas } from '../visuals/GeometryComponents.jsx';
+import { ProbabilityMarbles } from '../visuals/ProbabilityVisuals.jsx';
+import { PercentGrid } from '../visuals/StatisticsVisuals.jsx';
 
 // --- MATH RENDERING ENGINE ---
 const MathDisplay = ({ content, className = "" }) => {
@@ -32,102 +36,60 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed text-inherit ${className}`} />;
 };
 
-// --- MOCK COMPONENTS FOR LIVE SECTION ---
-
-const TeacherLiveMock = () => (
-    <div className="w-full bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden transform hover:-rotate-1 transition-transform">
-        <div className="bg-slate-900 p-4 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black text-white uppercase tracking-widest italic">Live Monitor</span>
-            </div>
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">32 Elever Anslutna</span>
-        </div>
-        <div className="p-4 grid grid-cols-4 sm:grid-cols-8 gap-2">
-            {[...Array(24)].map((_, i) => (
-                <div key={i} className={`h-8 rounded-lg flex items-center justify-center ${
-                    i % 5 === 0 ? 'bg-rose-500 shadow-sm shadow-rose-200' : 
-                    i % 3 === 0 ? 'bg-emerald-500 shadow-sm shadow-emerald-200' : 
-                    'bg-slate-100'
-                }`}>
-                    {i % 5 === 0 && <X size={14} className="text-white" />}
-                    {i % 3 === 0 && i % 5 !== 0 && <Check size={14} className="text-white" />}
-                </div>
-            ))}
-        </div>
-        <div className="bg-emerald-50 p-3 text-center border-t border-emerald-100 flex justify-center gap-6">
-            <div className="text-[9px] font-black text-emerald-800 uppercase">Träffsäkerhet: 82%</div>
-            <div className="text-[9px] font-black text-rose-800 uppercase">Hjälp behövs: 4 st</div>
-        </div>
-    </div>
-);
-
-const StudentLiveMock = () => (
-    <div className="w-[260px] bg-white rounded-[3rem] border-[10px] border-slate-900 shadow-2xl overflow-hidden relative transform rotate-2">
-        <div className="h-6 bg-slate-900 flex justify-center items-end pb-1">
-            <div className="w-12 h-1 bg-slate-800 rounded-full" />
-        </div>
-        <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
-                <Signal size={16} className="text-emerald-500" />
-                <div className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[8px] font-bold uppercase tracking-widest">Ansluten</div>
-            </div>
-            <div className="space-y-3">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Uppgift 4</p>
-                <MathDisplay content="Bestäm basen $b$ om arean är $24 \text{ cm}^2$." className="text-sm font-bold text-slate-800" />
-            </div>
-            <div className="h-24 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-center">
-                <GeometryVisual type="triangle" labels={{ b: "b", h: "8" }} width={120} height={80} />
-            </div>
-            <div className="space-y-3">
-                <div className="w-full h-10 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 flex items-center text-xs font-bold text-slate-400">Skriv svar...</div>
-                <div className="w-full h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-200">Skicka</div>
-            </div>
-        </div>
-    </div>
-);
-
 export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initialLang = 'sv' }) {
     const [lang, setLang] = useState(initialLang);
-    const [activeTab, setActiveTab] = useState(0);
-    const [revealedClueIdx, setRevealedClueIdx] = useState(-1);
     const [liveCode, setLiveCode] = useState('');
     const [classCode, setClassCode] = useState('');
 
-    useEffect(() => { setRevealedClueIdx(-1); }, [activeTab]);
+    // State for the interactive miniatures
+    const [hookIndex, setHookIndex] = useState(0);
+    const [isIntercepted, setIsIntercepted] = useState(false);
 
-    const SHOWCASE_ITEMS = [
-        {
-            title: { sv: "Funktioner & Grafer", en: "Functions & Graphs" },
-            icon: <MousePointer2 size={20}/>,
-            data: {
-                description: lang === 'sv' ? "Bestäm linjens ekvation med trappstegsmetoden." : "Determine the line's equation using the staircase method.",
-                latex: "y = kx + m",
-                graph: { range: 6, gridStep: 1, labelStep: 2, lines: [{ slope: 2, intercept: 1, color: '#059669' }] },
-                clues: [
-                    { sv: "Identifiera linjens skärningspunkt med y-axeln (m = 1).", en: "Identify y-intercept (m = 1).", latex: "m = 1" },
-                    { sv: "Utgå från y-axeln och gå ett steg höger.", en: "Move one step right.", latex: "Höger = 1" },
-                    { sv: "Räkna uppåt för att träffa linjen igen (k = 2).", en: "Move 2 steps up (k = 2).", latex: "k = 2" }
-                ]
-            }
-        },
-        {
-            title: { sv: "Geometri & Volym", en: "Geometry & Volume" },
-            icon: <Layers size={20}/>,
-            data: {
-                description: lang === 'sv' ? "Beräkna volymen av cylindern." : "Calculate the volume of the cylinder.",
-                latex: "V = \\pi \\cdot r^2 \\cdot h",
-                geometry: { type: "cylinder", labels: { r: "4", h: "10" } },
-                clues: [
-                    { sv: "Identifiera radien (r=4) och höjden (h=10).", en: "r=4, h=10", latex: "r=4, h=10" },
-                    // UPDATED: Substitution clue
-                    { sv: "Sätt in värdena i formeln för cylinderns volym.", en: "Insert values into formula.", latex: "V = \\pi \\cdot 4^2 \\cdot 10" },
-                    // UPDATED: Final answer clue
-                    { sv: "Beräkna resultatet. Avrunda till en decimal.", en: "Calculate result. Round to one decimal.", latex: "V \\approx 502,7 \\text{ cm}^3" }
-                ]
-            }
-        }
-    ];
+    // --- STATE FOR SECTIONS 3-6 ---
+    const [gridVersion, setGridVersion] = useState(0);
+    const [canvasTopic, setCanvasTopic] = useState('geom');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [testHash, setTestHash] = useState(null);
+    
+    const [ghostStudents, setGhostStudents] = useState([
+        { id: 1, name: 'Anna K.', progress: 15, status: 'solving' },
+        { id: 2, name: 'Leo M.', progress: 45, status: 'correct' },
+        { id: 3, name: 'Sara J.', progress: 30, status: 'error' }
+    ]);
+
+    // Animate ghost students for Live View miniature
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setGhostStudents(prev => prev.map(s => {
+                if (s.progress >= 100) return { ...s, progress: 100, status: 'done' };
+                const jump = Math.floor(Math.random() * 15) + 5;
+                const isError = Math.random() > 0.85;
+                return {
+                    ...s,
+                    progress: Math.min(100, s.progress + jump),
+                    status: isError ? 'error' : (s.progress + jump >= 100 ? 'done' : 'correct')
+                };
+            }));
+        }, 2500);
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleGenerateTest = () => {
+        setIsGenerating(true);
+        setTestHash(null);
+        setTimeout(() => {
+            setIsGenerating(false);
+            setTestHash(`LAB-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.floor(Math.random()*900)+100}`);
+        }, 1200);
+    };
+
+    // Auto-cycle the "Infinite Math" hook every 3 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setHookIndex(prev => (prev + 1) % 3);
+        }, 3000);
+        return () => clearInterval(interval);
+    }, []);
 
     const t = {
         sv: {
@@ -141,21 +103,31 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             btn_live: "Gå med",
             btn_practice: "Börja öva",
             btn_teacher: "Lärare & Föräldrar",
-            phi_title: "Överbrygga gapet",
-            phi_text: "Läroböcker går ofta för snabbt fram. Vi ger dig de saknade övningsstegen så att du kan nöta de svåra momenten tills de sitter.",
-            bridge_step_1: "Teori & Genomgång",
-            bridge_step_2: "Anpassa Träning",
-            bridge_step_3: "Prov & Mål",
-            live_h: "Synkroniserat Lärande",
-            live_p: "I ett Live-rum ser läraren klassens framsteg i realtid medan eleverna arbetar på egna enheter.",
-            demo_h: "Interaktiv Demo",
-            demo_p: "Se hur vi stegar fram lösningar för att bygga förståelse.",
-            hint_btn: "Visa nästa steg",
-            hint_reset: "Återställ",
-            feat_worksheet_h: "Spara planeringstid",
-            feat_donow_h: "Aktivera klassen",
-            feat_live_h: "Live Lektion",
-            footer_motto: "Anpassa Math Platform — Designad för mastery."
+            
+            // New Miniature Strings
+            hook_title: "Oändligt med uppgifter.",
+            hook_subtitle: "Noll förberedelse.",
+            hook_desc: "Lämna statiska PDF:er bakom dig. Vår motor genererar unika siffror, grafer och figurer i realtid. Varje elev får sin helt egen version av uppgiften.",
+            interceptor_title: "Matte är inte bara siffror.",
+            interceptor_subtitle: "Det är verkligheten.",
+            interceptor_desc: "Vår \"Word Problem Interceptor\" förvandlar torra ekvationer till relaterbara textuppgifter med ett enda klick. Systemet anpassar automatiskt enheter, gränsvärden och facit till det valda scenariot.",
+            btn_context: "Problemlösning",
+            btn_reset: "Återställ",
+            footer_motto: "Anpassa Math Platform — Designad för mastery.",
+            studio_title: "Bygg lektioner på sekunder.",
+            studio_subtitle: "Inte timmar.",
+            studio_desc: "Question Studio låter dig bygga Do Now-grids och arbetsblad med ett klick. Behöver du en ny version? Klicka på blanda, så genereras helt nya uppgifter för hela klassen direkt.",
+            btn_shuffle: "Blanda uppgifter",
+            canvas_title: "Smartboardens",
+            canvas_subtitle: "bästa vän.",
+            canvas_desc: "Digital Canvas förvandlar din projektor till en interaktiv tavla. Hämta fram valfri uppgift, zooma in på figurer och stega igenom lösningar utan att vända ryggen till klassen.",
+            live_title: "Fånga aha-ögonblicken",
+            live_subtitle: "i realtid.",
+            live_desc: "Teacher Live View ger dig fullständig överblick. Se precis när en elev fastnar, vilken uppgift som ställer till det, och vem som är redo för en utmaning – allt medan lektionen pågår.",
+            testlab_title: "Differentierade prov.",
+            testlab_subtitle: "Ett knapptryck bort.",
+            testlab_desc: "Välj svårighetsgrad, klicka i ämnesområden och generera unika provkoder. Test Lab skapar individuella prov där ingen elev får exakt samma siffror, vilket gör fusk omöjligt.",
+            btn_generate: "Generera provkod",
         },
         en: {
             hero_badge: "Math on your terms",
@@ -168,34 +140,100 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             btn_live: "Join Room",
             btn_practice: "Start Practice",
             btn_teacher: "Teachers & Parents",
-            phi_title: "Bridge the Gap",
-            phi_text: "Textbooks move too fast. We provide the missing steps so you can master difficult topics at your own pace.",
-            bridge_step_1: "Theory & Lecture",
-            bridge_step_2: "Anpassa Practice",
-            bridge_step_3: "Exams & Goals",
-            live_h: "Synchronized Learning",
-            live_p: "In a Live Room, teachers track class progress in real-time while students solve tasks on their devices.",
-            demo_h: "Interactive Demo",
-            demo_p: "See how we break down solutions step-by-step to build mastery.",
-            hint_btn: "Next Step",
-            hint_reset: "Reset",
-            feat_worksheet_h: "Save Prep Time",
-            feat_donow_h: "Activate the Class",
-            feat_live_h: "Live Lesson",
-            footer_motto: "Anpassa Math Platform — Built for mastery."
+
+            hook_title: "Infinite questions.",
+            hook_subtitle: "Zero prep time.",
+            hook_desc: "Leave static PDFs behind. Our engine generates unique numbers, graphs, and figures in real-time. Every student gets their own version of the task.",
+            interceptor_title: "Math isn't just numbers.",
+            interceptor_subtitle: "It's the real world.",
+            interceptor_desc: "Our \"Word Problem Interceptor\" transforms dry equations into relatable story tasks with a single click. The system automatically adapts units, thresholds, and answer keys to the chosen scenario.",
+            btn_context: "Word Problem",
+            btn_reset: "Reset",
+            footer_motto: "Anpassa Math Platform — Built for mastery.",
+            studio_title: "Build lessons in seconds.",
+            studio_subtitle: "Not hours.",
+            studio_desc: "Question Studio lets you build Do Now grids and worksheets with one click. Need a new version? Hit shuffle, and entirely new problems are generated for the whole class instantly.",
+            btn_shuffle: "Shuffle Board",
+            canvas_title: "Your Smartboard's",
+            canvas_subtitle: "best friend.",
+            canvas_desc: "Digital Canvas turns your projector into an interactive board. Summon any task, zoom in on geometric figures, and step through solutions without ever turning your back to the class.",
+            live_title: "Catch the \"Aha!\" moments",
+            live_subtitle: "in real-time.",
+            live_desc: "Teacher Live View gives you complete oversight. See exactly when a student gets stuck, which specific task is causing trouble, and who is ready for a challenge.",
+            testlab_title: "Differentiated tests.",
+            testlab_subtitle: "One click away.",
+            testlab_desc: "Select difficulty, pick subjects, and generate unique test codes. Test Lab creates individualized tests where no student gets the exact same numbers, making cheating impossible.",
+            btn_generate: "Generate Code",
         }
     }[lang];
 
-    const renderVisual = (itemData) => {
-        if (itemData.graph) return <GraphCanvas data={itemData.graph} />;
-        if (itemData.geometry) return <VolumeVisualization data={itemData.geometry} width={220} height={180} />;
-        return null;
-    };
+    // Data payload for the Infinite Math slot machine
+    // FIXED: Using scale wrappers to prevent visuals from bleeding out of their containers
+    const INFINITE_EXAMPLES = [
+        {
+            id: 1,
+            badge: lang === 'sv' ? "Geometri & Volym" : "Geometry & Volume",
+            desc: lang === 'sv' ? "Beräkna cylinderns volym." : "Calculate the cylinder's volume.",
+            latex: "V = \\pi \\cdot 4^2 \\cdot 10",
+            comp: (
+                <div className="transform scale-[0.6] sm:scale-75 origin-center w-full h-full flex justify-center items-center">
+                    <GeometryVisual data={{ type: "cylinder", labels: { r: "4", h: "10" } }} />
+                </div>
+            )
+        },
+        {
+            id: 2,
+            badge: lang === 'sv' ? "Funktioner & Grafer" : "Functions & Graphs",
+            desc: lang === 'sv' ? "Bestäm linjens ekvation." : "Determine the line's equation.",
+            latex: "y = 2x - 1",
+            comp: (
+                <div className="transform scale-[0.65] sm:scale-90 origin-center w-full h-full flex justify-center items-center pointer-events-none">
+                    <GraphCanvas data={{ range: 5, gridStep: 1, labelStep: 1, lines: [{ slope: 2, intercept: -1, color: '#4f46e5' }] }} />
+                </div>
+            )
+        },
+        {
+            id: 3,
+            badge: lang === 'sv' ? "Sannolikhet" : "Probability",
+            desc: lang === 'sv' ? "Hur stor andel är blåa?" : "What fraction is blue?",
+            latex: "P(\\text{Blå}) = \\frac{3}{8}",
+            comp: (
+                <div className="transform scale-75 origin-center w-full h-full flex justify-center items-center">
+                    <ProbabilityMarbles data={{ items: { blue: 3, red: 5 } }} />
+                </div>
+            )
+        }
+    ];
+
+    // FIXED: Radically changing Data sets for the Do Now Grid to show true randomization
+    const DO_NOW_SETS = [
+        [
+            { eq: `\\frac{3}{4} + \\frac{1}{2}`, icon: <Calculator size={20} className="text-slate-300"/> },
+            { eq: `x^2 = 16`, icon: <CheckCircle2 size={20} className="text-emerald-300"/> },
+            { eq: `V = \\pi \\cdot 2^2 \\cdot 10`, icon: <Layers size={20} className="text-amber-300"/> },
+            { eq: `10^3 \\cdot 0,1`, icon: <Target size={20} className="text-pink-300"/> }
+        ],
+        [
+            { eq: `\\frac{5}{8} - \\frac{1}{4}`, icon: <Calculator size={20} className="text-slate-300"/> },
+            { eq: `2x + 4 = 20`, icon: <CheckCircle2 size={20} className="text-emerald-300"/> },
+            { eq: `V = \\pi \\cdot 5^2 \\cdot 8`, icon: <Layers size={20} className="text-amber-300"/> },
+            { eq: `\\frac{10^4}{100}`, icon: <Target size={20} className="text-pink-300"/> }
+        ],
+        [
+            { eq: `\\frac{2}{3} \\cdot \\frac{3}{5}`, icon: <Calculator size={20} className="text-slate-300"/> },
+            { eq: `\\sqrt{x} = 9`, icon: <CheckCircle2 size={20} className="text-emerald-300"/> },
+            { eq: `A = \\frac{4 \\cdot 7}{2}`, icon: <Layers size={20} className="text-amber-300"/> },
+            { eq: `10^{-2} \\cdot 1000`, icon: <Target size={20} className="text-pink-300"/> }
+        ]
+    ];
+    const currentGrid = DO_NOW_SETS[gridVersion % DO_NOW_SETS.length];
 
     return (
         <div className="min-h-screen bg-[#f9fbf7] font-sans text-slate-800 selection:bg-emerald-100 overflow-x-hidden transition-colors duration-500">
             
-            {/* --- 1. NAVIGATION --- */}
+            {/* =========================================================================
+                TOP SECTION: NAVIGATION & LOGIN BOXES
+                ========================================================================= */}
             <nav className="fixed top-0 left-0 right-0 z-50 bg-white/60 backdrop-blur-xl border-b border-emerald-100 px-6 py-4">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-2">
@@ -213,7 +251,6 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                 </div>
             </nav>
 
-            {/* --- 2. HERO SECTION --- */}
             <header className="pt-40 pb-24 px-6 text-center max-w-6xl mx-auto relative z-10">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-widest mb-8 border border-emerald-100">
                     <Zap size={14} className="fill-emerald-500" /> {t.hero_badge}
@@ -226,6 +263,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                 </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    {/* LIVE LESSON BOX */}
                     <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-emerald-100 flex flex-col items-center text-center group hover:border-emerald-500 transition-all">
                         <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm"><Users size={28} /></div>
                         <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-800">{t.path_live_h}</h3>
@@ -235,6 +273,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                             <button onClick={() => onStudentJoin('live', liveCode)} className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-emerald-500 shadow-lg active:scale-95 transition-all">{t.btn_live}</button>
                         </div>
                     </div>
+                    {/* SELF PRACTICE BOX */}
                     <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-amber-100 flex flex-col items-center text-center group hover:border-amber-500 transition-all">
                         <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm"><GraduationCap size={28} /></div>
                         <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-800">{t.path_practice_h}</h3>
@@ -247,134 +286,330 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                 </div>
             </header>
 
-            {/* --- 3. BRIDGING THE GAP --- */}
-            <section className="py-32 bg-emerald-50 border-y border-emerald-100 relative overflow-hidden">
-                <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center relative z-10">
-                    <div className="space-y-8">
-                        <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic text-emerald-950 leading-tight">{t.phi_title}</h2>
-                        <p className="text-lg text-emerald-800/60 leading-relaxed font-medium">{t.phi_text}</p>
-                        <div className="bg-white/60 border border-emerald-200 px-4 py-2 rounded-xl inline-flex items-center gap-2 shadow-sm">
-                            <CheckCircle2 className="text-emerald-600" size={16}/> 
-                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-800">Mastery-driven inlärning</span>
-                        </div>
+            {/* =========================================================================
+                SECTION 1: THE INFINITE MATH HOOK (MINIATURE)
+                ========================================================================= */}
+            <section className="py-24 bg-white relative overflow-hidden border-t border-slate-100">
+                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div className="space-y-6">
+                        <h2 className="text-4xl md:text-5xl font-black uppercase italic text-slate-900 tracking-tighter">
+                            {t.hook_title}<br/>
+                            <span className="text-indigo-600">{t.hook_subtitle}</span>
+                        </h2>
+                        <p className="text-lg text-slate-500 font-medium leading-relaxed">
+                            {t.hook_desc}
+                        </p>
                     </div>
-                    <div className="flex flex-col gap-6 relative">
-                        <div className="bg-white/70 p-6 rounded-[2rem] border border-emerald-100 shadow-sm flex items-center gap-5 opacity-40 grayscale scale-95">
-                            <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center"><BookOpen size={24}/></div>
-                            <span className="font-bold text-slate-500 uppercase tracking-widest text-sm">{t.bridge_step_1}</span>
-                        </div>
-                        <div className="bg-white p-8 rounded-[3rem] border-4 border-emerald-50 shadow-2xl relative z-10 transform -rotate-1">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200"><Zap size={28} fill="currentColor"/></div>
-                                    <div>
-                                        <div className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Steget som saknas</div>
-                                        <h4 className="text-2xl font-black uppercase text-slate-800 italic leading-none">{t.bridge_step_2}</h4>
-                                    </div>
+
+                    {/* The Slot Machine Display Container */}
+                    <div className="bg-slate-50 rounded-[3rem] p-8 border-4 border-slate-100 shadow-2xl relative h-[380px] flex items-center justify-center overflow-hidden">
+                        {INFINITE_EXAMPLES.map((ex, idx) => (
+                            <div 
+                                key={ex.id} 
+                                className={`absolute inset-0 p-8 flex flex-col items-center justify-center transition-all duration-700 ease-in-out
+                                    ${hookIndex === idx ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95 pointer-events-none'}`}
+                            >
+                                <span className="px-4 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-indigo-200 shadow-sm">
+                                    {ex.badge}
+                                </span>
+                                
+                                <div className="h-[140px] flex items-center justify-center mb-6 w-full">
+                                    {ex.comp}
                                 </div>
-                                <CheckCircle2 size={36} className="text-emerald-500" />
+                                
+                                <MathDisplay content={ex.desc} className="text-sm font-bold text-slate-700 mb-3 text-center" />
+                                <MathDisplay content={`$$${ex.latex}$$`} className="text-2xl text-emerald-600 font-serif" />
                             </div>
-                        </div>
-                        <div className="bg-white/70 p-6 rounded-[2rem] border border-emerald-100 shadow-sm flex items-center gap-5 opacity-40 grayscale scale-95">
-                            <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center"><Target size={24}/></div>
-                            <span className="font-bold text-slate-500 uppercase tracking-widest text-sm">{t.bridge_step_3}</span>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </section>
 
-            {/* --- 4. LIVE SESSION EXAMPLE --- */}
-            <section className="py-32 px-6 bg-white border-b border-emerald-50">
-                <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                    <div className="flex flex-col sm:flex-row items-center gap-8 justify-center lg:justify-start">
-                        <StudentLiveMock />
-                        <div className="hidden sm:block">
-                            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 animate-bounce">
-                                <ArrowRight size={24} />
+            {/* =========================================================================
+                SECTION 2: THE WORD PROBLEM INTERCEPTOR (MINIATURE)
+                ========================================================================= */}
+            <section className="py-24 bg-slate-900 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
+                    <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-emerald-500 blur-[120px] rounded-full"></div>
+                </div>
+
+                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
+                    
+                    <div className="order-1 lg:order-2 space-y-6 text-white">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 border border-emerald-500/30">
+                            <Sparkles size={14} className="fill-emerald-400" /> Interceptor Engine
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter">
+                            {t.interceptor_title}<br/>
+                            <span className="text-emerald-400">{t.interceptor_subtitle}</span>
+                        </h2>
+                        <p className="text-lg text-slate-300 font-medium leading-relaxed">
+                            {t.interceptor_desc}
+                        </p>
+                    </div>
+
+                    <div className="order-2 lg:order-1 relative">
+                        <div className={`bg-white rounded-[3rem] p-8 shadow-2xl transition-all duration-700 border-4 
+                            ${isIntercepted ? 'border-emerald-500 shadow-emerald-900/40' : 'border-slate-200'}`}>
+                            
+                            <div className="h-[180px] flex items-center justify-center bg-slate-50 rounded-2xl mb-6 relative overflow-hidden border border-slate-100 shadow-inner">
+                                {/* State A: Abstract Geometry */}
+                                <div className={`absolute inset-0 flex items-center justify-center transition-all duration-700 transform origin-center 
+                                    ${isIntercepted ? 'opacity-0 scale-90 translate-x-8 pointer-events-none' : 'opacity-100 scale-[0.6] sm:scale-75 translate-x-0'}`}>
+                                    <GeometryVisual data={{ type: 'cylinder', labels: { r: '3', h: '12' } }} />
+                                </div>
+                                
+                                {/* State B: Intercepted Soda Can Context */}
+                                <div className={`absolute inset-0 flex items-center justify-center transition-all duration-700 transform origin-center
+                                    ${isIntercepted ? 'opacity-100 scale-[0.6] sm:scale-75 translate-x-0' : 'opacity-0 scale-90 -translate-x-8 pointer-events-none'}`}>
+                                    <GeometryVisual data={{ type: 'cylinder', labels: { r: '3 cm', h: '12 cm' } }} />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 text-center">
+                                <div className="min-h-[3rem] flex items-center justify-center px-4">
+                                    <MathDisplay 
+                                        content={isIntercepted 
+                                            ? (lang === 'sv' ? "En läskburk har radien 3 cm och höjden 12 cm. Beräkna burkens volym." : "A soda can has a radius of 3 cm and a height of 12 cm. Calculate its volume.") 
+                                            : (lang === 'sv' ? "Beräkna cylinderns volym." : "Calculate the volume of the cylinder.")} 
+                                        className={`text-base font-bold transition-colors duration-500 ${isIntercepted ? 'text-emerald-900' : 'text-slate-800'}`} 
+                                    />
+                                </div>
+                                <div className="h-10 flex items-center justify-center">
+                                    <MathDisplay 
+                                        content={isIntercepted 
+                                            ? "$$V = 3{,}14 \\cdot 3^2 \\cdot 12 \\approx 339 \\text{ cm}^3$$" 
+                                            : "$$V = \\pi \\cdot r^2 \\cdot h$$"} 
+                                        className={`text-2xl font-serif transition-colors duration-500 ${isIntercepted ? 'text-emerald-600' : 'text-indigo-600'}`} 
+                                    />
+                                </div>
                             </div>
                         </div>
-                        <div className="w-full max-w-sm lg:hidden">
-                            <TeacherLiveMock />
+
+                        {/* FIXED: Magic "Intercept" Button is now a flexible Pill to fit long text */}
+                        <div className="absolute -right-4 -bottom-6 z-20">
+                            <button 
+                                onClick={() => setIsIntercepted(!isIntercepted)} 
+                                className={`h-24 px-8 min-w-[7rem] rounded-[2rem] flex flex-col items-center justify-center font-black uppercase text-[10px] tracking-widest shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 border-[6px] whitespace-nowrap
+                                ${isIntercepted 
+                                    ? 'bg-slate-900 text-white border-slate-800' 
+                                    : 'bg-emerald-500 text-white border-white'}`}
+                            >
+                                {isIntercepted ? <RefreshCcw size={24} className="mb-2" /> : <Sparkles size={24} className="mb-2" />}
+                                {isIntercepted ? t.btn_reset : t.btn_context}
+                            </button>
                         </div>
                     </div>
-                    <div className="space-y-8">
-                        <h2 className="text-4xl md:text-5xl font-black tracking-tighter uppercase italic text-slate-900 leading-tight">{t.live_h}</h2>
-                        <p className="text-lg text-slate-500 font-medium leading-relaxed">{t.live_p}</p>
-                        <div className="hidden lg:block">
-                            <TeacherLiveMock />
-                        </div>
-                    </div>
+
                 </div>
             </section>
 
-            {/* --- 5. INTERACTIVE DEMO (SCALED DOWN) --- */}
-            <section className="py-32 px-6 bg-[#f9fbf7]">
-                <div className="max-w-4xl mx-auto"> 
-                    <div className="text-center mb-12 space-y-4">
-                        <h2 className="text-3xl font-black tracking-tighter uppercase italic text-slate-900">{t.demo_h}</h2>
-                        <p className="text-slate-500 text-sm font-medium max-w-xl mx-auto">{t.demo_p}</p>
+            {/* =========================================================================
+                SECTION 3: QUESTION STUDIO & DO NOW GRIDS
+                ========================================================================= */}
+            <section className="py-24 bg-[#f9fbf7] relative overflow-hidden border-t border-slate-100">
+                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div className="space-y-6">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 border border-indigo-100">
+                            <Grid3X3 size={14} /> Question Studio
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-black uppercase italic text-slate-900 tracking-tighter">
+                            {t.studio_title}<br/>
+                            <span className="text-indigo-600">{t.studio_subtitle}</span>
+                        </h2>
+                        <p className="text-lg text-slate-500 font-medium leading-relaxed">
+                            {t.studio_desc}
+                        </p>
                     </div>
-                    <div className="flex flex-col md:flex-row gap-6 items-stretch">
-                        <div className="w-full md:w-[240px] space-y-2">
-                            {SHOWCASE_ITEMS.map((item, idx) => (
-                                <button key={idx} onClick={() => setActiveTab(idx)} className={`w-full p-4 rounded-[2rem] border-2 transition-all text-left flex items-center gap-4 ${activeTab === idx ? 'bg-emerald-900 border-emerald-900 text-white shadow-lg' : 'bg-white border-emerald-50 hover:border-emerald-200 text-slate-600'}`}>
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${activeTab === idx ? 'bg-emerald-700' : 'bg-emerald-50 text-emerald-600'}`}>{item.icon}</div>
-                                    <h4 className="font-black uppercase tracking-tight text-[10px] leading-none">{item.title[lang]}</h4>
-                                </button>
+
+                    <div className="relative">
+                        <div className="grid grid-cols-2 gap-4">
+                            {currentGrid.map((card, i) => (
+                                <div key={i} className="bg-white p-6 rounded-3xl shadow-lg border border-slate-100 flex flex-col items-center justify-center text-center aspect-square transition-all duration-300 hover:shadow-xl hover:border-indigo-100">
+                                    <div className="w-full flex justify-end mb-2">{card.icon}</div>
+                                    <MathDisplay content={`$$${card.eq}$$`} className="text-xl text-slate-700 font-serif" />
+                                </div>
                             ))}
                         </div>
-                        <div className="flex-1 bg-white rounded-[3rem] border border-emerald-100 p-8 flex flex-col items-center shadow-md relative overflow-hidden">
-                            <div className="w-full flex justify-center mb-8 min-h-[220px] items-center">
-                                {renderVisual(SHOWCASE_ITEMS[activeTab].data)}
-                            </div>
-                            <div className="text-center mb-6 space-y-2">
-                                <MathDisplay content={SHOWCASE_ITEMS[activeTab].data.description} className="text-lg font-bold text-slate-800 leading-tight" />
-                                {SHOWCASE_ITEMS[activeTab].data.latex && <div className="text-2xl text-emerald-600 font-serif"><MathDisplay content={`$$${SHOWCASE_ITEMS[activeTab].data.latex}$$`} /></div>}
-                            </div>
-                            <div className="w-full max-w-md space-y-3 mb-8">
-                                {SHOWCASE_ITEMS[activeTab].data.clues.map((clue, cIdx) => (
-                                    cIdx <= revealedClueIdx && (
-                                        <div key={cIdx} className="bg-[#f9fbf7] p-4 rounded-2xl border border-emerald-50 animate-in slide-in-from-left-4 flex gap-3">
-                                            <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 font-black text-[10px]">{cIdx + 1}</div>
-                                            <div className="text-left flex-1">
-                                                <div className="text-[11px] font-bold text-slate-600 leading-relaxed">{clue[lang]}</div>
-                                                {clue.latex && <MathDisplay content={`$${clue.latex}$`} className="text-sm font-black text-emerald-700 mt-1" />}
-                                            </div>
-                                        </div>
-                                    )
-                                ))}
-                            </div>
-                            <button onClick={() => revealedClueIdx < SHOWCASE_ITEMS[activeTab].data.clues.length - 1 ? setRevealedClueIdx(v => v + 1) : setRevealedClueIdx(-1)} className="px-8 py-4 bg-orange-500 text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-orange-600 active:scale-95 transition-all">
-                                {revealedClueIdx < SHOWCASE_ITEMS[activeTab].data.clues.length - 1 ? t.hint_btn : t.hint_reset}
+                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
+                            <button 
+                                onClick={() => setGridVersion(v => v + 1)}
+                                className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-4 rounded-full font-black uppercase tracking-widest text-[10px] shadow-xl hover:bg-indigo-500 active:scale-95 transition-all whitespace-nowrap"
+                            >
+                                <Shuffle size={16} /> {t.btn_shuffle}
                             </button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* --- 6. FEATURE HIGHLIGHTS (THE 3 CARDS) --- */}
-            <section className="py-24 px-6 max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="bg-white p-10 rounded-[3rem] border border-emerald-100 shadow-sm hover:shadow-2xl transition-all group">
-                        <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-sm"><FileText size={28} /></div>
-                        <h3 className="text-2xl font-black tracking-tighter mb-4 uppercase italic text-emerald-900 leading-tight">{t.feat_worksheet_h}</h3>
-                        <p className="text-slate-500 font-medium leading-relaxed">Designa professionella arbetsblad på sekunder. Ingen mer manuell formatering.</p>
+            {/* =========================================================================
+                SECTION 4: DIGITAL CANVAS / PRESENTATION VIEW
+                ========================================================================= */}
+            <section className="py-24 bg-slate-900 relative overflow-hidden">
+                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    
+                    <div className="order-2 lg:order-1 bg-slate-950 rounded-[2rem] border-8 border-slate-800 shadow-2xl overflow-hidden aspect-video flex relative">
+                        <div className="w-1/3 bg-slate-900 border-r border-slate-800 p-4 flex flex-col gap-2">
+                            <button onClick={() => setCanvasTopic('geom')} className={`text-left px-4 py-3 rounded-xl text-xs font-bold transition-all ${canvasTopic === 'geom' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>Volym (Cylinder)</button>
+                            <button onClick={() => setCanvasTopic('stat')} className={`text-left px-4 py-3 rounded-xl text-xs font-bold transition-all ${canvasTopic === 'stat' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>Procent & Rutnät</button>
+                        </div>
+                        <div className="w-2/3 flex items-center justify-center p-8 relative overflow-hidden">
+                            {/* FIXED: Added scaling wrapper to canvas visual */}
+                            <div className={`transition-all duration-500 absolute w-full h-full flex flex-col items-center justify-center gap-4 ${canvasTopic === 'geom' ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'}`}>
+                                <div className="transform scale-[0.6] origin-center">
+                                    <GeometryVisual data={{ type: 'cylinder', labels: { r: '5', h: '20' } }} />
+                                </div>
+                                <MathDisplay content="$$V = \pi \cdot r^2 \cdot h$$" className="text-white text-xl" />
+                            </div>
+                            <div className={`transition-all duration-500 absolute w-full h-full flex flex-col items-center justify-center gap-4 ${canvasTopic === 'stat' ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'}`}>
+                                <div className="transform scale-[0.7] origin-center">
+                                    <PercentGrid data={{ colored: 45, total: 100 }} />
+                                </div>
+                                <MathDisplay content="$$45\% = \frac{45}{100}$$" className="text-white text-xl" />
+                            </div>
+                        </div>
                     </div>
-                    <div className="bg-emerald-900 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-                        <div className="w-14 h-14 bg-white/10 text-white rounded-2xl flex items-center justify-center mb-8 group-hover:rotate-6 transition-transform"><Grid3X3 size={28} /></div>
-                        <h3 className="text-2xl font-black tracking-tighter mb-4 uppercase italic text-white leading-tight">{t.feat_donow_h}</h3>
-                        <p className="text-emerald-100/60 font-medium leading-relaxed">Dynamiska grids som aktiverar klassen direkt med relevanta uppgifter.</p>
+
+                    <div className="order-1 lg:order-2 space-y-6 text-white">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/20 text-indigo-300 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 border border-indigo-500/30">
+                            <Monitor size={14} className="fill-indigo-400" /> Digital Canvas
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter">
+                            {t.canvas_title}<br/>
+                            <span className="text-indigo-400">{t.canvas_subtitle}</span>
+                        </h2>
+                        <p className="text-lg text-slate-300 font-medium leading-relaxed">
+                            {t.canvas_desc}
+                        </p>
                     </div>
-                    <div className="bg-white p-10 rounded-[3rem] border border-emerald-100 shadow-sm hover:shadow-2xl transition-all group">
-                        <div className="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform"><Users size={28} /></div>
-                        <h3 className="text-2xl font-black tracking-tighter mb-4 uppercase italic text-orange-900 leading-tight">{t.feat_live_h}</h3>
-                        <p className="text-slate-500 font-medium leading-relaxed">Börja en live lektion, bjud in eleverna, och se exakt vad de kan eller det de behöver öva mer på.</p>
-                    </div>
+
                 </div>
             </section>
 
-            {/* --- 7. FOOTER --- */}
-            <footer className="pt-32 pb-24 text-center px-6 relative">
+            {/* =========================================================================
+                SECTION 5: TEACHER LIVE VIEW
+                ========================================================================= */}
+            <section className="py-24 bg-white relative overflow-hidden">
+                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    
+                    <div className="space-y-6">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 border border-amber-100">
+                            <Signal size={14} className="fill-amber-500" /> Live Telemetry
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-black uppercase italic text-slate-900 tracking-tighter">
+                            {t.live_title}<br/>
+                            <span className="text-amber-500">{t.live_subtitle}</span>
+                        </h2>
+                        <p className="text-lg text-slate-500 font-medium leading-relaxed">
+                            {t.live_desc}
+                        </p>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-[3rem] p-8 border border-slate-100 shadow-2xl space-y-4">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Klass 9B • Live</h3>
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-100 px-3 py-1 rounded-full animate-pulse">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Aktiv Session
+                            </div>
+                        </div>
+                        
+                        {ghostStudents.map((student) => (
+                            <div key={student.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 w-1/4">
+                                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-black text-slate-500">{student.name.charAt(0)}</div>
+                                    <span className="font-bold text-sm text-slate-700">{student.name}</span>
+                                </div>
+                                <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden relative">
+                                    <div 
+                                        className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-out
+                                            ${student.status === 'error' ? 'bg-red-500' : student.status === 'done' ? 'bg-emerald-500' : 'bg-amber-400'}`}
+                                        style={{ width: `${student.progress}%` }}
+                                    />
+                                </div>
+                                <div className="w-8 flex justify-end">
+                                    {student.status === 'error' && <XCircle size={18} className="text-red-500" />}
+                                    {student.status === 'done' && <CheckCircle2 size={18} className="text-emerald-500" />}
+                                    {student.status === 'solving' && <Loader2 size={18} className="text-amber-400 animate-spin" />}
+                                    {student.status === 'correct' && <Check size={18} className="text-emerald-500" />}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                </div>
+            </section>
+
+            {/* =========================================================================
+                SECTION 6: TEST LAB
+                ========================================================================= */}
+            <section className="py-24 bg-emerald-900 relative overflow-hidden text-white">
+                <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    
+                    <div className="order-2 lg:order-1 bg-white rounded-[3rem] p-8 shadow-2xl border-4 border-emerald-500/20 text-slate-800">
+                        <div className="space-y-6">
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3 block">1. Svårighetsgrad</label>
+                                <div className="flex gap-2">
+                                    {[1, 2, 3, 4, 5].map(lvl => (
+                                        <div key={lvl} className={`flex-1 h-2 rounded-full ${lvl <= 3 ? 'bg-emerald-500' : 'bg-slate-100'}`}></div>
+                                    ))}
+                                </div>
+                                <div className="flex justify-between text-xs font-bold text-slate-400 mt-2">
+                                    <span>Grundläggande</span>
+                                    <span className="text-emerald-600">Nivå 3</span>
+                                    <span>Avancerad</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3 block">2. Områden</label>
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold">Algebra</span>
+                                    <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold">Geometri</span>
+                                    <span className="px-3 py-1.5 bg-slate-100 text-slate-400 rounded-lg text-xs font-bold">Procent</span>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100">
+                                <button 
+                                    onClick={handleGenerateTest}
+                                    className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-500 shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                                >
+                                    {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />} 
+                                    {isGenerating ? 'Genererar...' : t.btn_generate}
+                                </button>
+                            </div>
+
+                            <div className={`transition-all duration-500 overflow-hidden ${testHash ? 'opacity-100 h-16 mt-4' : 'opacity-0 h-0 mt-0'}`}>
+                                <div className="w-full h-full bg-slate-900 rounded-2xl flex items-center justify-between px-6 border-2 border-emerald-500 border-dashed">
+                                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">KOD KLAR</span>
+                                    <span className="font-black text-xl tracking-[0.2em] text-white">{testHash}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="order-1 lg:order-2 space-y-6">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-800 text-emerald-300 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 border border-emerald-700">
+                            <FileText size={14} className="fill-emerald-500" /> Test Lab
+                        </div>
+                        <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter">
+                            {t.testlab_title}<br/>
+                            <span className="text-emerald-400">{t.testlab_subtitle}</span>
+                        </h2>
+                        <p className="text-lg text-emerald-100/70 font-medium leading-relaxed">
+                            {t.testlab_desc}
+                        </p>
+                    </div>
+
+                </div>
+            </section>
+
+            {/* =========================================================================
+                FOOTER
+                ========================================================================= */}
+            <footer className="bg-[#f9fbf7] pt-24 pb-12 flex flex-col items-center px-6 relative">
                 <div className="max-w-4xl mx-auto flex flex-col items-center gap-10 relative z-10">
                     <div className="flex items-center gap-3 opacity-20">
                         <Sparkles size={24} className="text-emerald-600" />
@@ -385,9 +620,10 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                     </button>
                     <p className="text-[11px] font-bold text-slate-300 uppercase tracking-[0.4em]">{t.footer_motto}</p>
                 </div>
+                {/* YOUR ORIGINAL WAVE SVG */}
                 <div className="absolute bottom-0 left-0 w-full leading-[0] pointer-events-none z-0">
                     <svg className="relative block w-full h-[300px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                        <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-emerald-100/40"></path>
+                        <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-emerald-50 opacity-50"></path>
                     </svg>
                 </div>
             </footer>
