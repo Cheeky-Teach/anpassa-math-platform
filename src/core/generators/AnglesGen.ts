@@ -75,11 +75,11 @@ export class AnglesGen {
                 token: this.toBase64(label), variationKey: v, type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Vi klassificerar vinklar genom att jämföra deras storlek med en rät vinkel (90°)." : "We classify angles by comparing their size to a right angle (90°).", 
+                        text: lang === 'sv' ? "Vi kategoriserar vinklar genom att jämföra deras storlek med en rät vinkel (90°)." : "We classify angles by comparing their size to a right angle (90°).", 
                         latex: `\\text{Rät vinkel} = 90^\\circ` 
                     },
                     { 
-                        text: lang === 'sv' ? `Undersök om figurens markerade vinkel på ${angle}° är större, mindre eller lika med 90°.` : `Check if the figure's marked angle of ${angle}° is larger, smaller, or equal to 90°.`, 
+                        text: lang === 'sv' ? `Kolla om figurens markerade vinkel på ${angle}° är större, mindre eller lika med 90°.` : `Check if the figure's marked angle of ${angle}° is larger, smaller, or equal to 90°.`, 
                         latex: `\\text{Aktuell vinkel} = ${angle}^\\circ` 
                     },
                     { 
@@ -245,7 +245,7 @@ export class AnglesGen {
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Kom ihåg geometrisatsen: Den sammanlagda vinkelsumman inuti en triangel är alltid exakt 180°." : "Remember the geometric rule: The total combined sum of internal angles inside any triangle is always exactly 180°.", 
+                        text: lang === 'sv' ? "Kom ihåg regeln: Alla 3 vinklar i en triangel tillsammans blir exakt 180°." : "Remember the rule: The total combined sum of internal angles inside any triangle is always exactly 180°.", 
                         latex: `x + ${a}^\\circ + ${b}^\\circ = 180^\\circ` 
                     },
                     { 
@@ -285,7 +285,7 @@ export class AnglesGen {
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Kom ihåg geometrisatsen: Den sammanlagda vinkelsumman inuti en fyrhörning (kvadrilateral) är alltid 360°." : "Remember the geometric rule: The total combined sum of internal angles inside a four-sided quadrilateral shape is always 360°.", 
+                        text: lang === 'sv' ? "Remember the rule: Alla vinklar i en fyrhörning tillsammans är alltid 360°." : "Remember the rule: All of the angles in a four sided shape together is always 360°.", 
                         latex: `x + ${a}^\\circ + ${b}^\\circ + ${c}^\\circ = 360^\\circ` 
                     },
                     { 

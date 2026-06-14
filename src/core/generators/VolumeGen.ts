@@ -116,12 +116,12 @@ export class VolumeGen {
                 token: this.toBase64(h.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Vi ska räkna baklänges! Volymen (allt utrymme på insidan) är alltid golvytan i botten multiplicerat med höjden." : "We need to work backwards! The volume (all space inside) is always the floor area at the bottom multiplied by the height.", 
-                        latex: `\\text{Volym} = \\text{Golvyta} \\cdot \\text{höjd}` 
+                        text: lang === 'sv' ? "Vi ska räkna baklänges! Volymen är alltid basytan multiplicerat med höjden." : "We need to work backwards! The volume (all space inside) is always the base's area at the bottom multiplied by the height.", 
+                        latex: `\\text{Volym} = \\text{basyta} \\cdot \\text{höjd}` 
                     },
                     { 
-                        text: lang === 'sv' ? `För att kasta om formeln och hitta den dolda höjden, tar vi hela volymen (${vol}) och delar (dividerar) med den kända golvytan (${baseArea}).` : `To reverse the formula and find the hidden height, take the total volume (${vol}) and divide by the known floor area (${baseArea}).`, 
-                        latex: `\\text{höjd} = \\frac{\\text{Volym}}{\\text{Golvyta}} = \\frac{${vol}}{\\mathbf{${baseArea}}}` 
+                        text: lang === 'sv' ? `För att kasta om formeln och hitta den dolda höjden, tar vi hela volymen (${vol}) och delar (dividerar) med den kända basytan (${baseArea}).` : `To reverse the formula and find the hidden height, take the total volume (${vol}) and divide by the known base's area (${baseArea}).`, 
+                        latex: `\\text{höjd} = \\frac{\\text{Volym}}{\\text{basyta}} = \\frac{${vol}}{\\mathbf{${baseArea}}}` 
                     },
                     { 
                         text: lang === 'sv' ? "Räkna ut divisionen för att låsa upp höjden." : "Calculate the division step to unlock the height.", 
@@ -143,12 +143,12 @@ export class VolumeGen {
                 token: this.toBase64(ansText), variationKey: v, type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Volymen (luftutrymmet) byggs upp av formeln: golvytan i botten gånger höjden." : "The volume (the air space) is built up by the formula: floor area at the bottom times the height.", 
-                        latex: `\\text{Volym} = \\text{Golvyta} \\cdot \\text{höjd}` 
+                        text: lang === 'sv' ? "Volymen (luftutrymmet) byggs upp av formeln: basytan gånger höjden." : "The volume (the air space) is built up by the formula: base's area at the bottom times the height.", 
+                        latex: `\\text{Volym} = \\text{basyta} \\cdot \\text{höjd}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Eftersom vi behåller samma golvyta men bygger huset exakt ${factor} gånger högre rakt upp, kommer det att få plats exakt ${factor} gånger så mycket luft inuti.` : `Since we keep the exact same floor area but build the house exactly ${factor} times taller straight up, it will hold exactly ${factor} times as much air inside.`, 
-                        latex: `\\text{Ny Volym} = \\text{Golvyta} \\cdot \\mathbf{(${factor} \\cdot \\text{höjd})}` 
+                        text: lang === 'sv' ? `Eftersom vi behåller samma basyta men bygger huset exakt ${factor} gånger högre rakt upp, kommer det att få plats exakt ${factor} gånger så mycket luft inuti.` : `Since we keep the exact same base's area but build the house exactly ${factor} times taller straight up, it will hold exactly ${factor} times as much air inside.`, 
+                        latex: `\\text{Ny Volym} = \\text{basyta} \\cdot \\mathbf{(${factor} \\cdot \\text{höjd})}` 
                     },
                     { 
                         text: lang === 'sv' ? `Hela volymutrymmet växer alltså i exakt samma takt som höjden, det vill säga ${factor} gånger.` : `The entire volume space grows at the exact same rate as the height, meaning ${factor} times.`, 
@@ -173,15 +173,15 @@ export class VolumeGen {
                     latex: `\\text{Volym} = \\text{bredd} \\cdot \\text{djup} \\cdot \\text{höjd}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Räkna först ut golvytan i botten av boxen genom att ta bredden (${w}) gånger djupet (${d}).` : `First, calculate the floor area at the bottom of the box by taking the width (${w}) times the depth (${d}).`, 
-                    latex: `\\text{Golvyta} = ${w} \\cdot ${d} = \\mathbf{${baseArea}}` 
+                    text: lang === 'sv' ? `Räkna först ut basytan av boxen genom att ta bredden (${w}) gånger djupet (${d}).` : `First, calculate the base's area at the bottom of the box by taking the width (${w}) times the depth (${d}).`, 
+                    latex: `\\text{basyta} = ${w} \\cdot ${d} = \\mathbf{${baseArea}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Gångra sedan golvytan (${baseArea}) med hur hög boxen är (${h}) för att fylla hela utrymmet.` : `Then multiply the floor area (${baseArea}) by how tall the box is (${h}) to fill the entire space.`, 
+                    text: lang === 'sv' ? `Gångra sedan basytan (${baseArea}) med hur hög boxen är (${h}) för att fylla hela utrymmet.` : `Then multiply the base's area (${baseArea}) by how tall the box is (${h}) to fill the entire space.`, 
                     latex: `\\text{Volym} = \\mathbf{${baseArea}} \\cdot ${h}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Slutför multiplikationen för att bestämma slutsvaret." : "Complete the final multiplication to determine the final answer code.", 
+                    text: lang === 'sv' ? "Multiplicera." : "Multiply.", 
                     latex: `\\text{Volym} = \\mathbf{${vol}}` 
                 },
                 { text: lang === 'sv' ? `Svar: ${vol}` : `Answer: ${vol}`, latex: `${vol}` }
@@ -205,15 +205,15 @@ export class VolumeGen {
             token: this.toBase64(vol.toString()), variationKey: 'vol_tri_prism_std', type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? "Volymen för ett prisma räknas ut genom att ta golvytan i botten (som här är en triangel) och gångra med hur lång figuren är." : "The volume of a prism is calculated by taking the floor area at the bottom (which here is a triangle) and multiplying by how long the shape is.", 
-                    latex: `\\text{Volym} = \\text{Triangelns golvyta} \\cdot \\text{längd}` 
+                    text: lang === 'sv' ? "Volymen för ett prisma räknas ut genom att ta basytan (som här är en triangel) och gångra med hur lång figuren är." : "The volume of a prism is calculated by taking the base's area at the bottom (which here is a triangle) and multiplying by how long the shape is.", 
+                    latex: `\\text{Volym} = \\text{Triangelns basyta} \\cdot \\text{längd}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Räkna ut triangelns golvyta först: basen (${b}) gånger höjden (${hTri}) delat på 2.` : `Calculate the triangle's floor area first: base (${b}) times height (${hTri}) divided by 2.`, 
-                    latex: `\\text{Triangelns golvyta} = \\frac{${b} \\cdot ${hTri}}{2} = \\mathbf{${baseArea}}` 
+                    text: lang === 'sv' ? `Räkna ut triangelns basyta först: basen (${b}) gånger höjden (${hTri}) delat på 2.` : `Calculate the triangle's base's area first: base (${b}) times height (${hTri}) divided by 2.`, 
+                    latex: `\\text{Triangelns basyta} = \\frac{${b} \\cdot ${hTri}}{2} = \\mathbf{${baseArea}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Gångra nu denna golvyta (${baseArea}) med prismats hela längd (${length}) för att få rymden.` : `Now multiply this floor area (${baseArea}) by the prism's entire length (${length}) to get the volume capacity.`, 
+                    text: lang === 'sv' ? `Gångra nu denna basyta (${baseArea}) med prismats hela längd (${length}) för att få rymden.` : `Now multiply this base's area (${baseArea}) by the prism's entire length (${length}) to get the volume capacity.`, 
                     latex: `\\text{Volym} = \\mathbf{${baseArea}} \\cdot ${length}` 
                 },
                 { 
@@ -243,19 +243,19 @@ export class VolumeGen {
             token: this.toBase64(vol.toString()), variationKey: 'vol_cyl_std', type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? "Volymen för ett runt rör (en cylinder) räknas ut genom att ta den runda golvytan i botten och gångra med höjden." : "The volume of a cylinder is calculated by taking the round floor area at the bottom and multiplying by the height.", 
-                    latex: `\\text{Volym} = \\text{Runda golvytan} \\cdot \\text{höjd}` 
+                    text: lang === 'sv' ? "Volymen för ett runt rör (en cylinder) räknas ut genom att ta den runda basytan och gångra med höjden." : "The volume of a cylinder is calculated by taking the round base's area at the bottom and multiplying by the height.", 
+                    latex: `\\text{Volym} = \\text{Runda basytan} \\cdot \\text{höjd}` 
                 },
                 ...(useDiameter ? [{ 
                     text: lang === 'sv' ? `Måttet i bilden visar hela bredden (diametern) som är ${displayVal} cm. Radien (avståndet från mitten) är hälften, alltså ${r} cm.` : `The dimension in the image shows the full width (diameter) which is ${displayVal} cm. The radius (distance from the center) is half, which is ${r} cm.`, 
                     latex: `r = \\frac{${displayVal}}{2} = \\mathbf{${r}}` 
                 }] : []),
                 { 
-                    text: lang === 'sv' ? `Räkna ut den runda cirkelns golvyta: radien i kvadrat (${r} · ${r}) gånger pi (3,14).` : `Calculate the area of the round circle floor: radius squared (${r} · ${r}) times pi (3.14).`, 
-                    latex: `\\text{Runda golvytan} = 3{,}14 \\cdot ${r} \\cdot ${r} = \\mathbf{${3.14 * r * r}}` 
+                    text: lang === 'sv' ? `Räkna ut den runda cirkelns basyta: radien i kvadrat (${r} · ${r}) gånger pi (3,14).` : `Calculate the area of the round circle floor: radius squared (${r} · ${r}) times pi (3.14).`, 
+                    latex: `\\text{Runda basytan} = 3{,}14 \\cdot ${r} \\cdot ${r} = \\mathbf{${3.14 * r * r}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Gångra nu denna runda golvyta (${3.14 * r * r}) med rörets hela höjd (${h}).` : `Now multiply this round floor area (${3.14 * r * r}) by the tube's full height (${h}).`, 
+                    text: lang === 'sv' ? `Gångra nu denna runda basyta (${3.14 * r * r}) med rörets hela höjd (${h}).` : `Now multiply this round base's area (${3.14 * r * r}) by the tube's full height (${h}).`, 
                     latex: `\\text{Volym} = \\mathbf{${3.14 * r * r}} \\cdot ${h}` 
                 },
                 { 
@@ -286,15 +286,15 @@ export class VolumeGen {
                 token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Kom ihåg guldregeln för spetsiga figurer: En pyramid rymmer bara exakt en tredjedel (delat på 3) jämfört med ett rakt rätblock med samma botten." : "Remember the golden rule for pointed shapes: A pyramid holds exactly one third (divided by 3) compared to a straight box with the same base.", 
-                        latex: `\\text{Volym} = \\frac{\\text{Golvyta} \\cdot \\text{höjd}}{3}` 
+                        text: lang === 'sv' ? "Kom ihåg guldregeln för spetsiga figurer: En pyramids volym är en tredjedel (dividera med 3) av ett rätblocks volym om de har samma basyta." : "Remember the golden rule for pointed shapes: A pyramid holds exactly one third (divided by 3) compared to a box with the same base.", 
+                        latex: `\\text{Volym} = \\frac{\\text{basyta} \\cdot \\text{höjd}}{3}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Räkna ut kvadratens golvyta i botten: ${s} gånger ${s} blir ${baseArea}.` : `Calculate the square floor area at the bottom: ${s} times ${s} equals ${baseArea}.`, 
-                        latex: `\\text{Golvyta} = ${s} \\cdot ${s} = \\mathbf{${baseArea}}` 
+                        text: lang === 'sv' ? `Räkna ut kvadratens basyta i botten: ${s} gånger ${s} blir ${baseArea}.` : `Calculate the square base's area at the bottom: ${s} times ${s} equals ${baseArea}.`, 
+                        latex: `\\text{basyta} = ${s} \\cdot ${s} = \\mathbf{${baseArea}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Gångra golvytan (${baseArea}) med höjden (${h}) och glöm inte att dela med 3 i slutet eftersom figuren är spetsig.` : `Multiply the floor area (${baseArea}) by the height (${h}) and don't forget to divide by 3 at the end because the shape is pointed.`, 
+                        text: lang === 'sv' ? `Gångra basytan (${baseArea}) med höjden (${h}) och glöm inte att dela med 3 i slutet eftersom figuren är spetsig.` : `Multiply the base's area (${baseArea}) by the height (${h}) and don't forget to divide by 3 at the end because the shape is pointed.`, 
                         latex: `\\text{Volym} = \\frac{\\mathbf{${baseArea}} \\cdot ${h}}{3}` 
                     },
                     { 
@@ -319,12 +319,12 @@ export class VolumeGen {
             token: this.toBase64(vol.toString()), variationKey: 'vol_cone_std', type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? "En spetsig glasstrut (en kon) rymmer exakt en tredjedel (delat på 3) jämfört med en rak cylinder som har samma runda botten." : "A pointed ice cream cone holds exactly one third (divided by 3) compared to a straight cylinder with the same round base.", 
-                    latex: `\\text{Volym} = \\frac{\\text{Runda golvytan} \\cdot \\text{höjd}}{3}` 
+                    text: lang === 'sv' ? "En kons volym är en tredjedel (dividera med 3) av en cylinders volym om de har samma basyta." : "A pointed ice cream cone holds exactly one third (divided by 3) compared to a straight cylinder with the same round base.", 
+                    latex: `\\text{Volym} = \\frac{\\text{Runda basytan} \\cdot \\text{höjd}}{3}` 
                 },
                 { 
                     text: lang === 'sv' ? `Räkna ut den runda bottenytans area: radien i kvadrat (${r} · ${r}) gånger 3,14.` : `Calculate the round base area: radius squared (${r} · ${r}) times 3.14.`, 
-                    latex: `\\text{Runda golvytan} = 3{,}14 \\cdot ${r} \\cdot ${r} = \\mathbf{${baseArea}}` 
+                    latex: `\\text{Runda basytan} = 3{,}14 \\cdot ${r} \\cdot ${r} = \\mathbf{${baseArea}}` 
                 },
                 { 
                     text: lang === 'sv' ? `Gångra nu denna runda yta (${baseArea}) med höjden (${h}) och dela med 3 eftersom struten smalnar av till en spets.` : `Multiply this round area (${baseArea}) by the height (${h}) and divide by 3 because the cone narrows down to a point.`, 
@@ -357,7 +357,7 @@ export class VolumeGen {
                 token: this.toBase64(vol.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "För att räkna ut rymden inuti en helt rund boll (ett klot) använder vi en färdig mall på tavlan." : "To calculate the space inside a perfectly round ball (a sphere), we use a standard layout template on the board.", 
+                        text: lang === 'sv' ? "För att räkna ut volymen till ett klot använder vi formeln." : "To calculate the space inside a perfectly round ball (a sphere), we use a standard layout template on the board.", 
                         latex: `\\text{Volym} = \\frac{4 \\cdot \\pi \\cdot r^3}{3}` 
                     },
                     { 
