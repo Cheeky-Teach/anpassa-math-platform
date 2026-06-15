@@ -191,6 +191,48 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         }
     };
 
+    const handleManualOverride = async (responseId, currentIsCorrect) => {
+        const newStatus = !currentIsCorrect;
+        
+        // 1. Snapshot for rollback
+        const previousResponses = [...responses];
+
+        // 2. OPTIMISTIC UI UPDATE: Instant visual feedback
+        setResponses(prevResponses => 
+            prevResponses.map(res => 
+                res.id === responseId 
+                    ? { ...res, is_correct: newStatus, is_manually_corrected: true } 
+                    : res
+            )
+        );
+
+        // 3. BACKGROUND SYNC: Update Supabase silently
+        try {
+            const { data, error } = await supabase
+                .from('responses')
+                .update({ is_correct: newStatus })
+                .eq('id', responseId)
+                .select(); // 🟢 ADD THIS: Forces Supabase to return the updated row
+
+            if (error) throw error;
+
+            // 🟢 NEW SAFETY CHECK: If RLS blocks the update, data will be empty!
+            if (!data || data.length === 0) {
+                throw new Error("Update blocked by Supabase RLS. 0 rows updated.");
+            }
+            
+        } catch (error) {
+            console.error("Database sync failed for manual override:", error);
+            
+            // 4. ROLLBACK ON ERROR
+            setResponses(previousResponses);
+            alert(lang === 'sv' 
+                ? "Databasfel: Din ändring sparades inte. Kontrollera Supabase RLS-rättigheter." 
+                : "Database Error: Your change was not saved. Check Supabase RLS policies."
+            );
+        }
+    };
+
     useEffect(() => {
         isMounted.current = true;
         if (!session?.id) return;
@@ -572,11 +614,13 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                                     <td 
                                                         key={qIdx} 
                                                         className="p-1 border-r border-slate-50"
-                                                        onClick={() => resp && handleManualGrade(resp)} // Trigger manual override
+                                                        // 🟢 FIXED: Now calls our new Optimistic Sync function if a response exists!
+                                                        onClick={() => resp && handleManualOverride(resp.id, resp.is_correct)} 
                                                     >
                                                         <div 
                                                             title={resp ? `Svar: ${resp.answer} (Klicka för att ändra rättning)` : 'Inget svar'}
-                                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer ${getStatusColor(resp?.is_correct, !!resp)}`}
+                                                            // Added 'hover:scale-95 active:scale-90' so the cell "presses in" like a real button when clicked
+                                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer hover:scale-95 active:scale-90 ${getStatusColor(resp?.is_correct, !!resp)}`}
                                                         >
                                                             {/* Show actual answer text if toggle is active */}
                                                             {showActualAnswers && resp && (

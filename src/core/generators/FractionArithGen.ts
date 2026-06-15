@@ -272,6 +272,7 @@ export class FractionArithGen {
         const finalRemN = resN % lcd;
         const simp = this.simplify(finalRemN, lcd);
         const finalAnsStr = simp.n === 0 ? `${finalW}` : `${finalW}\\ ${simp.n}/${simp.d}`;
+        const cleanTokenStr = simp.n === 0 ? `${finalW}` : `${finalW} ${simp.n}/${simp.d}`;
         const op = isSub ? '-' : '+';
 
         const clues = [
@@ -311,11 +312,11 @@ export class FractionArithGen {
 
         return {
             renderData: { 
-                description: lang === 'sv' ? `Beräkna och svara i blandad form.` : `Calculate and answer in mixed form.`, 
+                description: lang === 'sv' ? `Beräkna och svara i blandad form och enklaste form.` : `Calculate and answer as a mixed fraction in simplest form.`, 
                 latex: `${w1}\\frac{${n1}}{${d1}} ${op} ${w2}\\frac{${n2}}{${d2}}`, 
                 answerType: 'fraction' 
             },
-            token: this.toBase64(finalAnsStr), variationKey: v, clues
+            token: this.toBase64(cleanTokenStr), variationKey: v, clues
         };
     }
 
