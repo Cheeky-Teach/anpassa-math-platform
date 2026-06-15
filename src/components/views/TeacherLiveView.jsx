@@ -140,6 +140,26 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     
     const [showActualAnswers, setShowActualAnswers] = useState(false); // Toggle between answer icons and text
 
+    // Helper function to decode the answer key from the packet token
+    const getCorrectAnswer = (questionItem) => {
+        if (!questionItem?.resolvedData) return '-';
+        let ans = questionItem.resolvedData.answer; // If it's stored in plain text
+        
+        // If it's secured in a token, decode it
+        if (!ans && questionItem.resolvedData.token) {
+            try {
+                const binaryString = atob(questionItem.resolvedData.token);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                ans = new TextDecoder().decode(bytes); // UTF-8 Safe Decoding
+            } catch (e) {
+                ans = atob(questionItem.resolvedData.token);
+            }
+        }
+        return ans || '-';
+    };
 
     // --- RENDER VISUAL HELPER ---
     const renderVisual = (item) => {
@@ -188,6 +208,48 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         if (window.confirm(confirmMsg)) {
             onKick(alias);
             setResponses(prev => prev.filter(r => r.student_alias !== alias));
+        }
+    };
+
+    const handleManualOverride = async (responseId, currentIsCorrect) => {
+        const newStatus = !currentIsCorrect;
+        
+        // 1. Snapshot for rollback
+        const previousResponses = [...responses];
+
+        // 2. OPTIMISTIC UI UPDATE: Instant visual feedback
+        setResponses(prevResponses => 
+            prevResponses.map(res => 
+                res.id === responseId 
+                    ? { ...res, is_correct: newStatus, is_manually_corrected: true } 
+                    : res
+            )
+        );
+
+        // 3. BACKGROUND SYNC: Update Supabase silently
+        try {
+            const { data, error } = await supabase
+                .from('responses')
+                .update({ is_correct: newStatus })
+                .eq('id', responseId)
+                .select(); // 🟢 ADD THIS: Forces Supabase to return the updated row
+
+            if (error) throw error;
+
+            // 🟢 NEW SAFETY CHECK: If RLS blocks the update, data will be empty!
+            if (!data || data.length === 0) {
+                throw new Error("Update blocked by Supabase RLS. 0 rows updated.");
+            }
+            
+        } catch (error) {
+            console.error("Database sync failed for manual override:", error);
+            
+            // 4. ROLLBACK ON ERROR
+            setResponses(previousResponses);
+            alert(lang === 'sv' 
+                ? "Databasfel: Din ändring sparades inte. Kontrollera Supabase RLS-rättigheter." 
+                : "Database Error: Your change was not saved. Check Supabase RLS policies."
+            );
         }
     };
 
@@ -540,12 +602,18 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 <tr className="bg-slate-900 text-white">
                                     <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-white/10">{lang === 'sv' ? "Elev" : "Student"}</th>
                                     <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-white/10">{lang === 'sv' ? "Klar" : "Done"}</th>
-                                    {packet.map((_, i) => (
+                                    {packet.map((q, i) => (
                                         <th key={i} className="p-0 border-r border-white/10">
                                             <button onClick={() => setZoomIndex(i)}
-                                                className="w-full h-full p-3 text-[9px] font-black uppercase tracking-widest text-center hover:bg-white/10 transition-colors"
+                                                className="w-full h-full py-1.5 flex flex-col items-center justify-center gap-1 hover:bg-white/10 transition-colors"
                                             >
-                                                {i + 1}
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-center">{i + 1}</span>
+                                                {/* 🟢 NEW: INJECT ANSWER KEY INTO HEADER */}
+                                                {showActualAnswers && (
+                                                    <span className="text-[8px] text-orange-300 font-bold bg-orange-400/10 px-1.5 py-0.5 rounded truncate max-w-[50px] tracking-normal" title={getCorrectAnswer(q)}>
+                                                        {getCorrectAnswer(q)}
+                                                    </span>
+                                                )}
                                             </button>
                                         </th>
                                     ))}
@@ -572,11 +640,13 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                                     <td 
                                                         key={qIdx} 
                                                         className="p-1 border-r border-slate-50"
-                                                        onClick={() => resp && handleManualGrade(resp)} // Trigger manual override
+                                                        // 🟢 FIXED: Now calls our new Optimistic Sync function if a response exists!
+                                                        onClick={() => resp && handleManualOverride(resp.id, resp.is_correct)} 
                                                     >
                                                         <div 
                                                             title={resp ? `Svar: ${resp.answer} (Klicka för att ändra rättning)` : 'Inget svar'}
-                                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer ${getStatusColor(resp?.is_correct, !!resp)}`}
+                                                            // Added 'hover:scale-95 active:scale-90' so the cell "presses in" like a real button when clicked
+                                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer hover:scale-95 active:scale-90 ${getStatusColor(resp?.is_correct, !!resp)}`}
                                                         >
                                                             {/* Show actual answer text if toggle is active */}
                                                             {showActualAnswers && resp && (
@@ -636,7 +706,16 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                         </div>
 
                         {/* 2. COMPACT QUESTION ZONE */}
-                        <div className="px-8 py-4 bg-indigo-50/20 border-b border-indigo-50 shrink-0">
+                        <div className="px-8 py-4 bg-indigo-50/20 border-b border-indigo-50 shrink-0 relative">
+                            
+                            {/* NEW: PROMINENT ANSWER KEY BADGE */}
+                            {showActualAnswers && (
+                                <div className="absolute top-1/2 -translate-y-1/2 right-6 bg-orange-100 border border-orange-200 text-orange-800 px-4 py-2 rounded-xl text-lg font-black shadow-sm flex items-center gap-2">
+                                    <span className="opacity-60 uppercase text-[12px] tracking-widest">{lang === 'sv' ? "Facit" : "Key"}</span>
+                                    <span>{getCorrectAnswer(packet[zoomIndex])}</span>
+                                </div>
+                            )}
+
                             <div className="text-lg font-bold text-slate-800 leading-snug text-center max-w-3xl mx-auto">
                                 <MathDisplay content={packet[zoomIndex].resolvedData?.renderData?.description} />
                                 
