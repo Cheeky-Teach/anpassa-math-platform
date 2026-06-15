@@ -416,14 +416,14 @@ export const SKILL_BUCKETS = {
             key: 'mult_same_sign', 
             name: { sv: 'Multiplikation: Lika tecken', en: 'Multiplication: Same Sign' }, 
             tags: ['word_problem_ready'],
-            contextType: 'neg_mult',
+            contextType: 'neg_multiplication', 
             extractorPattern: /^(?<valA>-?\d+)\s*(?<op>\*)\s*(?<valB>-?\d+)$/
           },
           { 
             key: 'mult_diff_sign', 
             name: { sv: 'Multiplikation: Olika tecken', en: 'Multiplication: Diff Sign' }, 
             tags: ['word_problem_ready'],
-            contextType: 'neg_mult',
+            contextType: 'neg_multiplication',
             extractorPattern: /^(?<valA>-?\d+)\s*(?<op>\*)\s*(?<valB>-?\d+)$/
           },
           { 

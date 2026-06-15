@@ -353,7 +353,7 @@ export class NegativeNumbersGen {
             renderData: {
                 description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.",
                 latex: `${this.p(a)} \\cdot ${this.p(b)}`,
-                interceptorToken: `${a} * ${b}`,
+                interceptorToken: `${Math.abs(a)} * ${Math.abs(b)}`,
                 answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
