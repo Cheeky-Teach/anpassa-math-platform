@@ -413,6 +413,20 @@ export const SKILL_BUCKETS = {
             extractorPattern: /\\frac\{(?<valA>-?\d+)\}\{(?<valB>-?\d+)\}/
           },
           { 
+            key: 'mult_same_sign', 
+            name: { sv: 'Multiplikation: Lika tecken', en: 'Multiplication: Same Sign' }, 
+            tags: ['word_problem_ready'],
+            contextType: 'neg_multiplication', 
+            extractorPattern: /^(?<valA>-?\d+)\s*(?<op>\*)\s*(?<valB>-?\d+)$/
+          },
+          { 
+            key: 'mult_diff_sign', 
+            name: { sv: 'Multiplikation: Olika tecken', en: 'Multiplication: Diff Sign' }, 
+            tags: ['word_problem_ready'],
+            contextType: 'neg_multiplication',
+            extractorPattern: /^(?<valA>-?\d+)\s*(?<op>\*)\s*(?<valB>-?\d+)$/
+          },
+          { 
             key: 'div_diff_sign', 
             name: { sv: 'Division: Olika tecken', en: 'Division: Different signs' }, 
             desc: { sv: 'Svaret blir negativt', en: 'Answer is negative' },

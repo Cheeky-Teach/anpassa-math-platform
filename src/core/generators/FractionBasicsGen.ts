@@ -228,7 +228,7 @@ export class FractionBasicsGen {
 
         if (v === 'part_inverse') {
             return {
-                renderData: { description: lang === 'sv' ? `Om en ${d}-del (1/${d}) av ett okänt tal är ${partVal}, vad är då hela talet totalt?` : `If one ${d}-th (1/${d}) of a hidden number is ${partVal}, what is the whole number in total?`, answerType: 'numeric' },
+                renderData: { description: lang === 'sv' ? `Om en 1/${d} av ett okänt tal är ${partVal}, vad är då hela talet totalt?` : `If 1/${d}) of an unknown number is ${partVal}, what is the whole number in total?`, answerType: 'numeric' },
                 token: this.toBase64(total.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
@@ -236,7 +236,7 @@ export class FractionBasicsGen {
                         latex: `\\frac{1}{${d}} = ${partVal}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Då hittar vi hela talet genom att köra baklänges och gångra bitens värde med det totala antalet bitar (${d}).` : `Then we find the whole number by working backwards and multiplying the piece value by the total number of parts (${d}).`, 
+                        text: lang === 'sv' ? `Då hittar vi hela talet genom att köra baklänges och multiplicera bitens värde med det totala antalet bitar (${d}).` : `Then we find the whole number by working backwards and multiplying the piece value by the total number of parts (${d}).`, 
                         latex: `\\text{Hela talet} = ${partVal} \\mathbf{\\cdot ${d}}` 
                     },
                     { 
@@ -327,13 +327,11 @@ export class FractionBasicsGen {
                         latex: `${w}\\frac{${n}}{${d}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Multiplicera antalet hela med nämnaren: ${w} · ${d} blir ${w * d}.` 
-                        : `Multiply the number of wholes by the bottom number: ${w} · ${d} equals ${w * d}.`, 
+                        text: lang === 'sv' ? `multiplicera antalet hela med bottensiffran för att räkna ihop bitarna: ${w} · ${d} blir ${w * d} bitar.` : `Multiply the number of wholes by the bottom number to count up those slices: ${w} · ${d} equals ${w * d} slices.`, 
                         latex: `= \\frac{\\mathbf{${w} \\cdot ${d}} + ${n}}{${d}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Addera nu på de extra ${n} som redan stod i täljarens plats:` 
-                        : `Now add the extra ${n} that we sitting in the numerator:`, 
+                        text: lang === 'sv' ? `Addera nu på de extra ${n} bitarna som redan stod där uppe på bråkstrecket:` : `Now add the extra ${n} slices that were already sitting on top of the fraction bar:`, 
                         latex: `= \\frac{${w * d} \\mathbf{+ ${n}}}{${d}}` 
                     },
                     { 
@@ -426,11 +424,11 @@ export class FractionBasicsGen {
                         latex: `\\frac{${n}}{${d}} = \\frac{?}{${d * f}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Kika på bottensiffrorna. Vad har ${d} gångrats med för att förvandlas till ${d * f}? Det har gångrats med ${f}.` : `Look closely at the bottom digits. What has ${d} been multiplied by to turn into ${d * f}? It was multiplied by ${f}.`, 
+                        text: lang === 'sv' ? `Kika på bottensiffrorna. Vad har ${d} multiplicerats med för att förvandlas till ${d * f}? Det har multiplicerats med ${f}.` : `Look closely at the bottom digits. What has ${d} been multiplied by to turn into ${d * f}? It was multiplied by ${f}.`, 
                         latex: `${d} \\cdot \\mathbf{${f}} = ${d * f}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Eftersom botten har skalats upp med ${f}, måste vi göra exakt samma sak där uppe och gångra ${n} med ${f}.` : `Since the bottom has been scaled up by ${f}, we must execute exactly the same step on top and multiply ${n} by ${f}.`, 
+                        text: lang === 'sv' ? `Eftersom botten har skalats upp med ${f}, måste vi göra exakt samma sak där uppe och multiplicera ${n} med ${f}.` : `Since the bottom has been scaled up by ${f}, we must execute exactly the same step on top and multiply ${n} by ${f}.`, 
                         latex: `? = ${n} \\cdot \\mathbf{${f}}` 
                     },
                     { 

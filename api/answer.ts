@@ -71,6 +71,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Standard strict string comparison (Required for Algebra, MCQ, and exact Arithmetic)
         let isCorrect = normUserAns === normCorrectAns;
 
+        // NEW: Mathematical Equivalence Fallback for Fractions
+        if (!isCorrect && (answer.includes('/') || correctAnswer.includes('/'))) {
+            const getDecimalValue = (fracString: string) => {
+                try {
+                    let w = 0, n = 0, d = 1;
+                    const str = String(fracString).trim();
+                    
+                    if (str.includes(' ')) {
+                        const parts = str.split(' ');
+                        w = parseInt(parts[0], 10) || 0;
+                        if (parts[1] && parts[1].includes('/')) {
+                            const fParts = parts[1].split('/');
+                            n = parseInt(fParts[0], 10) || 0;
+                            d = parseInt(fParts[1], 10) || 1;
+                        }
+                    } else if (str.includes('/')) {
+                        const fParts = str.split('/');
+                        n = parseInt(fParts[0], 10) || 0;
+                        d = parseInt(fParts[1], 10) || 1;
+                    } else {
+                        w = parseInt(str, 10) || 0;
+                    }
+                    
+                    if (d === 0) return null; // Prevent divide by zero
+                    const sign = (w < 0 || str.startsWith('-')) ? -1 : 1;
+                    return sign * (Math.abs(w) + (n / d));
+                } catch (e) {
+                    return null;
+                }
+            };
+
+            const userDecimal = getDecimalValue(answer);
+            const correctDecimal = getDecimalValue(correctAnswer);
+
+            // If both parsed successfully and represent the exact same mathematical value
+            if (userDecimal !== null && correctDecimal !== null && Math.abs(userDecimal - correctDecimal) < 0.0001) {
+                isCorrect = true;
+            }
+        }
+
         // --- NEW: SMART NUMERIC TOLERANCE LOGIC ---
         const userNum = parseFloat(normUserAns);
         const correctNum = parseFloat(normCorrectAns);

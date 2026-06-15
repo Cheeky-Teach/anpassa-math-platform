@@ -99,8 +99,8 @@ export class NegativeNumbersGen {
             const steps = MathUtils.randomInt(3, 7);
             const isRight = Math.random() > 0.5;
             const ans = isRight ? start + steps : start - steps;
-            const dirSv = isRight ? "HÖGER (varmare / större)" : "VÄNSTER (kallare / mindre)";
-            const dirEn = isRight ? "RIGHT (warmer / larger)" : "LEFT (colder / smaller)";
+            const dirSv = isRight ? "höger" : "vänster";
+            const dirEn = isRight ? "right" : "left";
             const op = isRight ? '+' : '-';
 
             return {
@@ -117,11 +117,11 @@ export class NegativeNumbersGen {
                         latex: `\\text{Start} = ${start}` 
                     },
                     { 
-                        text: lang === 'sv' ? (isRight ? `Att gå åt höger betyder att det blir varmare. Vi plussar på (+) steg.` : `Att gå åt vänster betyder att det blir kallare. Vi minusar (-) steg.`) : (isRight ? `Moving right means it gets warmer. We add (+) steps.` : `Moving left means it gets colder. We subtract (-) steps.`), 
+                        text: lang === 'sv' ? (isRight ? `Att gå åt höger betyder att det blir större. Vi plussar på (+) steg.` : `Att gå åt vänster betyder att det blir mindre. Vi minusar (-) steg.`) : (isRight ? `Moving right means it gets bigger. We add (+) steps.` : `Moving left means it gets smaller. We subtract (-) steps.`), 
                         latex: `\\text{Uträkning: } ${start} \\mathbf{${op}} ${steps}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Räkna stegen längs linjen för att hitta var vi landar till slut.` : `Count the steps along the line to find where we end up at last.`, 
+                        text: lang === 'sv' ? `Räkna stegen längs linjen för hita var vi landar till slut.` : `Count the steps along the line to find where we end up at last.`, 
                         latex: `${start} ${op} ${steps} = \\mathbf{${ans}}` 
                     },
                     { 
@@ -171,7 +171,7 @@ export class NegativeNumbersGen {
         const lie = `${n1} > ${n2}`;
         return {
             renderData: {
-                description: lang === 'sv' ? "Vilket påstående stämmer INTE?" : "Which statement is NOT correct?",
+                description: lang === 'sv' ? "Vilket påstående stämmer inte?" : "Which statement is NOT correct?",
                 answerType: 'multiple_choice', options: MathUtils.shuffle([`${n2} > ${n1}`, lie, "-1 < 0", "0 > -5"])
             },
             token: this.toBase64(lie), variationKey: v, type: 'concept',
@@ -214,7 +214,7 @@ export class NegativeNumbersGen {
             return {
                 renderData: {
                     latex: fullExpr,
-                    description: lang === 'sv' ? "Beräkna värdet genom att räkna från vänster till höger." : "Calculate the value by working from left to right.",
+                    description: lang === 'sv' ? "Beräkna värdet." : "Calculate the value.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(res3.toString()), variationKey: v, type: 'calculate',
@@ -318,7 +318,7 @@ export class NegativeNumbersGen {
             return {
                 renderData: {
                     latex: fullExpr,
-                    description: lang === 'sv' ? "Gångra talen i tur och ordning från vänster till höger." : "Multiply the numbers in order from left to right.",
+                    description: lang === 'sv' ? "Beräkna." : "Calculate.",
                     answerType: 'numeric'
                 },
                 token: this.toBase64(res2.toString()), variationKey: v, type: 'calculate',
@@ -332,7 +332,7 @@ export class NegativeNumbersGen {
                         latex: `\\mathbf{${res1}} \\cdot ${this.p(f3)}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Gångra nu det uträknade numret med den sista biten på raden: ${res1} · ${this.p(f3)}.` : `Now multiply that calculated number by the very last factor left on the line: ${res1} · ${this.p(f3)}.`, 
+                        text: lang === 'sv' ? `Multiplicera nu det uträknade numret med den sista biten på raden: ${res1} · ${this.p(f3)}.` : `Now multiply that calculated number by the very last factor left on the line: ${res1} · ${this.p(f3)}.`, 
                         latex: `\\mathbf{${res1} \\cdot ${this.p(f3)}} = \\mathbf{${res2}}` 
                     },
                     { 
@@ -350,19 +350,24 @@ export class NegativeNumbersGen {
         const ans = a * b;
 
         return {
-            renderData: { latex: `${this.p(a)} \\cdot ${this.p(b)}`, description: lang === 'sv' ? "Räkna ut gångertalet." : "Calculate the product.", answerType: 'numeric' },
+            renderData: {
+                description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.",
+                latex: `${this.p(a)} \\cdot ${this.p(b)}`,
+                interceptorToken: `${Math.abs(a)} * ${Math.abs(b)}`,
+                answerType: 'numeric'
+            },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? `Börja med att räkna ut gångertalet som vanligt utan att bry dig om minustecknen: ${Math.abs(a)} · ${Math.abs(b)}.` : `Begin by calculating the multiplication as regular, ignoring any minus signs for now: ${Math.abs(a)} · ${Math.abs(b)}.`, 
+                    text: lang === 'sv' ? `Börja med att multiplicera siffrorna som vanligt utan att tänka på tecknen: ${Math.abs(a)} gånger ${Math.abs(b)}.` : `Start by multiplying the numbers normally without thinking about the signs: ${Math.abs(a)} times ${Math.abs(b)}.`, 
                     latex: `${Math.abs(a)} \\cdot ${Math.abs(b)} = \\mathbf{${Math.abs(ans)}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Bestäm sedan tecknet på svaret med en enkel regel: Likadana tecken ger ett plussvar, olika tecken ger ett minussvar." : "Next, figure out the final sign using a simple rule: Identical signs produce a plus answer, different signs produce a minus answer.", 
-                    latex: isSame ? `\\mathbf{(-) \\cdot (-) \\rightarrow (+)}` : `\\mathbf{(-) \\cdot (+) \\rightarrow (-)}` 
+                    text: lang === 'sv' ? "Kolla nu på tecknen. En av siffrorna är negativ och den andra är positiv." : "Now check the signs. One of the numbers is negative and the other is positive.", 
+                    latex: isSame ? `(-)\\cdot(-) \\rightarrow \\mathbf{(+)}` : `(-)\\cdot(+) \\rightarrow \\mathbf{(-)}` 
                 },
                 { 
-                    text: lang === 'sv' ? (isSame ? `Eftersom båda talen är negativa (likadana tecken), blir svaret ett glatt plustal: ${Math.abs(ans)}.` : `Eftersom talen har olika tecken (ett minus och ett plus), blir svaret ett kallt minustal: ${ans}.`) : (isSame ? `Since both numbers are negative (identical signs), the output yields a positive number: ${Math.abs(ans)}.` : `Since the numbers hold different signs (one minus and one plus), the output yields a negative number: ${ans}.`), 
+                    text: lang === 'sv' ? `Regeln säger att ${isSame ? 'lika' : 'olika'} tecken alltid ger ett ${isSame ? 'positivt (plus)' : 'negativt (minus)'} svar. Därför blir svaret ${ans}.` : `The rule states that ${isSame ? 'same' : 'different'} signs always give a ${isSame ? 'positive (plus)' : 'negative (minus)'} answer. Therefore the answer is ${ans}.`, 
                     latex: `\\text{Resultat} = \\mathbf{${ans}}` 
                 },
                 { 
@@ -389,17 +394,17 @@ export class NegativeNumbersGen {
             const correct = `${this.p(ans)} \\cdot ${this.p(b)} = ${a}`;
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Vilket gångersamband bevisar att $\\frac{${a}}{${b}} = ${ans}$?` : `Which multiplication layout proves that $\\frac{${a}}{${b}} = ${ans}$?`,
+                    description: lang === 'sv' ? `Vilken multiplikation bevisar att $\\frac{${a}}{${b}} = ${ans}$?` : `Which multiplication layout proves that $\\frac{${a}}{${b}} = ${ans}$?`,
                     answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${ans} + ${b} = ${a}`, `${a} \\cdot ${b} = ${ans}`])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Vi kan alltid testa om en delning (division) är rätt genom att räkna baklänges med gånger." : "We can always double-check if a division statement is true by running backwards using multiplication.", 
+                        text: lang === 'sv' ? "Vi kan alltid testa om en delning (division) är rätt genom att räkna baklänges med multiplikation." : "We can always double-check if a division statement is true by running backwards using multiplication.", 
                         latex: `\\frac{${a}}{${b}} = ${ans}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Att ta ett tal delat med b som blir c, betyder att svaret c gånger bottenbocken b måste träffa täljaren a där uppe." : "Dividing a value by b to reach c means that the answer c times the bottom term b must perfectly strike back to the top term a.", 
+                        text: lang === 'sv' ? "Att ta ett tal delat med b som blir c, betyder att svaret c gånger b måste träffa täljaren a där uppe." : "Dividing a value by b to reach c means that the answer c times the bottom term b must perfectly strike back to the top term a.", 
                         latex: `\\frac{a}{b} = c \\iff \\mathbf{c \\cdot b = a}` 
                     },
                     { 
@@ -415,7 +420,7 @@ export class NegativeNumbersGen {
         }
 
         return {
-            renderData: { latex: `\\frac{${a}}{${b}}`, description: lang === 'sv' ? "Räkna ut delningen." : "Calculate the quotient.", answerType: 'numeric' },
+            renderData: { latex: `\\frac{${a}}{${b}}`, description: lang === 'sv' ? "Räkna ut kvoten." : "Calculate the quotient.", answerType: 'numeric' },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { 
@@ -423,7 +428,7 @@ export class NegativeNumbersGen {
                     latex: `\\frac{${Math.abs(a)}}{${b}} = \\mathbf{${Math.abs(ans)}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Kolla nu på tecknen. Precis som i gånger gäller regeln: Olika tecken ger alltid ett minussvar." : "Now check the signs. Just like in multiplication, the rule applies: Different signs always result in a minus answer.", 
+                    text: lang === 'sv' ? "Kolla nu på tecknen. Precis som i multiplikation gäller regeln: Olika tecken ger alltid ett minussvar." : "Now check the signs. Just like in multiplication, the rule applies: Different signs always result in a minus answer.", 
                     latex: `\\mathbf{\\frac{(-)}{(+)} \\rightarrow (-)}` 
                 },
                 { 
