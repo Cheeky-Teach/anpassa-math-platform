@@ -224,6 +224,7 @@ export class OrderOperationsGen {
             return {
                 latex: `\\frac{${n1} + ${n2}}{${div}}`,
                 val: quotient,
+                type: 'fraction', 
                 clues: [
                     { 
                         text: lang === 'sv' ? "Steg 1: Bråkstrecket fungerar som en parentes. Vi måste räkna ut täljaren först." : "Step 1: The fraction bar acts like parentheses. We must calculate the numerator first.", 
@@ -237,7 +238,6 @@ export class OrderOperationsGen {
             };
         };
 
-        // Helper to generate a Parentheses term
         const getParentheses = () => {
             const p1 = MathUtils.randomInt(2, 10);
             const p2 = MathUtils.randomInt(2, 10);
@@ -247,6 +247,7 @@ export class OrderOperationsGen {
             return {
                 latex: `(${p1} + ${p2}) · ${pMult}`,
                 val: pVal,
+                type: 'parentheses', 
                 clues: [
                     { 
                         text: lang === 'sv' ? "Steg 1: Räkna ut värdet inom parentesen först." : "Step 1: Calculate the value inside the parentheses first.", 
@@ -259,6 +260,8 @@ export class OrderOperationsGen {
                 ]
             };
         };
+        
+        
 
         // Pick which complex term to use for this question
         const complexTerm = Math.random() > 0.5 ? getFraction() : getParentheses();
@@ -311,7 +314,7 @@ export class OrderOperationsGen {
         return {
             renderData: { 
                 latex, 
-                description: lang === 'sv' ? "Lös det långa uttrycket bit för bit." : "Follow the order of operations to solve the expression.", 
+                description: lang === 'sv' ? "Lös. Följ prioriteringsreglerna." : "Follow the order of operations to solve the expression.", 
                 answerType: 'numeric' 
             },
             token: this.toBase64(ans.toString()), 

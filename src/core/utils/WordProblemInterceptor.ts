@@ -181,17 +181,24 @@ export class WordProblemInterceptor {
         } else if (
             variationConfig.key === 'onestep_calc' ||
             variationConfig.key === 'twostep_calc' ||
-            variationConfig.key === 'twostep_solve_problem' || // Level 6 explicitly appended
+            variationConfig.key === 'twostep_solve_problem' || 
             variationConfig.key === 'paren_calc' ||       
             variationConfig.key === 'bothsides_calc' ||   
+            variationConfig.key === 'mult_same_sign' ||
+            variationConfig.key === 'mult_diff_sign' ||
             variationConfig.contextType?.startsWith('algebra_onestep') ||
             variationConfig.contextType?.startsWith('algebra_twostep') ||
             variationConfig.contextType?.startsWith('algebra_parentheses') ||
             variationConfig.contextType?.startsWith('algebra_bothsides')
         ) {
-            localizedStory += lang === 'en' 
-                ? " Calculate the value of x." 
-                : " Beräkna värdet på x.";
+            // Since these are arithmetic calculations and not solving for an unknown variable x, 
+            // we add a custom context-aware suffix condition:
+            const isNegativeMath = variationConfig.key.startsWith('mult_');
+            if (isNegativeMath) {
+                localizedStory += lang === 'sv' ?  " Beräkna." : " Calculate.";
+            } else {
+                localizedStory += lang === 'sv' ?  " Beräkna värdet på x." : " Calculate the value of x.";
+            }
         } else {
             // Does nothing! If a topic/generator doesn't explicitly register a 
             // suffix instruction, it leaves the story text completely untouched.
