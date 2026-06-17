@@ -503,7 +503,7 @@ export default function QuestionStudio({
             const updatedPacket = await Promise.all(packet.map(async (item) => {
                 if (!item.topicId || !item.variationKey) return item;
 
-                // 🟢 IDENTIFY ITEM STATE: Determine if THIS specific item was created as a word problem
+                // IDENTIFY ITEM STATE: Determine if THIS specific item was created as a word problem
                 const isItemWP = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
 
                 if (mode === 'stories') {
@@ -513,11 +513,11 @@ export default function QuestionStudio({
                     return { ...item, selectedStoryIndex: newIndex };
                 }
 
-                // 🟢 PASS ITEM STATE: Use the item's own word problem state, NOT the global toggle
+                // PASS ITEM STATE: Use the item's own word problem state, NOT the global toggle
                 const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWP}`);            
                 const data = await res.json();
                 
-                // 🟢 SHUFFLE BOTH LOGIC: If 'both' is selected and it is a word problem, randomize the text index!
+                // SHUFFLE BOTH LOGIC: If 'both' is selected and it is a word problem, randomize the text index!
                 let nextStoryIdx = null;
                 if (isItemWP) {
                     if (mode === 'both' && data.renderData?.availableStories) {
@@ -785,7 +785,7 @@ export default function QuestionStudio({
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-200 font-sans overflow-hidden relative">
+    <div className="flex flex-col h-full bg-slate-200 font-sans overflow-hidden relative">
       <header className={`relative border-b px-6 py-1 flex items-center justify-between shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
             {/* Left Side: Navigation Inputs */}
             <div className="flex items-center gap-4 flex-1 max-w-[40%]">
