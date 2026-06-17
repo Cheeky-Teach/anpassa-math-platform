@@ -203,7 +203,7 @@ export const LEVEL_DESCRIPTIONS = {
     percent: { 
         1: { sv: "Grundläggande (Rutnät)", en: "Basic Concepts (Grid)" },
         2: { sv: "Huvudräkning (10%, 50%)", en: "Mental Math" },
-        3: { sv: "Multiplar av 10%", en: "Multiples of 10%" },
+        3: { sv: "Beräkna delen", en: "Calculate the part" },
         4: { sv: "Beräkna andelen (Decimal)", en: "Calculate Part (Decimal)" },
         5: { sv: "Hitta helheten (100%)", en: "Find Whole" },
         6: { sv: "Verklig Förändring", en: "Real World Change" }

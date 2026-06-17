@@ -115,7 +115,7 @@ export class PercentGen {
                         latex: `\\frac{1}{${item.d}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Gångra (förläng) både uppe och nere med ${100 / item.d} för att få 100 i botten.` : `Multiply both top and bottom by ${100 / item.d} to get 100 at the bottom.`, 
+                        text: lang === 'sv' ? `multiplicera (förläng) både uppe och nere med ${100 / item.d} för att få 100 i botten.` : `Multiply both top and bottom by ${100 / item.d} to get 100 at the bottom.`, 
                         latex: `\\frac{1 \\mathbf{\\cdot ${100 / item.d}}}{${item.d} \\mathbf{\\cdot ${100 / item.d}}} = \\frac{\\mathbf{${item.p}}}{100}` 
                     },
                     { 
@@ -247,7 +247,7 @@ export class PercentGen {
                     latex: `${mult} \\cdot ${pctInv}\\% = 100\\%` 
                 },
                 { 
-                    text: lang === 'sv' ? `Gångra (multiplicera) därför bitens värde (${part}) med ${mult} för att hitta hela talet.` : `Therefore, multiply the piece value (${part}) by ${mult} to find the full whole number total.`, 
+                    text: lang === 'sv' ? `Multiplicera därför bitens värde (${part}) med ${mult} för att hitta hela talet.` : `Therefore, multiply the piece value (${part}) by ${mult} to find the full whole number total.`, 
                     latex: `100\\% = ${part} \\cdot \\mathbf{${mult}}` 
                 },
                 { 
@@ -263,28 +263,85 @@ export class PercentGen {
     private level3_BuildingBlocks(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'composition', type: 'calculate' },
-            { key: 'decomposition', type: 'calculate' }
+            { key: 'decomposition', type: 'calculate' },
+            { key: 'calc_any_percent', type: 'calculate'}
         ];
         const v = variationKey || this.getVariation(pool, options);
         const base = MathUtils.randomInt(2, 8) * 100;
 
+        if (v === 'calc_any_percent') {
+            const getGcd = (a: number, b: number): number => b === 0 ? a : getGcd(b, a % b);
+            
+            const pct = MathUtils.randomInt(1, 99);
+            const gcd = getGcd(pct, 100);
+            const divisor = 100 / gcd;
+            
+            const minMultipliers = Math.ceil(50 / divisor);
+            const maxMultipliers = Math.floor(1000 / divisor);
+            const safeMin = Math.max(1, minMultipliers);
+            const safeMax = Math.max(safeMin, maxMultipliers);
+            
+            const mult = MathUtils.randomInt(safeMin, safeMax);
+            const base = divisor * mult;
+            
+            const ans = (pct * base) / 100;
+            const pctBaseProduct = pct * base;
+
+            return {
+                renderData: {
+                    description: lang === 'sv' ? `Beräkna ${pct}% av ${base}.` : `Calculate ${pct}% of ${base}.`,
+                    latex: ``,
+                    interceptorToken: `${pct}% av ${base}`, 
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(ans.toString()),
+                variationKey: v,
+                type: 'calculate',
+                clues: [
+                    {
+                        text: lang === 'sv' 
+                            ? `Procent betyder "hundradelar". Vi kan räkna ut detta genom att multiplicera procenten med talet och sedan dela alltihop med 100.` 
+                            : `Percent means "hundredths". We can calculate this by multiplying the percent by the number and then dividing everything by 100.`,
+                        latex: `\\frac{${pct} \\cdot ${base}}{100}`
+                    },
+                    {
+                        text: lang === 'sv' 
+                            ? `Börja med att multiplicera talen där uppe: ${pct} · ${base} = ${pctBaseProduct}.` 
+                            : `Start by multiplying the numbers on top: ${pct} · ${base} = ${pctBaseProduct}.`,
+                        latex: `\\frac{\\mathbf{${pctBaseProduct}}}{100}`
+                    },
+                    {
+                        text: lang === 'sv' 
+                            ? `Dela sedan resultatet med 100 för att få fram det slutgiltiga svaret (ett tips är att stryka nollorna!).` 
+                            : `Then divide the result by 100 to get the final answer (a tip is to cross out the zeros!).`,
+                        latex: `\\frac{${pctBaseProduct}}{100} = \\mathbf{${ans}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                        latex: `${ans}`
+                    }
+                ],
+                metadata: { variation_key: v, difficulty: 3 }
+            };
+        }
+
         if (v === 'composition') {
-            const pct = MathUtils.randomChoice([30, 40, 70, 80]);
+            const pct = MathUtils.randomChoice([20, 30, 40, 60, 70, 80, 90]);
             const ans = (base * pct) / 100;
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Beräkna ${pct}% av ${base} genom att först hitta 10%.` : `Calculate ${pct}% of ${base} by first finding 10%.`,
-                    latex: `${pct}\\% \\cdot ${base}`,
+                    description: lang === 'sv' ? `Beräkna ${pct}% av ${base}.` : `Calculate ${pct}% of ${base}.`,
+                    latex: ``,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? `Hitta en smidig hjälp-byggsten på 10% först genom att dela hela talet ${base} med 10.` : `Find a convenient 10% helper building block first by dividing the full number ${base} by 10.`, 
+                        text: lang === 'sv' ? `Hitta 10% först genom att dela hela talet ${base} med 10.` : `Find 10% first by dividing the full number ${base} by 10.`, 
                         latex: `10\\% = \\frac{${base}}{10} = \\mathbf{${base / 10}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Eftersom du söker ${pct}%, behöver vi exakt ${pct / 10} stycken sådana byggstenar. Gångra därför värdet med ${pct / 10}.` : `Since you are looking for ${pct}%, we need exactly ${pct / 10} of those building blocks. Therefore, multiply the value by ${pct / 10}.`, 
+                        text: lang === 'sv' ? `Eftersom du vill ha ${pct}%, behöver vi exakt ${pct / 10} stycken sådana byggstenar. Multiplicera därför värdet med ${pct / 10}.` : `Since you are looking for ${pct}%, we need exactly ${pct / 10} of those building blocks. Therefore, multiply the value by ${pct / 10}.`, 
                         latex: `${pct}\\% = ${base / 10} \\cdot \\mathbf{${pct / 10}}` 
                     },
                     { 
@@ -299,7 +356,7 @@ export class PercentGen {
         const ans5 = (base * 5) / 100;
         return {
             renderData: {
-                description: lang === 'sv' ? `Beräkna 5% av ${base} med hjälp av 10%.` : `Calculate 5% of ${base} using 10%.`,
+                description: lang === 'sv' ? `Beräkna 5% av ${base}` : `Calculate 5% of ${base}.`,
                 answerType: 'numeric'
             },
             token: this.toBase64(ans5.toString()), variationKey: 'decomposition', type: 'calculate',
@@ -331,7 +388,7 @@ export class PercentGen {
         return {
             renderData: { 
                 description: desc, 
-                latex: `\\frac{${part}}{${w}}`,
+                latex: ``,
                 answerType: 'numeric', 
                 suffix: '%' 
             },            
@@ -350,7 +407,7 @@ export class PercentGen {
                     latex: `\\text{Andel} = \\mathbf{${(part / w).toString().replace('.', ',')}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Gör om till procent genom att flytta kommatecknet två steg åt höger (vilket är samma sak som att gångra med 100)." : "Convert to percent by shifting the decimal point two steps to the right (which is exactly the same as multiplying by 100).", 
+                    text: lang === 'sv' ? "Gör om till procent genom att flytta kommatecknet två steg åt höger (vilket är samma sak som att multiplicera med 100)." : "Convert to percent by shifting the decimal point two steps to the right (which is exactly the same as multiplying by 100).", 
                     latex: `${(part / w).toString().replace('.', ',')} \\cdot 100 = \\mathbf{${p}\\%}` 
                 },
                 { text: lang === 'sv' ? `Svar: ${p}%` : `Answer: ${p}%`, latex: `${p}\\%` }
@@ -381,7 +438,7 @@ export class PercentGen {
                     latex: `${multiplier} \\cdot ${p}\\% = 100\\%` 
                 },
                 { 
-                    text: lang === 'sv' ? `Gångra (multiplicera) därför delens värde (${part}) med ${multiplier} för att hitta vad hela summan var från början.` : `Therefore, multiply the piece value (${part}) by ${multiplier} to calculate what the full total sum was at the start.`, 
+                    text: lang === 'sv' ? `Multiplicera därför delens värde (${part}) med ${multiplier} för att hitta vad hela summan var från början.` : `Therefore, multiply the piece value (${part}) by ${multiplier} to calculate what the full total sum was at the start.`, 
                     latex: `100\\% = ${part} \\cdot \\mathbf{${multiplier}}` 
                 },
                 { 

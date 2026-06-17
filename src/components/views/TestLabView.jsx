@@ -128,7 +128,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
-    
+
     const copyTestLink = () => {
         // Append tracking flag to meta configuration state object bundle on the fly
         const updatedMeta = { ...meta, wordProblem: useWordProblems };
@@ -361,17 +361,16 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             );
         }
 
-        // 2. DETECT INPUT TYPE (Mapped to PracticeView.jsx conventions)
+        // 2. DETECT INPUT TYPE
         const type = rd?.answerType || rd?.inputType || item?.resolvedData?.inputType || 'text';
         
         // 3. RENDER SPECIALIZED COMPONENTS
-        switch (inputType) {
+        switch (type) { 
             case 'mixed_fraction': 
                 return (
                     <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
                         <div className="scale-110 transform origin-center">
-                            {/* 🟢 FIXED: Dynamic autoFocus */}
-                            <FractionInput value={value} onChange={handleWrappedChange} allowMixed={true} autoFocus={!isMobile} />
+                            <FractionInput value={inputValue} onChange={setInputValue} allowMixed={true} autoFocus={!isMobile} />
                         </div>
                     </div>
                 );
@@ -380,8 +379,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 return (
                     <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
                         <div className="scale-110 transform origin-center">
-                            {/* 🟢 FIXED: Dynamic autoFocus */}
-                            <FractionInput value={value} onChange={handleWrappedChange} allowMixed={false} autoFocus={!isMobile} />
+                            <FractionInput value={inputValue} onChange={setInputValue} allowMixed={false} autoFocus={!isMobile} />
                         </div>
                     </div>
                 );
@@ -391,7 +389,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 return (
                     <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
                         <div className="scale-110 transform origin-center">
-                            <ExponentInput value={value} onChange={handleWrappedChange} autoFocus={!isMobile} />
+                            <ExponentInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} />
                         </div>
                     </div>
                 );
@@ -401,7 +399,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 return (
                     <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
                         <div className="scale-110 transform origin-center">
-                            <ScientificInput value={value} onChange={handleWrappedChange} autoFocus={!isMobile} />
+                            <ScientificInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} />
                         </div>
                     </div>
                 );
@@ -413,10 +411,10 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         autoFocus={!isMobile} 
                         className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 shadow-inner"
                         placeholder="..."
-                        value={value}
+                        value={inputValue} 
                         maxLength={20}
-                        onChange={(e) => handleWrappedChange(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSolve()}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleLabSubmit()}
                     />
                 );
         }
