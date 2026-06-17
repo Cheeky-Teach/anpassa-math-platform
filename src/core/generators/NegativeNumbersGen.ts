@@ -95,8 +95,8 @@ export class NegativeNumbersGen {
         const v = variationKey || this.getVariation(pool, options);
 
         if (v === 'theory_number_line') {
-            const start = MathUtils.randomInt(-8, 5);
-            const steps = MathUtils.randomInt(3, 7);
+            const start = MathUtils.randomInt(-10, 10);
+            const steps = MathUtils.randomInt(2, 12);
             const isRight = Math.random() > 0.5;
             const ans = isRight ? start + steps : start - steps;
             const dirSv = isRight ? "höger" : "vänster";
@@ -391,11 +391,11 @@ export class NegativeNumbersGen {
         const ans = a / b;
 
         if (v === 'div_check_logic') {
-            const correct = `${this.p(ans)} \\cdot ${this.p(b)} = ${a}`;
+            const correct = `${this.p(ans)} · ${this.p(b)} = ${a}`;
             return {
                 renderData: {
                     description: lang === 'sv' ? `Vilken multiplikation bevisar att $\\frac{${a}}{${b}} = ${ans}$?` : `Which multiplication layout proves that $\\frac{${a}}{${b}} = ${ans}$?`,
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${ans} + ${b} = ${a}`, `${a} \\cdot ${b} = ${ans}`])
+                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${ans} + ${b} = ${a}`, `${a} · ${b} = ${ans}`])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [

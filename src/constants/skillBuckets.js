@@ -550,54 +550,54 @@ export const SKILL_BUCKETS = {
             contextType: 'percent_of_amount',
             extractorPattern: /^(?<pct>\d+)\\%\\s*\\cdot\\s*(?<base>\d+)/
           },
-          {
-            key: 'benchmark_inverse',
-            name: { sv: 'Hitta 100%', en: 'Find 100%' },
-            desc: { sv: 'Om 10% är 5, vad är allt?', en: 'If 10% is 5, what is total?' },
-            tags: ['word_problem_ready'],
-            contextType: 'percent_base_part',
-            extractorPattern: /^(?<pct>\d+)\\%\\s*=\\s*(?<part>\d+)/
+          { 
+            key: 'calc_any_percent', 
+            name: { sv: 'Beräkna delen', en: 'Calculate part of a whole' }, 
+            desc: { sv: 'Beräkna delen med procent och det hela', en: 'Calculate a part using percent and the total' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'percent_of_amount', 
+            extractorPattern: /^(?<pct>\d+)\s*%\s*av\s*(?<base>\d+)$/i 
           },
           {
             key: 'composition',
-            name: { sv: 'Procent: Tiotal', en: 'Percent: Tens' },
-            desc: { sv: 'Beräkna 30, 40...90%', en: 'Calculate 30, 40...90%' },
+            name: { sv: 'Beräkna 30, 40...90%', en: 'Calculate 30, 40...90%' },
+            desc: { sv: 'Procent: Tiotal', en: 'Percent: Even 10s' },
             tags: ['word_problem_ready'],
             contextType: 'percent_of_amount',
             extractorPattern: /^(?<pct>\d+)\\%\\s*\\cdot\\s*(?<base>\d+)/
           },
           { key: 'decomposition', name: { sv: 'Beräkna (5%)', en: 'Beräkna (5%)' }, desc: { sv: 'Använd 10% för att hitta 5%', en: 'Use 10% to find 5%' } },
           {
+            key: 'benchmark_inverse',
+            name: { sv: 'Om x är.. Vad blir 100%', en: 'If x is ... What is 100%' },
+            desc: { sv: 'Om 10% är 5, vad är allt?', en: 'If 10% is 5, what is total?' },
+            tags: ['word_problem_ready'],
+            contextType: 'percent_base_part',
+            extractorPattern: /^(?<pct>\d+)\\%\\s*=\\s*(?<part>\d+)/
+          },
+          {
+            key: 'reverse_find_whole',
+            name: { sv: 'Det hela', en: 'Det hela' },
+            desc: { sv: 'Beräkna hela summan', en: 'Calculate total sum' },
+            tags: ['word_problem_ready'],
+            contextType: 'percent_base_part',
+            extractorPattern: /^(?<pct>\d+)\\%\\s*=\\s*(?<part>\d+)/
+          },
+          {
             key: 'find_percent_test',
-            name: { sv: 'Procentsats: Prov', en: 'Percent: Test' },
+            name: { sv: 'Andelen (Prov)', en: 'Find Percent (Test)' },
             desc: { sv: 'Delen / Hela', en: 'Part / Whole' },
             tags: ['word_problem_ready'],
             contextType: 'percent_find_rate',
             extractorPattern: /\\frac\{(?<part>\d+)\}\{(?<whole>\d+)\}/
           },
-          { 
-            key: 'calc_any_percent', 
-            name: { sv: 'Procent av ett tal (Blandat)', en: 'Percent of a number (Mixed)' }, 
-            desc: { sv: 'Beräkna valfri procent (helskaliga svar)', en: 'Calculate any percent (whole number answers)' }, 
-            tags: ['word_problem_ready'], 
-            contextType: 'percent_of_amount', 
-            extractorPattern: /^(?<pct>\d+)\s*%\s*av\s*(?<base>\d+)$/i 
-          },
           {
             key: 'find_percent_discount',
-            name: { sv: 'Procentsats: Rabatt', en: 'Percent: Discount' },
+            name: { sv: 'Andelen (Rabatt)', en: 'Percent: Discount' },
             desc: { sv: 'Beräkna andelen', en: 'Calculate share' },
             tags: ['word_problem_ready'],
             contextType: 'percent_find_rate',
             extractorPattern: /\\frac\{(?<part>\d+)\}\{(?<whole>\d+)\}/
-          },
-          {
-            key: 'reverse_find_whole',
-            name: { sv: 'Hitta 100%', en: 'Find 100%' },
-            desc: { sv: 'Beräkna hela summan', en: 'Calculate total sum' },
-            tags: ['word_problem_ready'],
-            contextType: 'percent_base_part',
-            extractorPattern: /^(?<pct>\d+)\\%\\s*=\\s*(?<part>\d+)/
           },
           { 
             key: 'change_calc', 

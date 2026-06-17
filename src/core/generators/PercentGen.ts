@@ -52,6 +52,7 @@ export class PercentGen {
             case 'composition':
             case 'decomposition':
             case 'estimation':
+            case 'calc_any_percent':
                 return this.level3_BuildingBlocks(lang, key);
             case 'find_percent_basic':
             case 'find_percent_test':
@@ -501,7 +502,7 @@ export class PercentGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `Ett pris ändrades från ${oldV} kr till ${newV} kr. Vad var förändringen i procent?` : `A price changed from ${oldV} kr to ${newV} kr. What was the change in percent?`,
-                latex: `\\frac{${diff}}{${oldV}}`,
+                latex: ``,
                 answerType: 'numeric', 
                 suffix: '%'
             },
