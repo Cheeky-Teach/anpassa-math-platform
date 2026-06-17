@@ -59,7 +59,7 @@ export const PERCENT_STORIES: Record<string, StoryScenario[]> = {
             en: "A new skatepark covers a ground area of {base} square meters. The concrete ramps themselves take up {pct}% of the park's area. How much surface area do the ramps occupy?"
         },
         {
-            sv: "Ett fik sålde {base} muggar boba-te under en solig lördag. Det visade sig att {pct}% av alla beställningar gällde muggar med extra boba-pärlor. Hur många muggar fick extra pärlor?",
+            sv: "En kiosk sålde {base} muggar boba-te under en solig lördag. Det visade sig att {pct}% av alla beställningar gällde muggar med extra boba-pärlor. Hur många muggar fick extra pärlor?",
             en: "A bubble tea shop sold {base} cups of boba milk tea on a sunny Saturday. It turned out that {pct}% of all orders requested extra tapioca pearls. How many cups got extra pearls?"
         },
         {

@@ -158,9 +158,9 @@ export class FractionArithGen {
         const v = variationKey || this.getVariation(pool, options);
         const isSub = v === 'sub_diff_denom';
 
-        let d1 = MathUtils.randomInt(2, 6);
-        let d2 = MathUtils.randomInt(2, 8);
-        while (d1 === d2) d2 = MathUtils.randomInt(2, 8);
+        let d1 = MathUtils.randomInt(2, 10);
+        let d2 = MathUtils.randomInt(2, 10);
+        while (d1 === d2) d2 = MathUtils.randomInt(2, 10);
 
         const lcd = this.lcm(d1, d2);
         let f1 = lcd / d1;
@@ -325,8 +325,8 @@ export class FractionArithGen {
         const pool: {key: string, type: 'calculate'}[] = [{ key: 'mult_calc', type: 'calculate' }];
         const v = variationKey || this.getVariation(pool, options);
 
-        const n1 = MathUtils.randomInt(1, 5), d1 = MathUtils.randomInt(2, 6);
-        const n2 = MathUtils.randomInt(1, 5), d2 = MathUtils.randomInt(2, 6);
+        const n1 = MathUtils.randomInt(1, 8), d1 = MathUtils.randomInt(2, 10);
+        const n2 = MathUtils.randomInt(1, 8), d2 = MathUtils.randomInt(2, 10);
         const resN = n1 * n2, resD = d1 * d2;
         const simp = this.simplify(resN, resD);
 
@@ -376,8 +376,8 @@ export class FractionArithGen {
         const pool: {key: string, type: 'calculate'}[] = [{ key: 'div_calc', type: 'calculate' }];
         const v = variationKey || this.getVariation(pool, options);
 
-        const n1 = MathUtils.randomInt(1, 4), d1 = MathUtils.randomInt(5, 10);
-        const n2 = MathUtils.randomInt(1, 4), d2 = MathUtils.randomInt(5, 10);
+        const n1 = MathUtils.randomInt(1, 5), d1 = MathUtils.randomInt(5, 12);
+        const n2 = MathUtils.randomInt(1, 5), d2 = MathUtils.randomInt(5, 12);
 
         const resN = n1 * d2;
         const resD = d1 * n2;
