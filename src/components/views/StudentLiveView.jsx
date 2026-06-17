@@ -38,7 +38,16 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
 };
 
-// 🟢 NEW: Mobile detection state
+export default function StudentLiveView({ session, packet, lang = 'sv', studentAlias, onBack }) {
+    // Logic & Navigation State
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [answers, setAnswers] = useState({});
+    const [completed, setCompleted] = useState({}); 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [roomActive, setRoomActive] = useState(true);
+    const [showFinalReview, setShowFinalReview] = useState(false);
+
+    // 🟢 NEW: Mobile detection state
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -50,15 +59,6 @@ const MathDisplay = ({ content, className = "" }) => {
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
-
-export default function StudentLiveView({ session, packet, lang = 'sv', studentAlias, onBack }) {
-    // Logic & Navigation State
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [answers, setAnswers] = useState({});
-    const [completed, setCompleted] = useState({}); 
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [roomActive, setRoomActive] = useState(true);
-    const [showFinalReview, setShowFinalReview] = useState(false);
 
     // --- 1. THE KILL SWITCH ---
     useEffect(() => {
