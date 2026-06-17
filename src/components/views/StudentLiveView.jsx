@@ -214,6 +214,8 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         switch (inputType) {
             case 'fraction': return <FractionInput value={value} onChange={handleWrappedChange} allowMixed={true} autoFocus={true} />;
             case 'exponent': return <ExponentInput value={value} onChange={handleWrappedChange} autoFocus={true} />;
+            case 'structured_power': // 🟢 ADDED: Catches the exact key ExponentsGen uses!
+                return <ExponentInput value={value} onChange={handleWrappedChange} autoFocus={true} />;
             case 'scientific': return <ScientificInput value={value} onChange={handleWrappedChange} autoFocus={true} />;
             default:
                 return (
