@@ -535,7 +535,7 @@ export class BasicArithmeticGen {
             };
         }
 
-        const correctStr = `${a} \\cdot ${b} = ${ans}`;
+        const correctStr = `${a} · ${b} = ${ans}`;
         return {
             renderData: { description: lang === 'sv' ? "Vilken uträkning har placerat kommatecknet rätt?" : "Which calculation placed the decimal point correctly?", answerType: 'multiple_choice', options: MathUtils.shuffle([correctStr, `${a} · ${b} = ${ans*10}`, `${a} · ${b} = ${ans/10}`]) },
             token: this.toBase64(correctStr), variationKey: v, type: 'concept',

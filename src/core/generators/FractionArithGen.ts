@@ -91,9 +91,83 @@ export class FractionArithGen {
     private level1_SameDenom(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'add_calc', type: 'calculate' },
-            { key: 'sub_calc', type: 'calculate' }
+            { key: 'sub_calc', type: 'calculate' },
+            { key: 'add_concept', type: 'concept'}
         ];
         const v = variationKey || this.getVariation(pool, options);
+        // ==========================================
+        // VARIATION A: Concept Check (True/False)
+        // ==========================================
+        if (v === 'add_concept') {
+            const d = MathUtils.randomInt(4, 9);
+            const n1 = 1;
+            const n2 = MathUtils.randomInt(1, d - 2);
+            const sum = n1 + n2;
+            
+            const correctEq = `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d}}`;
+            const wrongEq = `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d*2}}`; // The Lie
+            
+            return {
+                renderData: {
+                    description: lang === 'sv' ? "Vilket påstående är matematiskt korrekt?" : "Which statement is mathematically correct?",
+                    latex: "", // Left blank so the clickable options act as the visual
+                    answerType: 'multiple_choice',
+                    // 🟢 Upgraded: Passes the raw equations as clickable buttons instead of "Option A/B"
+                    options: MathUtils.shuffle([correctEq, wrongEq]) 
+                },
+                token: this.toBase64(correctEq),
+                variationKey: v,
+                type: 'concept',
+                clues: [
+                    { 
+                        text: lang === 'sv' 
+                            ? "När man adderar bråk med samma nämnare, ändras INTE nämnaren." 
+                            : "When adding fractions with the same denominator, the denominator does NOT change.", 
+                        latex: `\\frac{a}{c} + \\frac{b}{c} = \\frac{a+b}{c}` 
+                    }
+                ],
+                metadata: { variation_key: v, difficulty: 1 }
+            };
+        }
+
+        // ==========================================
+        // VARIATION B: Missing Term (Algebraic)
+        // ==========================================
+        if (v === 'add_missing') {
+            const d = MathUtils.randomInt(5, 12);
+            const n1 = MathUtils.randomInt(1, d - 2);
+            const nMissing = MathUtils.randomInt(1, d - n1 - 1);
+            const nTotal = n1 + nMissing;
+
+            return {
+                renderData: {
+                    description: lang === 'sv' ? "Vilket tal är x?" : "Which number is x?",
+                    latex: `\\frac{${n1}}{${d}} + \\frac{x}{${d}} = \\frac{${nTotal}}{${d}}`,
+                    answerType: 'numeric'
+                },
+                token: this.toBase64(nMissing.toString()),
+                variationKey: v,
+                type: 'calculate',
+                clues: [
+                    { 
+                        text: lang === 'sv' 
+                            ? `Täljarna måste bli summan. Vad plus ${n1} blir ${nTotal}?` 
+                            : `Numerators must sum up. What plus ${n1} equals ${nTotal}?`, 
+                        latex: `${n1} + x = ${nTotal}` 
+                    },
+                    {
+                        text: lang === 'sv' ? `Subtrahera ${n1} från ${nTotal} för att få reda på x.` : `Subtract ${n1} from ${nTotal} to find x.`,
+                        latex: `x = ${nTotal} - ${n1} = ${nMissing}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${nMissing}` : `Answer: ${nMissing}`,
+                        latex: `${nMissing}`
+                    }
+                ],
+                metadata: { variation_key: v, difficulty: 2 }
+            };
+        }
+
         const isSub = v === 'sub_calc';
 
         const d = MathUtils.randomInt(4, 12);
@@ -153,9 +227,49 @@ export class FractionArithGen {
     private level2_DiffDenom(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'add_diff_denom', type: 'calculate' },
-            { key: 'sub_diff_denom', type: 'calculate' }
+            { key: 'sub_diff_denom', type: 'calculate' },
+            { key: 'lcd_find', type: 'concept'}
         ];
         const v = variationKey || this.getVariation(pool, options);
+        if (v === 'lcd_find') {
+            const d1 = MathUtils.randomInt(2, 8), d2 = MathUtils.randomInt(4, 15);
+            const res = this.lcm(d1, d2);
+            
+            return {
+                renderData: { 
+                    description: lang === 'sv' ? `Hitta den minsta gemensamma nämnaren (MGN) för ${d1} och ${d2}.` : `Find the lowest common denominator (LCD) for ${d1} and ${d2}.`, 
+                    answerType: 'numeric' 
+                },
+                token: this.toBase64(res.toString()), 
+                variationKey: v, 
+                type: 'concept',
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Steg 1: Vi letar efter det minsta talet som finns i båda talens multiplikationstabeller." : "Step 1: We are looking for the smallest number that appears in the multiplication tables of both numbers.",
+                        latex: ""
+                    },
+                    { 
+                        text: lang === 'sv' ? `Tabell ${d1}: ${d1}, ${d1*2}, ${d1*3}...` : `Table ${d1}: ${d1}, ${d1*2}, ${d1*3}...`,
+                        latex: ""
+                    },
+                    { 
+                        text: lang === 'sv' ? `Tabell ${d2}: ${d2}, ${d2*2}, ${d2*3}...` : `Table ${d2}: ${d2}, ${d2*2}, ${d2*3}...`,
+                        latex: ""
+                    },
+                    { 
+                        text: lang === 'sv' ? `Det första gemensamma talet är ${res}.` : `The first common number is ${res}.`,
+                        latex: ""
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${res}` : `Answer: ${res}`,
+                        latex: `${res}`
+                    }
+                ],
+                // 🟢 NEW: Added standard metadata for analytics
+                metadata: { variation_key: v, difficulty: 2 } 
+            };
+        }
+
         const isSub = v === 'sub_diff_denom';
 
         let d1 = MathUtils.randomInt(2, 10);

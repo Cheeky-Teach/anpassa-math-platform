@@ -734,9 +734,7 @@ function App() {
                 ) : view === 'print' ? (
                     <PrintView packet={savedPacket} title={sheetTitle} lang={lang} onBack={() => setView('question_studio')} includeAnswerKey={includeAnswerKey} answerKeyStyle={answerKeyStyle} />
                 ) : view === 'do_now' ? (
-                    <DesktopZoomWrapper>
                     <DoNowGrid questions={savedPacket} ui={ui} lang={lang} onBack={() => setView('question_studio')} onClose={() => setView('dashboard')} onRefreshAll={handleRefreshAllDoNow} onRefreshOne={handleRefreshOneDoNow} />
-                    </DesktopZoomWrapper>
                 ) : view === 'practice_lab' ? (
                     <DesktopZoomWrapper>
                     <TestLabView 
