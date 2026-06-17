@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { BarChart3, AlertCircle } from 'lucide-react';
 
@@ -28,6 +28,46 @@ import ContentModal from './components/modals/ContentModal';
 // Data & Constants
 import { UI_TEXT, LEVEL_DESCRIPTIONS } from './constants/localization';
 
+// --- DESKTOP AUTO-SCALER WRAPPER ---
+// Automatically zooms out on laptops/desktops to compensate for browser UI bars, 
+// but leaves mobile phones alone so text remains readable.
+const DesktopZoomWrapper = ({ children, forceConstrain = false }) => {
+    const [zoomLevel, setZoomLevel] = useState(1);
+
+    useEffect(() => {
+        const calculateZoom = () => {
+            // Apply 95% zoom on screens wider than an iPad
+            if (window.innerWidth > 1024) {
+                setZoomLevel(0.95);
+            } else {
+                setZoomLevel(1);
+            }
+        };
+        
+        calculateZoom();
+        window.addEventListener('resize', calculateZoom);
+        return () => window.removeEventListener('resize', calculateZoom);
+    }, []);
+
+    // Automatically calculates the exact viewport height needed
+    // Example: 100 / 0.95 = 105.26vh (or 111.11vh if you used 0.90)
+    const compensatedHeight = `${(100 / zoomLevel).toFixed(2)}vh`;
+
+    return (
+        <div 
+            style={{ 
+                zoom: zoomLevel, 
+                height: forceConstrain ? compensatedHeight : 'auto',
+                minHeight: !forceConstrain ? compensatedHeight : 'auto',
+                overflow: forceConstrain ? 'hidden' : 'visible'
+            }} 
+            className="w-full flex flex-col"
+        >
+            {children}
+        </div>
+    );
+};
+
 function App() {
     // --- 1. AUTH & PROFILE STATE ---
     const [session, setSession] = useState(null);
@@ -35,6 +75,7 @@ function App() {
     const [loadingProfile, setLoadingProfile] = useState(true);
     const [view, setView] = useState('landing'); 
     const [lang, setLang] = useState('sv');
+    const currentUserRef = useRef(null);
 
     // --- 2. STUDENT & LIVE SESSION STATE ---
     const [studentMode, setStudentMode] = useState(null); 
@@ -296,35 +337,37 @@ function App() {
         // Initial Session Check
         supabase.auth.getSession().then(({ data: { session: s } }) => {
             setSession(s);
-            if (s) fetchProfile(s.user.id);
+            if (s) {
+                currentUserRef.current = s.user.id; // Set initial ref
+                fetchProfile(s.user.id);
+            }
             else setLoadingProfile(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-            const previousSession = session;
             setSession(s);
 
             if (s) {
-                // SILENT UPDATE: If we already have a session and the user hasn't changed,
-                // fetch the profile silently in the background to avoid the refresh flicker.
-                const isSameUser = previousSession?.user?.id === s.user.id;
+                // 🟢 FIXED: Use the Ref to check if it's the same user, bypassing the stale closure!
+                const isSameUser = currentUserRef.current === s.user.id;
+                currentUserRef.current = s.user.id; 
                 
                 if (event === 'PASSWORD_RECOVERY') {
                     setView('profile');
                     fetchProfile(s.user.id); // Not silent for recovery
                 } else {
-                    // Pass 'true' for isSilent if we are just re-verifying the same user
                     fetchProfile(s.user.id, isSameUser); 
                 }
             } else {
+                currentUserRef.current = null;
                 setProfile(null);
                 setView('landing');
                 setLoadingProfile(false);
             }
         });
 
-    return () => subscription.unsubscribe();
-}, []); // Keep dependencies empty to manage internal state manually
+        return () => subscription.unsubscribe();
+    }, []);
 
     // --- PROFILE GATEKEEPER ---
     const fetchProfile = async (uid, isSilent = false) => {
@@ -624,6 +667,7 @@ function App() {
 
             <div className="flex-1 flex flex-col relative overflow-x-hidden">
                 {view === 'dashboard' ? (
+                    <DesktopZoomWrapper>
                     <Dashboard 
                         profile={profile} 
                         lang={lang} 
@@ -653,6 +697,7 @@ function App() {
                         toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} 
                         resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
                     />
+                    </DesktopZoomWrapper>
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />
                 ) : view === 'presentation' ? ( 
@@ -668,6 +713,7 @@ function App() {
                         onBack={() => setView('dashboard')} 
                     />
                 ) : view === 'practice' ? (
+                        <DesktopZoomWrapper>
                         <PracticeView
                             lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} 
                             handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip}
@@ -680,13 +726,19 @@ function App() {
                             useWordProblems={useWordProblems}
                             setUseWordProblems={setUseWordProblems}
                         />
+                        </DesktopZoomWrapper>
                 ) : view === 'question_studio' ? (
+                    <DesktopZoomWrapper forceConstrain={true}>
                     <QuestionStudio profile={profile} ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} onWorksheetGenerate={(p) => { setSavedPacket(p); setView('print'); }} onDoNowGenerate={(conf, pack, liveData) => { if (liveData?.room) { setActiveRoom(liveData.room); setSavedPacket(liveData.packet); setView('teacher_live'); } else if (pack) { setSavedPacket(pack); if (conf?.title) setSheetTitle(conf.title); setView('do_now'); } }} />
+                    </DesktopZoomWrapper>
                 ) : view === 'print' ? (
                     <PrintView packet={savedPacket} title={sheetTitle} lang={lang} onBack={() => setView('question_studio')} includeAnswerKey={includeAnswerKey} answerKeyStyle={answerKeyStyle} />
                 ) : view === 'do_now' ? (
+                    <DesktopZoomWrapper>
                     <DoNowGrid questions={savedPacket} ui={ui} lang={lang} onBack={() => setView('question_studio')} onClose={() => setView('dashboard')} onRefreshAll={handleRefreshAllDoNow} onRefreshOne={handleRefreshOneDoNow} />
+                    </DesktopZoomWrapper>
                 ) : view === 'practice_lab' ? (
+                    <DesktopZoomWrapper>
                     <TestLabView 
                         configCode={pendingLabConfig} 
                         profile={profile}
@@ -696,7 +748,9 @@ function App() {
                             setView('dashboard');
                         }}
                     />
+                    </DesktopZoomWrapper>
                 ) : view === 'live_session' && activeRoom ? (
+                    <DesktopZoomWrapper>
                     <StudentLiveView 
                         session={activeRoom} 
                         packet={activeRoom.active_question_data?.packet || []} 
@@ -704,6 +758,7 @@ function App() {
                         studentAlias={studentAlias} 
                         onBack={handleStudentExitLive} 
                     />
+                    </DesktopZoomWrapper>
                 ) : view === 'teacher_live' && activeRoom ? (
                     <TeacherLiveView session={activeRoom} packet={savedPacket} lang={lang} onEnd={handleEndSession} onKick={handleKick} onCreateReport={(res) => { setReportData(res); setView('live_report'); }} />
                 ) : view === 'live_report' && activeRoom && reportData ? (
