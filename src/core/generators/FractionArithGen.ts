@@ -314,7 +314,7 @@ export class FractionArithGen {
             renderData: { 
                 description: lang === 'sv' ? `Beräkna och svara i blandad form och enklaste form.` : `Calculate and answer as a mixed fraction in simplest form.`, 
                 latex: `${w1}\\frac{${n1}}{${d1}} ${op} ${w2}\\frac{${n2}}{${d2}}`, 
-                answerType: 'fraction' 
+                answerType: 'mixed_fraction' 
             },
             token: this.toBase64(cleanTokenStr), variationKey: v, clues
         };

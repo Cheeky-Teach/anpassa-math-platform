@@ -54,19 +54,16 @@ export const FractionInput = ({ value, onChange, allowMixed = false, autoFocus =
 
     return (
         <div className="inline-flex items-center gap-3 font-mono text-slate-800">
+            {/* 🟢 FIXED: Only render the Whole Number box if allowMixed is TRUE */}
             {allowMixed && (
-                <div className="flex flex-col items-center">
-                    <span className="text-[12px] font-black uppercase text-slate-400 mb-1">Heltal</span>
-                    <input
-                        ref={wholeRef}
-                        type="text"
-                        inputMode="numeric"
-                        className="w-14 h-14 text-center border-2 border-slate-300 rounded-xl focus:border-indigo-500 focus:outline-none bg-white text-2xl font-bold shadow-sm"
-                        value={w}
-                        onChange={(e) => update(e.target.value, n, d)}
-                        placeholder="0"
-                    />
-                </div>
+                <input
+                    ref={wholeRef}
+                    type="text"
+                    inputMode="numeric"
+                    className="w-14 h-16 sm:w-16 sm:h-20 text-center border-2 border-slate-300 rounded-xl sm:rounded-2xl focus:border-indigo-500 focus:outline-none bg-white text-3xl sm:text-4xl font-black shadow-sm mr-2"
+                    value={w}
+                    onChange={(e) => update(e.target.value, n, d)}
+                />
             )}
             <div className="flex flex-col items-center gap-1">
                 <input

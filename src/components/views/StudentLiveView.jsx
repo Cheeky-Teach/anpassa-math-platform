@@ -38,6 +38,19 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
 };
 
+// 🟢 NEW: Mobile detection state
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            // Disable autofocus on screens smaller than 768px (iPads/Phones)
+            setIsMobile(window.innerWidth < 768); 
+        };
+        checkMobile(); // Check on mount
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
 export default function StudentLiveView({ session, packet, lang = 'sv', studentAlias, onBack }) {
     // Logic & Navigation State
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -212,15 +225,49 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         };
 
         switch (inputType) {
-            case 'fraction': return <FractionInput value={value} onChange={handleWrappedChange} allowMixed={true} autoFocus={true} />;
-            case 'exponent': return <ExponentInput value={value} onChange={handleWrappedChange} autoFocus={true} />;
-            case 'structured_power': // 🟢 ADDED: Catches the exact key ExponentsGen uses!
-                return <ExponentInput value={value} onChange={handleWrappedChange} autoFocus={true} />;
-            case 'scientific': return <ScientificInput value={value} onChange={handleWrappedChange} autoFocus={true} />;
+            case 'mixed_fraction': 
+                return (
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
+                        <div className="scale-110 transform origin-center">
+                            <FractionInput value={value} onChange={handleWrappedChange} allowMixed={true} autoFocus={!isMobile} />
+                        </div>
+                    </div>
+                );
+
+            case 'fraction': 
+                return (
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
+                        <div className="scale-110 transform origin-center">
+                            <FractionInput value={value} onChange={handleWrappedChange} allowMixed={false} autoFocus={!isMobile} />
+                        </div>
+                    </div>
+                );
+            
+            case 'exponent': 
+            case 'structured_power': 
+                return (
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
+                        <div className="scale-110 transform origin-center">
+                            <ExponentInput value={value} onChange={handleWrappedChange} autoFocus={!isMobile} />
+                        </div>
+                    </div>
+                );
+            
+            case 'scientific': 
+            case 'structured_scientific': 
+                return (
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
+                        <div className="scale-110 transform origin-center">
+                            <ScientificInput value={value} onChange={handleWrappedChange} autoFocus={!isMobile} />
+                        </div>
+                    </div>
+                );
+
             default:
                 return (
                     <input 
                         type="text" 
+                        autoFocus={!isMobile} 
                         className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 shadow-inner"
                         placeholder="Ditt svar..."
                         value={value}
