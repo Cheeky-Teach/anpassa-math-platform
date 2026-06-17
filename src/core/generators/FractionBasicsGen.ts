@@ -348,7 +348,7 @@ export class FractionBasicsGen {
         }
 
         return {
-            renderData: { description: lang === 'sv' ? "Skriv om från bråkform till blandad form." : "Convert from improper fraction to mixed fraction.", latex: `\\frac{${impN}}{${d}}`, answerType: 'fraction' },
+            renderData: { description: lang === 'sv' ? "Skriv om från bråkform till blandad form." : "Convert from improper fraction to mixed fraction.", latex: `\\frac{${impN}}{${d}}`, answerType: 'mixed_fraction' },
             token: this.toBase64(`${w} ${n}/${d}`), variationKey: v, type: 'calculate',
             clues: [
                 { 
@@ -444,7 +444,7 @@ export class FractionBasicsGen {
         }
 
         return {
-            renderData: { description: lang === 'sv' ? "Gör bråket så enkelt som möjligt genom att förkorta bort gemensamma gånger-faktorer." : "Make the fraction as simple as possible by dividing away common multiplier factors.", latex: `\\frac{${n * f}}{${d * f}}`, answerType: 'fraction' },
+            renderData: { description: lang === 'sv' ? "Förenkla bråket till enklaste form." : "Simplify the fraction to simplest form.", latex: `\\frac{${n * f}}{${d * f}}`, answerType: 'fraction' },
             token: this.toBase64(`${n}/${d}`), variationKey: v, type: 'calculate',
             clues: [
                 { 

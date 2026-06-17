@@ -63,8 +63,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         /// 2. Decode & Validate (Base64 Mode)
         const correctAnswer = Buffer.from(token, 'base64').toString('utf-8');
-        const normalize = (str: any) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.');
-        
+        const normalize = (str: any) => {
+            return String(str)
+                .toLowerCase()
+                .replace(/^0+\s+/, '')     // 🟢 NEW: Instantly converts "0 11/5" into "11/5"
+                .replace(/[\s_]+/g, '')    // Remove spaces and underscores
+                .replace(',', '.')         // Swedish comma to dot
+                .replace(/\\/g, '')        // Strip rogue LaTeX backslashes
+                .replace(/^[a-z]=/, '')    // Strip "x="
+                .replace(/^svar:/, '')     // Strip "svar:"
+                .replace(/·/g, '*');       // Normalize dot operators
+        };
+
         const normUserAns = normalize(answer);
         const normCorrectAns = normalize(correctAnswer);
 

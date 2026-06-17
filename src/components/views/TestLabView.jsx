@@ -116,6 +116,19 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     // --- HELPERS ---
     const getStyles = (category) => COLOR_VARIANTS[category.color || 'indigo'] || COLOR_VARIANTS.indigo;
 
+    // 🟢 NEW: Mobile detection state
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            // Disable autofocus on screens smaller than 768px (iPads/Phones)
+            setIsMobile(window.innerWidth < 768); 
+        };
+        checkMobile(); // Check on mount
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+    
     const copyTestLink = () => {
         // Append tracking flag to meta configuration state object bundle on the fly
         const updatedMeta = { ...meta, wordProblem: useWordProblems };
@@ -352,35 +365,43 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         const type = rd?.answerType || rd?.inputType || item?.resolvedData?.inputType || 'text';
         
         // 3. RENDER SPECIALIZED COMPONENTS
-        switch (type) {
-            case 'fraction': 
-                // allowMixed={true} is required for the "whole number" field to render
+        switch (inputType) {
+            case 'mixed_fraction': 
                 return (
-                    <div className="flex justify-center py-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
                         <div className="scale-110 transform origin-center">
-                            <FractionInput value={inputValue} onChange={setInputValue} allowMixed={true} autoFocus={true} />
+                            {/* 🟢 FIXED: Dynamic autoFocus */}
+                            <FractionInput value={value} onChange={handleWrappedChange} allowMixed={true} autoFocus={!isMobile} />
+                        </div>
+                    </div>
+                );
+
+            case 'fraction': 
+                return (
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
+                        <div className="scale-110 transform origin-center">
+                            {/* 🟢 FIXED: Dynamic autoFocus */}
+                            <FractionInput value={value} onChange={handleWrappedChange} allowMixed={false} autoFocus={!isMobile} />
                         </div>
                     </div>
                 );
             
-            // PracticeView uses 'structured_power' for exponents
-            case 'exponent':
+            case 'exponent': 
             case 'structured_power': 
                 return (
-                    <div className="flex justify-center py-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
                         <div className="scale-110 transform origin-center">
-                            <ExponentInput value={inputValue} onChange={setInputValue} autoFocus={true} />
+                            <ExponentInput value={value} onChange={handleWrappedChange} autoFocus={!isMobile} />
                         </div>
                     </div>
                 );
             
-            // PracticeView uses 'structured_scientific' for base-10 notation
-            case 'scientific':
+            case 'scientific': 
             case 'structured_scientific': 
                 return (
-                    <div className="flex justify-center py-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
                         <div className="scale-110 transform origin-center">
-                            <ScientificInput value={inputValue} onChange={setInputValue} autoFocus={true} />
+                            <ScientificInput value={value} onChange={handleWrappedChange} autoFocus={!isMobile} />
                         </div>
                     </div>
                 );
@@ -389,12 +410,13 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 return (
                     <input 
                         type="text" 
-                        autoFocus 
-                        value={inputValue} 
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleLabSubmit()}
-                        className="w-full bg-slate-100 rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 shadow-inner"
+                        autoFocus={!isMobile} 
+                        className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 shadow-inner"
                         placeholder="..."
+                        value={value}
+                        maxLength={20}
+                        onChange={(e) => handleWrappedChange(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSolve()}
                     />
                 );
         }

@@ -330,10 +330,21 @@ const PracticeView = ({
                                     <form onSubmit={(e) => { e.preventDefault(); if (feedback !== 'correct') handleSubmit(e, input); else actions.retry(true); }} className="space-y-3">
                                         <div className="relative group">
                                             {/* SUPPORTED INPUTS: Fraction, Power, Scientific, Text */}
-                                            {question.renderData.answerType === 'fraction' ? (
+                                            {question?.renderData?.answerType === 'mixed_fraction' ? (
                                                 <div className="flex justify-center py-2 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
                                                     <div className="scale-90 transform origin-center">
-                                                        <FractionInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} allowMixed={true} autoFocus={false} />
+                                                <FractionInput
+                                                    value={input}
+                                                    onChange={setInput}
+                                                    allowMixed={true}
+                                                    autoFocus={true}
+                                                />
+                                                    </div>
+                                                </div>
+                                            ) : question.renderData.answerType === 'fraction' ? (
+                                                <div className="flex justify-center py-2 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                                                    <div className="scale-90 transform origin-center">
+                                                        <FractionInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} allowMixed={false} autoFocus={false} />
                                                     </div>
                                                 </div>
                                             ) : question.renderData.answerType === 'structured_power' ? (
