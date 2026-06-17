@@ -304,7 +304,7 @@ export class ExponentsGen {
         if (v === 'scientific_to_form') {
             return {
                 renderData: { 
-                    description: lang === 'sv' ? `Skriv ${number.toLocaleString(lang)} med en tiopotens.` : `Write ${number.toLocaleString(lang)} using a power of ten.`, 
+                    description: lang === 'sv' ? `Skriv ${number.toLocaleString(lang)} i grundpotens form.` : `Write ${number.toLocaleString(lang)} in scientific notation.`, 
                     interceptorToken: `${number} ; ${mantissa} ; ${exponent}`,
                     answerType: 'structured_scientific' 
                 },
