@@ -90,7 +90,7 @@ export default function WordProblemVisualGuard({
                                 onClick={() => setReveal(true)}
                                 className="px-4 py-2 bg-white border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl text-[12px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 cursor-pointer shadow-indigo-900/5"
                             >
-                                {lang === 'sv' ? "Avslöja figur" : "Reveal Diagram"}
+                                {lang === 'sv' ? "Visa ledtråd" : "Visa ledtråd"}
                             </button>
                         ) : (
                             /* 🟢 Softened badge: Replaced "Avstängt" with an inviting, low-stress coaching tag */

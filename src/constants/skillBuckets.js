@@ -552,7 +552,7 @@ export const SKILL_BUCKETS = {
           },
           {
             key: 'benchmark_inverse',
-            name: { sv: 'Hitta 100% (Bas)', en: 'Find 100% (Basic)' },
+            name: { sv: 'Hitta 100%', en: 'Find 100%' },
             desc: { sv: 'Om 10% är 5, vad är allt?', en: 'If 10% is 5, what is total?' },
             tags: ['word_problem_ready'],
             contextType: 'percent_base_part',
@@ -560,13 +560,13 @@ export const SKILL_BUCKETS = {
           },
           {
             key: 'composition',
-            name: { sv: 'Sammansättning', en: 'Composition' },
-            desc: { sv: 'Bygg 30, 40, 70%', en: 'Build 30, 40, 70%' },
+            name: { sv: 'Procent: Tiotal', en: 'Percent: Tens' },
+            desc: { sv: 'Beräkna 30, 40...90%', en: 'Calculate 30, 40...90%' },
             tags: ['word_problem_ready'],
             contextType: 'percent_of_amount',
             extractorPattern: /^(?<pct>\d+)\\%\\s*\\cdot\\s*(?<base>\d+)/
           },
-          { key: 'decomposition', name: { sv: 'Uppdelning (5%)', en: 'Decomposition (5%)' }, desc: { sv: 'Använd 10% för att hitta 5%', en: 'Use 10% to find 5%' } },
+          { key: 'decomposition', name: { sv: 'Beräkna (5%)', en: 'Beräkna (5%)' }, desc: { sv: 'Använd 10% för att hitta 5%', en: 'Use 10% to find 5%' } },
           {
             key: 'find_percent_test',
             name: { sv: 'Procentsats: Prov', en: 'Percent: Test' },
@@ -574,6 +574,14 @@ export const SKILL_BUCKETS = {
             tags: ['word_problem_ready'],
             contextType: 'percent_find_rate',
             extractorPattern: /\\frac\{(?<part>\d+)\}\{(?<whole>\d+)\}/
+          },
+          { 
+            key: 'calc_any_percent', 
+            name: { sv: 'Procent av ett tal (Blandat)', en: 'Percent of a number (Mixed)' }, 
+            desc: { sv: 'Beräkna valfri procent (helskaliga svar)', en: 'Calculate any percent (whole number answers)' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'percent_of_amount', 
+            extractorPattern: /^(?<pct>\d+)\s*%\s*av\s*(?<base>\d+)$/i 
           },
           {
             key: 'find_percent_discount',
