@@ -25,6 +25,43 @@ export class AlgebraicGeometryGenerator {
         return questionData;
     }
 
+    //  Add this routing method right below generate()
+    public generateByVariation(key: string, lang: string = 'sv', options: any = {}): any {
+        let questionData: any;
+
+        // Route the keys from skillBuckets.js to their exact methods
+        switch (key) {
+            case 'perimeter_write': 
+                questionData = this.perimeter_writeExpression(lang); 
+                break;
+            case 'perimeter_solve': 
+                questionData = this.perimeter_solveEquation(lang); 
+                break;
+            case 'area_write': 
+                questionData = this.area_writeExpression(lang); 
+                break;
+            case 'area_solve': 
+                questionData = this.area_solveEquation(lang); 
+                break;
+            case 'angles_write': 
+                questionData = this.angles_writeExpression(lang); 
+                break;
+            case 'angles_solve': 
+                questionData = this.angles_solveEquation(lang); 
+                break;
+            default: 
+                questionData = this.perimeter_writeExpression(lang); 
+                break;
+        }
+        // Attach the specific variation key to the metadata so the UI registers it correctly
+        if (!questionData.metadata) {
+            questionData.metadata = {};
+        }
+        questionData.metadata.variation_key = key;
+
+        return questionData;
+    }
+
     private toBase64(str: string): string {
         return Buffer.from(str, 'utf-8').toString('base64');
     }
@@ -487,7 +524,7 @@ export class AlgebraicGeometryGenerator {
     private options_solveEquation_data(lang: string, targetX: number, xCoeff: number, remainder: number, totalDeg: number, geomConfig: any, desc: string): any {
         const clues = [
             { 
-                text: lang === 'sv' ? `Vinklarna bildar tillsammans en känd geometrisk vinkelsumma på ${totalDeg}°.` : `The angles together combine to form a known geometric angle sum of ${totalDeg}°.`,
+                text: lang === 'sv' ? `Vinklarna bildar tillsammans vinkelsumman ${totalDeg}°.` : `The angles together are ${totalDeg}°.`,
                 latex: `${xCoeff}x + ${remainder} = ${totalDeg}`
             },
             { 
@@ -533,7 +570,7 @@ export class AlgebraicGeometryGenerator {
                 arcs: [{ center: { x: 150, y: 180 }, startAngle: 0, endAngle: 45, radius: 40, label: `${xCoeff}x`, color: "rgba(16, 185, 129, 0.15)", stroke: "#10b981" }, { center: { x: 150, y: 180 }, startAngle: 45, endAngle: 90, radius: 40, label: `${angle1Remainder}°`, color: "rgba(59, 130, 246, 0.15)", stroke: "#3b82f6" }],
                 labels: []
             };
-            desc = lang === 'sv' ? `Vinklarna bildar tillsammans en rät vinkel (90° totalt). Beräkna x.` : `The angles together form a right angle (90° total). Calculate x.`;
+            desc = lang === 'sv' ? `Vinklarna bildar tillsammans en rät vinkel. Beräkna x.` : `The angles together form a right angle. Calculate x.`;
             return this.options_solveEquation_data(lang, targetX, xCoeff, angle1Remainder, 90, geomConfig, desc);
         } else { // Straight Line Split (Adds up to 180°)
             targetX = MathUtils.randomInt(5, 15);
