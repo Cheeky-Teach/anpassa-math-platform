@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MathText from '../ui/MathText';
-import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
-import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry';
-import PatternVisual from '../visuals/PatternComponents';
-import ProbabilityTree from '../visuals/ProbabilityTree';
-import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
-import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals';
-import AngleVisual from '../visuals/AngleComponents';
+import VisualRenderer from '../visuals/VisualRenderer';
 import CluePanel from '../practice/CluePanel';
 import HistoryList from '../practice/HistoryList';
 import { useMyCoach } from '../../hooks/useMyCoach';
@@ -136,46 +129,6 @@ const PracticeView = ({
         handleSubmit({ preventDefault: () => { } }, choice); 
     };
 
-    // --- 4. REFINED VISUAL SCALING LOGIC ---
-    const renderVisual = () => {
-        const rd = question?.renderData;
-        if (!rd) return null;
-
-        // Suppress matchstick/sequence structures if a real-world pattern story is active
-        if (isPatternWordProblem) return null;
-
-        // 1. Dynamic Routing Channels for Interactive Graphical Canvas Components
-        if (rd.graph) return <GraphCanvas data={rd.graph} lang={lang} />;
-        if (rd.geometry) {
-            if (rd.geometry.type === 'transversal') return <TransversalVisual data={rd.geometry} />;
-            if (rd.geometry.type === 'bar_graph') return <BarGraph data={rd.geometry} />;
-            if (rd.geometry.type === 'frequency_table') return <FrequencyTable data={rd.geometry} />;
-            return <GeometryVisual data={rd.geometry} />;
-        }
-        if (rd.volume) return <VolumeVisualization data={rd.volume} />;
-        if (rd.pattern) return <PatternVisual data={rd.pattern} />;
-        if (rd.probabilityTree) return <ProbabilityTree data={rd.probabilityTree} />;
-        if (rd.probabilityMarbles) return <ProbabilityMarbles data={rd.probabilityMarbles} />;
-        if (rd.probabilitySpinner) return <ProbabilitySpinner data={rd.probabilitySpinner} />;
-        if (rd.scale) return <ScaleVisual data={rd.scale} />;
-        if (rd.similarity) return <SimilarityCompare data={rd.similarity} />;
-        if (rd.compareShapesArea) return <CompareShapesArea data={rd.compareShapesArea} />;
-        if (rd.frequencyTable) return <FrequencyTable data={rd.frequencyTable} />;
-        if (rd.percentGrid) return <PercentGrid data={rd.percentGrid} />;
-        if (rd.angles) return <AngleVisual data={rd.angles} />;
-
-        // 2. Fallback Channel for Pure Numerical/Algebraic Expressions
-        if (rd.latex) {
-            return (
-                <div className="text-2xl sm:text-5xl font-serif text-indigo-600 text-center py-4 animate-in fade-in duration-300">
-                    <MathText text={`$$${rd.latex}$$`} large={true} />
-                </div>
-            );
-        }
-
-        return null;
-    };
-
     const getSubmitLabel = () => {
         if (feedback === 'correct') return ui.btnNext || "Nästa ➡";
         if (feedback === 'incorrect') return ui.tagWrong || "Fel svar";
@@ -287,7 +240,10 @@ const PracticeView = ({
                                 >
                                     {/* 🟢 THE LOCK: Enforces a strict max-width of 300px so raw SVGs cannot explode in size */}
                                     <div className="w-full max-w-[300px] flex justify-center items-center mx-auto overflow-visible">
-                                        {renderVisual()}
+                                        <VisualRenderer 
+                                            data={question?.renderData} 
+                                            isWordProblem={!!question?.renderData?.isWordProblemApplied} 
+                                        />
                                     </div>
                                 </WordProblemVisualGuard>
                                 
