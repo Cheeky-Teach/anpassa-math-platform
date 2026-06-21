@@ -1198,7 +1198,17 @@ export const SKILL_BUCKETS = {
             tags: ['word_problem_ready'],
             contextType: 'stats_freq_mode',
             extractorPattern: /^(?<mode>\d+)/
-          }
+          },
+          { 
+            key: 'freq_mean', 
+            name: { sv: 'Frekvenstabell: Medelvärde', en: 'Frequency table: Mean' }, 
+            desc: { sv: 'Beräkna medelvärdet från en tabell', en: 'Calculate the mean from a table' } 
+          },
+          { 
+            key: 'freq_median', 
+            name: { sv: 'Frekvenstabell: Median', en: 'Frequency table: Median' }, 
+            desc: { sv: 'Bestäm medianen från en tabell', en: 'Determine the median from a table' } 
+          },
         ]
       },
       probability: {
