@@ -118,7 +118,7 @@ export class StatisticsGen {
         if (v === 'find_mode') {
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Studera listan över ${s.sv}: ${setStr}. Vilket är typvärdet?` : `Examine the list of ${s.en}: ${setStr}. What is the mode?`,
+                    description: lang === 'sv' ? `Kolla igenom ${s.sv} listan: ${setStr}. Vilket är typvärdet?` : `Examine the list of ${s.en}: ${setStr}. What is the mode?`,
                     interceptorToken: `${setStr} ; ${modeVal}`,
                     answerType: 'numeric'
                 },
@@ -180,7 +180,93 @@ export class StatisticsGen {
                 ]
             };
         }
+        // ==========================================
+        // VARIATION: STATS LIE (Misidentified Concept)
+        // ==========================================
+        if (v === 'stats_lie') {
+            // 1. Calculate all 4 actual statistical values
+            const sum = list.reduce((a, b) => a + b, 0);
+            const mean = +(sum / count).toFixed(1);
+            const sortedList = [...list].sort((a, b) => a - b);
+            const median = count % 2 === 0 
+                ? (sortedList[count / 2 - 1] + sortedList[count / 2]) / 2 
+                : sortedList[Math.floor(count / 2)];
+            
+            // 2. Map all concepts with definitions and LaTeX calculation steps
+            const concepts = [
+                { 
+                    key: 'Typvärde', enKey: 'Mode', val: modeVal, 
+                    svName: 'typvärdet (det vanligaste värdet)', enName: 'the mode (most common value)', 
+                    svDesc: 'Typvärdet är det tal som förekommer flest gånger', enDesc: 'The mode is the number that appears the most times', 
+                    latexSteps: `\\mathbf{${modeVal}}`
+                },
+                { 
+                    key: 'Variationsbredd', enKey: 'Range', val: range, 
+                    svName: 'variationsbredden (största minus minsta)', enName: 'the range (maximum minus minimum)', 
+                    svDesc: `Variationsbredden beräknas som ${max} - ${min}`, enDesc: `The range is calculated as ${max} - ${min}`, 
+                    latexSteps: `${max} - ${min} = \\mathbf{${range}}` 
+                },
+                { 
+                    key: 'Median', enKey: 'Median', val: median, 
+                    svName: 'medianen (mitternsta värdet när listan sorterats)', enName: 'the median (middle value when sorted)', 
+                    svDesc: 'Medianen är det mittersta talet i storleksordning', enDesc: 'The median is the middle number in order of size', 
+                    latexSteps: `\\mathbf{${median}}` 
+                },
+                { 
+                    key: 'Medelvärde', enKey: 'Mean', val: mean, 
+                    svName: 'medelvärdet (summan delat på antalet)', enName: 'the mean (sum divided by count)', 
+                    svDesc: `Medelvärdet är summan (${sum}) delat på antalet tal (${count})`, enDesc: `The mean is the sum (${sum}) divided by the number of values (${count})`, 
+                    latexSteps: `\\frac{${sum}}{${count}} = \\mathbf{${mean}}` 
+                }
+            ];
 
+            // 3. Pick what they were *supposed* to do, and what they *actually* did
+            MathUtils.shuffle(concepts);
+            const intended = concepts[0];
+            // Finds another concept that produced a distinctly different number
+            const calculated = concepts.find(c => c.val !== intended.val)!; 
+
+            const ans = lang === 'sv' ? calculated.key : calculated.enKey;
+                
+            const description = lang === 'sv' 
+                ? `En elev ska bestämma ${intended.svName} för listan: ${setStr}.\n\nEleven får fram svaret ${calculated.val}, men det är fel! Vilket statistiskt begrepp har eleven egentligen räknat ut för att få fram det talet?`
+                : `A student needs to determine ${intended.enName} for the list: ${setStr}.\n\nThe student answers ${calculated.val}, but this is incorrect! Which statistical concept did the student *actually* calculate to get that number?`;
+
+            return {
+                renderData: {
+                    description: description,
+                    answerType: 'multiple_choice',
+                    options: lang === 'sv' ? ["Medelvärde", "Median", "Typvärde", "Variationsbredd"] : ["Mean", "Median", "Mode", "Range"]
+                },
+                token: this.toBase64(ans), 
+                variationKey: v, 
+                type: 'concept',
+                clues: [
+                    {
+                        text: lang === 'sv' 
+                            ? `Låt oss undersöka vilket begrepp som faktiskt ger värdet ${calculated.val}.` 
+                            : `Let's investigate which concept actually gives the value ${calculated.val}.`,
+                        latex: `\\text{Elevens svar} = ${calculated.val}`
+                    },
+                    {
+                        text: lang === 'sv'
+                            ? `Testa att beräkna de olika statistiska måtten. ${calculated.svDesc}, vilket blir exakt ${calculated.val}.`
+                            : `Try calculating the different statistical measures. ${calculated.enDesc}, which is exactly ${calculated.val}.`,
+                        latex: `\\text{${lang === 'sv' ? calculated.key : calculated.enKey}} = ${calculated.latexSteps}`
+                    },
+                    {
+                        text: lang === 'sv'
+                            ? `Eleven har alltså blandat ihop namnen och räknat ut ${calculated.key.toLowerCase()} istället för ${intended.key.toLowerCase()}.`
+                            : `The student has thus mixed up the names and calculated the ${calculated.enKey.toLowerCase()} instead of the ${intended.enKey.toLowerCase()}.`,
+                        latex: `\\text{Sökt begrepp} = \\text{${ans}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`,
+                        latex: `\\text{${ans}}`
+                    }
+                ]
+            };
+        }
         // find_min_max default
         const isMin = Math.random() > 0.5;
         return {

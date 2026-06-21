@@ -439,19 +439,11 @@ function App() {
                     setStreak(result.newStreak); setTotalCorrect(prev => prev + 1);
                     updateStats(helpUsed ? 'correctHelp' : 'correctNoHelp');
 
+                    // Show the Choice Modal
                     if (result.levelUp) {
-                        const nextLvl = Math.min(level + 1, 9);
                         setFeedback('correct');
-                        setToast({
-                            title: lang === 'sv' ? "Nivå avklarad!" : "Level Mastered!",
-                            message: lang === 'sv' ? `Snyggt jobbat! Du går nu vidare till nivå ${nextLvl}.` : `Great work! Moving up to level ${nextLvl}.`,
-                            type: 'success'
-                        });
-                        setTimeout(() => {
-                            setLevel(nextLvl);
-                            fetchQuestion(topic, nextLvl, lang);
-                            setToast(null);
-                        }, 2500);
+                        // Wait 1 second so they see the green checkmark before the modal pops up
+                        setTimeout(() => setLevelUpAvailable(true), 1000);
                         return;
                     }
 
@@ -650,8 +642,15 @@ function App() {
             <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
             <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
             <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
-            <StreakModal visible={showStreakModal} onClose={() => setShowStreakModal(false)} streak={streak} ui={ui} />
-            
+            <StreakModal 
+                visible={showStreakModal} 
+                onClose={() => { 
+                    setShowStreakModal(false); 
+                    fetchQuestion(topic, level, lang); 
+                }} 
+                streak={streak} 
+                ui={ui} 
+            />            
             {(view === 'dashboard' || view === 'practice' || view === 'times_table') && (
                 <header className="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-emerald-100 px-4 py-0 flex justify-between items-center shadow-sm">
                     <h1 className="text-xl font-black text-emerald-800 tracking-tighter cursor-pointer uppercase italic" onClick={quitPractice}>ANPASSA</h1>
@@ -722,9 +721,10 @@ function App() {
                             actions={{ retry: (f) => fetchQuestion(topic, level, lang, f), goBack: quitPractice }} 
                             isSolutionRevealed={isSolutionRevealed} timerSettings={timerSettings} formatTime={formatTime}
                             toast={toast}
-                            // --- ADD THE DYNAMIC PROPERTIES TO PASS TO PRACTICEVIEW ---
                             useWordProblems={useWordProblems}
                             setUseWordProblems={setUseWordProblems}
+                            levelUpAvailable={levelUpAvailable}
+                            setLevelUpAvailable={setLevelUpAvailable}
                         />
                         </DesktopZoomWrapper>
                 ) : view === 'question_studio' ? (
