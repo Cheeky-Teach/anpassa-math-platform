@@ -6,7 +6,7 @@ import PatternVisual from '../visuals/PatternComponents';
 import ProbabilityTree from '../visuals/ProbabilityTree';
 import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
 import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
-import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
+import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals';
 import AngleVisual from '../visuals/AngleComponents';
 import CluePanel from '../practice/CluePanel';
 import HistoryList from '../practice/HistoryList';
@@ -148,6 +148,8 @@ const PracticeView = ({
         if (rd.graph) return <GraphCanvas data={rd.graph} lang={lang} />;
         if (rd.geometry) {
             if (rd.geometry.type === 'transversal') return <TransversalVisual data={rd.geometry} />;
+            if (rd.geometry.type === 'bar_graph') return <BarGraph data={rd.geometry} />;
+            if (rd.geometry.type === 'frequency_table') return <FrequencyTable data={rd.geometry} />;
             return <GeometryVisual data={rd.geometry} />;
         }
         if (rd.volume) return <VolumeVisualization data={rd.volume} />;
