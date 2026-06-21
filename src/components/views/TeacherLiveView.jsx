@@ -14,7 +14,7 @@ import PatternVisual from '../visuals/PatternComponents';
 import ProbabilityTree from '../visuals/ProbabilityTree';
 import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
 import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
-import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
+import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals';
 import AngleVisual from '../visuals/AngleComponents';
 
 // --- MATH DISPLAY COMPONENT ---
@@ -172,6 +172,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         if (data.freqTable || data.geometry?.type === 'frequency_table' || data.geometry?.headers) return <FrequencyTable data={data.freqTable || data.geometry} />;
         if (data.percentGrid || data.geometry?.type === 'percent_grid') return <PercentGrid data={data.percentGrid || data.geometry} />;
         if (data.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism'].includes(data.geometry.type)) return <VolumeVisualization data={data.geometry} width={400} height={300} />;
+        if (data.geometry?.type === 'bar_graph') return <BarGraph data={data.geometry} />;
         if (data.geometry?.type === 'transversal') return <TransversalVisual data={data.geometry} />;
         if (data.geometry?.type === 'composite') return <CompositeVisual data={data.geometry} />;
         if (data.geometry?.type === 'angle') return <AngleVisual data={data.geometry} />;

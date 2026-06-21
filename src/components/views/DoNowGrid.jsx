@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents.jsx';
+import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
+import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry';
+import PatternVisual from '../visuals/PatternComponents';
+import ProbabilityTree from '../visuals/ProbabilityTree';
+import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
+import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
+import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals';
+import AngleVisual from '../visuals/AngleComponents';
 import { 
     X, Maximize, Minimize, ZoomIn, ZoomOut, RefreshCw, 
     Eye, EyeOff, Loader2, Play, Pause, RotateCcw, ChevronUp, ChevronDown,
@@ -114,15 +121,41 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
         const vW = isFocused ? 600 : 300;
         const vH = isFocused ? 320 : 150;
 
+        if (!data) return null;
+
+        // 1. Graphs & Patterns
         if (data.graph) return <GraphCanvas data={data.graph} width={vW} height={vH} />;
+        if (data.pattern || data.geometry?.subtype === 'matchsticks' || data.geometry?.subtype === 'sequence') return <PatternVisual data={data.pattern || data.geometry} />;
+        
+        // 2. Probability
+        if (data.marbles || data.geometry?.type === 'marbles' || data.geometry?.items) return <ProbabilityMarbles data={data.marbles || data.geometry} />;
+        if (data.spinner || data.geometry?.type === 'spinner') return <ProbabilitySpinner data={data.spinner || data.geometry} />;
+        if (data.tree || data.geometry?.type === 'pathway') return <ProbabilityTree data={data.tree || data.geometry} />;
+        
+        // 3. Statistics
+        if (data.geometry?.type === 'bar_graph') return <BarGraph data={data.geometry} width={vW} height={vH} />;
+        if (data.freqTable || data.geometry?.type === 'frequency_table' || data.geometry?.headers) return <FrequencyTable data={data.freqTable || data.geometry} />;
+        if (data.percentGrid || data.geometry?.type === 'percent_grid') return <PercentGrid data={data.percentGrid || data.geometry} />;
+
+        // 4. Geometry & Scaling
+        if (data.scale || data.geometry?.type === 'scale') return <ScaleVisual data={data.scale || data.geometry} />;
+        if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
+        if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
+        
+        // 5. Core Geometry Sub-types
         if (data.geometry) {
             const geom = data.geometry;
+            if (geom.type === 'transversal') return <TransversalVisual data={geom} />;
+            if (geom.type === 'composite') return <CompositeVisual data={geom} />;
+            if (geom.type === 'angle') return <AngleVisual data={geom} />;
+            
             const volumeTypes = ['cuboid', 'cylinder', 'cone', 'sphere', 'hemisphere', 'pyramid', 'triangular_prism', 'silo', 'ice_cream', 'volume'];
             if (volumeTypes.includes(geom.type)) {
                 return <VolumeVisualization data={geom} width={vW} height={vH} />;
             }
             return <GeometryVisual data={geom} />;
         }
+        
         return null;
     };
 
