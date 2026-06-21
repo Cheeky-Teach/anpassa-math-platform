@@ -131,8 +131,13 @@ export class LinearEquationGen {
             return {
                 renderData: { 
                     latex: q, 
-                    description: lang === 'sv' ? "Lös ekvationen." : "Solve the equation.", 
-                    answerType: 'text' 
+                    // 🟢 FIXED: Updated the description to explicitly ask what operation to use
+                    description: lang === 'sv' 
+                        ? "Vilket räknesätt används för att beräkna värdet på x?" 
+                        : "Which operation is used to calculate the value of x?", 
+                    // 🟢 FIXED: Changed answerType to multiple_choice and provided the options array
+                    answerType: 'multiple_choice',
+                    options: ops
                 },
                 token: this.toBase64(ansVal), variationKey: v, type: 'concept',
                 clues: [

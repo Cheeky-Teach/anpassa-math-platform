@@ -19,7 +19,7 @@ import { ChevronLeft, Trophy, Zap, Clock, Info, CheckCircle2, XCircle, HelpCircl
 import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 
 const PracticeView = ({ 
-    lang, ui, question, loading, feedback, input, setInput, 
+    lang, ui, question, loading, feedback, input, setInput, streak,
     handleSubmit, handleHint, handleSolution, handleSkip, 
     handleChangeLevel, revealedClues, uiState, actions, 
     levelUpAvailable, setLevelUpAvailable, isSolutionRevealed, 
@@ -183,8 +183,17 @@ const PracticeView = ({
     return (
         <div className="max-w-6xl mx-auto w-full p-2 sm:p-4 fade-in min-h-screen pb-10 relative z-10 font-sans">
             
-            <LevelUpModal visible={levelUpAvailable} ui={ui} onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); }} onStay={() => { setLevelUpAvailable(false); actions.retry(true); }} lang={lang} />
-            
+            <LevelUpModal 
+                visible={levelUpAvailable} 
+                lang={lang} 
+                // Checks if word problems are supported but NOT yet turned on
+                supportsWordProblems={question?.metadata?.levelSupportsWordProblems && !useWordProblems}
+                onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); setUseWordProblems(false);}} 
+                onStay={() => { setLevelUpAvailable(false); actions.retry(true); }} 
+                // Toggles word problems on, which App.jsx detects to fetch a new question!
+                onWordProblems={() => { setUseWordProblems(true); setLevelUpAvailable(false); }} 
+            />
+
             {/* MASTERY TOAST OVERLAY */}
             {toast && (
                 <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[70] w-full max-w-md px-4 animate-in slide-in-from-top duration-500">
@@ -504,6 +513,15 @@ const PracticeView = ({
                             {stats.help > 0 && <div style={{ width: `${getPct(stats.help)}%` }} className="bg-amber-400 h-full transition-all duration-1000" title={ui.stat_help} />}
                             {stats.wrong > 0 && <div style={{ width: `${getPct(stats.wrong)}%` }} className="bg-rose-500 h-full transition-all duration-1000" title={ui.stat_wrong} />}
                             {stats.skipped > 0 && <div style={{ width: `${getPct(stats.skipped)}%` }} className="bg-slate-400 h-full transition-all duration-1000" title={ui.stat_skip} />}
+                        </div>
+                        
+                        {/* STREAK BANNER */}
+                        <div className="bg-gradient-to-r from-orange-400 to-rose-400 p-3 rounded-2xl mb-4 flex justify-between items-center text-white shadow-md border border-orange-300">
+                            <span className="text-[11px] font-black uppercase tracking-widest">{lang === 'sv' ? "Aktuell Streak" : "Current Streak"}</span>
+                            <div className="flex items-center gap-1">
+                                <span className="text-xl font-black leading-none">{streak}</span>
+                                <span className="text-lg">🔥</span>
+                            </div>
                         </div>
 
                         {/* 2. MAJOR STATS GRID */}
