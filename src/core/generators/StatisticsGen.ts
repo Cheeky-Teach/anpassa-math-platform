@@ -69,6 +69,7 @@ export class StatisticsGen {
             case 'freq_count':
             case 'freq_mode':
             case 'freq_range':
+            case 'freq_median':
                 return this.level5_FrequencyTable(lang, key, options);
             case 'real_outlier_shift':
             case 'real_measure_choice':
@@ -424,7 +425,7 @@ export class StatisticsGen {
                     latex: `\\text{Måste-summa totalt} = \\text{Medelvärde} \\cdot \\text{Antal tal}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Gångra (multiplicera) medelvärdet ${mean} med 4 tal totalt:` : `Multiply the mean ${mean} by 4 total numbers:`, 
+                    text: lang === 'sv' ? `Multiplicera medelvärdet ${mean} med 4 tal totalt:` : `Multiply the mean ${mean} by 4 total numbers:`, 
                     latex: `\\text{Måste-summa totalt} = ${mean} \\cdot 4 = \\mathbf{${total}}` 
                 },
                 { 
@@ -449,12 +450,24 @@ export class StatisticsGen {
 
     // --- LEVEL 5: FREQUENCY TABLE (Visual-Safe) ---
     private level5_FrequencyTable(lang: string, variationKey?: string, options: any = {}): any {
-        const v = variationKey || 'freq_count';
+        // 1. Setup the variation pool to randomize between the 4 types
+        const pool: {key: string, type: 'concept' | 'calculate'}[] = [
+            { key: 'freq_count', type: 'calculate' },
+            { key: 'freq_mode', type: 'calculate' },
+            { key: 'freq_mean', type: 'calculate' },
+            { key: 'freq_median', type: 'calculate' }
+        ];
+        const v = variationKey || this.getVariation(pool, options);
+        
+        // 2. Generate the base table data
         const vals = [1, 2, 3, 4];
         const freqs = [MathUtils.randomInt(2, 4), MathUtils.randomInt(4, 6), MathUtils.randomInt(2, 4), MathUtils.randomInt(1, 2)];
         const rows = vals.map((v, i) => [v, freqs[i]]);
         const totalCount = freqs.reduce((a, b) => a + b, 0);
 
+        // ==========================================
+        // VARIATION A: Total Count
+        // ==========================================
         if (v === 'freq_count') {
             return {
                 renderData: {
@@ -485,6 +498,95 @@ export class StatisticsGen {
             };
         }
 
+        // ==========================================
+        // VARIATION B: Mean (Medelvärde)
+        // ==========================================
+        if (v === 'freq_mean') {
+            const sumProducts = rows.reduce((acc, [val, freq]) => acc + (val * freq), 0);
+            const mean = +(sumProducts / totalCount).toFixed(1);
+            
+            return {
+                renderData: {
+                    description: lang === 'sv' ? "Beräkna medelvärdet för mätningarna i tabellen. (Avrunda till en decimal om det behövs)" : "Calculate the mean for the measurements in the table. (Round to one decimal if needed)",
+                    interceptorToken: `${mean}`,
+                    answerType: 'numeric',
+                    geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
+                },
+                token: this.toBase64(mean.toString()), variationKey: v, type: 'calculate',
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "För att räkna ut medelvärdet från en frekvenstabell måste vi först hitta den totala summan av alla värden tillsammans." : "To calculate the mean from a frequency table, we first need to find the total sum of all values combined.", 
+                        latex: `\\text{Steg 1: Hitta den totala summan}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Istället för att addera varje tal för sig, kan vi multiplicera varje 'Värde' med sitt 'Antal'. Exempel: Om värdet 2 har antalet 3 betyder det 2+2+2, vilket vi kan skriva som 2 · 3." : "Instead of adding each number separately, we can multiply each 'Value' by its 'Count'. Example: If the value 2 has a count of 3, it means 2+2+2, which we can write as 2 · 3.", 
+                        latex: `\\text{Summa} = ${rows.map(r => `${r[0]} \\cdot ${r[1]}`).join(' + ')}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `När vi utför multiplikationerna och adderar dem får vi den totala summan till ${sumProducts}.` : `When we perform the multiplications and add them up, we get the total sum of ${sumProducts}.`, 
+                        latex: `\\text{Total summa} = \\mathbf{${sumProducts}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Steg 2: Dela den totala summan (${sumProducts}) med det totala antalet observationer i hela tabellen (${totalCount}) för att få fram medelvärdet.` : `Step 2: Divide the total sum (${sumProducts}) by the total number of observations in the entire table (${totalCount}) to get the mean.`, 
+                        latex: `\\text{Medelvärde} = \\frac{${sumProducts}}{${totalCount}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${mean}` : `Answer: ${mean}`, 
+                        latex: `\\mathbf{${mean}}` 
+                    }
+                ]
+            };
+        }
+
+        // ==========================================
+        // VARIATION C: Median
+        // ==========================================
+        if (v === 'freq_median') {
+            const flatList: number[] = [];
+            rows.forEach(([val, freq]) => { for(let i=0; i<freq; i++) flatList.push(val); });
+            const isEven = totalCount % 2 === 0;
+            const median = isEven 
+                ? (flatList[totalCount / 2 - 1] + flatList[totalCount / 2]) / 2 
+                : flatList[Math.floor(totalCount / 2)];
+
+            return {
+                renderData: {
+                    description: lang === 'sv' ? "Bestäm medianen för värdena i frekvenstabellen." : "Determine the median for the values in the frequency table.",
+                    interceptorToken: `${median}`,
+                    answerType: 'numeric',
+                    geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
+                },
+                token: this.toBase64(median.toString()), variationKey: v, type: 'calculate',
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Medianen är det mittersta värdet när absolut alla observationer ställs upp på en lång rad i storleksordning." : "The median is the middle value when absolutely all observations are lined up in a long row in order of size.", 
+                        latex: `\\text{Steg 1: Skriv ut alla värden i en kö}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Vi använder tabellen för att rulla ut kön. Om 'Värde' är 1 och 'Antal' är 2, skriver vi två ettor (1, 1). Gör vi detta för hela tabellen ser kön ut så här:" : "We use the table to unroll the line. If 'Value' is 1 and 'Count' is 2, we write two ones (1, 1). If we do this for the entire table, the line looks like this:", 
+                        latex: `\\text{Kö: } ${flatList.join(', ')}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Steg 2: Hitta mitten av kön. Eftersom det finns totalt ${totalCount} observationer, måste vi hitta den exakta mittpunkten.` : `Step 2: Find the middle of the line. Since there are a total of ${totalCount} observations, we must find the exact center point.`, 
+                        latex: isEven 
+                            ? `\\text{Mitten är mellan } ${flatList[totalCount/2 - 1]} \\text{ och } ${flatList[totalCount/2]}`
+                            : `\\text{Mittenplatsen är värdet } ${median}` 
+                    },
+                    ...(isEven ? [{
+                        text: lang === 'sv' ? "Eftersom antalet observationer är jämnt, hamnar två tal i mitten. Medianen är medelvärdet av dessa två tal." : "Since the number of observations is even, two numbers land in the middle. The median is the mean of these two numbers.",
+                        latex: `\\text{Median} = \\frac{${flatList[totalCount/2 - 1]} + ${flatList[totalCount/2]}}{2} = \\mathbf{${median}}`
+                    }] : []),
+                    { 
+                        text: lang === 'sv' ? `Svar: ${median}` : `Answer: ${median}`, 
+                        latex: `\\mathbf{${median}}` 
+                    }
+                ]
+            };
+        }
+
+        // ==========================================
+        // VARIATION D: Mode (Typvärde - Fallback)
+        // ==========================================
         const modeIdx = freqs.indexOf(Math.max(...freqs));
         const mode = vals[modeIdx];
         return {
@@ -568,7 +670,7 @@ export class StatisticsGen {
                     latex: `\\text{Total kostnad i kassan} = 5 \\text{ kg} \\cdot 26 \\text{ kr/kg}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Gångra vikten med medelpriset för att hitta kassa-totalen:" : "Multiply the weight by the average price to find the register total:", 
+                    text: lang === 'sv' ? "Multiplicera vikten med medelpriset för att hitta kassa-totalen:" : "Multiply the weight by the average price to find the register total:", 
                     latex: `\\text{Total kostnad i kassan} = 5 \\cdot 26 = \\mathbf{${totalSum}}` 
                 },
                 { 
