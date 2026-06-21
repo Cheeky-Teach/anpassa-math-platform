@@ -26,7 +26,9 @@ export default function WordProblemVisualGuard({
         'eq_no_m',
         'eq_horizontal',
         'freq_count',
-        'freq_mode'
+        'freq_mode',
+        'freq_median',
+        'freq_range'
     ];
 
     const shouldBypassGuard = alwaysShow || ALWAYS_SHOW_VISUAL_KEYS.includes(questionKey);
