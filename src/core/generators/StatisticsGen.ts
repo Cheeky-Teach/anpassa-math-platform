@@ -448,9 +448,8 @@ export class StatisticsGen {
         };
     }
 
-    // --- LEVEL 5: FREQUENCY TABLE (Visual-Safe) ---
+    // --- LEVEL 5: TABLES AND GRAPHS ---
     private level5_FrequencyTable(lang: string, variationKey?: string, options: any = {}): any {
-        // 1. Setup the variation pool to randomize between the 4 types
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'freq_count', type: 'calculate' },
             { key: 'freq_mode', type: 'calculate' },
@@ -459,11 +458,27 @@ export class StatisticsGen {
         ];
         const v = variationKey || this.getVariation(pool, options);
         
-        // 2. Generate the base table data
+        // 1. Math Data (Identical for both views)
         const vals = [1, 2, 3, 4];
         const freqs = [MathUtils.randomInt(2, 4), MathUtils.randomInt(4, 6), MathUtils.randomInt(2, 4), MathUtils.randomInt(1, 2)];
         const rows = vals.map((v, i) => [v, freqs[i]]);
         const totalCount = freqs.reduce((a, b) => a + b, 0);
+
+        // 2. 🟢 UI Toggle: 50% chance to render a graph instead of a table
+        const isGraph = Math.random() > 0.5;
+        const geomType = isGraph ? 'bar_graph' : 'frequency_table';
+        const headers = lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'];
+
+        // 3. 🟢 Dynamic Text Helpers for Clues
+        const tVis = isGraph 
+            ? (lang === 'sv' ? "stolpdiagrammet" : "the bar graph") 
+            : (lang === 'sv' ? "frekvenstabellen" : "the frequency table");
+        const tCountSrc = isGraph 
+            ? (lang === 'sv' ? "y-axeln (stapelns höjd)" : "the y-axis (bar height)") 
+            : (lang === 'sv' ? "kolumnen 'Antal'" : "the 'Count' column");
+        const tValSrc = isGraph 
+            ? (lang === 'sv' ? "x-axeln" : "the x-axis") 
+            : (lang === 'sv' ? "kolumnen 'Värde'" : "the 'Value' column");
 
         // ==========================================
         // VARIATION A: Total Count
@@ -471,28 +486,23 @@ export class StatisticsGen {
         if (v === 'freq_count') {
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Hur många observationer (totalt antal) visas i frekvenstabellen?" : "How many observations (total count) are shown in the frequency table?",
-                    interceptorToken: `${totalCount}`,
-                    answerType: 'numeric',
-                    geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
+                    description: lang === 'sv' ? `Hur många observationer (totalt antal) visas i ${tVis}?` : `How many observations (total count) are shown in ${tVis}?`,
+                    interceptorToken: `${totalCount}`, answerType: 'numeric',
+                    geometry: { type: geomType, headers, rows }
                 },
                 token: this.toBase64(totalCount.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Kolumnen 'Antal' talar om exakt hur många gånger varje enskilt värde har räknats eller mätts upp." : "The 'Count' column tells us exactly how many times each individual value was counted or measured.", 
-                        latex: `\\text{Kolla i spalten för 'Antal'}` 
+                        text: lang === 'sv' ? `Genom att läsa av ${tCountSrc} ser vi exakt hur många gånger varje enskilt värde har räknats upp.` : `By reading ${tCountSrc}, we can see exactly how many times each individual value was counted.`, 
+                        latex: "" 
                     },
                     { 
-                        text: lang === 'sv' ? `För att hitta hela gruppens storlek plussar vi helt enkelt ihop alla siffrorna nedåt i Antal-spalten.` : `To find the size of the entire group, simply add up all the numbers going down the Count column.`, 
+                        text: lang === 'sv' ? `För att hitta hela gruppens storlek adderar vi helt enkelt ihop alla dessa antal.` : `To find the size of the entire group, we simply add all of these counts together.`, 
                         latex: `\\text{Totalt antal} = ${freqs.join(' + ')}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Räkna ut summan för att hitta det totala antalet mätningar." : "Calculate the sum to find the total count of measurements.", 
-                        latex: `\\text{Totalt antal} = \\mathbf{${totalCount}}` 
-                    },
-                    { 
                         text: lang === 'sv' ? `Svar: ${totalCount}` : `Answer: ${totalCount}`, 
-                        latex: `${totalCount}` 
+                        latex: `\\mathbf{${totalCount}}` 
                     }
                 ]
             };
@@ -507,27 +517,22 @@ export class StatisticsGen {
             
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Beräkna medelvärdet för mätningarna i tabellen. (Avrunda till en decimal om det behövs)" : "Calculate the mean for the measurements in the table. (Round to one decimal if needed)",
-                    interceptorToken: `${mean}`,
-                    answerType: 'numeric',
-                    geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
+                    description: lang === 'sv' ? `Beräkna medelvärdet för mätningarna i ${tVis}. (Avrunda till en decimal om det behövs)` : `Calculate the mean for the measurements in ${tVis}. (Round to one decimal if needed)`,
+                    interceptorToken: `${mean}`, answerType: 'numeric',
+                    geometry: { type: geomType, headers, rows }
                 },
                 token: this.toBase64(mean.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "För att räkna ut medelvärdet från en frekvenstabell måste vi först hitta den totala summan av alla värden tillsammans." : "To calculate the mean from a frequency table, we first need to find the total sum of all values combined.", 
+                        text: lang === 'sv' ? `För att räkna ut medelvärdet från ${isGraph ? 'ett diagram' : 'en tabell'} måste vi först hitta den totala summan av alla värden tillsammans.` : `To calculate the mean from ${isGraph ? 'a graph' : 'a table'}, we first need to find the total sum of all values combined.`, 
                         latex: `\\text{Steg 1: Hitta den totala summan}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Istället för att addera varje tal för sig, kan vi multiplicera varje 'Värde' med sitt 'Antal'. Exempel: Om värdet 2 har antalet 3 betyder det 2+2+2, vilket vi kan skriva som 2 · 3." : "Instead of adding each number separately, we can multiply each 'Value' by its 'Count'. Example: If the value 2 has a count of 3, it means 2+2+2, which we can write as 2 · 3.", 
+                        text: lang === 'sv' ? `Multiplicera varje värde på ${tValSrc} med sitt antal från ${tCountSrc}.` : `Multiply each value on ${tValSrc} by its count from ${tCountSrc}.`, 
                         latex: `\\text{Summa} = ${rows.map(r => `${r[0]} \\cdot ${r[1]}`).join(' + ')}` 
                     },
                     { 
-                        text: lang === 'sv' ? `När vi utför multiplikationerna och adderar dem får vi den totala summan till ${sumProducts}.` : `When we perform the multiplications and add them up, we get the total sum of ${sumProducts}.`, 
-                        latex: `\\text{Total summa} = \\mathbf{${sumProducts}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Steg 2: Dela den totala summan (${sumProducts}) med det totala antalet observationer i hela tabellen (${totalCount}) för att få fram medelvärdet.` : `Step 2: Divide the total sum (${sumProducts}) by the total number of observations in the entire table (${totalCount}) to get the mean.`, 
+                        text: lang === 'sv' ? `Steg 2: Dela den totala summan (${sumProducts}) med det totala antalet observationer (${totalCount}) för att få fram medelvärdet.` : `Step 2: Divide the total sum (${sumProducts}) by the total number of observations (${totalCount}) to get the mean.`, 
                         latex: `\\text{Medelvärde} = \\frac{${sumProducts}}{${totalCount}}` 
                     },
                     { 
@@ -545,75 +550,63 @@ export class StatisticsGen {
             const flatList: number[] = [];
             rows.forEach(([val, freq]) => { for(let i=0; i<freq; i++) flatList.push(val); });
             const isEven = totalCount % 2 === 0;
-            const median = isEven 
-                ? (flatList[totalCount / 2 - 1] + flatList[totalCount / 2]) / 2 
-                : flatList[Math.floor(totalCount / 2)];
+            const median = isEven ? (flatList[totalCount / 2 - 1] + flatList[totalCount / 2]) / 2 : flatList[Math.floor(totalCount / 2)];
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Bestäm medianen för värdena i frekvenstabellen." : "Determine the median for the values in the frequency table.",
-                    interceptorToken: `${median}`,
-                    answerType: 'numeric',
-                    geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
+                    description: lang === 'sv' ? `Bestäm medianen för värdena i ${tVis}.` : `Determine the median for the values in ${tVis}.`,
+                    interceptorToken: `${median}`, answerType: 'numeric',
+                    geometry: { type: geomType, headers, rows }
                 },
                 token: this.toBase64(median.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Medianen är det mittersta värdet när absolut alla observationer ställs upp på en lång rad i storleksordning." : "The median is the middle value when absolutely all observations are lined up in a long row in order of size.", 
-                        latex: `\\text{Steg 1: Skriv ut alla värden i en kö}` 
+                        text: lang === 'sv' ? `Medianen är det mittersta värdet när vi skriver ut alla observationer från ${tVis} i en lång rad.` : `The median is the middle value when we write out all observations from ${tVis} in a long row.`, 
+                        latex: `\\text{Steg 1: Skriv ut värdena i en kö}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Vi använder tabellen för att rulla ut kön. Om 'Värde' är 1 och 'Antal' är 2, skriver vi två ettor (1, 1). Gör vi detta för hela tabellen ser kön ut så här:" : "We use the table to unroll the line. If 'Value' is 1 and 'Count' is 2, we write two ones (1, 1). If we do this for the entire table, the line looks like this:", 
+                        text: lang === 'sv' ? `Om ett värde är 1 och ${isGraph ? 'stapeln är 2 hög' : 'antalet är 2'}, skriver vi två ettor (1, 1). Hela kön ser ut så här:` : `If a value is 1 and ${isGraph ? 'the bar is 2 high' : 'the count is 2'}, we write two ones (1, 1). The entire line looks like this:`, 
                         latex: `\\text{Kö: } ${flatList.join(', ')}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Steg 2: Hitta mitten av kön. Eftersom det finns totalt ${totalCount} observationer, måste vi hitta den exakta mittpunkten.` : `Step 2: Find the middle of the line. Since there are a total of ${totalCount} observations, we must find the exact center point.`, 
-                        latex: isEven 
-                            ? `\\text{Mitten är mellan } ${flatList[totalCount/2 - 1]} \\text{ och } ${flatList[totalCount/2]}`
-                            : `\\text{Mittenplatsen är värdet } ${median}` 
+                        text: lang === 'sv' ? `Steg 2: Hitta mitten av kön. Det finns totalt ${totalCount} värden uppskrivna.` : `Step 2: Find the middle of the line. There are a total of ${totalCount} values written down.`, 
+                        latex: isEven ? `\\text{Mitten är mellan } ${flatList[totalCount/2 - 1]} \\text{ och } ${flatList[totalCount/2]}` : `\\text{Mittenplatsen är värdet } ${median}` 
                     },
                     ...(isEven ? [{
-                        text: lang === 'sv' ? "Eftersom antalet observationer är jämnt, hamnar två tal i mitten. Medianen är medelvärdet av dessa två tal." : "Since the number of observations is even, two numbers land in the middle. The median is the mean of these two numbers.",
+                        text: lang === 'sv' ? "Eftersom kön är jämn, tar vi medelvärdet av de två mittersta siffrorna." : "Since the line is even, we take the mean of the two middle digits.",
                         latex: `\\text{Median} = \\frac{${flatList[totalCount/2 - 1]} + ${flatList[totalCount/2]}}{2} = \\mathbf{${median}}`
                     }] : []),
-                    { 
-                        text: lang === 'sv' ? `Svar: ${median}` : `Answer: ${median}`, 
-                        latex: `\\mathbf{${median}}` 
-                    }
+                    { text: lang === 'sv' ? `Svar: ${median}` : `Answer: ${median}`, latex: `\\mathbf{${median}}` }
                 ]
             };
         }
 
         // ==========================================
-        // VARIATION D: Mode (Typvärde - Fallback)
+        // VARIATION D: Mode (Typvärde)
         // ==========================================
         const modeIdx = freqs.indexOf(Math.max(...freqs));
         const mode = vals[modeIdx];
         return {
             renderData: {
-                description: lang === 'sv' ? "Vilket är typvärdet enligt tabellen?" : "What is the mode according to the table?",
-                interceptorToken: `${mode}`,
-                answerType: 'numeric',
-                geometry: { type: 'frequency_table', headers: lang === 'sv' ? ['Värde', 'Antal'] : ['Value', 'Count'], rows }
+                description: lang === 'sv' ? `Vilket är typvärdet enligt ${tVis}?` : `What is the mode according to ${tVis}?`,
+                interceptorToken: `${mode}`, answerType: 'numeric',
+                geometry: { type: geomType, headers, rows }
             },
             token: this.toBase64(mode.toString()), variationKey: 'freq_mode', type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? "Typvärdet betyder fortfarande det värde som är kändast och förekommer flest gånger (har absolut högst siffra i Antal-spalten)." : "The mode still means the value that is most famous and appears the most times (has the absolute highest number in the Count column).", 
-                    latex: `\\text{Leta efter högst frekvens}` 
+                    text: lang === 'sv' ? `Typvärdet är det värde som har absolut ${isGraph ? 'högst stapel' : 'högst siffra i Antal-spalten'}.` : `The mode is the value that has the absolute ${isGraph ? 'highest bar' : 'highest number in the Count column'}.`, 
+                    latex: `\\text{Leta efter det största antalet}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Leta efter det största numret i kolumnen 'Antal'. Vi ser att den högsta toppsiffran där är ${freqs[modeIdx]}.` : `Look for the largest number in the 'Count' column. We can see that the highest top digit there is ${freqs[modeIdx]}.`, 
-                    latex: `\\text{Högsta antal} = \\mathbf{${freqs[modeIdx]}}` 
+                    text: lang === 'sv' ? `Leta efter den ${isGraph ? 'högsta stapeln. Vi ser att den når upp till' : 'största siffran i kolumnen Antal. Vi ser att toppsiffran är'} ${freqs[modeIdx]}.` : `Look for the ${isGraph ? 'highest bar. We see it reaches up to' : 'largest number in the Count column. We see the top digit is'} ${freqs[modeIdx]}.`, 
+                    latex: `\\text{Största antal} = \\mathbf{${freqs[modeIdx]}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Kolla nu horisontellt till vänster på samma rad för att se vilket 'Värde' som hör ihop med den vinnande siffran: Det är värdet ${mode}.` : `Now look horizontally to the left on that same row to see which 'Value' belongs to that winning count: It is the value ${mode}.`, 
+                    text: lang === 'sv' ? `Kolla nu ${isGraph ? 'rakt ner på x-axeln under den stapeln' : 'horisontellt till vänster på samma rad'} för att se vilket värde som vann.` : `Now look ${isGraph ? 'straight down to the x-axis under that bar' : 'horizontally to the left on the same row'} to see which value won.`, 
                     latex: `\\text{Motsvarande värde} = \\mathbf{${mode}}` 
                 },
-                { 
-                    text: lang === 'sv' ? `Svar: ${mode}` : `Answer: ${mode}`, 
-                    latex: `${mode}` 
-                }
+                { text: lang === 'sv' ? `Svar: ${mode}` : `Answer: ${mode}`, latex: `\\mathbf{${mode}}` }
             ]
         };
     }

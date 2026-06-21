@@ -222,7 +222,7 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Medelvärde", en: "Mean" },
         3: { sv: "Median", en: "Median" },
         4: { sv: "Baklänges medelvärde", en: "Reverse Mean" },
-        5: { sv: "Frekvenstabell", en: "Frequency Table" },
+        5: { sv: "Tabell och Diagram", en: "Tables and Graphs" },
         6: { sv: "Blandade begrepp", en: "Mixed Concepts" }
     },
     simplify: {

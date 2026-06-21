@@ -9,7 +9,7 @@ import PatternVisual from '../visuals/PatternComponents.jsx';
 import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals.jsx';
 import ProbabilityTree from '../visuals/ProbabilityTree.jsx';
 import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals.jsx';
-import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals.jsx';
+import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals.jsx';
 import AngleVisual from '../visuals/AngleComponents.jsx';
 
 // --- MATH RENDERING ENGINE ---
@@ -110,7 +110,9 @@ export default function PrintView({
         if (rd.spinner || rd.geometry?.type === 'spinner') {
             return <ProbabilitySpinner data={rd.spinner || rd.geometry} />;
         }
-        
+        if (rd.geometry?.type === 'bar_graph') {
+        return <BarGraph data={rd.geometry} />;
+        }
         if (rd.freqTable || rd.geometry?.type === 'frequency_table' || rd.geometry?.headers) {
             return <FrequencyTable data={rd.freqTable || rd.geometry} />;
         }

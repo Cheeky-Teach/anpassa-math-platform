@@ -44,6 +44,65 @@ export const FrequencyTable = ({ data, width = "100%", height = "auto" }) => {
     );
 };
 
+// Renders standard frequency data as a single-quadrant Bar Graph
+export const BarGraph = ({ data, width = "100%", height = "auto" }) => {
+    if (!data?.rows || !data?.headers) return null;
+    const { headers, rows } = data; 
+
+    // Internal SVG Canvas Dimensions
+    const svgWidth = 400;
+    const svgHeight = 280;
+    const margin = { top: 20, right: 20, bottom: 50, left: 50 };
+    const chartWidth = svgWidth - margin.left - margin.right;
+    const chartHeight = svgHeight - margin.top - margin.bottom;
+
+    // Determine scale dynamically
+    const maxFreq = Math.max(...rows.map(r => r[1]), 5); 
+    const barWidth = chartWidth / rows.length;
+
+    return (
+        <div className="flex justify-center items-center p-2 overflow-hidden w-full max-w-[400px] mx-auto bg-white rounded-xl border border-slate-200 shadow-sm">
+            <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} width={width} height={height} className="overflow-visible">
+                
+                {/* 1. Y-Axis Grid Lines & Numbers */}
+                {Array.from({length: maxFreq + 1}).map((_, i) => {
+                    const y = margin.top + chartHeight - (i / maxFreq) * chartHeight;
+                    return (
+                        <g key={`grid-${i}`}>
+                            <line x1={margin.left} y1={y} x2={margin.left + chartWidth} y2={y} stroke="#f1f5f9" strokeWidth="2" />
+                            <text x={margin.left - 10} y={y + 4} textAnchor="end" fontSize="12" fill="#64748b" className="font-sans font-bold">{i}</text>
+                        </g>
+                    );
+                })}
+
+                {/* 2. Main X/Y Axes */}
+                <line x1={margin.left} y1={margin.top} x2={margin.left} y2={margin.top + chartHeight} stroke="#94a3b8" strokeWidth="2" />
+                <line x1={margin.left} y1={margin.top + chartHeight} x2={margin.left + chartWidth} y2={margin.top + chartHeight} stroke="#94a3b8" strokeWidth="2" />
+
+                {/* 3. The Bars and X-Axis Labels */}
+                {rows.map((row, i) => {
+                    const [val, freq] = row;
+                    const bHeight = (freq / maxFreq) * chartHeight;
+                    const bW = barWidth * 0.6; // Bar thickness
+                    const x = margin.left + (i * barWidth) + (barWidth / 2) - (bW / 2); 
+                    const y = margin.top + chartHeight - bHeight;
+                    
+                    return (
+                        <g key={`bar-${i}`}>
+                            <rect x={x} y={y} width={bW} height={bHeight} fill="#3b82f6" rx="4" className="drop-shadow-sm" />
+                            <text x={x + bW/2} y={margin.top + chartHeight + 20} textAnchor="middle" fontSize="14" fill="#475569" className="font-sans font-black">{val}</text>
+                        </g>
+                    );
+                })}
+
+                {/* 4. Axis Headers */}
+                <text x={margin.left + chartWidth/2} y={svgHeight - 5} textAnchor="middle" fontSize="12" fill="#64748b" className="font-sans font-black uppercase tracking-widest">{headers[0]}</text>
+                <text x={12} y={margin.top + chartHeight/2} transform={`rotate(-90, 12, ${margin.top + chartHeight/2})`} textAnchor="middle" fontSize="12" fill="#64748b" className="font-sans font-black uppercase tracking-widest">{headers[1]}</text>
+            </svg>
+        </div>
+    );
+};
+
 /**
  * PercentGrid - Refactored for fluid containers.
  * Visualizes percentages on a 10x10 grid using internal coordinate math.
