@@ -18,7 +18,7 @@ import PatternVisual from '../visuals/PatternComponents';
 import ProbabilityTree from '../visuals/ProbabilityTree';
 import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
 import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
-import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
+import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals';
 import AngleVisual from '../visuals/AngleComponents';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 
@@ -329,6 +329,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         if (data.tree) return <ProbabilityTree data={data.tree} />;
         if (data.marbles || data.geometry?.type === 'marbles') return <ProbabilityMarbles data={data.marbles || data.geometry} />;
         if (data.spinner || data.geometry?.type === 'spinner') return <ProbabilitySpinner data={data.spinner || data.geometry} />;
+        if (data.geometry?.type === 'bar_graph') return <BarGraph data={data.geometry} />;
         if (data.freqTable || data.geometry?.headers) return <FrequencyTable data={data.freqTable || data.geometry} />;
         if (data.percentGrid || data.geometry?.type === 'percent_grid') return <PercentGrid data={data.percentGrid || data.geometry} />;
         if (data.geometry?.type === 'transversal') return <TransversalVisual data={data.geometry} />;
@@ -492,7 +493,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         {/* REPLACE the icon button with this textual button */}
                         <button 
                             onClick={onBack} 
-                            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all border border-slate-100"
+                            className="px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all border border-slate-100"
                         >
                             {t.toDashboard}
                         </button>

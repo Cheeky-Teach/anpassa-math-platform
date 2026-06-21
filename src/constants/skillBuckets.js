@@ -1185,7 +1185,7 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'freq_count', 
-            name: { sv: 'Tabell: Totalt antal', en: 'Table: Total count' }, 
+            name: { sv: 'Tabell/Graf: Totalt antal', en: 'Table/Graph: Total count' }, 
             desc: { sv: 'Summera alla frekvenser i tabellen', en: 'Sum all frequencies in the table' },
             tags: ['word_problem_ready'],
             contextType: 'stats_freq_count',
@@ -1193,11 +1193,21 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'freq_mode', 
-            name: { sv: 'Tabell: Typvärde', en: 'Table: Mode' }, 
+            name: { sv: 'Tabell/Graf: Typvärde', en: 'Table/Graph: Mode' }, 
             desc: { sv: 'Hitta värdet med högst frekvens', en: 'Find the value with the highest frequency' },
             tags: ['word_problem_ready'],
             contextType: 'stats_freq_mode',
             extractorPattern: /^(?<mode>\d+)/
+          },
+          { 
+            key: 'freq_mean', 
+            name: { sv: 'Tabell/Graf: Medelvärde', en: 'Table/Graph: Mean' }, 
+            desc: { sv: 'Beräkna medelvärdet från en tabell', en: 'Calculate the mean from a table' } 
+          },
+          { 
+            key: 'freq_median', 
+            name: { sv: 'Tabell/Graf: Median', en: 'Table/Graph: Median' }, 
+            desc: { sv: 'Bestäm medianen från en tabell', en: 'Determine the median from a table' } 
           }
         ]
       },
