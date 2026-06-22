@@ -53,7 +53,7 @@ export default function VisualRenderer({ data, width, height, isWordProblem }) {
         if (volumeTypes.includes(geom.type)) {
             return (
                 <div style={{ 
-                    width: width || 250, 
+                    width: width || 350, 
                     height: height || 250, 
                     display: 'flex', 
                     justifyContent: 'center', 
