@@ -1,14 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Loader2, RefreshCcw, Type, Calculator, Zap } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
-import { GeometryVisual, GraphCanvas } from '../visuals/GeometryComponents';
-import { VolumeVisualization } from '../visuals/VolumeVisualization';
-import PatternVisual from '../visuals/PatternComponents';
-import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
-import ProbabilityTree from '../visuals/ProbabilityTree';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
-import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
-import AngleVisual from '../visuals/AngleComponents';
+import VisualRenderer from '../visuals/VisualRenderer';
 
 // Lightweight Math Renderer for the Preview
 const MathDisplay = ({ content, className = "" }) => {
@@ -96,18 +89,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
         onSummon(newItem);
     };
 
-    // --- VISUAL RENDERER ---
-    const renderVisual = (rd) => {
-        if (!rd) return null;
-        if (rd.graph) return <GraphCanvas data={rd.graph} />;
-        if (rd.pattern || rd.geometry?.subtype === 'sequence') return <PatternVisual data={rd.pattern || rd.geometry} />;
-        if (rd.marbles) return <ProbabilityMarbles data={rd.marbles} />;
-        if (rd.spinner) return <ProbabilitySpinner data={rd.spinner} />;
-        if (rd.freqTable) return <FrequencyTable data={rd.freqTable} />;
-        if (rd.geometry?.type === 'angle') return <AngleVisual data={rd.geometry} />;
-        if (rd.geometry) return <GeometryVisual data={rd.geometry} width={220} height={180} />;
-        return null;
-    };
+    
 
     return (
         <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-8 animate-in fade-in duration-200">
@@ -186,9 +168,11 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                                 </div>
                             ) : previewData ? (
                                 <div className="w-full flex flex-col items-center animate-in zoom-in-95 duration-200">
-                                    {/* 🟢 FIXED: Removed scale-95 origin constraints and set wide scrolling handles if needed */}
-                                    <div className="w-full max-w-md mx-auto flex justify-center mb-6 overflow-x-auto custom-scrollbar p-2">
-                                        {renderVisual(previewData.renderData)}
+                                    <div className="flex justify-center scale-90 origin-top mt-2">
+                                        <VisualRenderer 
+                                            data={previewData?.renderData} 
+                                            isWordProblem={isWordProblem} 
+                                        />
                                     </div>
                                     <div className="text-lg text-slate-800 font-bold text-center px-4 leading-relaxed mb-6">
                                         <MathDisplay content={previewData.renderData.description} />

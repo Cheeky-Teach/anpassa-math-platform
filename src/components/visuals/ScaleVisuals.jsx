@@ -74,7 +74,7 @@ export const SimilarityCompare = ({ data, width = "100%", height = "auto" }) => 
                 preserveAspectRatio="xMidYMid meet"
                 className="block overflow-visible drop-shadow-sm"
             >
-                <RenderShape type={shapeType} dims={leftDims} labels={data.left.labels} offsetX={-75} scale={0.6} />
+                <RenderShape type={shapeType} dims={leftDims} labels={data.left.labels} offsetX={-35} scale={0.6} />
                 <text x="200" y="125" textAnchor="middle" fontSize="30" fontWeight="bold" fill="#000000">→</text>
                 <RenderShape type={shapeType} dims={rightDims} labels={data.right.labels} offsetX={200} scale={1.1} />
             </svg>

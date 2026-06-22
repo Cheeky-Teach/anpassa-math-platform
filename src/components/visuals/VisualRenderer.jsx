@@ -1,7 +1,8 @@
 import React from 'react';
 
 // --- THE SINGLE SOURCE OF TRUTH FOR ALL VISUAL IMPORTS ---
-import { GeometryVisual, GraphCanvas, VolumeVisualization } from './GeometryComponents';
+import { GeometryVisual, GraphCanvas } from './GeometryComponents';
+import { VolumeVisualization } from './VolumeVisualization';
 import { TransversalVisual, CompositeVisual } from './ComplexGeometry';
 import PatternVisual from './PatternComponents';
 import ProbabilityTree from './ProbabilityTree';
@@ -50,8 +51,18 @@ export default function VisualRenderer({ data, width, height, isWordProblem }) {
         
         const volumeTypes = ['cuboid', 'cylinder', 'cone', 'sphere', 'hemisphere', 'pyramid', 'triangular_prism', 'silo', 'ice_cream', 'volume'];
         if (volumeTypes.includes(geom.type)) {
-            // Apply standard compact sizing for volumes unless overridden
-            return <VolumeVisualization data={geom} width={width || 240} height={height || 200} />;
+            return (
+                <div style={{ 
+                    width: width || 250, 
+                    height: height || 250, 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center',
+                    margin: 'auto'
+                }}>
+                    <VolumeVisualization data={geom} />
+                </div>
+            );
         }
         
         return <GeometryVisual data={geom} width={width} height={height} />;

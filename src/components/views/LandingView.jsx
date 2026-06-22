@@ -5,11 +5,7 @@ import {
     Monitor, Signal, Check, XCircle, RefreshCcw, Calculator, Shuffle, Loader2
 } from 'lucide-react';
 
-// Reusing the actual visual components for the interactive miniatures
-// FIXED: Reverted VolumeVisualization to GeometryVisual to prevent rendering crashes
-import { GeometryVisual, GraphCanvas } from '../visuals/GeometryComponents.jsx';
-import { ProbabilityMarbles } from '../visuals/ProbabilityVisuals.jsx';
-import { PercentGrid } from '../visuals/StatisticsVisuals.jsx';
+import VisualRenderer from '../visuals/VisualRenderer';
 
 // --- MATH RENDERING ENGINE ---
 const MathDisplay = ({ content, className = "" }) => {
@@ -107,7 +103,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             // New Miniature Strings
             hook_title: "Oändligt med uppgifter.",
             hook_subtitle: "Noll förberedelse.",
-            hook_desc: "Lämna statiska PDF:er bakom dig. Vår motor genererar unika siffror, grafer och figurer i realtid. Varje elev får sin helt egen version av uppgiften.",
+            hook_desc: "Lämna statiska PDF:er bakom dig. Skapa nya uppgifter, tal, grafer och figurer i realtid. Varje elev får sin helt egen version av uppgiften.",
             interceptor_title: "Matte är inte bara siffror.",
             interceptor_subtitle: "Det är verkligheten.",
             interceptor_desc: "Vår \"Word Problem Interceptor\" förvandlar torra ekvationer till relaterbara textuppgifter med ett enda klick. Systemet anpassar automatiskt enheter, gränsvärden och facit till det valda scenariot.",
@@ -143,7 +139,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
 
             hook_title: "Infinite questions.",
             hook_subtitle: "Zero prep time.",
-            hook_desc: "Leave static PDFs behind. Our engine generates unique numbers, graphs, and figures in real-time. Every student gets their own version of the task.",
+            hook_desc: "Leave static PDFs behind. The system creates unique numbers, graphs, and figures in real-time. Every student gets their own version of the task.",
             interceptor_title: "Math isn't just numbers.",
             interceptor_subtitle: "It's the real world.",
             interceptor_desc: "Our \"Word Problem Interceptor\" transforms dry equations into relatable story tasks with a single click. The system automatically adapts units, thresholds, and answer keys to the chosen scenario.",
@@ -167,8 +163,6 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
         }
     }[lang];
 
-    // Data payload for the Infinite Math slot machine
-    // FIXED: Using scale wrappers to prevent visuals from bleeding out of their containers
     const INFINITE_EXAMPLES = [
         {
             id: 1,
@@ -177,7 +171,8 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             latex: "V = \\pi \\cdot 4^2 \\cdot 10",
             comp: (
                 <div className="transform scale-[0.6] sm:scale-75 origin-center w-full h-full flex justify-center items-center">
-                    <GeometryVisual data={{ type: "cylinder", labels: { r: "4", h: "10" } }} />
+                    {/* 🟢 FIXED: Wrapped in geometry object */}
+                    <VisualRenderer data={{ geometry: { type: "cylinder", labels: { r: "4", h: "10" } } }} />
                 </div>
             )
         },
@@ -188,7 +183,8 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             latex: "y = 2x - 1",
             comp: (
                 <div className="transform scale-[0.65] sm:scale-90 origin-center w-full h-full flex justify-center items-center pointer-events-none">
-                    <GraphCanvas data={{ range: 5, gridStep: 1, labelStep: 1, lines: [{ slope: 2, intercept: -1, color: '#4f46e5' }] }} />
+                    {/* 🟢 FIXED: Wrapped in graph object */}
+                    <VisualRenderer data={{ graph: { range: 5, gridStep: 1, labelStep: 1, lines: [{ slope: 2, intercept: -1, color: '#4f46e5' }] } }} />
                 </div>
             )
         },
@@ -199,7 +195,8 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             latex: "P(\\text{Blå}) = \\frac{3}{8}",
             comp: (
                 <div className="transform scale-75 origin-center w-full h-full flex justify-center items-center">
-                    <ProbabilityMarbles data={{ items: { blue: 3, red: 5 } }} />
+                    {/* 🟢 FIXED: Wrapped in marbles object */}
+                    <VisualRenderer data={{ marbles: { items: { blue: 3, red: 5 } } }} />
                 </div>
             )
         }
@@ -337,7 +334,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                     
                     <div className="order-1 lg:order-2 space-y-6 text-white">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2 border border-emerald-500/30">
-                            <Sparkles size={14} className="fill-emerald-400" /> Interceptor Engine
+                            <Sparkles size={14} className="fill-emerald-400" /> Problemlösning
                         </div>
                         <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter">
                             {t.interceptor_title}<br/>
@@ -356,13 +353,13 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                                 {/* State A: Abstract Geometry */}
                                 <div className={`absolute inset-0 flex items-center justify-center transition-all duration-700 transform origin-center 
                                     ${isIntercepted ? 'opacity-0 scale-90 translate-x-8 pointer-events-none' : 'opacity-100 scale-[0.6] sm:scale-75 translate-x-0'}`}>
-                                    <GeometryVisual data={{ type: 'cylinder', labels: { r: '3', h: '12' } }} />
+                                    <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '3', h: '12' } } }} />
                                 </div>
                                 
                                 {/* State B: Intercepted Soda Can Context */}
                                 <div className={`absolute inset-0 flex items-center justify-center transition-all duration-700 transform origin-center
                                     ${isIntercepted ? 'opacity-100 scale-[0.6] sm:scale-75 translate-x-0' : 'opacity-0 scale-90 -translate-x-8 pointer-events-none'}`}>
-                                    <GeometryVisual data={{ type: 'cylinder', labels: { r: '3 cm', h: '12 cm' } }} />
+                                    <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '3 cm', h: '12 cm' } } }} />
                                 </div>
                             </div>
 
@@ -458,13 +455,13 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                             {/* FIXED: Added scaling wrapper to canvas visual */}
                             <div className={`transition-all duration-500 absolute w-full h-full flex flex-col items-center justify-center gap-4 ${canvasTopic === 'geom' ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'}`}>
                                 <div className="transform scale-[0.6] origin-center">
-                                    <GeometryVisual data={{ type: 'cylinder', labels: { r: '5', h: '20' } }} />
+                                    <VisualRenderer data={{ geometry: { type: 'cylinder', labels: { r: '5', h: '20' } } }} />
                                 </div>
                                 <MathDisplay content="$$V = \pi \cdot r^2 \cdot h$$" className="text-white text-xl" />
                             </div>
                             <div className={`transition-all duration-500 absolute w-full h-full flex flex-col items-center justify-center gap-4 ${canvasTopic === 'stat' ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'}`}>
                                 <div className="transform scale-[0.7] origin-center">
-                                    <PercentGrid data={{ colored: 45, total: 100 }} />
+                                    <VisualRenderer data={{ percentGrid: { colored: 45, total: 100 } }} />
                                 </div>
                                 <MathDisplay content="$$45\% = \frac{45}{100}$$" className="text-white text-xl" />
                             </div>

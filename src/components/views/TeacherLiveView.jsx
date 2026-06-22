@@ -6,16 +6,7 @@ import {
     ChevronLeft, ChevronRight, CheckCircle2, XCircle, Type
 } from 'lucide-react';
 import { UI_TEXT } from '../../constants/localization';
-
-// --- VISUAL & INPUT IMPORTS ---
-import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
-import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry';
-import PatternVisual from '../visuals/PatternComponents';
-import ProbabilityTree from '../visuals/ProbabilityTree';
-import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
-import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals';
-import AngleVisual from '../visuals/AngleComponents';
+import VisualRenderer from '../visuals/VisualRenderer';
 
 // --- MATH DISPLAY COMPONENT ---
 const MathDisplay = ({ content, className = "" }) => {
@@ -161,28 +152,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         return ans || '-';
     };
 
-    // --- RENDER VISUAL HELPER ---
-    const renderVisual = (item) => {
-        const data = item.resolvedData?.renderData;
-        if (!data) return null;
-        if (data.graph) return <GraphCanvas data={data.graph} />;
-        if (data.pattern || data.geometry?.subtype === 'matchsticks' || data.geometry?.subtype === 'sequence') return <PatternVisual data={data.pattern || data.geometry} />;
-        if (data.marbles || data.geometry?.type === 'marbles' || data.geometry?.items) return <ProbabilityMarbles data={data.marbles || data.geometry} />;
-        if (data.spinner || data.geometry?.type === 'spinner') return <ProbabilitySpinner data={data.spinner || data.geometry} />;
-        if (data.freqTable || data.geometry?.type === 'frequency_table' || data.geometry?.headers) return <FrequencyTable data={data.freqTable || data.geometry} />;
-        if (data.percentGrid || data.geometry?.type === 'percent_grid') return <PercentGrid data={data.percentGrid || data.geometry} />;
-        if (data.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism'].includes(data.geometry.type)) return <VolumeVisualization data={data.geometry} width={400} height={300} />;
-        if (data.geometry?.type === 'bar_graph') return <BarGraph data={data.geometry} />;
-        if (data.geometry?.type === 'transversal') return <TransversalVisual data={data.geometry} />;
-        if (data.geometry?.type === 'composite') return <CompositeVisual data={data.geometry} />;
-        if (data.geometry?.type === 'angle') return <AngleVisual data={data.geometry} />;
-        if (data.scale || data.geometry?.type === 'scale') return <ScaleVisual data={data.scale || data.geometry} />;
-        if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
-        if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
-        if (data.tree || data.geometry?.type === 'pathway') return <ProbabilityTree data={data.tree || data.geometry} />;
-        if (data.geometry) return <GeometryVisual data={data.geometry} />;
-        return null;
-    };
+    
 
     const syncData = async () => {
         if (!session?.id || !isMounted.current) return;
@@ -733,8 +703,20 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             
                             {/* LEFT COLUMN: Visual (Scaled to contain) */}
                             <div className="flex-1 p-6 flex items-center justify-center bg-white overflow-hidden border-r border-slate-50">
-                                <div className="w-full h-full flex items-center justify-center transform scale-110 drop-shadow-xl">
-                                    {renderVisual(packet[zoomIndex])}
+                                {/* VISUAL & LATEX DISPLAY */}
+                                <div className="flex-1 flex flex-col justify-center items-center py-6 min-h-[150px]">
+                                    <div className="flex justify-center scale-90 origin-top mt-2">
+                                        {/* 🟢 FIXED: Replaced renderVisual with VisualRenderer */}
+                                        <VisualRenderer 
+                                            data={packet[zoomIndex]?.resolvedData?.renderData} 
+                                            isWordProblem={packet[zoomIndex]?.selectedStoryIndex !== null && packet[zoomIndex]?.selectedStoryIndex !== undefined} 
+                                        />
+                                    </div>
+                                    {packet[zoomIndex]?.resolvedData?.renderData?.latex && (
+                                        <div className="mt-4 text-3xl font-serif text-indigo-600 bg-indigo-50 px-6 py-4 rounded-2xl">
+                                            <MathDisplay content={`$$${packet[zoomIndex].resolvedData.renderData.latex}$$`} />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
