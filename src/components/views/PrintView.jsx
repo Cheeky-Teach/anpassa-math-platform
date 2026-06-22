@@ -1,16 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Printer, ChevronLeft, X, ChevronRight, Maximize2, Loader2 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
-
-// --- COMPREHENSIVE VISUAL IMPORTS ---
-import { GeometryVisual, GraphCanvas } from '../visuals/GeometryComponents.jsx';
-import { VolumeVisualization } from '../visuals/VolumeVisualization.jsx';
-import PatternVisual from '../visuals/PatternComponents.jsx';
-import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals.jsx';
-import ProbabilityTree from '../visuals/ProbabilityTree.jsx';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals.jsx';
-import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals.jsx';
-import AngleVisual from '../visuals/AngleComponents.jsx';
+import VisualRenderer from '../visuals/VisualRenderer';
 
 // --- MATH RENDERING ENGINE ---
 const MathDisplay = ({ content, className = "" }) => {
@@ -95,52 +86,6 @@ export default function PrintView({
                  rd?.compareArea || rd?.tree);
     };
 
-    const renderVisual = (rd) => {
-        if (!rd) return null;
-
-        if (rd.graph) return <GraphCanvas data={rd.graph} />;
-        
-        if (rd.pattern || rd.geometry?.subtype === 'matchsticks' || rd.geometry?.subtype === 'sequence') {
-            return <PatternVisual data={rd.pattern || rd.geometry} />;
-        }
-        
-        if (rd.marbles || rd.geometry?.type === 'marbles' || rd.geometry?.items) {
-            return <ProbabilityMarbles data={rd.marbles || rd.geometry} />;
-        }
-        if (rd.spinner || rd.geometry?.type === 'spinner') {
-            return <ProbabilitySpinner data={rd.spinner || rd.geometry} />;
-        }
-        if (rd.geometry?.type === 'bar_graph') {
-        return <BarGraph data={rd.geometry} />;
-        }
-        if (rd.freqTable || rd.geometry?.type === 'frequency_table' || rd.geometry?.headers) {
-            return <FrequencyTable data={rd.freqTable || rd.geometry} />;
-        }
-        if (rd.percentGrid || rd.geometry?.type === 'percent_grid') {
-            return <PercentGrid data={rd.percentGrid || rd.geometry} />;
-        }
-
-        if (rd.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'].includes(rd.geometry.type)) {
-            return (
-                <div style={{ width: '220px', height: '180px' }}>
-                    <VolumeVisualization data={rd.geometry} />
-                </div>
-            );
-        }
-        
-        if (rd.geometry?.type === 'angle') return <AngleVisual data={rd.geometry} />;
-        if (rd.scale || rd.geometry?.type === 'scale') return <ScaleVisual data={rd.scale || rd.geometry} />;
-        if (rd.similarity || rd.geometry?.type === 'similarity') return <SimilarityCompare data={rd.similarity || rd.geometry} />;
-        if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
-        
-        if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
-
-        if (rd.geometry) {
-            return <GeometryVisual data={rd.geometry} width={220} height={180} />;
-        }
-        
-        return null;
-    };
 
     // 🟢 STRATEGY 3 STATE MANAGEMENT: Tracks calculated groupings via asynchronous DOM passes
     const [measuredPages, setMeasuredPages] = useState([]);
@@ -303,10 +248,14 @@ export default function PrintView({
                                                     </div>
                                                 )}
                                                 
-                                                {/* DYNAMIC VISUAL RENDERER */}
-                                                {displayVisual && hasVisual(item.resolvedData?.renderData) && (
-                                                    <div className="flex justify-center p-4 bg-slate-50/30 rounded-2xl border border-slate-50 overflow-hidden">
-                                                        {renderVisual(item.resolvedData.renderData)}
+                                                {/* VISUAL CONTAINER */}
+                                                {displayVisual && (
+                                                    <div className="flex justify-center scale-90 origin-top mt-2">
+                                                        {/* 🟢 FIXED: Called VisualRenderer with the word problem state! */}
+                                                        <VisualRenderer 
+                                                            data={item.resolvedData?.renderData} 
+                                                            isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} 
+                                                        />
                                                     </div>
                                                 )}
 
@@ -394,11 +343,16 @@ export default function PrintView({
                                         {displayLatex && item.resolvedData?.renderData.latex && (
                                             <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} /></div>
                                         )}
-                                        {displayVisual && hasVisual(item.resolvedData?.renderData) && (
-                                            <div className="flex justify-center p-4 bg-slate-50/30 rounded-2xl border h-[180px] w-full">
-                                                {renderVisual(item.resolvedData.renderData)}
-                                            </div>
-                                        )}
+                                        {/* VISUAL CONTAINER */}
+                                            {displayVisual && (
+                                                <div className="flex justify-center scale-90 origin-top mt-2">
+                                                    {/* 🟢 FIXED: Called VisualRenderer with the word problem state! */}
+                                                    <VisualRenderer 
+                                                        data={item.resolvedData?.renderData} 
+                                                        isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} 
+                                                    />
+                                                </div>
+                                            )}
                                         {showWorkArea && (
                                             <div className="w-full border rounded-xl" style={{ height: density === 'compact' ? '80px' : density === 'normal' ? '160px' : '320px' }} />
                                         )}

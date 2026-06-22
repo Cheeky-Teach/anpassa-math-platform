@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MathText from '../ui/MathText';
-import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
-import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry';
-import PatternVisual from '../visuals/PatternComponents';
-import ProbabilityTree from '../visuals/ProbabilityTree';
-import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
-import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals';
-import AngleVisual from '../visuals/AngleComponents';
+import VisualRenderer from '../visuals/VisualRenderer';
 import CluePanel from '../practice/CluePanel';
 import HistoryList from '../practice/HistoryList';
 import { useMyCoach } from '../../hooks/useMyCoach';
@@ -136,46 +129,6 @@ const PracticeView = ({
         handleSubmit({ preventDefault: () => { } }, choice); 
     };
 
-    // --- 4. REFINED VISUAL SCALING LOGIC ---
-    const renderVisual = () => {
-        const rd = question?.renderData;
-        if (!rd) return null;
-
-        // Suppress matchstick/sequence structures if a real-world pattern story is active
-        if (isPatternWordProblem) return null;
-
-        // 1. Dynamic Routing Channels for Interactive Graphical Canvas Components
-        if (rd.graph) return <GraphCanvas data={rd.graph} lang={lang} />;
-        if (rd.geometry) {
-            if (rd.geometry.type === 'transversal') return <TransversalVisual data={rd.geometry} />;
-            if (rd.geometry.type === 'bar_graph') return <BarGraph data={rd.geometry} />;
-            if (rd.geometry.type === 'frequency_table') return <FrequencyTable data={rd.geometry} />;
-            return <GeometryVisual data={rd.geometry} />;
-        }
-        if (rd.volume) return <VolumeVisualization data={rd.volume} />;
-        if (rd.pattern) return <PatternVisual data={rd.pattern} />;
-        if (rd.probabilityTree) return <ProbabilityTree data={rd.probabilityTree} />;
-        if (rd.probabilityMarbles) return <ProbabilityMarbles data={rd.probabilityMarbles} />;
-        if (rd.probabilitySpinner) return <ProbabilitySpinner data={rd.probabilitySpinner} />;
-        if (rd.scale) return <ScaleVisual data={rd.scale} />;
-        if (rd.similarity) return <SimilarityCompare data={rd.similarity} />;
-        if (rd.compareShapesArea) return <CompareShapesArea data={rd.compareShapesArea} />;
-        if (rd.frequencyTable) return <FrequencyTable data={rd.frequencyTable} />;
-        if (rd.percentGrid) return <PercentGrid data={rd.percentGrid} />;
-        if (rd.angles) return <AngleVisual data={rd.angles} />;
-
-        // 2. Fallback Channel for Pure Numerical/Algebraic Expressions
-        if (rd.latex) {
-            return (
-                <div className="text-2xl sm:text-5xl font-serif text-indigo-600 text-center py-4 animate-in fade-in duration-300">
-                    <MathText text={`$$${rd.latex}$$`} large={true} />
-                </div>
-            );
-        }
-
-        return null;
-    };
-
     const getSubmitLabel = () => {
         if (feedback === 'correct') return ui.btnNext || "Nästa ➡";
         if (feedback === 'incorrect') return ui.tagWrong || "Fel svar";
@@ -273,21 +226,32 @@ const PracticeView = ({
                     ) : (
                         <div className="p-1 sm:p-2 lg:p-2">
 
-                            {/* VISUAL CONTAINER */}
-                            <div className="mb-4 flex justify-center bg-slate-50/50 rounded-[2rem] p-4 min-h-[160px] h-[200px] sm:h-[350px] items-center border border-slate-100 shadow-inner relative overflow-hidden">
-    
-                            {/* 🟢 RESTORED VISUAL CONTAINER WITH STRICT BOUNDING BOXES */}
-    
+                            {/* VISUAL & LATEX CONTAINER (ALWAYS PRESENT) */}
+                            <div className="mb-4 flex flex-col justify-center bg-slate-50/50 rounded-[2rem] p-4 min-h-[160px] h-[200px] sm:h-[350px] border border-slate-100 shadow-inner relative overflow-hidden">
+                                
                                 <WordProblemVisualGuard 
                                     isActive={!!question?.metadata?.isWordProblemApplied || useWordProblems} 
                                     lang={lang}
                                     questionKey={question?.variationKey || question?.metadata?.variation_key || question?.metadata?.variationKey} 
-                                    // 🟢 FAILSAFE: Structural check looking directly for data features rather than text string matches
                                     alwaysShow={!!question?.renderData?.graph || question?.renderData?.geometry?.type === 'frequency_table' || !!question?.renderData?.frequencyTable}
                                 >
-                                    {/* 🟢 THE LOCK: Enforces a strict max-width of 300px so raw SVGs cannot explode in size */}
-                                    <div className="w-full max-w-[300px] flex justify-center items-center mx-auto overflow-visible">
-                                        {renderVisual()}
+                                    <div className="w-full h-full flex flex-col justify-center items-center gap-4 sm:gap-6">
+                                        
+                                        {/* 1. VISUAL (Priority First) */}
+                                        <div className="w-full max-w-[300px] flex justify-center items-center mx-auto overflow-visible empty:hidden">
+                                            <VisualRenderer 
+                                                data={question?.renderData} 
+                                                isWordProblem={!!question?.metadata?.isWordProblemApplied || useWordProblems} 
+                                            />
+                                        </div>
+
+                                        {/* 2. LATEX EQUATIONS (Underneath visual, or perfectly centered if alone) */}
+                                        {question?.renderData?.latex && !useWordProblems && !question?.metadata?.isWordProblemApplied && (
+                                            <div className="text-3xl sm:text-4xl font-serif text-indigo-600 flex justify-center items-center text-center">
+                                                <MathText text={`$$${question.renderData.latex}$$`} />
+                                            </div>
+                                        )}
+
                                     </div>
                                 </WordProblemVisualGuard>
                                 
@@ -295,16 +259,10 @@ const PracticeView = ({
                                     <div className={`w-1.5 h-1.5 rounded-full ${activeTheme.accent} animate-pulse`}></div>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 italic">Du kan det här!</span>
                                 </div>
-
-                            
-                            <div className="absolute top-3 left-6 flex items-center gap-2">
-                                <div className={`w-1.5 h-1.5 rounded-full ${activeTheme.accent} animate-pulse`}></div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 italic">Du kan det här!</span>
                             </div>
-                        </div>
                             
-                            {/* DESCRIPTION TEXT */}
-                            <div className="mb-4 text-center max-w-xl mx-auto">
+                            {/* DESCRIPTION TEXT (Remains below the blackboard) */}
+                            <div className="mb-4 text-center max-w-xl mx-auto flex flex-col items-center">
                                 <h2 className="text-base sm:text-lg font-bold text-slate-800 leading-snug px-3">
                                     <MathText text={descriptionText} />
                                 </h2>
@@ -312,9 +270,9 @@ const PracticeView = ({
                             
                             {/* ANSWER FIELD */}
                             <div className="max-w-md mx-auto">
-                                {question.renderData.answerType === 'multiple_choice' ? (
+                                {question?.renderData?.answerType === 'multiple_choice' ? (
                                     <div className="grid grid-cols-1 gap-2">
-                                        {(question.renderData.options || []).map((choice, idx) => {
+                                        {(question?.renderData?.options || []).map((choice, idx) => {
                                             const isSelected = choice === input;
                                             const isCorrect = feedback === 'correct' && isSelected;
                                             const isIncorrect = feedback === 'incorrect' && isSelected;
@@ -352,19 +310,19 @@ const PracticeView = ({
                                                 />
                                                     </div>
                                                 </div>
-                                            ) : question.renderData.answerType === 'fraction' ? (
+                                            ) : question?.renderData?.answerType === 'fraction' ? (
                                                 <div className="flex justify-center py-2 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
                                                     <div className="scale-90 transform origin-center">
                                                         <FractionInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} allowMixed={false} autoFocus={false} />
                                                     </div>
                                                 </div>
-                                            ) : question.renderData.answerType === 'structured_power' ? (
+                                            ) : question?.renderData?.answerType === 'structured_power' ? (
                                                 <div className="flex justify-center py-2 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
                                                     <div className="scale-90 transform origin-center">
                                                         <ExponentInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} autoFocus={true} />
                                                     </div>
                                                 </div>
-                                            ) : question.renderData.answerType === 'structured_scientific' ? (
+                                            ) : question?.renderData?.answerType === 'structured_scientific' ? (
                                                 <div className="flex justify-center py-2 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
                                                     <div className="scale-90 transform origin-center">
                                                         <ScientificInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} autoFocus={true} />
@@ -404,13 +362,12 @@ const PracticeView = ({
                             <div className="mt-6 flex gap-2 justify-center">
                                 <button 
                                     onClick={handleHint} 
-                                    disabled={!question.clues || revealedClues.length >= question.clues.length} 
+                                    disabled={!question?.clues || revealedClues.length >= question?.clues.length} 
                                     className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-white text-amber-500 border-2 border-amber-100 disabled:opacity-30 transition-all shadow-sm"
                                 >
                                     <Zap size={12}/> {ui.btnHint}
                                 </button>
 
-                                {/* 🟢 NEW: FULL-WIDTH PERSONAL COACH TRIGGER BUTTON */}
                                 <button
                                     onClick={openCoach}
                                     className="flex items-center justify-center gap-4 py-3 px-2 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer shadow-md border-b-2 border-purple-800"
