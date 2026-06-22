@@ -8,15 +8,7 @@ import {
   Image as ImageIcon, FileText as TextIcon, Monitor
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
-// --- COMPREHENSIVE VISUAL IMPORTS ---
-import { GeometryVisual, GraphCanvas } from '../visuals/GeometryComponents.jsx';
-import { VolumeVisualization } from '../visuals/VolumeVisualization.jsx';
-import PatternVisual from '../visuals/PatternComponents.jsx';
-import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals.jsx';
-import ProbabilityTree from '../visuals/ProbabilityTree.jsx';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals.jsx';
-import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals.jsx';
-import AngleVisual from '../visuals/AngleComponents.jsx';
+import VisualRenderer from '../visuals/VisualRenderer.jsx';
 import { supabase } from '../../lib/supabaseClient'; 
 import PresentationView from '../views/PresentationView.jsx';
 
@@ -277,44 +269,6 @@ export default function QuestionStudio({
             ))}
         </div>
     );
-  };
-
-  // --- UNIFIED VISUAL RENDERER ---
-  const renderVisual = (rd) => {
-    if (!rd) return null;
-    if (rd.graph) return <GraphCanvas data={rd.graph} />;
-    if (rd.pattern || rd.geometry?.subtype === 'matchsticks' || rd.geometry?.subtype === 'sequence') {
-        return <PatternVisual data={rd.pattern || rd.geometry} />;
-    }
-    if (rd.marbles || rd.geometry?.type === 'marbles' || rd.geometry?.items) {
-        return <ProbabilityMarbles data={rd.marbles || rd.geometry} />;
-    }
-    if (rd.spinner || rd.geometry?.type === 'spinner') {
-        return <ProbabilitySpinner data={rd.spinner || rd.geometry} />;
-    }
-    if (rd.geometry?.type === 'bar_graph') {
-        return <BarGraph data={rd.geometry} />;
-    }
-    if (rd.freqTable || rd.geometry?.type === 'frequency_table' || rd.geometry?.headers) {
-        return <FrequencyTable data={rd.freqTable || rd.geometry} />;
-    }
-    if (rd.percentGrid || rd.geometry?.type === 'percent_grid') {
-        return <PercentGrid data={rd.percentGrid || rd.geometry} />;
-    }
-    if (rd.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'].includes(rd.geometry.type)) {
-        return (
-            <div style={{ width: '220px', height: '180px', display: 'flex', justifyContent: 'center' }}>
-                <VolumeVisualization data={rd.geometry} />
-            </div>
-        );
-    }
-    if (rd.geometry?.type === 'angle') return <AngleVisual data={rd.geometry} />;
-    if (rd.scale || rd.geometry?.type === 'scale') return <ScaleVisual data={rd.scale || rd.geometry} />;
-    if (rd.similarity || rd.geometry?.type === 'similarity') return <SimilarityCompare data={rd.similarity || rd.geometry} />;
-    if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
-    if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
-    if (rd.geometry) return <GeometryVisual data={rd.geometry} width={220} height={180} />;
-    return null;
   };
 
   const getVariationCategory = (key) => {
@@ -762,7 +716,13 @@ export default function QuestionStudio({
                     <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
                         {peekSheet.packet.map((q, i) => (
                             <div key={i} className="border-b border-slate-100 pb-8 last:border-0">
-                                <div className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-4">{lang === 'sv' ? "Uppgift" : "Question"} {i+1}</div><div className="flex justify-center mb-4 scale-75 origin-top">{renderVisual(q.resolvedData?.renderData)}</div><div className="text-sm font-bold text-slate-700 leading-relaxed"><MathDisplay content={q.resolvedData?.renderData?.description} /></div>{q.resolvedData?.renderData?.latex && <div className="mt-4 p-4 bg-slate-50 rounded-2xl text-center font-serif"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>}{renderOptions(q.resolvedData?.renderData?.options)}</div>
+                                <div className="flex justify-center mb-4 scale-75 origin-top">
+                                    <VisualRenderer 
+                                        data={q.resolvedData?.renderData} 
+                                        isWordProblem={q.selectedStoryIndex !== null && q.selectedStoryIndex !== undefined} 
+                                    />
+                                </div>
+                                <div className="text-sm font-bold text-slate-700 leading-relaxed"><MathDisplay content={q.resolvedData?.renderData?.description} /></div>{q.resolvedData?.renderData?.latex && <div className="mt-4 p-4 bg-slate-50 rounded-2xl text-center font-serif"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>}{renderOptions(q.resolvedData?.renderData?.options)}</div>
                         ))}
                     </div>
                         <div className="p-8 border-t bg-slate-50">
@@ -1058,8 +1018,12 @@ export default function QuestionStudio({
                         </div> : !previewData ? <div className="h-full flex items-center justify-center text-slate-200 uppercase font-black tracking-widest italic">
                             {t.select_hint}
                             </div> : <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="w-full flex justify-center drop-shadow-md">{renderVisual(previewData?.renderData)}
-                                    </div>
+                                <div className="w-full flex justify-center drop-shadow-md">
+                                    <VisualRenderer 
+                                        data={previewData?.renderData} 
+                                        isWordProblem={useWordProblems} 
+                                    />
+                                </div>
                                     <div className="text-2xl text-slate-800 font-bold text-center px-10 leading-relaxed">
                                         <MathDisplay content={previewData.renderData.description} />
                                         </div>{previewData.renderData.latex && <div className="text-4xl text-indigo-600 bg-indigo-50/50 p-10 rounded-[2.5rem] border-2 border-indigo-100 shadow-inner text-center font-serif">
@@ -1129,7 +1093,10 @@ export default function QuestionStudio({
                                                     
                                                     {displayVisual && (
                                                         <div className="flex justify-center scale-90 origin-top mt-2">
-                                                            {renderVisual(item.resolvedData?.renderData)}
+                                                            <VisualRenderer 
+                                                                data={item.resolvedData?.renderData} 
+                                                                isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} 
+                                                            />
                                                         </div>
                                                     )}
                                                 </div>
