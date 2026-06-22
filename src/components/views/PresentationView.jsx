@@ -6,13 +6,7 @@ import {
 } from 'lucide-react';
 
 // Import your visual components exactly as you do in QuestionStudio
-import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
-import PatternVisual from '../visuals/PatternComponents';
-import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
-import ProbabilityTree from '../visuals/ProbabilityTree';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
-import { FrequencyTable, PercentGrid } from '../visuals/StatisticsVisuals';
-import AngleVisual from '../visuals/AngleComponents';
+import VisualRenderer from '../visuals/VisualRenderer';
 import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
 import QuestionSummoner from './QuestionSummoner';
 import { supabase } from '../../lib/supabaseClient'; 
@@ -106,41 +100,6 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
             presentationBoardEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
     }, [coachProps.currentStep, clueViewMode]);
-
-    // --- REUSED VISUAL RENDERER ---
-    const renderVisual = (rd) => {
-    if (!rd) return null;
-    if (rd.graph) return <GraphCanvas data={rd.graph} />;
-    if (rd.pattern || rd.geometry?.subtype === 'matchsticks' || rd.geometry?.subtype === 'sequence') {
-        return <PatternVisual data={rd.pattern || rd.geometry} />;
-    }
-    if (rd.marbles || rd.geometry?.type === 'marbles' || rd.geometry?.items) {
-        return <ProbabilityMarbles data={rd.marbles || rd.geometry} />;
-    }
-    if (rd.spinner || rd.geometry?.type === 'spinner') {
-        return <ProbabilitySpinner data={rd.spinner || rd.geometry} />;
-    }
-    if (rd.freqTable || rd.geometry?.type === 'frequency_table' || rd.geometry?.headers) {
-        return <FrequencyTable data={rd.freqTable || rd.geometry} />;
-    }
-    if (rd.percentGrid || rd.geometry?.type === 'percent_grid') {
-        return <PercentGrid data={rd.percentGrid || rd.geometry} />;
-    }
-    if (rd.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'].includes(rd.geometry.type)) {
-        return (
-            <div style={{ width: '220px', height: '180px', display: 'flex', justifyContent: 'center' }}>
-                <VolumeVisualization data={rd.geometry} />
-            </div>
-        );
-    }
-    if (rd.geometry?.type === 'angle') return <AngleVisual data={rd.geometry} />;
-    if (rd.scale || rd.geometry?.type === 'scale') return <ScaleVisual data={rd.scale || rd.geometry} />;
-    if (rd.similarity || rd.geometry?.type === 'similarity') return <SimilarityCompare data={rd.similarity || rd.geometry} />;
-    if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
-    if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
-    if (rd.geometry) return <GeometryVisual data={rd.geometry} width={220} height={180} />;
-    return null;
-  };
 
     // Tracks which diagram is currently blown up full screen
     const [spotlightVisual, setSpotlightVisual] = useState(null);
@@ -840,7 +799,11 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                         onClick={(e) => e.stopPropagation()} 
                         className="bg-white p-12 rounded-[2.5rem] shadow-2xl flex items-center justify-center border border-slate-100 max-w-4xl max-h-[75vh] min-w-[450px] min-h-[350px] transform scale-[1.65] origin-center shadow-emerald-950/20"
                     >
-                        {renderVisual(spotlightVisual)}
+                        {/* 🟢 FIXED: Replaced the old function call with our unified component! */}
+                        <VisualRenderer 
+                            data={spotlightVisual} 
+                            isWordProblem={false} // Defaulting to false as presentations usually show the math
+                        />
                     </div>
                 </div>
             )}

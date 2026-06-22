@@ -12,14 +12,7 @@ import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
 
 // --- SHARED UI COMPONENTS ---
 import MathText from '../ui/MathText';
-import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
-import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry';
-import PatternVisual from '../visuals/PatternComponents';
-import ProbabilityTree from '../visuals/ProbabilityTree';
-import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
-import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals';
-import AngleVisual from '../visuals/AngleComponents';
+import VisualRenderer from '../visuals/VisualRenderer';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 
 // --- STYLING CONSTANTS (Matched with Dashboard.jsx) ---
@@ -321,26 +314,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     };
 
     // --- RENDERERS ---
-    const renderVisual = (item) => {
-        const data = item.resolvedData?.renderData;
-        if (!data) return null;
-        if (data.graph) return <GraphCanvas data={data.graph} />;
-        if (data.pattern || data.geometry?.subtype === 'matchsticks') return <PatternVisual data={data.pattern || data.geometry} />;
-        if (data.tree) return <ProbabilityTree data={data.tree} />;
-        if (data.marbles || data.geometry?.type === 'marbles') return <ProbabilityMarbles data={data.marbles || data.geometry} />;
-        if (data.spinner || data.geometry?.type === 'spinner') return <ProbabilitySpinner data={data.spinner || data.geometry} />;
-        if (data.geometry?.type === 'bar_graph') return <BarGraph data={data.geometry} />;
-        if (data.freqTable || data.geometry?.headers) return <FrequencyTable data={data.freqTable || data.geometry} />;
-        if (data.percentGrid || data.geometry?.type === 'percent_grid') return <PercentGrid data={data.percentGrid || data.geometry} />;
-        if (data.geometry?.type === 'transversal') return <TransversalVisual data={data.geometry} />;
-        if (data.geometry?.type === 'angle') return <AngleVisual data={data.geometry} />;
-        if (data.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism'].includes(data.geometry.type)) {
-            return <VolumeVisualization data={data.geometry} />;
-        }
-        if (data.geometry) return <GeometryVisual data={data.geometry} />;
-        return null;
-    };
-
+    
     const renderInput = () => {
         const item = packet[currentIndex];
         const rd = item?.resolvedData?.renderData;
@@ -905,8 +879,10 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
                         <MathDisplay content={q?.resolvedData?.renderData?.description} />
                     </div>
-                            {/* HIDES THE LATEX MATH WHEN WORD PROBLEM INTERCEPTOR IS ACTIVE */}
-                            {q?.resolvedData?.renderData?.latex && !q?.resolvedData?.renderData?.isWordProblemApplied && (
+                            {/* HIDES THE LATEX MATH FOR WORD PROBLEMS AND GEOMETRY VISUALS */}
+                            {q?.resolvedData?.renderData?.latex && 
+                            !q?.resolvedData?.renderData?.isWordProblemApplied && 
+                            !q?.resolvedData?.renderData?.geometry && (
                                 <div className="mt-6 text-3xl lg:text-5xl text-indigo-600 font-serif border-t border-slate-100 pt-6 animate-in fade-in duration-300">
                                     <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
                                 </div>
@@ -966,8 +942,11 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             {q?.resolvedData?.renderData && (q.resolvedData.renderData.graph || q.resolvedData.renderData.geometry || q.resolvedData.renderData.pattern) ? (
                 <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 min-h-[400px] lg:h-full border-t lg:border-t-0 border-slate-50 relative overflow-hidden pb-12 lg:pb-12">
                     <div className="absolute inset-0 flex items-center justify-center p-8 lg:p-16">
-                        <div className="w-full h-full flex items-center justify-center transform scale-95 lg:scale-110 origin-center transition-all duration-500">
-                            {renderVisual(q)}
+                        <div className="flex justify-center scale-90 origin-top mt-2">
+                            <VisualRenderer 
+                                data={q?.resolvedData?.renderData || q?.renderData} 
+                                isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} 
+                            />
                         </div>
                     </div>
                 </div>
@@ -1022,8 +1001,11 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                             {/* 🎨 REFACTORED: Renders the diagram container beautifully */}
                                             {hasVisual && (
                                                 <div className="w-full flex justify-center bg-slate-50 p-4 rounded-2xl mb-4 border border-slate-100 overflow-hidden">
-                                                    <div className="scale-75 origin-center max-h-[140px] flex items-center justify-center">
-                                                        {renderVisual(qItem)}
+                                                    <div className="flex justify-center scale-90 origin-top mt-2">
+                                                        <VisualRenderer 
+                                                            data={q?.resolvedData?.renderData || q?.renderData} 
+                                                            isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} 
+                                                        />
                                                     </div>
                                                 </div>
                                             )}
@@ -1194,8 +1176,11 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                         {/* 2. MINI VISUAL RENDER */}
                                         {hasVisual && (
                                             <div className="w-full h-32 flex items-center justify-center bg-slate-50/50 rounded-2xl mb-4 border border-slate-100 overflow-hidden">
-                                                <div className="scale-[0.6] transform origin-center">
-                                                    {renderVisual(qItem)}
+                                                <div className="flex justify-center scale-90 origin-top mt-2">
+                                                    <VisualRenderer 
+                                                        data={q?.resolvedData?.renderData || q?.renderData} 
+                                                        isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} 
+                                                    />
                                                 </div>
                                             </div>
                                         )}

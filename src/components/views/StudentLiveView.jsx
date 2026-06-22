@@ -3,14 +3,7 @@ import { Send, CheckCircle2, ChevronLeft, ChevronRight, Loader2, LogOut, ListChe
 import { supabase } from '../../lib/supabaseClient';
 
 // --- VISUAL & INPUT IMPORTS ---
-import { GeometryVisual, GraphCanvas, VolumeVisualization } from '../visuals/GeometryComponents';
-import { TransversalVisual, CompositeVisual } from '../visuals/ComplexGeometry';
-import PatternVisual from '../visuals/PatternComponents';
-import ProbabilityTree from '../visuals/ProbabilityTree';
-import { ProbabilityMarbles, ProbabilitySpinner } from '../visuals/ProbabilityVisuals';
-import { ScaleVisual, SimilarityCompare, CompareShapesArea } from '../visuals/ScaleVisuals';
-import { FrequencyTable, BarGraph, PercentGrid } from '../visuals/StatisticsVisuals';
-import AngleVisual from '../visuals/AngleComponents';
+import VisualRenderer from '../visuals/VisualRenderer';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 
@@ -171,30 +164,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     };
 
     // --- 3. HARDENED VISUAL RENDERING ---
-    const renderVisual = (item) => {
-        const data = item.resolvedData?.renderData;
-        if (!data) return null;
-
-        if (data.graph) return <GraphCanvas data={data.graph} />;
-        if (data.pattern || data.geometry?.subtype === 'matchsticks' || data.geometry?.subtype === 'sequence') return <PatternVisual data={data.pattern || data.geometry} />;
-        if (data.marbles || data.geometry?.type === 'marbles' || data.geometry?.items) return <ProbabilityMarbles data={data.marbles || data.geometry} />;
-        if (data.spinner || data.geometry?.type === 'spinner') return <ProbabilitySpinner data={data.spinner || data.geometry} />;
-        if (data.freqTable || data.geometry?.type === 'frequency_table' || data.geometry?.headers) return <FrequencyTable data={data.freqTable || data.geometry} />;
-        if (data.percentGrid || data.geometry?.type === 'percent_grid') return <PercentGrid data={data.percentGrid || data.geometry} />;
-        if (data.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism'].includes(data.geometry.type)) return <VolumeVisualization data={data.geometry} width={240} height={200} />;
-        if (data.geometry?.type === 'bar_graph') return <BarGraph data={data.geometry} />;
-        if (data.geometry?.type === 'transversal') return <TransversalVisual data={data.geometry} />;
-        if (data.geometry?.type === 'composite') return <CompositeVisual data={data.geometry} />;
-        if (data.geometry?.type === 'angle') return <AngleVisual data={data.geometry} />;
-        if (data.scale || data.geometry?.type === 'scale') return <ScaleVisual data={data.scale || data.geometry} />;
-        if (data.similarity || data.geometry?.type === 'similarity') return <SimilarityCompare data={data.similarity || data.geometry} />;
-        if (data.compareArea || data.geometry?.type === 'compare_area') return <CompareShapesArea data={data.compareArea || data.geometry} />;
-        
-        if (data.tree || data.geometry?.type === 'pathway') return <ProbabilityTree data={data.tree || data.geometry} />;
-        if (data.geometry) return <GeometryVisual data={data.geometry} />;
-        
-        return null;
-    };
+    
 
     const renderInput = (idx = currentIndex) => {
         const item = packet[idx];
@@ -464,8 +434,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
                                     <MathDisplay content={packet[currentIndex].resolvedData?.renderData?.description} />
                                     
-                                    {packet[currentIndex].resolvedData?.renderData?.latex && !packet[currentIndex].resolvedData?.renderData?.isWordProblemApplied && (
-                                        <MathDisplay content={`$$${packet[currentIndex].resolvedData.renderData.latex}$$`} />
+                                    {packet[currentIndex].resolvedData?.renderData?.latex && 
+                                        !packet[currentIndex].resolvedData?.renderData?.isWordProblemApplied && 
+                                        !packet[currentIndex].resolvedData?.renderData?.geometry && (
+                                            <MathDisplay content={`$$${packet[currentIndex].resolvedData.renderData.latex}$$`} />
                                     )}
                                 </div>
                             </div>
@@ -503,13 +475,17 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 
                                 {/* 🎯 UNIVERSAL ASSESSMENT SHIELD: Absolute occlusion with override button deactivated */}
                                 <WordProblemVisualGuard
-                                    isActive={!!packet[currentIndex].resolvedData?.renderData?.isWordProblemApplied}
+                                    isActive={!!packet[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied}
                                     lang={lang}
-                                    questionKey={packet[currentIndex].id || currentIndex}
+                                    questionKey={packet[currentIndex]?.id || currentIndex}
                                     allowReveal={false} // 👈 🔒 HIDES THE "REVEAL" BUTTON COMPLETELY
                                 >
                                     <div className="w-full h-full flex items-center justify-center drop-shadow-md transform scale-90 lg:scale-125">
-                                        {renderVisual(packet[currentIndex])}
+                                        {/* 🟢 FIXED: Called VisualRenderer with the word problem state! */}
+                                        <VisualRenderer 
+                                            data={packet[currentIndex]?.resolvedData?.renderData} 
+                                            isWordProblem={!!packet[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied} 
+                                        />
                                     </div>
                                 </WordProblemVisualGuard>
 
