@@ -327,8 +327,11 @@ export class PercentGen {
         }
 
         if (v === 'composition') {
+            // Expand base to any multiple of 10 from 50 to 990
+            const base = MathUtils.randomInt(5, 99) * 10;
             const pct = MathUtils.randomChoice([20, 30, 40, 60, 70, 80, 90]);
             const ans = (base * pct) / 100;
+            
             return {
                 renderData: {
                     description: lang === 'sv' ? `Beräkna ${pct}% av ${base}.` : `Calculate ${pct}% of ${base}.`,
@@ -354,16 +357,20 @@ export class PercentGen {
             };
         }
 
-        const ans5 = (base * 5) / 100;
+        // DECOMPOSITION (Fallback)
+        // Base must be a multiple of 20 so base/10 is even (clean division by 2)
+        const decompBase = MathUtils.randomInt(5, 50) * 20; // Expanded to: 100, 120, 140... up to 1000
+        const ans5 = (decompBase * 5) / 100;
+        
         return {
             renderData: {
-                description: lang === 'sv' ? `Beräkna 5% av ${base}` : `Calculate 5% of ${base}.`,
+                description: lang === 'sv' ? `Beräkna 5% av ${decompBase}` : `Calculate 5% of ${decompBase}.`,
                 answerType: 'numeric'
             },
             token: this.toBase64(ans5.toString()), variationKey: 'decomposition', type: 'calculate',
             clues: [
-                { text: lang === 'sv' ? "Steg 1: Hitta värdet för 10% först." : "Step 1: Find the value of 10% first.", latex: `10\\% = \\frac{${base}}{10} = ${base/10}` },
-                { text: lang === 'sv' ? "Steg 2: Eftersom 5% är hälften av 10%, delar vi 10-procentsvärdet med 2." : "Step 2: Since 5% is half of 10%, we divide the 10-percent value by 2.", latex: `\\frac{${base/10}}{2} = ${ans5}` },
+                { text: lang === 'sv' ? "Steg 1: Hitta värdet för 10% först." : "Step 1: Find the value of 10% first.", latex: `10\\% = \\frac{${decompBase}}{10} = ${decompBase/10}` },
+                { text: lang === 'sv' ? "Steg 2: Eftersom 5% är hälften av 10%, delar vi 10-procentsvärdet med 2." : "Step 2: Since 5% is half of 10%, we divide the 10-percent value by 2.", latex: `\\frac{${decompBase/10}}{2} = ${ans5}` },
                 { text: lang === 'sv' ? `Svar: ${ans5}` : `Answer: ${ans5}` }
             ]
         };
@@ -377,8 +384,13 @@ export class PercentGen {
         ];
         const v = variationKey || this.getVariation(pool, options);
         
-        const w = MathUtils.randomChoice([20, 25, 40, 50, 200]);
-        const p = MathUtils.randomChoice([10, 20, 25, 40, 60]);
+        const w_options = [10, 20, 25, 40, 50, 60, 80, 100, 120, 140, 150, 160, 200, 240, 250, 300, 400, 500, 600, 800, 1000];
+        const w = MathUtils.randomChoice(w_options);
+        
+        const p_options = [5, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95];
+        const valid_p = p_options.filter(val => (w * val) % 100 === 0);
+        const p = MathUtils.randomChoice(valid_p);
+        
         const part = (p * w) / 100;
 
         const isTest = v === 'find_percent_test';
@@ -493,9 +505,14 @@ export class PercentGen {
             };
         }
 
-        const oldV = MathUtils.randomInt(4, 15) * 100;
-        const p = MathUtils.randomChoice([10, 20, 25, 50]);
+        const w_options = [10, 20, 25, 40, 50, 60, 80, 100, 120, 150, 200, 250, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000];
+        const oldV = MathUtils.randomChoice(w_options);
         const isInc = Math.random() > 0.5;
+        
+        const p_options = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 75, 80, 90, 100, 120, 150, 200];
+        const valid_p = p_options.filter(val => (oldV * val) % 100 === 0 && (isInc || val < 100));
+        const p = MathUtils.randomChoice(valid_p);
+        
         const diff = (oldV * p) / 100;
         const newV = isInc ? oldV + diff : oldV - diff;
 

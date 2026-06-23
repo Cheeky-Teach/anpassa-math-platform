@@ -71,7 +71,7 @@ export const STATISTICS_STORIES: Record<string, StoryScenario[]> = {
     stats_median_odd: [
         { sv: "Här är antalet matcher du spelade per vecka under två månader: {list}. Bestäm medianen.", en: "Here are the matches you played per week over two months: {list}. Determine the median." },
         { sv: "Du kollar hur många chips-påsar ditt kompisgäng köpte under några helger: {list}. Hitta medianen.", en: "You check how many bags of chips your friend group bought over a few weekends: {list}. Find the median." },
-        { sv: "Antalet läksidor du fick läsa i läxa under några veckor var: {list}. Bestäm läxornas median.", en: "The homework pages assigned to you over a few weeks were: {list}. Determine the median." },
+        { sv: "Antalet sidor du fick läsa i läxa under några veckor var: {list}. Bestäm median.", en: "The homework pages assigned to you over a few weeks were: {list}. Determine the median." },
         { sv: "Här är antalet oöppnade snaps du har liggande på mobilen: {list}. Vad är medianen för dina snaps?", en: "Here are the unread Snapchats waiting on your phone: {list}. What is the median of your snaps?" },
         { sv: "Du kollar hur många reps du orkar göra med en tung hantel: {list}. Räkna ut repsens median.", en: "You check how many reps you can complete with a heavy dumbbell: {list}. Calculate the median of the reps." },
         { sv: "Här är dina poäng på de senaste testerna i engelska: {list}. Vilket värde blir medianen?", en: "Here are your scores on recent English quizzes: {list}. Which value is the median?" },
