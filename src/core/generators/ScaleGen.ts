@@ -122,9 +122,23 @@ export class ScaleGen {
         const v = variationKey || this.getVariation(pool, options);
 
         if (v === 'concept_lie') {
-            const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.blueprint);
-            const ratio = MathUtils.randomChoice([20, 50, 100, 500]);
-            const sLie = lang === 'sv' ? `Bilden visar föremålet i dess verkliga storlek.` : `The image shows the object in its real size.`;
+            const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.microscope);
+            // expansion of scale ratios
+            const ratio = MathUtils.randomChoice([2, 4, 5, 8, 10, 15, 20, 25, 40, 50, 100]);
+            const scaleStr = `${ratio}:1`;
+            
+            // 🟢 Add Text Variety to the Lies so they aren't always the same sentence!
+            const lies = lang === 'sv' ? [
+                `Bilden visar föremålet i dess verkliga storlek.`,
+                `Verkligheten är ${ratio} gånger mindre än bilden.`,
+                `Detta är en förstoring.`
+            ] : [
+                `The image shows the object in its real size.`,
+                `Reality is ${ratio} times smaller than the image.`,
+                `This is an enlargement.`
+            ];
+            const sLie = MathUtils.randomChoice(lies);
+            
             const sTrue1 = lang === 'sv' ? `Verkligheten är ${ratio} gånger större än bilden.` : `Reality is ${ratio} times larger than the image.`;
             const sTrue2 = lang === 'sv' ? `Detta är en förminskning.` : `This is a reduction.`;
 
@@ -196,8 +210,8 @@ export class ScaleGen {
 
         if (v === 'calc_real') {
             const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.blueprint);
-            const scale = MathUtils.randomChoice([10, 20, 50]);
-            const imgCm = MathUtils.randomInt(3, 12);
+            const scale = MathUtils.randomChoice([10, 15, 20, 25, 40, 50, 100, 150, 200]);
+            const imgCm = MathUtils.randomInt(2, 25);
             const ans = imgCm * scale;
             return {
                 renderData: {
@@ -227,8 +241,8 @@ export class ScaleGen {
 
         if (v === 'calc_image') {
             const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.blueprint);
-            const scale = MathUtils.randomChoice([20, 50, 100]);
-            const imgCm = MathUtils.randomInt(2, 10);
+            const scale = MathUtils.randomChoice([10, 20, 25, 40, 50, 100, 200, 250, 400, 500]);
+            const imgCm = MathUtils.randomInt(2, 25);
             const realCm = imgCm * scale;
             return {
                 renderData: {
@@ -257,8 +271,8 @@ export class ScaleGen {
         }
 
         const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.microscope);
-        const scale = MathUtils.randomChoice([5, 10, 50]);
-        const img = MathUtils.randomInt(2, 10);
+        const scale = MathUtils.randomChoice([2, 4, 5, 10, 15, 20, 25, 40, 50, 100]);
+        const img = MathUtils.randomInt(2, 20);
         const real = img * scale;
         return {
             renderData: {
@@ -296,8 +310,8 @@ export class ScaleGen {
 
         if (v === 'map_real') {
             const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.map);
-            const scale = MathUtils.randomChoice([10000, 20000, 50000]);
-            const mapCm = MathUtils.randomInt(4, 15);
+            const scale = MathUtils.randomChoice([5000, 10000, 20000, 25000, 40000, 50000, 100000, 200000, 250000, 500000]);
+            const mapCm = MathUtils.randomInt(2, 30);
             const realCm = mapCm * scale;
             const realM = realCm / 100;
             const useKm = realM >= 1000;
@@ -337,10 +351,10 @@ export class ScaleGen {
 
         if (v === 'blueprint_draw') {
             const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.blueprint);
-            const scale = 50;
-            const realM = MathUtils.randomInt(4, 12);
-            const realCm = realM * 100;
-            const ans = realCm / scale;
+            const scale = MathUtils.randomChoice([20, 25, 40, 50, 100, 200]);
+            const ans = MathUtils.randomInt(4, 30); // the image cm
+            const realCm = ans * scale;
+            const realM = realCm / 100;
 
             return {
                 renderData: {
@@ -369,8 +383,12 @@ export class ScaleGen {
         }
 
         const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.microscope);
-        const scale = MathUtils.randomChoice([20, 50, 100]);
-        const realMm = MathUtils.randomChoice([0.1, 0.2, 0.5]);
+        const scaleOptions = [10, 20, 25, 40, 50, 100, 200, 250, 400, 500];
+        const scale = MathUtils.randomChoice(scaleOptions);
+        
+        const realMmOptions = [0.1, 0.2, 0.3, 0.4, 0.5, 0.8, 1.2, 1.5, 2.5];
+        const validMm = realMmOptions.filter(m => (m * scale) % 1 === 0);
+        const realMm = MathUtils.randomChoice(validMm.length > 0 ? validMm : [0.5]);
         const ansMm = realMm * scale;
 
         return {
@@ -401,8 +419,8 @@ export class ScaleGen {
 
     private level4_DetermineScale(lang: string, variationKey?: string, options: any = {}): any {
         const scenario = MathUtils.randomChoice(ScaleGen.SCENARIOS.blueprint);
-        const ratio = MathUtils.randomChoice([20, 50, 100, 200]);
-        const imgCm = MathUtils.randomInt(2, 8);
+        const ratio = MathUtils.randomChoice([10, 20, 25, 40, 50, 100, 200, 250, 400, 500]);
+        const imgCm = MathUtils.randomInt(2, 25);
         const realM = (imgCm * ratio) / 100;
         const v = variationKey || 'determine_reduction';
 
@@ -449,9 +467,9 @@ export class ScaleGen {
             { key: 'area_reverse', type: 'calculate' }
         ], options);
 
-        const L = MathUtils.randomChoice([2, 3, 5, 10]);
+        const L = MathUtils.randomChoice([2, 3, 4, 5, 6, 8, 10, 12, 15, 20]);
         const sq = L * L;
-        const smallA = MathUtils.randomInt(4, 10);
+        const smallA = MathUtils.randomInt(2, 50);
         const largeA = smallA * sq;
 
         if (v === 'area_reverse') {

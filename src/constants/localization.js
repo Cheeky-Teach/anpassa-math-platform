@@ -175,7 +175,8 @@ export const LEVEL_DESCRIPTIONS = {
         3: { sv: "Grundpotensform", en: "Scientific Notation" },
         4: { sv: "Kvadratrötter", en: "Square Roots" },
         5: { sv: "Potenslagar (Enkel)", en: "Exponent Laws (Basic)" },
-        6: { sv: "Potenslagar (Avancerad)", en: "Exponent Laws (Adv)" }
+        6: { sv: "Potenslagar (Avancerad)", en: "Exponent Laws (Adv)" },
+        7: { sv: "Räkna med grundpotens", en: "Calculate with Scientific Notation" }
     },
     arithmetic: {
         1: { sv: "Addition (Uppställning)", en: "Addition (Vertical)" },

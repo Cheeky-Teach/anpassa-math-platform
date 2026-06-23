@@ -370,11 +370,22 @@ export class StatisticsGen {
 
     // --- LEVEL 3: MEDIAN ---
     private level3_Median(lang: string, variationKey?: string, options: any = {}): any {
-        const count = MathUtils.randomChoice([5, 7]); // Always odd for base clarity
+        // Guaranteed 50/50 split between Even and Odd lists!
+        const isEvenList = Math.random() > 0.5;
+        const count = isEvenList ? MathUtils.randomChoice([6, 8]) : MathUtils.randomChoice([5, 7]);
+        
         const s = MathUtils.randomChoice(StatisticsGen.SCENARIOS.lists);
         const list = Array.from({length: count}, () => MathUtils.randomInt(s.min, s.max));
+        
+        // Sort the list
         const sorted = [...list].sort((a, b) => a - b);
-        const median = sorted[Math.floor(count / 2)];
+        
+        // If even, average the two middle numbers. If odd, take the exact middle.
+        const median = isEvenList 
+            ? (sorted[count / 2 - 1] + sorted[count / 2]) / 2 
+            : sorted[Math.floor(count / 2)];
+
+        const v = variationKey || (isEvenList ? 'median_even' : 'median_odd');
 
         return {
             renderData: {
@@ -382,7 +393,7 @@ export class StatisticsGen {
                 interceptorToken: `${list.join(', ')} ; ${median}`,
                 answerType: 'numeric'
             },
-            token: this.toBase64(median.toString()), variationKey: 'median_odd', type: 'calculate',
+            token: this.toBase64(median.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { 
                     text: lang === 'sv' ? "Medianen betyder mitt-talet. Men se upp! För att hitta talet i mitten måste siffrorna STÄLLAS I STORLEKSORDNING allra först, som en kö från kortast till längst." : "The median means the middle number. But watch out! To find the number in the center, the digits must BE SORTED BY SIZE first, like a line from shortest to tallest.", 
@@ -393,9 +404,16 @@ export class StatisticsGen {
                     latex: `\\text{Sorterad kö: } \\mathbf{${sorted.join(', ')}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Kolla nu vilket tal som står exakt i mitten av kön och har lika många kompisar till vänster som till höger.` : `Now check which number stands exactly in the middle of the line, having just as many neighbors to its left as to its right.`, 
-                    latex: `\\text{Mittersta platsen} = \\mathbf{${median}}` 
+                    text: lang === 'sv' 
+                        ? (isEvenList ? `Eftersom vi har ${count} tal (ett jämnt antal) finns det ingen ensam siffra i mitten. Vi kollar istället på de två mittersta talen.` : `Kolla nu vilket tal som står exakt i mitten av kön och har lika många kompisar till vänster som till höger.`) 
+                        : (isEvenList ? `Since we have ${count} numbers (an even amount), there is no single number in the middle. We look at the two middle numbers instead.` : `Now check which number stands exactly in the middle of the line, having just as many neighbors to its left as to its right.`), 
+                    latex: isEvenList ? `\\text{Mitten: } ${sorted[count/2 - 1]} \\text{ och } ${sorted[count/2]}` : `\\text{Mittersta platsen} = \\mathbf{${median}}` 
                 },
+                // Extra step automatically added ONLY for even numbers
+                ...(isEvenList ? [{
+                    text: lang === 'sv' ? "För att få fram medianen adderar vi de två mittersta talen och delar på 2 (vi räknar alltså ut deras medelvärde)." : "To find the median, we add the two middle numbers together and divide by 2 (we calculate their mean).",
+                    latex: `\\frac{${sorted[count/2 - 1]} + ${sorted[count/2]}}{2} = \\mathbf{${median}}`
+                }] : []),
                 { 
                     text: lang === 'sv' ? `Svar: ${median}` : `Answer: ${median}`, 
                     latex: `${median}` 
@@ -403,7 +421,6 @@ export class StatisticsGen {
             ]
         };
     }
-
     // --- LEVEL 4: REVERSE MEAN ---
     private level4_ReverseMean(lang: string, variationKey?: string, options: any = {}): any {
         const count = 4;
@@ -458,9 +475,19 @@ export class StatisticsGen {
         ];
         const v = variationKey || this.getVariation(pool, options);
         
-        // 1. Math Data (Identical for both views)
-        const vals = [1, 2, 3, 4];
-        const freqs = [MathUtils.randomInt(2, 4), MathUtils.randomInt(4, 6), MathUtils.randomInt(2, 4), MathUtils.randomInt(1, 2)];
+        // 1. Math Data (Dynamic Generation)
+        // 🟢 FIXED: Randomize values and frequencies so the median shifts dynamically
+        const numRows = MathUtils.randomInt(4, 6);
+        const startVal = MathUtils.randomInt(0, 15);
+        const vals = Array.from({length: numRows}, (_, i) => startVal + i);
+
+        // Generate base random frequencies
+        const freqs = vals.map(() => MathUtils.randomInt(1, 6));
+
+        // Force a random peak to ensure a clear Mode and shift the Median naturally
+        const peakIndex = MathUtils.randomInt(0, numRows - 1);
+        freqs[peakIndex] += MathUtils.randomInt(3, 5);
+
         const rows = vals.map((v, i) => [v, freqs[i]]);
         const totalCount = freqs.reduce((a, b) => a + b, 0);
 
@@ -479,6 +506,8 @@ export class StatisticsGen {
         const tValSrc = isGraph 
             ? (lang === 'sv' ? "x-axeln" : "the x-axis") 
             : (lang === 'sv' ? "kolumnen 'Värde'" : "the 'Value' column");
+
+
 
         // ==========================================
         // VARIATION A: Total Count

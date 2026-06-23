@@ -17,6 +17,7 @@ export class ExponentsGen {
             case 4: questionData = this.level4_SquareRoots(lang, undefined, options); break;
             case 5: questionData = this.level5_LawsBasic(lang, undefined, options); break;
             case 6: questionData = this.level6_LawsAdvanced(lang, undefined, options); break;
+            case 7: questionData = this.level7_ScientificCalc(lang, undefined, options); break;
             default: questionData = this.level1_Foundations(lang, undefined, options); break;
         }
 
@@ -64,6 +65,9 @@ export class ExponentsGen {
             case 'law_inverse_algebra':
             case 'law_all_combined':
                 return this.level6_LawsAdvanced(lang, key, options);
+            case 'scientific_mult':
+            case 'scientific_div':
+                return this.level7_ScientificCalc(lang, key, options);
             default:
                 return this.generate(1, lang, options);
         }
@@ -493,5 +497,170 @@ export class ExponentsGen {
                 { text: lang === 'sv' ? `Svar: x${this.toSup(resExp)}` : `Answer: x${this.toSup(resExp)}` }
             ]
         };
+    }
+
+    // --- LEVEL 7: CALCULATE WITH SCIENTIFIC NOTATION ---
+    private level7_ScientificCalc(lang: string, variationKey?: string, options: any = {}): any {
+        // Fallback helper in case this class doesn't have getVariation built exactly the same way
+        const getVar = (pool: any[], opts: any) => {
+            if (variationKey) return variationKey;
+            let filtered = pool;
+            if (opts?.exclude?.length) filtered = filtered.filter(v => !opts.exclude.includes(v.key));
+            return MathUtils.randomChoice(filtered.map(v => v.key));
+        };
+
+        const pool = [
+            { key: 'scientific_mult', type: 'calculate' },
+            { key: 'scientific_div', type: 'calculate' }
+        ];
+        const v = getVar(pool, options);
+
+        // Helper function for base64
+        const toBase64 = (str: string) => Buffer.from(str).toString('base64');
+
+        if (v === 'scientific_mult') {
+            const a = MathUtils.randomInt(2, 9);
+            const c = MathUtils.randomInt(2, 9);
+            
+            const b = MathUtils.randomInt(-8, 8);
+            let d = MathUtils.randomInt(-8, 8);
+            if (b >= 0 && d >= 0) d = -MathUtils.randomInt(1, 8); 
+
+            const rawMantissa = a * c;
+            const rawExp = b + d;
+            
+            let finalMantissa = rawMantissa;
+            let finalExp = rawExp;
+            let adjustStep = false;
+
+            if (rawMantissa >= 10) {
+                finalMantissa = rawMantissa / 10;
+                finalExp = rawExp + 1;
+                adjustStep = true;
+            }
+
+            const aStr = a.toString();
+            const cStr = c.toString();
+            const finalMStr = finalMantissa.toString().replace('.', ',');
+
+            return {
+                renderData: {
+                    description: lang === 'sv' ? "Beräkna och svara i grundpotensform." : "Calculate and answer in scientific notation.",
+                    latex: `${aStr} \\cdot 10^{${b}} \\cdot ${cStr} \\cdot 10^{${d}}`,
+                    answerType: 'scientific' 
+                },
+                token: toBase64(`${finalMStr};${finalExp}`), 
+                variationKey: v, type: 'calculate',
+                clues: [
+                    {
+                        text: lang === 'sv' 
+                            ? "Steg 1: Sortera talen. Sätt de vanliga siffrorna för sig, och tiopotenserna för sig." 
+                            : "Step 1: Group the numbers. Put the regular numbers together, and the powers of ten together.",
+                        latex: `(${aStr} \\cdot ${cStr}) \\cdot (10^{${b}} \\cdot 10^{${d}})`
+                    },
+                    {
+                        text: lang === 'sv' 
+                            ? `Steg 2: Börja med att multiplicera de vanliga siffrorna (${aStr} · ${cStr} = ${rawMantissa}).` 
+                            : `Step 2: Start by multiplying the regular numbers (${aStr} · ${cStr} = ${rawMantissa}).`,
+                        latex: `${rawMantissa} \\cdot (10^{${b}} \\cdot 10^{${d}})`
+                    },
+                    {
+                        text: lang === 'sv' 
+                            ? `Steg 3: Använd nu potenslagarna för tiopotenserna. Vid multiplikation ska exponenterna adderas: ${b} + (${d}) = ${rawExp}.` 
+                            : `Step 3: Now use the laws of exponents for the powers of ten. Add the exponents: ${b} + (${d}) = ${rawExp}.`,
+                        latex: `${rawMantissa} \\cdot 10^{${rawExp}}`
+                    },
+                    ...(adjustStep ? [{
+                        text: lang === 'sv' 
+                            ? `Steg 4: Grundpotensform kräver att talet är mellan 1 och 10. Eftersom ${rawMantissa} är större än 10, delar vi den med 10 (blir ${finalMStr}) och LÄGGER TILL 1 på exponenten.` 
+                            : `Step 4: Scientific notation requires a coefficient between 1 and 10. Since ${rawMantissa} is greater than 10, divide by 10 (giving ${finalMStr}) and ADD 1 to the exponent.`,
+                        latex: `\\mathbf{${finalMStr} \\cdot 10^{${finalExp}}}`
+                    }] : [{
+                        text: lang === 'sv' 
+                            ? `Steg 4: Siffran framför tiopotensen (${rawMantissa}) är redan mellan 1 och 10, så svaret är färdigt!` 
+                            : `Step 4: The coefficient (${rawMantissa}) is already between 1 and 10, so the answer is ready!`,
+                        latex: `\\mathbf{${finalMStr} \\cdot 10^{${finalExp}}}`
+                    }]),
+                    {
+                        text: lang === 'sv' ? `Svar: ${finalMStr} · 10^${finalExp}` : `Answer: ${finalMStr} · 10^${finalExp}`,
+                        latex: `${finalMStr} \\cdot 10^{${finalExp}}`
+                    }
+                ],
+                metadata: { difficulty: 7 }
+            };
+        }
+
+        if (v === 'scientific_div') {
+            const c = MathUtils.randomChoice([2, 4, 5, 8]);
+            const a = MathUtils.randomInt(1, 9);
+            
+            const b = MathUtils.randomInt(-8, 8);
+            let d = MathUtils.randomInt(-8, 8);
+            if (b >= 0 && d >= 0) d = -MathUtils.randomInt(1, 8);
+
+            const rawMantissa = a / c; 
+            const rawExp = b - d;
+            
+            let finalMantissa = rawMantissa;
+            let finalExp = rawExp;
+            let adjustStep = false;
+
+            if (rawMantissa < 1) {
+                finalMantissa = rawMantissa * 10;
+                finalExp = rawExp - 1;
+                adjustStep = true;
+            }
+
+            const aStr = a.toString();
+            const cStr = c.toString();
+            const rawMStr = rawMantissa.toString().replace('.', ',');
+            const finalMStr = finalMantissa.toString().replace('.', ',');
+
+            return {
+                renderData: {
+                    description: lang === 'sv' ? "Beräkna och svara i grundpotensform." : "Calculate and answer in scientific notation.",
+                    latex: `\\frac{${aStr} \\cdot 10^{${b}}}{${cStr} \\cdot 10^{${d}}}`,
+                    answerType: 'scientific'
+                },
+                token: toBase64(`${finalMStr};${finalExp}`),
+                variationKey: v, type: 'calculate',
+                clues: [
+                    {
+                        text: lang === 'sv' 
+                            ? "Steg 1: Dela upp bråket i två delar. Dividera siffrorna för sig och tiopotenserna för sig." 
+                            : "Step 1: Split the fraction. Divide the coefficients separately and the powers of ten separately.",
+                        latex: `\\frac{${aStr}}{${cStr}} \\cdot \\frac{10^{${b}}}{10^{${d}}}`
+                    },
+                    {
+                        text: lang === 'sv' 
+                            ? `Steg 2: Börja med att dividera de vanliga siffrorna (${aStr} / ${cStr} = ${rawMStr}).` 
+                            : `Step 2: Start by dividing the regular numbers (${aStr} / ${cStr} = ${rawMStr}).`,
+                        latex: `${rawMStr} \\cdot \\frac{10^{${b}}}{10^{${d}}}`
+                    },
+                    {
+                        text: lang === 'sv' 
+                            ? `Steg 3: Använd nu potenslagarna för division. Subtrahera den nedre exponenten från den övre (se upp med minustecken!): ${b} - (${d}) = ${rawExp}.` 
+                            : `Step 3: Now use the laws of exponents for division. Subtract the bottom exponent from the top (watch out for minus signs!): ${b} - (${d}) = ${rawExp}.`,
+                        latex: `${rawMStr} \\cdot 10^{${rawExp}}`
+                    },
+                    ...(adjustStep ? [{
+                        text: lang === 'sv' 
+                            ? `Steg 4: Grundpotensform kräver att talet är mellan 1 och 10. Eftersom ${rawMStr} är mindre än 1, multiplicerar vi den med 10 (blir ${finalMStr}) och DRAR BORT 1 från exponenten.` 
+                            : `Step 4: Scientific notation requires a coefficient between 1 and 10. Since ${rawMStr} is less than 1, multiply by 10 (giving ${finalMStr}) and SUBTRACT 1 from the exponent.`,
+                        latex: `\\mathbf{${finalMStr} \\cdot 10^{${finalExp}}}`
+                    }] : [{
+                        text: lang === 'sv' 
+                            ? `Steg 4: Siffran framför tiopotensen (${rawMStr}) är redan mellan 1 och 10, så svaret är färdigt!` 
+                            : `Step 4: The coefficient (${rawMStr}) is already between 1 and 10, so the answer is ready!`,
+                        latex: `\\mathbf{${finalMStr} \\cdot 10^{${finalExp}}}`
+                    }]),
+                    {
+                        text: lang === 'sv' ? `Svar: ${finalMStr} · 10^${finalExp}` : `Answer: ${finalMStr} · 10^${finalExp}`,
+                        latex: `${finalMStr} \\cdot 10^{${finalExp}}`
+                    }
+                ],
+                metadata: { difficulty: 7 }
+            };
+        }
     }
 }

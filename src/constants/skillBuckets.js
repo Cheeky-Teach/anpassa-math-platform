@@ -735,7 +735,17 @@ export const SKILL_BUCKETS = {
           { key: 'law_division', name: { sv: 'Lag: Division', en: 'Law: Division' }, desc: { sv: 'Subtrahera exponenter', en: 'Subtract exponents' } },
           { key: 'law_mult_div_combined', name: { sv: 'Lag: Mult & Div', en: 'Law: Mult & Div' }, desc: { sv: 'Blandade regler', en: 'Mixed rules' } },
           { key: 'law_power_of_power', name: { sv: 'Lag: Potens av potens', en: 'Law: Power of power' }, desc: { sv: 'Multiplicera exponenter', en: 'Multiply exponents' } },
-          { key: 'law_all_combined', name: { sv: 'Blandade Lagar', en: 'Mixed Laws' }, desc: { sv: 'Avancerad förenkling', en: 'Advanced simplification' } }
+          { key: 'law_all_combined', name: { sv: 'Blandade Lagar', en: 'Mixed Laws' }, desc: { sv: 'Avancerad förenkling', en: 'Advanced simplification' } },
+          { 
+            key: 'scientific_mult', 
+            name: { sv: 'Multiplikation (Grundpotens)', en: 'Multiplication (Scientific)' }, 
+            desc: { sv: 'Multiplicera två tal i grundpotensform', en: 'Multiply two numbers in scientific notation' } 
+          },
+          { 
+            key: 'scientific_div', 
+            name: { sv: 'Division (Grundpotens)', en: 'Division (Scientific)' }, 
+            desc: { sv: 'Dividera två tal i grundpotensform', en: 'Divide two numbers in scientific notation' } 
+          }
         ]
       },
       ten_powers: {
