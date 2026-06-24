@@ -6,59 +6,31 @@ export class AlgebraicGeometryGenerator {
         let questionData: any;
 
         switch (level) {
-            // --- SEGMENT 1: PERIMETER BASICS ---
             case 1: questionData = this.perimeter_writeExpression(lang); break;
             case 2: questionData = this.perimeter_solveEquation(lang); break;
-
-            // --- SEGMENT 2: AREA BASICS ---
             case 3: questionData = this.area_writeExpression(lang); break;
             case 4: questionData = this.area_solveEquation(lang); break;
-
-            // --- SEGMENT 3: TRIANGLES & ANGLES ---
             case 5: questionData = this.angles_writeExpression(lang); break;
             case 6: questionData = this.angles_solveEquation(lang); break;
-
-            // 🟢 FIXED: Levels 7 and 8 removed completely to focus on the optimized 6-level layout track
             default: questionData = this.perimeter_writeExpression(lang); break;
         }
 
         return questionData;
     }
 
-    //  Add this routing method right below generate()
     public generateByVariation(key: string, lang: string = 'sv', options: any = {}): any {
         let questionData: any;
-
-        // Route the keys from skillBuckets.js to their exact methods
         switch (key) {
-            case 'perimeter_write': 
-                questionData = this.perimeter_writeExpression(lang); 
-                break;
-            case 'perimeter_solve': 
-                questionData = this.perimeter_solveEquation(lang); 
-                break;
-            case 'area_write': 
-                questionData = this.area_writeExpression(lang); 
-                break;
-            case 'area_solve': 
-                questionData = this.area_solveEquation(lang); 
-                break;
-            case 'angles_write': 
-                questionData = this.angles_writeExpression(lang); 
-                break;
-            case 'angles_solve': 
-                questionData = this.angles_solveEquation(lang); 
-                break;
-            default: 
-                questionData = this.perimeter_writeExpression(lang); 
-                break;
+            case 'perimeter_write': questionData = this.perimeter_writeExpression(lang); break;
+            case 'perimeter_solve': questionData = this.perimeter_solveEquation(lang); break;
+            case 'area_write': questionData = this.area_writeExpression(lang); break;
+            case 'area_solve': questionData = this.area_solveEquation(lang); break;
+            case 'angles_write': questionData = this.angles_writeExpression(lang); break;
+            case 'angles_solve': questionData = this.angles_solveEquation(lang); break;
+            default: questionData = this.perimeter_writeExpression(lang); break;
         }
-        // Attach the specific variation key to the metadata so the UI registers it correctly
-        if (!questionData.metadata) {
-            questionData.metadata = {};
-        }
+        if (!questionData.metadata) questionData.metadata = {};
         questionData.metadata.variation_key = key;
-
         return questionData;
     }
 
@@ -66,7 +38,6 @@ export class AlgebraicGeometryGenerator {
         return Buffer.from(str, 'utf-8').toString('base64');
     }
 
-    // Comprehensive label mapping matrix matching GeometryShapes.jsx expectations
     private getLabels(w: string, h: string, s: string = '') {
         return { 
             w, h, s, 
@@ -78,8 +49,35 @@ export class AlgebraicGeometryGenerator {
         };
     }
 
+    // 🟢 NEW: Mathematical Term Formatting Engine
+    private formatTerm(a: number, b: number): string {
+        if (b === 0) return `${a}x`;
+        return b > 0 ? `${a}x+${b}` : `${a}x-${Math.abs(b)}`;
+    }
+
+    // 🟢 NEW: Dynamic Expression Generator (Mixes Single and Double Terms)
+    private genLinearTerm(minA = 2, maxA = 12, minB = 1, maxB = 15, allowNegative = true): { a: number, b: number, text: string } {
+        const a = MathUtils.randomInt(minA, maxA);
+        const useConst = Math.random() > 0.4; // 60% chance to have a second term (+ b)
+        let b = 0;
+        if (useConst) {
+            b = MathUtils.randomInt(minB, maxB);
+            if (allowNegative && Math.random() > 0.5) b = -b; // 50% chance to be negative (- b)
+        }
+        return { a, b, text: this.formatTerm(a, b) };
+    }
+
+    // 🟢 NEW: Trigonometry Engine for True-to-Math Dynamic Angles
+    private calcPoint(cx: number, cy: number, radius: number, angleDeg: number) {
+        const rad = (angleDeg * Math.PI) / 180;
+        return {
+            x: Math.round(cx + radius * Math.cos(-rad)),
+            y: Math.round(cy + radius * Math.sin(-rad)) // Negative because SVG Y goes down
+        };
+    }
+
     // =========================================================================
-    // LEVEL 1: Omkrets - Teckna uttryck (Rectangles, Squares, Triangles)
+    // LEVEL 1: Omkrets - Teckna uttryck
     // =========================================================================
     private perimeter_writeExpression(lang: string): any {
         const shapeChoice = MathUtils.randomInt(1, 4);
@@ -88,92 +86,44 @@ export class AlgebraicGeometryGenerator {
         desc = lang === 'sv' ? `Teckna ett förenklat uttryck för figurens omkrets.` : `Write a simplified expression for the figure's perimeter.`;
 
         if (shapeChoice === 1) { // Rectangle
-            const a = MathUtils.randomInt(2, 5);
-            const b = MathUtils.randomInt(3, 12);
-            const wText = `${a}x`;
-            const hText = `${b}`;
-            geom = { type: "rectangle", width: 200, height: 120, labels: this.getLabels(wText, hText) };
-            ans = `${2*a}x+${2*b}`;
+            const w = this.genLinearTerm(2, 6, 1, 10);
+            const h = this.genLinearTerm(2, 6, 1, 10);
+            geom = { type: "rectangle", width: 200, height: 120, labels: this.getLabels(w.text, h.text) };
+            ans = this.formatTerm(2 * w.a + 2 * h.a, 2 * w.b + 2 * h.b);
             clues = [
-                {
-                    text: lang === 'sv' ? "Omkretsen är summan av en figurs sidor." : "The perimeter is the sum of all outer sides of a figure.",
-                    latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3 + \\text{sida}_4`
-                },
-                {
-                    text: lang === 'sv' ? "Steg 1: Ställ upp summan för rektangelns fyra yttre sidor." : "Step 1: Set up the sum for the four outer sides of the rectangle.",
-                    latex: `\\text{Omkrets} = ${wText} + ${hText} + ${wText} + ${hText}`
-                },
-                {
-                    text: lang === 'sv' ? "Sortera uttrycket genom att samla x-termer och sifferkonstanter var för sig." : "Group the expression by gathering x-terms and constants separately.",
-                    latex: `\\text{Omkrets} = \\mathbf{${a}x + ${a}x} + \\mathbf{${b} + ${b}}`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla genom att slå ihop x-termerna för sig och talen för sig." : "Simplify by combining the x-terms together and the constants together.",
-                    latex: `\\text{Omkrets} = \\mathbf{${ans}}`
-                }
+                { text: lang === 'sv' ? "Omkretsen är summan av figurens yttre sidor." : "The perimeter is the sum of all outer sides of a figure.", latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3 + \\text{sida}_4` },
+                { text: lang === 'sv' ? "Ställ upp summan för rektangelns fyra yttre sidor." : "Set up the sum for the four outer sides of the rectangle.", latex: `(${w.text}) + (${h.text}) + (${w.text}) + (${h.text})` },
+                { text: lang === 'sv' ? "Sortera uttrycket genom att samla x-termer och sifferkonstanter var för sig." : "Group the expression by gathering x-terms and constants separately.", latex: `\\mathbf{${w.a}x + ${w.a}x + ${h.a}x + ${h.a}x} ${w.b !== 0 || h.b !== 0 ? `+ \\mathbf{(${2 * w.b + 2 * h.b})}` : ''}` },
+                { text: lang === 'sv' ? "Förenkla för att få slutsvaret." : "Simplify to get the final answer.", latex: `\\mathbf{${ans}}` }
             ];
         } else if (shapeChoice === 2) { // Square
-            const a = MathUtils.randomInt(2, 4);
-            const b = MathUtils.randomInt(1, 6);
-            const sText = `${a}x+${b}`;
-            geom = { type: "rectangle", subtype: "square", width: 150, height: 150, labels: this.getLabels(sText, sText, sText) };
-            ans = `${4*a}x+${4*b}`;
+            const s = this.genLinearTerm(2, 8, 1, 12);
+            geom = { type: "rectangle", subtype: "square", width: 150, height: 150, labels: this.getLabels(s.text, s.text, s.text) };
+            ans = this.formatTerm(4 * s.a, 4 * s.b);
             clues = [
-                {
-                    text: lang === 'sv' ? "En kvadrat har fyra sidor som är lika långa." : "A square has four sides that are all the same length.",
-                    latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3 + \\text{sida}_4`
-                },
-                {
-                    text: lang === 'sv' ? "Steg 1: Ställ upp summan för kvadratens fyra sidor." : "Step 1: Set up the sum for the four sides of the square.",
-                    latex: `\\text{Omkrets} = (${sText}) + (${sText}) + (${sText}) + (${sText})`
-                },
-                {
-                    text: lang === 'sv' ? "Sortera uttrycket genom att samla alla x-termer och sifferkonstanter var för sig." : "Group the expression by gathering all x-terms and constants separately.",
-                    latex: `\\text{Omkrets} = \\mathbf{${a}x + ${a}x + ${a}x + ${a}x} + \\mathbf{${b} + ${b} + ${b} + ${b}}`
-                },
-                {
-                    text: lang === 'sv' ? "Slå ihop termerna för att få det färdiga förenklade uttrycket." : "Combine the terms to get the final simplified expression.",
-                    latex: `\\text{Omkrets} = \\mathbf{${ans}}`
-                }
+                { text: lang === 'sv' ? "En kvadrat har fyra sidor som är lika långa." : "A square has four sides of equal length.", latex: `\\text{Omkrets} = 4 \\cdot \\text{sidan}` },
+                { text: lang === 'sv' ? "Ställ upp summan för kvadratens fyra sidor." : "Set up the sum for the four sides of the square.", latex: `(${s.text}) + (${s.text}) + (${s.text}) + (${s.text})` },
+                { text: lang === 'sv' ? "Slå ihop termerna för att få det färdiga förenklade uttrycket." : "Combine the terms to get the final simplified expression.", latex: `\\mathbf{${ans}}` }
             ];
         } else if (shapeChoice === 3) { // Equilateral Triangle
-            const a = MathUtils.randomInt(2, 6);
-            const sText = `${a}x`;
-            geom = { type: "triangle", subtype: "equilateral", width: 160, height: 140, labels: this.getLabels(sText, "", sText) };
-            ans = `${3*a}x`;
+            const s = this.genLinearTerm(2, 8, 1, 12);
+            geom = { type: "triangle", subtype: "equilateral", width: 160, height: 140, labels: this.getLabels(s.text, "", "") };
+            ans = this.formatTerm(3 * s.a, 3 * s.b);
             clues = [
-                {
-                    text: lang === 'sv' ? "En liksidig triangel har tre sidor som är lika långa." : "An equilateral triangle has three sides that are all the same length.",
-                    latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3`
-                },
-                {
-                    text: lang === 'sv' ? "Steg 1: Ställ upp summan för triangelns tre sidor." : "Step 1: Set up the sum for the three sides of the triangle.",
-                    latex: `\\text{Omkrets} = ${sText} + ${sText} + ${sText}`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla uttrycket genom att lägga ihop de tre likadana x-termerna." : "Simplify the expression by adding the three identical x-terms together.",
-                    latex: `\\text{Omkrets} = \\mathbf{${ans}}`
-                }
+                { text: lang === 'sv' ? "En liksidig triangel har tre sidor som är lika långa." : "An equilateral triangle has three identical sides.", latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3` },
+                { text: lang === 'sv' ? "Ställ upp summan för triangelns tre sidor." : "Set up the sum for the three sides of the triangle.", latex: `(${s.text}) + (${s.text}) + (${s.text})` },
+                { text: lang === 'sv' ? "Förenkla uttrycket genom att slå ihop termerna." : "Simplify the expression by combining terms.", latex: `\\mathbf{${ans}}` }
             ];
         } else { // Right Triangle
-            const a = MathUtils.randomInt(2, 4);
-            const b = MathUtils.randomInt(2, 5);
-            const c = MathUtils.randomInt(2, 6);
-            geom = { type: "triangle", subtype: "right", width: 180, height: 140, labels: this.getLabels(`${a}x`, `${b}x`, `${c}x`) };
-            ans = `${a+b+c}x`;
+            const s1 = this.genLinearTerm(2, 6, 1, 8);
+            const s2 = this.genLinearTerm(2, 6, 1, 8);
+            const s3 = this.genLinearTerm(2, 6, 1, 8);
+            geom = { type: "triangle", subtype: "right", width: 180, height: 140, labels: this.getLabels(s1.text, s2.text, s3.text) };
+            ans = this.formatTerm(s1.a + s2.a + s3.a, s1.b + s2.b + s3.b);
             clues = [
-                {
-                    text: lang === 'sv' ? "Omkretsen får vi om vi adderar alla tre sidor." : "We get the perimeter by adding all three outer sides of the triangle together.",
-                    latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3`
-                },
-                {
-                    text: lang === 'sv' ? "Steg 1: Sätt upp summan för de tre sidorna." : "Step 1: Set up the sum for the three sides.",
-                    latex: `\\text{Omkrets} = ${a}x + ${b}x + ${c}x`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla genom att slå ihop alla x-termer." : "Simplify by combining all x-terms into a single final answer.",
-                    latex: `\\text{Omkrets} = \\mathbf{${ans}}`
-                }
+                { text: lang === 'sv' ? "Omkretsen får vi om vi adderar alla tre sidor." : "We get the perimeter by adding all three outer sides.", latex: `\\text{Omkrets} = \\text{sida}_1 + \\text{sida}_2 + \\text{sida}_3` },
+                { text: lang === 'sv' ? "Sätt upp summan för de tre sidorna." : "Set up the sum for the three sides.", latex: `(${s1.text}) + (${s2.text}) + (${s3.text})` },
+                { text: lang === 'sv' ? "Förenkla genom att slå ihop x-termer och sifferkonstanter." : "Simplify by combining all x-terms and constants.", latex: `\\mathbf{${ans}}` }
             ];
         }
 
@@ -184,123 +134,57 @@ export class AlgebraicGeometryGenerator {
     }
 
     // =========================================================================
-    // LEVEL 2: Omkrets - Lös ekvationen (Concise Step-by-Step LaTeX)
+    // LEVEL 2: Omkrets - Lös ekvationen
     // =========================================================================
     private perimeter_solveEquation(lang: string): any {
         const shapeChoice = MathUtils.randomInt(1, 4);
-        const targetX = MathUtils.randomInt(2, 8); // 🟢 Student-friendly concise target values
+        const targetX = MathUtils.randomInt(2, 12);
         let geom: any, ans: number = targetX, desc: string, clues: any[], totalP: number;
 
+        // Force positive 'b' for equation solving to ensure clean, pedagogical steps without double negatives
         if (shapeChoice === 1) { // Rectangle
-            const a = MathUtils.randomInt(1, 4);
-            const b = MathUtils.randomInt(2, 8);
-            const wText = `x+${a}`;
-            const hText = `${b}`;
-            totalP = 2*(targetX + a) + 2*b;
-            geom = { type: "rectangle", width: 200, height: 120, labels: this.getLabels(wText, hText) };
+            const w = this.genLinearTerm(2, 6, 1, 15, false);
+            const h = this.genLinearTerm(2, 6, 1, 15, false);
+            totalP = 2 * (w.a * targetX + w.b) + 2 * (h.a * targetX + h.b);
+            geom = { type: "rectangle", width: 200, height: 120, labels: this.getLabels(w.text, h.text) };
             desc = lang === 'sv' ? `Rektangelns omkrets är ${totalP} cm. Beräkna x.` : `The rectangle's perimeter is ${totalP} cm. Calculate x.`;
+            
+            const totalA = 2 * w.a + 2 * h.a;
+            const totalB = 2 * w.b + 2 * h.b;
+
             clues = [
-                {
-                    text: lang === 'sv' ? "Sätt upp ekvationen genom att addera rektangelns alla fyra sidor med den kända omkretsen." : "Set up the equation by adding all four sides of the rectangle and setting them equal to the perimeter.",
-                    latex: `(x + ${a}) + ${b} + (x + ${a}) + ${b} = ${totalP}`
-                },
-                {
-                    text: lang === 'sv' ? "Gruppera termerna på vänster sida genom att samla alla x-termer och sifferkonstanter." : "Group the terms on the left side by gathering all x-terms and numerical constants together.",
-                    latex: `\\mathbf{x + x} + \\mathbf{${a} + ${b} + ${a} + ${b}} = ${totalP}`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla uttrycket till en vanlig tvåstegsekvation:" : "Simplify the expression into a standard two-step equation:",
-                    latex: `2x + \\mathbf{${2*a + 2*b}} = ${totalP}`
-                },
-                {
-                    text: lang === 'sv' ? `Steg 1: Ta bort siffertermen genom att subtrahera ${2*a + 2*b} från båda sidor.` : `Step 1: Remove the constant term by subtracting ${2*a + 2*b} from both sides.`,
-                    latex: `2x + ${2*a + 2*b} \\mathbf{- ${2*a + 2*b}} = ${totalP} \\mathbf{- ${2*a + 2*b}}`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla raden för att helt isolera x-termen på sin sida:" : "Simplify the row to cleanly isolate the x-term on its side:",
-                    latex: `2x = \\mathbf{${totalP - (2*a + 2*b)}}`
-                },
-                {
-                    text: lang === 'sv' ? "Steg 2: Dela båda sidor med 2 för att få bort multiplikationen." : "Step 2: Divide both sides by 2 to undo the multiplication.",
-                    latex: `\\frac{2x}{\\mathbf{2}} = \\frac{${totalP - (2*a + 2*b)}}{\\mathbf{2}}`
-                },
-                {
-                    text: lang === 'sv' ? "Räkna ut divisionen för att få värdet på x." : "Calculate the division to find the final value of x.",
-                    latex: `x = \\mathbf{${targetX}}`
-                },
-                {
-                    text: lang === 'sv' ? `Svar: x = ${targetX}` : `Answer: x = ${targetX}`,
-                    latex: `x = ${targetX}`
-                }
+                { text: lang === 'sv' ? "Sätt upp ekvationen genom att addera rektangelns fyra sidor." : "Set up the equation by adding all four sides.", latex: `(${w.text}) + (${h.text}) + (${w.text}) + (${h.text}) = ${totalP}` },
+                { text: lang === 'sv' ? "Förenkla uttrycket på vänster sida till en tvåstegsekvation:" : "Simplify the left side into a standard two-step equation:", latex: `${totalA}x + \\mathbf{${totalB}} = ${totalP}` },
+                ...(totalB > 0 ? [{ text: lang === 'sv' ? `Steg 1: Ta bort siffertermen genom att subtrahera ${totalB} från båda sidor.` : `Step 1: Remove the constant by subtracting ${totalB} from both sides.`, latex: `${totalA}x = \\mathbf{${totalP - totalB}}` }] : []),
+                { text: lang === 'sv' ? `Steg 2: Dela båda sidor med ${totalA}.` : `Step 2: Divide both sides by ${totalA}.`, latex: `x = \\mathbf{${targetX}}` }
             ];
         } else if (shapeChoice === 2) { // Square
-            const a = MathUtils.randomInt(2, 4);
-            const sText = `${a}x`;
-            totalP = 4 * a * targetX;
-            geom = { type: "rectangle", subtype: "square", width: 150, height: 150, labels: this.getLabels(sText, sText, sText) };
+            const s = this.genLinearTerm(2, 8, 1, 15, false);
+            totalP = 4 * (s.a * targetX + s.b);
+            geom = { type: "rectangle", subtype: "square", width: 150, height: 150, labels: this.getLabels(s.text, s.text, s.text) };
             desc = lang === 'sv' ? `Kvadratens omkrets är ${totalP} cm. Beräkna x.` : `The square's perimeter is ${totalP} cm. Calculate x.`;
+            
+            const totalB = 4 * s.b;
+            
             clues = [
-                {
-                    text: lang === 'sv' ? "En kvadrat har fyra lika långa sidor. Vi ställer upp ekvationen utifrån omkretsen:" : "A square has four sides of equal length. We set up the equation based on the perimeter:",
-                    latex: `${sText} + ${sText} + ${sText} + ${sText} = ${totalP}`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla vänster sida genom att addera ihop alla fyra likadana x-termer:" : "Simplify the left side by adding all four identical x-terms together:",
-                    latex: `\\mathbf{${4*a}}x = ${totalP}`
-                },
-                {
-                    text: lang === 'sv' ? `Steg 1: Dela med x-koefficienten ${4*a} på båda sidor för att få x ensam.` : `Step 1: Divide by the x-coefficient ${4*a} on both sides to leave x completely isolated.`,
-                    latex: `\\frac{${4*a}x}{\\mathbf{${4*a}}} = \\frac{${totalP}}{\\mathbf{${4*a}}}`
-                },
-                {
-                    text: lang === 'sv' ? "Utför divisionen för att räkna ut värdet på x." : "Perform the division to find the final answer.",
-                    latex: `x = \\mathbf{${targetX}}`
-                },
-                {
-                    text: lang === 'sv' ? `Svar: x = ${targetX}` : `Answer: x = ${targetX}`,
-                    latex: `x = ${targetX}`
-                }
+                { text: lang === 'sv' ? "En kvadrat har fyra lika långa sidor. Vi ställer upp ekvationen:" : "A square has four equal sides. We set up the equation:", latex: `4 \\cdot (${s.text}) = ${totalP}` },
+                { text: lang === 'sv' ? "Förenkla vänster sida:" : "Simplify the left side:", latex: `${4 * s.a}x + \\mathbf{${totalB}} = ${totalP}` },
+                ...(totalB > 0 ? [{ text: lang === 'sv' ? `Steg 1: Subtrahera ${totalB} från båda sidor.` : `Step 1: Subtract ${totalB} from both sides.`, latex: `${4 * s.a}x = \\mathbf{${totalP - totalB}}` }] : []),
+                { text: lang === 'sv' ? `Dela med ${4 * s.a} på båda sidor för att lösa ut x.` : `Divide by ${4 * s.a} on both sides to solve for x.`, latex: `x = \\mathbf{${targetX}}` }
             ];
         } else { // Equilateral Triangle
-            const a = MathUtils.randomInt(2, 4);
-            const b = MathUtils.randomInt(1, 5);
-            const sText = `${a}x+${b}`;
-            totalP = 3 * (a * targetX + b);
-            geom = { type: "triangle", subtype: "equilateral", width: 160, height: 140, labels: this.getLabels(sText, "", "") };
+            const s = this.genLinearTerm(2, 8, 1, 15, false);
+            totalP = 3 * (s.a * targetX + s.b);
+            geom = { type: "triangle", subtype: "equilateral", width: 160, height: 140, labels: this.getLabels(s.text, "", "") };
             desc = lang === 'sv' ? `En liksidig triangels omkrets är ${totalP} cm. Beräkna x.` : `The triangle's perimeter is ${totalP} cm. Calculate x.`;
+            
+            const totalB = 3 * s.b;
+
             clues = [
-                {
-                    text: lang === 'sv' ? "En liksidig triangel har tre sidor som är lika långa. Vi sätter upp summan:" : "An equilateral triangle has three sides that are all the same length. We set up the sum:",
-                    latex: `(${sText}) + (${sText}) + (${sText}) = ${totalP}`
-                },
-                {
-                    text: lang === 'sv' ? "Sortera och gruppera x-termerna för sig och sifferkonstanterna för sig på vänster sida." : "Group the x-terms and the numerical constants separately on the left side.",
-                    latex: `\\mathbf{${a}x + ${a}x + ${a}x} + \\mathbf{${b} + ${b} + ${b}} = ${totalP}`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla uttrycket till en vanlig tvåstegsekvation:" : "Simplify the expression into a standard two-step equation:",
-                    latex: `${3*a}x + \\mathbf{${3*b}} = ${totalP}`
-                },
-                {
-                    text: lang === 'sv' ? `Steg 1: Ta bort siffertermen genom att subtrahera ${3*b} från båda sidor.` : `Step 1: Remove the constant term by subtracting ${3*b} from both sides.`,
-                    latex: `${3*a}x + ${3*b} \\mathbf{- ${3*b}} = ${totalP} \\mathbf{- ${3*b}}`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla subtraktionen för att isolera variabeltermen:" : "Simplify the subtraction to cleanly isolate the variable term:",
-                    latex: `${3*a}x = \\mathbf{${totalP - 3*b}}`
-                },
-                {
-                    text: lang === 'sv' ? `Steg 2: Dela båda sidor med ${3*a} för att få bort multiplikationen.` : `Step 2: Divide both sides by ${3*a} to undo the multiplication.`,
-                    latex: `\\frac{${3*a}x}{\\mathbf{${3*a}}} = \\frac{${totalP - 3*b}}{\\mathbf{${3*a}}}`
-                },
-                {
-                    text: lang === 'sv' ? "Räkna ut divisionen för att få fram det färdiga värdet på x." : "Calculate the division to yield the final value of x.",
-                    latex: `x = \\mathbf{${targetX}}`
-                },
-                {
-                    text: lang === 'sv' ? `Svar: x = ${targetX}` : `Answer: x = ${targetX}`,
-                    latex: `x = ${targetX}`
-                }
+                { text: lang === 'sv' ? "En liksidig triangel har tre lika långa sidor. Ekvationen blir:" : "An equilateral triangle has three equal sides. The equation is:", latex: `3 \\cdot (${s.text}) = ${totalP}` },
+                { text: lang === 'sv' ? "Förenkla uttrycket:" : "Simplify the expression:", latex: `${3 * s.a}x + \\mathbf{${totalB}} = ${totalP}` },
+                ...(totalB > 0 ? [{ text: lang === 'sv' ? `Steg 1: Subtrahera ${totalB} från båda sidor.` : `Step 1: Subtract ${totalB} from both sides.`, latex: `${3 * s.a}x = \\mathbf{${totalP - totalB}}` }] : []),
+                { text: lang === 'sv' ? `Dela med ${3 * s.a} på båda sidor.` : `Divide by ${3 * s.a} on both sides.`, latex: `x = \\mathbf{${targetX}}` }
             ];
         }
 
@@ -311,7 +195,7 @@ export class AlgebraicGeometryGenerator {
     }
 
     // =========================================================================
-    // LEVEL 3: Area - Teckna uttryck (Strictly Linear)
+    // LEVEL 3: Area - Teckna uttryck
     // =========================================================================
     private area_writeExpression(lang: string): any {
         const shapeChoice = MathUtils.randomInt(1, 3);
@@ -319,56 +203,28 @@ export class AlgebraicGeometryGenerator {
 
         desc = lang === 'sv' ? `Teckna ett förenklat uttryck för figurens area.` : `Write a simplified expression for the figure's area.`;
 
+        // 🟢 FIX: To prevent generating powers higher than 1 (x^2), the height is forced to be a pure scalar constant.
         if (shapeChoice === 1) { // Rectangle
-            const a = MathUtils.randomInt(2, 5);
-            const b = MathUtils.randomInt(1, 5);
-            const c = MathUtils.randomInt(2, 6);
-            const wText = `${a}x+${b}`;
-            const hText = `${c}`;
-            geom = { type: "rectangle", width: 200, height: 120, labels: this.getLabels(wText, hText) };
-            ans = `${a*c}x+${b*c}`;
+            const base = this.genLinearTerm(2, 8, 1, 10);
+            const heightC = MathUtils.randomInt(3, 12);
+            geom = { type: "rectangle", width: 200, height: 120, labels: this.getLabels(base.text, `${heightC}`) };
+            ans = this.formatTerm(base.a * heightC, base.b * heightC);
             clues = [
-                {
-                    text: lang === 'sv' ? "Rektangelns area beräknas genom att multiplicera basen med höjden." : "The area of a rectangle is found by multiplying the base by the height.",
-                    latex: `\\text{Area} = \\text{basen} \\cdot \\text{höjden}`
-                },
-                {
-                    text: lang === 'sv' ? "Steg 1: Sätt in sidornas värden i formeln. Använd parentes runt basens uttryck:" : "Step 1: Insert the side dimensions into the formula. Use parentheses around the base expression:",
-                    latex: `\\text{Area} = (${a}x + ${b}) \\cdot ${c}`
-                },
-                {
-                    text: lang === 'sv' ? `Multiplicera in ${c} med varje term inuti parentesen:` : `Distribute (multiply) ${c} into each term inside the parentheses:`,
-                    latex: `\\text{Area} = \\mathbf{${c} \\cdot ${a}x + ${c} \\cdot ${b}}`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla:" : "Simplify:",
-                    latex: `\\text{Area} = \\mathbf{${ans}}`
-                }
+                { text: lang === 'sv' ? "Rektangelns area är basen multiplicerat med höjden." : "The rectangle's area is base multiplied by height.", latex: `\\text{Area} = \\text{basen} \\cdot \\text{höjden}` },
+                { text: lang === 'sv' ? "Sätt in sidornas värden. Använd parentes runt uttrycket:" : "Insert the values. Use parentheses around the expression:", latex: `\\text{Area} = (${base.text}) \\cdot ${heightC}` },
+                { text: lang === 'sv' ? `Multiplicera in ${heightC} med varje term inuti parentesen:` : `Distribute ${heightC} into each term inside the parentheses:`, latex: `\\text{Area} = \\mathbf{${heightC * base.a}x} ${base.b !== 0 ? (base.b > 0 ? `+ \\mathbf{${heightC * base.b}}` : `- \\mathbf{${Math.abs(heightC * base.b)}}`) : ''}` },
+                { text: lang === 'sv' ? "Förenkla:" : "Simplify:", latex: `\\text{Area} = \\mathbf{${ans}}` }
             ];
         } else { // Right Triangle
-            const a = MathUtils.randomInt(2, 4);
-            const c = MathUtils.randomInt(2, 5) * 2;
-            const wText = `${a}x`;
-            const hText = `${c}`;
-            geom = { type: "triangle", subtype: "right", width: 180, height: 140, labels: this.getLabels(wText, hText) };
-            ans = `${(a*c)/2}x`;
+            const base = this.genLinearTerm(2, 6, 1, 10);
+            const heightC = MathUtils.randomInt(2, 8) * 2; // Always even so division by 2 is mathematically clean
+            geom = { type: "triangle", subtype: "right", width: 180, height: 140, labels: this.getLabels(base.text, `${heightC}`) };
+            ans = this.formatTerm((base.a * heightC) / 2, (base.b * heightC) / 2);
             clues = [
-                {
-                    text: lang === 'sv' ? "Triangelns area beräknas med formeln: (basen * höjden) / 2." : "The area of a triangle is found using the formula: (base * height) / 2.",
-                    latex: `\\text{Area} = \\frac{\\text{basen} \\cdot \\text{höjden}}{2}`
-                },
-                {
-                    text: lang === 'sv' ? "Steg 1: Sätt in triangelns kända bas och höjd i formeluppställningen:" : "Step 1: Insert the triangle's base and height parameters into the formula layout:",
-                    latex: `\\text{Area} = \\frac{${a}x \\cdot ${c}}{2}`
-                },
-                {
-                    text: lang === 'sv' ? "Multiplicera ihop faktorerna uppe i täljaren först:" : "Multiply the factors in the numerator first:",
-                    latex: `\\text{Area} = \\frac{\\mathbf{${a*c}}x}{2}`
-                },
-                {
-                    text: lang === 'sv' ? "Slutför divisionen med 2:" : "Complete the final division by 2:",
-                    latex: `\\text{Area} = \\mathbf{${ans}}`
-                }
+                { text: lang === 'sv' ? "Triangelns area är (basen * höjden) / 2." : "The triangle's area is (base * height) / 2.", latex: `\\text{Area} = \\frac{\\text{basen} \\cdot \\text{höjden}}{2}` },
+                { text: lang === 'sv' ? "Sätt in kända värden i formeln:" : "Insert the values into the formula:", latex: `\\text{Area} = \\frac{(${base.text}) \\cdot ${heightC}}{2}` },
+                { text: lang === 'sv' ? "Multiplicera ihop faktorerna i täljaren först:" : "Multiply the factors in the numerator first:", latex: `\\text{Area} = \\frac{${heightC * base.a}x ${base.b !== 0 ? (base.b > 0 ? `+ ${heightC * base.b}` : `- ${Math.abs(heightC * base.b)}`) : ''}}{2}` },
+                { text: lang === 'sv' ? "Dela alla termer med 2:" : "Divide all terms by 2:", latex: `\\text{Area} = \\mathbf{${ans}}` }
             ];
         }
 
@@ -379,86 +235,44 @@ export class AlgebraicGeometryGenerator {
     }
 
     // =========================================================================
-    // LEVEL 4: Area - Lös ekvationen (Step-by-Step LaTeX Clues)
+    // LEVEL 4: Area - Lös ekvationen
     // =========================================================================
     private area_solveEquation(lang: string): any {
         const shapeChoice = MathUtils.randomInt(1, 3);
-        const targetX = MathUtils.randomInt(2, 10);
+        const targetX = MathUtils.randomInt(2, 12);
         let geom: any, ans: number = targetX, desc: string, clues: any[], totalA: number;
 
         if (shapeChoice === 1) { // Rectangle
-            const a = MathUtils.randomInt(2, 6);
-            const c = MathUtils.randomInt(2, 6);
-            const wText = `x+${a}`;
-            const hText = `${c}`;
-            totalA = c * (targetX + a);
-            geom = { type: "rectangle", width: 200, height: 120, labels: this.getLabels(wText, hText) };
+            const base = this.genLinearTerm(2, 8, 1, 15, false); // Positive B for solving
+            const heightC = MathUtils.randomInt(3, 10);
+            totalA = heightC * (base.a * targetX + base.b);
+            geom = { type: "rectangle", width: 200, height: 120, labels: this.getLabels(base.text, `${heightC}`) };
             desc = lang === 'sv' ? `Rektangelns area är ${totalA} cm². Beräkna x.` : `The rectangle's area is ${totalA} cm². Calculate x.`;
+            
+            const areaConstant = heightC * base.b;
+
             clues = [
-                {
-                    text: lang === 'sv' ? "Area beräknas som basen gånger höjden. Vi ställer upp ekvationen mot det kända areavärdet:" : "Area is calculated as base times height. We set up the equation against the known area value:",
-                    latex: `${c} \\cdot (x + ${a}) = ${totalA}`
-                },
-                {
-                    text: lang === 'sv' ? `Multiplicera in höjden ${c} med båda termerna inuti parentesen:` : `Multiply the height dimension value ${c} across both terms inside the parentheses:`,
-                    latex: `\\mathbf{${c} \\cdot x + ${c} \\cdot ${a}} = ${totalA}`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla:" : "Simplify:",
-                    latex: `${c}x + \\mathbf{${c*a}} = ${totalA}`
-                },
-                {
-                    text: lang === 'sv' ? `Steg 1: Ta bort sifferkonstanten genom att subtrahera ${c*a} från båda sidor.` : `Step 1: Eliminate the constant term by subtracting ${c*a} from both sides.`,
-                    latex: `${c}x + ${c*a} \\mathbf{- ${c*a}} = ${totalA} \\mathbf{- ${c*a}}`
-                },
-                {
-                    text: lang === 'sv' ? "Förenkla raden för att isolera variabeltermen på vänster sida:" : "Simplify the expressions to leave the variable term isolated on the left side:",
-                    latex: `${c}x = \\mathbf{${totalA - (c*a)}}`
-                },
-                {
-                    text: lang === 'sv' ? `Steg 2: Dela båda sidor med ${c} för att få bort multiplikationsfaktorn.` : `Step 2: Divide both sides by ${c} to eliminate the multiplier factor completely.`,
-                    latex: `\\frac{${c}x}{\\mathbf{${c}}} = \\frac{${totalA - (c*a)}}{\\mathbf{${c}}}`
-                },
-                {
-                    text: lang === 'sv' ? "Räkna ut divisionen för att finna det slutgiltiga svaret på x." : "Compute the final division step to reveal the target tracking solution value for x.",
-                    latex: `x = \\mathbf{${targetX}}`
-                },
-                {
-                    text: lang === 'sv' ? `Svar: x = ${targetX}` : `Answer: x = ${targetX}`,
-                    latex: `x = ${targetX}`
-                }
+                { text: lang === 'sv' ? "Area beräknas som basen gånger höjden. Ekvationen blir:" : "Area is base times height. The equation is:", latex: `${heightC} \\cdot (${base.text}) = ${totalA}` },
+                { text: lang === 'sv' ? `Multiplicera in höjden ${heightC} inuti parentesen:` : `Multiply the height ${heightC} inside the parentheses:`, latex: `${heightC * base.a}x + \\mathbf{${areaConstant}} = ${totalA}` },
+                ...(areaConstant > 0 ? [{ text: lang === 'sv' ? `Subtrahera ${areaConstant} från båda sidor.` : `Subtract ${areaConstant} from both sides.`, latex: `${heightC * base.a}x = \\mathbf{${totalA - areaConstant}}` }] : []),
+                { text: lang === 'sv' ? `Dela båda sidor med ${heightC * base.a}.` : `Divide both sides by ${heightC * base.a}.`, latex: `x = \\mathbf{${targetX}}` }
             ];
         } else { // Right Triangle
-            const a = MathUtils.randomInt(2, 4);
-            const c = MathUtils.randomInt(2, 5) * 2; 
-            totalA = (a * targetX * c) / 2;
-            geom = { type: "triangle", subtype: "right", width: 180, height: 140, labels: this.getLabels(`${a}x`, `${c}`) };
+            const base = this.genLinearTerm(2, 8, 1, 15, false);
+            const heightC = MathUtils.randomInt(2, 8) * 2; 
+            totalA = (heightC * (base.a * targetX + base.b)) / 2;
+            geom = { type: "triangle", subtype: "right", width: 180, height: 140, labels: this.getLabels(base.text, `${heightC}`) };
             desc = lang === 'sv' ? `Triangelns area är ${totalA} cm². Beräkna x.` : `The triangle's area is ${totalA} cm². Calculate x.`;
+            
+            const reducedHeight = heightC / 2;
+            const areaConstant = reducedHeight * base.b;
+
             clues = [
-                {
-                    text: lang === 'sv' ? "Area för en triangel är (basen * höjden) / 2. Vi ställer upp ekvationen:" : "Area for a triangle is (base * height) / 2. We construct the equation structure:",
-                    latex: `\\frac{${a}x \\cdot ${c}}{2} = ${totalA}`
-                },
-                {
-                    text: lang === 'sv' ? "Multiplicera ihop faktorerna uppe i täljaren först:" : "Multiply the coefficient parameters sitting in the numerator first:",
-                    latex: `\\frac{\\mathbf{${a*c}}x}{2} = ${totalA}`
-                },
-                {
-                    text: lang === 'sv' ? "Utför divisionen med 2 på vänster sida:" : "Perform the division by 2 on the left side:",
-                    latex: `\\mathbf{${(a*c)/2}}x = ${totalA}`
-                },
-                {
-                    text: lang === 'sv' ? `Steg 1: Dela med ${(a*c)/2} på båda sidor för att lösa ut x.` : `Step 1: Divide both sides by the core x-coefficient multiplier ${(a*c)/2} to isolate x.`,
-                    latex: `\\frac{${(a*c)/2}x}{\\mathbf{${(a*c)/2}}} = \\frac{${totalA}}{\\mathbf{${(a*c)/2}}}`
-                },
-                {
-                    text: lang === 'sv' ? "Räkna ut divisionen på höger sida." : "Calculate the final division on the right side.",
-                    latex: `x = \\mathbf{${targetX}}`
-                },
-                {
-                    text: lang === 'sv' ? `Svar: x = ${targetX}` : `Answer: x = ${targetX}`,
-                    latex: `x = ${targetX}`
-                }
+                { text: lang === 'sv' ? "Area för en triangel är (basen * höjden) / 2. Vi ställer upp ekvationen:" : "Area for a triangle is (base * height) / 2. We construct the equation:", latex: `\\frac{(${base.text}) \\cdot ${heightC}}{2} = ${totalA}` },
+                { text: lang === 'sv' ? `Det är lättast att dividera höjden (${heightC}) med 2 direkt:` : `It is easiest to divide the height (${heightC}) by 2 right away:`, latex: `(${base.text}) \\cdot \\mathbf{${reducedHeight}} = ${totalA}` },
+                { text: lang === 'sv' ? `Multiplicera in ${reducedHeight} i parentesen:` : `Multiply ${reducedHeight} into the parentheses:`, latex: `${reducedHeight * base.a}x + \\mathbf{${areaConstant}} = ${totalA}` },
+                ...(areaConstant > 0 ? [{ text: lang === 'sv' ? `Subtrahera ${areaConstant} från båda sidor.` : `Subtract ${areaConstant} from both sides.`, latex: `${reducedHeight * base.a}x = \\mathbf{${totalA - areaConstant}}` }] : []),
+                { text: lang === 'sv' ? `Dela med ${reducedHeight * base.a} för att lösa ut x.` : `Divide by ${reducedHeight * base.a} to solve for x.`, latex: `x = \\mathbf{${targetX}}` }
             ];
         }
 
@@ -469,47 +283,39 @@ export class AlgebraicGeometryGenerator {
     }
 
     // =========================================================================
-    // LEVEL 5: Vinklar - Teckna uttryck (Alternating Subtypes)
+    // LEVEL 5: Vinklar - Teckna uttryck
     // =========================================================================
     private angles_writeExpression(lang: string): any {
-        const visualChoice = MathUtils.randomInt(1, 3); 
-        const xCoeff = MathUtils.randomInt(2, 6);
-        const constant = MathUtils.randomInt(10, 50); 
-        const angle1Text = `${xCoeff}x`;
-        const angle2Text = `${constant}°`;
-        const ans = `${xCoeff}x+${constant}`;
+        const t1 = this.genLinearTerm(2, 8, 1, 15);
+        const t2 = this.genLinearTerm(2, 8, 1, 15);
+        const ans = this.formatTerm(t1.a + t2.a, t1.b + t2.b);
         
-        let geomConfig: any;
-        if (visualChoice === 1) { // 3-Ray Acute Corner Layout Split
-            geomConfig = { 
-                type: "angle", subtype: "adjacent", angle: 120, 
-                lines: [{ x1: 150, y1: 170, x2: 260, y2: 170 }, { x1: 150, y1: 170, x2: 234, y2: 99 }, { x1: 150, y1: 170, x2: 104, y2: 70 }],
-                arcs: [{ center: { x: 150, y: 170 }, startAngle: 0, endAngle: 40, radius: 45, label: angle1Text, color: "rgba(16, 185, 129, 0.15)", stroke: "#10b981" }, { center: { x: 150, y: 170 }, startAngle: 40, endAngle: 115, radius: 45, label: angle2Text, color: "rgba(59, 130, 246, 0.15)", stroke: "#3b82f6" }],
-                labels: [] 
-            };
-        } else { // 180° Straight Line Split
-            geomConfig = { 
-                type: "angle", subtype: "supplementary", angle: 180, 
-                lines: [{ x1: 40, y1: 180, x2: 260, y2: 180 }, { x1: 150, y1: 180, x2: 213, y2: 90 }],
-                arcs: [{ center: { x: 150, y: 180 }, startAngle: 0, endAngle: 55, radius: 40, label: angle1Text, color: "rgba(16, 185, 129, 0.15)", stroke: "#10b981" }, { center: { x: 150, y: 180 }, startAngle: 55, endAngle: 180, radius: 40, label: angle2Text, color: "rgba(59, 130, 246, 0.15)", stroke: "#3b82f6" }],
-                labels: []
-            };
-        }
+        // 🟢 FIX: Generate a completely arbitrary total visual angle (e.g. 110°) so students don't falsely assume it mathematically equals exactly 90 or 180.
+        let totalVisDeg = MathUtils.randomChoice([70, 80, 100, 110, 120, 130, 140]);
+        const angle1VisDeg = MathUtils.randomInt(25, totalVisDeg - 25);
+        
+        const pt1 = this.calcPoint(150, 180, 100, angle1VisDeg);
+        const pt2 = this.calcPoint(150, 180, 100, totalVisDeg);
 
-        const desc = lang === 'sv' ? "Teckna ett uttryck för de två vinklarnas sammanlagda summa." : "Write an expression for the sum of the two angles.";
+        const geomConfig = { 
+            type: "angle", subtype: "adjacent", angle: totalVisDeg, 
+            lines: [
+                { x1: 150, y1: 180, x2: 250, y2: 180 }, 
+                { x1: 150, y1: 180, x2: pt1.x, y2: pt1.y }, 
+                { x1: 150, y1: 180, x2: pt2.x, y2: pt2.y }
+            ],
+            arcs: [
+                { center: { x: 150, y: 180 }, startAngle: 0, endAngle: angle1VisDeg, radius: 45, label: `${t1.text}°`, color: "rgba(16, 185, 129, 0.15)", stroke: "#10b981" }, 
+                { center: { x: 150, y: 180 }, startAngle: angle1VisDeg, endAngle: totalVisDeg, radius: 45, label: `${t2.text}°`, color: "rgba(59, 130, 246, 0.15)", stroke: "#3b82f6" }
+            ],
+            labels: [] 
+        };
+
+        const desc = lang === 'sv' ? "Teckna ett förenklat uttryck för de två vinklarnas sammanlagda summa." : "Write a simplified expression for the sum of the two angles.";
         const clues = [
-            { 
-                text: lang === 'sv' ? "För att beräkna uttrycket för hela vinkeln adderar vi de två delvinklarna med varandra." : "To construct the expression for the combined angle, we add the two individual parts together.",
-                latex: `\\text{Total vinkel} = \\text{vinkel}_1 + \\text{vinkel}_2`
-            },
-            { 
-                text: lang === 'sv' ? "Steg 1: Sätt in de två delvinklarnas kända värden i summan:" : "Step 1: Insert the two sub-angle values directly into the expression sum track:", 
-                latex: `\\text{Total vinkel} = ${angle1Text} + ${angle2Text}` 
-            },
-            { 
-                text: lang === 'sv' ? "Eftersom x-termer och siffergrader inte kan slås samman bildar detta det färdiga uttrycket:" : "Since variable x-terms and basic scalar constants cannot merge together, this forms the final output expression:", 
-                latex: `\\text{Total vinkel} = \\mathbf{${ans}}` 
-            }
+            { text: lang === 'sv' ? "För att beräkna hela vinkeln adderar vi delarna." : "To get the combined angle, add the parts together.", latex: `\\text{Total vinkel} = \\text{vinkel}_1 + \\text{vinkel}_2` },
+            { text: lang === 'sv' ? "Sätt in vinklarnas uttryck i summan:" : "Insert the sub-angle expressions:", latex: `(${t1.text}) + (${t2.text})` },
+            { text: lang === 'sv' ? "Förenkla genom att slå ihop x-termer och sifferkonstanter:" : "Simplify by grouping x-terms and constants:", latex: `\\mathbf{${ans}}` }
         ];
 
         return {
@@ -519,72 +325,78 @@ export class AlgebraicGeometryGenerator {
     }
 
     // =========================================================================
-    // LEVEL 6: Vinklar - Lös ekvationen (Alternating Subtypes + Concise Track Engine)
+    // LEVEL 6: Vinklar - Lös ekvationen
     // =========================================================================
-    private options_solveEquation_data(lang: string, targetX: number, xCoeff: number, remainder: number, totalDeg: number, geomConfig: any, desc: string): any {
+    private angles_solveEquation(lang: string): any {
+        const visualChoice = MathUtils.randomInt(1, 3);
+        const totalDeg = visualChoice === 1 ? 90 : 180;
+        
+        const targetX = MathUtils.randomInt(5, 15);
+        let t1 = { a: 0, b: 0, text: "" };
+        let angle1Deg = 0;
+        
+        // 🟢 FIX: Ensure mathematical reality matches visual proportions exactly
+        while (angle1Deg <= 20 || angle1Deg >= totalDeg - 20) {
+            t1 = this.genLinearTerm(2, 6, 0, 20, false); // allow b=0 for pure "2x"
+            angle1Deg = t1.a * targetX + t1.b;
+        }
+        
+        const angle2Deg = totalDeg - angle1Deg;
+        
+        // 🟢 FIX: Randomly swap which slice gets the variable to ensure variety
+        const swap = Math.random() > 0.5;
+        const slice1Size = swap ? angle2Deg : angle1Deg;
+        const slice2Size = swap ? angle1Deg : angle2Deg;
+        const label1 = swap ? `${angle2Deg}°` : `${t1.text}°`;
+        const label2 = swap ? `${t1.text}°` : `${angle2Deg}°`;
+
+        const pt1 = this.calcPoint(150, 180, 100, slice1Size);
+        let pt2;
+
+        let geomConfig: any;
+        if (visualChoice === 1) { 
+            pt2 = this.calcPoint(150, 180, 100, 90);
+            geomConfig = { 
+                type: "angle", subtype: "adjacent", angle: 90, 
+                lines: [
+                    { x1: 150, y1: 180, x2: 250, y2: 180 }, 
+                    { x1: 150, y1: 180, x2: pt1.x, y2: pt1.y }, 
+                    { x1: 150, y1: 180, x2: pt2.x, y2: pt2.y }
+                ],
+                arcs: [
+                    { center: { x: 150, y: 180 }, startAngle: 0, endAngle: slice1Size, radius: 40, label: label1, color: "rgba(16, 185, 129, 0.15)", stroke: "#10b981" }, 
+                    { center: { x: 150, y: 180 }, startAngle: slice1Size, endAngle: 90, radius: 40, label: label2, color: "rgba(59, 130, 246, 0.15)", stroke: "#3b82f6" }
+                ],
+                labels: []
+            };
+        } else { 
+            pt2 = this.calcPoint(150, 180, 100, 180);
+            geomConfig = { 
+                type: "angle", subtype: "supplementary", angle: 180, 
+                lines: [
+                    { x1: 40, y1: 180, x2: 260, y2: 180 }, // Complete straight baseline
+                    { x1: 150, y1: 180, x2: pt1.x, y2: pt1.y } // Dividing ray
+                ],
+                arcs: [
+                    { center: { x: 150, y: 180 }, startAngle: 0, endAngle: slice1Size, radius: 40, label: label1, color: "rgba(16, 185, 129, 0.15)", stroke: "#10b981" }, 
+                    { center: { x: 150, y: 180 }, startAngle: slice1Size, endAngle: 180, radius: 40, label: label2, color: "rgba(59, 130, 246, 0.15)", stroke: "#3b82f6" }
+                ],
+                labels: []
+            };
+        }
+
+        const desc = lang === 'sv' ? `Vinklarna bildar tillsammans ${totalDeg}°. Beräkna x.` : `The angles together form ${totalDeg}°. Calculate x.`;
+        
         const clues = [
-            { 
-                text: lang === 'sv' ? `Vinklarna bildar tillsammans vinkelsumman ${totalDeg}°.` : `The angles together are ${totalDeg}°.`,
-                latex: `${xCoeff}x + ${remainder} = ${totalDeg}`
-            },
-            { 
-                text: lang === 'sv' ? `Steg 1: Ta bort sifferkonstanten genom att subtrahera ${remainder} från båda sidor.` : `Step 1: Remove the scalar constant term by subtracting ${remainder} from both sides.`, 
-                latex: `${xCoeff}x + ${remainder} \\mathbf{- ${remainder}} = ${totalDeg} \\mathbf{- ${remainder}}` 
-            },
-            { 
-                text: lang === 'sv' ? "Förenkla subtraktionerna på båda sidor för att isolera variabeltermen:" : "Simplify the subtractions on both sides to isolate the variable term:", 
-                latex: `${xCoeff}x = \\mathbf{${totalDeg - remainder}}` 
-            },
-            { 
-                text: lang === 'sv' ? `Steg 2: Dela båda sidor med ${xCoeff} för att ta bort multiplikationsfaktorn.` : `Step 2: Divide both sides by ${xCoeff} to eliminate the multiplier factor.`, 
-                latex: `\\frac{${xCoeff}x}{\\mathbf{${xCoeff}}} = \\frac{${totalDeg - remainder}}{\\mathbf{${xCoeff}}}` 
-            },
-            { 
-                text: lang === 'sv' ? "Räkna ut divisionen på höger sida för att finna värdet på x." : "Compute the division step on the right side to resolve the tracking value of x.", 
-                latex: `x = \\mathbf{${targetX}}` 
-            },
-            { 
-                text: lang === 'sv' ? `Svar: x = ${targetX}` : `Answer: x = ${targetX}`, 
-                latex: `x = ${targetX}` 
-            }
+            { text: lang === 'sv' ? `Vinklarna bildar tillsammans vinkelsumman ${totalDeg}°.` : `The angles sum to ${totalDeg}°.`, latex: `${t1.text} + ${angle2Deg} = ${totalDeg}` },
+            { text: lang === 'sv' ? `Förenkla genom att slå ihop siffrorna:` : `Simplify by grouping the constants:`, latex: `${t1.a}x + \\mathbf{${t1.b + angle2Deg}} = ${totalDeg}` },
+            { text: lang === 'sv' ? `Subtrahera ${t1.b + angle2Deg} från båda sidor:` : `Subtract ${t1.b + angle2Deg} from both sides:`, latex: `${t1.a}x = \\mathbf{${totalDeg - (t1.b + angle2Deg)}}` },
+            { text: lang === 'sv' ? `Dela med ${t1.a} för att lösa ekvationen.` : `Divide by ${t1.a} to solve the equation.`, latex: `x = \\mathbf{${targetX}}` }
         ];
+
         return {
             renderData: { geometry: geomConfig, description: desc, answerType: "numeric", answer: targetX },
             token: this.toBase64(targetX.toString()), variationKey: "angles_solve", type: "calculate", clues: clues
         };
-    }
-
-    private angles_solveEquation(lang: string): any {
-        const visualChoice = MathUtils.randomInt(1, 3);
-        let targetX: number, xCoeff: number, angle1Remainder: number;
-        let geomConfig: any, desc: string;
-
-        if (visualChoice === 1) { // Right Angle Corner Split (Adds up to 90°)
-            targetX = MathUtils.randomInt(2, 6); // 🟢 Safe low limits block negative constants completely
-            xCoeff = MathUtils.randomInt(2, 4);
-            angle1Remainder = 90 - (xCoeff * targetX); 
-
-            geomConfig = { 
-                type: "angle", subtype: "adjacent", angle: 90, 
-                lines: [{ x1: 150, y1: 180, x2: 250, y2: 180 }, { x1: 150, y1: 180, x2: 220, y2: 110 }, { x1: 150, y1: 180, x2: 150, y2: 80 }],
-                arcs: [{ center: { x: 150, y: 180 }, startAngle: 0, endAngle: 45, radius: 40, label: `${xCoeff}x`, color: "rgba(16, 185, 129, 0.15)", stroke: "#10b981" }, { center: { x: 150, y: 180 }, startAngle: 45, endAngle: 90, radius: 40, label: `${angle1Remainder}°`, color: "rgba(59, 130, 246, 0.15)", stroke: "#3b82f6" }],
-                labels: []
-            };
-            desc = lang === 'sv' ? `Vinklarna bildar tillsammans en rät vinkel. Beräkna x.` : `The angles together form a right angle. Calculate x.`;
-            return this.options_solveEquation_data(lang, targetX, xCoeff, angle1Remainder, 90, geomConfig, desc);
-        } else { // Straight Line Split (Adds up to 180°)
-            targetX = MathUtils.randomInt(5, 15);
-            xCoeff = MathUtils.randomInt(2, 4);
-            angle1Remainder = 180 - (xCoeff * targetX); 
-
-            geomConfig = { 
-                type: "angle", subtype: "supplementary", angle: 180, 
-                lines: [{ x1: 40, y1: 180, x2: 260, y2: 180 }, { x1: 150, y1: 180, x2: 213, y2: 90 }],
-                arcs: [{ center: { x: 150, y: 180 }, startAngle: 0, endAngle: 55, radius: 40, label: `${xCoeff}x`, color: "rgba(16, 185, 129, 0.15)", stroke: "#10b981" }, { center: { x: 150, y: 180 }, startAngle: 55, endAngle: 180, radius: 40, label: `${angle1Remainder}°`, color: "rgba(59, 130, 246, 0.15)", stroke: "#3b82f6" }],
-                labels: []
-            };
-            desc = lang === 'sv' ? `Vinklarna ligger längs en rät linje (180° totalt). Beräkna x.` : `The angles lie on a straight line (180° total). Calculate x.`;
-            return this.options_solveEquation_data(lang, targetX, xCoeff, angle1Remainder, 180, geomConfig, desc);
-        }
     }
 }
