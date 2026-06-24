@@ -146,8 +146,8 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Komplement & Supplement", en: "Complementary & Supplementary" },
         3: { sv: "Vertikal- & Sidovinklar", en: "Vertical & Adjacent Angles" },
         4: { sv: "Vinkelsumma (Triangel)", en: "Triangle Angle Sum" },
-        5: { sv: "Likbelägna & Alternatvinklar", en: "Parallel Lines" },
-        6: { sv: "Vinkelsumma (Polygoner)", en: "Polygon Angle Sum" }
+        5: { sv: "Vinkelsumma (Polygoner)", en: "Polygon Angle Sum" },
+        6: { sv: "Likbelägna & Alternatvinklar", en: "Parallel Lines" },
     },
     change_factor: {
         1: { sv: "Begrepp & Definition", en: "Concepts & Definitions" },
