@@ -100,6 +100,27 @@ const Dashboard = ({
         } catch (err) { console.error("Session Check Failed:", err); }
     };
 
+    const formatSubscriptionDate = (dateString, lang = 'sv') => {
+        if (!dateString) return null;
+
+        const endDate = new Date(dateString);
+        const now = new Date();
+        const isExpired = endDate < now;
+
+        const formattedDate = endDate.toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+
+        return {
+            text: isExpired 
+                ? (lang === 'sv' ? `Prenumeration slutade den ${formattedDate}` : `Subscription expired on ${formattedDate}`)
+                : (lang === 'sv' ? `Prenumeration aktiv till ${formattedDate}` : `Subscription active until ${formattedDate}`),
+            isExpired
+        };
+    };
+    
     const fetchArchive = async () => {
         setIsLoadingArchive(true);
         try {
@@ -163,9 +184,24 @@ const Dashboard = ({
                             <h1 className="text-2xl font-bold text-slate-800 leading-none mb-1">
                                 {userRole === 'teacher' ? (profile?.full_name || "Lärare") : (profile?.full_name || "Elev")}
                             </h1>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/60 flex items-center gap-2">
+                            <p className="text-[12px] font-bold uppercase tracking-widest text-emerald-600/60 flex items-center gap-2">
                                 <Target size={12}/> {profile?.school_name || "Anpassa Math Platform"}
                             </p>
+
+                            {/* 🟢 SUBSCRIPTION END DATE DISPLAY */}
+                            {(() => {
+                                const sub = formatSubscriptionDate(profile?.subscription_end_date || profile?.subscription_ends_at, lang);
+                                if (!sub) return null;
+
+                                return (
+                                    <div className="mt-1.5 flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider">
+                                        <span className={`w-2 h-2 rounded-full ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                                        <span className={sub.isExpired ? 'text-rose-600 font-black' : 'text-slate-400'}>
+                                            {sub.text}
+                                        </span>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
 
