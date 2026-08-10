@@ -183,26 +183,31 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
     // --- NAVIGATION CONTROLS ---
     const handleCanvasPrev = () => {
+        if (livePacket.length === 0) return; // Safety check
+        
         let targetIdx = presentationIndex;
         if (activeIds.length > 0) targetIdx -= 1; 
         if (targetIdx < 0) return;
 
         setPresentationIndex(targetIdx);
-        setActiveIds([packet[targetIdx].id]); 
-        if (clueProgress[packet[targetIdx].id] === undefined) {
-            setClueProgress(prev => ({ ...prev, [packet[targetIdx].id]: 0 }));
+        // 🟢 FIXED: Reference livePacket instead of static packet
+        setActiveIds([livePacket[targetIdx].id]); 
+        if (clueProgress[livePacket[targetIdx].id] === undefined) {
+            setClueProgress(prev => ({ ...prev, [livePacket[targetIdx].id]: 0 }));
         }
     };
 
     const handleCanvasNext = () => {
+        if (livePacket.length === 0) return; // Safety check
+        
         let targetIdx = presentationIndex;
         if (activeIds.length > 0) targetIdx += 1;
-        if (targetIdx >= packet.length) return;
+        if (targetIdx >= livePacket.length) return;
         
         setPresentationIndex(targetIdx);
-        setActiveIds([packet[targetIdx].id]); 
-        if (clueProgress[packet[targetIdx].id] === undefined) {
-            setClueProgress(prev => ({ ...prev, [packet[targetIdx].id]: 0 }));
+        setActiveIds([livePacket[targetIdx].id]); 
+        if (clueProgress[livePacket[targetIdx].id] === undefined) {
+            setClueProgress(prev => ({ ...prev, [livePacket[targetIdx].id]: 0 }));
         }
     };
 
@@ -366,7 +371,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                         {isActive && <span className="w-2 h-2 rounded-full bg-amber-500 shadow-sm" />}
                                     </div>
                                     <div className="text-xs font-bold line-clamp-2 text-slate-600 truncate">
-                                        <MathDisplay content={q.resolvedData?.renderData?.description || q.name} />
+                                        <MathDisplay content={compileAnchoredStory(q, lang)} />
                                     </div>
                                 </div>
                             );
@@ -383,7 +388,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                         <div className="absolute top-2 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
                             <button 
                                 onClick={handleCanvasPrev}
-                                disabled={activeIds.length > 0 && presentationIndex === 0}
+                                disabled={livePacket.length === 0 || (activeIds.length > 0 && presentationIndex === 0)}
                                 className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
                                 title={lang === 'sv' ? "Föregående uppgift" : "Previous Question"}
                             >
@@ -399,7 +404,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
                             <button 
                                 onClick={handleCanvasNext}
-                                disabled={activeIds.length > 0 && presentationIndex >= livePacket.length - 1}
+                                disabled={livePacket.length === 0 || (activeIds.length > 0 && presentationIndex >= livePacket.length - 1)}
                                 className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
                                 title={lang === 'sv' ? "Nästa uppgift" : "Next Question"}
                             >
@@ -480,12 +485,14 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                             )}
                                                             
                                                             {displayVisual && rd && (
-                                                                /* 🟢 FIXED: Handled text size reactive scaling and enabled click-to-spotlight */
                                                                 <div 
                                                                     onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
                                                                     className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 relative z-30 ${sizeClasses.visualClass}`}
                                                                 >
-                                                                    {renderVisual(rd)}
+                                                                    <VisualRenderer 
+                                                                        data={rd} 
+                                                                        isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} 
+                                                                    />
                                                                 </div>
                                                             )}
                                                         </div>
@@ -555,7 +562,10 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                         onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
                                                         className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 ${sizeClasses.visualClass}`}
                                                     >
-                                                        {renderVisual(rd)}
+                                                        <VisualRenderer 
+                                                            data={rd} 
+                                                            isWordProblem={q.selectedStoryIndex !== null && q.selectedStoryIndex !== undefined} 
+                                                        />
                                                     </div>
                                                 )}
 
@@ -799,7 +809,6 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                         onClick={(e) => e.stopPropagation()} 
                         className="bg-white p-12 rounded-[2.5rem] shadow-2xl flex items-center justify-center border border-slate-100 max-w-4xl max-h-[75vh] min-w-[450px] min-h-[350px] transform scale-[1.65] origin-center shadow-emerald-950/20"
                     >
-                        {/* 🟢 FIXED: Replaced the old function call with our unified component! */}
                         <VisualRenderer 
                             data={spotlightVisual} 
                             isWordProblem={false} // Defaulting to false as presentations usually show the math

@@ -33,6 +33,59 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
         checkProvider();
     }, []);
 
+    // State to hold subscription details
+    const [subscriptionEndDate, setSubscriptionEndDate] = useState(profile?.subscription_end_date || null);
+    const [isLoadingSub, setIsLoadingSub] = useState(false);
+    const getSubscriptionStatus = (dateString) => {
+        if (!dateString) return null;
+
+        const endDate = new Date(dateString);
+        const now = new Date();
+        const isActive = endDate > now;
+
+        const formattedDate = endDate.toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        return { formattedDate, isActive };
+    };
+
+    useEffect(() => {
+        // If it's already in the profile prop, use it directly
+        if (profile?.subscription_end_date) {
+            setSubscriptionEndDate(profile.subscription_end_date);
+            return;
+        }
+
+        // Otherwise, fetch it directly from Supabase for the current user
+        const fetchSubscription = async () => {
+            setIsLoadingSub(true);
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                // Thanks to RLS, querying profiles with .eq('id', user.id) is completely secure
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('subscription_end_date') // Ensure this column name matches your database schema
+                    .eq('id', user.id)
+                    .single();
+
+                if (!error && data) {
+                    setSubscriptionEndDate(data.subscription_end_date);
+                }
+            } catch (err) {
+                console.error("Error fetching subscription date:", err);
+            } finally {
+                setIsLoadingSub(false);
+            }
+        };
+
+        fetchSubscription();
+    }, [profile]);
+
     // --- FIX: Sync internal state if profile prop updates ---
     useEffect(() => {
         if (profile) {
@@ -151,6 +204,81 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
             </header>
 
             <main className="max-w-4xl mx-auto p-6 space-y-10 relative z-10">
+                {/* --- SECTION: PRENUMERATION / SUBSCRIPTION --- */}
+                <section className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/5 border border-emerald-50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="p-8 border-b border-emerald-50 bg-emerald-50/30 flex items-center gap-4">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
+                            <CreditCard size={20} />
+                        </div>
+                        <h2 className="font-bold uppercase text-xs tracking-widest text-indigo-900">
+                            {lang === 'sv' ? 'Prenumerationsstatus' : 'Subscription Status'}
+                        </h2>
+                    </div>
+
+                    <div className="p-8">
+                        {isLoadingSub ? (
+                            <div className="flex items-center gap-3 text-slate-400 py-4">
+                                <Loader2 className="animate-spin text-indigo-600" size={20} />
+                                <span className="text-xs font-bold uppercase tracking-wider">
+                                    {lang === 'sv' ? 'Hämtar prenumeration...' : 'Loading subscription details...'}
+                                </span>
+                            </div>
+                        ) : (() => {
+                            const status = getSubscriptionStatus(subscriptionEndDate);
+
+                            if (!status) {
+                                return (
+                                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                                        <XCircle className="text-slate-400 shrink-0" size={28} />
+                                        <div>
+                                            <p className="font-bold text-slate-700 text-sm">
+                                                {lang === 'sv' ? 'Ingen aktiv prenumeration hittades' : 'No active subscription found'}
+                                            </p>
+                                            <p className="text-xs text-slate-400 font-medium mt-0.5">
+                                                {lang === 'sv' ? 'Kontakta support om du tror detta är ett fel.' : 'Contact support if you believe this is an error.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className={`p-6 rounded-2xl border-2 flex items-center justify-between gap-4 ${
+                                    status.isActive 
+                                        ? 'bg-emerald-50/50 border-emerald-200' 
+                                        : 'bg-rose-50/50 border-rose-200'
+                                }`}>
+                                    <div className="flex items-center gap-4">
+                                        {status.isActive ? (
+                                            <CheckCircle2 className="text-emerald-500 shrink-0" size={32} />
+                                        ) : (
+                                            <XCircle className="text-rose-500 shrink-0" size={32} />
+                                        )}
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider ${
+                                                    status.isActive 
+                                                        ? 'bg-emerald-100 text-emerald-800' 
+                                                        : 'bg-rose-100 text-rose-800'
+                                                }`}>
+                                                    {status.isActive 
+                                                        ? (lang === 'sv' ? 'Aktiv' : 'Active') 
+                                                        : (lang === 'sv' ? 'Utgången' : 'Expired')}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm font-bold text-slate-800 mt-2">
+                                                {status.isActive
+                                                    ? (lang === 'sv' ? `Aktiv till och med ${status.formattedDate}` : `Active until ${status.formattedDate}`)
+                                                    : (lang === 'sv' ? `Gick ut den ${status.formattedDate}` : `Expired on ${status.formattedDate}`)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </section>
+
                 {/* --- SECTION: PERSONUPPGIFTER --- */}
                 <section className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/5 border border-emerald-50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="p-8 border-b border-emerald-50 bg-emerald-50/30 flex items-center gap-4">
