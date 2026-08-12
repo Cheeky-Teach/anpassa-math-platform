@@ -393,8 +393,9 @@ export default function QuestionStudio({
       if (sheet.config?.showWorkArea !== undefined) setShowWorkArea(sheet.config.showWorkArea);
   };
 
-  const handleLaunchGrid = () => { if (!isSaved && !window.confirm(t.unsaved_warning)) return; onDoNowGenerate({ title: sheetTitle }, packet); };
-  const handleLaunchPrint = () => { if (!isSaved && !window.confirm(t.unsaved_warning)) return; onWorksheetGenerate(packet); };
+
+  const handleLaunchGrid = () => { if (!isSaved && !window.confirm(t.unsaved_warning)) return; onDoNowGenerate({ title: sheetTitle, showWorkArea, includeAnswerKey, answerKeyStyle }, packet); };
+  const handleLaunchPrint = () => { if (!isSaved && !window.confirm(t.unsaved_warning)) return; onWorksheetGenerate(packet, { title: sheetTitle, showWorkArea, includeAnswerKey, answerKeyStyle }); };
   
   const handleLaunchLive = async () => {
     if (!isSaved && !window.confirm(t.unsaved_warning)) return;
@@ -441,7 +442,8 @@ export default function QuestionStudio({
                 instructionMode: useWordProblems ? 'inline' : (isFirstInBatch ? 'header' : 'hidden'),
                 showLatex: !useWordProblems,
                 showVisual: !useWordProblems,
-                selectedStoryIndex: useWordProblems ? 0 : null 
+                selectedStoryIndex: useWordProblems ? 0 : null,
+                showWorkArea: showWorkArea 
             });
         }
         if (setupMode === 'donow' && packet.length + newItems.length > 6) { alert("Do Now max 6."); return; }
