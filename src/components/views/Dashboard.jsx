@@ -115,8 +115,8 @@ const Dashboard = ({
 
         return {
             text: isExpired 
-                ? (lang === 'sv' ? `Prenumeration slutade den ${formattedDate}` : `Subscription expired on ${formattedDate}`)
-                : (lang === 'sv' ? `Prenumeration aktiv till ${formattedDate}` : `Subscription active until ${formattedDate}`),
+                ? (lang === 'sv' ? `Inaktiv den ${formattedDate}` : `Expired on ${formattedDate}`)
+                : (lang === 'sv' ? `Aktiv till ${formattedDate}` : `Active until ${formattedDate}`),
             isExpired
         };
     };
