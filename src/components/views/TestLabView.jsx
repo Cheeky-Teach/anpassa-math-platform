@@ -4,10 +4,9 @@ import {
     ChevronDown, Settings2, Zap, ArrowRight, 
     RefreshCcw, Eye, Clock, Lock, Send, ListChecks, 
     LayoutGrid, XCircle, ChevronRight, LogOut,
-    CheckCircle2, Award, Info, HelpCircle
+    CheckCircle2, Award, Info, HelpCircle, X
 } from 'lucide-react';
 import { decodeConfig, encodeConfig, BUNDLE_PRESETS } from '../../core/utils/labCodeUtils';
-// Added LEVEL_DESCRIPTIONS to imports
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
 
 // --- SHARED UI COMPONENTS ---
@@ -54,19 +53,19 @@ const MathDisplay = ({ content, className = "" }) => {
 const LAB_TEXT = {
     sv: {
         title: "Test Lab", testCode: "Testkod", modeExam: "Provläge", modePractice: "Öva",
-        startBtn: "Starta", selectedAreas: "valda", level: "Nivå", back: "Tillbaka",
+        startBtn: "Starta pass", selectedAreas: "valda", level: "Nivå", back: "Tillbaka",
         loading: "Laddar...", milestoneTitle: "Dags för en paus!", continueBtn: "Nästa Etapp",
         cooldown: "Vänta...", showAnswers: "Visa rätt svar", quit: "Avbryt Passet",
         answerReceived: "Svar mottaget", nextArr: "Fortsätt med pilen", finish: "Avsluta & Se Resultat",
         summaryTitle: "Testrapport", recoveryTitle: "Rekommenderad träning", recoveryDesc: "Fokusera på dina svagaste områden.",
         copyLink: "Kopiera länk", linkCopied: "Länk kopierad till urklipp!", toDashboard: "Lämna",
-        backToLab: "Till Labbet",
-        guideTitle: "Så fungerar Testlabbet (Custom övergripande mängdträningsuppgifter)",
-        guidePreset: "Välj ett färdigt paket (t.ex. NP-GEO) för att automatiskt välja alla nivåer i den kategorin ELLER välj ämnen manuellt i listan nedan och klicka på nivå-bubblorna (1-9) för att anpassa svårighetsgraden. ",
-        guideCustom: "Ange hur många frågor ska inkluderas. Om Antal Frågor står tom då skapas ett prov med 50 frågor med en rapport varje 15 frågor. Om man skriver in manuellt hur många frågor övningsprovet ska innehålla då kan man se en rapport halvvägs genom testet där man ser de sista frågorna som svarades, facit, och ett steg-för-steg lösning till alla frågor. En fullständig diagnosrapport visas upp när man är klar.",
-        guideModes: "Övningsläge ger dig direkt feedback på varje svar. Provläge döljer alla resultat fram tills varje rapport.",
-        guideReview: "KOPIERA LÄNKEN efter du har valt vilka område du vill lägga in i övningsprovet och dela med dina elever.",
-        guideControls: "ELEVERNA KOMMER ÅT ÖVNINGSPROVET GENOM ATT KLICKA PÅ LÄNKEN DU DELADE OCH SEN BEHÖVER SKRIVA IN EN GILTIG KLASSKOD TILL 'EGEN ÖVNING' på startsidan. OBS: LÄNKARNA ÄR GILTIGA UNDER HELA BETA-TEST PERIODEN OCH KAN ÅTERANVÄNDAS. Det kan vara så i framtiden att appen uppdateras och nya länkar behöver skapas."
+        backToLab: "Till Labbet", guideBtn: "Instruktioner",
+        guideTitle: "Så fungerar Testlabbet",
+        guidePreset: "Välj ett färdigt paket (t.ex. NP-GEO) för att automatiskt välja alla nivåer i den kategorin ELLER välj ämnen manuellt i listan till höger och klicka på nivå-bubblorna (1-9).",
+        guideCustom: "Ange hur många frågor som ska inkluderas. Om fältet lämnas tomt skapas ett pass med 50 frågor med en rapport var 15:e fråga.",
+        guideModes: "Övningsläge ger dig direkt feedback på varje svar. Provläge döljer alla resultat tills slutrapporten.",
+        guideReview: "Kopiera länken efter att du valt vilka områden som ska ingå och dela med dina elever.",
+        guideControls: "Eleverna når testet genom att klicka på länken och ange sin klasskod på startsidan."
     },
     en: {
         title: "Test Lab", testCode: "Test Code", modeExam: "Exam Mode", modePractice: "Practice Mode",
@@ -76,13 +75,13 @@ const LAB_TEXT = {
         answerReceived: "Answer received", nextArr: "Continue using arrows", finish: "Finish & See Results",
         summaryTitle: "Test Report", recoveryTitle: "Recommended Practice", recoveryDesc: "Focus on your weakest areas.",
         copyLink: "Copy Link", linkCopied: "Link copied to clipboard!", toDashboard: "Exit",
-        backToLab: "Back to Lab",
-        guideTitle: "How the Test Lab Works (Custom repetition practice tests spanning multiple topics)",
-        guidePreset: "Select a preset (e.g., NP-GEO) to automatically enable all topics and levels in that category OR Toggle topics manually below and click level bubbles (N1-N9) to customize difficulty.",
-        guideCustom: "Enter how many questions should be included. If it is blank, then it will be an infinite test with a report summary every 15 questions. If you manually enter a maximum number of questions, a short report will show to review your progress at the halfway point where you can see previous questions, answers, and step-by-step solutions. A full progress report is shown when finishing a practice test.",
-        guideModes: "Practice Mode gives instant feedback. Exam Mode hides results until the very end. ",
-        guideReview: "Copy and share the practice test when you have selected all of your topics.",
-        guideControls: "WHEN STUDENTS CLICK THE LINK, THEY JUST NEED TO ENTER A VALID CLASS CODE ON THE START SITE and will be instantly launched into the practice test. THERE IS NO TIME LIMIT FOR HOW LONG LINKS ARE VALID, BUT MAY NOT WORK AFTER THIS BETA-TEST PERIOD BECAUSE OF APP UPDATES."
+        backToLab: "Back to Lab", guideBtn: "Guide",
+        guideTitle: "How the Test Lab Works",
+        guidePreset: "Select a preset (e.g., NP-GEO) to enable topics automatically OR toggle topics manually on the right and click level bubbles (1-9).",
+        guideCustom: "Enter how many questions to include. Leave blank for an infinite test with milestone reports.",
+        guideModes: "Practice Mode gives instant feedback. Exam Mode hides results until the final report.",
+        guideReview: "Copy and share the practice test link when you have selected your topics.",
+        guideControls: "Students access the test via the link and enter their class code on the start page."
     }
 };
 
@@ -100,30 +99,25 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     const [showMilestone, setShowMilestone] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [cooldown, setCooldown] = useState(0);
-    const [activeCategory, setActiveCategory] = useState(null);
+    const [activeCategory, setActiveCategory] = useState('algebra'); // Default first tab
     const [revealMilestoneAnswers, setRevealMilestoneAnswers] = useState(false);
     const [visibleClues, setVisibleClues] = useState({});
-    const [showGuide, setShowGuide] = useState(false);
+    const [showGuideModal, setShowGuideModal] = useState(false);
     const [useWordProblems, setUseWordProblems] = useState(false);
 
     // --- HELPERS ---
     const getStyles = (category) => COLOR_VARIANTS[category.color || 'indigo'] || COLOR_VARIANTS.indigo;
 
-    // 🟢 NEW: Mobile detection state
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
-        const checkMobile = () => {
-            // Disable autofocus on screens smaller than 768px (iPads/Phones)
-            setIsMobile(window.innerWidth < 768); 
-        };
-        checkMobile(); // Check on mount
+        const checkMobile = () => { setIsMobile(window.innerWidth < 768); };
+        checkMobile();
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
     const copyTestLink = () => {
-        // Append tracking flag to meta configuration state object bundle on the fly
         const updatedMeta = { ...meta, wordProblem: useWordProblems };
         const testCode = encodeConfig({ meta: updatedMeta, selection });
         const baseUrl = window.location.origin + "/lab";
@@ -132,95 +126,55 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         alert(t.linkCopied);
     };
 
-    //  RESET AND PRESETS 
     const resetAllSelection = () => {
         setSelection({});
-        setMeta(p => ({ 
-            ...p, 
-            isNationalTest: false, 
-            bundleId: null,
-            limit: 0, // Reset to infinity
-            mode: 'practice' // Reset to practice mode
-        }));
+        setMeta(p => ({ ...p, isNationalTest: false, bundleId: null, limit: 0, mode: 'practice' }));
     };
 
     const applyPresetSelection = (bundleId) => {
-        if (!bundleId) {
-            resetAllSelection();
-            return;
-        }
-
+        if (!bundleId) { resetAllSelection(); return; }
         const preset = BUNDLE_PRESETS[bundleId];
         const newSelection = {};
-
-        // Match catId (the object key) against the preset's category
         Object.entries(CATEGORIES).forEach(([catId, cat]) => {
             if (bundleId === 'NP-ALL' || catId === preset.category) {
                 cat.topics.forEach(topic => {
-                    const topicLevels = LEVEL_DESCRIPTIONS[topic.id] 
-                        ? Object.keys(LEVEL_DESCRIPTIONS[topic.id]).map(Number) 
-                        : [1];
+                    const topicLevels = LEVEL_DESCRIPTIONS[topic.id] ? Object.keys(LEVEL_DESCRIPTIONS[topic.id]).map(Number) : [1];
                     newSelection[topic.id] = { enabled: true, levels: topicLevels };
                 });
             }
         });
-
         setSelection(newSelection);
         setMeta(p => ({ ...p, isNationalTest: true, bundleId: bundleId }));
     };
 
-    // Resets question array when going back to lab to change settings
     const startNewSession = () => {
-        setResponses({});          // Clear previous answers
-        setVisibleClues({});       // Reset clue visibility
-        setCurrentIndex(0);        // Reset to first question
-        setInputValue('');         // Clear typed input
-        
-        // 1. Force the layout into LOADING state first
-        setInternalMode('LOADING'); 
-        
-        // 2. Wipe out the stale packet data
-        setPacket([]);             
-        
-        // 3. Let the state clear settle, then boot into ACTIVE mode to trigger a fresh network fetch
-        setTimeout(() => {
-            setInternalMode('ACTIVE');
-        }, 50);
+        setResponses({});
+        setVisibleClues({});
+        setCurrentIndex(0);
+        setInputValue('');
+        setInternalMode('LOADING');
+        setPacket([]);
+        setTimeout(() => { setInternalMode('ACTIVE'); }, 50);
     };
 
-    // --- CORE LOGIC ---
     const fetchNextSprint = async () => {
-        // Force number comparison for the limit
         if (Number(meta.limit) > 0 && packet.length >= Number(meta.limit)) return;
-        
         setIsGenerating(true);
         try {
             const enabledTopics = Object.keys(selection).filter(id => selection[id].enabled);
-            
             let batchSize = 15;
             if (Number(meta.limit) > 0) {
                 batchSize = Math.min(15, Number(meta.limit) - packet.length);
             }
-            
-            if (batchSize <= 0) {
-                setIsGenerating(false);
-                return;
-            }
+            if (batchSize <= 0) { setIsGenerating(false); return; }
 
             const requests = Array.from({ length: batchSize }).map(() => {
                 const topicId = enabledTopics[Math.floor(Math.random() * enabledTopics.length)];
                 const conf = selection[topicId];
-                
-                // FIX: Pick a random level from the TOGGLED array
                 const possibleLevels = conf.levels && conf.levels.length > 0 ? conf.levels : [1];
                 const randomLevel = possibleLevels[Math.floor(Math.random() * possibleLevels.length)];
 
-                return { 
-                    topic: topicId, 
-                    level: randomLevel, 
-                    lang,
-                    wordProblem: useWordProblems // Pass the word problem flag for each question 
-                };
+                return { topic: topicId, level: randomLevel, lang, wordProblem: useWordProblems };
             });
 
             const res = await fetch('/api/batch', {
@@ -230,13 +184,9 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             });
             const newQuestions = await res.json();
             setPacket(prev => [...prev, ...newQuestions]);
-        } catch (err) { 
-            console.error("Fetch Error:", err); 
-        } finally { 
-            setIsGenerating(false); 
-        }
+        } catch (err) { console.error("Fetch Error:", err); } 
+        finally { setIsGenerating(false); }
     };
-
 
     const handleLabSubmit = async (manualValue = null) => {
         const val = manualValue || inputValue;
@@ -247,32 +197,20 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             const res = await fetch('/api/answer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    answer: String(val).trim(),
-                    token: currentQ.resolvedData.token,
-                    mode: meta.mode
-                })
+                body: JSON.stringify({ answer: String(val).trim(), token: currentQ.resolvedData.token, mode: meta.mode })
             });
             const result = await res.json();
             
-            // 1. RECORD RESPONSE: UI instantly turns Green/Red here
             setResponses(prev => ({
                 ...prev,
                 [currentIndex]: { answer: val, isCorrect: result.correct, topic_id: currentQ.topic_id }
             }));
 
-            // 2. DEFINE THE ADVANCE LOGIC
             const advance = () => {
                 const nextIndex = currentIndex + 1;
                 const limit = Number(meta.limit);
 
-                // Finish check
-                if (limit > 0 && nextIndex === limit) {
-                    setInternalMode('SUMMARY');
-                    return;
-                }
-
-                // Milestone check (Pause every 15 or at halfway)
+                if (limit > 0 && nextIndex === limit) { setInternalMode('SUMMARY'); return; }
                 const halfwayPoint = limit > 0 ? Math.floor(limit / 2) : 15;
                 const shouldPause = limit > 0 ? nextIndex === halfwayPoint : nextIndex % 15 === 0;
 
@@ -280,27 +218,17 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     setCooldown(2);
                     setShowMilestone(true);
                 } else {
-                    // Pre-fetch if near end
-                    if (nextIndex === packet.length - 1 && (limit === 0 || packet.length < limit)) {
-                        fetchNextSprint();
-                    }
-                    // CLEAR EVERYTHING and move forward
+                    if (nextIndex === packet.length - 1 && (limit === 0 || packet.length < limit)) { fetchNextSprint(); }
                     setCurrentIndex(nextIndex);
                     setInputValue(''); 
                 }
             };
 
-            // 3. EXECUTE ADVANCE
-            if (meta.mode === 'exam') {
-                advance(); // Instant in Exam mode
-            } else {
-                // Short delay in Practice mode to show the color feedback card
-                setTimeout(advance, 1000); 
-            }
+            if (meta.mode === 'exam') { advance(); } 
+            else { setTimeout(advance, 1000); }
 
         } catch (err) { console.error("Submission error:", err); }
     };
-
 
     const getDiagnosticStats = () => {
         const stats = { arithmetic: { correct: 0, total: 0 }, algebra: { correct: 0, total: 0 }, geometry: { correct: 0, total: 0 }, statistics: { correct: 0, total: 0 } };
@@ -313,22 +241,15 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         return { stats, weakest };
     };
 
-    // --- RENDERERS ---
-    
     const renderInput = () => {
         const item = packet[currentIndex];
         const rd = item?.resolvedData?.renderData;
         
-        // 1. Handle Multiple Choice Options (Highest Priority)
         if (rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options))) {
             return (
                 <div className="grid grid-cols-1 gap-3 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
                     {(rd.options || []).map((opt, i) => (
-                        <button
-                            key={i}
-                            onClick={() => handleLabSubmit(opt)}
-                            className="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-700 hover:border-indigo-600 hover:bg-indigo-50 transition-all shadow-sm text-center active:scale-95"
-                        >
+                        <button key={i} onClick={() => handleLabSubmit(opt)} className="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-700 hover:border-indigo-600 hover:bg-indigo-50 transition-all shadow-sm text-center active:scale-95">
                             <MathDisplay content={String(opt)} />
                         </button>
                     ))}
@@ -336,114 +257,52 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             );
         }
 
-        // 2. DETECT INPUT TYPE
         const type = rd?.answerType || rd?.inputType || item?.resolvedData?.inputType || 'text';
-        
-        // 3. RENDER SPECIALIZED COMPONENTS
         switch (type) { 
             case 'mixed_fraction': 
-                return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
-                        <div className="scale-110 transform origin-center">
-                            <FractionInput value={inputValue} onChange={setInputValue} allowMixed={true} autoFocus={!isMobile} />
-                        </div>
-                    </div>
-                );
-
+                return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><FractionInput value={inputValue} onChange={setinputValue} allowMixed={true} autoFocus={!isMobile} /></div></div>;
             case 'fraction': 
-                return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
-                        <div className="scale-110 transform origin-center">
-                            <FractionInput value={inputValue} onChange={setInputValue} allowMixed={false} autoFocus={!isMobile} />
-                        </div>
-                    </div>
-                );
-            
+                return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><FractionInput value={inputValue} onChange={setInputValue} allowMixed={false} autoFocus={!isMobile} /></div></div>;
             case 'exponent': 
             case 'structured_power': 
-                return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
-                        <div className="scale-110 transform origin-center">
-                            <ExponentInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} />
-                        </div>
-                    </div>
-                );
-            
+                return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><ExponentInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} /></div></div>;
             case 'scientific': 
             case 'structured_scientific': 
-                return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full">
-                        <div className="scale-110 transform origin-center">
-                            <ScientificInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} />
-                        </div>
-                    </div>
-                );
-
+                return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><ScientificInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} /></div></div>;
             default:
-                return (
-                    <input 
-                        type="text" 
-                        autoFocus={!isMobile} 
-                        className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 shadow-inner"
-                        placeholder="..."
-                        value={inputValue} 
-                        maxLength={20}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleLabSubmit()}
-                    />
-                );
+                return <input type="text" autoFocus={!isMobile} className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 shadow-inner" placeholder="..." value={inputValue} maxLength={20} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLabSubmit()} />;
         }
     };
 
-    // --- EFFECTS ---
     useEffect(() => {
         if (configCode) {
             const decoded = decodeConfig(configCode);
             if (decoded) {
                 let finalSelection = decoded.selection;
-
-                // PRESET EXPANSION: If the code is a preset, we find all topics now
                 if (decoded.meta.isNationalTest && decoded.meta.bundleId) {
                     const bundleId = decoded.meta.bundleId;
                     const preset = BUNDLE_PRESETS[bundleId];
                     const expandedSelection = {};
-
-                    // Use catId (the key) to match the preset category
                     Object.entries(CATEGORIES).forEach(([catId, cat]) => {
                         if (bundleId === 'NP-ALL' || catId === preset.category) {
                             cat.topics.forEach(topic => {
-                                const topicLevels = LEVEL_DESCRIPTIONS[topic.id] 
-                                    ? Object.keys(LEVEL_DESCRIPTIONS[topic.id]).map(Number) 
-                                    : [1];
+                                const topicLevels = LEVEL_DESCRIPTIONS[topic.id] ? Object.keys(LEVEL_DESCRIPTIONS[topic.id]).map(Number) : [1];
                                 expandedSelection[topic.id] = { enabled: true, levels: topicLevels };
                             });
                         }
                     });
                     finalSelection = expandedSelection;
                 }
-
                 setMeta(decoded.meta);
                 setSelection(finalSelection); 
-
-                // --- EXTRACT PARAMETER FROM LINK DECODE PASS FOR WORD PROBLEMS ---
-                if (decoded.meta?.wordProblem !== undefined) {
-                    setUseWordProblems(!!decoded.meta.wordProblem);
-                }
-
+                if (decoded.meta?.wordProblem !== undefined) { setUseWordProblems(!!decoded.meta.wordProblem); }
                 setInternalMode('ACTIVE'); 
-            } else {
-                setInternalMode('SETUP');
-            }
-        } else {
-            setInternalMode('SETUP');
-        }
+            } else { setInternalMode('SETUP'); }
+        } else { setInternalMode('SETUP'); }
     }, [configCode]);
 
     useEffect(() => {
-        if (internalMode === 'ACTIVE' && packet.length === 0) {
-            fetchNextSprint();
-        }
-    // FIX: Include useWordProblems inside the dependency list so changes trigger clean network queries
+        if (internalMode === 'ACTIVE' && packet.length === 0) { fetchNextSprint(); }
     }, [internalMode, packet.length, useWordProblems]);
 
     useEffect(() => {
@@ -454,329 +313,349 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
     if (internalMode === 'LOADING') return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" size={48} /></div>;
 
-    // --- 1. SETUP UI (Harmonized with Dashboard.jsx) ---
+    // =========================================================
+    // --- 1. SETUP UI (Harmonized with Dashboard Two-Column Layout) ---
+    // =========================================================
     if (internalMode === 'SETUP') {
         const currentTestCode = encodeConfig({ meta, selection });
+        const activeCategoryData = CATEGORIES[activeCategory];
+        const categoryStyles = COLOR_VARIANTS[activeCategoryData?.color || 'indigo'] || COLOR_VARIANTS.indigo;
+        const totalSelectedCount = Object.keys(selection).filter(k => selection[k].enabled).length;
 
         return (
-            <div className="max-w-5xl mx-auto w-full p-6 pb-20 animate-in fade-in duration-500 font-sans">
-                {/* STICKY HEADER (Continuity with App.jsx) */}
-                <header className="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-emerald-100 px-4 py-3 flex justify-between items-center shadow-sm -mx-6 -mt-6 mb-10">
-                    <h1 className="text-xl font-black text-emerald-800 tracking-tighter cursor-pointer uppercase italic" onClick={onBack}>ANPASSA</h1>
-                    <div className="flex items-center gap-3">
-                        {/* REPLACE the icon button with this textual button */}
-                        <button 
-                            onClick={onBack} 
-                            className="px-4 py-2 text-[12px] font-black uppercase tracking-widest text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all border border-slate-100"
-                        >
-                            {t.toDashboard}
-                        </button>
-                    </div>
-                </header>
-
-                {/* STATUS CARD (Mirroring Dashboard Header) */}
-                <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white border border-emerald-100 p-8 rounded-[2.5rem] shadow-xl shadow-emerald-900/5">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-indigo-600 rounded-[1.8rem] flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                            <Beaker size={30} />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-800 leading-none mb-1">{t.title}</h1>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{lang === 'sv' ? 'Konfigurera testpass' : 'Configure test session'}</p>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col items-end bg-indigo-50 px-8 py-5 rounded-[2rem] border border-indigo-100 min-w-[240px]">
-                        <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-indigo-800/40 mb-1">{t.testCode}</span>
-                        <span className="text-3xl font-black tracking-[0.2em] text-indigo-700 uppercase">{currentTestCode}</span>
-                    </div>
-                </div>
-
-                {/* INSTRUCTIONAL GUIDE */}
-                <div className="mb-6 bg-indigo-50/50 border border-indigo-400 rounded-[2rem] overflow-hidden transition-all">
-                    <button 
-                        onClick={() => setShowGuide(!showGuide)}
-                        className="w-full px-8 py-4 flex items-center justify-between text-indigo-700 hover:bg-indigo-100/50 transition-all"
-                    >
-                        <div className="flex items-center gap-3">
-                            <HelpCircle size={20} className="text-indigo-500" />
-                            <span className="font-black uppercase text-[14px] tracking-widest">{t.guideTitle}</span>
-                        </div>
-                        <ChevronDown size={20} className={`transition-transform duration-300 ${showGuide ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {showGuide && (
-                        <div className="px-8 pb-8 grid grid-cols-1 md:grid-cols-1 gap-6 animate-in slide-in-from-top-2">
-                            {/* Guide Item: Presets */}
-                            <div className="flex gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm border border-indigo-100 text-indigo-600 font-black text-xs">1</div>
-                                <p className="text-[14px] font-medium text-slate-800 leading-relaxed">{t.guidePreset}</p>
-                            </div>
-                            {/* Guide Item: Custom Selection */}
-                            <div className="flex gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm border border-indigo-100 text-indigo-600 font-black text-xs">2</div>
-                                <p className="text-[14px] font-medium text-slate-800 leading-relaxed">{t.guideCustom}</p>
-                            </div>
-                            {/* Guide Item: Modes */}
-                            <div className="flex gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm border border-indigo-100 text-indigo-600 font-black text-xs">3</div>
-                                <p className="text-[14px] font-medium text-slate-800 leading-relaxed">{t.guideModes}</p>
-                            </div>
-                            {/* Guide Item: Reviews */}
-                            <div className="flex gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm border border-indigo-100 text-indigo-600 font-black text-xs">4</div>
-                                <p className="text-[14px] font-medium text-slate-800 leading-relaxed">{t.guideReview}</p>
-                            </div>
-                            {/* Guide Item: CONTROLS */}
-                            <div className="flex gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 shadow-sm border border-indigo-100 text-indigo-600 font-black text-xs">4</div>
-                                <p className="text-[14px] font-medium text-slate-800 leading-relaxed">{t.guideControls}</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* REFACTORED: HIGH-CONTRAST LIGHT ACTION CONTROL STRIP */}
-                <div className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl p-3 flex flex-wrap lg:flex-row items-center justify-between gap-3 mb-6 shadow-sm select-none">
+            <div className="relative w-full overflow-hidden bg-[#f9fbf7] min-h-screen">
+                
+                {/* Widescreen Two-Column Container (Fixed for laptop protection) */}
+                <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 py-8 animate-in fade-in duration-700 flex flex-col xl:flex-row gap-8 relative z-10 font-sans">
                     
-                    {/* Left-Side: Distinct, Elevated Interactive Buttons */}
-                    <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                    {/* LEFT COLUMN: COMMAND CENTER (CONFIG SIDEBAR) */}
+                    <aside className="w-full xl:w-[360px] flex-shrink-0 flex flex-col gap-6">
                         
-                        {/* 1. Practice vs. Exam Mode Toggle Button */}
-                        <button
-                            type="button"
-                            onClick={() => setMeta(p => ({ ...p, mode: p.mode === 'exam' ? 'practice' : 'exam' }))}
-                            title={meta.mode === 'exam' ? (lang === 'sv' ? 'Dolda resultat' : 'Hidden results') : (lang === 'sv' ? 'Direkt feedback' : 'Instant feedback')}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all active:scale-95 border-2 shadow-sm cursor-pointer ${
-                                meta.mode === 'exam' 
-                                    ? 'bg-rose-600 border-rose-600 text-white shadow-rose-600/20' 
-                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100/70 hover:border-slate-300'
-                            }`}
-                        >
-                            {meta.mode === 'exam' ? <Lock size={15}/> : <Zap size={15}/>}
-                            {meta.mode === 'exam' ? t.modeExam : t.modePractice}
-                        </button>
+                        {/* Status Card & Test Code */}
+                        <div className="bg-white border border-indigo-100 p-6 rounded-[2rem] shadow-xl shadow-indigo-900/5 flex flex-col gap-5">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0">
+                                        <Beaker size={24} />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-lg font-bold text-slate-800 leading-none mb-1">{t.title}</h1>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                            {lang === 'sv' ? 'Konfigurera pass' : 'Configure session'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setShowGuideModal(true)}
+                                    className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all border border-indigo-100 flex items-center gap-1 text-[10px] font-black uppercase"
+                                    title={t.guideBtn}
+                                >
+                                    <HelpCircle size={16} />
+                                </button>
+                            </div>
 
-                        {/* 2. Word Problem Toggle Button */}
-                        <button
-                            type="button"
-                            onClick={() => setUseWordProblems(!useWordProblems)} // Keep it simple here!
-                            title={useWordProblems ? (lang === 'sv' ? 'Läget är aktivt' : 'Mode is Active') : (lang === 'sv' ? 'Standard matte' : 'Standard math')}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider transition-all active:scale-95 border-2 shadow-sm cursor-pointer ${
-                                useWordProblems 
-                                    ? 'bg-emerald-600 border-emerald-600 text-white shadow-rose-600/20' 
-                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100/70 hover:border-slate-300'
-                            }`}
-                        >
-                            <HelpCircle size={15} fill={useWordProblems ? "rgba(255, 255, 255, 0.2)" : "none"}/>
-                            {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
-                        </button>
+                            <div className="flex flex-col items-center bg-indigo-50 px-4 py-3 rounded-2xl border border-indigo-100">
+                                <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-indigo-800/40 mb-0.5">{t.testCode}</span>
+                                <span className="text-xl font-black tracking-[0.2em] text-indigo-700 uppercase">{currentTestCode}</span>
+                            </div>
 
-                        {/* 3. External Share Test Button */}
-                        <button
-                            type="button"
-                            onClick={copyTestLink}
-                            title={lang === 'sv' ? 'Dela testet externt' : 'Share test externally'}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-black uppercase tracking-wider bg-white text-slate-600 border-2 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm active:scale-95 cursor-pointer"
-                        >
-                            <LayoutGrid size={15}/>
-                            {t.copyLink}
-                        </button>
-                        
-                        {/* 4. Question Limit Numerical Field Item */}
-                        <div 
-                            title={lang === 'sv' ? 'Ange max antal frågor (Lämna tomt för oändligt)' : 'Enter max question count (Leave empty for infinite)'}
-                            className="flex items-center gap-2 bg-white border-2 border-slate-200 rounded-xl px-3 py-1.5 h-[42px] shadow-sm"
-                        >
-                            <ListChecks size={20} className="text-amber-500 shrink-0"/>
-                            <span className="text-s font-black uppercase tracking-wider text-slate-800 select-none">
-                                {lang === 'sv' ? 'Frågor:' : 'Qty:'}
-                            </span>
-                            <input 
-                                type="number" 
-                                min="1" 
-                                max="100" 
-                                value={meta.limit || ''} 
-                                placeholder="∞" 
-                                onChange={(e) => setMeta(p => ({ ...p, limit: parseInt(e.target.value) || 0 }))}
-                                className="w-10 bg-slate-200 rounded-lg text-slate-800 font-black text-l text-center py-0.5 focus:bg-amber-50 focus:text-amber-900 outline-none transition-colors border border-transparent focus:border-amber-200"
-                            />
+                            <button 
+                                onClick={onBack} 
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm active:scale-95 cursor-pointer"
+                            >
+                                <LogOut size={14} /> {t.toDashboard}
+                            </button>
                         </div>
-                    </div>
 
-                    {/* Right-Side: Primary Launch Session Button Action */}
-                    <div className="w-full lg:w-auto mt-1 lg:mt-0">
-                        {/* 5. Start Session Button */}
+                        {/* Configuration Controls Stack */}
+                        <div className="bg-white border border-slate-200 p-6 rounded-[2rem] shadow-sm flex flex-col gap-4">
+                            <div className="flex items-center gap-2 ml-1">
+                                <Settings2 size={14} className="text-indigo-500" />
+                                <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    {lang === 'sv' ? "Inställningar" : "Settings"}
+                                </h2>
+                            </div>
+
+                            {/* Preset Selector */}
+                            <div>
+                                <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 ml-1">
+                                    {lang === 'sv' ? "Snabbval (Preset)" : "Presets"}
+                                </span>
+                                <select 
+                                    value={meta.bundleId || ""}
+                                    onChange={(e) => applyPresetSelection(e.target.value)}
+                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-2 font-bold text-xs focus:border-indigo-500 focus:bg-white outline-none transition-all cursor-pointer"
+                                >
+                                    <option value="">{lang === 'sv' ? "-- Välj snabbval --" : "-- Choose a preset ---"}</option>
+                                    {Object.entries(BUNDLE_PRESETS).map(([id, data]) => (
+                                        <option key={id} value={id}>{data.title} ({id})</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Mode Toggle Button */}
+                            <button
+                                type="button"
+                                onClick={() => setMeta(p => ({ ...p, mode: p.mode === 'exam' ? 'practice' : 'exam' }))}
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer ${
+                                    meta.mode === 'exam' 
+                                        ? 'bg-rose-600 border-rose-600 text-white' 
+                                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    {meta.mode === 'exam' ? <Lock size={14}/> : <Zap size={14}/>}
+                                    <span>{meta.mode === 'exam' ? t.modeExam : t.modePractice}</span>
+                                </div>
+                                <span className="text-[9px] opacity-80 uppercase">
+                                    {meta.mode === 'exam' ? (lang === 'sv' ? 'Dolda svar' : 'Hidden') : (lang === 'sv' ? 'Direkt' : 'Instant')}
+                                </span>
+                            </button>
+
+                            {/* Word Problem Toggle Button */}
+                            <button
+                                type="button"
+                                onClick={() => setUseWordProblems(!useWordProblems)}
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer ${
+                                    useWordProblems 
+                                        ? 'bg-emerald-600 border-emerald-600 text-white' 
+                                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <HelpCircle size={14} fill={useWordProblems ? "rgba(255,255,255,0.2)" : "none"}/>
+                                    <span>{lang === 'sv' ? 'Problemlösning' : 'Word Problems'}</span>
+                                </div>
+                                <span className="text-[9px] opacity-80 uppercase">
+                                    {useWordProblems ? (lang === 'sv' ? 'Aktiv' : 'On') : (lang === 'sv' ? 'Av' : 'Off')}
+                                </span>
+                            </button>
+
+                            {/* Question Limit Input */}
+                            <div className="flex items-center justify-between bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2">
+                                <div className="flex items-center gap-2">
+                                    <ListChecks size={16} className="text-amber-500"/>
+                                    <span className="text-xs font-black uppercase tracking-wider text-slate-700">
+                                        {lang === 'sv' ? 'Antal frågor:' : 'Quantity:'}
+                                    </span>
+                                </div>
+                                <input 
+                                    type="number" 
+                                    min="1" 
+                                    max="100" 
+                                    value={meta.limit || ''} 
+                                    placeholder="∞" 
+                                    onChange={(e) => setMeta(p => ({ ...p, limit: parseInt(e.target.value) || 0 }))}
+                                    className="w-12 bg-white rounded-lg text-slate-800 font-black text-xs text-center py-1 outline-none border border-slate-200 focus:border-amber-400"
+                                />
+                            </div>
+
+                            {/* Action Buttons: Copy Link & Reset */}
+                            <div className="grid grid-cols-2 gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={copyTestLink}
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-all cursor-pointer"
+                                >
+                                    <LayoutGrid size={13}/>
+                                    {t.copyLink}
+                                </button>
+                                <button 
+                                    onClick={resetAllSelection}
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl font-black uppercase text-[10px] tracking-wider transition-all cursor-pointer"
+                                >
+                                    <RefreshCcw size={13} />
+                                    {lang === 'sv' ? "Rensa" : "Reset"}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Prominent Start Button Sidebar Anchor */}
                         <button 
                             type="button"
                             onClick={startNewSession} 
-                            disabled={Object.keys(selection).filter(k => selection[k].enabled).length === 0} 
-                            className="w-full lg:w-auto flex items-center justify-center gap-4 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl font-black uppercase text-sm tracking-widest shadow-md shadow-indigo-600/10 active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+                            disabled={totalSelectedCount === 0} 
+                            className="w-full flex items-center justify-center gap-3 py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl shadow-orange-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-40"
                         >
-                            <div className="flex items-center gap-2">
-                                <Play size={15} fill="currentColor"/>
-                                <span>{t.startBtn}</span>
-                            </div>
-                            <span className="text-[11px] font-black tracking-normal bg-indigo-900/40 text-indigo-100 px-2.5 py-1 rounded-lg">
-                                {Object.keys(selection).filter(k => selection[k].enabled).length} {lang === 'sv' ? 'valda' : 'selected'}
+                            <Play size={16} fill="currentColor"/>
+                            <span>{t.startBtn}</span>
+                            <span className="text-[10px] font-black bg-orange-700/50 text-orange-100 px-2 py-0.5 rounded-lg">
+                                {totalSelectedCount}
                             </span>
                         </button>
-                    </div>
-                    
-                </div>
+                    </aside>
 
-                {/* PRESETS & RESET ROW */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 bg-white border-2 border-indigo-50 p-6 rounded-[2.5rem] shadow-sm">
-                    <div className="flex items-center gap-4 w-full md:w-auto">
-                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-inner">
-                            <LayoutGrid size={22} />
+
+                    {/* ➡️ RIGHT COLUMN: MAIN TOPIC SELECTION AREA */}
+                    <main className="flex-1 flex flex-col min-w-0">
+                        
+                        {/* Horizontal Category Tabs */}
+                        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+                            {Object.entries(CATEGORIES).map(([catKey, category]) => {
+                                const isActive = activeCategory === catKey;
+                                const styles = COLOR_VARIANTS[category.color || 'indigo'] || COLOR_VARIANTS.indigo;
+                                const count = category.topics.filter(t => selection[t.id]?.enabled).length;
+                                
+                                return (
+                                    <button 
+                                        key={catKey}
+                                        onClick={() => setActiveCategory(catKey)}
+                                        className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border cursor-pointer ${
+                                            isActive 
+                                                ? `${styles.bgDark} text-white border-transparent shadow-md` 
+                                                : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
+                                        }`}
+                                    >
+                                        <Award size={14} />
+                                        {category.label[lang]}
+                                        {count > 0 && (
+                                            <span className="ml-1 px-1.5 py-0.2 bg-white/20 rounded-full text-[9px]">
+                                                {count}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
-                        <div className="flex-1 md:w-72">
-                            <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 ml-1">
-                                {lang === 'sv' ? "Snabbval (Preset)" : "Presets"}
-                            </span>
-                            <select 
-                                value={meta.bundleId || ""}
-                                onChange={(e) => applyPresetSelection(e.target.value)}
-                                className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 font-bold text-sm focus:border-indigo-500 focus:bg-white outline-none transition-all cursor-pointer"
-                            >
-                                <option value="">{lang === 'sv' ? "-- Välj snabbval --" : "-- Choose a preset --- "}</option>
-                                {Object.entries(BUNDLE_PRESETS).map(([id, data]) => (
-                                    <option key={id} value={id}>{data.title} ({id})</option>
-                                ))}
-                            </select>
-                        </div>
 
-                        {/* --- NEW: WORD PROBLEM TOGGLE CONTROL SLIDER LINKED TO TESTPass --- */}
-                        {/* Prominent Multi-State Toggle Button */}
-                            
-
-                    </div>
-
-                    <button 
-                        onClick={resetAllSelection}
-                        className="w-full md:w-auto px-8 py-3 bg-white border-2 border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white hover:border-rose-600 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-3 shadow-sm active:scale-95"
-                    >
-                        <RefreshCcw size={16} />
-                        {lang === 'sv' ? "Rensa allt" : "Reset all"}
-                    </button>
-                </div>
-
-
-                {/* CATEGORY GRID (Now matching Dashboard's Topic Cards) */}
-                <div className="grid grid-cols-1 gap-6">
-                    {Object.entries(CATEGORIES).map(([catKey, category]) => {
-                        const styles = getStyles(category);
-                        const isExpanded = activeCategory === catKey;
-                        const count = category.topics.filter(t => selection[t.id]?.enabled).length;
-
-                        return (
-                            <div key={catKey} className={`bg-white rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${isExpanded ? `shadow-2xl shadow-indigo-900/10 border-indigo-800` : 'border-slate-100 shadow-sm hover:border-indigo-800'}`}>
-                                <button onClick={() => setActiveCategory(isExpanded ? null : catKey)} className={`w-full p-8 flex items-center justify-between text-left ${isExpanded ? 'bg-slate-50/50' : ''}`}>
-                                    <div className="flex items-center gap-6">
-                                        <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center ${styles.bgDark} text-white shadow-lg`}><Award size={28} /></div>
-                                        <div><h3 className="text-xl font-bold text-slate-800 tracking-tight">{category.label[lang]}</h3><p className={`text-[12px] font-bold uppercase tracking-widest ${count > 0 ? styles.text : 'text-slate-400'}`}>{count > 0 ? `${count} ${t.selectedAreas}` : `${category.topics.length} delmoment`}</p></div>
+                        {/* Active Category Topics Grid */}
+                        <div className={`bg-white rounded-[2.5rem] border ${categoryStyles.border} p-6 sm:p-8 shadow-xl shadow-indigo-900/5 flex-1`}>
+                            <div className="mb-6 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${categoryStyles.bgDark} text-white shadow-md`}>
+                                        <Award size={20} />
                                     </div>
-                                    <ChevronDown size={24} className={`text-slate-300 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                </button>
-
-                                {isExpanded && (
-                                    <div className="p-8 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-top-2 duration-300">
-                                        {category.topics.map(topic => {
-                                            const isEnabled = selection[topic.id]?.enabled;
-                                            const topicLevels = LEVEL_DESCRIPTIONS[topic.id] ? Object.keys(LEVEL_DESCRIPTIONS[topic.id]).map(Number) : [1];
-                                            const selectedLevels = selection[topic.id]?.levels || [];
-
-                                            const toggleLevel = (lvl) => {
-                                                setMeta(p => ({ ...p, isNationalTest: false, bundleId: null })); // NEW: Clear preset flag on manual change
-                                                setSelection(p => {
-                                                    const currentLevels = p[topic.id]?.levels || [];
-                                                    const newLevels = currentLevels.includes(lvl)
-                                                        ? currentLevels.filter(l => l !== lvl) // Remove if exists
-                                                        : [...currentLevels, lvl].sort((a, b) => a - b); // Add and sort
-                                                    
-                                                    return {
-                                                        ...p,
-                                                        [topic.id]: { 
-                                                            ...p[topic.id], 
-                                                            levels: newLevels,
-                                                            // Auto-enable topic if a level is picked, auto-disable if empty
-                                                            enabled: newLevels.length > 0 
-                                                        }
-                                                    };
-                                                });
-                                            };
-
-                                            return (
-                                                <div key={topic.id} className={`p-6 rounded-[2.2rem] border transition-all flex flex-col ${isEnabled ? `border-indigo-500 shadow-xl bg-white` : 'border-slate-400 bg-slate-50/30 opacity-70'}`}>
-                                                    <div className="flex items-start justify-between mb-4">
-                                                        <div className="flex-1 pr-4">
-                                                            <h4 className="font-bold text-sm text-slate-800 leading-tight">{topic.label[lang]}</h4>
-                                                            <p className="text-[10px] text-slate-400 font-medium mt-1">
-                                                                {selectedLevels.length} {lang === 'sv' ? 'nivåer valda' : 'levels selected'}
-                                                            </p>
-                                                        </div>
-                                                        {/* Master Toggle to select/deselect everything */}
-                                                        <button 
-                                                            onClick={() => {
-                                                                setMeta(p => ({ ...p, isNationalTest: false, bundleId: null })); // NEW: Clear preset flag
-                                                                setSelection(p => ({ 
-                                                                    ...p, 
-                                                                    [topic.id]: { 
-                                                                        enabled: !isEnabled, 
-                                                                        levels: !isEnabled ? topicLevels : [] 
-                                                                    } 
-                                                                }));
-                                                            }}
-                                                            className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${isEnabled ? styles.bgDark + ' text-white shadow-lg' : 'bg-white text-transparent border border-slate-600'}`}
-                                                        >
-                                                            <Check size={18} strokeWidth={4}/>
-                                                        </button>
-                                                    </div>
-
-                                                    {/* LEVEL TOGGLE GRID */}
-                                                    <div className="flex flex-wrap gap-2 mt-2">
-                                                        {topicLevels.map(lvl => {
-                                                            const isActive = selectedLevels.includes(lvl);
-                                                            return (
-                                                                <button
-                                                                    key={lvl}
-                                                                    onClick={() => toggleLevel(lvl)}
-                                                                    className={`w-10 h-10 rounded-xl text-xs font-black transition-all border-2 flex items-center justify-center
-                                                                        ${isActive 
-                                                                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md scale-105' 
-                                                                            : 'bg-white border-slate-400 text-slate-700 hover:border-indigo-400'
-                                                                        }`}
-                                                                >
-                                                                    {lvl}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-
-                                                    {/* DYNAMIC DESCRIPTION BOX */}
-                                                    {selectedLevels.length > 0 && (
-                                                        <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 animate-in fade-in duration-300">
-                                                            <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
-                                                                {selectedLevels.map(lvl => (
-                                                                    <div key={lvl} className="flex gap-2 text-[9px] leading-tight items-start group">
-                                                                        <span className="font-black text-indigo-500 min-w-[15px]">N{lvl}</span>
-                                                                        <span className="text-slate-500 font-medium group-hover:text-slate-800 transition-colors">
-                                                                            {LEVEL_DESCRIPTIONS[topic.id][lvl][lang]}
-                                                                        </span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-800 tracking-tight leading-none mb-1">
+                                            {activeCategoryData.label[lang]}
+                                        </h3>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">
+                                            {activeCategoryData.topics.length} {lang === 'sv' ? 'tillgängliga delmoment' : 'available topics'}
+                                        </p>
                                     </div>
-                                )}
+                                </div>
                             </div>
-                        );
-                    })}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                                {activeCategoryData.topics.map(topic => {
+                                    const isEnabled = selection[topic.id]?.enabled;
+                                    const topicLevels = LEVEL_DESCRIPTIONS[topic.id] ? Object.keys(LEVEL_DESCRIPTIONS[topic.id]).map(Number) : [1];
+                                    const selectedLevels = selection[topic.id]?.levels || [];
+
+                                    const toggleLevel = (lvl) => {
+                                        setMeta(p => ({ ...p, isNationalTest: false, bundleId: null }));
+                                        setSelection(p => {
+                                            const currentLevels = p[topic.id]?.levels || [];
+                                            const newLevels = currentLevels.includes(lvl)
+                                                ? currentLevels.filter(l => l !== lvl)
+                                                : [...currentLevels, lvl].sort((a, b) => a - b);
+                                            
+                                            return {
+                                                ...p,
+                                                [topic.id]: { 
+                                                    ...p[topic.id], 
+                                                    levels: newLevels,
+                                                    enabled: newLevels.length > 0 
+                                                }
+                                            };
+                                        });
+                                    };
+
+                                    return (
+                                        <div key={topic.id} className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${isEnabled ? 'border-indigo-500 shadow-md bg-white' : 'border-slate-200 bg-slate-50/50 opacity-75'}`}>
+                                            <div>
+                                                <div className="flex items-start justify-between mb-3">
+                                                    <h4 className="font-bold text-xs text-slate-800 leading-tight pr-2">{topic.label[lang]}</h4>
+                                                    <button 
+                                                        onClick={() => {
+                                                            setMeta(p => ({ ...p, isNationalTest: false, bundleId: null }));
+                                                            setSelection(p => ({ 
+                                                                ...p, 
+                                                                [topic.id]: { 
+                                                                    enabled: !isEnabled, 
+                                                                    levels: !isEnabled ? topicLevels : [] 
+                                                                } 
+                                                            }));
+                                                        }}
+                                                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer ${isEnabled ? categoryStyles.bgDark + ' text-white shadow-sm' : 'bg-white text-transparent border border-slate-300'}`}
+                                                    >
+                                                        <Check size={14} strokeWidth={3}/>
+                                                    </button>
+                                                </div>
+
+                                                {/* LEVEL TOGGLE GRID */}
+                                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                                    {topicLevels.map(lvl => {
+                                                        const isActive = selectedLevels.includes(lvl);
+                                                        return (
+                                                            <button
+                                                                key={lvl}
+                                                                onClick={() => toggleLevel(lvl)}
+                                                                className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all border flex items-center justify-center cursor-pointer
+                                                                    ${isActive 
+                                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs' 
+                                                                        : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400'
+                                                                    }`}
+                                                            >
+                                                                {lvl}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            {/* DYNAMIC DESCRIPTION BOX */}
+                                            {selectedLevels.length > 0 && (
+                                                <div className="mt-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100 max-h-24 overflow-y-auto custom-scrollbar">
+                                                    <div className="space-y-1">
+                                                        {selectedLevels.map(lvl => (
+                                                            <div key={lvl} className="flex gap-1.5 text-[8px] leading-tight items-start">
+                                                                <span className="font-black text-indigo-500">N{lvl}</span>
+                                                                <span className="text-slate-500 font-medium truncate">
+                                                                    {LEVEL_DESCRIPTIONS[topic.id][lvl][lang]}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                    </main>
+                </div>
+
+                {/* --- GUIDE MODAL OVERLAY --- */}
+                {showGuideModal && (
+                    <div className="fixed inset-0 z-[200] bg-indigo-950/40 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
+                        <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95">
+                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md"><HelpCircle size={20}/></div>
+                                    <h2 className="text-lg font-black uppercase tracking-tight italic">{t.guideTitle}</h2>
+                                </div>
+                                <button onClick={() => setShowGuideModal(false)} className="p-2 hover:bg-slate-200 rounded-full text-slate-400 transition-colors cursor-pointer"><X size={18} /></button>
+                            </div>
+                            
+                            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar text-xs font-medium text-slate-700 leading-relaxed">
+                                <p>1. {lang === 'sv' ? "Snabbval" : "Presets"}: {t.guidePreset}</p>
+                                <p>2. {lang === 'sv' ? "Frågeantal" : "Quantity"}: {t.guideCustom}</p>
+                                <p>3. {lang === 'sv' ? "Lägen" : "Modes"}: {t.guideModes}</p>
+                                <p>4. {lang === 'sv' ? "Dela" : "Sharing"}: {t.guideReview}</p>
+                                <p>5. {lang === 'sv' ? "Elever" : "Students"}: {t.guideControls}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* BACKGROUND DECORATION */}
+                <div className="absolute bottom-0 left-0 w-full leading-[0] pointer-events-none z-0 overflow-hidden">
+                    <svg className="relative block w-full h-[250px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                        <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-indigo-100/40"></path>
+                    </svg>
                 </div>
             </div>
         );

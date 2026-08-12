@@ -27,6 +27,7 @@ const Dashboard = ({
     onRelaunch, onViewReport, onEdit, 
     userRole = 'teacher'
 }) => {
+    // 🟢 expandedCategory now functions as our active tab state for the curriculum
     const [expandedCategory, setExpandedCategory] = useState('algebra');
     const [activeTab, setActiveTab] = useState('curriculum'); 
     const [archivedSessions, setArchivedSessions] = useState([]);
@@ -50,7 +51,7 @@ const Dashboard = ({
             accuracy_label: "Träffsäkerhet", edit_btn: "Öppna i Studio",
             type_donow: "Do Now Grid", type_worksheet: "Arbetsblad",
             times_table_title: "Tabeller", times_table_desc: "Multiplikation",
-            news_title: "Senaste uppdatering", view_all: "Visa ändringslogg"
+            news_title: "Senaste uppdatering", view_all: "Visa logg"
         },
         en: {
             tools_section: "Tools", class_code_label: "Your Class Code", connected_code_label: "Connected to code",
@@ -67,14 +68,10 @@ const Dashboard = ({
             accuracy_label: "Accuracy", edit_btn: "Open in Studio",
             type_donow: "Do Now Grid", type_worksheet: "Worksheet",
             times_table_title: "Tables", times_table_desc: "Multiplication",
-            news_title: "Latest Update", view_all: "View Changelog"
+            news_title: "Latest Update", view_all: "View log"
         }
     };
 
-    const updateLabels = {
-        sv: { news_title: "Senaste uppdatering", view_all: "Visa ändringslogg" },
-        en: { news_title: "Latest Update", view_all: "View Changelog" }
-    }[lang];
     const t = TEXT[lang] || TEXT.sv;
     const latestUpdate = APP_UPDATES[0];
 
@@ -102,17 +99,12 @@ const Dashboard = ({
 
     const formatSubscriptionDate = (dateString, lang = 'sv') => {
         if (!dateString) return null;
-
         const endDate = new Date(dateString);
         const now = new Date();
         const isExpired = endDate < now;
-
         const formattedDate = endDate.toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
+            year: 'numeric', month: 'short', day: 'numeric'
         });
-
         return {
             text: isExpired 
                 ? (lang === 'sv' ? `Inaktiv den ${formattedDate}` : `Expired on ${formattedDate}`)
@@ -148,366 +140,376 @@ const Dashboard = ({
         finally { setIsLoadingArchive(false); }
     };
 
-    const getStyles = (category) => COLOR_VARIANTS[category.color || 'emerald'] || COLOR_VARIANTS.emerald;
+    const activeCategoryData = CATEGORIES[expandedCategory];
+    const categoryStyles = COLOR_VARIANTS[activeCategoryData?.color || 'emerald'] || COLOR_VARIANTS.emerald;
 
     return (
-        <div className="relative w-full overflow-hidden bg-[#f9fbf7]">
-            <div className="max-w-5xl mx-auto w-full p-6 animate-in fade-in duration-700 flex flex-col min-h-screen relative z-10 font-sans">
+        <div className="relative w-full overflow-hidden bg-[#f9fbf7] min-h-screen">
+            {/* 🟢 FIXED: Adjusted to xl:flex-row for laptop protection */}
+            <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 py-8 animate-in fade-in duration-700 flex flex-col xl:flex-row gap-8 relative z-10 font-sans">
                 
-                {/* --- ACTIVE SESSION RESUME BANNER --- */}
-                {activeSession && userRole === 'teacher' && (
-                    <div className="mb-8 p-6 bg-emerald-900 rounded-[2.5rem] text-white shadow-2xl shadow-emerald-900/20 flex flex-col sm:flex-row items-center justify-between gap-6 animate-in slide-in-from-top-4 duration-500">
-                        <div className="flex items-center gap-6">
-                            <div className="w-14 h-14 bg-white/10 rounded-[1.5rem] flex items-center justify-center backdrop-blur-md">
-                                <PlayCircle size={32} className="text-emerald-400" />
+                {/* ========================================================= */}
+                {/* LEFT COLUMN: COMMAND CENTER (PROFILE & TOOLS)        */}
+                {/* ========================================================= */}
+                <aside className="w-full xl:w-[320px] flex-shrink-0 flex flex-col gap-6">
+                    
+                    {/* --- HEADER STATUS CARD (COMPRESSED) --- */}
+                    <div className="bg-white border border-emerald-100 p-6 rounded-[2rem] shadow-xl shadow-emerald-900/5 flex flex-col gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0">
+                                {userRole === 'teacher' ? <Users size={24} /> : <User size={24} />}
                             </div>
-                            <div className="text-center sm:text-left">
-                                <h3 className="text-xl font-bold uppercase italic tracking-tighter leading-none mb-1">{t.resume_h}</h3>
-                                <p className="text-xs font-medium text-emerald-300 uppercase tracking-widest leading-none">
-                                    {activeSession.title} — Kod: <span className="font-black text-white">{activeSession.class_code}</span>
+                            <div className="min-w-0">
+                                <h1 className="text-lg font-bold text-slate-800 leading-none mb-1 truncate">
+                                    {userRole === 'teacher' ? (profile?.full_name || "Lärare") : (profile?.full_name || "Elev")}
+                                </h1>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/60 flex items-center gap-1.5 truncate">
+                                    <Target size={10}/> {profile?.school_name || "Anpassa Math Platform"}
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => onRelaunch(activeSession)} className="w-full sm:w-auto px-10 py-4 bg-white text-emerald-900 rounded-2xl font-bold uppercase text-[10px] tracking-widest hover:bg-emerald-50 transition-all shadow-xl active:scale-95">
-                            {t.resume_btn}
+
+                        {/* Subscription Date */}
+                        {(() => {
+                            const sub = formatSubscriptionDate(profile?.subscription_end_date || profile?.subscription_ends_at, lang);
+                            if (!sub) return null;
+                            return (
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                    <span className={`w-2 h-2 rounded-full ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                                    <span className={sub.isExpired ? 'text-rose-600 font-black' : 'text-slate-500'}>
+                                        {sub.text}
+                                    </span>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Class Code */}
+                        <div className="flex flex-col items-center bg-emerald-50 px-4 py-3 rounded-2xl border border-emerald-100">
+                            <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-emerald-800/40 mb-0.5">
+                                {userRole === 'teacher' ? t.class_code_label : t.connected_code_label}
+                            </span>
+                            <span className="text-xl font-black tracking-[0.2em] text-emerald-700 uppercase">
+                                {profile?.class_code || "---"}
+                            </span>
+                        </div>
+
+                        {/* 🟢 NEW: Prominent Settings Button */}
+                        <button 
+                            onClick={onProfileOpen} 
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-sm active:scale-95 cursor-pointer"
+                        >
+                            <Settings size={14} /> {t.profile_btn}
                         </button>
                     </div>
-                )}
 
-                {/* --- HEADER STATUS CARD --- */}
-                <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white border border-emerald-100 p-8 rounded-[2.5rem] shadow-xl shadow-emerald-900/5">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-emerald-600 rounded-[1.8rem] flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                            {userRole === 'teacher' ? <Users size={30} /> : <User size={30} />}
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-800 leading-none mb-1">
-                                {userRole === 'teacher' ? (profile?.full_name || "Lärare") : (profile?.full_name || "Elev")}
-                            </h1>
-                            <p className="text-[12px] font-bold uppercase tracking-widest text-emerald-600/60 flex items-center gap-2">
-                                <Target size={12}/> {profile?.school_name || "Anpassa Math Platform"}
-                            </p>
-
-                            {/* 🟢 SUBSCRIPTION END DATE DISPLAY */}
-                            {(() => {
-                                const sub = formatSubscriptionDate(profile?.subscription_end_date || profile?.subscription_ends_at, lang);
-                                if (!sub) return null;
-
-                                return (
-                                    <div className="mt-1.5 flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider">
-                                        <span className={`w-2 h-2 rounded-full ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`} />
-                                        <span className={sub.isExpired ? 'text-rose-600 font-black' : 'text-slate-400'}>
-                                            {sub.text}
-                                        </span>
+                    {/* --- NEWS / UPDATES MICRO-CARD --- */}
+                    {userRole === 'teacher' && (
+                        <button 
+                            onClick={() => setShowUpdateLog(true)}
+                            className="w-full flex items-center justify-between p-3.5 bg-white border border-emerald-100 rounded-2xl hover:border-emerald-500 hover:shadow-md transition-all group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
+                                    <Sparkles size={16} fill="currentColor" />
+                                </div>
+                                <div className="text-left">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[9px] font-black uppercase text-emerald-800/40 tracking-widest">{t.news_title}</span>
                                     </div>
-                                );
-                            })()}
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col items-end bg-emerald-50 px-8 py-5 rounded-[2rem] border border-emerald-100 min-w-[220px]">
-                        <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-emerald-800/40 mb-1">
-                            {userRole === 'teacher' ? t.class_code_label : t.connected_code_label}
-                        </span>
-                        <span className="text-3xl font-black tracking-[0.2em] text-emerald-700 uppercase">
-                            {profile?.class_code || "---"}
-                        </span>
-                    </div>
-                </header>
-
-                {/* --- NEWS / UPDATES SECTION  --- */}
-                {userRole === 'teacher' && (
-                    <section className="mb-6 px-2 bg-emerald">
-                    <button 
-                        onClick={() => setShowUpdateLog(true)}
-                        className="w-full flex items-center justify-between p-4 bg-white border border-emerald-100 rounded-3xl hover:border-emerald-500 hover:shadow-lg transition-all group"
-                    >
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-500 group-hover:scale-110 transition-transform">
-                                <Sparkles size={20} fill="currentColor" />
-                            </div>
-                            <div className="text-left">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-black uppercase text-emerald-800/40 tracking-widest">{updateLabels.news_title}</span>
-                                    <span className="bg-emerald-100 text-emerald-700 text-[8px] font-black px-2 py-0.5 rounded-full">v.{latestUpdate.version}</span>
+                                    <h4 className="text-xs font-bold text-slate-700 truncate max-w-[140px]">{latestUpdate.title[lang]}</h4>
                                 </div>
-                                <h4 className="text-sm font-bold text-slate-700">{latestUpdate.title[lang]}</h4>
                             </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-emerald-600 font-bold text-[10px] uppercase tracking-widest">
-                            <span className="opacity-0 group-hover:opacity-100 transition-opacity">{updateLabels.view_all}</span>
-                            <ArrowUpRight size={16} />
-                        </div>
-                    </button>
-                    </section>
-                )}
+                            <ArrowUpRight size={14} className="text-emerald-600" />
+                        </button>
+                    )}
 
-                {/* --- TOOLS SECTION --- */}
-                <section className="mb-12">
-                    <div className="flex items-center gap-3 mb-6 px-4">
-                        <Zap size={18} className="text-orange-400" />
-                        <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.tools_section}</h2>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        
-                        {/* Question Studio - Teacher Only */}
+                    {/* --- TOOLS SECTION (COMPRESSED LIST) --- */}
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2 ml-2">
+                            <Zap size={14} className="text-orange-400" />
+                            <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.tools_section}</h2>
+                        </div>
+
+                        {/* Question Studio */}
                         {userRole === 'teacher' && (
-                            <button onClick={onStudioOpen} className="group p-6 bg-emerald-900 text-white rounded-[2.5rem] hover:bg-emerald-800 transition-all shadow-xl shadow-emerald-900/10 text-left relative overflow-hidden">
-                                <div className="absolute -bottom-4 -right-4 opacity-10 group-hover:scale-110 transition-transform"><PenTool size={80} /></div>
-                                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center mb-4"><Zap size={20} fill="currentColor" /></div>
-                                <span className="block font-bold text-sm uppercase tracking-tight mb-1">{t.studio_title}</span>
-                                <span className="text-[9px] font-medium text-emerald-300 uppercase tracking-widest">{t.studio_desc}</span>
+                            <button onClick={onStudioOpen} className="group flex items-center gap-4 p-3.5 bg-emerald-900 text-white rounded-2xl hover:bg-emerald-800 transition-all shadow-md text-left w-full">
+                                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
+                                    <Zap size={18} fill="currentColor" />
+                                </div>
+                                <div>
+                                    <span className="block font-bold text-sm uppercase tracking-tight leading-tight">{t.studio_title}</span>
+                                    <span className="text-[9px] font-medium text-emerald-300 uppercase tracking-widest">{t.studio_desc}</span>
+                                </div>
                             </button>
                         )}
 
-                        {/* Test Lab / NP-Mode - Accessible to all */}
-                        <button onClick={onLabOpen} className="group p-6 bg-indigo-500 border border-slate-200 rounded-[2.5rem] hover:border-indigo-600 transition-all text-left shadow-sm relative overflow-hidden">
-                            <div className="absolute -bottom-3 -right-3 opacity-30 group-hover:scale-110 transition-transform text-slate-50">
-                                <Beaker size={80} />
+                        {/* Test Lab */}
+                        <button onClick={onLabOpen} className="group flex items-center gap-4 p-3.5 bg-indigo-50 border border-indigo-100 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all text-left w-full">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shrink-0 group-hover:text-indigo-600">
+                                <Beaker size={18} />
                             </div>
-                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                                <Beaker size={20} />
+                            <div>
+                                <span className="block font-bold text-sm uppercase text-indigo-900 group-hover:text-white leading-tight">Test Lab</span>
+                                <span className="text-[9px] font-medium text-indigo-400 group-hover:text-indigo-200 uppercase tracking-widest">
+                                    {lang === 'sv' ? 'Övningsprov' : 'Practice tests'}
+                                </span>
                             </div>
-                            <span className="block font-bold text-sm uppercase text-slate-100 mb-1">
-                                {lang === 'sv' ? 'Test Lab' : 'Test Lab'}
-                            </span>
-                            <span className="text-[9px] font-medium text-indigo-100 uppercase tracking-widest leading-tight">
-                                {lang === 'sv' ? 'Skapa övningsprov' : 'Create practice tests'}
-                            </span>
                         </button>
 
-                        {/* Presentation Canvas - Teacher Only */}
+                        {/* Presentation Canvas */}
                         {userRole === 'teacher' && (
-                            <button 
-                                onClick={onWhiteboardOpen} 
-                                /* CHANGED: Shifted hover styles to purple to visually link it to the 'Summoner' color system themes */
-                                className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-purple-600 transition-all text-left shadow-sm relative overflow-hidden cursor-pointer"
-                            >
-                                <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 mb-4 group-hover:bg-purple-600 group-hover:text-white transition-all shadow-sm">
-                                    <Monitor size={20} />
+                            <button onClick={onWhiteboardOpen} className="group flex items-center gap-4 p-3.5 bg-white border border-slate-200 rounded-2xl hover:border-purple-600 hover:bg-purple-50 transition-all text-left w-full">
+                                <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 shrink-0 group-hover:bg-white">
+                                    <Monitor size={18} />
                                 </div>
-                                <span className="block font-bold text-sm uppercase text-slate-700 mb-1">
-                                    {lang === 'sv' ? 'Presentationstavla' : 'Presentation Board'}
-                                </span>
-                                <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">
-                                    {lang === 'sv' ? 'Starta tom lektionsyta' : 'Start blank canvas'}
-                                </span>
+                                <div>
+                                    <span className="block font-bold text-sm uppercase text-slate-700 group-hover:text-purple-900 leading-tight">
+                                        {lang === 'sv' ? 'Presentation' : 'Board'}
+                                    </span>
+                                    <span className="text-[9px] font-medium text-slate-400 group-hover:text-purple-500 uppercase tracking-widest">
+                                        {lang === 'sv' ? 'Lektionsyta' : 'Blank canvas'}
+                                    </span>
+                                </div>
                             </button>
                         )}
-                                                
-                        {/* Multiplication Tables Tool - Accessible to all */}
-                        <button onClick={onTimesTableOpen} className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-emerald-600 transition-all text-left shadow-sm">
-                            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
-                                <Grid3X3 size={20} />
+
+                        {/* Timer Inline Tool */}
+                        <div className="flex items-center gap-3 p-3.5 bg-emerald-50 border border-emerald-100 rounded-2xl w-full">
+                            <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm">
+                                <Clock size={18} />
                             </div>
-                            <span className="block font-bold text-sm uppercase text-slate-700 mb-1">{t.times_table_title}</span>
-                            <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">{t.times_table_desc}</span>
-                        </button>
-
-
-                        {/* Statistics Tool - Accessible to all */}
-                        <button onClick={onStatsOpen} className="group p-6 bg-amber-50 border border-amber-100 rounded-[2.5rem] hover:bg-amber-100 transition-all text-left shadow-sm">
-                            <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center text-white mb-4 shadow-lg shadow-amber-200"><BarChart3 size={20} /></div>
-                            <span className="block font-bold text-sm uppercase text-amber-900 mb-1">{t.stats_title}</span>
-                            <span className="text-[9px] font-medium text-amber-600 uppercase tracking-widest">{t.stats_desc}</span>
-                        </button>
-
-                        {/* Timer Tool - Accessible to all */}
-                        <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-[2.5rem] flex flex-col justify-between shadow-sm">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-md"><Clock size={16} /></div>
-                                <span className="font-bold text-[10px] uppercase tracking-widest text-emerald-800">{t.timer_title}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <select value={timerSettings.duration / 60} onChange={(e) => toggleTimer(Number(e.target.value))} className="flex-1 bg-white border border-emerald-200 text-emerald-700 py-2 px-3 rounded-xl text-xs font-bold outline-none cursor-pointer">
+                            <div className="flex-1 flex items-center gap-2">
+                                <select value={timerSettings.duration / 60} onChange={(e) => toggleTimer(Number(e.target.value))} className="flex-1 bg-white border border-emerald-200 text-emerald-700 py-1.5 px-2 rounded-lg text-xs font-bold outline-none cursor-pointer">
                                     <option value="0">{t.timer_off}</option>
                                     {[5, 10, 15, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
                                 </select>
-                                {timerSettings.duration > 0 && <button onClick={resetTimer} className="p-2 text-rose-500 bg-white rounded-xl shadow-sm border border-rose-100 hover:bg-rose-50 transition-colors"><RotateCcw size={16} /></button>}
+                                {timerSettings.duration > 0 && (
+                                    <button onClick={resetTimer} className="p-1.5 text-rose-500 bg-white rounded-lg shadow-sm border border-rose-100 hover:bg-rose-50 transition-colors">
+                                        <RotateCcw size={14} />
+                                    </button>
+                                )}
                             </div>
                         </div>
 
-                        {/* Profile Settings - Teacher Only */}
-                        {userRole === 'teacher' && (
-                            <button onClick={onProfileOpen} className="group p-6 bg-white border border-slate-200 rounded-[2.5rem] hover:border-emerald-600 transition-all text-left shadow-sm">
-                                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm"><Settings size={20} /></div>
-                                <span className="block font-bold text-sm uppercase text-slate-700 mb-1">{t.profile_btn}</span>
-                                <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">{t.profile_desc}</span>
+                        {/* Bottom Row Tools (Grid 2 cols) */}
+                        <div className="grid grid-cols-2 gap-3 mt-1">
+                            <button onClick={onTimesTableOpen} className="group flex flex-col items-center justify-center gap-2 p-4 bg-white border border-slate-200 rounded-2xl hover:border-emerald-600 transition-all text-center">
+                                <Grid3X3 size={20} className="text-emerald-500" />
+                                <span className="font-bold text-[10px] uppercase text-slate-600">{t.times_table_title}</span>
                             </button>
-                        )}
+                            <button onClick={onStatsOpen} className="group flex flex-col items-center justify-center gap-2 p-4 bg-amber-50 border border-amber-100 rounded-2xl hover:bg-amber-100 transition-all text-center">
+                                <BarChart3 size={20} className="text-amber-500" />
+                                <span className="font-bold text-[10px] uppercase text-amber-900">{t.stats_title}</span>
+                            </button>
+                        </div>
                     </div>
-                </section>
 
-                {/* --- CONTENT TABS & CONTENT MAP ROW --- */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 mx-2">
-                    {/* Left Side: The existing toggles */}
-                    <div className="flex gap-1 p-1 bg-emerald-950/5 rounded-2xl w-fit">
-                        <button 
-                            onClick={() => setActiveTab('curriculum')} 
-                            className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'curriculum' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}
-                        >
-                            <div className="flex items-center gap-2"><Book size={14}/> {t.curriculum_title}</div>
-                        </button>
-                        {userRole === 'teacher' && (
+                    {/* Left Footer Links */}
+                    <footer className="mt-auto pt-8 pb-4 flex flex-col gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <button onClick={onLgrOpen} className="flex items-center gap-2 hover:text-emerald-600 transition-colors"><Book size={14} /> {t.lgr_link}</button>
+                        <button onClick={onAboutOpen} className="flex items-center gap-2 hover:text-emerald-600 transition-colors"><Info size={14} /> {t.about_link}</button>
+                    </footer>
+                </aside>
+
+
+                {/* ========================================================= */}
+                {/* ➡️ RIGHT COLUMN: MAIN CONTENT (CURRICULUM & ARCHIVE)    */}
+                {/* ========================================================= */}
+                <main className="flex-1 flex flex-col min-w-0">
+                    
+                    {/* --- ACTIVE SESSION RESUME BANNER --- */}
+                    {activeSession && userRole === 'teacher' && (
+                        <div className="mb-6 p-5 bg-emerald-900 rounded-[2rem] text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                                    <PlayCircle size={24} className="text-emerald-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold uppercase italic tracking-tighter leading-none mb-1">{t.resume_h}</h3>
+                                    <p className="text-[10px] font-medium text-emerald-300 uppercase tracking-widest leading-none">
+                                        {activeSession.title} — Kod: <span className="font-black text-white">{activeSession.class_code}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={() => onRelaunch(activeSession)} className="w-full sm:w-auto px-8 py-3 bg-white text-emerald-900 rounded-xl font-bold uppercase text-[10px] tracking-widest hover:bg-emerald-50 transition-all shadow-md active:scale-95">
+                                {t.resume_btn}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* --- CONTENT TABS & MAP NAV --- */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                        <div className="flex gap-1 p-1 bg-emerald-950/5 rounded-2xl w-fit">
                             <button 
-                                onClick={() => setActiveTab('archive')} 
-                                className={`px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all ${activeTab === 'archive' ? 'bg-white text-emerald-700 shadow-md' : 'text-slate-400 hover:text-emerald-600'}`}
+                                onClick={() => setActiveTab('curriculum')} 
+                                className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'curriculum' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-400 hover:text-emerald-600'}`}
                             >
-                                <div className="flex items-center gap-2"><History size={14}/> {t.archive_title}</div>
+                                <Book size={14}/> {t.curriculum_title}
                             </button>
-                        )}
+                            {userRole === 'teacher' && (
+                                <button 
+                                    onClick={() => setActiveTab('archive')} 
+                                    className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === 'archive' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-400 hover:text-emerald-600'}`}
+                                >
+                                    <History size={14}/> {t.archive_title}
+                                </button>
+                            )}
+                        </div>
+
+                        <button 
+                            onClick={onContentOpen} 
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-emerald-100 text-emerald-600 hover:text-white hover:bg-emerald-600 hover:border-emerald-600 font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm group"
+                        >
+                            <Map size={14} className="group-hover:scale-110 transition-transform" /> 
+                            {t.content_map}
+                            <ChevronRight size={14} className="opacity-40" />
+                        </button>
                     </div>
 
-                    {/* Right Side: The relocated Content Map Button */}
-                    <button 
-                        onClick={onContentOpen} 
-                        className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white border border-emerald-100 text-emerald-600 hover:text-white hover:bg-emerald-600 hover:border-emerald-600 font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm group"
-                    >
-                        <Map size={16} className="group-hover:scale-110 transition-transform" /> 
-                        {t.content_map}
-                        <ChevronRight size={14} className="opacity-40" />
-                    </button>
-                </div>
+                    {/* --- TAB CONTENT --- */}
+                    {activeTab === 'curriculum' ? (
+                        <div className="flex flex-col animate-in slide-in-from-right-4 duration-500">
+                            
+                            {/* 🟢 NEW: HORIZONTAL CATEGORY TABS */}
+                            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                {Object.entries(CATEGORIES).map(([catKey, category]) => {
+                                    const isActive = expandedCategory === catKey;
+                                    const styles = COLOR_VARIANTS[category.color || 'emerald'] || COLOR_VARIANTS.emerald;
+                                    
+                                    return (
+                                        <button 
+                                            key={catKey}
+                                            onClick={() => setExpandedCategory(catKey)}
+                                            className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border ${
+                                                isActive 
+                                                    ? `${styles.bgDark} text-white border-transparent` 
+                                                    : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-600'
+                                            }`}
+                                        >
+                                            {isActive && <Award size={14} />}
+                                            {category.label[lang]}
+                                        </button>
+                                    );
+                                })}
+                            </div>
 
-                {/* --- TAB CONTENT --- */}
-                {activeTab === 'curriculum' ? (
-                    <section className="flex flex-col gap-6 animate-in slide-in-from-left-4 duration-500">
-                        {Object.entries(CATEGORIES).map(([catKey, category]) => {
-                            const styles = getStyles(category);
-                            const isExpanded = expandedCategory === catKey;
-                            return (
-                                <div key={catKey} className={`bg-white rounded-[2.5rem] border transition-all duration-500 overflow-hidden ${isExpanded ? `shadow-2xl shadow-emerald-900/10 border-emerald-200` : 'border-slate-100 shadow-sm hover:border-emerald-200'}`}>
-                                    <button onClick={() => setExpandedCategory(isExpanded ? null : catKey)} className={`w-full p-8 flex items-center justify-between text-left ${isExpanded ? 'bg-emerald-50/30' : ''}`}>
-                                        <div className="flex items-center gap-6">
-                                            <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center ${styles.bgDark} text-white shadow-lg`}><Award size={28} /></div>
-                                            <div>
-                                                <h3 className="text-xl font-bold text-slate-800 tracking-tight">{category.label[lang]}</h3>
-                                                <p className="text-[10px] text-emerald-600/60 font-bold uppercase tracking-widest">{t.topics_count(category.topics.length)}</p>
-                                            </div>
-                                        </div>
-                                        {isExpanded ? <ChevronUp size={24} className="text-slate-300" /> : <ChevronDown size={24} className="text-slate-300" />}
-                                    </button>
-                                    <div className={`transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-[3000px] opacity-100 p-8 pt-0' : 'max-h-0 opacity-0 pointer-events-none'}`}>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            {category.topics.map(topic => (
-                                                <div key={topic.id} className="bg-white rounded-[2rem] p-6 border border-slate-100 hover:border-amber-200 hover:shadow-xl transition-all group">
-                                                    <div className="font-bold text-slate-800 mb-5 flex items-center justify-between text-sm">
-                                                        {topic.label[lang]}
-                                                        <div className={`w-2 h-2 rounded-full ${styles.bgDark} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
-                                                    </div>
-                                                    <div className="relative">
-                                                        <select value={selectedTopic === topic.id ? selectedLevel : 0} onChange={(e) => onSelect(topic.id, Number(e.target.value))} className={`w-full p-4 pl-5 bg-[#f9fbf7] border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 appearance-none transition-all ${selectedTopic === topic.id ? `ring-2 ring-emerald-500 border-transparent shadow-lg bg-white` : ''}`}>
-                                                            <option value={0} disabled>{t.select_level}</option>
-                                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl] && (
-                                                                <option key={lvl} value={lvl} className="text-base">
-                                                                    {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} — {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                        <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-300"><ChevronDown size={18} /></div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
+                            {/* 🟢 NEW: ACTIVE CATEGORY TOPICS GRID */}
+                            <div className={`bg-white rounded-[2.5rem] border ${categoryStyles.border} p-6 sm:p-8 shadow-xl shadow-emerald-900/5`}>
+                                <div className="mb-6 flex items-center gap-4">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${categoryStyles.bgDark} text-white shadow-md`}>
+                                        <Award size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-800 tracking-tight leading-none mb-1">
+                                            {activeCategoryData.label[lang]}
+                                        </h3>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">
+                                            {t.topics_count(activeCategoryData.topics.length)}
+                                        </p>
                                     </div>
                                 </div>
-                            );
-                        })}
-                    </section>
-                ) : (
-                    <section className="animate-in slide-in-from-right-4 duration-500 space-y-4 pb-20">
-                        {isLoadingArchive ? (
-                            <div className="flex items-center justify-center p-20"><div className="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full" /></div>
-                        ) : archivedSessions.length === 0 ? (
-                            <div className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-emerald-100">
-                                <History size={48} className="mx-auto text-emerald-100 mb-4" />
-                                <p className="font-bold text-slate-400 uppercase tracking-widest">{t.archive_empty}</p>
-                            </div>
-                        ) : (
-                            archivedSessions.map(session => {
-                                const isDoNow = session.active_question_data?.mode === 'donow';
 
-                                return (
-                                    <div key={session.id} className="bg-white p-6 rounded-[2.5rem] border border-emerald-50 shadow-sm hover:shadow-xl transition-all flex flex-col lg:flex-row items-center justify-between gap-6 group">
-                                        <div className="flex items-center gap-6 flex-1 min-w-0">
-                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner group-hover:text-white transition-all ${
-                                                isDoNow 
-                                                ? 'bg-indigo-50 text-indigo-500 group-hover:bg-indigo-600' 
-                                                : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600'
-                                            }`}>
-                                                {isDoNow ? <LayoutGrid size={28} /> : <FileSpreadsheet size={28} />}
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                    {activeCategoryData.topics.map(topic => (
+                                        <div key={topic.id} className="bg-slate-50 rounded-2xl p-5 border border-slate-100 hover:border-amber-200 hover:bg-white hover:shadow-lg transition-all group">
+                                            <div className="font-bold text-slate-800 mb-4 flex items-center justify-between text-sm leading-tight">
+                                                {topic.label[lang]}
+                                                <div className={`w-2 h-2 rounded-full ${categoryStyles.bgDark} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
                                             </div>
-                                            <div className="min-w-0">
-                                                <h4 className="font-bold text-slate-800 text-lg truncate leading-none mb-2">{session.title || (isDoNow ? "Do Now Grid" : "Live Lektion")}</h4>
-                                                <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                                    <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md"><Calendar size={12}/> {new Date(session.created_at).toLocaleDateString()}</span>
-                                                    <span className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md"><Users size={12}/> {session.studentCount} Elever</span>
-                                                    <span className={`px-2 py-0.5 rounded-md border font-black ${
-                                                        isDoNow ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                    }`}>{isDoNow ? t.type_donow : t.type_worksheet}</span>
+                                            <div className="relative">
+                                                <select 
+                                                    value={selectedTopic === topic.id ? selectedLevel : 0} 
+                                                    onChange={(e) => onSelect(topic.id, Number(e.target.value))} 
+                                                    className={`w-full p-3 pl-4 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 appearance-none transition-all cursor-pointer ${
+                                                        selectedTopic === topic.id ? `ring-2 ${categoryStyles.ring} border-transparent shadow-md` : ''
+                                                    }`}
+                                                >
+                                                    <option value={0} disabled>{t.select_level}</option>
+                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl] && (
+                                                        <option key={lvl} value={lvl}>
+                                                            {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} — {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-300">
+                                                    <ChevronDown size={16} />
                                                 </div>
                                             </div>
                                         </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="animate-in slide-in-from-right-4 duration-500 space-y-4 pb-20">
+                            {isLoadingArchive ? (
+                                <div className="flex items-center justify-center p-20"><div className="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full" /></div>
+                            ) : archivedSessions.length === 0 ? (
+                                <div className="bg-white rounded-[3rem] p-20 text-center border-2 border-dashed border-emerald-100">
+                                    <History size={48} className="mx-auto text-emerald-100 mb-4" />
+                                    <p className="font-bold text-slate-400 uppercase tracking-widest">{t.archive_empty}</p>
+                                </div>
+                            ) : (
+                                archivedSessions.map(session => {
+                                    const isDoNow = session.active_question_data?.mode === 'donow';
 
-                                        <div className="flex items-center gap-8 px-6 border-l border-slate-100">
-                                            <div className="text-center">
-                                                <span className="block text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">{t.accuracy_label}</span>
-                                                <div className={`text-2xl font-black italic ${session.accuracy > 70 ? 'text-emerald-500' : session.accuracy > 40 ? 'text-amber-500' : 'text-rose-500'}`}>{session.accuracy}%</div>
+                                    return (
+                                        <div key={session.id} className="bg-white p-5 rounded-[2rem] border border-emerald-50 shadow-sm hover:shadow-xl transition-all flex flex-col lg:flex-row items-center justify-between gap-5 group">
+                                            <div className="flex items-center gap-5 flex-1 min-w-0 w-full">
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-inner shrink-0 group-hover:text-white transition-all ${
+                                                    isDoNow 
+                                                    ? 'bg-indigo-50 text-indigo-500 group-hover:bg-indigo-600' 
+                                                    : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600'
+                                                }`}>
+                                                    {isDoNow ? <LayoutGrid size={24} /> : <FileSpreadsheet size={24} />}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h4 className="font-bold text-slate-800 text-base truncate leading-none mb-2">{session.title || (isDoNow ? "Do Now Grid" : "Live Lektion")}</h4>
+                                                    <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                                                        <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md"><Calendar size={10}/> {new Date(session.created_at).toLocaleDateString()}</span>
+                                                        <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-md"><Users size={10}/> {session.studentCount} Elever</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="w-12 h-12 rounded-full border-4 border-slate-50 flex items-center justify-center">
-                                                {session.accuracy > 70 ? <CheckCircle2 size={20} className="text-emerald-500" /> : <AlertCircle size={20} className={session.accuracy > 40 ? "text-amber-500" : "text-rose-500"} />}
+
+                                            <div className="flex items-center gap-6 px-4 lg:border-l border-slate-100 w-full lg:w-auto">
+                                                <div className="text-center">
+                                                    <span className="block text-[8px] font-black text-slate-300 uppercase tracking-widest mb-0.5">{t.accuracy_label}</span>
+                                                    <div className={`text-xl font-black italic ${session.accuracy > 70 ? 'text-emerald-500' : session.accuracy > 40 ? 'text-amber-500' : 'text-rose-500'}`}>{session.accuracy}%</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                                                <button onClick={() => onViewReport(session)} className="flex-1 lg:flex-none px-4 py-3 bg-slate-50 text-slate-600 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100">{t.view_report}</button>
+                                                <button onClick={() => onEdit(session)} className={`p-3 rounded-xl transition-all border ${
+                                                    isDoNow ? 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-600 hover:text-white' : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white'
+                                                }`} title={t.edit_btn}>
+                                                    <PenTool size={16} />
+                                                </button>
+                                                <button onClick={() => onRelaunch(session)} className="flex-1 lg:flex-none px-4 py-3 bg-emerald-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95">
+                                                    <RotateCcw size={14}/> {t.relaunch_btn}
+                                                </button>
                                             </div>
                                         </div>
-                                        
-                                        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                                            <button onClick={() => onViewReport(session)} className="flex-1 lg:flex-none px-5 py-4 bg-slate-50 text-slate-600 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100">{t.view_report}</button>
-                                            <button onClick={() => onEdit(session)} className={`p-4 rounded-2xl transition-all border group/edit ${
-                                                isDoNow ? 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-600 hover:text-white' : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white'
-                                            }`} title={t.edit_btn}>
-                                                <PenTool size={18} />
-                                            </button>
-                                            <button onClick={() => onRelaunch(session)} className="flex-1 lg:flex-none px-6 py-4 bg-emerald-900 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95">
-                                                <RotateCcw size={14}/> {t.relaunch_btn}
-                                            </button>
-                                            <button className="p-3 text-slate-200 hover:text-slate-900 transition-colors"><MoreHorizontal size={20}/></button>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </section>
-                )}
+                                    );
+                                })
+                            )}
+                        </div>
+                    )}
+
+                </main>
 
                 {/* --- START PRACTICE FLOATING ACTION BUTTON --- */}
+                {/* Repositioned to sit within the right column's bounds on large screens */}
                 {activeTab === 'curriculum' && (
-                    <div className={`fixed bottom-12 left-0 right-0 flex justify-center pointer-events-none z-30 transition-all duration-500 ${selectedTopic ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-                        <button onClick={onStart} className="px-14 py-6 rounded-[2.5rem] font-bold text-2xl shadow-[0_20px_50px_rgba(249,115,22,0.3)] bg-orange-500 text-white pointer-events-auto flex items-center gap-6 hover:scale-105 hover:bg-orange-600 active:scale-95 transition-all tracking-tight border-b-8 border-orange-700">
-                            {t.start_btn} <Play fill="currentColor" size={28} />
+                    <div className={`fixed bottom-8 right-8 flex justify-end pointer-events-none z-30 transition-all duration-500 ${selectedTopic ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+                        <button onClick={onStart} className="px-10 py-5 rounded-[2rem] font-bold text-xl shadow-[0_20px_50px_rgba(249,115,22,0.3)] bg-orange-500 text-white pointer-events-auto flex items-center gap-4 hover:scale-105 hover:bg-orange-600 active:scale-95 transition-all tracking-tight border-b-[6px] border-orange-700">
+                            {t.start_btn} <Play fill="currentColor" size={24} />
                         </button>
                     </div>
                 )}
 
-                {/* --- FOOTER --- */}
-                <footer className="mt-24 py-16 grid grid-cols-1 md:grid-cols-3 gap-12 px-4 relative z-10 border-t border-emerald-900/5">
-                    <div className="space-y-6 text-center md:text-left">
-                        <h4 className="text-[10px] font-bold text-emerald-800/30 uppercase tracking-[0.3em]">{t.resources}</h4>
-                        <div className="flex flex-col gap-4">
-                            <button onClick={onLgrOpen} className="flex items-center justify-center md:justify-start gap-3 text-slate-500 hover:text-emerald-700 font-bold text-sm transition-colors"><Book size={18} /> {t.lgr_link}</button>
-                        </div>
-                    </div>
-                    <div className="space-y-6 text-center md:text-left">
-                        <h4 className="text-[10px] font-bold text-emerald-800/30 uppercase tracking-[0.3em]">Support</h4>
-                        <div className="flex flex-col gap-4">
-                            <button onClick={onAboutOpen} className="flex items-center justify-center md:justify-start gap-3 text-slate-500 hover:text-emerald-700 font-bold text-sm transition-colors"><Info size={18} /> {t.about_link}</button>
-                        </div>
-                    </div>
-                    <div className="flex flex-col items-center md:items-end justify-center gap-1 opacity-20">
-                        <h2 className="text-3xl font-black text-emerald-900 tracking-tighter italic leading-none">{lang === 'sv' ? 'ANPASSA' : 'ADAPT'}</h2>
-                        <p className="text-[10px] text-emerald-800 font-bold uppercase tracking-widest">{t.brand_motto}</p>
-                    </div>
-                </footer>
-
-                {/* --- 4. UPDATE LOG MODAL OVERLAY --- */}
+                {/* --- UPDATE LOG MODAL OVERLAY --- */}
                 {showUpdateLog && (
                     <div className="fixed inset-0 z-[100] bg-emerald-950/40 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
                         <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95">
@@ -516,7 +518,7 @@ const Dashboard = ({
                                     <div className="p-3 bg-emerald-900 text-white rounded-2xl shadow-lg"><Newspaper size={24}/></div>
                                     <h2 className="text-2xl font-black uppercase tracking-tight italic">Ändringslogg</h2>
                                 </div>
-                                <button onClick={() => setShowUpdateLog(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"><X /></button>
+                                <button onClick={() => setShowUpdateLog(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors cursor-pointer"><X /></button>
                             </div>
                             
                             <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
@@ -546,7 +548,7 @@ const Dashboard = ({
 
             {/* BACKGROUND DECORATION */}
             <div className="absolute bottom-0 left-0 w-full leading-[0] pointer-events-none z-0 overflow-hidden">
-                <svg className="relative block w-full h-[400px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+                <svg className="relative block w-full h-[300px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
                     <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-emerald-100/40"></path>
                 </svg>
             </div>
