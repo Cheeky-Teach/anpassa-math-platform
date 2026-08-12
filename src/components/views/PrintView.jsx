@@ -27,33 +27,64 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
 };
 
+// Word problem / Story saver
 const compileAnchoredStory = (item, lang = 'sv') => {
     const rd = item.resolvedData?.renderData;
     
+    // Fallback: If no story index is selected, or if it isn't an intercepted problem, use server description
     if (item.selectedStoryIndex === undefined || item.selectedStoryIndex === null || !rd?.availableStories) {
         return rd?.description || item.name;
     }
 
+    // 1. Safe boundary lookup for the locked template
     const storyPackage = rd.availableStories[item.selectedStoryIndex];
     if (!storyPackage) return rd?.description || item.name;
     
     let template = storyPackage[lang === 'en' ? 'en' : 'sv'];
 
-    const category = Object.values(SKILL_BUCKETS).find(cat => cat.topics[item.topicId]);
-    const variation = category?.topics[item.topicId]?.variations?.find(v => v.key === item.variationKey);
-    
-    if (variation?.extractorPattern && rd.latex) {
-        const match = rd.latex.match(variation.extractorPattern);
-        if (match && match.groups) {
-            Object.entries(match.groups).forEach(([key, value]) => {
-                let cleanValue = String(value).replace(/[()]/g, '');
-                if (cleanValue.startsWith('-')) {
-                    cleanValue = `$${cleanValue}$`;
-                }
-                template = template.replace(new RegExp(`{${key}}`, 'g'), cleanValue);
-            });
+    // 2. Prioritize pre-extracted parameters passed down from the interceptor data payload
+    let params = rd.extractedParams;
+
+    // 3. Backward compatibility fallback: run regex if extractedParams is missing from history streams
+    if (!params) {
+        const category = Object.values(SKILL_BUCKETS).find(cat => cat.topics[item.topicId]);
+        const variation = category?.topics[item.topicId]?.variations?.find(v => v.key === item.variationKey);
+        
+        const sourceToken = rd.latex || rd.interceptorToken;
+        if (variation?.extractorPattern && sourceToken) {
+            const match = sourceToken.match(variation.extractorPattern);
+            if (match && match.groups) {
+                params = match.groups;
+            }
         }
     }
+
+    // 4. Perform placeholder variable substitution
+    if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+            const cleanValue = String(value).replace(/[()]/g, '');
+            // 🟢 FIXED: Safely escape the curly braces in the RegExp
+            template = template.replace(new RegExp(`\\{${key}\\}`, 'g'), cleanValue);
+        });
+    }
+
+    // 5. Append the exact uniform instructional directive suffix corresponding to the current variation key context
+    if (item.variationKey === 'apply_factor_inc' || item.variationKey === 'apply_factor_dec') {
+        template += lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.";
+    } else if (item.variationKey === 'find_original_inc' || item.variationKey === 'find_original_dec') {
+        template += lang === 'en' ? " Calculate the original value." : " Beräkna det ursprungliga värdet.";
+    } else if (item.variationKey === 'sequential_factors') {
+        template += lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.";
+    } else if (item.topicId === 'equations' || item.topicId === 'equations_word') {
+        if (item.resolvedData?.metadata?.difficulty === 5) {
+            template += lang === 'en' ? " Write the equation that describes this situation." : " Teckna ekvationen som beskriver situationen.";
+        } else {
+            template += lang === 'en' ? " Calculate the value of x." : " Beräkna värdet på x.";
+        }
+    } else if (item.topicId === 'expressions') {
+        template += lang === 'en' ? " Write and simplify the algebraic expression." : " Skriv och förenkla uttrycket.";
+    }
+
     return template;
 };
 

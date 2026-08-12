@@ -46,7 +46,7 @@ export default function VisualRenderer({ data, width, height, isWordProblem }) {
         const geom = data.geometry;
         
         if (geom.type === 'transversal') return <TransversalVisual data={geom} />;
-        if (geom.type === 'composite') return <CompositeVisual data={geom} />;
+
         if (geom.type === 'angle') return <AngleVisual data={geom} />;
         
         const volumeTypes = ['cuboid', 'cylinder', 'cone', 'sphere', 'hemisphere', 'pyramid', 'triangular_prism', 'silo', 'ice_cream', 'volume'];

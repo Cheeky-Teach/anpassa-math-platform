@@ -373,22 +373,6 @@ export const SKILL_BUCKETS = {
           },
           { key: 'fluency_transform_match', name: { sv: 'Matcha uttryck', en: 'Match expressions' }, desc: { sv: 'Olika skrivsätt', en: 'Different notations' } },
           { 
-            key: 'mult_same_sign', 
-            name: { sv: 'Mult: Samma tecken', en: 'Mult: Same signs' }, 
-            desc: { sv: 'Minus * Minus = Plus', en: 'Minus * Minus = Plus' },
-            tags: ['word_problem_ready'],
-            contextType: 'neg_multiplication',
-            extractorPattern: /^(?<valA>\(-?\d+\)|-?\d+)\s*·\s*(?<valB>\(-?\d+\)|-?\d+)$/
-          },
-          { 
-            key: 'mult_diff_sign', 
-            name: { sv: 'Mult: Olika tecken', en: 'Mult: Different signs' }, 
-            desc: { sv: 'Minus * Plus = Minus', en: 'Minus * Plus = Minus' },
-            tags: ['word_problem_ready'],
-            contextType: 'neg_multiplication',
-            extractorPattern: /^(?<valA>\(-?\d+\)|-?\d+)\s*·\s*(?<valB>\(-?\d+\)|-?\d+)$/
-          },
-          { 
             key: 'mult_chain', 
             name: { sv: 'Mult: Kedja', en: 'Mult: Chain' }, 
             desc: { sv: 'Jämnt/Udda antal minus', en: 'Even/Odd number of minuses' },
