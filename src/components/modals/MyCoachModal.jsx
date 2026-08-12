@@ -30,7 +30,7 @@ const CoachMathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content select-text ${className}`} />;
 };
 
-// CORE GRAPHICAL VISUAL SWITCHBOARD ROUTER
+// FIXED SWITCHBOARD ROUTER
 const renderCoachVisual = (rd) => {
     if (!rd) return null;
     if (rd.graph) return <GraphCanvas data={rd.graph} />;
@@ -51,7 +51,7 @@ const renderCoachVisual = (rd) => {
     }
     if (rd.geometry && ['cylinder', 'cuboid', 'sphere', 'cone', 'pyramid', 'triangular_prism', 'silo', 'ice_cream'].includes(rd.geometry.type)) {
         return (
-            <div style={{ width: '160px', height: '140px', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ width: '220px', height: '180px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <VolumeVisualization data={rd.geometry} />
             </div>
         );
@@ -61,7 +61,9 @@ const renderCoachVisual = (rd) => {
     if (rd.similarity || rd.geometry?.type === 'similarity') return <SimilarityCompare data={rd.similarity || rd.geometry} />;
     if (rd.compareArea || rd.geometry?.type === 'compare_area') return <CompareShapesArea data={rd.compareArea || rd.geometry} />;
     if (rd.tree || rd.geometry?.type === 'pathway') return <ProbabilityTree data={rd.tree || rd.geometry} />;
-    if (rd.geometry) return <GeometryVisual data={rd.geometry} width={160} height={140} />;
+    
+    // 🟢 CHANGED: Increased default width & height from 160x140 to 240x200
+    if (rd.geometry) return <GeometryVisual data={rd.geometry} width={240} height={200} />;
     return null;
 };
 
@@ -205,11 +207,11 @@ export default function MyCoachModal({
 
                             {/* STICKY GEOMETRIC DIAGRAM AT THE BASE HEAD OF THE WHITEBOARD CHALKBOARD */}
                             {rd && (rd.graph || rd.geometry || rd.volume || rd.pattern || rd.probabilityTree || rd.probabilityMarbles || rd.probabilitySpinner || rd.scale || rd.similarity || rd.compareShapesArea || rd.frequencyTable || rd.percentGrid || rd.angles) && (
-                                <div className="bg-white border border-slate-200/60 shadow-sm p-6 rounded-2xl flex justify-center items-center max-w-xs mx-auto shrink-0 mb-2 relative overflow-hidden animate-in zoom-in-95 duration-200">
-                                    <div className="scale-90 origin-center max-h-[140px] flex items-center justify-center">
+                                <div className="bg-white border border-slate-200/60 shadow-sm p-4 pt-6 rounded-2xl flex justify-center items-center max-w-sm mx-auto shrink-0 mb-2 relative overflow-visible animate-in zoom-in-95 duration-200">
+                                    <div className="w-full flex items-center justify-center overflow-visible">
                                         {renderCoachVisual(rd)}
                                     </div>
-                                    <div className="absolute top-1 left-3 text-[8px] font-black text-slate-300 uppercase tracking-widest">
+                                    <div className="absolute top-1.5 left-3 text-[8px] font-black text-slate-300 uppercase tracking-widest">
                                         {lang === 'sv' ? "Figur" : "Diagram"}
                                     </div>
                                 </div>

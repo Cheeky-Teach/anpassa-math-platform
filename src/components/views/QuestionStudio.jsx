@@ -543,7 +543,8 @@ export default function QuestionStudio({
   })
   .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
 
-  // COMPACT INITIAL QUESTION STUDIO VIEW REPLACEMENT
+
+    // 🟢 FULL-WIDTH STARTUP SCREEN WITH EXPANDED TITLE COLUMN
     if (!setupMode) {
         return (
             <div className="flex-1 bg-[#f9fbf7] flex flex-col p-6 overflow-y-auto relative custom-scrollbar">
@@ -554,19 +555,20 @@ export default function QuestionStudio({
                 <X size={16}/> {t.btn_close}
             </button>
             
-            <div className="max-w-5xl w-full mx-auto space-y-6 relative z-10">
-                {/* Upper Mode Pickers (Compressed) */}
+            {/* 🟢 CHANGED: Replaced max-w-5xl with w-full px-4 sm:px-8 to fill browser width */}
+            <div className="w-full px-4 sm:px-8 mx-auto space-y-6 relative z-10">
+                {/* Upper Mode Pickers */}
                 <div className="text-center">
                     <h2 className="text-3xl font-black text-emerald-900 tracking-tighter uppercase italic mb-4">{t.studio}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-w-5xl mx-auto">
                         <button 
                             onClick={() => { setSetupMode('donow'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); }} 
                             className="group p-5 bg-white border-2 border-slate-100 rounded-[2rem] hover:border-indigo-600 transition-all text-left shadow-xs hover:shadow-md active:scale-[0.98] cursor-pointer flex items-center gap-5"
                         >
                             <Grid3X3 size={28} className="text-indigo-600 shrink-0" />
                             <div>
-                            <h3 className="text-xl font-black text-slate-800 uppercase leading-none mb-1">{t.donow_title}</h3>
-                            <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest">Digital Grid för tavlan</p>
+                            <h3 className="text-2xl font-black text-slate-800 uppercase leading-none mb-1">{t.donow_title}</h3>
+                            <p className="text-slate-400 font-bold uppercase text-[12px] tracking-widest">För tavlan</p>
                             </div>
                         </button>
 
@@ -576,38 +578,38 @@ export default function QuestionStudio({
                         >
                             <FileText size={28} className="text-emerald-600 shrink-0" />
                             <div>
-                            <h3 className="text-xl font-black text-slate-800 uppercase leading-none mb-1">{t.worksheet_title}</h3>
-                            <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest">Klassiska pappersblad</p>
+                            <h3 className="text-2xl font-black text-slate-800 uppercase leading-none mb-1">{t.worksheet_title}</h3>
+                            <p className="text-slate-400 font-bold uppercase text-[12px] tracking-widest">Klassiska pappersblad</p>
                             </div>
                         </button>
                     </div>
                 </div>
 
-                {/* Streamlined Archive Library Card Element Container (Compressed) */}
-                <div className="bg-white rounded-[2rem] shadow-lg border border-emerald-100 overflow-hidden flex flex-col min-h-[450px]">
+                {/* Streamlined Archive Library Card Container */}
+                <div className="bg-white rounded-[2rem] shadow-lg border border-emerald-100 overflow-hidden flex flex-col min-h-[450px] w-full">
                     {/* Tier 1: Primary Scope Tabs */}
                     <div className="bg-slate-900 px-6 pt-2 flex justify-between items-center">
                         <div className="flex gap-1">
                             <button 
                                 onClick={() => setLibraryTab('private')} 
-                                className={`px-5 py-2 rounded-t-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'private' ? 'bg-[#f9fbf7] text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                                className={`px-5 py-2 rounded-t-lg text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'private' ? 'bg-[#f9fbf7] text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-white'}`}
                             >
                                 {t.tab_mine}
                             </button>
                             <button 
                                 onClick={() => setLibraryTab('school')} 
-                                className={`px-5 py-2 rounded-t-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'school' ? 'bg-[#f9fbf7] text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                                className={`px-5 py-2 rounded-t-lg text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'school' ? 'bg-[#f9fbf7] text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-white'}`}
                             >
                                 {t.tab_school}
                             </button>
                             <button 
                                 onClick={() => setLibraryTab('public')} 
-                                className={`px-5 py-2 rounded-t-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'public' ? 'bg-[#f9fbf7] text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                                className={`px-5 py-2 rounded-t-lg text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'public' ? 'bg-[#f9fbf7] text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-white'}`}
                             >
                                 {t.tab_global}
                             </button>
                         </div>
-                        <span className="text-[9px] font-black tracking-widest uppercase text-slate-500 italic mr-2">
+                        <span className="text-[12px] font-black tracking-widest uppercase text-slate-500 italic mr-2">
                             {t.library_title}
                         </span>
                     </div>
@@ -616,28 +618,28 @@ export default function QuestionStudio({
                     <div className="px-5 py-3 border-b border-emerald-100 flex flex-col lg:flex-row justify-between items-center gap-3 bg-slate-50/70">
                         {/* Left Side: Type Sub-Filters */}
                         <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto py-0.5">
-                            <span className="text-[8px] font-black uppercase tracking-wider text-slate-400 mr-1 select-none">
+                            <span className="text-[12px] font-black uppercase tracking-wider text-slate-400 mr-1 select-none">
                                 {lang === 'sv' ? "Typ:" : "Type:"}
                             </span>
                             <div className="flex gap-1 p-0.5 bg-slate-200/60 rounded-lg border border-slate-300/40 shadow-inner">
                                 <button 
                                     onClick={() => setFilterDocType('all')}
-                                    className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all cursor-pointer ${filterDocType === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                                    className={`px-3 py-1 rounded-md text-[12px] font-black uppercase transition-all cursor-pointer ${filterDocType === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
                                 >
                                     {lang === 'sv' ? "Visa Alla" : "Show Both"}
                                 </button>
                                 <button 
                                     onClick={() => setFilterDocType('worksheet')}
-                                    className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${filterDocType === 'worksheet' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                                    className={`px-3 py-1 rounded-md text-[12px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${filterDocType === 'worksheet' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
                                 >
                                     <FileText size={10} />
                                     {lang === 'sv' ? "Arbetsblad" : "Worksheets"}
                                 </button>
                                 <button 
                                     onClick={() => setFilterDocType('donow')}
-                                    className={`px-3 py-1 rounded-md text-[9px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${filterDocType === 'donow' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                                    className={`px-3 py-1 rounded-md text-[12px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${filterDocType === 'donow' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
                                 >
-                                    <Grid3X3 size={10} />
+                                    <Grid3X3 size={12} />
                                     {lang === 'sv' ? "Do Now Grids" : "Grids"}
                                 </button>
                             </div>
@@ -645,12 +647,12 @@ export default function QuestionStudio({
                         
                         {/* Right Side: Title Search & Topic Filters */}
                         <div className="flex flex-col sm:flex-row gap-2 items-center w-full lg:w-auto justify-end">
-                            <div className="relative w-full sm:w-40 group">
+                            <div className="relative w-full sm:w-64 group">
                                 <Search className="absolute left-2.5 top-2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={13} />
                                 <input 
                                     type="text" 
                                     placeholder={lang === 'sv' ? "Sök titel..." : "Search title..."} 
-                                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-emerald-100 focus:border-indigo-500 rounded-lg text-xs font-bold outline-none transition-all shadow-xs" 
+                                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-emerald-100 focus:border-indigo-500 rounded-lg text-s font-bold outline-none transition-all shadow-s" 
                                     value={searchTerm} 
                                     onChange={(e) => setSearchTerm(e.target.value)} 
                                 />
@@ -674,55 +676,55 @@ export default function QuestionStudio({
                         </div>
                     </div>
 
-                    {/* Content Table Layout Area (Compressed Table Rows) */}
-                    <div className="flex-1 overflow-x-auto">
+                    {/* Content Table Layout Area */}
+                    <div className="flex-1 overflow-x-auto w-full">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-emerald-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                                    <th className="px-5 py-3">Titel</th>
-                                    <th className="px-5 py-3">Innehåll</th>
-                                    <th className="px-5 py-3 text-center">Uppgifter</th>
-                                    <th className="px-5 py-3 text-center">Senast ändrad</th>
-                                    <th className="px-5 py-3 text-center">Åtgärder</th>
+                                    {/* 🟢 CHANGED: Allocated w-2/5 to Title and w-1/4 to Content */}
+                                    <th className="px-6 py-3 w-2/5">Titel</th>
+                                    <th className="px-6 py-3 w-1/4">Innehåll</th>
+                                    <th className="px-6 py-3 text-center w-24">Uppgifter</th>
+                                    <th className="px-6 py-3 text-center w-36">Senast ändrad</th>
+                                    <th className="px-6 py-3 text-center w-48">Åtgärder</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-emerald-50/50">
                                 {filteredLibrary.map(sheet => (
                                     <tr key={sheet.id} className="hover:bg-indigo-50/30 transition-colors group">
-                                        <td className="px-5 py-2.5 font-bold text-slate-700 text-xs">{sheet.title}</td>
-                                        <td className="px-5 py-2.5">
+                                        <td className="px-6 py-3 font-bold text-slate-700 text-m truncate max-w-0" title={sheet.title}>
+                                            {sheet.title}
+                                        </td>
+                                        <td className="px-6 py-3">
                                             <div className="flex flex-wrap gap-1">
-                                                {sheet.auto_topics?.slice(0, 2).map(tag => (
-                                                    <span key={tag} className="text-[7px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{tag}</span>
+                                                {sheet.auto_topics?.slice(0, 3).map(tag => (
+                                                    <span key={tag} className="text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{tag}</span>
                                                 ))}
-                                                {sheet.auto_topics?.length > 2 && (
-                                                    <span className="text-[7px] font-black text-slate-300">+{sheet.auto_topics.length - 2}</span>
+                                                {sheet.auto_topics?.length > 3 && (
+                                                    <span className="text-[10px] font-black text-slate-300">+{sheet.auto_topics.length - 3}</span>
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-5 py-2.5 text-center font-bold text-slate-400 text-xs">{sheet.packet?.length || 0}</td>
-                                        <td className="px-5 py-2.5 text-center font-medium text-slate-400 text-[11px]">{new Date(sheet.updated_at).toLocaleDateString()}</td>
-                                        <td className="px-5 py-2.5 text-right">
+                                        <td className="px-6 py-3 text-center font-bold text-slate-400 text-xs">{sheet.packet?.length || 0}</td>
+                                        <td className="px-6 py-3 text-center font-medium text-slate-400 text-[11px]">{new Date(sheet.updated_at).toLocaleDateString()}</td>
+                                        <td className="px-6 py-3 text-right">
                                             <div className="flex justify-end gap-1.5 items-center">
                                                 <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors"><Maximize2 size={15}/></button>
                                                 {libraryTab === 'private' ? (
                                                     <>
-                                                        {/* OPEN BUTTON */}
-                                                        <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors cursor-pointer">{t.load_btn}</button>
+                                                        <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors cursor-pointer">{t.load_btn}</button>
                                                         
-                                                        {/* PRESENT DIRECTLY FROM LIBRARY BUTTON */}
                                                         <button 
                                                             onClick={() => { loadSheet(sheet); setShowPresentation(true); }} 
-                                                            className="bg-amber-500 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-amber-600 shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
+                                                            className="bg-amber-500 text-white px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-amber-600 shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
                                                         >
                                                             <Monitor size={12} /> {t.present}
                                                         </button>
 
-                                                        {/* DELETE BUTTON */}
                                                         <button onClick={(e) => deleteSheet(e, sheet.id)} className="p-1.5 text-slate-800 hover:text-rose-500 opacity-40 group-hover:opacity-100 transition-all cursor-pointer"><Trash2 size={15}/></button>
                                                     </>
                                                 ) : (
-                                                    <button onClick={() => handleClone(sheet.id)} className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-1 cursor-pointer"><Copy size={12}/> {t.clone_btn}</button>
+                                                    <button onClick={() => handleClone(sheet.id)} className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-1 cursor-pointer"><Copy size={12}/> {t.clone_btn}</button>
                                                 )}
                                             </div>
                                         </td>
