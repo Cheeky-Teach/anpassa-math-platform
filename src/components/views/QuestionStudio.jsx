@@ -38,11 +38,19 @@ const MathDisplay = ({ content, className = "" }) => {
 
 // Word problem / Story saver
 const compileAnchoredStory = (item, lang = 'sv') => {
-    const rd = item.resolvedData?.renderData;
+    // Safely look inside renderData, or fallback to the root object
+    const rd = item.resolvedData?.renderData || item.resolvedData;
     
     // Fallback: If no story index is selected, or if it isn't an intercepted problem, use server description
     if (item.selectedStoryIndex === undefined || item.selectedStoryIndex === null || !rd?.availableStories) {
-        return rd?.description || item.name;
+        const desc = rd?.description;
+        const finalDesc = typeof desc === 'object' && desc !== null ? desc[lang] : desc;
+        
+        if (rd?.latex) {
+            return finalDesc ? `${finalDesc} $${rd.latex}$` : `$${rd.latex}$`;
+        }
+        
+        return finalDesc || item.name;
     }
 
     // 1. Safe boundary lookup for the locked template
@@ -1240,14 +1248,26 @@ export default function QuestionStudio({
                                 : 'bg-white border-slate-200 hover:shadow-md hover:border-slate-300 cursor-grab active:cursor-grabbing'
                             }`}
                     >
-                        <div className="flex items-center gap-2 min-w-0">
-                            <GripVertical size={12} className="text-slate-800 shrink-0 group-hover:text-slate-400 transition-colors" />
-                            <div className="min-w-0">
+                        {/* 🟢 FIXED: Changed to items-start and added flex-1 w-full so the text wraps and clamps properly */}
+                        <div className="flex items-start gap-2 min-w-0 flex-1 w-full">
+                            <GripVertical size={12} className="text-slate-800 shrink-0 group-hover:text-slate-400 transition-colors mt-1" />
+                            <div className="min-w-0 flex-1">
+                                {/* 1. Header Row: Number, Mode Indicator, and Topic Title */}
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className="text-[14px] font-black text-slate-900">#{idx + 1}</span>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-slate-200'}`} />
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-slate-200'}`} />
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">
+                                        {item.name}
+                                    </span>
                                 </div>
-                                    <div className="text-[12px] font-bold text-slate-700 truncate pr-4 uppercase">{item.name}</div>
+                                
+                                {/* 2. Content Row: The actual question text, clamped to 2 lines */}
+                                <div className="text-[11px] font-bold text-slate-700 leading-tight pr-2">
+                                    <MathDisplay 
+                                        content={compileAnchoredStory(item, lang)} 
+                                        className="!whitespace-normal line-clamp-2" 
+                                    />
+                                </div>
                             </div>
                         </div>
 
