@@ -601,7 +601,8 @@ export class GeometryGenerator {
               ]
             : [
                 { key: 'combined_l_shape', type: 'calculate' },
-                { key: 'combined_rect_tri', type: 'calculate' }
+                { key: 'combined_rect_tri', type: 'calculate' },
+                { key: 'combined_house', type: 'calculate' }
               ];
               
         const v = variationKey || this.getVariation(pool, options);
@@ -686,7 +687,7 @@ export class GeometryGenerator {
             ];
         } 
         // C. Handle House Configuration
-        else if (v === 'area_house') {
+        else if (v === 'area_house' || v === 'combined_house') {
             const rw = MathUtils.randomInt(40, 60), rh = MathUtils.randomInt(30, 45), hr = MathUtils.randomInt(20, 30);
             rawW = rw;
             rawH = rh;

@@ -84,7 +84,6 @@ export const GeometryVisual = ({ data }) => {
     // Safely reads from either the legacy root object or the clean modern nested geometry configuration
     const shapeType = data.type;
     if (['rectangle', 'square', 'parallelogram', 'triangle', 'circle', 'semicircle', 'quarter_circle', 'composite'].includes(shapeType)) {
-        // Trace data configurations safely to unpack whichever container layer is populated by the generator
         const activeDims = data.dims || data;
         const activeLabels = data.labels || (data.dims && data.dims.labels);
 
@@ -92,7 +91,8 @@ export const GeometryVisual = ({ data }) => {
             <svg width="300" height="250" viewBox="0 0 300 250" className="my-2 w-full max-w-[300px] mx-auto">
                 <RenderShape 
                     type={shapeType} 
-                    dims={activeDims} 
+                    subtype={data.subtype || activeDims.subtype}
+                    dims={activeDims}
                     labels={activeLabels} 
                     areaText={data.areaText} 
                 />

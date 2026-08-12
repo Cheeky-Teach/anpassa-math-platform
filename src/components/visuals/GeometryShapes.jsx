@@ -36,7 +36,8 @@ export const GeometryVisual = ({ data }) => {
                 >
                     <RenderShape 
                         type={data.type} 
-                        dims={data.dims} 
+                        subtype={data.subtype || (data.dims && data.dims.subtype)} // 🟢 ADDED: Pass subtype down
+                        dims={data.dims || data}
                         labels={data.labels} 
                         areaText={data.areaText} 
                     />
@@ -46,12 +47,14 @@ export const GeometryVisual = ({ data }) => {
     );
 };
 
-export const RenderShape = ({ type, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
+export const RenderShape = ({ type, subtype, dims, labels, areaText, offsetX = 0, offsetY = 0, scale = 1 }) => {
     const cx = 125 + offsetX;
     const cy = 125 + offsetY;
     const safeDims = dims || {};
     const lab = labels || {};
 
+    const activeSubtype = subtype || safeDims.subtype || (safeDims.dims && safeDims.dims.subtype) || type;
+    
     // Determine the true total dimensions for scaling
     let rawW = safeDims.width || safeDims.w || 10;
     let rawH = safeDims.height || safeDims.h || 10;
