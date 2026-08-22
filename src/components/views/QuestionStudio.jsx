@@ -37,7 +37,7 @@ const MathDisplay = ({ content, className = "" }) => {
 };
 
 // Word problem / Story saver
-const compileAnchoredStory = (item, lang = 'sv') => {
+const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
     // Safely look inside renderData, or fallback to the root object
     const rd = item.resolvedData?.renderData || item.resolvedData;
     
@@ -46,7 +46,8 @@ const compileAnchoredStory = (item, lang = 'sv') => {
         const desc = rd?.description;
         const finalDesc = typeof desc === 'object' && desc !== null ? desc[lang] : desc;
         
-        if (rd?.latex) {
+        // 🟢 FIXED: Only append the LaTeX math if includeLatex is explicitly true!
+        if (includeLatex && rd?.latex) {
             return finalDesc ? `${finalDesc} $${rd.latex}$` : `$${rd.latex}$`;
         }
         
@@ -1266,7 +1267,7 @@ export default function QuestionStudio({
                                 {/* 2. Content Row: The actual question text, clamped to 2 lines */}
                                 <div className="text-[11px] font-bold text-slate-700 leading-tight pr-2">
                                     <MathDisplay 
-                                        content={compileAnchoredStory(item, lang)} 
+                                        content={compileAnchoredStory(item, lang, true)} 
                                         className="!whitespace-normal line-clamp-2" 
                                     />
                                 </div>
