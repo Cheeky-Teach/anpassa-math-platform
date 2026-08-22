@@ -84,6 +84,9 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
     // CREATE A LIVE PACKET FOR THE SESSION
     const [livePacket, setLivePacket] = useState(packet || []);
+
+    // BACKGROUND TOGGLE STATE
+    const [bgType, setBgType] = useState('blank');
     
     // SUMMONER STATE
     const [isSummonerOpen, setIsSummonerOpen] = useState(false);
@@ -214,11 +217,10 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     // --- TEXT SIZE CLASS MAPPER ---
     const getTextSizeClass = (type) => {
         const textMap = {
-            // 🟢 FIXED: Added dynamic visual scale factors and margins tied to the user's zoom settings
-            'base': { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px]' },
-            'lg': { desc: 'text-xl', latex: 'text-2xl', clue: 'text-xl', headerText: 'text-xl', visualClass: 'scale-125 max-h-[240px] my-3' },
-            'xl': { desc: 'text-2xl', latex: 'text-3xl', clue: 'text-2xl', headerText: 'text-2xl', visualClass: 'scale-150 max-h-[320px] my-6' },
-            '2xl': { desc: 'text-3xl', latex: 'text-4xl', clue: 'text-3xl', headerText: 'text-3xl', visualClass: 'scale-[1.85] max-h-[420px] my-12' }
+            'base': { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px] mb-2' },
+            'lg': { desc: 'text-xl', latex: 'text-2xl', clue: 'text-xl', headerText: 'text-xl', visualClass: 'scale-125 max-h-[240px] mb-6' },
+            'xl': { desc: 'text-2xl', latex: 'text-3xl', clue: 'text-2xl', headerText: 'text-2xl', visualClass: 'scale-150 max-h-[320px] mb-12' },
+            '2xl': { desc: 'text-3xl', latex: 'text-4xl', clue: 'text-3xl', headerText: 'text-3xl', visualClass: 'scale-[1.85] max-h-[420px] mb-20' }
         };
         return textMap[textSize] || textMap['base'];
     };
@@ -380,7 +382,15 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 </div>
 
                 {/* COLUMN 2: WORKSPACE CANVAS INTERACTION SHELF */}
-                <main className="relative bg-[#f9fbf7] overflow-hidden h-full w-full flex flex-col">
+                {/* Apply dynamic grid background */}
+                <main 
+                    className={`relative overflow-hidden h-full w-full flex flex-col transition-colors duration-300 ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
+                    style={bgType === 'grid' ? {
+                        backgroundImage: 'linear-gradient(#e2e8f0 2px, transparent 2px), linear-gradient(90deg, #e2e8f0 2px, transparent 2px)',
+                        backgroundSize: '40px 40px',
+                        backgroundPosition: '-1px -1px'
+                    } : {}}
+                >
                     
                     <div className="flex-1 overflow-y-auto custom-scrollbar pt-16 pb-[480px] px-8 flex flex-col justify-start items-center relative z-10">
                         
@@ -515,7 +525,12 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                         {...coachProps} // 🚀 Forwards all playback control parameters seamlessly
                                     />
                                 ) : activeIds.length === 0 ? (
-                                    <div className="text-slate-300 font-black uppercase text-center mt-32 tracking-widest text-sm w-full">Välj uppgifter till vänster för att presentera</div>
+                                    <div className="absolute top-5 left-5 flex items-center gap-2 text-slate-400/50 bg-white/50 px-3 py-1.5 rounded-lg border border-slate-200/50 pointer-events-none select-none z-0">
+                                        <ChevronLeft size={14} className="animate-pulse" />
+                                        <span className="font-black uppercase tracking-widest text-[9px]">
+                                            {lang === 'sv' ? "Välj uppgift för att presentera" : "Select question to present"}
+                                        </span>
+                                    </div>
                                 ) : (
                                     /* 🟢 RENDER STANDARD LANE PROJECTIONS WHEN NOT IN COACH MODE */
                                     activeIds.map((id, index) => {
@@ -551,7 +566,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
                                                 {/* Standard Question Text Mode */}
                                                 {q.showText !== false && (
-                                                    <div className={`font-bold text-slate-800 text-center leading-relaxed max-w-prose w-full break-words px-4 mb-6 ${sizeClasses.desc}`}>
+                                                    <div className={`font-bold text-slate-800 text-center leading-relaxed max-w-prose w-full break-words px-4 mb-1 ${sizeClasses.desc}`}>
                                                         <MathDisplay content={compileAnchoredStory(q, lang)} />
                                                     </div>
                                                 )}
@@ -595,7 +610,11 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                         )}
                     </div>
                     {/* THE ISOLATED DRAWING ENGINE INJECTED HERE */}
-                    <InteractiveCanvas lang={lang} />
+                    <InteractiveCanvas 
+                        lang={lang} 
+                        bgType={bgType} 
+                        onToggleBg={() => setBgType(prev => prev === 'blank' ? 'grid' : 'blank')} 
+                    />
                 </main>
 
                 {/* COLUMN 3: SOLUTIONS & COMPACT ANSWER KEY DRAWER PANEL */}

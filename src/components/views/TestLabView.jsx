@@ -260,7 +260,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         const type = rd?.answerType || rd?.inputType || item?.resolvedData?.inputType || 'text';
         switch (type) { 
             case 'mixed_fraction': 
-                return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><FractionInput value={inputValue} onChange={setinputValue} allowMixed={true} autoFocus={!isMobile} /></div></div>;
+                return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><FractionInput value={inputValue} onChange={setInputValue} allowMixed={true} autoFocus={!isMobile} /></div></div>;
             case 'fraction': 
                 return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><FractionInput value={inputValue} onChange={setInputValue} allowMixed={false} autoFocus={!isMobile} /></div></div>;
             case 'exponent': 

@@ -180,11 +180,12 @@ const DoNowCard = ({ index, q, showAnswer, onToggleAnswer, onRefreshNumbers, onR
                     )}
                 </div>
 
+                {/* 🟢 FIXED: Replaced hardcoded 'text-sm' with dynamic '${textSizeClass}' */}
                 {data?.options && data.options.length > 0 && (
                     <div className={`grid grid-cols-2 gap-3 w-full shrink-0 ${isFocused ? 'mt-6 max-w-4xl pb-4' : 'mt-2'}`}>
                         {data.options.map((opt, idx) => (
                             <div key={idx} className={`bg-white border-2 border-slate-100 rounded-xl flex items-center gap-3 shadow-sm
-                                ${isFocused ? 'p-6 text-2xl' : 'p-2 text-sm font-bold text-left text-slate-700'}`}>
+                                ${isFocused ? 'p-6 text-4xl' : `p-2 ${textSizeClass} font-bold text-left text-slate-700`}`}>
                                 <span className="w-6 h-6 shrink-0 bg-slate-100 text-slate-400 rounded-lg flex items-center justify-center text-[10px] font-black">
                                     {String.fromCharCode(65 + idx)}
                                 </span>

@@ -6,12 +6,12 @@ import {
     LineChart, Ruler, Compass, Table, Clock,
     Undo2, Redo2, RefreshCw, Share2, Triangle,
     Cone, Cylinder, Pyramid, Orbit, Home,
-    FileText, ChevronDown, ChevronUp 
+    FileText, ChevronDown, ChevronUp, Grid3X3
 } from 'lucide-react';
 
 const Toolbar = ({ 
     lang = 'sv', activeTool, setActiveTool, color, setColor, 
-    onClear, onUndo, onRedo, canUndo, canRedo 
+    onClear, onUndo, onRedo, canUndo, canRedo, bgType, onToggleBg 
 }) => {
     const [showColors, setShowColors] = useState(false);
     const [show3DMenu, setShow3DMenu] = useState(false);
@@ -145,6 +145,14 @@ const Toolbar = ({
                 <ToolButton id="color_picker" category="system" icon={Palette} onClick={() => { setShowColors(!showColors); setShow3DMenu(false); }}>
                     <div className="w-5 h-5 rounded-full shadow-inner border border-black/10" style={{ backgroundColor: color }} />
                 </ToolButton>
+                {/* Background Toggle Button */}
+                <ToolButton 
+                    id="toggle_bg" 
+                    icon={bgType === 'grid' ? Grid3X3 : Square} 
+                    category="system" 
+                    onClick={onToggleBg} 
+                    label={lang === 'sv' ? "Ändra bakgrund" : "Toggle Background"}
+                />
                 <ToolButton id="clear_all" icon={Trash2} category="system" onClick={onClear} />
             </div>
         </div>

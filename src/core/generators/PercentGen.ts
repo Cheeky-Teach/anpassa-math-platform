@@ -169,7 +169,8 @@ export class PercentGen {
                 description: lang === 'sv' ? `Vilket decimaltal motsvarar ${p}%?` : `Which decimal corresponds to ${p}%?`,
                 answerType: 'numeric'
             },
-            token: this.toBase64(dec), variationKey: 'equivalence', type: 'calculate',
+            // Encode the raw mathematical value (with a dot) instead of the comma-string
+            token: this.toBase64((p / 100).toString()), variationKey: 'equivalence', type: 'calculate',
             clues: [
                 { 
                     text: lang === 'sv' ? "Procent betyder hundradelar. Vi skriver om procentsatsen som ett bråk delat med 100." : "Percent means hundredths. We rewrite the percentage as a fraction divided by 100.", 
@@ -482,7 +483,8 @@ export class PercentGen {
                     description: lang === 'sv' ? `Vilken förändringsfaktor motsvarar en ${isInc ? 'ökning' : 'minskning'} med ${p}%?` : `Which change factor corresponds to an ${isInc ? 'increase' : 'decrease'} of ${p}%?`,
                     answerType: 'numeric'
                 },
-                token: this.toBase64(ansStr), variationKey: v, type: 'calculate',
+                // 🟢 FIXED: Encode the raw mathematical value (with a dot) instead of the comma-string
+                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
                     { 
                         text: lang === 'sv' ? "Vi utgår alltid från 100%, vilket betyder hela ursprungsvärdet (1,00 i decimalform)." : "We always start with 100%, which represents the full original value (1.00 in decimal form).", 
