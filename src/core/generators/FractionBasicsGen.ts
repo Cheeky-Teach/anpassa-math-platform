@@ -194,11 +194,16 @@ export class FractionBasicsGen {
 
         if (v === 'part_compare') {
             const d1 = MathUtils.randomChoice([2, 3, 4]), d2 = MathUtils.randomChoice([6, 8, 10]);
-            const correct = `1/${d1}`;
+            
+            // 🟢 FIXED: Wrapped the correct answer in $$ so it matches the option string perfectly
+            const correct = `$$\\frac{1}{${d1}}$$`; 
+            
             return {
                 renderData: {
                     description: lang === 'sv' ? "Vilket bråk ger dig den STÖRSTA tårtbiten?" : "Which fraction gives you the LARGEST slice of cake?",
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([`\\frac{1}{${d1}}`, `\\frac{1}{${d2}}`, `\\frac{1}{${d2 + 2}}`])
+                    answerType: 'multiple_choice', 
+                    // 🟢 FIXED: Added $$ around the wrong options so MathDisplay catches all of them
+                    options: MathUtils.shuffle([correct, `$$\\frac{1}{${d2}}$$`, `$$\\frac{1}{${d2 + 2}}$$`])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [

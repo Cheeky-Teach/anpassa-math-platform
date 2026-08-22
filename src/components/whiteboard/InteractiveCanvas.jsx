@@ -3,7 +3,7 @@ import Toolbar from './Toolbar';
 import { Trash2, Play, RefreshCw, BarChart2, List, Hash } from 'lucide-react';
 import 'mathlive';
 
-export default function InteractiveCanvas({ lang = 'sv' }) {
+export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
     // --- 0. TRANSLATIONS ---
     const t = {
         sv: {
@@ -849,7 +849,9 @@ export default function InteractiveCanvas({ lang = 'sv' }) {
                 setColor={setColor} 
                 onClear={() => setElements([])} 
                 canUndo={false} 
-                canRedo={false} 
+                canRedo={false}
+                bgType={bgType}
+                onToggleBg={onToggleBg}
             />
         </>
     );
