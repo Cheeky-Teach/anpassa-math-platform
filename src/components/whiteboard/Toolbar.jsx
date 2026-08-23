@@ -6,7 +6,7 @@ import {
     LineChart, Ruler, Compass, Table, Clock,
     Undo2, Redo2, RefreshCw, Share2, Triangle,
     Cone, Cylinder, Pyramid, Orbit, Home,
-    FileText, ChevronDown, ChevronUp, Grid3X3
+    FileText, ChevronDown, ChevronUp, Grid3X3, Calculator
 } from 'lucide-react';
 
 const Toolbar = ({ 
@@ -139,6 +139,7 @@ const Toolbar = ({
                 <ToolButton id="ruler" icon={Ruler} category="analysis" />
                 <ToolButton id="timer" icon={Timer} category="analysis" />
                 <ToolButton id="clock" icon={Clock} category="analysis" />
+                <ToolButton id="calculator" icon={Calculator} category="analysis" />
                 <Divider />
 
                 {/* Color & Clear */}

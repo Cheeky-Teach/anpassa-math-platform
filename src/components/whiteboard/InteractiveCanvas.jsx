@@ -51,6 +51,43 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         return () => clearInterval(interval);
     }, []);
 
+    // 🟢 NEW: Auto-Spawn Widgets (Calculator & Timer) without requiring a canvas click
+    useEffect(() => {
+        if (activeTool === 'calculator' || activeTool === 'timer') {
+            const newId = Date.now().toString();
+            
+            // Shared base properties
+            let newEl = { 
+                id: newId, 
+                type: activeTool, 
+                x: 300, y: 150, // Default center-ish coordinates
+                stroke: color, 
+                rotation: 0, 
+                opacity: 1 
+            };
+
+            // Tool-specific properties & dimensions
+            if (activeTool === 'calculator') {
+                newEl.width = 280; 
+                newEl.height = 440;
+                newEl.expression = ""; 
+                newEl.result = ""; 
+                newEl.ans = ""; 
+                newEl.calcMode = "LTR";
+            } else if (activeTool === 'timer') {
+                newEl.width = 360;  // 🟢 Increased from 200 to 360 for projector visibility
+                newEl.height = 360; // 🟢 Ensures it stays a perfect circle
+                newEl.duration = 60; 
+                newEl.timeLeft = 60; 
+                newEl.isRunning = false;
+            }
+
+            setElements(prev => [...prev, newEl]);
+            setSelectedId(newId);
+            setActiveTool('select'); // Instantly return to pointer tool
+        }
+    }, [activeTool, color]);
+
     // GLOBAL BACKGROUND DESELECTION CONTROLLER
     useEffect(() => {
         const handleGlobalDeselect = (e) => {
@@ -155,7 +192,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         }
         
         const r = el.width / 2;
-        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart', 'math', 'dice', 'richText'];
+        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart', 'math', 'dice', 'richText', 'calculator'];
         if (bounds.some(b => el.type.includes(b))) return x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height;
         if (el.type.includes('circle') || ['spinner', 'node', 'protractor', 'clock', 'timer'].includes(el.type)) return Math.sqrt((x - (el.x + r))**2 + (y - (el.y + r))**2) <= r;
         if (el.type === 'line') return Math.abs((el.y2-el.y)*x - (el.x2-el.x)*y + el.x2*el.y - el.y2*el.x) / Math.sqrt((el.y2-el.y)**2 + (el.x2-el.x)**2) < 15;
@@ -196,6 +233,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             else if (activeTool === 'dice') { newEl.sides = "6"; newEl.diceData = [{ value: 1, color: '#ffffff' }]; }
             else if (activeTool === 'math') { newEl.label = ""; newEl.fontSize = 32; }
             else if (activeTool === 'richText') { newEl.content = "<p>Skriv här...</p>"; }
+            else if (activeTool === 'calculator') { newEl.expression = ""; newEl.result = ""; newEl.ans = ""; }
 
             setElements([...elements, newEl]);
             setSelectedId(newId);
@@ -273,8 +311,8 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                 const newGridSize = Math.max(20, Math.min(100, Math.max(raw.x - el.x, (el.y + el.height) - raw.y) / 10));
                 el.gridSize = newGridSize;
             } else if (interactionMode === 'resizing') {
-                el.width = Math.max(50, raw.x - el.x);
-                el.height = (el.shape3D === 'cube') ? el.width : Math.max(50, raw.y - el.y);
+                    el.width = Math.max(50, raw.x - el.x);
+                    el.height = (el.shape3D === 'cube') ? el.width : (el.type === 'calculator' ? el.width * (440/280) : Math.max(50, raw.y - el.y));
             } else if (interactionMode === 'drawing') {
                 if (el.type === 'path') el.points.push({ x: raw.x, y: raw.y });
                 else if (el.type === 'line') { el.x2 = x; el.y2 = y; }
@@ -303,7 +341,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             return el.width > 5 || el.height > 5;
         }));
 
-        const discrete = ['rect', 'circle', 'triangle', 'coord', 'shapes_3d', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'richText'];
+        const discrete = ['rect', 'circle', 'triangle', 'coord', 'shapes_3d', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'richText', 'calculator'];
         if (discrete.includes(activeTool) || activeTool.startsWith('3d_')) setActiveTool('select');
     };
 
@@ -785,6 +823,183 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                         )}
                     </g>
                     {showUI && !isEditing && renderHandles(el)}
+                </React.Fragment>
+            );
+        }
+
+        // Interactive Calculator
+        if (el.type === 'calculator') {
+            const currentMode = el.calcMode || 'LTR';
+        
+            const calcButtons = [
+                '(', ')', '^', '√',
+                'AC', 'DEL', '%', '÷',
+                '7', '8', '9', '×',
+                '4', '5', '6', '-',
+                '1', '2', '3', '+',
+                '0', '.', 'π', '='
+            ];
+        
+            const handleCalcClick = (btn) => {
+                setElements(prev => prev.map(o => {
+                    if (o.id !== el.id) return o;
+                    let expr = o.expression || "";
+                    let res = o.result || "";
+                    let ans = o.ans || "";
+        
+                    if (btn === 'AC') { 
+                        expr = ""; res = ""; 
+                    } else if (btn === 'DEL') { 
+                        expr = expr.slice(0, -1); res = ""; 
+                    } else if (btn === '=') {
+                        try {
+                            let parsed = expr
+                                .replace(/×/g, '*')
+                                .replace(/÷/g, '/')
+                                .replace(/π/g, Math.PI.toString())
+                                .replace(/(\d+(\.\d+)?)%/g, (_, num) => (parseFloat(num)/100).toString());
+        
+                            let evaluated;
+                            
+                            if (currentMode === 'PEMDAS') {
+                                // STANDARD JS MATH EVALUATION
+                                let pemdasStr = parsed
+                                    .replace(/\^/g, '**')
+                                    .replace(/√\(([^)]+)\)/g, 'Math.sqrt($1)')
+                                    .replace(/√(\d+(\.\d+)?)/g, 'Math.sqrt($1)');
+                                evaluated = new Function(`return ${pemdasStr}`)();
+                            } else {
+                                // CUSTOM LEFT-TO-RIGHT (LTR) EVALUATION ENGINE
+                                const solveLTR = (equation) => {
+                                    let str = equation;
+                                    // 1. Solve roots with parens
+                                    while (str.includes('√(')) {
+                                        str = str.replace(/√\(([^()]+)\)/g, (_, inner) => Math.sqrt(solveLTR(inner)).toString());
+                                    }
+                                    // 2. Solve parens recursively
+                                    while (str.includes('(')) {
+                                        str = str.replace(/\(([^()]+)\)/g, (_, inner) => solveLTR(inner).toString());
+                                    }
+                                    // 3. Solve raw roots
+                                    str = str.replace(/√(\d+(?:\.\d+)?)/g, (_, num) => Math.sqrt(parseFloat(num)).toString());
+                                    
+                                    // 4. Tokenize: Separate ALL operators from numbers
+                                    let tokens = str.match(/\d+(?:\.\d+)?|[+\-*/^]/g);
+                                    if (!tokens) return parseFloat(str) || 0;
+                                    
+                                    let result = 0;
+                                    let startIndex = 0;
+                            
+                                    // Handle leading negative sign (e.g., "-5 + 3")
+                                    if (tokens[0] === '-') {
+                                        result = -parseFloat(tokens[1] || 0);
+                                        startIndex = 2;
+                                    } else {
+                                        result = parseFloat(tokens[0] || 0);
+                                        startIndex = 1;
+                                    }
+                                    
+                                    for (let i = startIndex; i < tokens.length; i += 2) {
+                                        let op = tokens[i];
+                                        
+                                        // Handle negative numbers written after an operator (e.g., "5 * -3")
+                                        let nextNumOffset = 1;
+                                        let isNegative = false;
+                                        if (tokens[i+1] === '-') {
+                                            isNegative = true;
+                                            nextNumOffset = 2;
+                                        }
+                                        
+                                        let nextNum = parseFloat(tokens[i + nextNumOffset] || 0);
+                                        if (isNegative) nextNum = -nextNum;
+                            
+                                        if (op === '+') result += nextNum;
+                                        else if (op === '-') result -= nextNum;
+                                        else if (op === '*') result *= nextNum;
+                                        else if (op === '/') result /= nextNum;
+                                        else if (op === '^') result = Math.pow(result, nextNum);
+                                        
+                                        if (isNegative) i++; // Skip the extra minus sign token in the loop
+                                    }
+                                    return result;
+                                };
+                                evaluated = solveLTR(parsed);
+                            }
+                            
+                            // Safe Rounding for floating point errors
+                            const final = Math.round(evaluated * 10000000) / 10000000;
+                            res = final.toString();
+                            ans = final.toString();
+                        } catch (e) {
+                            res = "Error";
+                        }
+                    } else {
+                        if (res !== "" && res !== "Error" && !['+', '-', '×', '÷', '^', '%'].includes(btn)) {
+                            expr = btn; 
+                        } else if (res !== "" && res !== "Error") {
+                            expr = res + btn; 
+                        } else {
+                            expr += btn;
+                        }
+                        res = "";
+                    }
+                    return { ...o, expression: expr, result: res, ans: ans };
+                }));
+            };
+        
+            return (
+                <React.Fragment key={el.id}>
+                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
+                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="#1e293b" rx={24 * (el.width / 280)} stroke="#334155" strokeWidth="6" className="shadow-2xl" />
+                        
+                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height}>
+                            <div 
+                                style={{ width: '280px', height: '440px', transform: `scale(${el.width / 280})`, transformOrigin: 'top left' }} 
+                                className="flex flex-col p-5 pointer-events-auto"
+                            >
+                                {/* 🟢 NEW: Hardware Header with Mode Toggle */}
+                                <div className="flex justify-between items-center mb-2 px-1 ui-ignore" onPointerDown={e => e.stopPropagation()}>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Anpassa</span>
+                                    <button 
+                                        onClick={() => setElements(prev => prev.map(o => o.id === el.id ? { ...o, calcMode: currentMode === 'LTR' ? 'PEMDAS' : 'LTR' } : o))}
+                                        className={`text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-inner transition-colors cursor-pointer
+                                            ${currentMode === 'LTR' ? 'bg-amber-500/20 text-amber-400' : 'bg-indigo-500/20 text-indigo-400'}`}
+                                        title={lang === 'sv' ? "Ändra beräkningsordning" : "Toggle Calculation Order"}
+                                    >
+                                        {currentMode === 'LTR' ? 'L->R MODE' : 'PEMDAS MODE'}
+                                    </button>
+                                </div>
+        
+                                <div className="bg-white rounded-xl h-32 mb-5 p-4 flex flex-col justify-between items-end border-4 border-slate-200 shadow-inner font-mono overflow-hidden shrink-0">
+                                    <div className="text-slate-500 font-bold text-3xl tracking-widest w-full text-right overflow-hidden break-all">
+                                        {el.expression}
+                                    </div>
+                                    <div className="text-slate-900 text-5xl font-black truncate w-full text-right mt-1">
+                                        {el.result}
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-4 gap-2.5 flex-1 ui-ignore" onPointerDown={e => e.stopPropagation()}>
+                                    {calcButtons.map(btn => {
+                                        let bg = "bg-slate-200 hover:bg-slate-300 text-slate-800 border-b-4 border-slate-300 active:border-b-0 active:translate-y-1";
+                                        if (btn === 'AC' || btn === 'DEL') bg = "bg-rose-500 hover:bg-rose-600 text-white border-b-4 border-rose-700 active:border-b-0 active:translate-y-1";
+                                        if (btn === '=') bg = "bg-indigo-500 hover:bg-indigo-600 text-white border-b-4 border-indigo-700 active:border-b-0 active:translate-y-1";
+                                        if (['÷', '×', '-', '+'].includes(btn)) bg = "bg-amber-400 hover:bg-amber-500 text-slate-900 border-b-4 border-amber-600 active:border-b-0 active:translate-y-1";
+                                        
+                                        return (
+                                            <button 
+                                                key={btn} onClick={() => handleCalcClick(btn)}
+                                                className={`${bg} rounded-xl font-black text-lg shadow-sm flex items-center justify-center transition-all cursor-pointer`}
+                                            >
+                                                {btn}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </foreignObject>
+                    </g>
+                    {showUI && renderHandles(el)}
                 </React.Fragment>
             );
         }
