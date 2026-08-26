@@ -50,7 +50,7 @@ export class FractionBasicsGen {
     }
 
     private toBase64(str: string): string {
-        return Buffer.from(str).toString('base64');
+        return Buffer.from(str).toString('base64'); 
     }
 
     private gcd(a: number, b: number): number {
@@ -86,11 +86,12 @@ export class FractionBasicsGen {
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Titta på rutan. Vilket påstående stämmer INTE?" : "Look at the grid. Which statement is NOT correct?",
-                    answerType: 'multiple_choice',
-                    options: MathUtils.shuffle([`${p}\\%`, `\\frac{${p / div}}{${100 / div}}`, sLie]),
-                    geometry: { type: 'percent_grid', total: 100, colored: p }
-                },
+                        description: lang === 'sv' ? "Titta på rutan. Vilket påstående stämmer INTE?" : "Look at the grid. Which statement is NOT correct?",
+                        answerType: 'multiple_choice',
+                        // 🟢 FIXED: Wrapped the percentage and fraction in $$
+                        options: MathUtils.shuffle([`$$${p}\\%$$`, `$$\\frac{${p / div}}{${100 / div}}$$`, sLie]),
+                        geometry: { type: 'percent_grid', total: 100, colored: p }
+                    },
                 token: this.toBase64(sLie), variationKey: v, type: 'concept',
                 clues: [
                     { 
@@ -295,7 +296,8 @@ export class FractionBasicsGen {
             const correct = `${w} och ${w + 1}`;
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Mellan vilka två hela siffror ligger bråket \\frac{${impN}}{${d}}?` : `Between which two whole numbers does the fraction \\frac{${impN}}{${d}} lie?`,
+                    // 🟢 FIXED: Added $$ around the fraction in the description strings
+                    description: lang === 'sv' ? `Mellan vilka två hela siffror ligger bråket $\\frac{${impN}}{${d}}$?` : `Between which two whole numbers does the fraction $$\\frac{${impN}}{${d}}$$ lie?`,
                     answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${w - 1} och ${w}`, `${w + 1} och ${w + 2}`])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
@@ -393,26 +395,59 @@ export class FractionBasicsGen {
         ];
         const v = variationKey || this.getVariation(pool, options);
 
-        let n = MathUtils.randomInt(1, 5), d = MathUtils.randomInt(n + 1, 10);
+        let n = MathUtils.randomInt(1, 8), d = MathUtils.randomInt(n + 1, 10);
         while (this.gcd(n, d) !== 1) { n = MathUtils.randomInt(1, 5); d = MathUtils.randomInt(n + 1, 10); }
 
         if (v === 'simplify_concept') {
-            const opts = lang === 'sv' ? ["Storleken förblir exakt densamma", "Värdet blir mycket större", "Värdet blir mycket mindre"] : ["The value remains exactly the same", "The value becomes larger", "The value becomes smaller"];
+            // Generate a random multiplier for the equivalent fraction
+            const factor = MathUtils.randomInt(2, 7);
+            
+            // 1. Correct: Multiply top and bottom
+            const correctOpt = `$$\\frac{${n * factor}}{${d * factor}}$$`;
+            // 2. Trap: Add to top and bottom (common misconception)
+            const wrongAdd = `$$\\frac{${n + factor}}{${d + factor}}$$`;
+            // 3. Trap: Multiply top only
+            const wrongNum = `$$\\frac{${n * factor}}{${d}}$$`;
+
             return {
-                renderData: { description: lang === 'sv' ? "Vad händer med ett bråks verkliga värde om vi förlänger det?" : "What happens to a fraction's actual value if we extend it?", answerType: 'multiple_choice', options: MathUtils.shuffle(opts) },
-                token: this.toBase64(opts[0]), variationKey: v, type: 'concept',
+                renderData: { 
+                    description: lang === 'sv' 
+                        ? `Vilket av följande bråk är värt exakt lika mycket som $\\frac{${n}}{${d}}$?` 
+                        : `Which of the following fractions is worth exactly the same as $\\frac{${n}}{${d}}$?`, 
+                    answerType: 'multiple_choice', 
+                    options: MathUtils.shuffle([correctOpt, wrongAdd, wrongNum]) 
+                },
+                token: this.toBase64(correctOpt), 
+                variationKey: v, 
+                type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Att förlänga betyder bara att vi skär tårtan i FLER bitar, men varje bit blir samtidigt på motsvarande sätt MINDRE." : "Extending simply means cutting the pie into MORE pieces, but each slice simultaneously becomes correspondingly SMALLER.", 
-                        latex: `\\frac{1}{2} = \\frac{1 \\cdot 2}{2 \\cdot 2} = \\frac{2}{4}` 
+                        text: lang === 'sv' 
+                            ? "För att hitta ett bråk med exakt samma värde (ett likvärdigt bråk) måste vi förlänga det. Det betyder att vi multiplicerar både täljaren och nämnaren med samma dolda tal." 
+                            : "To find a fraction with exactly the same value, we must extend it. This means multiplying both the numerator and denominator by the same hidden number.", 
+                        latex: `\\frac{${n} \\cdot ?}{${d} \\cdot ?}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Eftersom vi har fler bitar men mindre storlek, ändras aldrig mängden mat på tallriken. Värdet är ständigt detsamma!" : "Since we have more pieces but a smaller size, the total amount of food on the plate never changes. The value remains exactly identical!", 
-                        latex: `\\frac{1}{2} = \\mathbf{\\frac{2}{4}}` 
+                        text: lang === 'sv' 
+                            ? `Låt oss prova att multiplicera både uppe och nere med ${factor}:` 
+                            : `Let's try multiplying both top and bottom by ${factor}:`, 
+                        latex: `\\frac{${n} \\cdot \\mathbf{${factor}}}{${d} \\cdot \\mathbf{${factor}}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Svar: ${opts[0]}` : `Answer: ${opts[0]}`, 
-                        latex: `\\text{${opts[0]}}` 
+                        text: lang === 'sv' 
+                            ? `Räknar vi ut det får vi det likvärdiga bråket:` 
+                            : `Calculating this gives us the equivalent fraction:`, 
+                        latex: `\\mathbf{\\frac{${n * factor}}{${d * factor}}}` 
+                    },
+                    { 
+                        text: lang === 'sv' 
+                            ? "Fällor att undvika: Att addera (plussa på) siffror uppe och nere förändrar bråkets värde helt och hållet, och att bara ändra ena sidan fungerar inte heller!" 
+                            : "Traps to avoid: Adding numbers to the top and bottom completely changes the fraction's value, and only changing one side doesn't work either!", 
+                        latex: `` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar:` : `Answer:`, 
+                        latex: correctOpt
                     }
                 ]
             };

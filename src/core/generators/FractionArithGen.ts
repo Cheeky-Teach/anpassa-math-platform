@@ -104,8 +104,8 @@ export class FractionArithGen {
             const n2 = MathUtils.randomInt(1, d - 2);
             const sum = n1 + n2;
             
-            const correctEq = `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d}}`;
-            const wrongEq = `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d*2}}`; // The Lie
+            const correctEq = `$$\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d}}$$`;
+            const wrongEq = `$$\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d*2}}$$`; // The Lie
             
             return {
                 renderData: {
