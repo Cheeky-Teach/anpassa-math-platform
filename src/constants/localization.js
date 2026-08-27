@@ -194,7 +194,8 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Svårare Addition/Subtraktion", en: "Harder Add/Sub" },
         3: { sv: "Multiplikation", en: "Multiplication" },
         4: { sv: "Division", en: "Division" },
-        5: { sv: "Blandade Uppgifter", en: "Mixed Problems" }
+        5: { sv: "Blandade + - x /", en: "Mixed: + - x /" },
+        6: { sv: "Prioriteringsregler: Negativa tal", en: "Order of Ops with Negative Numbers" }
     },
     ten_powers: {
         1: { sv: "Mult/Div med 10, 100, 1000", en: "Mult/Div by 10, 100, 1000" },

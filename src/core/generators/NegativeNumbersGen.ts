@@ -16,6 +16,7 @@ export class NegativeNumbersGen {
             case 3: questionData = this.level3_Multiplication(lang, undefined, options); break;
             case 4: questionData = this.level4_Division(lang, undefined, options); break;
             case 5: questionData = this.level5_Mixed(lang, options); break;
+            case 6: questionData = this.level6_OrderOfOperations(lang, undefined, options); break;
             default: questionData = this.level1_Foundations(lang, undefined, options); break;
         }
 
@@ -57,6 +58,9 @@ export class NegativeNumbersGen {
             case 'div_diff_sign':
             case 'div_check_logic':
                 return this.level4_Division(lang, key);
+            case 'neg_order_frac_basic':
+            case 'neg_order_frac_paren':
+                return this.level6_OrderOfOperations(lang, key);
             default:
                 return this.generate(1, lang);
         }
@@ -487,6 +491,105 @@ export class NegativeNumbersGen {
                 { 
                     text: lang === 'sv' ? `Eftersom vi delar två tal med ${isSame ? 'lika' : 'olika'} tecken, blir kvoten ${isSame ? 'positiv' : 'negativ'}: ${ans}.` : `Since we divide two numbers with ${isSame ? 'the same' : 'different'} signs, the quotient is ${isSame ? 'positive' : 'negative'}: ${ans}.`, 
                     latex: `\\text{Resultat} = \\mathbf{${ans}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    latex: `${ans}` 
+                }
+            ]
+        };
+    }
+
+    // --- LEVEL 6: ORDER OF OPERATIONS WITH NEGATIVES ---
+    private level6_OrderOfOperations(lang: string, variationKey?: string, options: any = {}): any {
+        const pool: {key: string, type: 'concept' | 'calculate'}[] = [
+            { key: 'neg_order_frac_basic', type: 'calculate' },
+            { key: 'neg_order_frac_paren', type: 'calculate' }
+        ];
+        const v = variationKey || this.getVariation(pool, options);
+
+        if (v === 'neg_order_frac_basic') {
+            // Structure: (a + b * c) / d
+            let d = 0; while (d === 0) d = MathUtils.randomInt(-6, 6);
+            let b = 0; while (b === 0) b = MathUtils.randomInt(-6, 6);
+            let c = 0; while (c === 0 || c === 1) c = MathUtils.randomInt(-6, 6);
+            
+            // Guarantee an integer answer by working backwards
+            let p = b * c;
+            let ans = 0; while (ans === 0) ans = MathUtils.randomInt(-6, 6);
+            let num = ans * d;
+            let a = num - p;
+
+            return {
+                renderData: { 
+                    latex: `\\frac{${a}  +  ${this.p(b)}  \\cdot  ${this.p(c)}}{${d}}`, 
+                    description: lang === 'sv' ? "Beräkna uttrycket." : "Evaluate the expression.", 
+                    answerType: 'numeric' 
+                },
+                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Täljaren (över bråkstrecket) fungerar som en stor parentes. Vi måste räkna ut den först." : "The numerator (above the fraction bar) acts as a large parenthesis. We must evaluate it first.", 
+                        latex: `\\text{Täljare: } ${a} + ${this.p(b)} \\cdot ${this.p(c)}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Prioriteringsreglerna säger att multiplikation görs före addition. Beräkna ${this.p(b)} · ${this.p(c)} först.` : `Order of operations states that multiplication is done before addition. Calculate ${this.p(b)} · ${this.p(c)} first.`, 
+                        latex: `${this.p(b)} \\cdot ${this.p(c)} = \\mathbf{${p}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Addera nu detta med starttalet i täljaren: ${a} + ${this.p(p)}.` : `Now add this to the starting number in the numerator: ${a} + ${this.p(p)}.`, 
+                        latex: `${a} + ${this.p(p)} = \\mathbf{${num}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Nu är täljaren färdig. Dividera den med nämnaren ${d} (och glöm inte teckenreglerna!).` : `The numerator is now complete. Divide it by the denominator ${d} (and don't forget the sign rules!).`, 
+                        latex: `\\frac{${num}}{${d}} = \\mathbf{${ans}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `${ans}` 
+                    }
+                ]
+            };
+        }
+
+        // neg_order_frac_paren
+        // Structure: (a * (b + c)) / d
+        let b = MathUtils.randomInt(-8, 8);
+        let c = MathUtils.randomInt(-8, 8);
+        let sum = b + c;
+        // Ensure the parenthesis doesn't evaluate to 0 to keep the division meaningful
+        while (sum === 0) {
+            c = MathUtils.randomInt(-8, 8);
+            sum = b + c;
+        }
+
+        let d = 0; while (d === 0) d = MathUtils.randomInt(-5, 5);
+        
+        // Guarantee an integer answer: let a be a multiple of d
+        let k = 0; while (k === 0) k = MathUtils.randomInt(-4, 4);
+        let a = k * d;
+        let num = a * sum;
+        let ans = num / d;
+
+        return {
+            renderData: { 
+                latex: `\\frac{${a} \\cdot (${b} + ${this.p(c)})}{${d}}`, 
+                description: lang === 'sv' ? "Beräkna uttrycket." : "Evaluate the expression.", 
+                answerType: 'numeric' 
+            },
+            token: this.toBase64(ans.toString()), variationKey: 'neg_order_frac_paren', type: 'calculate',
+            clues: [
+                { 
+                    text: lang === 'sv' ? "Börja med den innersta parentesen uppe i täljaren." : "Start with the innermost parenthesis up in the numerator.", 
+                    latex: `(${b} + ${this.p(c)}) = \\mathbf{${sum}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Multiplicera sedan parentesens värde med talet framför: ${a} · ${this.p(sum)}.` : `Then multiply the parenthesis's value by the number in front: ${a} · ${this.p(sum)}.`, 
+                    latex: `${a} \\cdot ${this.p(sum)} = \\mathbf{${num}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Till sist, dividera hela täljaren med nämnaren ${d}. Lika tecken ger plus, olika ger minus!` : `Finally, divide the entire numerator by the denominator ${d}. Same signs give plus, different give minus!`, 
+                    latex: `\\frac{${num}}{${d}} = \\mathbf{${ans}}` 
                 },
                 { 
                     text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 

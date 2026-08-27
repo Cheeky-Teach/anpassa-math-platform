@@ -420,6 +420,22 @@ export const SKILL_BUCKETS = {
             contextType: 'neg_division',
             extractorPattern: /\\frac\{(?<valA>-?\d+)\}\{(?<valB>-?\d+)\}/
           },
+          { 
+            key: 'neg_order_frac_basic', 
+            name: { sv: 'Prioritering: Bråk & Mult', en: 'Order: Fractions & Mult' }, 
+            desc: { sv: 'Räkna ut täljaren först (inkluderar multiplikation)', en: 'Calculate numerator first (includes multiplication)' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_order_ops',
+            extractorPattern: /\\frac\{(?<a>-?\d+)\s*\+\s*(?<b>-?\d+)\s*\\cdot\s*(?<c>-?\d+)\}\{(?<d>-?\d+)\}/
+          },
+          { 
+            key: 'neg_order_frac_paren', 
+            name: { sv: 'Prioritering: Bråk & Parentes', en: 'Order: Fractions & Parentheses' }, 
+            desc: { sv: 'Räkna ut parentesen i täljaren först', en: 'Calculate parentheses in numerator first' },
+            tags: ['word_problem_ready'],
+            contextType: 'neg_order_ops',
+            extractorPattern: /\\frac\{(?<a>-?\d+)\s*\\cdot\s*\((?<b>-?\d+)\s*\+\s*(?<c>-?\d+)\)\}\{(?<d>-?\d+)\}/
+          },
           { key: 'div_check_logic', name: { sv: 'Division: Kontroll', en: 'Division: Checking' }, desc: { sv: 'Använd multiplikation', en: 'Use multiplication' } }
         ]
       },
