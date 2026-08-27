@@ -309,37 +309,58 @@ export class NegativeNumbersGen {
         const v = variationKey || this.getVariation(pool, options);
 
         if (v === 'mult_chain') {
-            const f1 = MathUtils.randomInt(-3, 3) || 1;
-            const f2 = MathUtils.randomInt(-3, 3) || 1;
-            const f3 = MathUtils.randomInt(-3, 3) || 1;
-            const res1 = f1 * f2, res2 = res1 * f3;
-            const fullExpr = `${this.p(f1)} \\cdot ${this.p(f2)} \\cdot ${this.p(f3)}`;
+            // Randomly generate between 3 and 5 factors
+            const numFactors = MathUtils.randomInt(3, 5); 
+            const factors = [];
+            for (let i = 0; i < numFactors; i++) {
+                factors.push(MathUtils.randomInt(-5, 5) || 1); // || 1 prevents multiplying by 0
+            }
             
+            const fullExpr = factors.map(f => this.p(f)).join(' \\cdot ');
+            const finalAns = factors.reduce((acc, val) => acc * val, 1);
+            const res1 = factors[0] * factors[1];
+            
+            // Dynamically build the clues so they adapt to the chain's length
+            const clues = [
+                { 
+                    text: lang === 'sv' ? "Börja med de två första gångertalen längst fram på raden." : "Start with the first two multiplication factors at the front of the line.", 
+                    latex: `\\mathbf{${this.p(factors[0])} \\cdot ${this.p(factors[1])}} \\cdot ` + factors.slice(2).map(f => this.p(f)).join(' \\cdot ')
+                },
+                { 
+                    text: lang === 'sv' ? `Räkna ut första biten. Kom ihåg: Lika tecken ger plus, olika tecken ger minus! Det blir ${res1}.` : `Calculate that first piece. Remember: Same signs make a plus, different signs make a minus! It equals ${res1}.`, 
+                    latex: `\\mathbf{${res1}} \\cdot ` + factors.slice(2).map(f => this.p(f)).join(' \\cdot ')
+                }
+            ];
+
+            let currentRes = res1;
+            // Loop through any remaining factors and generate a clue for each step!
+            for (let i = 2; i < factors.length; i++) {
+                let nextRes = currentRes * factors[i];
+                let remaining = factors.slice(i + 1).map(f => this.p(f));
+                let remainingStr = remaining.length > 0 ? ' \\cdot ' + remaining.join(' \\cdot ') : '';
+                
+                clues.push({
+                    text: lang === 'sv' 
+                        ? `Multiplicera nu det uträknade numret med nästa bit på raden: ${currentRes} · ${this.p(factors[i])}.` 
+                        : `Now multiply that calculated number by the next factor on the line: ${currentRes} · ${this.p(factors[i])}.`,
+                    latex: `\\mathbf{${currentRes} \\cdot ${this.p(factors[i])}}${remainingStr} = \\mathbf{${nextRes}}${remainingStr}`
+                });
+                currentRes = nextRes;
+            }
+
+            clues.push({
+                text: lang === 'sv' ? `Svar: ${finalAns}` : `Answer: ${finalAns}`,
+                latex: `${finalAns}`
+            });
+
             return {
                 renderData: {
                     latex: fullExpr,
                     description: lang === 'sv' ? "Beräkna." : "Calculate.",
                     answerType: 'numeric'
                 },
-                token: this.toBase64(res2.toString()), variationKey: v, type: 'calculate',
-                clues: [
-                    { 
-                        text: lang === 'sv' ? "Börja med de två första gångertalen längst fram på raden." : "Start with the first two multiplication factors at the front of the line.", 
-                        latex: `\\mathbf{${this.p(f1)} \\cdot ${this.p(f2)}} \\cdot ${this.p(f3)}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Räkna ut första biten. Kom ihåg: Lika tecken ger plus, olika tecken ger minus! Det blir ${res1}.` : `Calculate that first piece. Remember: Same signs make a plus, different signs make a minus! It equals ${res1}.`, 
-                        latex: `\\mathbf{${res1}} \\cdot ${this.p(f3)}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Multiplicera nu det uträknade numret med den sista biten på raden: ${res1} · ${this.p(f3)}.` : `Now multiply that calculated number by the very last factor left on the line: ${res1} · ${this.p(f3)}.`, 
-                        latex: `\\mathbf{${res1} \\cdot ${this.p(f3)}} = \\mathbf{${res2}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Svar: ${res2}` : `Answer: ${res2}`, 
-                        latex: `${res2}` 
-                    }
-                ]
+                token: this.toBase64(finalAns.toString()), variationKey: v, type: 'calculate',
+                clues: clues
             };
         }
 
@@ -381,21 +402,45 @@ export class NegativeNumbersGen {
     // --- LEVEL 4: DIVISION ---
     private level4_Division(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
+            // Added div_same_sign to the pool to match skillBuckets.js
+            { key: 'div_same_sign', type: 'calculate' },
             { key: 'div_diff_sign', type: 'calculate' },
             { key: 'div_check_logic', type: 'concept' }
         ];
         const v = variationKey || this.getVariation(pool, options);
+        
         const bVal = MathUtils.randomInt(2, 8), qVal = MathUtils.randomInt(2, 8);
-        const a = bVal * qVal * -1; // Force negative numerator
-        const b = bVal; 
+        let a = bVal * qVal;
+        let b = bVal;
+
+        // Dynamic Sign Assignment Logic
+        const isSameSign = v === 'div_same_sign';
+        const isDiffSign = v === 'div_diff_sign';
+
+        if (isSameSign || (v === 'div_check_logic' && Math.random() > 0.5)) {
+            // Lika tecken (Same signs): 50% chance of both being positive, 50% chance both negative
+            if (Math.random() > 0.5) {
+                a = -a;
+                b = -b;
+            }
+        } else {
+            // Olika tecken (Different signs): 50% chance numerator is negative, 50% chance denominator is negative
+            if (Math.random() > 0.5) {
+                a = -a;
+            } else {
+                b = -b;
+            }
+        }
+
         const ans = a / b;
+        const isSame = (a < 0 && b < 0) || (a > 0 && b > 0);
 
         if (v === 'div_check_logic') {
-            const correct = `${this.p(ans)} · ${this.p(b)} = ${a}`;
+            const correct = `${this.p(ans)} \\cdot ${this.p(b)} = ${a}`;
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Vilken multiplikation bevisar att $\\frac{${a}}{${b}} = ${ans}$?` : `Which multiplication layout proves that $\\frac{${a}}{${b}} = ${ans}$?`,
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${ans} + ${b} = ${a}`, `${a} · ${b} = ${ans}`])
+                    description: lang === 'sv' ? `Vilken multiplikation bevisar att $\\frac{${a}}{${b}} = ${ans}$?` : `Which multiplication layout proves that $$\\frac{${a}}{${b}} = ${ans}$$?`,
+                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${ans} + ${b} = ${a}`, `${a} \\cdot ${b} = ${ans}`])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
@@ -412,11 +457,19 @@ export class NegativeNumbersGen {
                         latex: `\\mathbf{${correct}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}`, 
-                        latex: `\\text{${correct}}` 
+                        text: lang === 'sv' ? `Svar:` : `Answer:`, 
+                        latex: correct 
                     }
                 ]
             };
+        }
+
+        // Generate the visual representation for the signs in the clue
+        let signClueLatex = "";
+        if (isSame) {
+            signClueLatex = a < 0 ? `\\mathbf{\\frac{(-)}{(-)} \\rightarrow (+)}` : `\\mathbf{\\frac{(+)}{(+)} \\rightarrow (+)}`;
+        } else {
+            signClueLatex = a < 0 ? `\\mathbf{\\frac{(-)}{(+)} \\rightarrow (-)}` : `\\mathbf{\\frac{(+)}{(-)} \\rightarrow (-)}`;
         }
 
         return {
@@ -424,15 +477,15 @@ export class NegativeNumbersGen {
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? `Dela först siffrorna precis som vanligt utan att titta på minustecknet: ${Math.abs(a)} delat med ${b}.` : `First, divide the numbers as usual without looking at the minus sign: ${Math.abs(a)} divided by ${b}.`, 
-                    latex: `\\frac{${Math.abs(a)}}{${b}} = \\mathbf{${Math.abs(ans)}}` 
+                    text: lang === 'sv' ? `Dela först siffrorna precis som vanligt utan att titta på tecknen: ${Math.abs(a)} delat med ${Math.abs(b)}.` : `First, divide the numbers as usual without looking at the signs: ${Math.abs(a)} divided by ${Math.abs(b)}.`, 
+                    latex: `\\frac{${Math.abs(a)}}{${Math.abs(b)}} = \\mathbf{${Math.abs(ans)}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Kolla nu på tecknen. Precis som i multiplikation gäller regeln: Olika tecken ger alltid ett minussvar." : "Now check the signs. Just like in multiplication, the rule applies: Different signs always result in a minus answer.", 
-                    latex: `\\mathbf{\\frac{(-)}{(+)} \\rightarrow (-)}` 
+                    text: lang === 'sv' ? "Kolla nu på tecknen. Lika tecken ger alltid plus, och olika tecken ger alltid minus." : "Now check the signs. Same signs always result in a plus, and different signs always result in a minus.", 
+                    latex: signClueLatex
                 },
                 { 
-                    text: lang === 'sv' ? `Eftersom vi delar ett minustal med ett plustal (olika tecken), blir kvoten ett kallt minustal: ${ans}.` : `Since we divide a minus number by a plus number (different signs), the quotient results in a negative number: ${ans}.`, 
+                    text: lang === 'sv' ? `Eftersom vi delar två tal med ${isSame ? 'lika' : 'olika'} tecken, blir kvoten ${isSame ? 'positiv' : 'negativ'}: ${ans}.` : `Since we divide two numbers with ${isSame ? 'the same' : 'different'} signs, the quotient is ${isSame ? 'positive' : 'negative'}: ${ans}.`, 
                     latex: `\\text{Resultat} = \\mathbf{${ans}}` 
                 },
                 { 
