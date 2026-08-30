@@ -33,6 +33,8 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     
     const svgRef = useRef(null);
+    // Ref to hold the active drawing path for zero-latency rendering
+    const activePathRef = useRef(null);
 
     // --- 2. TIMERS & EFFECTS ---
     useEffect(() => {
@@ -132,6 +134,25 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
     }, [isDrawing, interactionMode, selectedId, dragOffset, activeTool]); 
 
     // --- 3. ENGINE HELPERS ---
+    // curve smoother for pen strokes
+    const getSmoothPathData = (points) => {
+        if (!points || points.length === 0) return '';
+        if (points.length === 1) return `M ${points[0].x} ${points[0].y} L ${points[0].x} ${points[0].y}`;
+        if (points.length === 2) return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+        
+        let d = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 1; i < points.length - 1; i++) {
+            // Find the midpoint between the current point and the next point
+            const xc = (points[i].x + points[i + 1].x) / 2;
+            const yc = (points[i].y + points[i + 1].y) / 2;
+            // Draw a quadratic bezier curve to that midpoint
+            d += ` Q ${points[i].x} ${points[i].y} ${xc} ${yc}`;
+        }
+        // Draw a straight line to the final resting point
+        d += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
+        return d;
+    };
+
     const getCoordinates = (e, shouldSnap = true) => {
         const svg = svgRef.current;
         if (!svg) return { x: 0, y: 0 };
@@ -269,7 +290,16 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         let newEl = { id: newId, type: activeTool, x: snap.x, y: snap.y, startX: snap.x, startY: snap.y, width: 0, height: 0, stroke: color, fill: 'none', strokeWidth: 4, opacity: 1, rotation: 0 };
         
         if (activeTool === 'pen' || activeTool === 'highlighter') { 
-            newEl.type = 'path'; newEl.points = [{ x, y }]; newEl.strokeWidth = activeTool === 'highlighter' ? 35 : 6; newEl.opacity = activeTool === 'highlighter' ? 0.4 : 1; 
+            // 🟢 FIXED: Initialize the activePathRef instead of adding to React state immediately
+            activePathRef.current = {
+                id: newId,
+                type: 'path',
+                points: [{ x: snap.x, y: snap.y }], // Use 'snap' coordinates here too for consistency
+                strokeWidth: activeTool === 'highlighter' ? 35 : 6,
+                opacity: activeTool === 'highlighter' ? 0.4 : 1,
+                stroke: color
+            };
+            return;
         } else if (activeTool === 'line') { newEl.x2 = snap.x; newEl.y2 = snap.y; }
         else if (activeTool === 'triangle') { newEl.triangleType = 'right'; }
         else if (activeTool === 'protractor') { newEl.width = 400; newEl.height = 200; }
@@ -285,6 +315,21 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         if (!isDrawing) return;
         const { x, y } = getCoordinates(e, !['pen', 'highlighter', 'select'].includes(activeTool));
         const raw = getCoordinates(e, false);
+
+        // Fast-path rendering intercepts the move BEFORE React state or selectedId checks!
+        if (interactionMode === 'drawing' && (activeTool === 'pen' || activeTool === 'highlighter')) {
+            if (activePathRef.current) {
+                activePathRef.current.points.push({ x: raw.x, y: raw.y });
+                // Force a direct DOM update for zero latency
+                const pathNode = svgRef.current?.querySelector(`#active-drawing-path`);
+                if (pathNode) {
+                    // Apply the smooth bezier curve function
+                    const d = getSmoothPathData(activePathRef.current.points);
+                    pathNode.setAttribute('d', d);
+                }
+            }
+            return; // Skip React state entirely!
+        }
 
         setElements(prev => {
             const updated = [...prev];
@@ -314,8 +359,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                     el.width = Math.max(50, raw.x - el.x);
                     el.height = (el.shape3D === 'cube') ? el.width : (el.type === 'calculator' ? el.width * (440/280) : Math.max(50, raw.y - el.y));
             } else if (interactionMode === 'drawing') {
-                if (el.type === 'path') el.points.push({ x: raw.x, y: raw.y });
-                else if (el.type === 'line') { el.x2 = x; el.y2 = y; }
+                if (el.type === 'line') { el.x2 = x; el.y2 = y; }
                 else if (['node', 'spinner'].includes(el.type)) {
                     const r = Math.sqrt((x - el.startX) ** 2 + (y - el.startY) ** 2);
                     el.width = r * 2; el.height = r * 2; el.x = el.startX - r; el.y = el.startY - r;
@@ -333,13 +377,22 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         if (e && e.target instanceof Element) try { e.target.releasePointerCapture(e.pointerId); } catch(err) {}
         if (!isDrawing) return; 
         setIsDrawing(false); setInteractionMode(null); 
-        
-        setElements(current => current.filter(el => {
-            if (el.type === 'path') return el.points.length > 2;
-            if (el.type === 'line') return Math.abs(el.x - el.x2) > 5 || Math.abs(el.y - el.y2) > 5;
-            if (['timer', 'clock', 'ruler', 'coord', 'richText'].includes(el.type)) return true;
-            return el.width > 5 || el.height > 5;
-        }));
+
+        // 🟢 FIXED: Capture the path object in a local variable before resetting the ref!
+        if ((activeTool === 'pen' || activeTool === 'highlighter') && activePathRef.current) {
+            const finalPath = activePathRef.current; // Save it to a standard variable first
+            if (finalPath.points.length > 2) {
+                setElements(prev => [...prev, finalPath]); // Safely pass the variable to React
+            }
+            activePathRef.current = null; // Now it is safe to reset the ref
+        } else {
+            setElements(current => current.filter(el => {
+                if (el.type === 'path') return el.points.length > 2;
+                if (el.type === 'line') return Math.abs(el.x - el.x2) > 5 || Math.abs(el.y - el.y2) > 5;
+                if (['timer', 'clock', 'ruler', 'coord', 'richText', 'calculator'].includes(el.type)) return true;
+                return el.width > 5 || el.height > 5;
+            }));
+        }
 
         const discrete = ['rect', 'circle', 'triangle', 'coord', 'shapes_3d', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'richText', 'calculator'];
         if (discrete.includes(activeTool) || activeTool.startsWith('3d_')) setActiveTool('select');
@@ -450,8 +503,9 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
 
         // Path (Pen/Highlighter)
         if (el.type === 'path') {
-            const d = el.points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-            return <path key={el.id} data-id={el.id} d={d} stroke={el.stroke} strokeWidth={el.strokeWidth} fill="none" strokeLinecap="round" opacity={el.opacity} className="pointer-events-auto cursor-move" />;
+            // Apply smooth curve math and seamless line joins
+            const d = getSmoothPathData(el.points);
+            return <path key={el.id} data-id={el.id} d={d} stroke={el.stroke} strokeWidth={el.strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={el.opacity} className="pointer-events-auto cursor-move" />;
         }
 
         // Line
@@ -718,8 +772,8 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                         {dice.map((d, i) => {
                             const dx = el.x + (i % cols) * cellSize, dy = el.y + Math.floor(i / cols) * cellSize, dSize = cellSize * 0.85;
                             return (
-                                <g key={i} onPointerDown={(e) => { setElements(p => p.map(o => o.id === el.id ? {...o, diceData: o.diceData.map((dd, idx) => idx === i ? { ...dd, color: color } : dd)} : o)); }}>
-                                    <rect x={dx + cellSize * 0.075} y={dy + cellSize * 0.075} width={dSize} height={dSize} fill={d.color || 'white'} stroke="black" strokeWidth="3" rx={dSize * 0.2} className={el.isRolling ? "animate-pulse" : "cursor-pointer"} />
+                                <g key={i}>
+                                    <rect x={dx + cellSize * 0.075} y={dy + cellSize * 0.075} width={dSize} height={dSize} fill="white" stroke="black" strokeWidth="3" rx={dSize * 0.2} className={el.isRolling ? "animate-pulse" : ""} />
                                     <text x={dx + cellSize/2} y={dy + cellSize/2 + (dSize*0.15)} textAnchor="middle" fontSize={dSize * 0.5} fontWeight="900" fill="black" className="select-none pointer-events-none">{d.value}</text>
                                 </g>
                             );
@@ -1053,6 +1107,19 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                 onPointerDown={handlePointerDown}
             >
                 {elements.map(renderElement)}
+
+                {/* Directly render the temporary path being drawn */}
+                {isDrawing && (activeTool === 'pen' || activeTool === 'highlighter') && activePathRef.current && (
+                    <path 
+                        id="active-drawing-path"
+                        stroke={activePathRef.current.stroke} 
+                        strokeWidth={activePathRef.current.strokeWidth} 
+                        fill="none" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        opacity={activePathRef.current.opacity} 
+                    />
+                )}
             </svg>
 
             {/*THE HORIZONTAL TOOLBAR */}
