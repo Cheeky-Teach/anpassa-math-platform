@@ -27,6 +27,7 @@ import { PatternsGen } from '../src/core/generators/PatternsGen.js';
 import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js';
 import { UnitConversionGen } from '../src/core/generators/UnitConversionGen.js';
 import { AlgebraicGeometryGenerator } from '../src/core/generators/AlgebraicGeometryGenerator.js';
+import { PlaceValueGen } from '../src/core/generators/PlaceValueGen.js';
 
 interface VercelRequest extends IncomingMessage {
     query: Record<string, string | string[]>;
@@ -54,6 +55,7 @@ class LegacyFractionsGen {
 const TopicMap: Record<string, any> = {
   'basic_arithmetic': BasicArithmeticGen,
   'arithmetic': BasicArithmeticGen,
+  'place_value': PlaceValueGen,
   'algebraic_geometry': AlgebraicGeometryGenerator,
   'negatives': NegativeNumbersGen,
   'negative': NegativeNumbersGen,

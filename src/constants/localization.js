@@ -6,7 +6,8 @@ export const CATEGORIES = {
         levels: 9,
         topics: [
             { id: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
-            { id: 'order_of_operations', label: { sv: "Prioriteringsregler", en: "Order of Operations" } }, // Ny generator tillagd här
+            { id: 'place_value', label: { sv: "Positionssystemet & Avrundning", en: "Place Value & Rounding" } }, 
+            { id: 'order_of_operations', label: { sv: "Prioriteringsregler", en: "Order of Operations" } },
             { id: 'fraction_basics', label: { sv: "Bråk: Grunder", en: "Fractions: Basics" } }, 
             { id: 'fraction_arith', label: { sv: "Bråk: Räkna", en: "Fractions: Arithmetic" } }, 
             { id: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
@@ -127,6 +128,11 @@ export const UI_TEXT = {
 };
 
 export const LEVEL_DESCRIPTIONS = {
+    place_value: {
+        1: { sv: "Heltal (Position)", en: "Whole Numbers (Place Value)" },
+        2: { sv: "Decimaltal (Position)", en: "Decimals (Place Value)" },
+        3: { sv: "Avrundning", en: "Rounding" }
+    },
     algebraic_geometry: {
         1: { sv: "Omkrets: Teckna uttryck", en: "Perimeter: Write Expression" },
         2: { sv: "Omkrets: Lös ut x", en: "Perimeter: Solve for x" },

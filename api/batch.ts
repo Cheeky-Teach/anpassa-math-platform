@@ -24,6 +24,7 @@ import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
 import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js';
 import { UnitConversionGen } from '../src/core/generators/UnitConversionGen.js';
 import { AlgebraicGeometryGenerator } from '../src/core/generators/AlgebraicGeometryGenerator.js';
+import { PlaceValueGen } from '../src/core/generators/PlaceValueGen.js';
 import { WordProblemInterceptor } from '../src/core/utils/WordProblemInterceptor.js';
 import { SKILL_BUCKETS } from '../src/constants/skillBuckets.js';
 
@@ -43,6 +44,7 @@ const TopicMap: Record<string, any> = {
 
   // Arithmetic
   'basic_arithmetic': BasicArithmeticGen,
+  'place_value': PlaceValueGen,
   'arithmetic': BasicArithmeticGen,
   'negatives': NegativeNumbersGen,
   'negative': NegativeNumbersGen,
