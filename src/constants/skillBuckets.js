@@ -322,6 +322,19 @@ export const SKILL_BUCKETS = {
           },
         ]
       },
+      place_value: {
+        name: { sv: 'Positionssystemet & Avrundning', en: 'Place Value & Rounding' },
+        variations: [
+          { key: 'pv_whole_value', name: { sv: 'Heltal: Siffrans värde', en: 'Whole: Digit value' }, desc: { sv: 'Vilket värde har siffran?', en: 'What value does the digit have?' } },
+          { key: 'pv_whole_digit', name: { sv: 'Heltal: Vilken siffra', en: 'Whole: Which digit' }, desc: { sv: 'Vilken siffra står på platsen?', en: 'Which digit is in the place?' } },
+          { key: 'pv_whole_build', name: { sv: 'Heltal: Bygg talet', en: 'Whole: Build number' }, desc: { sv: 'Skriv talet utifrån beskrivning', en: 'Write number from description' } },
+          { key: 'pv_dec_value', name: { sv: 'Decimal: Siffrans värde', en: 'Dec: Digit value' }, desc: { sv: 'Inkluderar decimaler', en: 'Includes decimals' } },
+          { key: 'pv_dec_digit', name: { sv: 'Decimal: Vilken siffra', en: 'Dec: Which digit' }, desc: { sv: 'Inkluderar decimaler', en: 'Includes decimals' } },
+          { key: 'pv_dec_build', name: { sv: 'Decimal: Bygg talet', en: 'Dec: Build number' }, desc: { sv: 'Bygg med decimaler', en: 'Build with decimals' } },
+          { key: 'pv_round_whole', name: { sv: 'Avrunda till heltal', en: 'Round to whole' }, desc: { sv: 'Avrunda tiotal, hundratal', en: 'Round tens, hundreds' } },
+          { key: 'pv_round_dec', name: { sv: 'Avrunda decimaltal', en: 'Round decimals' }, desc: { sv: 'Avrunda tiondel, hundradel', en: 'Round tenths, hundredths' } }
+        ]
+      },
       order_of_operations: {
         name: { sv: 'Prioriteringsregler', en: 'Order of Operations' },
         variations: [
