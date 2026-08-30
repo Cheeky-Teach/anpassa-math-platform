@@ -76,8 +76,8 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     const [presentationIndex, setPresentationIndex] = useState(0);
 
     // --- QUALITY OF LIFE STATES ---
-    const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
-    const [isRightCollapsed, setIsRightCollapsed] = useState(false);
+    const [isLeftCollapsed, setIsLeftCollapsed] = useState(true);
+    const [isRightCollapsed, setIsRightCollapsed] = useState(true);
     const [textSize, setTextSize] = useState('base'); 
     const [viewMode, setViewMode] = useState('list'); 
     const [clueViewMode, setClueViewMode] = useState('steps'); // 'steps' (revealer array slider) or 'answers' (kompakt full list facit)
