@@ -152,7 +152,8 @@ const PracticeView = ({
             )}
 
             {/* HEADER */}
-            <header className="flex justify-between items-center mb-6 px-2">
+            {/* 🟢 FIXED: Reduced bottom margin from mb-6 to mb-4 */}
+            <header className="flex justify-between items-center mb-4 px-2">
                 <button onClick={actions.goBack} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 font-black text-xs uppercase tracking-widest transition-all group">
                     <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-200 group-hover:shadow-md"><ChevronLeft size={16}/></div>
                     <span className="hidden sm:inline-block">{ui.backBtn || "Tillbaka"}</span>
@@ -162,7 +163,8 @@ const PracticeView = ({
                     <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${activeTheme.text} opacity-60`}>
                         {theme.categoryLabel}
                     </span>
-                    <h1 className="text-xl font-black uppercase tracking-tighter text-slate-900 italic leading-none">
+                    {/* 🟢 FIXED: Changed text-xl to text-lg to thin out the title */}
+                    <h1 className="text-lg font-black uppercase tracking-tighter text-slate-900 italic leading-none">
                         {theme.topicLabel}
                     </h1>
                 </div>
@@ -210,18 +212,18 @@ const PracticeView = ({
                                 <span className="text-xs font-black uppercase text-slate-400 tracking-widest">Laddar...</span>
                             </div>
                         ) : (
-                            <div className="flex flex-col min-h-[450px]">
+                            <div className="flex flex-col min-h-[350px]">
                                 
                                 {/* TOP SECTION: VISUAL & EQUATION */}
-                                <div className="w-full min-h-[260px] sm:min-h-[320px] p-8 xl:p-12 bg-slate-50/50 flex flex-col justify-center items-center border-b border-slate-100 relative overflow-hidden">
+                                <div className="w-full min-h-[180px] sm:min-h-[240px] p-4 sm:p-6 xl:p-8 bg-slate-50/50 flex flex-col justify-center items-center border-b border-slate-100 relative overflow-hidden">
                                     <WordProblemVisualGuard 
                                         isActive={!!question?.metadata?.isWordProblemApplied || useWordProblems} 
                                         lang={lang}
                                         questionKey={question?.variationKey || question?.metadata?.variation_key || question?.metadata?.variationKey} 
                                         alwaysShow={!!question?.renderData?.graph || question?.renderData?.geometry?.type === 'frequency_table' || !!question?.renderData?.frequencyTable}
                                     >
-                                        {/* 🟢 FIXED: Added min-h-[150px] here so the guard placeholder has guaranteed vertical breathing room */}
-                                        <div className="w-full min-h-[150px] flex flex-col justify-center items-center gap-6">
+                                        {/* 🟢 FIXED: Added min-h-[120px] here so the guard placeholder has guaranteed vertical breathing room */}
+                                        <div className="w-full min-h-[120px] flex flex-col justify-center items-center gap-4">
                                             
                                             <div className="w-full max-w-[400px] flex justify-center items-center mx-auto overflow-visible empty:hidden">
                                                 <VisualRenderer 
@@ -231,7 +233,7 @@ const PracticeView = ({
                                             </div>
 
                                             {question?.renderData?.latex && !useWordProblems && !question?.metadata?.isWordProblemApplied && (
-                                                <div className="text-4xl xl:text-5xl font-serif text-indigo-600 flex justify-center items-center text-center px-4">
+                                                <div className="text-3xl xl:text-4xl font-serif text-indigo-600 flex justify-center items-center text-center px-4">
                                                     <MathText text={`$$${question.renderData.latex}$$`} />
                                                 </div>
                                             )}
@@ -246,35 +248,40 @@ const PracticeView = ({
                                 </div>
 
                                 {/* BOTTOM SECTION: DESCRIPTION, INPUT & ACTIONS */}
-                                <div className="w-full p-6 xl:p-12 flex flex-col justify-center bg-white relative">
-                                    <div className="mb-8 text-center max-w-2xl mx-auto">
-                                        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 leading-snug">
+                                {/* 🟢 FIXED: Reduced padding from p-6 xl:p-12 to p-4 sm:p-6 */}
+                                <div className="w-full p-4 sm:p-6 flex flex-col justify-center bg-white relative">
+                                    {/* 🟢 FIXED: Reduced mb-8 to mb-4 */}
+                                    <div className="mb-4 text-center max-w-2xl mx-auto">
+                                        {/* 🟢 FIXED: Reduced text size from text-xl/2xl to text-lg/xl */}
+                                        <h2 className="text-lg sm:text-xl font-bold text-slate-800 leading-snug">
                                             <MathText text={descriptionText} />
                                         </h2>
                                     </div>
                                     
                                     {/* Action Row Split: Input vs Utilities */}
-                                    <div className="w-full max-w-4xl mx-auto flex flex-col md:flex-row gap-6 lg:gap-8 items-center md:items-stretch justify-center">
+                                    {/* 🟢 FIXED: Reduced gap from gap-6 lg:gap-8 to gap-4 lg:gap-6 */}
+                                    <div className="w-full max-w-4xl mx-auto flex flex-col md:flex-row gap-4 lg:gap-6 items-center md:items-stretch justify-center">
                                         
                                         {/* INPUT AREA (Left) */}
                                         <div className="w-full max-w-sm shrink-0 flex flex-col justify-end">
                                             {question?.renderData?.answerType === 'multiple_choice' ? (
-                                                <div className="grid grid-cols-1 gap-3">
+                                                <div className="grid grid-cols-1 gap-2.5">
                                                     {(question?.renderData?.options || []).map((choice, idx) => {
                                                         const isSelected = choice === input;
                                                         const isCorrect = feedback === 'correct' && isSelected;
                                                         const isIncorrect = feedback === 'incorrect' && isSelected;
                                                         return (
+                                                            // 🟢 FIXED: Reduced padding (p-3) and text size (text-sm)
                                                             <button 
                                                                 key={idx} 
                                                                 onClick={() => handleChoiceClick(choice)} 
-                                                                className={`p-4 rounded-xl font-bold text-base transition-all border-b-4 text-left flex items-center gap-3 active:translate-y-0.5 active:border-b-0
+                                                                className={`p-3 rounded-xl font-bold text-sm transition-all border-b-[3px] text-left flex items-center gap-3 active:translate-y-0.5 active:border-b-0
                                                                     ${isCorrect ? 'bg-emerald-500 border-emerald-700 text-white shadow-md' : 
                                                                       isIncorrect ? 'bg-rose-500 border-rose-700 text-white animate-shake' : 
                                                                       'bg-slate-50 border-slate-200 text-slate-600 hover:bg-white hover:border-indigo-400 hover:shadow-md'}`} 
                                                                 disabled={feedback === 'correct'}
                                                             >
-                                                                <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black shadow-inner
+                                                                <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shadow-inner
                                                                     ${(isCorrect || isIncorrect) ? 'bg-white/20 text-white' : 'bg-white text-slate-400 border border-slate-100'}`}>
                                                                     {String.fromCharCode(65 + idx)}
                                                                 </span>
@@ -284,32 +291,34 @@ const PracticeView = ({
                                                     })}
                                                 </div>
                                             ) : (
-                                                <form onSubmit={(e) => { e.preventDefault(); if (feedback !== 'correct') handleSubmit(e, input); else actions.retry(true); }} className="space-y-4 flex flex-col h-full justify-end">
+                                                <form onSubmit={(e) => { e.preventDefault(); if (feedback !== 'correct') handleSubmit(e, input); else actions.retry(true); }} className="space-y-3 flex flex-col h-full justify-end">
                                                     <div className="relative group">
+                                                        {/* 🟢 FIXED: Reduced vertical padding (py-3) on custom inputs */}
                                                         {question?.renderData?.answerType === 'mixed_fraction' ? (
-                                                            <div className="flex justify-center py-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 shadow-inner">
+                                                            <div className="flex justify-center py-3 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 shadow-inner">
                                                                 <FractionInput value={input} onChange={setInput} allowMixed={true} autoFocus={true} />
                                                             </div>
                                                         ) : question?.renderData?.answerType === 'fraction' ? (
-                                                            <div className="flex justify-center py-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 shadow-inner">
+                                                            <div className="flex justify-center py-3 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 shadow-inner">
                                                                 <FractionInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} allowMixed={false} autoFocus={false} />
                                                             </div>
                                                         ) : question?.renderData?.answerType === 'structured_power' ? (
-                                                            <div className="flex justify-center py-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 shadow-inner">
+                                                            <div className="flex justify-center py-3 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 shadow-inner">
                                                                 <ExponentInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} autoFocus={true} />
                                                             </div>
                                                         ) : question?.renderData?.answerType === 'structured_scientific' ? (
-                                                            <div className="flex justify-center py-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 shadow-inner">
+                                                            <div className="flex justify-center py-3 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 shadow-inner">
                                                                 <ScientificInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} autoFocus={true} />
                                                             </div>
                                                         ) : (
+                                                            // 🟢 FIXED: Reduced padding (p-3), text size (text-2xl), and border thickness (border-[3px])
                                                             <input 
                                                                 ref={inputRef} 
                                                                 type="text" 
                                                                 value={input} 
                                                                 onChange={handleInputChange} 
                                                                 autoComplete="off"
-                                                                className={`w-full p-4 text-center text-3xl font-black border-4 rounded-2xl outline-none shadow-inner transition-all
+                                                                className={`w-full p-3 text-center text-2xl font-black border-[3px] rounded-xl outline-none shadow-inner transition-all
                                                                     ${feedback === 'incorrect' ? 'border-rose-500 bg-rose-50 text-rose-700' : 
                                                                       feedback === 'correct' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' :
                                                                       'border-slate-100 bg-slate-50 focus:border-indigo-500 focus:bg-white'}`} 
@@ -318,10 +327,11 @@ const PracticeView = ({
                                                             />
                                                         )}
                                                         
-                                                        {feedback === 'correct' && <div className="absolute -right-3 -top-3 w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white animate-bounce"><CheckCircle2 size={20}/></div>}
-                                                        {feedback === 'incorrect' && <div className="absolute -right-3 -top-3 w-10 h-10 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white"><XCircle size={20}/></div>}
+                                                        {feedback === 'correct' && <div className="absolute -right-3 -top-3 w-8 h-8 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white animate-bounce"><CheckCircle2 size={16}/></div>}
+                                                        {feedback === 'incorrect' && <div className="absolute -right-3 -top-3 w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white"><XCircle size={16}/></div>}
                                                     </div>
-                                                    <button type="submit" className={`w-full py-4 rounded-xl font-black text-xl text-white transition-all border-b-4 shadow-lg active:translate-y-1 active:border-b-0
+                                                    {/* 🟢 FIXED: Reduced padding (py-3) and text size (text-lg) on Submit button */}
+                                                    <button type="submit" className={`w-full py-3 rounded-xl font-black text-lg text-white transition-all border-b-[3px] shadow-lg active:translate-y-1 active:border-b-0
                                                         ${feedback === 'correct' ? 'bg-emerald-500 border-emerald-700 hover:bg-emerald-400' : 
                                                           feedback === 'incorrect' ? 'bg-rose-600 border-rose-800 hover:bg-rose-500' : 
                                                           'bg-indigo-600 border-indigo-800 hover:bg-indigo-500'}`}>
@@ -332,18 +342,19 @@ const PracticeView = ({
                                         </div>
                                         
                                         {/* SECONDARY ACTIONS (Right Side) */}
-                                        <div className="w-full md:w-48 flex flex-row md:flex-col gap-3 justify-center shrink-0 mt-4 md:mt-0">
+                                        <div className="w-full md:w-40 flex flex-row md:flex-col gap-3 justify-center shrink-0 mt-2 md:mt-0">
+                                            {/* 🟢 FIXED: Reduced padding (py-2.5) and text size (text-[11px]) on action buttons */}
                                             <button 
                                                 onClick={handleHint} 
                                                 disabled={!question?.clues || revealedClues.length >= question?.clues.length} 
-                                                className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl bg-white text-amber-500 border-2 border-amber-100 disabled:opacity-30 hover:bg-amber-50 hover:border-amber-200 transition-all shadow-sm cursor-pointer"
+                                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-lg bg-white text-amber-500 border-2 border-amber-100 disabled:opacity-30 hover:bg-amber-50 hover:border-amber-200 transition-all shadow-sm cursor-pointer"
                                             >
                                                 <Zap size={16}/> <span className="hidden sm:inline-block">{ui.btnHint}</span>
                                             </button>
 
                                             <button
                                                 onClick={openCoach}
-                                                className="flex-1 flex items-center justify-center gap-2 py-3.5 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer shadow-md border-b-4 border-purple-800 active:translate-y-1 active:border-b-0"
+                                                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer shadow-md border-b-[3px] border-purple-800 active:translate-y-1 active:border-b-0"
                                                 title={lang === 'sv' ? "Starta tavel-repris och få hjälp" : "Start interactive step guide"}
                                             >
                                                 <HelpCircle size={16} />
@@ -352,7 +363,7 @@ const PracticeView = ({
 
                                             <button 
                                                 onClick={handleSkip} 
-                                                className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl bg-white text-indigo-400 border-2 border-indigo-100 hover:bg-indigo-50 hover:text-indigo-600 transition-all shadow-sm cursor-pointer"
+                                                className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-lg bg-white text-indigo-400 border-2 border-indigo-100 hover:bg-indigo-50 hover:text-indigo-600 transition-all shadow-sm cursor-pointer"
                                             >
                                                 <span className="hidden sm:inline-block">Hoppa över</span> <ChevronRight size={16} />
                                             </button>
