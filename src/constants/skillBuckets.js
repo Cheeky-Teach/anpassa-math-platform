@@ -320,6 +320,22 @@ export const SKILL_BUCKETS = {
             contextType: 'arithmetic_div_std',
             extractorPattern: /^(?<prod>\d+)\s*\/\s*(?<f1>\d+)$/
           },
+          { 
+            key: 'div_decimal_dividend', 
+            name: { sv: 'Division: Decimal i täljaren', en: 'Division: Decimal in dividend' }, 
+            desc: { sv: 'Dela ett decimaltal med ett heltal', en: 'Divide a decimal by a whole number' },
+            tags: ['word_problem_ready'],
+            contextType: 'arithmetic_div_std',
+            extractorPattern: /^(?<prod>[\d,.]+)\s*\/\s*(?<f1>\d+)$/
+          },
+          { 
+            key: 'div_decimal_divisor', 
+            name: { sv: 'Division: Decimal i nämnaren', en: 'Division: Decimal in divisor' }, 
+            desc: { sv: 'Dela med ett decimaltal', en: 'Divide by a decimal number' },
+            tags: ['word_problem_ready'],
+            contextType: 'arithmetic_div_std',
+            extractorPattern: /^(?<prod>[\d,.]+)\s*\/\s*(?<f1>[\d,.]+)$/
+          }
         ]
       },
       place_value: {

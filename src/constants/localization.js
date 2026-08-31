@@ -3,7 +3,7 @@ export const CATEGORIES = {
         id: 'arithmetic', 
         label: { sv: "Taluppfattning", en: "Number Theory" },
         color: "pink",
-        levels: 9,
+        levels: 10,
         topics: [
             { id: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
             { id: 'place_value', label: { sv: "Positionssystemet & Avrundning", en: "Place Value & Rounding" } }, 
@@ -192,8 +192,9 @@ export const LEVEL_DESCRIPTIONS = {
         5: { sv: "Multiplikation (Medel)", en: "Multiplication (Medium)" },
         6: { sv: "Multiplikation (Svår)", en: "Multiplication (Hard)" },
         7: { sv: "Kort Division", en: "Short Division" },
-        8: { sv: "Blandade Heltal", en: "Mixed Integers" },
-        9: { sv: "Blandade Decimaltal", en: "Mixed Decimals" }
+        8: { sv: "Division med Decimaler", en: "Division with Decimals" }, 
+        9: { sv: "Blandade Heltal", en: "Mixed Integers" }, 
+        10: { sv: "Blandade Decimaltal", en: "Mixed Decimals" } 
     },
     negative: {
         1: { sv: "Enkel Addition/Subtraktion", en: "Simple Add/Sub" },
