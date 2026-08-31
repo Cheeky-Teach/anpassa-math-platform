@@ -14,17 +14,18 @@ export class BasicArithmeticGen {
             case 5: questionData = this.level5_MultMedium(lang, undefined, options); break;
             case 6: questionData = this.level6_MultHard(lang, undefined, options); break;
             case 7: questionData = this.level7_DivEasy(lang, undefined, options); break;
-            case 8: questionData = this.level8_MixedIntegers(lang, options); break;
-            case 9: questionData = this.level9_MixedDecimals(lang, options); break;
+            case 8: questionData = this.level8_DecimalDivision(lang, undefined, options); break;
+            case 9: questionData = this.level9_MixedIntegers(lang, options); break;
+            case 10: questionData = this.level10_MixedDecimals(lang, options); break;
             default: questionData = this.level1_AddSimple(lang, undefined, options); break;
         }
 
-        // 🟢 FIX 1: Run the question data through the decorator for default fallback parameters
+        // Run the question data through the decorator for default fallback parameters
         enrichQuestionMetadata(questionData);
 
-        // 🟢 FIX 2: Level-wide capability override for Practice Mode
-        // Levels 1, 2, 4, and 7 contain variations that support stories, so lock the level open!
-        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 4, 7];
+        // Level-wide capability override for Practice Mode
+        // Levels 1, 2, 4, 7, and 8 contain variations that support stories, so lock the level open!
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 4, 7, 8];
         if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
             if (!questionData.metadata) questionData.metadata = {};
             questionData.metadata.levelSupportsWordProblems = true;
@@ -72,6 +73,10 @@ export class BasicArithmeticGen {
             case 'div_inverse_logic':
                 questionData = this.level7_DivEasy(lang, key, options);
                 break;
+            case 'div_decimal_dividend':
+            case 'div_decimal_divisor':
+                questionData = this.level8_DecimalDivision(lang, key, options);
+                break;
             default:
                 questionData = this.generate(1, lang, options);
                 break;
@@ -100,6 +105,13 @@ export class BasicArithmeticGen {
         }
         if (filtered.length === 0) return pool[0].key;
         return MathUtils.randomChoice(filtered.map(v => v.key));
+    }
+
+    // Safely format numbers with commas for Swedish
+    private formatNum(num: number, lang: string): string {
+        // Strip trailing zeros caused by JS float math, then format
+        const cleanNum = parseFloat(num.toFixed(4));
+        return lang === 'sv' ? cleanNum.toString().replace('.', ',') : cleanNum.toString();
     }
 
     // --- LEVEL 1: ADDITION ---
@@ -500,20 +512,33 @@ export class BasicArithmeticGen {
         };
     }
 
-    // --- LEVEL 6: MULT HARD ---
+    // --- LEVEL 6: MULT HARD (1 OR 2 DECIMALS) ---
     private level6_MultHard(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'mult_decimal_std', type: 'calculate' },
             { key: 'mult_decimal_placement', type: 'concept' }
         ];
         const v = variationKey || this.getVariation(pool, options);
-        const a = MathUtils.randomInt(1, 9) / 10, b = MathUtils.randomInt(3, 15), ans = Math.round(a * b * 100) / 100;
-        const wholeA = Math.round(a * 10);
+
+        // Dynamically allow 1 or 2 decimal places, completely avoiding trailing zeroes
+        const numDecimals = MathUtils.randomChoice([1, 2]);
+        let wholeA = numDecimals === 1 ? MathUtils.randomInt(1, 9) : MathUtils.randomInt(11, 99);
+        if (numDecimals === 2) {
+            while (wholeA % 10 === 0) wholeA = MathUtils.randomInt(11, 99);
+        }
+
+        const a = wholeA / Math.pow(10, numDecimals);
+        const b = MathUtils.randomInt(3, 15);
+        const ans = Math.round(a * b * 1000) / 1000;
+
+        const aStr = this.formatNum(a, lang);
+        const ansStr = this.formatNum(ans, lang);
+        const shiftFactor = Math.pow(10, numDecimals);
 
         if (v === 'mult_decimal_std') {
             return {
-                renderData: { description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.", latex: `${a} \\cdot ${b}`, answerType: 'numeric' },
-                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+                renderData: { description: lang === 'sv' ? "Beräkna produkten." : "Calculate the product.", latex: `${aStr} \\cdot ${b}`, answerType: 'numeric' },
+                token: this.toBase64(ansStr), variationKey: v, type: 'calculate',
                 clues: [
                     { 
                         text: lang === 'sv' ? `Tänk bort kommatecknet först och räkna som ett vanligt gångertal: ${wholeA} · ${b}.` : `Ignore the decimal point first and calculate as a regular multiplication: ${wholeA} · ${b}.`, 
@@ -524,32 +549,35 @@ export class BasicArithmeticGen {
                         latex: `${wholeA} \\cdot ${b} = \\mathbf{${wholeA * b}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Sätt tillbaka kommatecknet. Eftersom ${a} har en siffra efter kommat ska även svaret ha det.` : `Put the decimal point back. Since ${a} has one digit after the comma, the answer must also have one digit after the comma.`, 
-                        latex: `\\frac{${wholeA * b}}{\\mathbf{10}} = \\mathbf{${ans}}` 
+                        text: lang === 'sv' ? `Sätt tillbaka kommatecknet. Eftersom ${aStr} har ${numDecimals} decimal${numDecimals > 1 ? 'er' : ''} efter kommat ska även svaret ha det.` : `Put the decimal point back. Since ${aStr} has ${numDecimals} decimal${numDecimals > 1 ? 's' : ''} after the comma, the answer must also have ${numDecimals}.`, 
+                        latex: `\\frac{${wholeA * b}}{\\mathbf{${shiftFactor}}} = \\mathbf{${ansStr}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
-                        latex: `${ans}` 
+                        text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
+                        latex: `${ansStr}` 
                     }
                 ]
             };
         }
 
-        const correctStr = `${a} · ${b} = ${ans}`;
+        const correctStr = `${aStr} \\cdot ${b} = ${ansStr}`;
+        const trapUp = this.formatNum(Math.round(ans * 10 * 100) / 100, lang);
+        const trapDown = this.formatNum(Math.round(ans / 10 * 1000) / 1000, lang);
+
         return {
-            renderData: { description: lang === 'sv' ? "Vilken uträkning har placerat kommatecknet rätt?" : "Which calculation placed the decimal point correctly?", answerType: 'multiple_choice', options: MathUtils.shuffle([correctStr, `${a} · ${b} = ${ans*10}`, `${a} · ${b} = ${ans/10}`]) },
+            renderData: { description: lang === 'sv' ? "Vilken uträkning har placerat kommatecknet rätt?" : "Which calculation placed the decimal point correctly?", answerType: 'multiple_choice', options: MathUtils.shuffle([correctStr, `${aStr} \\cdot ${b} = ${trapUp}`, `${aStr} \\cdot ${b} = ${trapDown}`]) },
             token: this.toBase64(correctStr), variationKey: v, type: 'concept',
             clues: [
                 { 
                     text: lang === 'sv' ? "Räkna hur många decimaler (siffror efter kommat) det finns i talen totalt." : "Count how many decimals (digits after the comma) there are in the numbers in total.", 
-                    latex: `${a} \\cdot ${b}` 
+                    latex: `${aStr} \\cdot ${b}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Talet ${a} har 1 decimal och ${b} har 0 decimaler. Svaret måste ha exakt 1 decimal.` : `The number ${a} has 1 decimal and ${b} has 0 decimals. The answer must have exactly 1 decimal.`, 
-                    latex: `1 + 0 = \\mathbf{1 \\text{ decimal}}` 
+                    text: lang === 'sv' ? `Talet ${aStr} har ${numDecimals} decimal${numDecimals > 1 ? 'er' : ''} och ${b} har 0 decimaler. Svaret måste ha exakt ${numDecimals} decimal${numDecimals > 1 ? 'er' : ''}.` : `The number ${aStr} has ${numDecimals} decimal${numDecimals > 1 ? 's' : ''} and ${b} has 0 decimals. The answer must have exactly ${numDecimals} decimal${numDecimals > 1 ? 's' : ''}.`, 
+                    latex: `${numDecimals} + 0 = \\mathbf{${numDecimals} \\text{ decimal${numDecimals > 1 && lang === 'sv' ? 'er' : numDecimals > 1 && lang === 'en' ? 's' : ''}}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Bland alternativen är det bara en uträkning som har exakt 1 siffra efter kommat:` : `Among the options, only one calculation has exactly 1 digit after the comma:`, 
+                    text: lang === 'sv' ? `Bland alternativen är det bara en uträkning som har kommatecknet på rätt plats:` : `Among the options, only one calculation has the decimal point in the correct place:`, 
                     latex: `\\mathbf{${correctStr}}` 
                 },
                 { 
@@ -627,16 +655,108 @@ export class BasicArithmeticGen {
         };
     }
 
-    // --- MIXED LEVELS ---
-    private level8_MixedIntegers(lang: string, options: any): any {
+    // --- LEVEL 8: DIVISION WITH DECIMALS ---
+    private level8_DecimalDivision(lang: string, variationKey?: string, options: any = {}): any {
+        const pool: {key: string, type: 'calculate'}[] = [
+            { key: 'div_decimal_dividend', type: 'calculate' },
+            { key: 'div_decimal_divisor', type: 'calculate' }
+        ];
+        const v = variationKey || this.getVariation(pool, options);
+
+        if (v === 'div_decimal_dividend') {
+            const divisor = MathUtils.randomInt(2, 9);
+            const quotientWhole = MathUtils.randomInt(2, 12);
+            const decShift = MathUtils.randomChoice([10, 100]); // Generates 1 or 2 decimals
+            
+            const dividend = (divisor * quotientWhole) / decShift;
+            const ans = quotientWhole / decShift;
+            const dividendStr = this.formatNum(dividend, lang);
+            const ansStr = this.formatNum(ans, lang);
+
+            return {
+                renderData: { 
+                    description: lang === 'sv' ? "Beräkna kvoten." : "Calculate the quotient.", 
+                    latex: `\\frac{${dividendStr}}{${divisor}}`, 
+                    interceptorToken: `${dividend} / ${divisor}`,
+                    answerType: 'numeric' 
+                },
+                token: this.toBase64(ansStr), variationKey: v, type: 'calculate',
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "När vi delar ett decimaltal med ett heltal kan vi tillfälligt ignorera kommatecknet och dela som vanligt." : "When dividing a decimal by a whole number, we can temporarily ignore the decimal point and divide normally.", 
+                        latex: `\\frac{${divisor * quotientWhole}}{${divisor}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna ut hela talet först: ${divisor * quotientWhole} delat med ${divisor} blir ${quotientWhole}.` : `Calculate the whole numbers first: ${divisor * quotientWhole} divided by ${divisor} is ${quotientWhole}.`, 
+                        latex: `\\frac{${divisor * quotientWhole}}{${divisor}} = \\mathbf{${quotientWhole}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Sätt nu tillbaka kommatecknet i svaret precis på samma position som det stod i talet där uppe (täljaren)." : "Now place the decimal point back into the answer in the exact same position it had in the top number (the dividend).", 
+                        latex: `\\frac{${dividendStr}}{${divisor}} = \\mathbf{${ansStr}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
+                        latex: `${ansStr}` 
+                    }
+                ]
+            };
+        }
+
+        // div_decimal_divisor
+        const ans = MathUtils.randomInt(2, 12); // The whole number quotient answer
+        const divisorWhole = MathUtils.randomInt(2, 9);
+        const decShift = MathUtils.randomChoice([10, 100]);
+        const divisor = divisorWhole / decShift;
+        const dividend = (ans * divisorWhole) / decShift;
+        
+        const dividendStr = this.formatNum(dividend, lang);
+        const divisorStr = this.formatNum(divisor, lang);
+
+        return {
+            renderData: { 
+                description: lang === 'sv' ? "Beräkna kvoten." : "Calculate the quotient.", 
+                latex: `\\frac{${dividendStr}}{${divisorStr}}`, 
+                interceptorToken: `${dividend} / ${divisor}`,
+                answerType: 'numeric' 
+            },
+            token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+            clues: [
+                { 
+                    text: lang === 'sv' ? "Det är svårt att dela med ett decimaltal! Vi måste göra om talet där nere (nämnaren) till ett heltal." : "It is tricky to divide by a decimal! We need to turn the bottom number (the denominator) into a whole number.", 
+                    latex: `\\frac{${dividendStr}}{\\mathbf{${divisorStr}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `För att flytta bort kommatecknet förlänger vi bråket. Multiplicera både uppe och nere med ${decShift}.` : `To shift the decimal point away, we expand the fraction. Multiply both top and bottom by ${decShift}.`, 
+                    latex: `\\frac{${dividendStr} \\cdot \\mathbf{${decShift}}}{${divisorStr} \\cdot \\mathbf{${decShift}}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Nu har vi ett mycket enklare bråk utan decimaler där nere: ${ans * divisorWhole} delat med ${divisorWhole}.` : `Now we have a much simpler fraction with no decimals on the bottom: ${ans * divisorWhole} divided by ${divisorWhole}.`, 
+                    latex: `\\frac{${ans * divisorWhole}}{${divisorWhole}}` 
+                },
+                { 
+                    text: lang === 'sv' ? "Eftersom bråkets värde aldrig ändras när vi förlänger det, är det bara att räkna ut den nya kvoten!" : "Since a fraction's value never changes when we expand it, just calculate this new quotient!", 
+                    latex: `\\frac{${ans * divisorWhole}}{${divisorWhole}} = \\mathbf{${ans}}` 
+                },
+                { 
+                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                    latex: `${ans}` 
+                }
+            ]
+        };
+    }
+
+    // --- LEVEL 9: MIXED INTEGERS ---
+    private level9_MixedIntegers(lang: string, options: any): any {
         const key = MathUtils.randomChoice(['add_std_horizontal', 'sub_std_horizontal', 'mult_table_std', 'div_basic_std']);
         const res = this.generateByVariation(key, lang);
         res.metadata = { ...res.metadata, mixed: true };
         return res;
     }
 
-    private level9_MixedDecimals(lang: string, options: any): any {
-        const key = MathUtils.randomChoice(['dec_add_vertical', 'dec_sub_vertical', 'mult_decimal_std']);
+    // --- LEVEL 10: MIXED DECIMALS ---
+    private level10_MixedDecimals(lang: string, options: any): any {
+        // 🟢 FIXED: Added the new decimal division keys to the random mixer
+        const key = MathUtils.randomChoice(['dec_add_vertical', 'dec_sub_vertical', 'mult_decimal_std', 'div_decimal_dividend', 'div_decimal_divisor']);
         const res = this.generateByVariation(key, lang);
         res.metadata = { ...res.metadata, mixed: true };
         return res;
