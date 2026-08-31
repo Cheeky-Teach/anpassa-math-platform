@@ -14,9 +14,10 @@ export class BasicArithmeticGen {
             case 5: questionData = this.level5_MultMedium(lang, undefined, options); break;
             case 6: questionData = this.level6_MultHard(lang, undefined, options); break;
             case 7: questionData = this.level7_DivEasy(lang, undefined, options); break;
-            case 8: questionData = this.level8_DecimalDivision(lang, undefined, options); break;
-            case 9: questionData = this.level9_MixedIntegers(lang, options); break;
-            case 10: questionData = this.level10_MixedDecimals(lang, options); break;
+            case 8: questionData = this.level8_DivisibilityRules(lang, undefined, options); break;
+            case 9: questionData = this.level9_DecimalDivision(lang, undefined, options); break;
+            case 10: questionData = this.level10_MixedIntegers(lang, options); break;
+            case 11: questionData = this.level11_MixedDecimals(lang, options); break;
             default: questionData = this.level1_AddSimple(lang, undefined, options); break;
         }
 
@@ -24,8 +25,8 @@ export class BasicArithmeticGen {
         enrichQuestionMetadata(questionData);
 
         // Level-wide capability override for Practice Mode
-        // Levels 1, 2, 4, 7, and 8 contain variations that support stories, so lock the level open!
-        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 4, 7, 8];
+        // 🟢 Don't forget to add the new Level 9 (old 8) to the word problem list!
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 4, 7, 9];
         if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
             if (!questionData.metadata) questionData.metadata = {};
             questionData.metadata.levelSupportsWordProblems = true;
@@ -73,9 +74,14 @@ export class BasicArithmeticGen {
             case 'div_inverse_logic':
                 questionData = this.level7_DivEasy(lang, key, options);
                 break;
+            case 'div_rule_check':
+            case 'div_rule_missing':
+            case 'div_rule_tf':
+                questionData = this.level8_DivisibilityRules(lang, key, options);
+                break;
             case 'div_decimal_dividend':
             case 'div_decimal_divisor':
-                questionData = this.level8_DecimalDivision(lang, key, options);
+                questionData = this.level9_DecimalDivision(lang, key, options);
                 break;
             default:
                 questionData = this.generate(1, lang, options);
@@ -655,8 +661,174 @@ export class BasicArithmeticGen {
         };
     }
 
-    // --- LEVEL 8: DIVISION WITH DECIMALS ---
-    private level8_DecimalDivision(lang: string, variationKey?: string, options: any = {}): any {
+    // --- LEVEL 8: DIVISIBILITY RULES ---
+    private level8_DivisibilityRules(lang: string, variationKey?: string, options: any = {}): any {
+        const pool: {key: string, type: 'concept' | 'calculate'}[] = [
+            { key: 'div_rule_check', type: 'calculate' },
+            { key: 'div_rule_missing', type: 'calculate' },
+            { key: 'div_rule_tf', type: 'concept' }
+        ];
+        const v = variationKey || this.getVariation(pool, options);
+        const divisors = [2, 3, 5, 10];
+        const d = MathUtils.randomChoice(divisors);
+
+        // Clue helpers based on divisor
+        const getRuleText = (div: number) => {
+            if (div === 2) return lang === 'sv' ? "Regel: Ett tal är delbart med 2 om sista siffran är jämn (0, 2, 4, 6, 8)." : "Rule: A number is divisible by 2 if its last digit is even (0, 2, 4, 6, 8).";
+            if (div === 5) return lang === 'sv' ? "Regel: Ett tal är delbart med 5 om sista siffran är 0 eller 5." : "Rule: A number is divisible by 5 if its last digit is 0 or 5.";
+            if (div === 10) return lang === 'sv' ? "Regel: Ett tal är delbart med 10 om sista siffran är 0." : "Rule: A number is divisible by 10 if its last digit is 0.";
+            return lang === 'sv' ? "Regel: Ett tal är delbart med 3 om dess siffersumma (alla siffror adderade) finns i 3:ans tabell." : "Rule: A number is divisible by 3 if its digit sum is a multiple of 3.";
+        };
+
+        if (v === 'div_rule_check') {
+            // Generate one correct and two false answers
+            let correct = 0;
+            let traps = [0, 0];
+            
+            while (correct % d !== 0 || correct < 100) correct = MathUtils.randomInt(100, 999);
+            while (traps[0] % d === 0 || traps[0] < 100) traps[0] = MathUtils.randomInt(100, 999);
+            while (traps[1] % d === 0 || traps[1] === traps[0] || traps[1] < 100) traps[1] = MathUtils.randomInt(100, 999);
+
+            const optionsArr = MathUtils.shuffle([correct.toString(), traps[0].toString(), traps[1].toString()]);
+
+            let dynamicClues = [];
+            dynamicClues.push({ text: getRuleText(d), latex: "" });
+
+            if (d === 3) {
+                // Break down the digit sum for all options explicitly
+                const latexSums = optionsArr.map(opt => {
+                    const sum = opt.split('').reduce((a, b) => parseInt(a) + parseInt(b), 0);
+                    return `\\text{${opt}: } ${opt.split('').join(' + ')} = ${sum}`;
+                }).join(' \\\\ ');
+
+                const correctSum = correct.toString().split('').reduce((a, b) => parseInt(a) + parseInt(b), 0);
+
+                dynamicClues.push({
+                    text: lang === 'sv' ? "Steg 1: Räkna ut siffersumman (addera siffrorna) för varje svarsalternativ:" : "Step 1: Calculate the digit sum (add the digits) for each option:",
+                    latex: `\\begin{aligned} ${latexSums} \\end{aligned}`
+                });
+
+                dynamicClues.push({
+                    text: lang === 'sv' ? `Steg 2: Kontrollera resultaten. Endast siffersumman ${correctSum} finns i 3:ans tabell (${correctSum} / 3 = ${correctSum / 3}).` : `Step 2: Check the results. Only the digit sum ${correctSum} is in the 3 times table (${correctSum} / 3 = ${correctSum / 3}).`,
+                    latex: `\\mathbf{${correct}}`
+                });
+
+            } else {
+                // Break down the last digit logic for 2, 5, 10
+                let endingReq = "";
+                if (d === 2) endingReq = lang === 'sv' ? "en jämn siffra (0, 2, 4, 6, 8)" : "an even digit (0, 2, 4, 6, 8)";
+                if (d === 5) endingReq = lang === 'sv' ? "en 0:a eller 5:a" : "a 0 or a 5";
+                if (d === 10) endingReq = lang === 'sv' ? "en 0:a" : "a 0";
+
+                const latexEnds = optionsArr.map(opt => {
+                    return lang === 'sv' ? `\\text{${opt} slutar på } \\mathbf{${opt.slice(-1)}}` : `\\text{${opt} ends in } \\mathbf{${opt.slice(-1)}}`;
+                }).join(' \\\\ ');
+
+                dynamicClues.push({
+                    text: lang === 'sv' ? `Steg 1: Kika bara på den allra sista siffran i varje tal för att se om regeln uppfylls:` : `Step 1: Just look at the very last digit of each number to see if the rule is met:`,
+                    latex: `\\begin{aligned} ${latexEnds} \\end{aligned}`
+                });
+
+                dynamicClues.push({
+                    text: lang === 'sv' ? `Steg 2: Endast talet ${correct} slutar på ${endingReq}. Därför är det rätt val!` : `Step 2: Only the number ${correct} ends in ${endingReq}. Therefore, it is the right choice!`,
+                    latex: `\\mathbf{${correct}}`
+                });
+            }
+
+            dynamicClues.push({ text: lang === 'sv' ? `Svar: ${correct}` : `Answer: ${correct}`, latex: `\\text{${correct}}` });
+
+            return {
+                renderData: { 
+                    description: lang === 'sv' ? `Vilket av följande tal är delbart med ${d}?` : `Which of the following numbers is divisible by ${d}?`, 
+                    answerType: 'multiple_choice',
+                    options: optionsArr
+                },
+                token: this.toBase64(correct.toString()), variationKey: v, type: 'calculate',
+                clues: dynamicClues
+            };
+        }
+
+        if (v === 'div_rule_missing') {
+            const isSmallest = MathUtils.randomChoice([true, false]);
+            const prefix = MathUtils.randomInt(10, 99).toString(); 
+            
+            let validDigits = [];
+            for (let i = 0; i <= 9; i++) {
+                if (parseInt(prefix + i) % d === 0) validDigits.push(i);
+            }
+
+            const targetDigit = isSmallest ? Math.min(...validDigits) : Math.max(...validDigits);
+            const sizeWord = isSmallest ? (lang === 'sv' ? "minsta möjliga" : "smallest possible") : (lang === 'sv' ? "största möjliga" : "largest possible");
+
+            let clues = [
+                { text: getRuleText(d), latex: "" }
+            ];
+
+            if (d === 3) {
+                const prefixSum = parseInt(prefix[0]) + parseInt(prefix[1]);
+                clues.push({ 
+                    text: lang === 'sv' ? `Steg 1: Addera de siffror vi redan vet värdet på: ${prefix[0]} + ${prefix[1]} = ${prefixSum}.` : `Step 1: Add the digits we already know: ${prefix[0]} + ${prefix[1]} = ${prefixSum}.`, 
+                    // 🟢 FIXED: Replaced x with LaTeX escaped underscore
+                    latex: `\\text{Siffersumma: } ${prefixSum} + \\_` 
+                });
+                clues.push({ 
+                    text: lang === 'sv' ? `Steg 2: Vi söker den ${sizeWord} siffran (mellan 0-9) som gör att hela summan hamnar i 3:ans tabell.` : `Step 2: We need the ${sizeWord} digit (from 0-9) that makes the total sum land in the 3 times table.`, 
+                    latex: `${prefixSum} + \\mathbf{${targetDigit}} = ${prefixSum + targetDigit}` 
+                });
+            } else {
+                clues.push({ 
+                    text: lang === 'sv' ? `Steg 1: Ignorera början av talet. När vi delar med ${d} är det bara den allra sista siffran (strecket) som spelar roll.` : `Step 1: Ignore the beginning of the number. When dividing by ${d}, only the very last digit (the blank) matters.`, 
+                    latex: `\\text{Sista siffran = } \\_` 
+                });
+                clues.push({ 
+                    text: lang === 'sv' ? `Steg 2: Välj den ${sizeWord} siffran (0-9) som uppfyller regeln för ${d}.` : `Step 2: Choose the ${sizeWord} digit (0-9) that fulfills the rule for ${d}.`, 
+                    latex: `\\_ = \\mathbf{${targetDigit}}` 
+                });
+            }
+
+            clues.push({ text: lang === 'sv' ? `Svar: ${targetDigit}` : `Answer: ${targetDigit}`, latex: `\\_ = ${targetDigit}` });
+
+            return {
+                renderData: { 
+                    // 🟢 FIXED: Rewrote descriptions to ask about the blank line
+                    description: lang === 'sv' ? `Vilken är den ${sizeWord} siffran som kan ersätta strecket för att talet ${prefix}_ ska vara delbart med ${d}?` : `What is the ${sizeWord} digit that can replace the blank to make the number ${prefix}_ divisible by ${d}?`, 
+                    latex: `${prefix}\\_`,
+                    answerType: 'numeric' 
+                },
+                token: this.toBase64(targetDigit.toString()), variationKey: v, type: 'calculate',
+                clues: clues
+            };
+        }
+
+        // div_rule_tf (True / False overlap logic)
+        const statements = [
+            { text: lang === 'sv' ? "Om ett tal är delbart med 10, är det alltid delbart med 5." : "If a number is divisible by 10, it is always divisible by 5.", isTrue: true, reason: lang === 'sv' ? "Ja! Alla tal som slutar på 0 uppfyller också regeln för 5 (slutar på 0 eller 5)." : "Yes! All numbers ending in 0 also fulfill the rule for 5 (ends in 0 or 5)." },
+            { text: lang === 'sv' ? "Om ett tal är delbart med 5, är det alltid delbart med 10." : "If a number is divisible by 5, it is always divisible by 10.", isTrue: false, reason: lang === 'sv' ? "Nej. Talet 15 är delbart med 5, men slutar inte på 0, så det är inte delbart med 10." : "No. The number 15 is divisible by 5, but doesn't end in 0, so it isn't divisible by 10." },
+            { text: lang === 'sv' ? "Om ett tal är delbart med 2 och slutar på 5, är det delbart med 10." : "If a number is divisible by 2 and ends in 5, it is divisible by 10.", isTrue: false, reason: lang === 'sv' ? "Nej! Det är omöjligt. Ett tal kan inte vara delbart med 2 om det slutar på 5 (det är udda)." : "No! This is impossible. A number cannot be divisible by 2 if it ends in 5 (it is odd)." }
+        ];
+
+        const chosen = MathUtils.randomChoice(statements);
+        const tBtn = lang === 'sv' ? "Sant" : "True";
+        const fBtn = lang === 'sv' ? "Falskt" : "False";
+        const ans = chosen.isTrue ? tBtn : fBtn;
+
+        return {
+            renderData: { 
+                description: chosen.text, 
+                answerType: 'multiple_choice',
+                options: [tBtn, fBtn]
+            },
+            token: this.toBase64(ans), variationKey: v, type: 'concept',
+            clues: [
+                { text: lang === 'sv' ? "Tänk noga på delbarhetsreglerna för de nämnda talen." : "Think carefully about the divisibility rules for the mentioned numbers.", latex: "" },
+                { text: chosen.reason, latex: "" },
+                { text: lang === 'sv' ? `Påståendet är därför:` : `The statement is therefore:`, latex: `\\mathbf{${ans}}` }
+            ]
+        };
+    }
+
+    // --- 🟢 LEVEL 9: DIVISION WITH DECIMALS (Shifted from 8) ---
+    private level9_DecimalDivision(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'calculate'}[] = [
             { key: 'div_decimal_dividend', type: 'calculate' },
             { key: 'div_decimal_divisor', type: 'calculate' }
@@ -745,18 +917,23 @@ export class BasicArithmeticGen {
         };
     }
 
-    // --- LEVEL 9: MIXED INTEGERS ---
-    private level9_MixedIntegers(lang: string, options: any): any {
+    // --- 🟢 LEVEL 10: MIXED INTEGERS (Shifted from 9) ---
+    private level10_MixedIntegers(lang: string, options: any): any {
         const key = MathUtils.randomChoice(['add_std_horizontal', 'sub_std_horizontal', 'mult_table_std', 'div_basic_std']);
         const res = this.generateByVariation(key, lang);
         res.metadata = { ...res.metadata, mixed: true };
         return res;
     }
 
-    // --- LEVEL 10: MIXED DECIMALS ---
-    private level10_MixedDecimals(lang: string, options: any): any {
-        // 🟢 FIXED: Added the new decimal division keys to the random mixer
-        const key = MathUtils.randomChoice(['dec_add_vertical', 'dec_sub_vertical', 'mult_decimal_std', 'div_decimal_dividend', 'div_decimal_divisor']);
+    // --- 🟢 LEVEL 11: MIXED DECIMALS (Shifted from 10) ---
+    private level11_MixedDecimals(lang: string, options: any): any {
+        const key = MathUtils.randomChoice([
+            'dec_add_vertical', 
+            'dec_sub_vertical', 
+            'mult_decimal_std', 
+            'div_decimal_dividend', 
+            'div_decimal_divisor'
+        ]);
         const res = this.generateByVariation(key, lang);
         res.metadata = { ...res.metadata, mixed: true };
         return res;

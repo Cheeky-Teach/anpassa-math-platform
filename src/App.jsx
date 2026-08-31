@@ -485,7 +485,10 @@ function App() {
     };
 
     const handleChangeLevel = (delta) => {
-        const newLvl = Math.max(1, Math.min(level + delta, 9));
+        // Dynamically check the maximum level available for the current topic
+        const maxLevel = Object.keys(LEVEL_DESCRIPTIONS[topic] || {}).length || 9;
+        const newLvl = Math.max(1, Math.min(level + delta, maxLevel));
+        
         if (newLvl !== level) {
             setLevel(newLvl);
             fetchQuestion(topic, newLvl, lang);

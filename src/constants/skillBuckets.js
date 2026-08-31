@@ -321,6 +321,21 @@ export const SKILL_BUCKETS = {
             extractorPattern: /^(?<prod>\d+)\s*\/\s*(?<f1>\d+)$/
           },
           { 
+            key: 'div_rule_check', 
+            name: { sv: 'Delbarhet: Flerval', en: 'Divisibility: Multiple Choice' }, 
+            desc: { sv: 'Vilket tal är delbart med n?', en: 'Which number is divisible by n?' } 
+          },
+          { 
+            key: 'div_rule_missing', 
+            name: { sv: 'Delbarhet: Saknad siffra', en: 'Divisibility: Missing Digit' }, 
+            desc: { sv: 'Vilken siffra gör talet delbart?', en: 'Which digit makes the number divisible?' } 
+          },
+          { 
+            key: 'div_rule_tf', 
+            name: { sv: 'Delbarhet: Sant/Falskt', en: 'Divisibility: True/False' }, 
+            desc: { sv: 'Logik för 2, 3, 5 och 10', en: 'Logic for 2, 3, 5 and 10' } 
+          },
+          { 
             key: 'div_decimal_dividend', 
             name: { sv: 'Division: Decimal i täljaren', en: 'Division: Decimal in dividend' }, 
             desc: { sv: 'Dela ett decimaltal med ett heltal', en: 'Divide a decimal by a whole number' },

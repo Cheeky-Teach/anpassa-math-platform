@@ -425,7 +425,8 @@ const Dashboard = ({
                                                     }`}
                                                 >
                                                     <option value={0} disabled>{t.select_level}</option>
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl] && (
+                                                    {/* 🟢 Expanded the array to include up to 12 */}
+                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl] && (
                                                         <option key={lvl} value={lvl}>
                                                             {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} — {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
                                                         </option>
