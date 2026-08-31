@@ -28,7 +28,7 @@ const Dashboard = ({
     userRole = 'teacher'
 }) => {
     // 🟢 expandedCategory now functions as our active tab state for the curriculum
-    const [expandedCategory, setExpandedCategory] = useState('algebra');
+    const [expandedCategory, setExpandedCategory] = useState('arithmetic');
     const [activeTab, setActiveTab] = useState('curriculum'); 
     const [archivedSessions, setArchivedSessions] = useState([]);
     const [isLoadingArchive, setIsLoadingArchive] = useState(false);
