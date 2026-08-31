@@ -176,7 +176,7 @@ const PracticeView = ({
             <div className="flex flex-col xl:flex-row gap-6 items-start relative z-10">
                 
                 {/* --- LEFT COLUMN: MAIN WORKSPACE (70%) --- */}
-                <div className="flex-1 w-full flex flex-col gap-4">
+                <div className="flex-1 w-full min-w-0 flex flex-col gap-4">
                     
                     {/* LEVEL PILLS */}
                     <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-1.5 flex items-center overflow-x-auto no-scrollbar snap-x sticky top-2 z-20">
