@@ -92,6 +92,12 @@ export class TenPowersGen {
         return MathUtils.randomChoice(filtered.map(v => v.key));
     }
 
+    // format numbers based on language locale to prevent float and comma bugs
+    private formatNum(num: number, lang: string): string {
+        const cleanNum = parseFloat(num.toFixed(8)); 
+        return lang === 'sv' ? cleanNum.toString().replace('.', ',') : cleanNum.toString();
+    }
+
     // --- LEVEL 1: MULT/DIV BY 10, 100, 1000, 10000 ---
     private level1_MultDivBig(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
@@ -109,8 +115,9 @@ export class TenPowersGen {
             const ans = isMult ? num * power : this.fixFloat(num / power);
             const zeros = Math.round(Math.log10(power));
 
-            const numStr = num.toString().replace('.', ',');
-            const ansStr = ans.toString().replace('.', ',');
+            // Use formatNum to respect language rules
+            const numStr = this.formatNum(num, lang);
+            const ansStr = this.formatNum(ans, lang);
             const currentLatex = isMult ? `${numStr} \\cdot ${power}` : `\\frac{${numStr}}{${power}}`;
 
             return {
@@ -119,7 +126,8 @@ export class TenPowersGen {
                 description: lang === 'sv' ? "Räkna ut värdet genom att flytta kommatecknet." : "Calculate the value by shifting the decimal point.",
                 answerType: 'numeric'
             },
-            token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+            // Use ansStr for the token so Swedish '2,5' doesn't fail against '2.5'
+            token: this.toBase64(ansStr), variationKey: v, type: 'calculate',
             clues: [
                 { 
                     text: lang === 'sv' ? `Kolla på nollorna i talet ${power}. Det har exakt ${zeros} nollor i slutet, vilket betyder att vi ska hoppa med kommatecknet ${zeros} steg.` : `Look at the zeroes in the number ${power}. It has exactly ${zeros} zeroes at the end, which means we will jump with the decimal point ${zeros} steps.`, 
@@ -149,8 +157,9 @@ export class TenPowersGen {
             const isMult = Math.random() > 0.5;
             const res = isMult ? num * power : this.fixFloat(num / power);
 
-            const numStr = num.toString().replace('.', ',');
-            const resStr = res.toString().replace('.', ',');
+            // Use formatNum to respect language rules
+            const numStr = this.formatNum(num, lang);
+            const resStr = this.formatNum(res, lang);
             const currentLatex = isMult ? `${numStr} \\cdot ? = ${resStr}` : `\\frac{${numStr}}{?} = ${resStr}`;
             const steps = Math.abs(Math.round(Math.log10(res / num)));
 
@@ -230,7 +239,7 @@ export class TenPowersGen {
             ];
             const s = MathUtils.randomChoice(scenarios);
             const isMult = Math.random() > 0.5;
-            const valFormatted = s.val.toString().replace('.', ',');
+            const valFormatted = this.formatNum(s.val, lang);
 
             return {
                 renderData: {
@@ -264,30 +273,32 @@ export class TenPowersGen {
         }
 
         const num = MathUtils.randomChoice([10, 50, 100, 1000]);
-        const sLie = `${num} · 0,1 = ${num * 10}`;
+        // Dynamically set the decimal string based on language
+        const decStr = lang === 'sv' ? "0,1" : "0.1";
+        const sLie = `${num} · ${decStr} = ${num * 10}`;
         return {
             renderData: {
                 description: lang === 'sv' ? "Vilket påstående stämmer INTE?" : "Which statement is NOT correct?",
                 answerType: 'multiple_choice', 
-                options: MathUtils.shuffle([sLie, `${num} · 0,1 = ${num/10}`, `${num} / 0,1 = ${num*10}`])
+                options: MathUtils.shuffle([sLie, `${num} · ${decStr} = ${num/10}`, `${num} / ${decStr} = ${num*10}`])
             },
             token: this.toBase64(sLie), variationKey: v, type: 'concept',
             clues: [
                 { 
-                    text: lang === 'sv' ? "Leta efter den rad som har räknat helt fel. Kolla vad som händer när vi tar ett tal gånger 0,1." : "Look for the row that calculated completely incorrectly. Let's look at what happens when multiplying a number by 0.1.", 
-                    latex: `${num} \\cdot 0,1` 
+                    text: lang === 'sv' ? `Leta efter den rad som har räknat helt fel. Kolla vad som händer när vi tar ett tal gånger ${decStr}.` : `Look for the row that calculated completely incorrectly. Let's look at what happens when multiplying a number by ${decStr}.`, 
+                    latex: `${num} \\cdot ${decStr}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Att gångra med 0,1 är som en hemlig instruktion att ta en tiondel av talet (dela med 10). Svaret ska alltså bli mindre, inte större!" : "Multiplying by 0.1 is like a secret instruction to take one-tenth of the number (divide by 10). The result should get smaller, not larger!", 
-                    latex: `${num} \\cdot 0,1 = \\frac{${num}}{10} = \\mathbf{${num / 10}}` 
+                    text: lang === 'sv' ? `Att gångra med ${decStr} är som en hemlig instruktion att ta en tiondel av talet (dela med 10). Svaret ska alltså bli mindre, inte större!` : `Multiplying by ${decStr} is like a secret instruction to take one-tenth of the number (divide by 10). The result should get smaller, not larger!`, 
+                    latex: `${num} \\cdot ${decStr} = \\frac{${num}}{10} = \\mathbf{${num / 10}}` 
                 },
                 { 
                     text: lang === 'sv' ? `Att påstå att svaret skulle blåsas upp och bli till ${num * 10} är därför en ren lögn. Den här raden stämmer inte:` : `Claiming that the result would explode into ${num * 10} is therefore a total lie. This statement is the error choice row:`, 
-                    latex: `\\mathbf{${num} \\cdot 0,1 = ${num * 10}}` 
+                    latex: `\\mathbf{${num} \\cdot ${decStr} = ${num * 10}}` 
                 },
                 { 
                     text: lang === 'sv' ? `Svar: ${sLie}` : `Answer: ${sLie}`, 
-                    latex: `\\text{Lögn: } ${num} \\cdot 0,1 = ${num * 10}` 
+                    latex: `\\text{Lögn: } ${num} \\cdot ${decStr} = ${num * 10}` 
                 }
             ]
         };
@@ -310,9 +321,10 @@ export class TenPowersGen {
         const ans = isMult ? this.fixFloat(num * factor) : this.fixFloat(num / factor);
         const steps = Math.abs(Math.round(Math.log10(factor)));
 
-        const numStr = num.toString().replace('.', ',');
-        const factorStr = factor.toString().replace('.', ',');
-        const ansStr = ans.toString().replace('.', ',');
+        // Apply formatNum to securely localize
+        const numStr = this.formatNum(num, lang);
+        const factorStr = this.formatNum(factor, lang);
+        const ansStr = this.formatNum(ans, lang);
 
         const currentLatex = isMult ? `${numStr} \\cdot ${factorStr}` : `\\frac{${numStr}}{${factorStr}}`;
 
@@ -322,7 +334,8 @@ export class TenPowersGen {
                 description: lang === 'sv' ? "Räkna ut värdet genom att flytta kommatecknet." : "Calculate the value by shifting the decimal point.",
                 answerType: 'numeric'
             },
-            token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+            // Use ansStr to correctly validate localized comma inputs
+            token: this.toBase64(ansStr), variationKey: v, type: 'calculate',
             clues: [
                 { 
                     text: lang === 'sv' ? `Kolla på det lilla decimalnumret ${factorStr}. Det hat exakt ${steps} stycken nollor och decimalsteg gömda i sig, vilket talar om hur många kliv kommatecknet ska ta.` : `Look closely at the small decimal number ${factorStr}. It features exactly ${steps} zeroes and decimal places hidden inside, which tells us how many steps our decimal point should take.`, 

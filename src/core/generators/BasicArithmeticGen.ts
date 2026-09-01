@@ -345,32 +345,37 @@ export class BasicArithmeticGen {
         const val2 = op === '+' ? b : Math.min(a, b);
         const ans = Math.round((op === '+' ? val1 + val2 : val1 - val2) * 100) / 100;
 
-        // add_spot_the_lie
-        const n1 = MathUtils.randomInt(10, 50), n2 = MathUtils.randomInt(10, 50);
-        const sTrue = `${n1} + ${n2} = ${n1 + n2}`;
-        const sFalse = `${n1} + ${n2} = ${n1 + n2 + MathUtils.randomChoice([-2, 1, 2])}`;
+        //  Added the missing formatted string declarations!
+        const val1Str = this.formatNum(val1, lang);
+        const val2Str = this.formatNum(val2, lang);
+        const ansStr = this.formatNum(ans, lang);
+
         return {
             renderData: {
                 description: lang === 'sv' ? "Ställ upp och beräkna." : "Calculate.",
-                latex: `${val1} ${op} ${val2}`, answerType: 'numeric'
+                //  Use the formatted strings here so the main question gets Swedish commas too
+                latex: `${val1Str} ${op} ${val2Str}`, 
+                answerType: 'numeric'
             },
-            token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+            //  Use the formatted answer string for the validation token
+            token: this.toBase64(ansStr), 
+            variationKey: v, type: 'calculate',
             clues: [
                 { 
                     text: lang === 'sv' ? "Se till att kommatecknen hamnar rakt under varandra." : "Make sure the decimal points align straight under each other.", 
-                    latex: `${val1} ${op} ${val2}` 
+                    latex: `${val1Str} ${op} ${val2Str}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Lägg till en nolla i slutet om det behövs så att talen blir lika långa." : "Add a zero at the end if needed so the numbers are the same length.", 
-                    latex: `${val1.toString().includes('.') && val1.toString().split('.')[1].length === 1 ? val1 + '0' : val1} ${op} ${val2.toString().includes('.') && val2.toString().split('.')[1].length === 1 ? val2 + '0' : val2}` 
+                    text: lang === 'sv' ? "Lägg till nollor i slutet om det behövs så att talen får lika många decimaler." : "Add zeros at the end if needed so the numbers have the same amount of decimals.", 
+                    latex: `${(lang === 'sv' ? val1.toFixed(2).replace('.', ',') : val1.toFixed(2))} ${op} ${(lang === 'sv' ? val2.toFixed(2).replace('.', ',') : val2.toFixed(2))}` 
                 },
                 { 
                     text: lang === 'sv' ? "Räkna nu talsort för talsort för att få fram svaret." : "Now calculate place value by place value to find the answer.", 
-                    latex: `${val1} ${op} ${val2} = \\mathbf{${ans}}` 
+                    latex: `${val1Str} ${op} ${val2Str} = \\mathbf{${ansStr}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
-                    latex: `${ans}` 
+                    text: lang === 'sv' ? `Svar: ${ansStr}` : `Answer: ${ansStr}`, 
+                    latex: `${ansStr}` 
                 }
             ]
         };
@@ -768,7 +773,7 @@ export class BasicArithmeticGen {
                 const prefixSum = parseInt(prefix[0]) + parseInt(prefix[1]);
                 clues.push({ 
                     text: lang === 'sv' ? `Steg 1: Addera de siffror vi redan vet värdet på: ${prefix[0]} + ${prefix[1]} = ${prefixSum}.` : `Step 1: Add the digits we already know: ${prefix[0]} + ${prefix[1]} = ${prefixSum}.`, 
-                    // 🟢 FIXED: Replaced x with LaTeX escaped underscore
+                    //  Replaced x with LaTeX escaped underscore
                     latex: `\\text{Siffersumma: } ${prefixSum} + \\_` 
                 });
                 clues.push({ 
@@ -790,7 +795,7 @@ export class BasicArithmeticGen {
 
             return {
                 renderData: { 
-                    // 🟢 FIXED: Rewrote descriptions to ask about the blank line
+                    //  Rewrote descriptions to ask about the blank line
                     description: lang === 'sv' ? `Vilken är den ${sizeWord} siffran som kan ersätta strecket för att talet ${prefix}_ ska vara delbart med ${d}?` : `What is the ${sizeWord} digit that can replace the blank to make the number ${prefix}_ divisible by ${d}?`, 
                     latex: `${prefix}\\_`,
                     answerType: 'numeric' 
@@ -856,11 +861,13 @@ export class BasicArithmeticGen {
                 clues: [
                     { 
                         text: lang === 'sv' ? "När vi delar ett decimaltal med ett heltal kan vi tillfälligt ignorera kommatecknet och dela som vanligt." : "When dividing a decimal by a whole number, we can temporarily ignore the decimal point and divide normally.", 
-                        latex: `\\frac{${divisor * quotientWhole}}{${divisor}}` 
+                        //  Wrapped the raw multiplication in formatNum to prevent JS float bugs (e.g. 2.0999999999999996)
+                        latex: `\\frac{${this.formatNum(divisor * quotientWhole, lang)}}{${divisor}}` 
                     },
                     { 
                         text: lang === 'sv' ? `Räkna ut hela talet först: ${divisor * quotientWhole} delat med ${divisor} blir ${quotientWhole}.` : `Calculate the whole numbers first: ${divisor * quotientWhole} divided by ${divisor} is ${quotientWhole}.`, 
-                        latex: `\\frac{${divisor * quotientWhole}}{${divisor}} = \\mathbf{${quotientWhole}}` 
+                        //  Wrapped here as well
+                        latex: `\\frac{${this.formatNum(divisor * quotientWhole, lang)}}{${divisor}} = \\mathbf{${quotientWhole}}` 
                     },
                     { 
                         text: lang === 'sv' ? "Sätt nu tillbaka kommatecknet i svaret precis på samma position som det stod i talet där uppe (täljaren)." : "Now place the decimal point back into the answer in the exact same position it had in the top number (the dividend).", 

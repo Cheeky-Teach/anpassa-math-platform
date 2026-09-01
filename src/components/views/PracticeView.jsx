@@ -266,15 +266,18 @@ const PracticeView = ({
                                         <div className="w-full max-w-sm shrink-0 flex flex-col justify-end">
                                             {question?.renderData?.answerType === 'multiple_choice' ? (
                                                 <div className="grid grid-cols-1 gap-2.5">
-                                                    {(question?.renderData?.options || []).map((choice, idx) => {
-                                                        const isSelected = choice === input;
+                                                    {(question?.renderData?.options || []).map((choiceItem, idx) => {
+                                                        // 🟢 NEW: Dynamically support both plain strings and { label, value } objects
+                                                        const choiceLabel = typeof choiceItem === 'object' ? choiceItem.label : choiceItem;
+                                                        const choiceValue = typeof choiceItem === 'object' ? choiceItem.value : choiceItem;
+                                                        
+                                                        const isSelected = choiceValue === input;
                                                         const isCorrect = feedback === 'correct' && isSelected;
                                                         const isIncorrect = feedback === 'incorrect' && isSelected;
                                                         return (
-                                                            // 🟢 FIXED: Reduced padding (p-3) and text size (text-sm)
                                                             <button 
                                                                 key={idx} 
-                                                                onClick={() => handleChoiceClick(choice)} 
+                                                                onClick={() => handleChoiceClick(choiceValue)} 
                                                                 className={`p-3 rounded-xl font-bold text-sm transition-all border-b-[3px] text-left flex items-center gap-3 active:translate-y-0.5 active:border-b-0
                                                                     ${isCorrect ? 'bg-emerald-500 border-emerald-700 text-white shadow-md' : 
                                                                       isIncorrect ? 'bg-rose-500 border-rose-700 text-white animate-shake' : 
@@ -285,7 +288,7 @@ const PracticeView = ({
                                                                     ${(isCorrect || isIncorrect) ? 'bg-white/20 text-white' : 'bg-white text-slate-400 border border-slate-100'}`}>
                                                                     {String.fromCharCode(65 + idx)}
                                                                 </span>
-                                                                <MathText text={choice} />
+                                                                <MathText text={choiceLabel} />
                                                             </button>
                                                         );
                                                     })}

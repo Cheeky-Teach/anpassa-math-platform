@@ -104,26 +104,47 @@ export class FractionArithGen {
             const n2 = MathUtils.randomInt(1, d - 2);
             const sum = n1 + n2;
             
-            const correctEq = `$$\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d}}$$`;
-            const wrongEq = `$$\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d*2}}$$`; // The Lie
+            // 🟢 FIXED: Using beautiful LaTeX for the label, and safe strings for the values!
+            const correctEq = { 
+                label: `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d}}`, 
+                value: "correct" 
+            };
+            const wrongEq1 = { 
+                label: `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d + d}}`, 
+                value: "trap_add_denom" 
+            };
+            const wrongEq2 = { 
+                label: `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${n1 * n2}}{${d}}`, 
+                value: "trap_mult_num" 
+            };
+            const wrongEq3 = { 
+                label: `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d * d}}`, 
+                value: "trap_mult_denom" 
+            };
             
             return {
                 renderData: {
                     description: lang === 'sv' ? "Vilket påstående är matematiskt korrekt?" : "Which statement is mathematically correct?",
-                    latex: "", // Left blank so the clickable options act as the visual
+                    latex: "",
                     answerType: 'multiple_choice',
-                    // 🟢 Upgraded: Passes the raw equations as clickable buttons instead of "Option A/B"
-                    options: MathUtils.shuffle([correctEq, wrongEq]) 
+                    options: MathUtils.shuffle([correctEq, wrongEq1, wrongEq2, wrongEq3]) 
                 },
-                token: this.toBase64(correctEq),
+                // 🟢 The token is now just "correct", ensuring a 100% match every time
+                token: this.toBase64("correct"),
                 variationKey: v,
                 type: 'concept',
                 clues: [
                     { 
                         text: lang === 'sv' 
-                            ? "När man adderar bråk med samma nämnare, ändras INTE nämnaren." 
-                            : "When adding fractions with the same denominator, the denominator does NOT change.", 
+                            ? "När man adderar bråk med samma nämnare, ändras INTE nämnaren. Man plussar bara ihop siffrorna där uppe (täljarna)." 
+                            : "When adding fractions with the same denominator, the denominator does NOT change. You only add the top numbers (numerators).", 
                         latex: `\\frac{a}{c} + \\frac{b}{c} = \\frac{a+b}{c}` 
+                    },
+                    {
+                        text: lang === 'sv'
+                            ? `Därför måste svaret ha kvar nämnaren ${d} och en täljare som är ${n1} + ${n2} = ${sum}.`
+                            : `Therefore, the answer must keep the denominator ${d} and have a numerator of ${n1} + ${n2} = ${sum}.`,
+                        latex: `\\mathbf{${correctEq.label}}`
                     }
                 ],
                 metadata: { variation_key: v, difficulty: 1 }

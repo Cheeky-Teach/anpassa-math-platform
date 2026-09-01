@@ -440,13 +440,29 @@ export class NegativeNumbersGen {
         const isSame = (a < 0 && b < 0) || (a > 0 && b > 0);
 
         if (v === 'div_check_logic') {
-            const correct = `${this.p(ans)} \\cdot ${this.p(b)} = ${a}`;
+            // 🟢 FIXED: Used { label, value } objects to bypass the frontend sanitizer stripping the '\' from '\cdot'
+            // 🟢 FIXED: Wrapped ALL variables in the traps with this.p() so negative numbers get their proper parentheses
+            const correctEq = {
+                label: `${this.p(ans)} \\cdot ${this.p(b)} = ${a}`,
+                value: "correct"
+            };
+            const trap1 = {
+                label: `${this.p(ans)} + ${this.p(b)} = ${a}`,
+                value: "trap_add"
+            };
+            const trap2 = {
+                label: `${this.p(a)} \\cdot ${this.p(b)} = ${this.p(ans)}`,
+                value: "trap_mult"
+            };
+
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Vilken multiplikation bevisar att $\\frac{${a}}{${b}} = ${ans}$?` : `Which multiplication layout proves that $$\\frac{${a}}{${b}} = ${ans}$$?`,
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${ans} + ${b} = ${a}`, `${a} \\cdot ${b} = ${ans}`])
+                    description: lang === 'sv' ? `Vilken multiplikation bevisar att $\\frac{${a}}{${b}} = ${ans}$?` : `Which multiplication layout proves that $\\frac{${a}}{${b}} = ${ans}$?`,
+                    answerType: 'multiple_choice', 
+                    options: MathUtils.shuffle([correctEq, trap1, trap2])
                 },
-                token: this.toBase64(correct), variationKey: v, type: 'concept',
+                // 🟢 FIXED: Using the safe string "correct" for the token
+                token: this.toBase64("correct"), variationKey: v, type: 'concept',
                 clues: [
                     { 
                         text: lang === 'sv' ? "Vi kan alltid testa om en delning (division) är rätt genom att räkna baklänges med multiplikation." : "We can always double-check if a division statement is true by running backwards using multiplication.", 
@@ -457,12 +473,12 @@ export class NegativeNumbersGen {
                         latex: `\\frac{a}{b} = c \\iff \\mathbf{c \\cdot b = a}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Sätter vi in våra siffror ser vi att svaret ${ans} gånger bottentalet ${b} ska bli starttalet ${a}:` : `Plugging in our actual numbers shows that the answer ${ans} times the bottom number ${b} must equal the top number ${a}:`, 
-                        latex: `\\mathbf{${correct}}` 
+                        text: lang === 'sv' ? `Sätter vi in våra siffror ser vi att svaret ${this.p(ans)} gånger bottentalet ${this.p(b)} ska bli starttalet ${a}:` : `Plugging in our actual numbers shows that the answer ${this.p(ans)} times the bottom number ${this.p(b)} must equal the top number ${a}:`, 
+                        latex: `\\mathbf{${correctEq.label}}` 
                     },
                     { 
                         text: lang === 'sv' ? `Svar:` : `Answer:`, 
-                        latex: correct 
+                        latex: correctEq.label 
                     }
                 ]
             };

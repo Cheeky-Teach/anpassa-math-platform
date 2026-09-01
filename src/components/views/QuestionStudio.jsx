@@ -270,12 +270,15 @@ export default function QuestionStudio({
     const labels = ['A', 'B', 'C', 'D', 'E', 'F'];
     return (
         <div className={`mt-4 grid grid-cols-2 gap-2 w-full max-w-md mx-auto ${inline ? 'px-4' : ''}`}>
-            {options.map((opt, i) => (
-                <div key={i} className="flex items-center gap-2 text-[11px] bg-slate-50 border border-slate-100 p-2 rounded-lg">
-                    <span className="font-black text-indigo-600">{labels[i]}</span>
-                    <MathDisplay content={opt} />
-                </div>
-            ))}
+            {options.map((opt, i) => {
+                const choiceLabel = typeof opt === 'object' ? opt.label : opt;
+                return (
+                    <div key={i} className="flex items-center gap-2 text-[11px] bg-slate-50 border border-slate-100 p-2 rounded-lg">
+                        <span className="font-black text-indigo-600">{labels[i]}</span>
+                        <MathDisplay content={choiceLabel} />
+                    </div>
+                );
+            })}
         </div>
     );
   };
@@ -918,49 +921,69 @@ export default function QuestionStudio({
             </div>
         </div>
 
-        {/* Variation Cards List */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
-            {visibleVariations.map(v => {
-                const cat = getVariationCategory(v.key);
-                const styles = getCategoryStyles(cat);
-                const isPreviewed = activePreviewKey === v.key;
-                const hasWordProblem = v.tags?.includes('word_problem_ready');
-                
-                return (
-                    <div 
-                        key={v.key} 
-                        onClick={() => triggerPreview(v.key)} 
-                        className={`group p-3 rounded-2xl border transition-all bg-white relative overflow-hidden
-                            ${isPreviewed ? 'border-indigo-500 shadow-md ring-2 ring-indigo-500/10' : 'border-slate-200 shadow-xs hover:border-indigo-300 cursor-pointer'}
-                        `}
-                    >
-                        <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg.replace('/20', '')}`} />
-                        <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-black text-[11px] uppercase tracking-tight text-slate-800 leading-tight pr-2">{v.name[lang]}</h4>
-                            <div className={`shrink-0 px-1.5 py-0.5 rounded border ${styles.border} ${styles.bg} ${styles.text} text-[7px] font-black uppercase flex items-center gap-0.5`}>
-                                {styles.icon} {styles.label}
-                            </div>
-                        </div>
-                        
-                        <p className="text-[9px] font-medium text-slate-400 line-clamp-1 mb-2 italic leading-tight">{v.desc[lang]}</p>
-                        
-                        <div className="flex items-center gap-1.5">
-                            <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
-                                <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded transition-all text-slate-500 hover:text-indigo-600"><Minus size={10}/></button>
-                                <span className="w-5 text-center text-[11px] font-black text-slate-700">{pendingQuantity}</span>
-                                <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(pendingQuantity + 1); }} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded transition-all text-slate-500 hover:text-indigo-600"><Plus size={10}/></button>
-                            </div>
-                            <button 
-                                disabled={isPreviewLoading} 
-                                onClick={(e) => { e.stopPropagation(); addToPacket(v, pendingQuantity); }} 
-                                className={`flex-1 py-1.5 text-white rounded-lg text-[9px] font-black uppercase transition-all shadow-xs active:scale-95 disabled:opacity-50 ${setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
-                            >
-                                {isPreviewLoading && isPreviewed ? '...' : `Lägg till ${pendingQuantity}`}
-                            </button>
-                        </div>
+        {/* Variation Cards List organized by Level Dividers */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar">
+            {Object.entries(
+                visibleVariations.reduce((acc, v) => {
+                    const lvl = v.level || 1; // Fallback to 1 if not explicitly defined in skillBuckets
+                    if (!acc[lvl]) acc[lvl] = [];
+                    acc[lvl].push(v);
+                    return acc;
+                }, {})
+            ).sort(([lvlA], [lvlB]) => Number(lvlA) - Number(lvlB)).map(([lvl, variations]) => (
+                <div key={lvl} className="space-y-2">
+                    {/* Level Divider Header */}
+                    <div className="sticky top-0 bg-slate-50/95 backdrop-blur-sm pt-4 pb-2 flex items-center z-10">
+                        <span className="text-[14px] font-black uppercase tracking-widest text-indigo-700">
+                            {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
+                        </span>
+                        <div className="flex-1 h-[2px] bg-indigo-100/70 ml-3 rounded-full"></div>
                     </div>
-                );
-            })}
+
+                    {/* Variations under this level */}
+                    {variations.map(v => {
+                        const cat = getVariationCategory(v.key);
+                        const styles = getCategoryStyles(cat);
+                        const isPreviewed = activePreviewKey === v.key;
+                        const hasWordProblem = v.tags?.includes('word_problem_ready');
+                        
+                        return (
+                            <div 
+                                key={v.key} 
+                                onClick={() => triggerPreview(v.key)} 
+                                className={`group p-3 rounded-2xl border transition-all bg-white relative overflow-hidden
+                                    ${isPreviewed ? 'border-indigo-500 shadow-md ring-2 ring-indigo-500/10' : 'border-slate-200 shadow-xs hover:border-indigo-300 cursor-pointer'}
+                                `}
+                            >
+                                <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg.replace('/20', '')}`} />
+                                <div className="flex justify-between items-start mb-1">
+                                    <h4 className="font-black text-[11px] uppercase tracking-tight text-slate-800 leading-tight pr-2">{v.name[lang]}</h4>
+                                    <div className={`shrink-0 px-1.5 py-0.5 rounded border ${styles.border} ${styles.bg} ${styles.text} text-[7px] font-black uppercase flex items-center gap-0.5`}>
+                                        {styles.icon} {styles.label}
+                                    </div>
+                                </div>
+                                
+                                <p className="text-[9px] font-medium text-slate-400 line-clamp-1 mb-2 italic leading-tight">{v.desc[lang]}</p>
+                                
+                                <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+                                        <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded transition-all text-slate-500 hover:text-indigo-600"><Minus size={10}/></button>
+                                        <span className="w-5 text-center text-[11px] font-black text-slate-700">{pendingQuantity}</span>
+                                        <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(pendingQuantity + 1); }} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded transition-all text-slate-500 hover:text-indigo-600"><Plus size={10}/></button>
+                                    </div>
+                                    <button 
+                                        disabled={isPreviewLoading} 
+                                        onClick={(e) => { e.stopPropagation(); addToPacket(v, pendingQuantity); }} 
+                                        className={`flex-1 py-1.5 text-white rounded-lg text-[9px] font-black uppercase transition-all shadow-xs active:scale-95 disabled:opacity-50 ${setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                                    >
+                                        {isPreviewLoading && isPreviewed ? '...' : `Lägg till ${pendingQuantity}`}
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            ))}
         </div>
         </div>
 

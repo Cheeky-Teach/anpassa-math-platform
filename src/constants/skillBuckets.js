@@ -275,82 +275,45 @@ export const SKILL_BUCKETS = {
       basic_arithmetic: {
         name: { sv: 'De 4 Räknesätten', en: 'The 4 Operations' },
         variations: [
-          { key: 'add_std_vertical', name: { sv: 'Addition: Uppställning', en: 'Addition: Column Method' }, desc: { sv: 'Stora tal', en: 'Large numbers' } },
-          { key: 'add_missing_variable', name: { sv: 'Addition: Hitta termen', en: 'Addition: Find the term' }, desc: { sv: 'a + x = b', en: 'a + x = b' } },
-          { key: 'add_spot_the_lie', name: { sv: 'Hitta felet: Addition', en: 'Find error: Addition' }, desc: { sv: 'Felsökning', en: 'Troubleshooting' } },
-          { key: 'sub_std_vertical', name: { sv: 'Subtraktion: Uppställning', en: 'Subtraction: Column Method' }, desc: { sv: 'Växling', en: 'Borrowing' } },
-          { key: 'sub_missing_variable', name: { sv: 'Subtraktion: Hitta termen', en: 'Subtraction: Find the term' }, desc: { sv: 'a - x = b', en: 'a - x = b' } },
-          { key: 'dec_add_vertical', name: { sv: 'Decimaler: Addition', en: 'Decimals: Addition' }, desc: { sv: 'Passa kommatecknet', en: 'Align decimal point' } },
-          { key: 'dec_sub_vertical', name: { sv: 'Decimaler: Subtraktion', en: 'Decimals: Subtraction' }, desc: { sv: 'Passa kommatecknet', en: 'Align decimal point' } },
-          { key: 'mult_commutative', name: { sv: 'Kommutativa lagen', en: 'Commutative Law' }, desc: { sv: 'a * b = b * a', en: 'a * b = b * a' } },
-          { key: 'mult_2x1_vertical', name: { sv: 'Mult: Uppställning', en: 'Mult: Column Method' }, desc: { sv: 'Två siffror * en siffra', en: 'Two digits * one digit' } },
-          { key: 'mult_distributive', name: { sv: 'Distributiva lagen', en: 'Distributive Law' }, desc: { sv: 'Dela upp faktorer', en: 'Split factors' } },
-          { key: 'mult_decimal_std', name: { sv: 'Decimalmultiplikation', en: 'Decimal Multiplication' }, desc: { sv: 'Räkna decimaler', en: 'Count decimals' } },
-          { key: 'mult_decimal_placement', name: { sv: 'Placera kommatecknet', en: 'Place decimal point' }, desc: { sv: 'Uppskattning', en: 'Estimation' } },
-          { key: 'div_inverse_logic', name: { sv: 'Division via multiplikation', en: 'Division via mult' }, desc: { sv: 'Samband', en: 'Connection' } },
-          { 
-            key: 'add_std_horizontal', 
-            name: { sv: 'Addition: Vågrät', en: 'Addition: Horizontal' }, 
-            desc: { sv: 'Standardberäkning med heltal', en: 'Standard whole number calculations' },
-            tags: ['word_problem_ready'],
-            contextType: 'arithmetic_add_std',
-            extractorPattern: /^(?<f1>\d+)\s*\+\s*(?<f2>\d+)$/
-          },
-          { 
-            key: 'sub_std_horizontal', 
-            name: { sv: 'Subtraktion: Vågrät', en: 'Subtraction: Horizontal' }, 
-            desc: { sv: 'Standardberäkning med heltal', en: 'Standard whole number calculations' },
-            tags: ['word_problem_ready'],
-            contextType: 'arithmetic_sub_std',
-            extractorPattern: /^(?<f1>\d+)\s*-\s*(?<f2>\d+)$/
-          },
-          { 
-            key: 'mult_table_std', 
-            name: { sv: 'Multiplikationstabell', en: 'Multiplication Table' }, 
-            desc: { sv: 'Standardträning på tabellerna', en: 'Standard times table practice' },
-            tags: ['word_problem_ready'],
-            contextType: 'arithmetic_mult_std',
-            extractorPattern: /^(?<f1>\d+)\s*(?:\\cdot|·)\s*(?<f2>\d+)$/
-          },
-          { 
-            key: 'div_basic_std', 
-            name: { sv: 'Division: Enkel', en: 'Division: Basic' }, 
-            desc: { sv: 'Exakta svar utifrån tabellerna', en: 'Exact inverse multiplication calculations' },
-            tags: ['word_problem_ready'],
-            contextType: 'arithmetic_div_std',
-            extractorPattern: /^(?<prod>\d+)\s*\/\s*(?<f1>\d+)$/
-          },
-          { 
-            key: 'div_rule_check', 
-            name: { sv: 'Delbarhet: Flerval', en: 'Divisibility: Multiple Choice' }, 
-            desc: { sv: 'Vilket tal är delbart med n?', en: 'Which number is divisible by n?' } 
-          },
-          { 
-            key: 'div_rule_missing', 
-            name: { sv: 'Delbarhet: Saknad siffra', en: 'Divisibility: Missing Digit' }, 
-            desc: { sv: 'Vilken siffra gör talet delbart?', en: 'Which digit makes the number divisible?' } 
-          },
-          { 
-            key: 'div_rule_tf', 
-            name: { sv: 'Delbarhet: Sant/Falskt', en: 'Divisibility: True/False' }, 
-            desc: { sv: 'Logik för 2, 3, 5 och 10', en: 'Logic for 2, 3, 5 and 10' } 
-          },
-          { 
-            key: 'div_decimal_dividend', 
-            name: { sv: 'Division: Decimal i täljaren', en: 'Division: Decimal in dividend' }, 
-            desc: { sv: 'Dela ett decimaltal med ett heltal', en: 'Divide a decimal by a whole number' },
-            tags: ['word_problem_ready'],
-            contextType: 'arithmetic_div_std',
-            extractorPattern: /^(?<prod>[\d,.]+)\s*\/\s*(?<f1>\d+)$/
-          },
-          { 
-            key: 'div_decimal_divisor', 
-            name: { sv: 'Division: Decimal i nämnaren', en: 'Division: Decimal in divisor' }, 
-            desc: { sv: 'Dela med ett decimaltal', en: 'Divide by a decimal number' },
-            tags: ['word_problem_ready'],
-            contextType: 'arithmetic_div_std',
-            extractorPattern: /^(?<prod>[\d,.]+)\s*\/\s*(?<f1>[\d,.]+)$/
-          }
+          // LEVEL 1: ADDITION
+          { key: 'add_std_vertical', level: 1, name: { sv: 'Addition: Uppställning', en: 'Addition: Column Method' }, desc: { sv: 'Stora tal', en: 'Large numbers' } },
+          { key: 'add_missing_variable', level: 1, name: { sv: 'Addition: Hitta termen', en: 'Addition: Find the term' }, desc: { sv: 'a + x = b', en: 'a + x = b' } },
+          { key: 'add_spot_the_lie', level: 1, name: { sv: 'Hitta felet: Addition', en: 'Find error: Addition' }, desc: { sv: 'Felsökning', en: 'Troubleshooting' } },
+          { key: 'add_std_horizontal', level: 1, name: { sv: 'Addition: Vågrät', en: 'Addition: Horizontal' }, desc: { sv: 'Standardberäkning', en: 'Standard calculation' }, tags: ['word_problem_ready'], contextType: 'arithmetic_add_std', extractorPattern: /^(?<f1>\d+)\s*\+\s*(?<f2>\d+)$/ },
+          
+          // LEVEL 2: SUBTRACTION
+          { key: 'sub_std_vertical', level: 2, name: { sv: 'Subtraktion: Uppställning', en: 'Subtraction: Column Method' }, desc: { sv: 'Växling', en: 'Borrowing' } },
+          { key: 'sub_missing_variable', level: 2, name: { sv: 'Subtraktion: Hitta termen', en: 'Subtraction: Find the term' }, desc: { sv: 'a - x = b', en: 'a - x = b' } },
+          { key: 'sub_std_horizontal', level: 2, name: { sv: 'Subtraktion: Vågrät', en: 'Subtraction: Horizontal' }, desc: { sv: 'Standardberäkning', en: 'Standard calculation' }, tags: ['word_problem_ready'], contextType: 'arithmetic_sub_std', extractorPattern: /^(?<f1>\d+)\s*-\s*(?<f2>\d+)$/ },
+          
+          // LEVEL 3: DECIMALS (+/-)
+          { key: 'dec_add_vertical', level: 3, name: { sv: 'Decimaler: Addition', en: 'Decimals: Addition' }, desc: { sv: 'Passa kommatecknet', en: 'Align decimal point' } },
+          { key: 'dec_sub_vertical', level: 3, name: { sv: 'Decimaler: Subtraktion', en: 'Decimals: Subtraction' }, desc: { sv: 'Passa kommatecknet', en: 'Align decimal point' } },
+          
+          // LEVEL 4: MULTIPLICATION (EASY)
+          { key: 'mult_table_std', level: 4, name: { sv: 'Multiplikationstabell', en: 'Multiplication Table' }, desc: { sv: 'Standardträning', en: 'Standard practice' }, tags: ['word_problem_ready'], contextType: 'arithmetic_mult_std', extractorPattern: /^(?<f1>\d+)\s*(?:\\cdot|·)\s*(?<f2>\d+)$/ },
+          { key: 'mult_commutative', level: 4, name: { sv: 'Kommutativa lagen', en: 'Commutative Law' }, desc: { sv: 'a * b = b * a', en: 'a * b = b * a' } },
+          
+          // LEVEL 5: MULTIPLICATION (MEDIUM)
+          { key: 'mult_2x1_vertical', level: 5, name: { sv: 'Mult: Uppställning', en: 'Mult: Column Method' }, desc: { sv: 'Två siffror * en siffra', en: 'Two digits * one digit' } },
+          { key: 'mult_distributive', level: 5, name: { sv: 'Distributiva lagen', en: 'Distributive Law' }, desc: { sv: 'Dela upp faktorer', en: 'Split factors' } },
+          
+          // LEVEL 6: MULTIPLICATION (HARD)
+          { key: 'mult_decimal_std', level: 6, name: { sv: 'Decimalmultiplikation', en: 'Decimal Multiplication' }, desc: { sv: 'Räkna decimaler', en: 'Count decimals' } },
+          { key: 'mult_decimal_placement', level: 6, name: { sv: 'Placera kommatecknet', en: 'Place decimal point' }, desc: { sv: 'Uppskattning', en: 'Estimation' } },
+          
+          // LEVEL 7: DIVISION
+          { key: 'div_basic_std', level: 7, name: { sv: 'Division: Enkel', en: 'Division: Basic' }, desc: { sv: 'Exakta svar', en: 'Exact calculations' }, tags: ['word_problem_ready'], contextType: 'arithmetic_div_std', extractorPattern: /^(?<prod>\d+)\s*\/\s*(?<f1>\d+)$/ },
+          { key: 'div_inverse_logic', level: 7, name: { sv: 'Division via multiplikation', en: 'Division via mult' }, desc: { sv: 'Samband', en: 'Connection' } },
+          
+          // LEVEL 8: DIVISIBILITY RULES
+          { key: 'div_rule_check', level: 8, name: { sv: 'Delbarhet: Flerval', en: 'Divisibility: MCQ' }, desc: { sv: 'Vilket tal är delbart med n?', en: 'Which number is divisible?' } },
+          { key: 'div_rule_missing', level: 8, name: { sv: 'Delbarhet: Saknad siffra', en: 'Divisibility: Missing Digit' }, desc: { sv: 'Hitta rätt siffra', en: 'Find the correct digit' } },
+          { key: 'div_rule_tf', level: 8, name: { sv: 'Delbarhet: Sant/Falskt', en: 'Divisibility: T/F' }, desc: { sv: 'Logik för 2, 3, 5 och 10', en: 'Logic for 2, 3, 5 and 10' } },
+          
+          // LEVEL 9: DECIMAL DIVISION
+          { key: 'div_decimal_dividend', level: 9, name: { sv: 'Division: Decimal i täljaren', en: 'Division: Decimal in dividend' }, desc: { sv: 'Dela ett decimaltal', en: 'Divide a decimal' }, tags: ['word_problem_ready'], contextType: 'arithmetic_div_std', extractorPattern: /^(?<prod>[\d,.]+)\s*\/\s*(?<f1>\d+)$/ },
+          { key: 'div_decimal_divisor', level: 9, name: { sv: 'Division: Decimal i nämnaren', en: 'Division: Decimal in divisor' }, desc: { sv: 'Dela med ett decimaltal', en: 'Divide by a decimal' }, tags: ['word_problem_ready'], contextType: 'arithmetic_div_std', extractorPattern: /^(?<prod>[\d,.]+)\s*\/\s*(?<f1>[\d,.]+)$/ }
         ]
       },
       place_value: {
