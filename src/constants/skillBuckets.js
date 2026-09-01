@@ -89,10 +89,12 @@ export const SKILL_BUCKETS = {
       expressions: {
         name: { sv: 'Förenkling av Uttryck', en: 'Expression Simplification' },
         variations: [
-          { key: 'combine_lie_exponent', name: { sv: 'Hitta felet: Potenser', en: 'Find error: Exponents' }, desc: { sv: 'x + x vs x * x', en: 'x + x vs x * x' } },
-          { key: 'combine_concept_id', name: { sv: 'Begrepp: Termer', en: 'Concept: Terms' }, desc: { sv: 'Identifiera lika termer', en: 'Identify like terms' } },
+          // LEVEL 1: Samla termer (Combine Terms)
+          { key: 'combine_lie_exponent', level: 1, name: { sv: 'Hitta felet: Potenser', en: 'Find error: Exponents' }, desc: { sv: 'x + x vs x * x', en: 'x + x vs x * x' } },
+          { key: 'combine_concept_id', level: 1, name: { sv: 'Begrepp: Termer', en: 'Concept: Terms' }, desc: { sv: 'Identifiera lika termer', en: 'Identify like terms' } },
           { 
             key: 'combine_standard_mixed', 
+            level: 1,
             name: { sv: 'Förenkla uttryck', en: 'Simplify expressions' }, 
             desc: { sv: 'Samla x och tal i ordning', en: 'Combine x and constants' },
             tags: ['word_problem_ready'],
@@ -101,55 +103,76 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'expressions_word_problem', 
+            level: 1,
             name: { sv: 'Uttryck: Vardagsproblem', en: 'Expressions: Word Problems' }, 
             desc: { sv: 'Förenkla uttryck utifrån textscenarier', en: 'Simplify expressions from text scenarios' },
             tags: ['word_problem_ready'],
             contextType: 'algebra_expressions_story',
             extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*(?<op2>[\+\-])\s*(?<c>\d+)x\s*(?<op3>[\+\-])\s*(?<d>\d+)$/
           },
-          { key: 'distribute_lie_partial', name: { sv: 'Hitta felet: Parentes', en: 'Find error: Parentheses' }, desc: { sv: 'Partiell distribution', en: 'Partial distribution' } },
+          { key: 'word_candy', level: 1, name: { sv: 'Uttryck: Godispåsar', en: 'Expressions: Candy bags' }, desc: { sv: 'Teckna uttryck', en: 'Formulate expression' } },
+          { key: 'word_combined_age_tri', level: 1, name: { sv: 'Uttryck: Åldrar', en: 'Expressions: Ages' }, desc: { sv: 'Tre personers ålder', en: 'Ages of three people' } },
+          { key: 'word_passengers', level: 1, name: { sv: 'Uttryck: Passagerare', en: 'Expressions: Passengers' }, desc: { sv: 'Förändring på buss', en: 'Changes on a bus' } },
+
+          // LEVEL 2: Parenteser (Parentheses)
+          { key: 'distribute_lie_partial', level: 2, name: { sv: 'Hitta felet: Parentes', en: 'Find error: Parentheses' }, desc: { sv: 'Partiell distribution', en: 'Partial distribution' } },
           { 
             key: 'distribute_plus', 
+            level: 2,
             name: { sv: 'Parentes (+)', en: 'Parentheses (+)' }, 
-            desc: { sv: 'Multiplicera in i parentes', en: 'Multiply into parentheses' }, // 🟢 Added missing desc
+            desc: { sv: 'Multiplicera in i parentes', en: 'Multiply into parentheses' }, 
             tags: ['word_problem_ready'],
             contextType: 'algebra_expressions_dist',
             extractorPattern: /^(?<a>\d+)x\s*\+\s*\(?(?<b>\d*)x\s*\+\s*(?<c>\d+)\)?$/
           },
           { 
             key: 'distribute_minus', 
+            level: 2,
             name: { sv: 'Parentes (-)', en: 'Parentheses (-)' }, 
-            desc: { sv: 'Multiplicera med negativt tecken', en: 'Multiply with negative sign' }, // 🟢 Added missing desc
+            desc: { sv: 'Multiplicera med negativt tecken', en: 'Multiply with negative sign' }, 
             tags: ['word_problem_ready'],
             contextType: 'algebra_expressions_dist_neg',
             extractorPattern: /^(?<a>\d+)x\s*-\s*\(?(?<b>\d*)x\s*\+\s*(?<c>\d+)\)?$/
           },
-          { key: 'distribute_double', name: { sv: 'Dubbla parenteser', en: 'Double parentheses' }, desc: { sv: 'Expandera två parenteser', en: 'Expand two parentheses' } },
+
+          // LEVEL 3: Expandera och Förenkla (Distribute & Simplify)
+          { key: 'distribute_double', level: 3, name: { sv: 'Dubbla parenteser', en: 'Double parentheses' }, desc: { sv: 'Expandera två parenteser', en: 'Expand two parentheses' } },
           { 
             key: 'distribute_combine_std', 
+            level: 3,
             name: { sv: 'Expandera & Förenkla', en: 'Expand & Simplify' }, 
-            desc: { sv: 'Förenkla uttryck med parenteser', en: 'Simplify expressions with parentheses' }, // 🟢 Added missing desc
+            desc: { sv: 'Förenkla uttryck med parenteser', en: 'Simplify expressions with parentheses' }, 
             tags: ['word_problem_ready'],
             contextType: 'algebra_expressions_expand',
             extractorPattern: /^(?<a>\d+)\((?<b>\d*)x\s*\+\s*(?<c>\d+)\)\s*(?<op>[\+\-])\s*(?<d>\d+)x$/
           },
-          { key: 'sub_concept_plus_logic', name: { sv: 'Teckenregler', en: 'Sign rules' }, desc: { sv: 'Minus framför parentes', en: 'Minus in front of parentheses' } },
-          { key: 'sub_block_plus', name: { sv: 'Minusparentes (+)', en: 'Minus parentheses (+)' }, desc: { sv: '-(ax + b)', en: '-(ax + b)' } },
-          { key: 'sub_block_minus', name: { sv: 'Minusparentes (-)', en: 'Minus parentheses (-)' }, desc: { sv: '-(ax - b)', en: '-(ax - b)' } },
-          { key: 'word_candy', name: { sv: 'Uttryck: Godispåsar', en: 'Expressions: Candy bags' }, desc: { sv: 'Teckna uttryck', en: 'Formulate expression' } },
-          { key: 'word_combined_age_tri', name: { sv: 'Uttryck: Åldrar', en: 'Expressions: Ages' }, desc: { sv: 'Tre personers ålder', en: 'Ages of three people' } },
-          { key: 'word_passengers', name: { sv: 'Uttryck: Passagerare', en: 'Expressions: Passengers' }, desc: { sv: 'Förändring på buss', en: 'Changes on a bus' } }
+
+          // LEVEL 4: Minusparenteser (Subtract Parentheses)
+          { key: 'sub_concept_plus_logic', level: 4, name: { sv: 'Teckenregler', en: 'Sign rules' }, desc: { sv: 'Minus framför parentes', en: 'Minus in front of parentheses' } },
+          { key: 'sub_block_plus', level: 4, name: { sv: 'Minusparentes (+)', en: 'Minus parentheses (+)' }, desc: { sv: '-(ax + b)', en: '-(ax + b)' } },
+          { key: 'sub_block_minus', level: 4, name: { sv: 'Minusparentes (-)', en: 'Minus parentheses (-)' }, desc: { sv: '-(ax - b)', en: '-(ax - b)' } }
         ]
       },
       algebraic_geometry: {
         name: { sv: 'Geometri med Algebra', en: 'Geometry with Algebra' },
         variations: [
-          { key: 'perimeter_write', name: { sv: 'Omkrets: Teckna uttryck', en: 'Perimeter: Write Expression' }, desc: { sv: 'Skriv förenklat uttryck för figurernas sidomkrets', en: 'Write a simplified expression for shape perimeters' } },
-          { key: 'perimeter_solve', name: { sv: 'Omkrets: Lös ut x', en: 'Perimeter: Solve for x' }, desc: { sv: 'Hitta x-värdet utifrån en känd total omkrets', en: 'Find x based on a known total perimeter parameter' } },
-          { key: 'area_write', name: { sv: 'Area: Teckna uttryck', en: 'Area: Write Expression' }, desc: { sv: 'Teckna ett förenklat uttryck för areaytan', en: 'Write a simplified expression for side areas' } },
-          { key: 'area_solve', name: { sv: 'Area: Lös ut x', en: 'Area: Solve for x' }, desc: { sv: 'Lös ut x-variabeln via kända area-parametrar', en: 'Isolate x via a known given total figure area' } },
-          { key: 'angles_write', name: { sv: 'Vinklar: Teckna uttryck', en: 'Angles: Write Expression' }, desc: { sv: 'Teckna uttryck för intilliggande vinkelsummor', en: 'Write expressions for combined adjacent angles' } },
-          { key: 'angles_solve', name: { sv: 'Vinklar: Lös ut x', en: 'Angles: Solve for x' }, desc: { sv: 'Beräkna x via vinklar på en rät linje (180°)', en: 'Calculate x using straight line angles summing to 180°' } },
+          // LEVEL 1: Omkrets - Teckna uttryck
+          { key: 'perimeter_write', level: 1, name: { sv: 'Omkrets: Teckna uttryck', en: 'Perimeter: Write Expression' }, desc: { sv: 'Skriv förenklat uttryck för figurernas sidomkrets', en: 'Write a simplified expression for shape perimeters' } },
+          
+          // LEVEL 2: Omkrets - Lös ut x
+          { key: 'perimeter_solve', level: 2, name: { sv: 'Omkrets: Lös ut x', en: 'Perimeter: Solve for x' }, desc: { sv: 'Hitta x-värdet utifrån en känd total omkrets', en: 'Find x based on a known total perimeter parameter' } },
+          
+          // LEVEL 3: Area - Teckna uttryck
+          { key: 'area_write', level: 3, name: { sv: 'Area: Teckna uttryck', en: 'Area: Write Expression' }, desc: { sv: 'Teckna ett förenklat uttryck för areaytan', en: 'Write a simplified expression for side areas' } },
+          
+          // LEVEL 4: Area - Lös ut x
+          { key: 'area_solve', level: 4, name: { sv: 'Area: Lös ut x', en: 'Area: Solve for x' }, desc: { sv: 'Lös ut x-variabeln via kända area-parametrar', en: 'Isolate x via a known given total figure area' } },
+          
+          // LEVEL 5: Vinklar - Teckna uttryck
+          { key: 'angles_write', level: 5, name: { sv: 'Vinklar: Teckna uttryck', en: 'Angles: Write Expression' }, desc: { sv: 'Teckna uttryck för intilliggande vinkelsummor', en: 'Write expressions for combined adjacent angles' } },
+          
+          // LEVEL 6: Vinklar - Lös ut x
+          { key: 'angles_solve', level: 6, name: { sv: 'Vinklar: Lös ut x', en: 'Angles: Solve for x' }, desc: { sv: 'Beräkna x via vinklar på en rät linje (180°)', en: 'Calculate x using straight line angles summing to 180°' } }
         ]
       },
       patterns: {
@@ -449,32 +472,44 @@ export const SKILL_BUCKETS = {
       fractions_basics: {
         name: { sv: 'Bråk: Grunder', en: 'Fractions: Basics' },
         variations: [
-          { key: 'visual_lie', name: { sv: 'Hitta felet: Bilder', en: 'Find error: Visuals' }, desc: { sv: 'Visuell tolkning', en: 'Visual interpretation' } },
-          { key: 'visual_inverse', name: { sv: 'Bild: Hitta helheten', en: 'Visual: Find whole' }, desc: { sv: 'Givet del, sök helhet', en: 'Given part, seek whole' } },
-          { key: 'visual_calc', name: { sv: 'Bild: Beräkna andel', en: 'Visual: Calculate share' }, desc: { sv: 'Färgad del av total', en: 'Colored part of total' } },
-          { key: 'part_inverse', name: { sv: 'Hitta helheten', en: 'Find the whole' }, desc: { sv: '1/n är x, vad är allt?', en: '1/n is x, what is total?' } },
-          { key: 'part_compare', name: { sv: 'Jämför andelar', en: 'Compare shares' }, desc: { sv: 'Vilken del är störst?', en: 'Which part is largest?' } },
-          { key: 'part_calc', name: { sv: 'Beräkna del av antal', en: 'Calculate part of count' }, desc: { sv: '1/n av x', en: '1/n of x' } },
-          { key: 'mixed_bounds', name: { sv: 'Storleksbedömning', en: 'Size assessment' }, desc: { sv: 'Större/Mindre än heltal', en: 'Greater/Smaller than integer' } },
-          { key: 'mixed_convert_imp', name: { sv: 'Till bråkform', en: 'To improper fraction' }, desc: { sv: 'Blandad -> Bråk', en: 'Mixed -> Improper' } },
-          { key: 'mixed_convert_mix', name: { sv: 'Till blandad form', en: 'To mixed form' }, desc: { sv: 'Bråk -> Blandad', en: 'Improper -> Mixed' } },
-          { key: 'simplify_missing', name: { sv: 'Likvärdiga bråk', en: 'Equivalent fractions' }, desc: { sv: 'Förlängning/Förkortning', en: 'Extension/Simplification' } },
-          { key: 'simplify_concept', name: { sv: 'Koncept: Förkortning', en: 'Concept: Simplification' }, desc: { sv: 'Ändras värdet?', en: 'Does the value change?' } },
-          { key: 'simplify_calc', name: { sv: 'Förkorta bråk', en: 'Simplify fraction' }, desc: { sv: 'Enklaste form', en: 'Simplest form' } },
-          { key: 'equivalence_basic_frac', name: { sv: 'Basfakta: Bråk till %', en: 'Basic Facts: Fraction to %' }, desc: { sv: 'Ex: 1/4 = 25%', en: 'Ex: 1/4 = 25%' } },
-          { key: 'equivalence_basic_dec', name: { sv: 'Basfakta: Decimal till %', en: 'Basic Facts: Decimal to %' }, desc: { sv: 'Ex: 0,2 = 20%', en: 'Ex: 0.2 = 20%' } },
-          { key: 'decimal_inequality', name: { sv: 'Jämför bråk/decimal', en: 'Compare fraction/decimal' }, desc: { sv: 'Större, mindre, lika', en: 'Greater, smaller, equal' } },
-          { key: 'decimal_to_dec', name: { sv: 'Bråk till decimal', en: 'Fraction to decimal' }, desc: { sv: 'Ex: 1/4 = 0,25', en: 'Ex: 1/4 = 0.25' } },
-          { key: 'decimal_to_frac', name: { sv: 'Decimal till bråk', en: 'Decimal to fraction' }, desc: { sv: 'Ex: 0,5 = 1/2', en: 'Ex: 0.5 = 1/2' } }
+          // LEVEL 1: Visualiseringar (Visuals)
+          { key: 'visual_lie', level: 1, name: { sv: 'Hitta felet: Bilder', en: 'Find error: Visuals' }, desc: { sv: 'Visuell tolkning', en: 'Visual interpretation' } },
+          { key: 'visual_inverse', level: 1, name: { sv: 'Bild: Hitta helheten', en: 'Visual: Find whole' }, desc: { sv: 'Givet del, sök helhet', en: 'Given part, seek whole' } },
+          { key: 'visual_calc', level: 1, name: { sv: 'Bild: Beräkna andel', en: 'Visual: Calculate share' }, desc: { sv: 'Färgad del av total', en: 'Colored part of total' } },
+          
+          // LEVEL 2: Del av antal (Parts of Quantity)
+          { key: 'part_inverse', level: 2, name: { sv: 'Hitta helheten', en: 'Find the whole' }, desc: { sv: '1/n är x, vad är allt?', en: '1/n is x, what is total?' } },
+          { key: 'part_compare', level: 2, name: { sv: 'Jämför andelar', en: 'Compare shares' }, desc: { sv: 'Vilken del är störst?', en: 'Which part is largest?' } },
+          { key: 'part_calc', level: 2, name: { sv: 'Beräkna del av antal', en: 'Calculate part of count' }, desc: { sv: '1/n av x', en: '1/n of x' } },
+          
+          // LEVEL 3: Blandad form & Bråkform (Mixed & Improper)
+          { key: 'mixed_bounds', level: 3, name: { sv: 'Storleksbedömning', en: 'Size assessment' }, desc: { sv: 'Större/Mindre än heltal', en: 'Greater/Smaller than integer' } },
+          { key: 'mixed_missing', level: 3, name: { sv: 'Blandad form: Pussel', en: 'Mixed form: Puzzle' }, desc: { sv: 'Hitta saknad täljare/nämnare', en: 'Find missing numerator/denominator' } },
+          { key: 'mixed_convert_imp', level: 3, name: { sv: 'Till bråkform', en: 'To improper fraction' }, desc: { sv: 'Blandad -> Bråk', en: 'Mixed -> Improper' } },
+          { key: 'mixed_convert_mix', level: 3, name: { sv: 'Till blandad form', en: 'To mixed form' }, desc: { sv: 'Bråk -> Blandad', en: 'Improper -> Mixed' } },
+          
+          // LEVEL 4: Förlängning & Förkortning (Simplify & Extend)
+          { key: 'simplify_missing', level: 4, name: { sv: 'Likvärdiga bråk', en: 'Equivalent fractions' }, desc: { sv: 'Förlängning/Förkortning', en: 'Extension/Simplification' } },
+          { key: 'simplify_concept', level: 4, name: { sv: 'Koncept: Förkortning', en: 'Concept: Simplification' }, desc: { sv: 'Ändras värdet?', en: 'Does the value change?' } },
+          { key: 'simplify_calc', level: 4, name: { sv: 'Förkorta bråk', en: 'Simplify fraction' }, desc: { sv: 'Enklaste form', en: 'Simplest form' } },
+          
+          // LEVEL 5: Bråk, Decimaler & Procent (Decimals & Conversions)
+          { key: 'decimal_inequality', level: 5, name: { sv: 'Jämför bråk/decimal', en: 'Compare fraction/decimal' }, desc: { sv: 'Större, mindre, lika', en: 'Greater, smaller, equal' } },
+          { key: 'decimal_to_dec', level: 5, name: { sv: 'Bråk till decimal', en: 'Fraction to decimal' }, desc: { sv: 'Ex: 1/4 = 0,25', en: 'Ex: 1/4 = 0.25' } },
+          { key: 'decimal_to_frac', level: 5, name: { sv: 'Decimal till bråk', en: 'Decimal to fraction' }, desc: { sv: 'Ex: 0,5 = 1/2', en: 'Ex: 0.5 = 1/2' } },
+          { key: 'equivalence_basic_frac', level: 5, name: { sv: 'Basfakta: Bråk till %', en: 'Basic Facts: Fraction to %' }, desc: { sv: 'Ex: 1/4 = 25%', en: 'Ex: 1/4 = 25%' } },
+          { key: 'equivalence_basic_dec', level: 5, name: { sv: 'Basfakta: Decimal till %', en: 'Basic Facts: Decimal to %' }, desc: { sv: 'Ex: 0,2 = 20%', en: 'Ex: 0.2 = 20%' } }
         ]
       },
       fraction_arith: {
         name: { sv: 'Bråk: Räknesätt', en: 'Fraction Operations' },
         variations: [
-          { key: 'add_concept', name: { sv: 'Addition: Regler', en: 'Addition: Rules' }, desc: { sv: 'Addera täljare, ej nämnare', en: 'Add numerators, not denominators' } },
-          { key: 'add_missing', name: { sv: 'Addition: Pussel', en: 'Addition: Puzzle' }, desc: { sv: 'Hitta saknad term', en: 'Find missing term' } },
+          // LEVEL 1: Lika nämnare (Same Denominator)
+          { key: 'add_concept', level: 1, name: { sv: 'Addition: Regler', en: 'Addition: Rules' }, desc: { sv: 'Addera täljare, ej nämnare', en: 'Add numerators, not denominators' } },
+          { key: 'add_missing', level: 1, name: { sv: 'Addition: Pussel', en: 'Addition: Puzzle' }, desc: { sv: 'Hitta saknad term', en: 'Find missing term' } },
           {
             key: "add_calc",
+            level: 1,
             name: { sv: "Bråkaddition: Lika nämnare", en: "Fraction Addition: Same Denominator" },
             desc: { sv: "Addera bråk med gemensam nämnare och svara i enklaste form", en: "Add fractions with a common denominator and simplify the answer" },
             tags: ["word_problem_ready"],
@@ -483,16 +518,20 @@ export const SKILL_BUCKETS = {
           },
           {
             key: "sub_calc",
+            level: 1,
             name: { sv: "Bråksubtraktion: Lika nämnare", en: "Fraction Subtraction: Same Denominator" },
             desc: { sv: "Subtrahera bråk med gemensam nämnare och svara i enklaste form", en: "Subtract fractions with a common denominator and simplify the answer" },
             tags: ["word_problem_ready"],
             contextType: "frac_same_denom_sub",
             extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d>\d+)\s*}\s*-\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?:\k<d>)\s*}/
           },
-          { key: 'lcd_find', name: { sv: 'Hitta MGN', en: 'Find LCD' }, desc: { sv: 'Minsta gemensamma nämnare', en: 'Lowest common denominator' } },
-          { key: 'add_error_spot', name: { sv: 'Hitta felet: Olika nämnare', en: 'Find error: Diff denom' }, desc: { sv: 'Vanliga misstag', en: 'Common mistakes' } },
+
+          // LEVEL 2: Olika nämnare (Different Denominators)
+          { key: 'lcd_find', level: 2, name: { sv: 'Hitta MGN', en: 'Find LCD' }, desc: { sv: 'Minsta gemensamma nämnare', en: 'Lowest common denominator' } },
+          { key: 'add_error_spot', level: 2, name: { sv: 'Hitta felet: Olika nämnare', en: 'Find error: Diff denom' }, desc: { sv: 'Vanliga misstag', en: 'Common mistakes' } },
           {
             key: "add_diff_denom",
+            level: 2,
             name: { sv: "Bråkaddition: Olika nämnare", en: "Fraction Addition: Different Denominators" },
             desc: { sv: "Hitta MGN för att addera bråk med olika nämnare", en: "Find the LCD to add fractions with different denominators" },
             tags: ["word_problem_ready"],
@@ -501,42 +540,58 @@ export const SKILL_BUCKETS = {
           },
           {
             key: "sub_diff_denom",
+            level: 2,
             name: { sv: "Bråksubtraktion: Olika nämnare", en: "Fraction Subtraction: Different Denominators" },
             desc: { sv: "Hitta MGN för att subtrahera bråk med olika nämnare", en: "Find the LCD to subtract fractions with different denominators" },
             tags: ["word_problem_ready"],
             contextType: "frac_diff_denom_sub",
             extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*-\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
           },
+
+          // LEVEL 3: Blandad form (Mixed Numbers)
+          { key: 'mixed_est', level: 3, name: { sv: 'Uppskatta summa', en: 'Estimate Sum' }, desc: { sv: 'Uppskatta värdet av blandade bråk', en: 'Estimate the value of mixed fractions' } },
+          { key: 'mixed_add_same', level: 3, name: { sv: 'Addition: Blandad (Lika nämnare)', en: 'Addition: Mixed (Same denom)' }, desc: { sv: 'Addera blandade bråk med samma nämnare', en: 'Add mixed fractions with same denominator' } },
+          { key: 'mixed_sub_same', level: 3, name: { sv: 'Subtraktion: Blandad (Lika nämnare)', en: 'Subtraction: Mixed (Same denom)' }, desc: { sv: 'Subtrahera blandade bråk med samma nämnare', en: 'Subtract mixed fractions with same denominator' } },
           {
             key: "mixed_add_diff",
-            name: { sv: "Addition: Blandad form", en: "Addition: Mixed Form" },
-            desc: { sv: "Addera bråk i blandad form genom att omvandla till bråkform", en: "Add fractions in mixed form by converting to improper fractions" },
+            level: 3,
+            name: { sv: "Addition: Blandad (Olika)", en: "Addition: Mixed Form (Diff denom)" },
+            desc: { sv: "Addera bråk i blandad form", en: "Add fractions in mixed form" },
             tags: ["word_problem_ready"],
             contextType: "frac_mixed_add",
             extractorPattern: /(?<w1>\d+)\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*\+\s*(?<w2>\d+)\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
           },
           {
             key: "mixed_sub_diff",
-            name: { sv: "Subtraktion: Blandad form", en: "Subtraction: Mixed Form" },
-            desc: { sv: "Subtrahera bråk i blandad form genom att omvandla till bråkform", en: "Subtract fractions in mixed form by converting to improper fractions" },
+            level: 3,
+            name: { sv: "Subtraktion: Blandad (Olika)", en: "Subtraction: Mixed Form (Diff denom)" },
+            desc: { sv: "Subtrahera bråk i blandad form", en: "Subtract fractions in mixed form" },
             tags: ["word_problem_ready"],
             contextType: "frac_mixed_sub",
             extractorPattern: /(?<w1>\d+)\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*-\s*(?<w2>\d+)\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
           },
-          { key: 'mult_scaling', name: { sv: 'Multiplikation: Skalning', en: 'Mult: Scaling' }, desc: { sv: 'Större eller mindre?', en: 'Larger or smaller?' } },
+
+          // LEVEL 4: Multiplikation (Multiplication)
+          { key: 'mult_scaling', level: 4, name: { sv: 'Multiplikation: Skalning', en: 'Mult: Scaling' }, desc: { sv: 'Större eller mindre?', en: 'Larger or smaller?' } },
+          { key: 'mult_area', level: 4, name: { sv: 'Areaberäkning (Bråk)', en: 'Area Calculation (Fractions)' }, desc: { sv: 'Beräkna area med bråk', en: 'Calculate area using fractions' } },
           {
             key: "mult_calc",
+            level: 4,
             name: { sv: "Bråkmultiplikation", en: "Fraction Multiplication" },
-            desc: { sv: "Multiplicera täljare för sig och nämnare för sig till enklaste form", en: "Multiply numerators and denominators separately into simplest form" },
+            desc: { sv: "Multiplicera täljare för sig och nämnare för sig", en: "Multiply numerators and denominators separately" },
             tags: ["word_problem_ready"],
             contextType: "frac_multiplication",
             extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*\\cdot\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
           },
-          { key: 'div_reciprocal', name: { sv: 'Inverterade tal', en: 'Reciprocal numbers' }, desc: { sv: 'Vänd på bråket', en: 'Flip the fraction' } },
+
+          // LEVEL 5: Division (Division)
+          { key: 'div_operator', level: 5, name: { sv: 'Division: Koncept', en: 'Division: Concept' }, desc: { sv: 'Förstå bråkdivision', en: 'Understand fraction division' } },
+          { key: 'div_reciprocal', level: 5, name: { sv: 'Inverterade tal', en: 'Reciprocal numbers' }, desc: { sv: 'Vänd på bråket', en: 'Flip the fraction' } },
           {
             key: "div_calc",
+            level: 5,
             name: { sv: "Bråkdivision", en: "Fraction Division" },
-            desc: { sv: "Dividera bråk genom att multiplicera med det inverterade bråket", en: "Divide fractions by multiplying by the reciprocal" },
+            desc: { sv: "Dividera bråk genom att multiplicera med inverterat", en: "Divide fractions by multiplying by the reciprocal" },
             tags: ["word_problem_ready"],
             contextType: "frac_division",
             extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*\\div\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
@@ -620,29 +675,36 @@ export const SKILL_BUCKETS = {
       change_factor: {
         name: { sv: 'Förändringsfaktor', en: 'Change Factor' },
         variations: [
-          { key: 'pct_to_factor_inc', name: { sv: 'Ökning till Faktor', en: 'Increase to Factor' }, desc: { sv: '+20% -> 1,20', en: '+20% -> 1.20' } },
-          { key: 'pct_to_factor_dec', name: { sv: 'Minskning till Faktor', en: 'Decrease to Factor' }, desc: { sv: '-20% -> 0,80', en: '-20% -> 0.80' } },
-          { key: 'factor_to_pct_inc', name: { sv: 'Factor till Ökning', en: 'Factor to Increase' }, desc: { sv: '1,20 -> +20%', en: '1.20 -> +20%' } },
-          { key: 'factor_to_pct_dec', name: { sv: 'Factor till Minskning', en: 'Factor to Decrease' }, desc: { sv: '0,80 -> -20%', en: '0.80 -> -20%' } },
+          // LEVEL 1: Koncept & Omvandling
+          { key: 'pct_to_factor_inc', level: 1, name: { sv: 'Ökning till Faktor', en: 'Increase to Factor' }, desc: { sv: '+20% -> 1,20', en: '+20% -> 1.20' } },
+          { key: 'pct_to_factor_dec', level: 1, name: { sv: 'Minskning till Faktor', en: 'Decrease to Factor' }, desc: { sv: '-20% -> 0,80', en: '-20% -> 0.80' } },
+          { key: 'factor_to_pct_inc', level: 1, name: { sv: 'Factor till Ökning', en: 'Factor to Increase' }, desc: { sv: '1,20 -> +20%', en: '1.20 -> +20%' } },
+          { key: 'factor_to_pct_dec', level: 1, name: { sv: 'Factor till Minskning', en: 'Factor to Decrease' }, desc: { sv: '0,80 -> -20%', en: '0.80 -> -20%' } },
+          
+          // LEVEL 2: Beräkna nytt värde
           { 
             key: 'apply_factor_inc', 
+            level: 2,
             name: { sv: 'Beräkna nytt (Ökning)', en: 'Calc new (Increase)' }, 
-            desc: { sv: 'Startvärde · Ökningsfaktor', en: 'Initial value · Growth factor' }, // 🟢 Restores studio subtitle labels
+            desc: { sv: 'Startvärde · Ökningsfaktor', en: 'Initial value · Growth factor' },
             tags: ['word_problem_ready'],
             contextType: 'apply_factor_inc', 
-            // 🟢 Embraces both dot notation layout strings '·' and code-escaped '\\cdot' configurations dynamically
             extractorPattern: /^(?<base>\d+)\s*(?:\\cdot|·)\s*(?<factor>1[.,]\d+)$/
           },
           { 
             key: 'apply_factor_dec', 
+            level: 2,
             name: { sv: 'Beräkna nytt (Minskning)', en: 'Calc new (Decrease)' }, 
             desc: { sv: 'Startvärde · Minskningsfaktor', en: 'Initial value · Decay factor' },
             tags: ['word_problem_ready'],
             contextType: 'apply_factor_dec',
             extractorPattern: /^(?<base>\d+)\s*(?:\\cdot|·)\s*(?<factor>0[.,]\d+)$/
           },
+          
+          // LEVEL 3: Hitta ursprungsvärdet
           { 
             key: 'find_original_inc', 
+            level: 3,
             name: { sv: 'Hitta gamla (Ökning)', en: 'Find old (Increase)' }, 
             desc: { sv: 'Nytt värde / Ökningsfaktor', en: 'New value / Growth factor' },
             tags: ['word_problem_ready'],
@@ -651,14 +713,18 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'find_original_dec', 
+            level: 3,
             name: { sv: 'Hitta gamla (Minskning)', en: 'Find old (Decrease)' }, 
             desc: { sv: 'Nytt värde / Minskningsfaktor', en: 'New value / Decay factor' },
             tags: ['word_problem_ready'],
             contextType: 'find_original_dec',
             extractorPattern: /^\\frac\{(?<newPrice>\d+)\}\{(?<factor>0[.,]\d+)\}$/
           },
+          
+          // LEVEL 4: Upprepade förändringar
           { 
             key: 'sequential_factors', 
+            level: 4,
             name: { sv: 'Total faktor', en: 'Total factor' }, 
             desc: { sv: 'Faktor 1 · Faktor 2', en: 'Factor 1 · Factor 2' },
             tags: ['word_problem_ready'],
@@ -670,19 +736,24 @@ export const SKILL_BUCKETS = {
       exponents: {
         name: { sv: 'Potenser', en: 'Exponents' },
         variations: [
-          { key: 'zero_rule', name: { sv: 'Noll-regeln', en: 'Zero rule' }, desc: { sv: 'x^0 = 1', en: 'x^0 = 1' } },
-          { key: 'power_of_one', name: { sv: 'Upphöjt till 1', en: 'Power of one' }, desc: { sv: 'x^1 = x', en: 'x^1 = x' } },
+          // LEVEL 1: Grunder (Foundations)
+          { key: 'zero_rule', level: 1, name: { sv: 'Noll-regeln', en: 'Zero rule' }, desc: { sv: 'x^0 = 1', en: 'x^0 = 1' } },
+          { key: 'power_of_one', level: 1, name: { sv: 'Upphöjt till 1', en: 'Power of one' }, desc: { sv: 'x^1 = x', en: 'x^1 = x' } },
           { 
             key: 'foundations_calc', 
+            level: 1,
             name: { sv: 'Beräkna potenser', en: 'Calc powers' }, 
             desc: { sv: 'Beräkna värdet av en potens med heltalsbas', en: 'Calculate the value of a whole number power' },
             tags: ['word_problem_ready'],
             contextType: 'exp_foundations_calc',
             extractorPattern: /^(?<base>\d+)\s*;\s*(?<exp>\d+)\s*;\s*(?<ans>\d+)/
           },
-          { key: 'foundations_spot_the_lie', name: { sv: 'Hitta felet: Bas/Exp', en: 'Find error: Base/Exp' }, desc: { sv: 'Vanliga misstag', en: 'Common mistakes' } },
+          { key: 'foundations_spot_the_lie', level: 1, name: { sv: 'Hitta felet: Bas/Exp', en: 'Find error: Base/Exp' }, desc: { sv: 'Vanliga misstag', en: 'Common mistakes' } },
+          
+          // LEVEL 2: Tiopotenser (Powers of Ten)
           { 
             key: 'ten_positive_exponent', 
+            level: 2,
             name: { sv: 'Tiopotenser (Pos)', en: 'Powers of ten (Pos)' }, 
             desc: { sv: 'Skriv en positiv tiopotens som ett heltal', en: 'Write a positive power of ten as an integer' },
             tags: ['word_problem_ready'],
@@ -691,6 +762,7 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'ten_negative_exponent', 
+            level: 2,
             name: { sv: 'Tiopotenser (Neg)', en: 'Powers of ten (Neg)' }, 
             desc: { sv: 'Omvandla en negativ tiopotens till ett decimaltal', en: 'Convert a negative power of ten to a decimal' },
             tags: ['word_problem_ready'],
@@ -699,14 +771,18 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'ten_inverse_counting', 
+            level: 2,
             name: { sv: 'Räkna nollor', en: 'Count zeros' }, 
             desc: { sv: 'Skriv ett tal som en tiopotens genom att räkna nollor', en: 'Write a number as a power of ten by counting zeros' },
             tags: ['word_problem_ready'],
             contextType: 'exp_ten_inverse',
             extractorPattern: /^(?<num>\d+)\s*;\s*(?<zeros>\d+)/
           },
+          
+          // LEVEL 3: Grundpotensform (Scientific Notation)
           { 
             key: 'scientific_to_form', 
+            level: 3,
             name: { sv: 'Till Grundpotensform', en: 'To Scientific Notation' }, 
             desc: { sv: 'Skriv om stora tal i grundpotensform', en: 'Rewrite large numbers in scientific notation' },
             tags: ['word_problem_ready'],
@@ -715,15 +791,19 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'scientific_missing_mantissa', 
+            level: 3,
             name: { sv: 'Hitta mantissan', en: 'Find mantissa' }, 
             desc: { sv: 'Bestäm saknat värde a i a * 10^n', en: 'Determine missing value a in a * 10^n' },
             tags: ['word_problem_ready'],
             contextType: 'exp_scientific_missing',
             extractorPattern: /^(?<number>[\d.]+)\s*;\s*(?<exponent>\d+)\s*;\s*(?<mantissa>[\d.]+)/
           },
-          { key: 'scientific_missing_exponent', name: { sv: 'Hitta exponenten', en: 'Find exponent' }, desc: { sv: 'Bestäm n i a * 10^n', en: 'Determine n in a * 10^n' } },
+          { key: 'scientific_missing_exponent', level: 3, name: { sv: 'Hitta exponenten', en: 'Find exponent' }, desc: { sv: 'Bestäm n i a * 10^n', en: 'Determine n in a * 10^n' } },
+          
+          // LEVEL 4: Kvadratrötter (Square Roots)
           { 
             key: 'root_calc', 
+            level: 4,
             name: { sv: 'Kvadratrötter', en: 'Square roots' }, 
             desc: { sv: 'Beräkna det positiva talet som multiplicerat med sig självt blir x', en: 'Calculate the positive square root of a number' },
             tags: ['word_problem_ready'],
@@ -732,34 +812,37 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'root_inverse_algebra', 
+            level: 4,
             name: { sv: 'Ekvation x^2', en: 'Equation x^2' }, 
             desc: { sv: 'Lös andragradsekvationer på formen x^2 = a', en: 'Solve basic quadratic equations of form x^2 = a' },
             tags: ['word_problem_ready'],
             contextType: 'exp_root_inverse',
             extractorPattern: /^(?<square>\d+)\s*;\s*(?<base>\d+)/
           },
-          { key: 'law_multiplication', name: { sv: 'Lag: Multiplikation', en: 'Law: Multiplication' }, desc: { sv: 'Addera exponenter', en: 'Add exponents' } },
-          { key: 'law_division', name: { sv: 'Lag: Division', en: 'Law: Division' }, desc: { sv: 'Subtrahera exponenter', en: 'Subtract exponents' } },
-          { key: 'law_mult_div_combined', name: { sv: 'Lag: Mult & Div', en: 'Law: Mult & Div' }, desc: { sv: 'Blandade regler', en: 'Mixed rules' } },
-          { key: 'law_power_of_power', name: { sv: 'Lag: Potens av potens', en: 'Law: Power of power' }, desc: { sv: 'Multiplicera exponenter', en: 'Multiply exponents' } },
-          { key: 'law_all_combined', name: { sv: 'Blandade Lagar', en: 'Mixed Laws' }, desc: { sv: 'Avancerad förenkling', en: 'Advanced simplification' } },
-          { 
-            key: 'scientific_mult', 
-            name: { sv: 'Multiplikation (Grundpotens)', en: 'Multiplication (Scientific)' }, 
-            desc: { sv: 'Multiplicera två tal i grundpotensform', en: 'Multiply two numbers in scientific notation' } 
-          },
-          { 
-            key: 'scientific_div', 
-            name: { sv: 'Division (Grundpotens)', en: 'Division (Scientific)' }, 
-            desc: { sv: 'Dividera två tal i grundpotensform', en: 'Divide two numbers in scientific notation' } 
-          }
+          
+          // LEVEL 5: Potenslagar Grund (Basic Laws)
+          { key: 'law_multiplication', level: 5, name: { sv: 'Lag: Multiplikation', en: 'Law: Multiplication' }, desc: { sv: 'Addera exponenter', en: 'Add exponents' } },
+          { key: 'law_division', level: 5, name: { sv: 'Lag: Division', en: 'Law: Division' }, desc: { sv: 'Subtrahera exponenter', en: 'Subtract exponents' } },
+          { key: 'law_addition_trap', level: 5, name: { sv: 'Hitta felet: Addition', en: 'Find error: Addition' }, desc: { sv: 'Potenslagar gäller ej addition', en: 'Power laws do not apply to addition' } },
+          { key: 'law_mult_div_combined', level: 5, name: { sv: 'Lag: Mult & Div', en: 'Law: Mult & Div' }, desc: { sv: 'Blandade regler', en: 'Mixed rules' } },
+          
+          // LEVEL 6: Potenslagar Avancerad (Advanced Laws)
+          { key: 'law_power_of_power', level: 6, name: { sv: 'Lag: Potens av potens', en: 'Law: Power of power' }, desc: { sv: 'Multiplicera exponenter', en: 'Multiply exponents' } },
+          { key: 'law_inverse_algebra', level: 6, name: { sv: 'Ekvation: Exponent', en: 'Equation: Exponent' }, desc: { sv: 'Hitta den saknade exponenten', en: 'Find the missing exponent' } },
+          { key: 'law_all_combined', level: 6, name: { sv: 'Blandade Lagar', en: 'Mixed Laws' }, desc: { sv: 'Avancerad förenkling', en: 'Advanced simplification' } },
+          
+          // LEVEL 7: Beräkningar Grundpotens (Scientific Calc)
+          { key: 'scientific_mult', level: 7, name: { sv: 'Multiplikation (Grundpotens)', en: 'Multiplication (Scientific)' }, desc: { sv: 'Multiplicera två tal i grundpotensform', en: 'Multiply two numbers in scientific notation' } },
+          { key: 'scientific_div', level: 7, name: { sv: 'Division (Grundpotens)', en: 'Division (Scientific)' }, desc: { sv: 'Dividera två tal i grundpotensform', en: 'Divide two numbers in scientific notation' } }
         ]
       },
       ten_powers: {
         name: { sv: 'Tiopotenser & Prefix', en: 'Powers of Ten & Prefixes' },
         variations: [
+          // LEVEL 1: Stora tal & Potensform (Large Numbers & Powers)
           {
             key: "big_mult_std",
+            level: 1,
             name: { sv: "Multiplikation: Stora tal", en: "Multiplication: Large numbers" },
             desc: { sv: "Multiplicera decimaltal med 10, 100, 1000", en: "Multiply decimals by 10, 100, 1000" },
             tags: ["word_problem_ready"],
@@ -768,18 +851,24 @@ export const SKILL_BUCKETS = {
           },
           {
             key: "big_div_std",
+            level: 1,
             name: { sv: "Division: Stora tal", en: "Division: Large numbers" },
             desc: { sv: "Dividera decimaltal med 10, 100, 1000", en: "Divide decimals by 10, 100, 1000" },
             tags: ["word_problem_ready"],
             contextType: "ten_powers_div_large",
             extractorPattern: /\\frac{\s*(?<num>[\d,.]+)\s*}{\s*(?<power>10|100|1000|10000)\s*}/
           },
-          { key: 'big_missing_factor', name: { sv: 'Hitta 10-faktorn', en: 'Find 10-factor' }, desc: { sv: 'Vad multiplicerades?', en: 'What was multiplied?' } },
-          { key: 'power_discovery', name: { sv: 'Potensform', en: 'Power form' }, desc: { sv: 'Skriv som 10^n', en: 'Write as 10^n' } },
-          { key: 'reciprocal_equivalence', name: { sv: 'Inverser (0,1/0,01)', en: 'Reciprocals (0.1/0.01)' }, desc: { sv: '0,1 = 1/10', en: '0.1 = 1/10' } },
-          { key: 'concept_spot_lie', name: { sv: 'Hitta felet: 10-bas', en: 'Find error: base 10' }, desc: { sv: 'Konceptuell förståelse', en: 'Conceptual understanding' } },
+          { key: 'big_missing_factor', level: 1, name: { sv: 'Hitta 10-faktorn', en: 'Find 10-factor' }, desc: { sv: 'Vad multiplicerades?', en: 'What was multiplied?' } },
+          { key: 'power_discovery', level: 1, name: { sv: 'Potensform', en: 'Power form' }, desc: { sv: 'Skriv som 10^n', en: 'Write as 10^n' } },
+
+          // LEVEL 2: Konceptuella inversa tal (Conceptual Reciprocals)
+          { key: 'reciprocal_equivalence', level: 2, name: { sv: 'Inverser (0,1/0,01)', en: 'Reciprocals (0.1/0.01)' }, desc: { sv: '0,1 = 1/10', en: '0.1 = 1/10' } },
+          { key: 'concept_spot_lie', level: 2, name: { sv: 'Hitta felet: 10-bas', en: 'Find error: base 10' }, desc: { sv: 'Konceptuell förståelse', en: 'Conceptual understanding' } },
+
+          // LEVEL 3: Decimala tiopotenser (Decimal Powers)
           {
             key: "decimal_mult_std",
+            level: 3,
             name: { sv: "Multiplikation: Små tal", en: "Multiplication: Small numbers" },
             desc: { sv: "Multiplicera med decimala tiopotenser (0,1, 0,01)", en: "Multiply by decimal powers of ten (0.1, 0.01)" },
             tags: ["word_problem_ready"],
@@ -788,14 +877,16 @@ export const SKILL_BUCKETS = {
           },
           {
             key: "decimal_div_std",
+            level: 3,
             name: { sv: "Division: Små tal", en: "Division: Small numbers" },
             desc: { sv: "Dividera med decimala tiopotenser (0,1, 0,01)", en: "Divide by decimal powers of ten (0.1, 0.01)" },
             tags: ["word_problem_ready"],
             contextType: "ten_powers_div_small",
             extractorPattern: /\\frac{\s*(?<num>[\d,.]+)\s*}{\s*(?<factor>0[.,]0*1)\s*}/
-          }
+          },
+          { key: 'decimal_logic_trap', level: 3, name: { sv: 'Logisk fälla (Decimaler)', en: 'Logical trap (Decimals)' }, desc: { sv: 'Analysera decimalmultiplikationens effekt', en: 'Analyze decimal multiplication effects' } }
         ]
-      }
+      },
     }
   },
 
@@ -912,13 +1003,32 @@ export const SKILL_BUCKETS = {
       angles: {
         name: { sv: 'Vinklar', en: 'Angles' },
         variations: [
-          { key: 'classification_visual', name: { sv: 'Vinkeltyper', en: 'Angle types' }, desc: { sv: 'Spetsig, Rät, Trubbig', en: 'Acute, Right, Obtuse' } },
-          { key: 'classification_check_acute', name: { sv: 'Är det spetsig?', en: 'Is it acute?' }, desc: { sv: '<90 grader', en: '<90 degrees' } },
-          { key: 'comp_supp_visual', name: { sv: 'Grannvinklar', en: 'Neighbor angles' }, desc: { sv: 'Summa 180 eller 90', en: 'Sum 180 or 90' } },
-          { key: 'vertical_side_visual', name: { sv: 'Vertikalvinklar', en: 'Vertical angles' }, desc: { sv: 'Mittemot varandra', en: 'Opposite each other' } },
-          { key: 'triangle_sum_visual', name: { sv: 'Triangelns summa', en: 'Triangle sum' }, desc: { sv: 'Alltid 180 grader', en: 'Always 180 degrees' } },
-          { key: 'quad_missing', name: { sv: 'Fyrhörning', en: 'Quadrilateral' }, desc: { sv: 'Summa 360 grader', en: 'Sum 360 degrees' } },
-          { key: 'parallel_visual', name: { sv: 'Parallella linjer', en: 'Parallel lines' }, desc: { sv: 'Alternat/Likbelägen', en: 'Alternate/Corresponding' } }
+          // LEVEL 1: Terminologi & Typer
+          { key: 'classification_visual', level: 1, name: { sv: 'Vinkeltyper', en: 'Angle types' }, desc: { sv: 'Spetsig, Rät, Trubbig', en: 'Acute, Right, Obtuse' } },
+          { key: 'classification_inverse_numeric', level: 1, name: { sv: 'Klassificera via gradtal', en: 'Classify by degrees' }, desc: { sv: 'Bedöm vinkel utifrån tal', en: 'Judge angle from number' } },
+          { key: 'classification_lie', level: 1, name: { sv: 'Hitta felet: Typer', en: 'Find error: Types' }, desc: { sv: 'Analysera påståenden', en: 'Analyze statements' } },
+          { key: 'classification_check_acute', level: 1, name: { sv: 'Är det spetsig?', en: 'Is it acute?' }, desc: { sv: '<90 grader', en: '<90 degrees' } },
+          
+          // LEVEL 2: Komplement & Supplementvinklar
+          { key: 'comp_supp_visual', level: 2, name: { sv: 'Grannvinklar', en: 'Neighbor angles' }, desc: { sv: 'Summa 180 eller 90', en: 'Sum 180 or 90' } },
+          { key: 'comp_supp_inverse', level: 2, name: { sv: 'Hitta saknad grannvinkel', en: 'Find missing neighbor' }, desc: { sv: 'Räkna ut vinkeln', en: 'Calculate the angle' } },
+
+          // LEVEL 3: Vertikalvinklar
+          { key: 'vertical_side_visual', level: 3, name: { sv: 'Vertikalvinklar', en: 'Vertical angles' }, desc: { sv: 'Mittemot varandra', en: 'Opposite each other' } },
+          { key: 'vertical_side_lie', level: 3, name: { sv: 'Hitta felet: Vertikal', en: 'Find error: Vertical' }, desc: { sv: 'Felsök vinkelkors', en: 'Troubleshoot intersections' } },
+
+          // LEVEL 4: Triangelns Vinkelsumma
+          { key: 'triangle_sum_visual', level: 4, name: { sv: 'Triangelns summa', en: 'Triangle sum' }, desc: { sv: 'Alltid 180 grader', en: 'Always 180 degrees' } },
+          { key: 'triangle_isosceles', level: 4, name: { sv: 'Likbent triangel', en: 'Isosceles triangle' }, desc: { sv: 'Basvinklar är lika', en: 'Base angles are equal' } },
+
+          // LEVEL 5: Polygoner & Fyrhörningar
+          { key: 'polygon_sum', level: 5, name: { sv: 'Vinkelsumma (Månghörning)', en: 'Polygon Angle Sum' }, desc: { sv: 'Formel: (n-2)*180', en: 'Formula: (n-2)*180' } },
+          { key: 'quad_missing', level: 5, name: { sv: 'Fyrhörning (Saknad)', en: 'Quadrilateral (Missing)' }, desc: { sv: 'Summa 360 grader', en: 'Sum 360 degrees' } },
+          { key: 'polygon_inverse', level: 5, name: { sv: 'Månghörning (Saknad)', en: 'Polygon (Missing)' }, desc: { sv: 'Beräkna sista vinkeln', en: 'Calculate the last angle' } },
+
+          // LEVEL 6: Parallella Linjer & Transversaler
+          { key: 'parallel_visual', level: 6, name: { sv: 'Parallella linjer', en: 'Parallel lines' }, desc: { sv: 'Alternat/Likbelägen', en: 'Alternate/Corresponding' } },
+          { key: 'parallel_lie', level: 6, name: { sv: 'Hitta felet: Parallella', en: 'Find error: Parallel' }, desc: { sv: 'Felsök logiken', en: 'Troubleshoot logic' } }
         ]
       },
       pythagoras: {
