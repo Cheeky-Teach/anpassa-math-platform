@@ -248,11 +248,16 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         if (rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options))) {
             return (
                 <div className="grid grid-cols-1 gap-3 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {(rd.options || []).map((opt, i) => (
-                        <button key={i} onClick={() => handleLabSubmit(opt)} className="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-700 hover:border-indigo-600 hover:bg-indigo-50 transition-all shadow-sm text-center active:scale-95">
-                            <MathDisplay content={String(opt)} />
-                        </button>
-                    ))}
+                    {(rd.options || []).map((opt, i) => {
+                        // Extract label for visual display and value for backend submission
+                        const choiceLabel = typeof opt === 'object' ? opt.label : opt;
+                        const choiceValue = typeof opt === 'object' ? opt.value : opt;
+                        return (
+                            <button key={i} onClick={() => handleLabSubmit(choiceValue)} className="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-700 hover:border-indigo-600 hover:bg-indigo-50 transition-all shadow-sm text-center active:scale-95">
+                                <MathDisplay content={String(choiceLabel)} />
+                            </button>
+                        );
+                    })}
                 </div>
             );
         }
