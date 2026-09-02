@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { decodeConfig, encodeConfig, BUNDLE_PRESETS } from '../../core/utils/labCodeUtils';
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
+import { useMyCoach } from '../../hooks/useMyCoach';
+import MyCoachModal from '../modals/MyCoachModal';
 
 // --- SHARED UI COMPONENTS ---
 import MathText from '../ui/MathText';
@@ -104,6 +106,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     const [visibleClues, setVisibleClues] = useState({});
     const [showGuideModal, setShowGuideModal] = useState(false);
     const [useWordProblems, setUseWordProblems] = useState(false);
+    const [allowCoach, setAllowCoach] = useState(false);
+    const [showCoachModal, setShowCoachModal] = useState(false);
 
     // --- HELPERS ---
     const getStyles = (category) => COLOR_VARIANTS[category.color || 'indigo'] || COLOR_VARIANTS.indigo;
@@ -118,7 +122,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     }, []);
 
     const copyTestLink = () => {
-        const updatedMeta = { ...meta, wordProblem: useWordProblems };
+        // Include allowCoach in the copied link
+        const updatedMeta = { ...meta, wordProblem: useWordProblems, allowCoach: allowCoach };
         const testCode = encodeConfig({ meta: updatedMeta, selection });
         const baseUrl = window.location.origin + "/lab";
         const fullUrl = `${baseUrl}?config=${testCode}`;
@@ -300,7 +305,16 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 }
                 setMeta(decoded.meta);
                 setSelection(finalSelection); 
-                if (decoded.meta?.wordProblem !== undefined) { setUseWordProblems(!!decoded.meta.wordProblem); }
+                
+                // Add this line to read the word problem flag from the decoded link
+                if (decoded.meta?.wordProblem !== undefined) { 
+                    setUseWordProblems(!!decoded.meta.wordProblem); 
+                }
+
+                if (decoded.meta?.allowCoach !== undefined) { 
+                    setAllowCoach(!!decoded.meta.allowCoach); 
+                }
+                
                 setInternalMode('ACTIVE'); 
             } else { setInternalMode('SETUP'); }
         } else { setInternalMode('SETUP'); }
@@ -322,7 +336,11 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     // --- 1. SETUP UI (Harmonized with Dashboard Two-Column Layout) ---
     // =========================================================
     if (internalMode === 'SETUP') {
-        const currentTestCode = encodeConfig({ meta, selection });
+        // Inject wordProblem into the meta object so the code updates instantly
+        const currentTestCode = encodeConfig({ 
+            meta: { ...meta, wordProblem: useWordProblems, allowCoach: allowCoach }, 
+            selection 
+        });
         const activeCategoryData = CATEGORIES[activeCategory];
         const categoryStyles = COLOR_VARIANTS[activeCategoryData?.color || 'indigo'] || COLOR_VARIANTS.indigo;
         const totalSelectedCount = Object.keys(selection).filter(k => selection[k].enabled).length;
@@ -433,6 +451,25 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                 </div>
                                 <span className="text-[9px] opacity-80 uppercase">
                                     {useWordProblems ? (lang === 'sv' ? 'Aktiv' : 'On') : (lang === 'sv' ? 'Av' : 'Off')}
+                                </span>
+                            </button>
+
+                            {/* AI Coach Toggle Button */}
+                            <button
+                                type="button"
+                                onClick={() => setAllowCoach(!allowCoach)}
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer ${
+                                    allowCoach 
+                                        ? 'bg-blue-600 border-blue-600 text-white' 
+                                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Info size={14} fill={allowCoach ? "rgba(255,255,255,0.2)" : "none"}/>
+                                    <span>{lang === 'sv' ? 'Ledtrådar / Coach' : 'Clues / Coach'}</span>
+                                </div>
+                                <span className="text-[9px] opacity-80 uppercase">
+                                    {allowCoach ? (lang === 'sv' ? 'Tillåten' : 'Allowed') : (lang === 'sv' ? 'Avstängd' : 'Disabled')}
                                 </span>
                             </button>
 
@@ -690,6 +727,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 </div>
             );
         }
+        
         return (
             <div className="min-h-screen bg-slate-50 font-sans flex flex-col overflow-hidden">
                 <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-20 shadow-sm">
@@ -737,6 +775,16 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     </div>
                 </header>
 
+                {/* COACH MODAL */}
+                {showCoachModal && (
+                    <MyCoachModal 
+                        visible={showCoachModal}
+                        onClose={() => setShowCoachModal(false)}
+                        question={q} // Pass the current question data so the coach knows what to help with
+                        lang={lang}
+                    />
+                )}
+
                 <main className="flex-1 max-w-6xl w-full mx-auto p-3 lg:p-6 overflow-hidden flex flex-col relative">
     {/* 1. MAIN CARD WRAPPER: Allows scrolling on mobile, stays fixed on desktop */}
     <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-y-auto lg:overflow-hidden transition-all duration-300 flex flex-col ${!!responses[currentIndex] && meta.mode === 'practice' ? '' : ''}`}>
@@ -751,7 +799,28 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         {/* QUESTION HEADER */}
         <div className="px-8 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 shrink-0">
             <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.25em]">{lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} / {packet.length}</span>
-            {!!responses[currentIndex] && <div className="flex items-center gap-2"><span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">{lang === 'sv' ? "Svar mottaget" : "Answer received"}</span><CheckCircle2 className="text-emerald-500" size={20} /></div>}
+            
+            <div className="flex items-center gap-3">
+                {/* AI Coach Button - Only shows if allowed and question is not yet answered */}
+                {allowCoach && !responses[currentIndex] && (
+                    <button 
+                        onClick={() => setShowCoachModal(true)} 
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                    >
+                        <Info size={14} />
+                        {lang === 'sv' ? 'Hjälp!' : 'Help!'}
+                    </button>
+                )}
+                
+                {!!responses[currentIndex] && (
+                    <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">
+                            {lang === 'sv' ? "Svar mottaget" : "Answer received"}
+                        </span>
+                        <CheckCircle2 className="text-emerald-500" size={20} />
+                    </div>
+                )}
+            </div>
         </div>
 
         {/* 2. RESPONSIVE GRID: Removes 'flex-1' on mobile to allow natural vertical expansion */}
