@@ -107,7 +107,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     const [showGuideModal, setShowGuideModal] = useState(false);
     const [useWordProblems, setUseWordProblems] = useState(false);
     const [allowCoach, setAllowCoach] = useState(false);
-    const [showCoachModal, setShowCoachModal] = useState(false);
+    const q = packet[currentIndex];
+    const coach = useMyCoach(q, lang);
 
     // --- HELPERS ---
     const getStyles = (category) => COLOR_VARIANTS[category.color || 'indigo'] || COLOR_VARIANTS.indigo;
@@ -776,284 +777,285 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 </header>
 
                 {/* COACH MODAL */}
-                {showCoachModal && (
+                {coach.isOpen && (
                     <MyCoachModal 
-                        visible={showCoachModal}
-                        onClose={() => setShowCoachModal(false)}
-                        question={q} // Pass the current question data so the coach knows what to help with
+                        visible={coach.isOpen}
+                        onClose={coach.closeCoach}
+                        question={q}
                         lang={lang}
+                        {...coach.coachProps} 
                     />
                 )}
 
                 <main className="flex-1 max-w-6xl w-full mx-auto p-3 lg:p-6 overflow-hidden flex flex-col relative">
-    {/* 1. MAIN CARD WRAPPER: Allows scrolling on mobile, stays fixed on desktop */}
-    <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-y-auto lg:overflow-hidden transition-all duration-300 flex flex-col ${!!responses[currentIndex] && meta.mode === 'practice' ? '' : ''}`}>
-        
-        {/* MOBILE PROGRESS BAR */}
-        <div className="sm:hidden h-1 bg-slate-100 flex shrink-0">
-            {packet.map((_, i) => (
-                <div key={i} className={`flex-1 ${i === currentIndex ? 'bg-indigo-500' : !!responses[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
-            ))}
-        </div>
-
-        {/* QUESTION HEADER */}
-        <div className="px-8 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 shrink-0">
-            <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.25em]">{lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} / {packet.length}</span>
-            
-            <div className="flex items-center gap-3">
-                {/* AI Coach Button - Only shows if allowed and question is not yet answered */}
-                {allowCoach && !responses[currentIndex] && (
-                    <button 
-                        onClick={() => setShowCoachModal(true)} 
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
-                    >
-                        <Info size={14} />
-                        {lang === 'sv' ? 'Hjälp!' : 'Help!'}
-                    </button>
-                )}
-                
-                {!!responses[currentIndex] && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">
-                            {lang === 'sv' ? "Svar mottaget" : "Answer received"}
-                        </span>
-                        <CheckCircle2 className="text-emerald-500" size={20} />
+                {/* 1. MAIN CARD WRAPPER: Allows scrolling on mobile, stays fixed on desktop */}
+                <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-y-auto lg:overflow-hidden transition-all duration-300 flex flex-col ${!!responses[currentIndex] && meta.mode === 'practice' ? '' : ''}`}>
+                    
+                    {/* MOBILE PROGRESS BAR */}
+                    <div className="sm:hidden h-1 bg-slate-100 flex shrink-0">
+                        {packet.map((_, i) => (
+                            <div key={i} className={`flex-1 ${i === currentIndex ? 'bg-indigo-500' : !!responses[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
+                        ))}
                     </div>
-                )}
-            </div>
-        </div>
 
-        {/* 2. RESPONSIVE GRID: Removes 'flex-1' on mobile to allow natural vertical expansion */}
-        <div className="lg:flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-slate-50">
-            
-            {/* 3. TEXT & INPUT SECTION: Restricted height only on desktop */}
-            <div className="flex flex-col order-1 lg:h-full lg:overflow-hidden border-b lg:border-b-0 border-slate-50">
-                <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6 overflow-y-auto">
-                    <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
-                        <MathDisplay content={q?.resolvedData?.renderData?.description} />
-                    </div>
-                            {/* HIDES THE LATEX MATH FOR WORD PROBLEMS AND GEOMETRY VISUALS */}
-                            {q?.resolvedData?.renderData?.latex && 
-                            !q?.resolvedData?.renderData?.isWordProblemApplied && 
-                            !q?.resolvedData?.renderData?.geometry && (
-                                <div className="mt-6 text-3xl lg:text-5xl text-indigo-600 font-serif border-t border-slate-100 pt-6 animate-in fade-in duration-300">
-                                    <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
-                                </div>
-                            )}
-                </div>
-
-                {/* FEEDBACK SECTION */}
-                <div className="p-6 lg:p-10 bg-slate-50/30 border-t border-slate-100 shrink-0">
-                    {!responses[currentIndex] ? (
-                        <div className="max-w-md mx-auto space-y-4">
-                            {renderInput()}
-                            {!(packet[currentIndex]?.resolvedData?.renderData?.options) && (
-                                <button onClick={() => handleLabSubmit()} disabled={!inputValue} className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 transition-all">
-                                    <Send size={20} /> {lang === 'sv' ? "Svara" : "Submit"}
+                    {/* QUESTION HEADER */}
+                    <div className="px-8 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 shrink-0">
+                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.25em]">{lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} / {packet.length}</span>
+                        
+                        <div className="flex items-center gap-3">
+                            {/* Coach Button - Only shows if allowed and question is not yet answered */}
+                            {allowCoach && !responses[currentIndex] && (
+                                <button 
+                                    onClick={coach.openCoach} 
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer"
+                                >
+                                    <Info size={14} />
+                                    {lang === 'sv' ? 'Hjälp!' : 'Help!'}
                                 </button>
                             )}
-                        </div>
-                    ) : (
-                        <div className="max-w-md mx-auto animate-in zoom-in-95 duration-300">
-                            {meta.mode === 'practice' ? (
-                                <div className={`p-6 rounded-[2rem] border-4 flex flex-col items-center gap-4 shadow-lg
-                                    ${responses[currentIndex].isCorrect ? 'bg-emerald-50 border-emerald-500' : 'bg-rose-50 border-rose-500'}`}>
-                                    
-                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white
-                                        ${responses[currentIndex].isCorrect ? 'bg-emerald-500 animate-bounce' : 'bg-rose-500 animate-shake'}`}>
-                                        {responses[currentIndex].isCorrect ? <Check size={32} strokeWidth={4} /> : <XCircle size={32} strokeWidth={4} />}
-                                    </div>
-                                    
-                                    <div className="text-center">
-                                        <p className={`text-xl font-black uppercase italic tracking-tight
-                                            ${responses[currentIndex].isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                            {responses[currentIndex].isCorrect 
-                                                ? (lang === 'sv' ? "Snyggt jobbat!" : "Great job!") 
-                                                : (lang === 'sv' ? "Inte riktigt rätt" : "Not quite right")}
-                                        </p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                            {t.nextArr}
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="py-8 text-center bg-slate-100 rounded-[2rem] border-2 border-dashed border-slate-200">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <CheckCircle2 size={32} className="text-slate-400" />
-                                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest animate-pulse italic">
-                                            {t.answerReceived} — {t.nextArr}
-                                        </p>
-                                    </div>
+                            
+                            {!!responses[currentIndex] && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">
+                                        {lang === 'sv' ? "Svar mottaget" : "Answer received"}
+                                    </span>
+                                    <CheckCircle2 className="text-emerald-500" size={20} />
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    {/* 2. RESPONSIVE GRID: Removes 'flex-1' on mobile to allow natural vertical expansion */}
+                    <div className="lg:flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-slate-50">
+                        
+                        {/* 3. TEXT & INPUT SECTION: Restricted height only on desktop */}
+                        <div className="flex flex-col order-1 lg:h-full lg:overflow-hidden border-b lg:border-b-0 border-slate-50">
+                            <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6 overflow-y-auto">
+                                <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
+                                    <MathDisplay content={q?.resolvedData?.renderData?.description} />
+                                </div>
+                                        {/* HIDES THE LATEX MATH FOR WORD PROBLEMS AND GEOMETRY VISUALS */}
+                                        {q?.resolvedData?.renderData?.latex && 
+                                        !q?.resolvedData?.renderData?.isWordProblemApplied && 
+                                        !q?.resolvedData?.renderData?.geometry && (
+                                            <div className="mt-6 text-3xl lg:text-5xl text-indigo-600 font-serif border-t border-slate-100 pt-6 animate-in fade-in duration-300">
+                                                <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
+                                            </div>
+                                        )}
+                            </div>
+
+                            {/* FEEDBACK SECTION */}
+                            <div className="p-6 lg:p-10 bg-slate-50/30 border-t border-slate-100 shrink-0">
+                                {!responses[currentIndex] ? (
+                                    <div className="max-w-md mx-auto space-y-4">
+                                        {renderInput()}
+                                        {!(packet[currentIndex]?.resolvedData?.renderData?.options) && (
+                                            <button onClick={() => handleLabSubmit()} disabled={!inputValue} className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 transition-all">
+                                                <Send size={20} /> {lang === 'sv' ? "Svara" : "Submit"}
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="max-w-md mx-auto animate-in zoom-in-95 duration-300">
+                                        {meta.mode === 'practice' ? (
+                                            <div className={`p-6 rounded-[2rem] border-4 flex flex-col items-center gap-4 shadow-lg
+                                                ${responses[currentIndex].isCorrect ? 'bg-emerald-50 border-emerald-500' : 'bg-rose-50 border-rose-500'}`}>
+                                                
+                                                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white
+                                                    ${responses[currentIndex].isCorrect ? 'bg-emerald-500 animate-bounce' : 'bg-rose-500 animate-shake'}`}>
+                                                    {responses[currentIndex].isCorrect ? <Check size={32} strokeWidth={4} /> : <XCircle size={32} strokeWidth={4} />}
+                                                </div>
+                                                
+                                                <div className="text-center">
+                                                    <p className={`text-xl font-black uppercase italic tracking-tight
+                                                        ${responses[currentIndex].isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                                        {responses[currentIndex].isCorrect 
+                                                            ? (lang === 'sv' ? "Snyggt jobbat!" : "Great job!") 
+                                                            : (lang === 'sv' ? "Inte riktigt rätt" : "Not quite right")}
+                                                    </p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                                                        {t.nextArr}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="py-8 text-center bg-slate-100 rounded-[2rem] border-2 border-dashed border-slate-200">
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <CheckCircle2 size={32} className="text-slate-400" />
+                                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest animate-pulse italic">
+                                                        {t.answerReceived} — {t.nextArr}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 4. VISUAL SIDE: Set a minimum height for mobile and added padding to prevent clipping */}
+                        {q?.resolvedData?.renderData && (q.resolvedData.renderData.graph || q.resolvedData.renderData.geometry || q.resolvedData.renderData.pattern) ? (
+                            <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 min-h-[400px] lg:h-full border-t lg:border-t-0 border-slate-50 relative overflow-hidden pb-12 lg:pb-12">
+                                <div className="absolute inset-0 flex items-center justify-center p-8 lg:p-16">
+                                    <div className="flex justify-center scale-90 origin-top mt-2">
+                                        <VisualRenderer 
+                                            data={q?.resolvedData?.renderData || q?.renderData} 
+                                            isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="hidden lg:block order-2 bg-slate-50/10" />
+                        )}
+                    </div>
+
+                    {/* MILESTONE REVIEW MODAL */}
+                    {showMilestone && (
+                        <div className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 rounded-[2rem] lg:rounded-[3.5rem]">
+                            <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
+                                
+                                <div className="p-8 lg:p-10 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
+                                    <div>
+                                        <h2 className="text-3xl lg:text-4xl font-black text-slate-900 italic tracking-tight uppercase mb-2">
+                                            {t.milestoneTitle}
+                                        </h2>
+                                        <p className="text-slate-500 font-medium text-xs lg:text-sm">
+                                            {lang === 'sv' ? 'Granska dina senaste svar innan du går vidare.' : 'Review your recent answers before continuing.'}
+                                        </p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setInternalMode('SUMMARY')} 
+                                        className="px-6 py-3 bg-rose-100 text-rose-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+                                    >
+                                        {t.finish}
+                                    </button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-6 lg:p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50/30 custom-scrollbar">
+                                    {Object.keys(responses)
+                                        .filter(idx => idx >= currentIndex - 14 && idx <= currentIndex)
+                                        .map(idx => {
+                                            const qItem = packet[idx];
+                                            const res = responses[idx];
+                                            const rd = qItem?.resolvedData?.renderData;
+                                            const hasVisual = rd?.graph || rd?.geometry || rd?.pattern;
+                                            const clues = qItem?.clues || qItem?.resolvedData?.clues || [];
+
+                                            return (
+                                                <div key={idx} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-sm flex flex-col justify-between relative transition-all ${res.isCorrect ? 'border-emerald-500 shadow-emerald-50/30' : 'border-rose-400 shadow-rose-50/30'}`}>
+                                                    
+                                                    <div>
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                                                                {lang === 'sv' ? "Uppgift" : "Question"} {parseInt(idx) + 1}
+                                                            </span>
+                                                            {res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-400" size={20} />}
+                                                        </div>
+
+                                                        {/* 🎨 REFACTORED: Renders the diagram container beautifully */}
+                                                        {hasVisual && (
+                                                            <div className="w-full flex justify-center bg-slate-50 p-4 rounded-2xl mb-4 border border-slate-100 overflow-hidden">
+                                                                <div className="flex justify-center scale-90 origin-top mt-2">
+                                                                    <VisualRenderer 
+                                                                        data={q?.resolvedData?.renderData || q?.renderData} 
+                                                                        isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} 
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="space-y-3 text-slate-700 mb-6">
+                                                            <div className="text-center font-bold text-[12px] leading-snug px-2">
+                                                                <MathDisplay content={typeof rd?.description === 'object' ? rd.description[lang] : rd?.description} />
+                                                            </div>
+                                                            
+                                                            {/* 🔢 REFACTORED: Formal LaTeX Formula equation slot */}
+                                                            {rd?.latex && (
+                                                                <div className="py-2 bg-indigo-50/30 rounded-xl border border-indigo-100/50 text-center">
+                                                                    <MathDisplay content={`$$${rd.latex}$$`} className="text-indigo-600 scale-90" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2 mt-auto">
+                                                        <div className={`p-3 rounded-2xl text-center shadow-inner ${res.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                                                            <span className="text-[8px] font-black text-white/60 uppercase block mb-0.5">
+                                                                {lang === 'sv' ? "Ditt Svar" : "Your Answer"}
+                                                            </span>
+                                                            <span className="font-black text-white text-xs">
+                                                                {res.answer || '-'}
+                                                            </span>
+                                                        </div>
+
+                                                        {clues.length > 0 && (
+                                                            <div className="space-y-2">
+                                                                <button 
+                                                                    onClick={() => setVisibleClues(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                                                                    className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2 cursor-pointer
+                                                                        ${visibleClues[idx] 
+                                                                            ? 'bg-amber-500 border-amber-600 text-white shadow-md' 
+                                                                            : 'bg-white border-amber-100 text-amber-500 hover:bg-amber-50'}`}
+                                                                >
+                                                                    <Zap size={12} fill={visibleClues[idx] ? "currentColor" : "none"} />
+                                                                    {visibleClues[idx] ? (lang === 'sv' ? "Dölj lösning" : "Hide Solution") : (lang === 'sv' ? "Visa lösning" : "Show Solution")}
+                                                                </button>
+
+                                                                {visibleClues[idx] && (
+                                                                    <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-100 animate-in slide-in-from-top-2 duration-200">
+                                                                        <div className="space-y-4">
+                                                                            {clues.map((step, sIdx) => {
+                                                                                const stepText = typeof step === 'object' && step !== null ? step[lang] || step.text || Object.values(step)[0] : step;
+                                                                                const stepLatex = typeof step === 'object' && step !== null ? step.latex || step.math : null;
+                                                                                return (
+                                                                                    <div key={sIdx} className="flex gap-2 items-start border-l-2 border-amber-200 pl-2">
+                                                                                        <div className="flex-1 space-y-1">
+                                                                                            <div className="text-[10px] font-bold text-amber-900 leading-tight">
+                                                                                                <MathDisplay content={stepText} />
+                                                                                            </div>
+                                                                                            {stepLatex && (
+                                                                                                <div className="py-1 px-2 bg-white/60 rounded border border-amber-200/50 inline-block">
+                                                                                                    <MathDisplay content={`$$${stepLatex}$$`} className="text-indigo-600 scale-[0.8] origin-left" />
+                                                                                                </div>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
+
+                                <div className="p-8 bg-white border-t border-slate-100 flex justify-center">
+                                    <button 
+                                        disabled={cooldown > 0} 
+                                        onClick={() => { 
+                                            setShowMilestone(false); 
+                                            setCurrentIndex(currentIndex + 1); 
+                                            setInputValue(''); 
+                                            setRevealMilestoneAnswers(false); 
+                                        }} 
+                                        className="px-16 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 disabled:opacity-50 transition-all flex items-center gap-4 active:scale-95"
+                                    >
+                                        {cooldown > 0 ? `${t.cooldown} (${cooldown}s)` : t.continueBtn} <ChevronRight size={20}/>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
-            </div>
-
-            {/* 4. VISUAL SIDE: Set a minimum height for mobile and added padding to prevent clipping */}
-            {q?.resolvedData?.renderData && (q.resolvedData.renderData.graph || q.resolvedData.renderData.geometry || q.resolvedData.renderData.pattern) ? (
-                <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 min-h-[400px] lg:h-full border-t lg:border-t-0 border-slate-50 relative overflow-hidden pb-12 lg:pb-12">
-                    <div className="absolute inset-0 flex items-center justify-center p-8 lg:p-16">
-                        <div className="flex justify-center scale-90 origin-top mt-2">
-                            <VisualRenderer 
-                                data={q?.resolvedData?.renderData || q?.renderData} 
-                                isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} 
-                            />
+                            </main>
                         </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="hidden lg:block order-2 bg-slate-50/10" />
-            )}
-        </div>
-
-        {/* MILESTONE REVIEW MODAL */}
-        {showMilestone && (
-            <div className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 rounded-[2rem] lg:rounded-[3.5rem]">
-                <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
-                    
-                    <div className="p-8 lg:p-10 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
-                        <div>
-                            <h2 className="text-3xl lg:text-4xl font-black text-slate-900 italic tracking-tight uppercase mb-2">
-                                {t.milestoneTitle}
-                            </h2>
-                            <p className="text-slate-500 font-medium text-xs lg:text-sm">
-                                {lang === 'sv' ? 'Granska dina senaste svar innan du går vidare.' : 'Review your recent answers before continuing.'}
-                            </p>
-                        </div>
-                        <button 
-                            onClick={() => setInternalMode('SUMMARY')} 
-                            className="px-6 py-3 bg-rose-100 text-rose-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                        >
-                            {t.finish}
-                        </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-6 lg:p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50/30 custom-scrollbar">
-                        {Object.keys(responses)
-                            .filter(idx => idx >= currentIndex - 14 && idx <= currentIndex)
-                            .map(idx => {
-                                const qItem = packet[idx];
-                                const res = responses[idx];
-                                const rd = qItem?.resolvedData?.renderData;
-                                const hasVisual = rd?.graph || rd?.geometry || rd?.pattern;
-                                const clues = qItem?.clues || qItem?.resolvedData?.clues || [];
-
-                                return (
-                                    <div key={idx} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-sm flex flex-col justify-between relative transition-all ${res.isCorrect ? 'border-emerald-500 shadow-emerald-50/30' : 'border-rose-400 shadow-rose-50/30'}`}>
-                                        
-                                        <div>
-                                            <div className="flex justify-between items-center mb-4">
-                                                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                                                    {lang === 'sv' ? "Uppgift" : "Question"} {parseInt(idx) + 1}
-                                                </span>
-                                                {res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-400" size={20} />}
-                                            </div>
-
-                                            {/* 🎨 REFACTORED: Renders the diagram container beautifully */}
-                                            {hasVisual && (
-                                                <div className="w-full flex justify-center bg-slate-50 p-4 rounded-2xl mb-4 border border-slate-100 overflow-hidden">
-                                                    <div className="flex justify-center scale-90 origin-top mt-2">
-                                                        <VisualRenderer 
-                                                            data={q?.resolvedData?.renderData || q?.renderData} 
-                                                            isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} 
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            <div className="space-y-3 text-slate-700 mb-6">
-                                                <div className="text-center font-bold text-[12px] leading-snug px-2">
-                                                    <MathDisplay content={typeof rd?.description === 'object' ? rd.description[lang] : rd?.description} />
-                                                </div>
-                                                
-                                                {/* 🔢 REFACTORED: Formal LaTeX Formula equation slot */}
-                                                {rd?.latex && (
-                                                    <div className="py-2 bg-indigo-50/30 rounded-xl border border-indigo-100/50 text-center">
-                                                        <MathDisplay content={`$$${rd.latex}$$`} className="text-indigo-600 scale-90" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2 mt-auto">
-                                            <div className={`p-3 rounded-2xl text-center shadow-inner ${res.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
-                                                <span className="text-[8px] font-black text-white/60 uppercase block mb-0.5">
-                                                    {lang === 'sv' ? "Ditt Svar" : "Your Answer"}
-                                                </span>
-                                                <span className="font-black text-white text-xs">
-                                                    {res.answer || '-'}
-                                                </span>
-                                            </div>
-
-                                            {clues.length > 0 && (
-                                                <div className="space-y-2">
-                                                    <button 
-                                                        onClick={() => setVisibleClues(prev => ({ ...prev, [idx]: !prev[idx] }))}
-                                                        className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2 cursor-pointer
-                                                            ${visibleClues[idx] 
-                                                                ? 'bg-amber-500 border-amber-600 text-white shadow-md' 
-                                                                : 'bg-white border-amber-100 text-amber-500 hover:bg-amber-50'}`}
-                                                    >
-                                                        <Zap size={12} fill={visibleClues[idx] ? "currentColor" : "none"} />
-                                                        {visibleClues[idx] ? (lang === 'sv' ? "Dölj lösning" : "Hide Solution") : (lang === 'sv' ? "Visa lösning" : "Show Solution")}
-                                                    </button>
-
-                                                    {visibleClues[idx] && (
-                                                        <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-100 animate-in slide-in-from-top-2 duration-200">
-                                                            <div className="space-y-4">
-                                                                {clues.map((step, sIdx) => {
-                                                                    const stepText = typeof step === 'object' && step !== null ? step[lang] || step.text || Object.values(step)[0] : step;
-                                                                    const stepLatex = typeof step === 'object' && step !== null ? step.latex || step.math : null;
-                                                                    return (
-                                                                        <div key={sIdx} className="flex gap-2 items-start border-l-2 border-amber-200 pl-2">
-                                                                            <div className="flex-1 space-y-1">
-                                                                                <div className="text-[10px] font-bold text-amber-900 leading-tight">
-                                                                                    <MathDisplay content={stepText} />
-                                                                                </div>
-                                                                                {stepLatex && (
-                                                                                    <div className="py-1 px-2 bg-white/60 rounded border border-amber-200/50 inline-block">
-                                                                                        <MathDisplay content={`$$${stepLatex}$$`} className="text-indigo-600 scale-[0.8] origin-left" />
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                    </div>
-
-                    <div className="p-8 bg-white border-t border-slate-100 flex justify-center">
-                        <button 
-                            disabled={cooldown > 0} 
-                            onClick={() => { 
-                                setShowMilestone(false); 
-                                setCurrentIndex(currentIndex + 1); 
-                                setInputValue(''); 
-                                setRevealMilestoneAnswers(false); 
-                            }} 
-                            className="px-16 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 disabled:opacity-50 transition-all flex items-center gap-4 active:scale-95"
-                        >
-                            {cooldown > 0 ? `${t.cooldown} (${cooldown}s)` : t.continueBtn} <ChevronRight size={20}/>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
-    </div>
-                </main>
-            </div>
-        );
-    }
+                    );
+                }
 
     // --- 3. SUMMARY UI (With Full Review & Clue Toggles) ---
     if (internalMode === 'SUMMARY') {
