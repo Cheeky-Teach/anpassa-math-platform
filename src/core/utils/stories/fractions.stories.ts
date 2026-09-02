@@ -7,64 +7,64 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
     // =========================================================================
     frac_same_denom_add: [
         {
-            sv: "Leo äter {n1}/{d} av en pizza på eftermiddagen och {n2}/{d} till av samma pizza på kvällen. Hur stor del av pizzan har han ätit totalt?",
-            en: "Leo eats {n1}/{d} of a pizza in the afternoon, and another {n2}/{d} of the same pizza in the evening. What fraction of the pizza has he eaten in total?"
+            sv: "Leo bakar med {n1}/{d} kilo pizzadeg på eftermiddagen och {n2}/{d} kilo till på kvällen. Hur mycket pizzadeg har han använt totalt?",
+            en: "Leo bakes using {n1}/{d} kg of pizza dough in the afternoon, and another {n2}/{d} kg in the evening. How much pizza dough has he used in total?"
         },
         {
             sv: "I en plastburk finns det {n1}/{d} liter vit färg. Du häller i {n2}/{d} liter färg till i burken. Hur mycket färg innehåller den nu?",
             en: "A plastic container contains {n1}/{d} liters of white paint. You pour another {n2}/{d} liters into the container. How much paint does it contain now?"
         },
         {
-            sv: "På måndagen läste Hanna {n1}/{d} av en bok, och på tisdagen läste hon {n2}/{d} till av boken. Hur stor del har hon läst totalt?",
-            en: "On Monday Hanna read {n1}/{d} of a book, and on Tuesday she read another {n2}/{d} of the book. What fraction has she read in total?"
+            sv: "På måndagen läste Hanna i {n1}/{d} timmar, och på tisdagen läste hon i {n2}/{d} timmar till. Hur många timmar har hon läst totalt?",
+            en: "On Monday Hanna read for {n1}/{d} hours, and on Tuesday she read for another {n2}/{d} hours. How many hours has she read in total?"
         },
         {
-            sv: "En löpare har sprungit {n1}/{d} av ett motionsspår och fortsätter sedan {n2}/{d} till före nästa paus. Hur stor del av spåret har hen sprungit nu?",
-            en: "A runner completes {n1}/{d} of a jogging track and then continues for another {n2}/{d} before their next break. What fraction of the track is completed now?"
+            sv: "En löpare springer {n1}/{d} kilometer före sin paus och fortsätter sedan {n2}/{d} kilometer till. Hur långt har hen sprungit nu?",
+            en: "A runner completes {n1}/{d} kilometers before their break and then continues for another {n2}/{d} kilometers. How far have they run now?"
         },
         {
-            sv: "På en odlingslott används {n1}/{d} av ytan till potatis och {n2}/{d} av ytan till morötter. Hur stor del av lotten upptas av dessa två grönsaker tillsammans?",
-            en: "In a garden plot, {n1}/{d} of the area is used for potatoes and {n2}/{d} of the area for carrots. What fraction of the plot is occupied by these two vegetables combined?"
+            sv: "På en odlingslott skördas {n1}/{d} kilo potatis och {n2}/{d} kilo morötter. Hur mycket väger grönsakerna tillsammans?",
+            en: "In a garden plot, {n1}/{d} kg of potatoes and {n2}/{d} kg of carrots are harvested. How much do the vegetables weigh combined?"
         },
         {
-            sv: "Vid frukosten drack en familj {n1}/{d} liter mjölk och till middagen drack de {n2}/{d} liter till ur ett mjölkpaket. Hur mycket mjölk gick åt totalt?",
-            en: "During breakfast the family drank {n1}/{d} liters of milk, and at dinner they drank another {n2}/{d} liters from a large milk carton. How much milk did they use in total?"
+            sv: "Vid frukosten drack en familj {n1}/{d} liter mjölk och till middagen drack de {n2}/{d} liter till. Hur mycket mjölk gick åt totalt?",
+            en: "During breakfast the family drank {n1}/{d} liters of milk, and at dinner they drank another {n2}/{d} liters. How much milk did they use in total?"
         },
         {
-            sv: "En snickare monterar en skiva som täcker {n1}/{d} av en vägg. En skiva till fästs bredvid och täcker {n2}/{d} till av väggen. Hur stor del av väggen är nu täckt?",
-            en: "A carpenter mounts a drywall panel covering {n1}/{d} of a wall. Another panel is attached next to it, covering another {n2}/{d} of the wall. What fraction of the wall is now covered?"
+            sv: "En snickare använder en bräda som är {n1}/{d} meter lång. En bräda till fästs bredvid som är {n2}/{d} meter lång. Hur många meter brädor har använts?",
+            en: "A carpenter uses a board that is {n1}/{d} meters long. Another board is attached next to it measuring {n2}/{d} meters. How many meters of boards have been used?"
         },
         {
-            sv: "Av eleverna i en klass åker {n1}/{d} moped till skolan och {n2}/{d} åker buss. Hur stor del av klassen åker antingen moped eller buss?",
-            en: "Of the students in a class, {n1}/{d} ride a moped to school and {n2}/{d} take the bus. What fraction of the class takes either a moped or a bus?"
+            sv: "En elev cyklar {n1}/{d} kilometer till skolan och går sedan {n2}/{d} kilometer. Hur lång sträcka har eleven tagit sig totalt?",
+            en: "A student bicycles {n1}/{d} kilometers to school and then walks {n2}/{d} kilometers. What total distance has the student covered?"
         },
         {
-            sv: "En flaska är fylld till {n1}/{d} med vatten. Du fyller på med ytterligare {n2}/{d} av flaskans totala volym. Hur stor del av flaskan är fylld nu?",
-            en: "A bottle is filled to {n1}/{d} with water. You top it up with another {n2}/{d} of the bottle's total volume. What fraction of the bottle is filled now?"
+            sv: "En hink fylls med {n1}/{d} liter vatten. Du fyller på med ytterligare {n2}/{d} liter vatten. Hur mycket vatten finns det i hinken nu?",
+            en: "A bucket is filled with {n1}/{d} liters of water. You top it up with another {n2}/{d} liters of water. How much water is in the bucket now?"
         },
         {
-            sv: "Liam målar {n1}/{d} av ett staket på förmiddagen och hinner med {n2}/{d} till under eftermiddagen. Hur stor del av staketet har han målat under dagen?",
-            en: "Liam paints {n1}/{d} of a fence in the morning and manages another {n2}/{d} during the afternoon. What fraction of the fence has he painted during the day?"
+            sv: "Liam målar staketet i {n1}/{d} timmar på förmiddagen och målar {n2}/{d} timmar till under eftermiddagen. Hur länge har han målat under dagen?",
+            en: "Liam paints the fence for {n1}/{d} hours in the morning and paints for another {n2}/{d} hours during the afternoon. How long has he been painting during the day?"
         },
         {
-            sv: "Du dricker {n1}/{d} liter saft på förmiddagen och din kompis dricker {n2}/{d} liter ur samma tillbringare. Hur mycket saft har ni druckit tillsammans?",
-            en: "You drink {n1}/{d} liters of juice in the morning and your friend drinks {n2}/{d} liters from the same pitcher. How much juice have you drunk together?"
+            sv: "Du dricker {n1}/{d} liter saft på förmiddagen och din kompis dricker {n2}/{d} liter. Hur mycket saft har ni druckit tillsammans?",
+            en: "You drink {n1}/{d} liters of juice in the morning and your friend drinks {n2}/{d} liters. How much juice have you drunk together?"
         },
         {
-            sv: "Under en spelsession laddar din handkontroll upp {n1}/{d} av batteriet, och under nästa paus laddar den {n2}/{d} till. Hur stor del av batteriet har laddats?",
-            en: "During a gaming session, your controller charges {n1}/{d} of its battery, and during the next break it charges another {n2}/{d}. What fraction of the battery has charged?"
+            sv: "En solpanel genererar {n1}/{d} kWh energi på morgonen och {n2}/{d} kWh till på kvällen. Hur mycket energi har genererats?",
+            en: "A solar panel generates {n1}/{d} kWh of energy in the morning and another {n2}/{d} kWh in the evening. How much energy has been generated?"
         },
         {
-            sv: "För att sy en tygkasse går det åt {n1}/{d} meter av ett tygstycke, och till ett band går det åt {n2}/{d} meter till. Hur mycket tyg har använts totalt?",
-            en: "To sew a tote bag, {n1}/{d} meters of a fabric piece are used, and for a strap another {n2}/{d} meters are used. How much fabric has been used in total?"
+            sv: "För att sy en tygkasse går det åt {n1}/{d} meter tyg, och till ett band går det åt {n2}/{d} meter till. Hur mycket tyg har använts totalt?",
+            en: "To sew a tote bag, {n1}/{d} meters of fabric are used, and for a strap another {n2}/{d} meters are used. How much fabric has been used in total?"
         },
         {
-            sv: "Bilderna på din telefon tar upp {n1}/{d} av minnet och dina sparade appar tar upp {n2}/{d} till. Hur stor del av telefonens minne upptas av bilder och appar?",
-            en: "The photos on your phone take up {n1}/{d} of the storage and your saved apps take up another {n2}/{d}. What fraction of the phone's storage is occupied by photos and apps?"
+            sv: "Ett USB-minne fylls med {n1}/{d} GB bilder och {n2}/{d} GB appar. Hur mycket data har sparats på minnet?",
+            en: "A USB drive is filled with {n1}/{d} GB of photos and {n2}/{d} GB of apps. How much data has been saved to the drive?"
         },
         {
-            sv: "Maja gjorde klart {n1}/{d} av sina läxor i skolan och gjorde {n2}/{d} till hemma under kvällen. Hur stor del av läxorna har hon gjort klart under dagen?",
-            en: "Maja completed {n1}/{d} of her homework at school and did another {n2}/{d} at home during the evening. What fraction of the homework has she finished during the day?"
+            sv: "Maja ägnade {n1}/{d} timmar åt läxor i skolan och {n2}/{d} timmar åt läxor hemma. Hur många timmar har hon pluggat under dagen?",
+            en: "Maja spent {n1}/{d} hours on homework at school and {n2}/{d} hours on homework at home. How many hours has she studied during the day?"
         }
     ],
 
@@ -73,64 +73,64 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
     // =========================================================================
     frac_same_denom_sub: [
         {
-            sv: "En flaska innehåller {n1}/{d} liter juice. Saga dricker upp {n2}/{d} liter. Hur mycket juice finns kvar i flaskan?",
-            en: "A bottle contains {n1}/{d} liters of juice. Saga drinks {n2}/{d} liters of it. How much juice is left in the bottle?"
+            sv: "En dunk innehåller {n1}/{d} liter juice. Saga dricker {n2}/{d} liter. Hur mycket juice finns kvar i dunken?",
+            en: "A jug contains {n1}/{d} liters of juice. Saga drinks {n2}/{d} liters of it. How much juice is left in the jug?"
         },
         {
-            sv: "Ett skolprojekt hade {n1}/{d} kvar av sina träskivor, men efter ett bygge användes {n2}/{d} av det ursprungliga materialet. Hur stor del av träskivorna återstår?",
-            en: "A school project had {n1}/{d} left of its wooden boards, but after a build, {n2}/{d} of the original material was used. What fraction of the wooden boards remains?"
+            sv: "Ett skolprojekt hade {n1}/{d} meter rep. Under bygget användes {n2}/{d} meter av repet. Hur mycket rep återstår?",
+            en: "A school project had {n1}/{d} meters of rope. During the build, {n2}/{d} meters of the rope were used. How much rope remains?"
         },
         {
-            sv: "Det finns {n1}/{d} kvar av en tårta. Gästerna tar bitar som motsvarar {n2}/{d} av hela tårtan. Hur stor del av tårtan finns kvar efter det?",
-            en: "There is {n1}/{d} left of a cake. The guests take pieces corresponding to {n2}/{d} of the whole cake. What fraction of the cake is left after that?"
+            sv: "Det finns {n1}/{d} kilo tårta. Gästerna äter {n2}/{d} kilo. Hur mycket tårta finns kvar efter det?",
+            en: "There is {n1}/{d} kg of cake. The guests eat {n2}/{d} kg. How much cake is left after that?"
         },
         {
-            sv: "Du har fyllt en vattenkanna till {n1}/{d}. Efter att ha vattnat blommorna har {n2}/{d} av den totala volymen gått åt. Hur stor del är kvar?",
-            en: "You filled a watering can to {n1}/{d}. After watering the flowers, {n2}/{d} of the total volume has been used. What fraction is left?"
+            sv: "Du har fyllt en tunna med {n1}/{d} liter vatten. Efter att ha vattnat blommorna har {n2}/{d} liter gått åt. Hur mycket vatten är kvar?",
+            en: "You filled a barrel with {n1}/{d} liters of water. After watering the flowers, {n2}/{d} liters have been used. How much water is left?"
         },
         {
-            sv: "Ett cykelhjul var fyllt till {n1}/{d} med luft. På grund av en liten läcka försvann {n2}/{d} av luften. Hur stor del luft är kvar i hjulet?",
-            en: "A bicycle wheel was filled to {n1}/{d} with air. Due to a small leak, {n2}/{d} of the air escaped. What fraction of air is left in the wheel?"
+            sv: "En kompressor innehöll {n1}/{d} liter tryckluft. På grund av en liten läcka försvann {n2}/{d} liter luft. Hur mycket luft är kvar i kompressorn?",
+            en: "A compressor contained {n1}/{d} liters of compressed air. Due to a small leak, {n2}/{d} liters of air escaped. How much air is left in the compressor?"
         },
         {
-            sv: "En tygrulle mäter {n1}/{d} av en hel rulle. En hantverkare klipper av en bit som motsvarar {n2}/{d} av en hel rulle. Hur stor del av rullen finns kvar?",
-            en: "A roll of fabric measures {n1}/{d} of a full roll. A crafter cuts off a piece corresponding to {n2}/{d} of a full roll. What fraction of the roll remains?"
+            sv: "En tygrulle mäter {n1}/{d} meter. En hantverkare klipper av en bit som är {n2}/{d} meter. Hur mycket tyg finns kvar på rullen?",
+            en: "A roll of fabric measures {n1}/{d} meters. A crafter cuts off a piece that is {n2}/{d} meters. How much fabric remains on the roll?"
         },
         {
-            sv: "Ett batteri var laddat till {n1}/{d} av sin maxnivå. Efter en stunds användning har laddningen sjunkit med {n2}/{d} av maxnivån. Vad är laddningsnivån nu?",
-            en: "A battery was charged to {n1}/{d} of its maximum level. After some use, the charge dropped by {n2}/{d} of the maximum level. What is the charge level now?"
+            sv: "Ett batteri hade lagrat {n1}/{d} kWh energi. Efter en stunds användning förbrukades {n2}/{d} kWh. Hur mycket energi finns kvar?",
+            en: "A battery had stored {n1}/{d} kWh of energy. After some use, {n2}/{d} kWh was consumed. How much energy is left?"
         },
         {
-            sv: "På en spellista är {n1}/{d} av låtarna hiphop. Du städar listan och tar bort låtar som utgör {n2}/{d} av det totala antalet låtar. Hur stor del av listan är nu hiphop?",
-            en: "On a playlist, {n1}/{d} of the songs are hip-hop. You clean up the list and remove tracks making up {n2}/{d} of the total songs. What fraction of the list is now hip-hop?"
+            sv: "På en hårddisk låg det {n1}/{d} GB musikfiler. Du städar och raderar {n2}/{d} GB av musiken. Hur mycket plats tar musiken nu?",
+            en: "On a hard drive, there was {n1}/{d} GB of music files. You clean up and delete {n2}/{d} GB of music. How much space does the music take now?"
         },
         {
-            sv: "Ett skåp i skolan var fyllt till {n1}/{d} av sin volym. Innan sommarlovet tog du ut böcker som motsvarade {n2}/{d} av volymen. Hur stor del av skåpet är fyllt nu?",
-            en: "A school locker was filled to {n1}/{d} of its volume. Before summer break, you took out books corresponding to {n2}/{d} of the volume. What fraction of the locker is filled now?"
+            sv: "En låda rymde {n1}/{d} kilo böcker. Innan sommarlovet tog du ut {n2}/{d} kilo böcker. Hur många kilo böcker finns i lådan nu?",
+            en: "A box contained {n1}/{d} kg of books. Before summer break, you took out {n2}/{d} kg of books. How many kilos of books are in the box now?"
         },
         {
-            sv: "I en påse godis är {n1}/{d} av bitarna choklad. Kompisarna äter upp en mängd som motsvarar {n2}/{d} av påsens totala innehåll. Hur stor andel choklad ligger kvar?",
-            en: "In a bag of candy, {n1}/{d} of the pieces are chocolate. The friends eat an amount corresponding to {n2}/{d} of the bag's total contents. What fraction of chocolate is left?"
+            sv: "I en påse finns det {n1}/{d} kilo choklad. Kompisarna äter upp {n2}/{d} kilo under kvällen. Hur mycket choklad ligger kvar?",
+            en: "In a bag there is {n1}/{d} kg of chocolate. The friends eat {n2}/{d} kg during the evening. How much chocolate is left?"
         },
         {
-            sv: "Ett juicepaket innehåller {n1}/{d} liter läsk. Hugo dricker upp {n2}/{d} liter under lunchen. Hur mycket läsk finns kvar i paketet?",
-            en: "A juice carton contains {n1}/{d} liters of soda. Hugo drinks {n2}/{d} liters during lunch. How much soda is left in the carton?"
+            sv: "En tunna innehåller {n1}/{d} liter läsk. Hugo tappar upp {n2}/{d} liter under lunchen. Hur mycket läsk finns kvar i tunnan?",
+            en: "A barrel contains {n1}/{d} liters of soda. Hugo pours out {n2}/{d} liters during lunch. How much soda is left in the barrel?"
         },
         {
-            sv: "Ett häfte med matteuppgifter har {n1}/{d} av sidorna kvar att räkna. Du gör bort {n2}/{d} av sidorna under lektionen. Hur stor del av häftet återstår nu?",
-            en: "A booklet of math exercises has {n1}/{d} of its pages left to solve. You finish {n2}/{d} of the pages during class. What fraction of the booklet remains now?"
+            sv: "Du planerade att plugga matte i {n1}/{d} timmar. Du har redan arbetat i {n2}/{d} timmar. Hur mycket tid återstår av ditt pluggpass?",
+            en: "You planned to study math for {n1}/{d} hours. You have already worked for {n2}/{d} hours. How much time remains of your study session?"
         },
         {
-            sv: "Ett nystan med garn väger {n1}/{d} av sin fulla vikt. Du stickar en liten mössa och använder {n2}/{d} av nystanets totala vikt. Hur stor del finns kvar?",
-            en: "A skein of yarn weighs {n1}/{d} of its full weight. You knit a small beanie and use {n2}/{d} of the yarn's total weight. What fraction is left?"
+            sv: "Ett nystan med garn väger {n1}/{d} kilo. Du stickar en liten mössa och använder {n2}/{d} kilo av garnet. Hur mycket garn finns kvar?",
+            en: "A skein of yarn weighs {n1}/{d} kg. You knit a small beanie and use {n2}/{d} kg of the yarn. How much yarn is left?"
         },
         {
-            sv: "Din vattenflaska under gympalektionen var fylld till {n1}/{d}. Efter halva lektionen har du druckit upp {n2}/{d} av flaskans totala volym. Hur stor del är kvar?",
-            en: "Your water bottle during gym class was filled to {n1}/{d}. After half the class, you have drunk {n2}/{d} of the bottle's total volume. What fraction is left?"
+            sv: "Din vattendunk innehöll {n1}/{d} liter. Efter halva dagen har du druckit {n2}/{d} liter av vattnet. Hur mycket finns kvar?",
+            en: "Your water jug contained {n1}/{d} liters. After half the day, you have drunk {n2}/{d} liters of the water. How much is left?"
         },
         {
-            sv: "En nedladdning till ett spel har nått {n1}/{d} av filens storlek. Datorn pausar och raderar en skadad del som utgör {n2}/{d} av filen. Vad är framstegsnivån nu?",
-            en: "A game download has reached {n1}/{d} of the file size. The computer pauses and deletes a corrupted part making up {n2}/{d} of the file. What is the progress level now?"
+            sv: "En fil som ska laddas ner är {n1}/{d} GB stor. Du avbryter och tar bort {n2}/{d} GB som redan laddats ner. Hur mycket data återstår att ladda ner sedan?",
+            en: "A file to be downloaded is {n1}/{d} GB in size. You cancel and delete {n2}/{d} GB that had already downloaded. How much data remains to be downloaded then?"
         }
     ],
 
@@ -139,64 +139,64 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
     // =========================================================================
     frac_diff_denom_add: [
         {
-            sv: "Maja använder {n1}/{d1} av sina pengar till böcker och {n2}/{d2} på ett café. Hur stor del av sina totala pengar har hon gjort av med?",
-            en: "Maja spends {n1}/{d1} of her savings on books and {n2}/{d2} on café visits. What fraction of her total savings has she spent?"
+            sv: "Maja köper {n1}/{d1} kilo äpplen och {n2}/{d2} kilo bananer. Hur mycket frukt har hon köpt totalt?",
+            en: "Maja buys {n1}/{d1} kg of apples and {n2}/{d2} kg of bananas. How much fruit has she bought in total?"
         },
         {
-            sv: "En kruka med blommor består till {n1}/{d1} av jord och till {n2}/{d2} av sand. Hur stor del av krukan upptas av dessa två delar tillsammans?",
-            en: "A flowerpot consists of {n1}/{d1} soil and {n2}/{d2} sand. What fraction of the pot is occupied by these two parts combined?"
+            sv: "En säck blandas med {n1}/{d1} kilo jord och {n2}/{d2} kilo sand. Vad väger blandningen i säcken tillsammans?",
+            en: "A sack is mixed with {n1}/{d1} kg of soil and {n2}/{d2} kg of sand. What does the mixture in the sack weigh combined?"
         },
         {
-            sv: "Du blandar fruktdryck i en tillbringare. Först hälls {n1}/{d1} liter juice i och sedan tillsätts {n2}/{d2} liter vatten. Vad blir den totala volymen i tillbringaren?",
-            en: "You mix a fruit drink in a pitcher. First, {n1}/{d1} liters of juice are poured in, and then {n2}/{d2} liters of water are added. What is the total volume in the pitcher?"
+            sv: "Du blandar fruktdryck i en tillbringare. Först hälls {n1}/{d1} liter juice i och sedan tillsätts {n2}/{d2} liter vatten. Vad blir den totala volymen?",
+            en: "You mix a fruit drink in a pitcher. First, {n1}/{d1} liters of juice are poured in, and then {n2}/{d2} liters of water are added. What is the total volume?"
         },
         {
-            sv: "Under förmiddagen plockade Oliver {n1}/{d1} kilo bär, och under eftermiddagen plockade han {n2}/{d2} kilo bär till. Hur mycket bär har han plockat totalt under dagen?",
-            en: "During the morning Oliver picked {n1}/{d1} kg of berries, and during the afternoon he picked another {n2}/{d2} kg of berries. How many berries has he picked in total today?"
+            sv: "Under förmiddagen plockade Oliver {n1}/{d1} kilo bär, och under eftermiddagen plockade han {n2}/{d2} kilo bär till. Hur mycket bär plockade han?",
+            en: "During the morning Oliver picked {n1}/{d1} kg of berries, and during the afternoon he picked another {n2}/{d2} kg. How many berries did he pick?"
         },
         {
-            sv: "En musiker har skrevet {n1}/{d1} av en låt och gör sedan ytterligare {n2}/{d2} av låten. Hur stor del av hela låten är färdig nu?",
-            en: "A musician has written {n1}/{d1} of a piece of music and then composes another {n2}/{d2} of it. What fraction of the entire piece is finished now?"
+            sv: "En musiker övar i {n1}/{d1} timmar på morgonen och sedan ytterligare {n2}/{d2} timmar på kvällen. Hur mycket har musikern övat totalt?",
+            en: "A musician practices for {n1}/{d1} hours in the morning and then another {n2}/{d2} hours in the evening. How long has the musician practiced in total?"
         },
         {
             sv: "För att blanda till en grön färg använder en målare {n1}/{d1} liter blå färg och {n2}/{d2} liter gul färg. Hur mycket färdig färgblandning ger detta?",
             en: "To mix a shade of green, a painter uses {n1}/{d1} liters of blue paint and {n2}/{d2} liters of yellow paint. How much total paint mixture does this yield?"
         },
         {
-            sv: "Lagringsutrymmet på en telefon är fyllt med bilder till {n1}/{d1} och med sparade appar till {n2}/{d2}. Hur stor del av utrymmet upptas av bilder och appar tillsammans?",
-            en: "The storage space on a phone is filled with photos to {n1}/{d1} and with saved apps to {n2}/{d2}. What fraction of the space is occupied by photos and apps combined?"
+            sv: "En hårddisk fylls med {n1}/{d1} GB bilder och {n2}/{d2} GB sparade appar. Hur mycket utrymme tar bilder och appar tillsammans?",
+            en: "A hard drive is filled with {n1}/{d1} GB of photos and {n2}/{d2} GB of saved apps. How much space do the photos and apps take combined?"
         },
         {
-            sv: "Av deltagarna på en idrottsträff spelar {n1}/{d1} fotboll på fritiden och {n2}/{d2} spelar tennis. Hur stor del av deltagarna utövar någon av dessa två sporter?",
-            en: "Of the participants at a sports gathering, {n1}/{d1} play football in their spare time and {n2}/{d2} play tennis. What fraction of the participants practices either of these two sports?"
+            sv: "Under helgen spenderade Kalle {n1}/{d1} timmar på fotboll och {n2}/{d2} timmar på tennis. Hur mycket tid la han på dessa två sporter?",
+            en: "During the weekend, Kalle spent {n1}/{d1} hours on football and {n2}/{d2} hours on tennis. How much time did he spend on these two sports?"
         },
         {
-            sv: "Lagringsutrymmet på en surfplatta är fyllt med filmer till {n1}/{d1} och med musikfiler till {n2}/{d2}. Hur stor del av utrymmet upptas av filmer och musik tillsammans?",
-            en: "The storage space on a tablet is filled with movies to {n1}/{d1} and with music files to {n2}/{d2}. What fraction of the space is occupied by movies and music combined?"
+            sv: "Du har sparat {n1}/{d1} GB filmer och {n2}/{d2} GB musik på din surfplatta. Hur mycket data tar filmer och musik totalt?",
+            en: "You have saved {n1}/{d1} GB of movies and {n2}/{d2} GB of music on your tablet. How much data do movies and music take in total?"
         },
         {
-            sv: "Under den första timmen fylldes en pool till {n1}/{d1} av sin volym, och under den andra timmen fylldes ytterligare {n2}/{d2}. Hur stor del av poolen är fylld efter de två timmarna?",
-            en: "During the first hour, a pool was filled to {n1}/{d1} of its volume, and during the second hour another {n2}/{d2} was filled. What fraction of the pool is filled after the two hours?"
+            sv: "Under den första timmen pumpades {n1}/{d1} liter vatten in i poolen, och under nästa timme pumpades {n2}/{d2} liter in. Hur mycket vatten har pumpats in?",
+            en: "During the first hour, {n1}/{d1} liters of water were pumped into the pool, and during the next hour {n2}/{d2} liters were pumped in. How much water has been pumped?"
         },
         {
             sv: "Till en kaksmet behövs {n1}/{d1} dl mjöl och till glasyren behövs {n2}/{d2} dl mjöl till. Hur mycket mjöl går det åt totalt till baket?",
             en: "For a cake batter, {n1}/{d1} dl of flour is needed, and for the icing another {n2}/{d2} dl of flour is used. How much flour is used in total for baking?"
         },
         {
-            sv: "Du lägger {n1}/{d1} av din kväll på att plugga matte och {n2}/{d2} på att läsa engelska glosor. Hur stor del av kvällen har gått åt till studier?",
-            en: "You spend {n1}/{d1} of your evening studying math and {n2}/{d2} reading English vocabulary. What fraction of the evening has been spent on studies?"
+            sv: "Du lägger {n1}/{d1} timmar på att plugga matte och {n2}/{d2} timmar på att läsa engelska. Hur många timmar har gått åt till studier?",
+            en: "You spend {n1}/{d1} hours studying math and {n2}/{d2} hours reading English. How many hours have been spent on studies?"
         },
         {
-            sv: "När du åker till träningen går {n1}/{d1} av sträckan genom att åka buss och {n2}/{d2} genom att gå. Hur stor del av hela sträckan har du klarat av då?",
-            en: "When going to practice, {n1}/{d1} of the distance is covered by riding the bus and {n2}/{d2} by walking. What fraction of the entire distance have you completed then?"
+            sv: "När du åker till träningen färdas du {n1}/{d1} kilometer med buss och går {n2}/{d2} kilometer. Hur lång är sträckan totalt?",
+            en: "When going to practice, you travel {n1}/{d1} kilometers by bus and walk {n2}/{d2} kilometers. How long is the total distance?"
         },
         {
-            sv: "Först städar du {n1}/{d1} av ditt rum före lunch och tar sedan {n2}/{d2} till under eftermiddagen. Hur stor del av rummet har du städat totalt under dagen?",
-            en: "First you clean {n1}/{d1} of your room before lunch and then take another {n2}/{d2} during the afternoon. What fraction of the room have you cleaned in total during the day?"
+            sv: "Först städar du i {n1}/{d1} timmar före lunch och städar sedan i {n2}/{d2} timmar till. Hur många timmar städade du totalt?",
+            en: "First you clean for {n1}/{d1} hours before lunch and then clean for another {n2}/{d2} hours. How many hours did you clean in total?"
         },
         {
-            sv: "I ett litet akvarium fyller dekorationsstenar {n1}/{d1} av botten och växterna tar upp {n2}/{d2} till. Hur stor del av bottenytan täcks av stenar och växter?",
-            en: "In a small aquarium, decorative stones fill {n1}/{d1} of the bottom and plants take up another {n2}/{d2}. What fraction of the bottom surface is covered by stones and plants?"
+            sv: "I ett akvarium väger dekorationsstenarna {n1}/{d1} kilo och sanden väger {n2}/{d2} kilo. Vad väger stenar och sand tillsammans?",
+            en: "In an aquarium, the decorative stones weigh {n1}/{d1} kg and the sand weighs {n2}/{d2} kg. What do the stones and sand weigh together?"
         }
     ],
 
@@ -213,56 +213,56 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
             en: "A pitcher contains {n1}/{d1} liters of milk. You pour {n2}/{d2} liters into a baking batter. How much milk is left in the pitcher?"
         },
         {
-            sv: "Ett batteri var laddat till {n1}/{d1} och efter ett videosamtal har laddningen minskat med {n2}/{d2} av full nivå. Vad är laddningsnivån nu?",
-            en: "A battery was charged to {n1}/{d1} and after a video call, the charge decreased by {n2}/{d2} of full capacity. What is the charge level now?"
+            sv: "Ett batteri genererade {n1}/{d1} kWh energi och maskinen förbrukade {n2}/{d2} kWh. Hur mycket energi finns kvar i systemet?",
+            en: "A battery generated {n1}/{d1} kWh of energy and the machine consumed {n2}/{d2} kWh. How much energy remains in the system?"
         },
         {
-            sv: "En burk innehåller {n1}/{d1} kilo mjöl till ett bak. Du tar ut {n2}/{d2} kilo för att baka frallor. Hur mycket mjöl finns kvar i burken?",
-            en: "A container contains {n1}/{d1} kg of chemicals. A lab technician takes out {n2}/{d2} kg for an experiment. How many chemicals are left in the container?"
+            sv: "En låda innehåller {n1}/{d1} kilo kemikalier. En labassistent tar ut {n2}/{d2} kilo för ett experiment. Hur mycket finns kvar i lådan?",
+            en: "A box contains {n1}/{d1} kg of chemicals. A lab technician takes out {n2}/{d2} kg for an experiment. How much is left in the box?"
         },
         {
-            sv: "I en skål fanns det {n1}/{d1} kilo godis. Kompisarna äter upp {n2}/{d2} kilo under kvällen. Hur mycket godis finns kvar i skålen efteråt?",
+            sv: "I en skål fanns det {n1}/{d1} kilo godis. Barnen äter upp {n2}/{d2} kilo under kvällen. Hur mycket godis finns kvar i skålen efteråt?",
             en: "In a bowl there was {n1}/{d1} kg of candy. The children eat {n2}/{d2} kg during the evening. How much candy is left in the bowl afterward?"
         },
         {
-            sv: "Du har sorterat {n1}/{d1} av dina skolarbeten i en mapp. Under en rensning tar du bort gamla filer som utgör {n2}/{d2} av hela mappen. Hur stor del är kvar?",
-            en: "A warehouse had {n1}/{d1} of its items sorted. During a check, damage was found on {n2}/{d2} of the total items, and these were removed. What fraction is sorted and defect-free?"
+            sv: "Ett lager hade {n1}/{d1} ton stålplåt. Under dagen såldes och levererades {n2}/{d2} ton plåt. Hur mycket stålplåt finns kvar på lagret?",
+            en: "A warehouse had {n1}/{d1} tons of sheet metal. During the day, {n2}/{d2} tons were sold and delivered. How much sheet metal is left in stock?"
         },
         {
-            sv: "Bensintanken på en moped var fylld till {n1}/{d1}. Efter en åktur har en mängd motsvarande {n2}/{d2} av tankens totala volym gått åt. Hur stor del bensin är kvar?",
-            en: "A tanker truck's cistern was filled to {n1}/{d1} with gasoline. At the first station, an amount corresponding to {n2}/{d2} of the tank's total volume was pumped out. What fraction of gasoline is left in the cistern?"
+            sv: "En tank fylldes med {n1}/{d1} liter bensin. På en bensinstation pumpades {n2}/{d2} liter ut. Hur mycket bensin är kvar i tanken?",
+            en: "A tank was filled with {n1}/{d1} liters of gasoline. At a gas station, {n2}/{d2} liters were pumped out. How much gasoline is left in the tank?"
         },
         {
             sv: "Du har köpt ett tygstycke som är {n1}/{d1} meter långt. Du klipper bort en bit på {n2}/{d2} meter för att sy en kudde. Hur långt är tygstycket som återstår?",
             en: "You bought a piece of fabric that is {n1}/{d1} meters long. You cut off a piece of {n2}/{d2} meters to sew a pillow. How long is the remaining piece of fabric?"
         },
         {
-            sv: "Du har sparat ner spel på din hårddisk som tar upp {n1}/{d1} av utrymmet. Du raderar några gamla spel som motsvarar {n2}/{d2} av hela disken. Hur stor del upptas nu?",
-            en: "A transport company usually has {n1}/{d1} of its vehicles in operation. Due to urgent servicing, they are forced to ground {n2}/{d2} of their entire fleet. What fraction of the fleet is still running?"
+            sv: "Du har sparat filer på din disk som tar upp {n1}/{d1} GB. Du raderar några gamla spel som tar upp {n2}/{d2} GB. Hur mycket data finns kvar?",
+            en: "You have saved files on your drive taking up {n1}/{d1} GB. You delete some old games taking up {n2}/{d2} GB. How much data remains?"
         },
         {
             sv: "Du har ett dekorationsband som är {n1}/{d1} meter långt. Du klipper av en bit på {n2}/{d2} meter till ett paket. Hur lång del av bandet är kvar?",
-            en: "A farmer harvested {n1}/{d1} of a large field. A machine breaks down, meaning an area corresponding to {n2}/{d2} of the whole field is lost. What fraction of the field's harvest is left?"
+            en: "You have a decorative ribbon that is {n1}/{d1} meters long. You cut off a piece of {n2}/{d2} meters for a gift. How long is the remaining ribbon?"
         },
         {
-            sv: "Ett juicepaket innehöll {n1}/{d1} liter dricka. Du häller upp ett glas till mellis som rymmer {n2}/{d2} liter. Hur mycket juice finns kvar i paketet?",
-            en: "A juice carton contained {n1}/{d1} liters of drink. You pour a glass for a snack holding {n2}/{d2} liters. How much juice is left in the carton?"
+            sv: "En flaska innehöll {n1}/{d1} liter dricka. Du häller upp ett glas som rymmer {n2}/{d2} liter. Hur mycket dricka finns kvar i flaskan?",
+            en: "A bottle contained {n1}/{d1} liters of drink. You pour a glass holding {n2}/{d2} liters. How much drink is left in the bottle?"
         },
         {
-            sv: "Du fick {n1}/{d1} kr i månadspeng den här månaden. Du köper ett föremål i ett spel för {n2}/{d2} av hela summan. Hur stor del av månadspengen har du kvar?",
-            en: "You received {n1}/{d1} kr in monthly allowance this month. You buy an item in a game for {n2}/{d2} of the total sum. What fraction of the allowance do you have left?"
+            sv: "Du hade {n1}/{d1} liter färg i en hink. Du använder {n2}/{d2} liter färg för att måla ett staket. Hur mycket färg har du kvar i hinken?",
+            en: "You had {n1}/{d1} liters of paint in a bucket. You use {n2}/{d2} liters of paint to coat a fence. How much paint do you have left in the bucket?"
         },
         {
-            sv: "En speltimer för en utmaning var inställd på {n1}/{d1} av en timme. När du startar dras en tidsbonus bort på {n2}/{d2} av en timme. Hur stor del av tiden har du på dig nu?",
-            en: "A game timer for a challenge was set to {n1}/{d1} of an hour. When you start, a time bonus of {n2}/{d2} of an hour is deducted. What fraction of the time do you have now?"
+            sv: "Du satte timern på {n1}/{d1} timmar för din uppgift. När du pausar dras {n2}/{d2} timmar bort som du redan jobbat. Hur mycket tid återstår?",
+            en: "You set the timer to {n1}/{d1} hours for your task. When you pause, {n2}/{d2} hours are deducted for what you've already worked. How much time remains?"
         },
         {
-            sv: "Det ligger {n1}/{d1} av en familjepizza kvar i kartongen. Du tar en bit till kvällsmat som motsvarar {n2}/{d2} av hela pizzan. Hur stor del ligger kvar i kartongen sedan?",
-            en: "There is {n1}/{d1} of a family pizza left in the box. You take a slice for supper corresponding to {n2}/{d2} of the whole pizza. What fraction is left in the box afterward?"
+            sv: "Det ligger {n1}/{d1} kilo fryst pizza i frysen. Du tillagar {n2}/{d2} kilo av den till kvällsmat. Hur mycket pizza ligger kvar i frysen?",
+            en: "There is {n1}/{d1} kg of frozen pizza in the freezer. You cook {n2}/{d2} kg of it for supper. How much pizza is left in the freezer?"
         },
         {
-            sv: "Ett ljus som brann under kvällen har minskat med {n1}/{d1} av sin ursprungliga längd. Efter en stund till har det brunnit ner {n2}/{d2} till. Hur stor del av längden har brunnit ner totalt?",
-            en: "A candle burning during the evening decreased by {n1}/{d1} of its original length. After a while longer, it burned down another {n2}/{d2}. What fraction of the length burned down in total?"
+            sv: "Ett ljus består av {n1}/{d1} kilo stearin. Efter att ha brunnit en kväll har {n2}/{d2} kilo stearin smält bort. Hur mycket stearin är kvar?",
+            en: "A candle consists of {n1}/{d1} kg of wax. After burning for an evening, {n2}/{d2} kg of wax has melted away. How much wax is left?"
         }
     ],
 
@@ -279,36 +279,36 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
             en: "A baking recipe requires {w1} {n1}/{d1} deciliters of sugar for the dough and {w2} {n2}/{d2} deciliters for the icing. How much sugar is needed in total?"
         },
         {
-            sv: "Vid redigering av en video klipper du ihop en sekvens på {w1} {n1}/{d1} minuter med en sista del på {w2} {n2}/{d2} minuter. Hur lång blir videon totalt?",
-            en: "A forestry team clears {w1} {n1}/{d1} hectares of land during the first week and {w2} {n2}/{d2} hectares during the second week. How many hectares have they cleared in total?"
+            sv: "Vid redigering klipper du ihop en videosekvens på {w1} {n1}/{d1} minuter med en sista del på {w2} {n2}/{d2} minuter. Hur lång blir videon totalt?",
+            en: "While editing, you splice a video sequence of {w1} {n1}/{d1} minutes with a final part of {w2} {n2}/{d2} minutes. How long is the video in total?"
         },
         {
             sv: "En målare förbrukar {w1} {n1}/{d1} burkar färg på rummets väggar och {w2} {n2}/{d2} burkar på listerna runt om. Hur många burkar färg går åt sammanlagt?",
-            en: "A painter consumes {w1} {n1}/{d1} cans of paint on the front of the house and {w2} {n2}/{d2} cans on the back of the house. How many cans of paint are used in total?"
+            en: "A painter consumes {w1} {n1}/{d1} cans of paint on the walls and {w2} {n2}/{d2} cans on the trim. How many cans of paint are used in total?"
         },
         {
             sv: "Du packar ner två paket i din ryggsäck som väger {w1} {n1}/{d1} kg respektive {w2} {n2}/{d2} kg. Vad blir deras sammanlagda vikt i väskan?",
-            en: "Two freight containers weigh {w1} {n1}/{d1} tons and {w2} {n2}/{d2} tons respectively. What is their combined weight if loaded onto the same truck?"
+            en: "You pack two packages in your backpack weighing {w1} {n1}/{d1} kg and {w2} {n2}/{d2} kg respectively. What is their combined weight in the bag?"
         },
         {
             sv: "En löpare vilar efter att ha sprungit {w1} {n1}/{d1} kilometer och fortsätter sedan ytterligare {w2} {n2}/{d2} kilometer. Hur långt har löparen sprungit totalt?",
             en: "A runner rests after running {w1} {n1}/{d1} kilometers and then continues for another {w2} {n2}/{d2} kilometers. How far has the runner jogged in total?"
         },
         {
-            sv: "Till en fest köps det in {w1} {n1}/{d1} stora påsar med chips och {w2} {n2}/{d2} påsar till med annat snacks. Hur många påsar snacks blir det sammanlagt?",
-            en: "A farmer sells {w1} {n1}/{d1} bags of potatoes in the morning and {w2} {n2}/{d2} bags in the afternoon. How many bags of potatoes has the farmer sold during the day?"
+            sv: "En bondgård skördar {w1} {n1}/{d1} säckar potatis på morgonen och {w2} {n2}/{d2} säckar på eftermiddagen. Hur många säckar har de skördat totalt?",
+            en: "A farm harvests {w1} {n1}/{d1} bags of potatoes in the morning and {w2} {n2}/{d2} bags in the afternoon. How many bags have they harvested in total?"
         },
         {
-            sv: "Under helgen åker du moped {w1} {n1}/{d1} kilometer på lördagen och {w2} {n2}/{d2} kilometer till på söndagen. Hur långt har du kört moped totalt?",
-            en: "A road construction crew finishes {w1} {n1}/{d1} kilometers of road before the holidays and {w2} {n2}/{d2} kilometers after the holidays. How much road has been built in total?"
+            sv: "Under helgen kör du moped {w1} {n1}/{d1} kilometer på lördagen och {w2} {n2}/{d2} kilometer till på söndagen. Hur långt har du kört moped totalt?",
+            en: "Over the weekend, you ride a moped {w1} {n1}/{d1} kilometers on Saturday and another {w2} {n2}/{d2} kilometers on Sunday. How far have you ridden in total?"
         },
         {
             sv: "För att göra en fruktsmoothie mixar du {w1} {n1}/{d1} hekto bananer med {w2} {n2}/{d2} hekto frysta jordgubbar. Hur mycket väger frukten sammanlagt?",
-            en: "In a fruit shop, first {w1} {n1}/{d1} boxes of apples are sold and then {w2} {n2}/{d2} boxes of pears. How many boxes of fruit have been sold in total?"
+            en: "To make a fruit smoothie, you blend {w1} {n1}/{d1} hectograms of bananas with {w2} {n2}/{d2} hectograms of strawberries. How much does the fruit weigh in total?"
         },
         {
-            sv: "En familj köper {w1} {n1}/{d1} kilo mat till en grillkväll och kompletterar med {w2} {n2}/{d2} kilo tillbehör. Hur mycket har de köpt sammanlagt?",
-            en: "A family buys {w1} {n1}/{d1} kg of barbecue meat for a party and supplements it with {w2} {n2}/{d2} kg of sausages. How much have they bought in total?"
+            sv: "En familj köper {w1} {n1}/{d1} kilo kött till en grillkväll och kompletterar med {w2} {n2}/{d2} kilo korv. Hur mycket har de köpt sammanlagt?",
+            en: "A family buys {w1} {n1}/{d1} kg of meat for a barbecue and supplements it with {w2} {n2}/{d2} kg of sausages. How much have they bought in total?"
         },
         {
             sv: "Du använder {w1} {n1}/{d1} nystan med garn till en halsduk och behöver {w2} {n2}/{d2} nystan till för att göra den helt klar. Hur mycket går åt totalt?",
@@ -346,11 +346,11 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
         },
         {
             sv: "Ett fik köpte in {w1} {n1}/{d1} kilo ost till sina mackor. Efter helgen har man förbrukat {w2} {n2}/{d2} kilo. Hur mycket ost finns kvar i kylen?",
-            en: "A restaurant purchased {w1} {n1}/{d1} kg of cheese. After the weekend, the chefs consumed {w2} {n2}/{d2} kg of it. How much cheese is left in the fridge?"
+            en: "A café purchased {w1} {n1}/{d1} kg of cheese. After the weekend, they have consumed {w2} {n2}/{d2} kg of it. How much cheese is left in the fridge?"
         },
         {
-            sv: "Ett akvarium i ett rum hade en vattenhöjd på {w1} {n1}/{d1} dm. Under en vecka avdunstade vattnet så att nivån sjönk med {w2} {n2}/{d2} dm. Vilken är vattenhöjden nu?",
-            en: "A watercourse had a flow height of {w1} {n1}/{d1} meters. During a dry week, the water level dropped by {w2} {n2}/{d2} meters. What is the flow height now?"
+            sv: "Ett akvarium hade en vattenhöjd på {w1} {n1}/{d1} dm. Under en vecka avdunstade vattnet så att nivån sjönk med {w2} {n2}/{d2} dm. Vilken är vattenhöjden nu?",
+            en: "An aquarium had a water level of {w1} {n1}/{d1} dm. During a week, the water evaporated and the level dropped by {w2} {n2}/{d2} dm. What is the level now?"
         },
         {
             sv: "Du har fyllt en mopedtank med {w1} {n1}/{d1} liter bensin. Efter en åktur har du förbrukat {w2} {n2}/{d2} liter. Hur mycket bensin är kvar i tanken?",
@@ -358,34 +358,34 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
         },
         {
             sv: "En elev har samlat ihop {w1} {n1}/{d1} kilo lera till bildlektionen. Han använder {w2} {n2}/{d2} kilo till en skulptur. Hur mycket lera finns kvar i burken?",
-            en: "A gardener collected {w1} {n1}/{d1} kg of soil. He spreads {w2} {n2}/{d2} kg in a greenhouse. How much soil is left in his storage area?"
+            en: "A student collected {w1} {n1}/{d1} kg of clay. He uses {w2} {n2}/{d2} kg for a sculpture. How much clay is left in the container?"
         },
         {
-            sv: "En bit dekorationsband mäter {w1} {n1}/{d1} meter. Du sågar bort en skadad ändbit på {w2} {n2}/{d2} meter. Hur långt är bandet efter kapningen?",
-            en: "A piece of timber measures {w1} {n1}/{d1} meters. A craftsman saws off a defective end piece of {w2} {n2}/{d2} meters. How long is the timber after cutting?"
+            sv: "En bit dekorationsband mäter {w1} {n1}/{d1} meter. Du klipper bort en skadad ändbit på {w2} {n2}/{d2} meter. Hur långt är bandet efter kapningen?",
+            en: "A piece of ribbon measures {w1} {n1}/{d1} meters. You cut off a damaged end piece of {w2} {n2}/{d2} meters. How long is the ribbon after cutting?"
         },
         {
-            sv: "Du har bokat upp {w1} {n1}/{d1} GB lagringsutrymme på en extern disk. På grund av en rensning raderar du filer på {w2} {n2}/{d2} GB. Hur stort utrymme upptas nu?",
-            en: "A transport company has booked {w1} {n1}/{d1} tons of freight capacity on a cargo train. Due to a change, {w2} {n2}/{d2} tons are removed from the booking. How large a freight volume remains?"
+            sv: "Du har bokat upp {w1} {n1}/{d1} GB lagringsutrymme på en disk. På grund av en rensning raderar du filer på {w2} {n2}/{d2} GB. Hur stort utrymme upptas nu?",
+            en: "You have booked {w1} {n1}/{d1} GB of storage space on a drive. Due to cleaning, you delete files of {w2} {n2}/{d2} GB. How much space is occupied now?"
         },
         {
-            sv: "En idrottsförening hade {w1} {n1}/{d1} timmar halltid bokad under en månad. De avbokar {w2} {n2}/{d2} timmar på grund av matchkrockar. Hur mycket halltid har de kvar?",
-            en: "A sports club had {w1} {n1}/{d1} hours of gym time booked during a month. They cancel {w2} {n2}/{d2} hours due to match clashes. How much gym time do they have left?"
+            sv: "En idrottsförening hade {w1} {n1}/{d1} timmar halltid bokad under en månad. De avbokar {w2} {n2}/{d2} timmar. Hur mycket halltid har de kvar?",
+            en: "A sports club had {w1} {n1}/{d1} hours of gym time booked during a month. They cancel {w2} {n2}/{d2} hours. How much gym time do they have left?"
         },
         {
             sv: "En skräddare har {w1} {n1}/{d1} meter sidentyg på rullen. Efter att ha sytt en kjol har {w2} {n2}/{d2} meter tyg gått åt. Hur mycket sidentyg finns kvar?",
             en: "A tailor has {w1} {n1}/{d1} meters of silk fabric. After sewing a dress, {w2} {n2}/{d2} meters of fabric have been used. How much silk fabric is left on the roll?"
         },
         {
-            sv: "En glassbar har {w1} {n1}/{d1} stora lådor med vaniljglass i frysen. Efter en solig eftermiddag har man sålt bort {w2} {n2}/{d2} lådor. Hur mycket glass finns kvar?",
-            en: "An ice cream shop has {w1} {n1}/{d1} large tubs of vanilla ice cream in the freezer. After a sunny afternoon, {w2} {n2}/{d2} tubs are sold. How much ice cream is left?"
+            sv: "En glassbar har {w1} {n1}/{d1} stora lådor med glass i frysen. Efter en solig eftermiddag har man sålt bort {w2} {n2}/{d2} lådor. Hur mycket glass finns kvar?",
+            en: "An ice cream shop has {w1} {n1}/{d1} large tubs of ice cream in the freezer. After a sunny afternoon, {w2} {n2}/{d2} tubs are sold. How much ice cream is left?"
         },
         {
-            sv: "Du köpte en stor behållare med {w1} {n1}/{d1} kg proteinpulver till din träning. Efter en månad har du använt {w2} {n2}/{d2} kg. Hur mycket pulver finns kvar?",
-            en: "You bought a large container with {w1} {n1}/{d1} kg of protein powder for your training. After a month, you have used {w2} {n2}/{d2} kg. How much powder remains?"
+            sv: "Du köpte en stor behållare med {w1} {n1}/{d1} kg proteinpulver. Efter en månad har du använt {w2} {n2}/{d2} kg. Hur mycket pulver finns kvar?",
+            en: "You bought a large container with {w1} {n1}/{d1} kg of protein powder. After a month, you have used {w2} {n2}/{d2} kg. How much powder remains?"
         },
         {
-            sv: "Ett träningskort på ett gym hade en giltighetstid på {w1} {n1}/{d1} timmar. Du har utnyttjat {w2} {n2}/{d2} timmar till pass. Hur mycket tid har du kvar på kortet?",
+            sv: "Ett träningskort hade en giltighetstid på {w1} {n1}/{d1} timmar. Du har utnyttjat {w2} {n2}/{d2} timmar till pass. Hur mycket tid har du kvar på kortet?",
             en: "A gym pass had a validity of {w1} {n1}/{d1} hours. You have utilized {w2} {n2}/{d2} hours for sessions. How much time do you have left on the card?"
         },
         {
@@ -393,8 +393,8 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
             en: "After a party, there were {w1} {n1}/{d1} large bottles of soda left in the kitchen. During the evening, the family finishes {w2} {n2}/{d2} bottles. How much soda is left?"
         },
         {
-            sv: "Ett kopieringspapper i skolan innehöll {w1} {n1}/{d1} hela paket papper. Lärarna använde {w2} {n2}/{d2} paket till ett prov. Hur många paket papper finns kvar i maskinen?",
-            en: "A copier station at school contained {w1} {n1}/{d1} full packages of paper. The teachers used {w2} {n2}/{d2} packages for an exam. How many packages of paper are left?"
+            sv: "Ett kopieringsrum i skolan innehöll {w1} {n1}/{d1} paket papper. Lärarna använde {w2} {n2}/{d2} paket till ett prov. Hur många paket papper finns kvar i maskinen?",
+            en: "A copier station at school contained {w1} {n1}/{d1} packages of paper. The teachers used {w2} {n2}/{d2} packages for an exam. How many packages of paper are left?"
         }
     ],
 
@@ -403,64 +403,64 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
     // =========================================================================
     frac_multiplication: [
         {
-            sv: "En gräsmatta täcker {n1}/{d1} av en villatomt. Du klipper {n2}/{d2} av denna gräsmatta innan regnet börjar. Hur stor del av hela tomten har du klippt?",
-            en: "A lawn covers {n1}/{d1} of a backyard lot. You mow {n2}/{d2} of this lawn before it starts raining. What fraction of the entire lot have you mowed?"
+            sv: "En rektangulär trädgård är {n1}/{d1} meter lång och {n2}/{d2} meter bred. Vad är trädgårdens area i kvadratmeter?",
+            en: "A rectangular garden is {n1}/{d1} meters long and {n2}/{d2} meters wide. What is the area of the garden in square meters?"
         },
         {
-            sv: "En odlingslott utgörs till {n1}/{d1} av öppen mark. På {n2}/{d2} av denna areal odlas det morötter. Hur stor del av hela lotten består av morotsodling?",
-            en: "A field is made up of {n1}/{d1} cultivation land. On {n2}/{d2} of this acreage, carrots are grown. What fraction of the entire field consists of carrots?"
+            sv: "Ett recept kräver {n1}/{d1} liter mjölk per sats pannkakor. Om du bakar {n2}/{d2} satser, hur mycket mjölk går det åt?",
+            en: "A recipe requires {n1}/{d1} liters of milk per batch of pancakes. If you bake {n2}/{d2} batches, how much milk is used?"
         },
         {
-            sv: "I ett akvarium är {n1}/{d1} av fiskarna färgglada arter. Av dessa fiskar utgörs {n2}/{d2} av neontetror. Hur stor del av samtliga fiskar i akvariet är neontetror?",
-            en: "In an aquarium, {n1}/{d1} of the fish are tropical species. Of these tropical fish, {n2}/{d2} are neon tetras. What fraction of all fish in the aquarium are neon tetras?"
+            sv: "En bil kör med en medelhastighet på {n1}/{d1} kilometer per timme. Hur långt hinner bilen köra på {n2}/{d2} timmar?",
+            en: "A car drives at an average speed of {n1}/{d1} kilometers per hour. How far does the car travel in {n2}/{d2} hours?"
         },
         {
-            sv: "Du väljer att spara {n1}/{d1} av din månadspeng på ett konto. Av dessa sparade pengar lägger du {n2}/{d2} på att köpa ett datorspel. Hur stor del av månadspengen gick till spelet?",
-            en: "A company allocates {n1}/{d1} of its profits to environmental projects. Of this money, {n2}/{d2} goes directly to tree planting. What fraction of the total profit goes to tree planting?"
+            sv: "Priset på exklusivt lösgodis är {n1}/{d1} kronor per kilo. Du köper {n2}/{d2} kilo av godiset. Hur mycket kommer det att kosta?",
+            en: "The price of exclusive pick-and-mix candy is {n1}/{d1} SEK per kg. You buy {n2}/{d2} kg of the candy. How much will it cost?"
         },
         {
-            sv: "En färgburk är fylld till {n1}/{d1} med vit färg. Du använder {n2}/{d2} av färgen till att måla en liten pall. Hur stor del av en hel färgburk gick åt till pallen?",
-            en: "A paint can is filled to {n1}/{d1} with base paint. You use {n2}/{d2} of that paint to paint a stool. What fraction of a full paint can was used for the stool?"
+            sv: "För att sy en specialdesignad tröja behövs det {n1}/{d1} meter tyg. En kläddesigner planerar att sy {n2}/{d2} sådana tröjor. Hur många meter tyg behövs totalt?",
+            en: "To sew a custom-designed shirt, {n1}/{d1} meters of fabric is needed. A clothing designer plans to sew {n2}/{d2} such shirts. How many meters of fabric are needed in total?"
         },
         {
-            sv: "Av eleverna på en skola läser {n1}/{d1} ett modernt språk som tillval. Bland dessa elever har {n2}/{d2} valt spanska. Hur stor del av skolans totala elevantal läser spanska?",
-            en: "Of the students at a college, {n1}/{d1} study computer science. Among these computer science students, {n2}/{d2} chose an AI specialization. What fraction of the total college student body studies AI?"
+            sv: "En målare använder {n1}/{d1} liter färg för att måla en standardvägg. Han får i uppdrag att måla {n2}/{d2} sådana väggar. Hur mycket färg går åt?",
+            en: "A painter uses {n1}/{d1} liters of paint to coat a standard wall. He is tasked with painting {n2}/{d2} such walls. How much paint is consumed?"
         },
         {
-            sv: "Ett bakrecept rekommenderar att fylla {n1}/{d1} av en form med smet. Om {n2}/{d2} av denna smet ska bestå av krossade chokladknappar, hur stor del av formen täcks av choklad?",
-            en: "A recipe recommends filling {n1}/{d1} of a baking dish with vegetables. If {n2}/{d2} of the vegetables are to be sliced onions, what fraction of the baking dish is covered by onions?"
+            sv: "Ett djur på en djurpark äter {n1}/{d1} kilo specialfoder varje dag. Hur mycket foder äter djuret under en period på {n2}/{d2} dagar?",
+            en: "An animal at a zoo eats {n1}/{d1} kg of special feed every day. How much feed does the animal eat over a period of {n2}/{d2} days?"
         },
         {
-            sv: "En bit grepptejp täcker {n1}/{d1} av ovansidan på en skateboard. Du väljer att rita ett mönster på {n2}/{d2} av denna tejpade yta. Hur stor del av hela brädan täcks av mönstret?",
-            en: "A freight train is loaded so that {n1}/{d1} of the cars carry timber. Of these timber cars, {n2}/{d2} are to be uncoupled in Skövde. What fraction of all the train's cars will be deleted in Skövde?"
+            sv: "En vattenpump kan pumpa ut {n1}/{d1} liter vatten per minut. Hur mycket vatten har pumpen flyttat efter {n2}/{d2} minuter?",
+            en: "A water pump can pump out {n1}/{d1} liters of water per minute. How much water has the pump moved after {n2}/{d2} minutes?"
         },
         {
-            sv: "Ett videoklipp har bearbetats så att {n1}/{d1} av filen är färdigrenderad. Under en kontroll laddas {n2}/{d2} av denna färdiga del upp på nätet. Hur stor del av hela klippet har laddats upp?",
-            en: "A land area corresponding to {n1}/{d1} of a forest property is designated as a nature reserve. On {n2}/{d2} of this reserve land, entry is strictly prohibited. What fraction of the entire property is covered by the restriction?"
+            sv: "En frilansare tjänar {n1}/{d1} hundralappar för varje timmes arbete. Hen arbetar i {n2}/{d2} timmar med ett projekt. Hur mycket pengar tjänar frilansaren?",
+            en: "A freelancer earns {n1}/{d1} hundreds of SEK for every hour of work. They work for {n2}/{d2} hours on a project. How much money does the freelancer earn?"
         },
         {
-            sv: "En frukthandlare använder {n1}/{d1} av sitt förråd till att göra smoothies. Av denna frukt utgörs {n2}/{d2} av pressade apelsiner. Hur stor del av hela förrådet blir till apelsinjuice?",
-            en: "A bakery uses {n1}/{d1} of its daily butter for baking buns. Of this butter, {n2}/{d2} goes into the filling. What fraction of the bakery's total butter consumption is used for the bun filling?"
+            sv: "På ett fält växer det i genomsnitt {n1}/{d1} kilo vete per kvadratmeter. Bonden ska skörda en yta på {n2}/{d2} kvadratmeter. Vad blir den förväntade vikten på vetet?",
+            en: "In a field, an average of {n1}/{d1} kg of wheat grows per square meter. The farmer is harvesting an area of {n2}/{d2} square meters. What is the expected weight of the wheat?"
         },
         {
-            sv: "Skärmen på din telefon drar {n1}/{d1} av batteriets ström under en dag. En specifik app står ensam för {n2}/{d2} av skärmens strömförbrukning. Hur stor del av hela batteriet drog appen?",
-            en: "Your phone screen uses {n1}/{d1} of the battery during a day. A specific app accounts for {n2}/{d2} of the screen's power usage. What fraction of the total battery did the app draw?"
+            sv: "Ett värmeelement förbrukar {n1}/{d1} kWh el per timme det är påslaget. Om elementet är igång i {n2}/{d2} timmar, hur mycket el har förbrukats?",
+            en: "A heater consumes {n1}/{d1} kWh of electricity per hour it is turned on. If the heater runs for {n2}/{d2} hours, how much electricity has been consumed?"
         },
         {
-            sv: "Du lägger {n1}/{d1} av din lediga tid på läxor under en vecka. Av denna studietid läggs {n2}/{d2} på att lösa matteuppgifter. Hur stor del av din lediga tid la du på matte?",
-            en: "You spend {n1}/{d1} of your free time on homework during a week. Of this study time, {n2}/{d2} is spent solving math problems. What fraction of your free time did you spend on math?"
+            sv: "En bagare använder {n1}/{d1} kilo mjöl för att baka en stor brödlimpa. Under förmiddagen bakar bagaren {n2}/{d2} limpor. Hur mycket mjöl används?",
+            en: "A baker uses {n1}/{d1} kg of flour to bake a large loaf of bread. During the morning, the baker bakes {n2}/{d2} loaves. How much flour is used?"
         },
         {
-            sv: "I en påse surt godis är {n1}/{d1} av bitarna röda nappar. När du räknar dem ser du att {n2}/{d2} av de röda napparna har smaken sur vattenmelon. Hur stor del av hela påsen är sur vattenmelon?",
-            en: "In a bag of sour candy, {n1}/{d1} of the pieces are red drops. When counting them, you see that {n2}/{d2} of the red drops have a sour watermelon flavor. What fraction of the whole bag is sour watermelon?"
+            sv: "En 3D-skrivare använder {n1}/{d1} gram plast för att skriva ut en specifik detalj. En tekniker beställer {n2}/{d2} utskrifter av denna detalj. Hur mycket plast går åt?",
+            en: "A 3D printer uses {n1}/{d1} grams of plastic to print a specific part. A technician orders {n2}/{d2} prints of this part. How much plastic is used?"
         },
         {
-            sv: "I Hugos garderob utgörs {n1}/{d1} av alla plagg av tröjor. Av dessa tröjor är {n2}/{d2} svarta hoodies. Hur stor del av alla hans kläder i garderoben är svarta hoodies?",
-            en: "In Hugo's wardrobe, {n1}/{d1} of all garments consist of shirts. Of these shirts, {n2}/{d2} are black hoodies. What fraction of all his clothes in the wardrobe are black hoodies?"
+            sv: "En maskin fördelar gödningsmedel och sprider ut {n1}/{d1} liter per hektar åkermark. Maskinen körs över en yta på {n2}/{d2} hektar. Hur mycket gödningsmedel har spridits ut?",
+            en: "A machine distributes fertilizer, spreading {n1}/{d1} liters per hectare of farmland. The machine is driven over an area of {n2}/{d2} hectares. How much fertilizer has been spread?"
         },
         {
-            sv: "En spellista på Spotify innehåller {n1}/{d1} låtar som är hiphop. Av dessa hiphop-låtar är {n2}/{d2} gjorda av samma favoritartist. Hur stor del av hela spellistan är låtar med din favoritartist?",
-            en: "A Spotify playlist contains {n1}/{d1} songs that are hip-hop. Of these hip-hop tracks, {n2}/{d2} are made by the same favorite artist. What fraction of the entire playlist consists of songs by your favorite artist?"
+            sv: "En snabb läsare kan läsa {n1}/{d1} sidor av en bok per minut. Om personen läser intensivt i {n2}/{d2} minuter, hur många sidor hinner hen läsa?",
+            en: "A fast reader can read {n1}/{d1} pages of a book per minute. If the person reads intensely for {n2}/{d2} minutes, how many pages will they manage to read?"
         }
     ],
 
@@ -478,15 +478,15 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
         },
         {
             sv: "En burk innehåller {n1}/{d1} kilo proteinpulver till träningen. Varje portion du blandar till kräver {n2}/{d2} kilo pulver. Hur många portioner räcker burken till?",
-            en: "A laboratory experiment requires doses of {n2}/{d2} grams of a powder. You have a container with {n1}/{d1} grams of powder left. How many full doses will it last for?"
+            en: "A container holds {n1}/{d1} kg of protein powder. Each serving requires {n2}/{d2} kg of powder. How many full servings will it last for?"
         },
         {
-            sv: "Du har en flaska som innehåller {n1}/{d1} liter färg till ett bygge. Du portionerar ut vätskan i mindre skålar som rymmer {n2}/{d2} liter var. Hur många skålar kan du fylla?",
-            en: "A machine fills small perfume bottles holding {n2}/{d2} liters each. The machine has a reservoir with {n1}/{d1} liters of perfume oil left. How many bottles can the machine fill?"
+            sv: "Du har en hink som innehåller {n1}/{d1} liter färg till ett bygge. Du portionerar ut färgen i mindre skålar som rymmer {n2}/{d2} liter var. Hur många skålar kan du fylla?",
+            en: "A bucket contains {n1}/{d1} liters of paint. You portion out the paint into smaller bowls holding {n2}/{d2} liters each. How many bowls can you fill?"
         },
         {
             sv: "Du har en flaska med {n1}/{d1} centiliter såpvatten. Du ska fylla små rör med bubbelvätska som rymmer {n2}/{d2} centiliter styck. Hur många rör kan du fylla helt?",
-            en: "A medical lab distributes {n1}/{d1} centiliters of serum into test tubes holding {n2}/{d2} centiliters each. How many test tubes can they fill completely?"
+            en: "You have a bottle with {n1}/{d1} centiliters of soap water. You distribute it into small tubes holding {n2}/{d2} centiliters each. How many tubes can you fill completely?"
         },
         {
             sv: "En slöjdlärare har en träläkt på {n1}/{d1} meter. Eleverna ska såga till bitar som är {n2}/{d2} meter långa till ett projekt. Hur många bitar räcker läkten till?",
@@ -498,15 +498,15 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
         },
         {
             sv: "En stor påse med godis väger {n1}/{d1} kilo. Du ska fördela godiset i mindre kalaspåsar som rymmer {n2}/{d2} kilo styck. Hur många påsar kan du fylla helt?",
-            en: "A shipment of {n1}/{d1} tons of gravel is to be distributed into smaller bags holding {n2}/{d2} tons each. How many such bags can be filled completely?"
+            en: "A large bag of candy weighs {n1}/{d1} kg. You are going to distribute the candy into smaller bags holding {n2}/{d2} kg each. How many such bags can be filled completely?"
         },
         {
-            sv: "En bagare ska dela upp en stor deg som väger {n1}/{d1} kilo till mindre brödbullar. Varje bulle ska vika {n2}/{d2} kilo före gräddning. Hur många bullar får bagaren ut?",
+            sv: "En bagare ska dela upp en stor deg som väger {n1}/{d1} kilo till mindre brödbullar. Varje bulle ska väga {n2}/{d2} kilo före gräddning. Hur många bullar får bagaren ut?",
             en: "A baker needs to divide a large dough weighing {n1}/{d1} kg into smaller buns. Each bun must weigh {n2}/{d2} kg before baking. How many buns will the baker get?"
         },
         {
             sv: "En stor kanna innehåller {n1}/{d1} deciliter varm choklad. Du häller upp drycken i mindre koppar som rymmer {n2}/{d2} deciliter styck. Hur många koppar kan du fylla?",
-            en: "A coffee bar serves tasting cups of espresso holding {n2}/{d2} deciliters each. The brewer contains {n1}/{d1} deciliters of espresso. How many cups can be filled?"
+            en: "A large pitcher contains {n1}/{d1} deciliters of hot chocolate. You pour the drink into smaller cups holding {n2}/{d2} deciliters each. How many cups can be filled?"
         },
         {
             sv: "Du har en flaska med {n1}/{d1} liter läsk kvar efter en fest. Du häller upp läsken i mindre glas som rymmer {n2}/{d2} liter var. Hur många glas räcker det till?",
