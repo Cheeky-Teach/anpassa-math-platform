@@ -253,7 +253,7 @@ export class NegativeNumbersGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `Vilket uttryck betyder exakt samma sak som $${a} - (-${b})$?` : `Which expression means exactly the same thing as $${a} - (-${b})$?`,
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${a} - ${b}`, `-${a} + ${b}`])
+                    answerType: 'multiple_choice', options: MathUtils.shuffle([correct, `${a} - ${b}`, `${a} + ${b}`])
                 },
                 token: this.toBase64(correct), variationKey: v, type: 'concept',
                 clues: [
