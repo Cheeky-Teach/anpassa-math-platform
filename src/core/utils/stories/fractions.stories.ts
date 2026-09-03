@@ -267,134 +267,134 @@ export const FRACTION_STORIES: Record<string, StoryScenario[]> = {
     ],
 
     // =========================================================================
-    // 🎯 5. FRAC MIXED ADD (Requires placeholders: {w1}, {n1}, {d1}, {w2}, {n2}, {d2})
+    // 🎯 5. FRAC MIXED ADD (Requires placeholders: {w1} och, {n1}, {d1}, {w2} och, {n2}, {d2})
     // =========================================================================
     frac_mixed_add: [
         {
-            sv: "En snickare använder {w1} {n1}/{d1} meter virke till en hylla och {w2} {n2}/{d2} meter till en annan. Hur mycket virke går åt totalt?",
-            en: "A carpenter uses {w1} {n1}/{d1} meters of lumber for one shelf and {w2} {n2}/{d2} meters for another. How much lumber is used in total?"
+            sv: "En snickare använder {w1} och {n1}/{d1} meter virke till en hylla och {w2} och {n2}/{d2} meter till en annan. Hur mycket virke går åt totalt?",
+            en: "A carpenter uses {w1} och {n1}/{d1} meters of lumber for one shelf and {w2} och {n2}/{d2} meters for another. How much lumber is used in total?"
         },
         {
-            sv: "Till ett bakrecept behövs {w1} {n1}/{d1} deciliter socker till degen och {w2} {n2}/{d2} deciliter till glasyren. Hur mycket socker behövs sammanlagt?",
-            en: "A baking recipe requires {w1} {n1}/{d1} deciliters of sugar for the dough and {w2} {n2}/{d2} deciliters for the icing. How much sugar is needed in total?"
+            sv: "Till ett bakrecept behövs {w1} och {n1}/{d1} deciliter socker till degen och {w2} och {n2}/{d2} deciliter till glasyren. Hur mycket socker behövs sammanlagt?",
+            en: "A baking recipe requires {w1} och {n1}/{d1} deciliters of sugar for the dough and {w2} och {n2}/{d2} deciliters for the icing. How much sugar is needed in total?"
         },
         {
-            sv: "Vid redigering klipper du ihop en videosekvens på {w1} {n1}/{d1} minuter med en sista del på {w2} {n2}/{d2} minuter. Hur lång blir videon totalt?",
-            en: "While editing, you splice a video sequence of {w1} {n1}/{d1} minutes with a final part of {w2} {n2}/{d2} minutes. How long is the video in total?"
+            sv: "Vid redigering klipper du ihop en videosekvens på {w1} och {n1}/{d1} minuter med en sista del på {w2} och {n2}/{d2} minuter. Hur lång blir videon totalt?",
+            en: "While editing, you splice a video sequence of {w1} och {n1}/{d1} minutes with a final part of {w2} och {n2}/{d2} minutes. How long is the video in total?"
         },
         {
-            sv: "En målare förbrukar {w1} {n1}/{d1} burkar färg på rummets väggar och {w2} {n2}/{d2} burkar på listerna runt om. Hur många burkar färg går åt sammanlagt?",
-            en: "A painter consumes {w1} {n1}/{d1} cans of paint on the walls and {w2} {n2}/{d2} cans on the trim. How many cans of paint are used in total?"
+            sv: "En målare förbrukar {w1} och {n1}/{d1} burkar färg på rummets väggar och {w2} och {n2}/{d2} burkar på listerna runt om. Hur många burkar färg går åt sammanlagt?",
+            en: "A painter consumes {w1} och {n1}/{d1} cans of paint on the walls and {w2} och {n2}/{d2} cans on the trim. How many cans of paint are used in total?"
         },
         {
-            sv: "Du packar ner två paket i din ryggsäck som väger {w1} {n1}/{d1} kg respektive {w2} {n2}/{d2} kg. Vad blir deras sammanlagda vikt i väskan?",
-            en: "You pack two packages in your backpack weighing {w1} {n1}/{d1} kg and {w2} {n2}/{d2} kg respectively. What is their combined weight in the bag?"
+            sv: "Du packar ner två paket i din ryggsäck som väger {w1} och {n1}/{d1} kg respektive {w2} och {n2}/{d2} kg. Vad blir deras sammanlagda vikt i väskan?",
+            en: "You pack two packages in your backpack weighing {w1} och {n1}/{d1} kg and {w2} och {n2}/{d2} kg respectively. What is their combined weight in the bag?"
         },
         {
-            sv: "En löpare vilar efter att ha sprungit {w1} {n1}/{d1} kilometer och fortsätter sedan ytterligare {w2} {n2}/{d2} kilometer. Hur långt har löparen sprungit totalt?",
-            en: "A runner rests after running {w1} {n1}/{d1} kilometers and then continues for another {w2} {n2}/{d2} kilometers. How far has the runner jogged in total?"
+            sv: "En löpare vilar efter att ha sprungit {w1} och {n1}/{d1} kilometer och fortsätter sedan ytterligare {w2} och {n2}/{d2} kilometer. Hur långt har löparen sprungit totalt?",
+            en: "A runner rests after running {w1} och {n1}/{d1} kilometers and then continues for another {w2} och {n2}/{d2} kilometers. How far has the runner jogged in total?"
         },
         {
-            sv: "En bondgård skördar {w1} {n1}/{d1} säckar potatis på morgonen och {w2} {n2}/{d2} säckar på eftermiddagen. Hur många säckar har de skördat totalt?",
-            en: "A farm harvests {w1} {n1}/{d1} bags of potatoes in the morning and {w2} {n2}/{d2} bags in the afternoon. How many bags have they harvested in total?"
+            sv: "En bondgård skördar {w1} och {n1}/{d1} säckar potatis på morgonen och {w2} och {n2}/{d2} säckar på eftermiddagen. Hur många säckar har de skördat totalt?",
+            en: "A farm harvests {w1} och {n1}/{d1} bags of potatoes in the morning and {w2} och {n2}/{d2} bags in the afternoon. How many bags have they harvested in total?"
         },
         {
-            sv: "Under helgen kör du moped {w1} {n1}/{d1} kilometer på lördagen och {w2} {n2}/{d2} kilometer till på söndagen. Hur långt har du kört moped totalt?",
-            en: "Over the weekend, you ride a moped {w1} {n1}/{d1} kilometers on Saturday and another {w2} {n2}/{d2} kilometers on Sunday. How far have you ridden in total?"
+            sv: "Under helgen kör du moped {w1} och {n1}/{d1} kilometer på lördagen och {w2} och {n2}/{d2} kilometer till på söndagen. Hur långt har du kört moped totalt?",
+            en: "Over the weekend, you ride a moped {w1} och {n1}/{d1} kilometers on Saturday and another {w2} och {n2}/{d2} kilometers on Sunday. How far have you ridden in total?"
         },
         {
-            sv: "För att göra en fruktsmoothie mixar du {w1} {n1}/{d1} hekto bananer med {w2} {n2}/{d2} hekto frysta jordgubbar. Hur mycket väger frukten sammanlagt?",
-            en: "To make a fruit smoothie, you blend {w1} {n1}/{d1} hectograms of bananas with {w2} {n2}/{d2} hectograms of strawberries. How much does the fruit weigh in total?"
+            sv: "För att göra en fruktsmoothie mixar du {w1} och {n1}/{d1} hekto bananer med {w2} och {n2}/{d2} hekto frysta jordgubbar. Hur mycket väger frukten sammanlagt?",
+            en: "To make a fruit smoothie, you blend {w1} och {n1}/{d1} hectograms of bananas with {w2} och {n2}/{d2} hectograms of strawberries. How much does the fruit weigh in total?"
         },
         {
-            sv: "En familj köper {w1} {n1}/{d1} kilo kött till en grillkväll och kompletterar med {w2} {n2}/{d2} kilo korv. Hur mycket har de köpt sammanlagt?",
-            en: "A family buys {w1} {n1}/{d1} kg of meat for a barbecue and supplements it with {w2} {n2}/{d2} kg of sausages. How much have they bought in total?"
+            sv: "En familj köper {w1} och {n1}/{d1} kilo kött till en grillkväll och kompletterar med {w2} och {n2}/{d2} kilo korv. Hur mycket har de köpt sammanlagt?",
+            en: "A family buys {w1} och {n1}/{d1} kg of meat for a barbecue and supplements it with {w2} och {n2}/{d2} kg of sausages. How much have they bought in total?"
         },
         {
-            sv: "Du använder {w1} {n1}/{d1} nystan med garn till en halsduk och behöver {w2} {n2}/{d2} nystan till för att göra den helt klar. Hur mycket går åt totalt?",
-            en: "You use {w1} {n1}/{d1} skeins of yarn for a scarf and need another {w2} {n2}/{d2} skeins to complete it. How much is used in total?"
+            sv: "Du använder {w1} och {n1}/{d1} nystan med garn till en halsduk och behöver {w2} och {n2}/{d2} nystan till för att göra den helt klar. Hur mycket går åt totalt?",
+            en: "You use {w1} och {n1}/{d1} skeins of yarn for a scarf and need another {w2} och {n2}/{d2} skeins to complete it. How much is used in total?"
         },
         {
-            sv: "Under en helg la du {w1} {n1}/{d1} timmar på att titta på en serie och {w2} {n2}/{d2} timmar på att spela dator. Hur mycket tid la du på det totalt?",
-            en: "Over a weekend, you spent {w1} {n1}/{d1} hours watching a series and {w2} {n2}/{d2} hours gaming. How much time did you spend in total?"
+            sv: "Under en helg la du {w1} och {n1}/{d1} timmar på att titta på en serie och {w2} och {n2}/{d2} timmar på att spela dator. Hur mycket tid la du på det totalt?",
+            en: "Over a weekend, you spent {w1} och {n1}/{d1} hours watching a series and {w2} och {n2}/{d2} hours gaming. How much time did you spend in total?"
         },
         {
-            sv: "För att fixa ett tygstycke till en gardin behövs {w1} {n1}/{d1} meter tyg och till en annan del går det åt {w2} {n2}/{d2} meter till. Hur mycket tyg går åt totalt?",
-            en: "To prepare a fabric piece for a curtain, {w1} {n1}/{d1} meters of fabric are needed and for another section another {w2} {n2}/{d2} meters are used. How much fabric is used total?"
+            sv: "För att fixa ett tygstycke till en gardin behövs {w1} och {n1}/{d1} meter tyg och till en annan del går det åt {w2} och {n2}/{d2} meter till. Hur mycket tyg går åt totalt?",
+            en: "To prepare a fabric piece for a curtain, {w1} och {n1}/{d1} meters of fabric are needed and for another section another {w2} och {n2}/{d2} meters are used. How much fabric is used total?"
         },
         {
-            sv: "Till din hund köper du en påse torrfoder på {w1} {n1}/{d1} kg och en mindre påse hundgodis på {w2} {n2}/{d2} kg. Vad väger djurmaten sammanlagt?",
-            en: "For your dog, you buy a bag of dry food weighing {w1} {n1}/{d1} kg and a smaller bag of treats weighing {w2} {n2}/{d2} kg. What does the pet food weigh in total?"
+            sv: "Till din hund köper du en påse torrfoder på {w1} och {n1}/{d1} kg och en mindre påse hundgodis på {w2} och {n2}/{d2} kg. Vad väger djurmaten sammanlagt?",
+            en: "For your dog, you buy a bag of dry food weighing {w1} och {n1}/{d1} kg and a smaller bag of treats weighing {w2} och {n2}/{d2} kg. What does the pet food weigh in total?"
         },
         {
-            sv: "Inför ett födelsedagskalas köps det in {w1} {n1}/{d1} liter läsk och {w2} {n2}/{d2} liter saft till gästerna. Hur mycket dryck har köpts in totalt?",
-            en: "Ahead of a birthday party, {w1} {n1}/{d1} liters of soda and {w2} {n2}/{d2} liters of juice are purchased for the guests. How much drink has been bought in total?"
+            sv: "Inför ett födelsedagskalas köps det in {w1} och {n1}/{d1} liter läsk och {w2} och {n2}/{d2} liter saft till gästerna. Hur mycket dryck har köpts in totalt?",
+            en: "Ahead of a birthday party, {w1} och {n1}/{d1} liters of soda and {w2} och {n2}/{d2} liters of juice are purchased for the guests. How much drink has been bought in total?"
         }
     ],
 
     // =========================================================================
-    // 🎯 6. FRAC MIXED SUB (Requires placeholders: {w1}, {n1}, {d1}, {w2}, {n2}, {d2})
+    // 🎯 6. FRAC MIXED SUB (Requires placeholders: {w1} och, {n1}, {d1}, {w2} och, {n2}, {d2})
     // =========================================================================
     frac_mixed_sub: [
         {
-            sv: "Ett bageri har {w1} {n1}/{d1} säckar mjöl på lager. Under morgonen går det åt {w2} {n2}/{d2} säckar. Hur mycket mjöl finns kvar på lagret?",
-            en: "A bakery has {w1} {n1}/{d1} bags of flour in stock. During the morning, {w2} {n2}/{d2} bags are used. How much flour is left in stock?"
+            sv: "Ett bageri har {w1} och {n1}/{d1} säckar mjöl på lager. Under morgonen går det åt {w2} och {n2}/{d2} säckar. Hur mycket mjöl finns kvar på lagret?",
+            en: "A bakery has {w1} och {n1}/{d1} bags of flour in stock. During the morning, {w2} och {n2}/{d2} bags are used. How much flour is left in stock?"
         },
         {
-            sv: "En hantverkare har en {w1} {n1}/{d1} meter lång vajer till ett bygge. Han kapar bort en bit på {w2} {n2}/{d2} meter. Hur mycket vajer återstår?",
-            en: "A construction worker has a wire rope that is {w1} {n1}/{d1} meters long. He cuts off a piece of {w2} {n2}/{d2} meters. How much wire rope remains?"
+            sv: "En hantverkare har en {w1} och {n1}/{d1} meter lång vajer till ett bygge. Han kapar bort en bit på {w2} och {n2}/{d2} meter. Hur mycket vajer återstår?",
+            en: "A construction worker has a wire rope that is {w1} och {n1}/{d1} meters long. He cuts off a piece of {w2} och {n2}/{d2} meters. How much wire rope remains?"
         },
         {
-            sv: "Ett fik köpte in {w1} {n1}/{d1} kilo ost till sina mackor. Efter helgen har man förbrukat {w2} {n2}/{d2} kilo. Hur mycket ost finns kvar i kylen?",
-            en: "A café purchased {w1} {n1}/{d1} kg of cheese. After the weekend, they have consumed {w2} {n2}/{d2} kg of it. How much cheese is left in the fridge?"
+            sv: "Ett fik köpte in {w1} och {n1}/{d1} kilo ost till sina mackor. Efter helgen har man förbrukat {w2} och {n2}/{d2} kilo. Hur mycket ost finns kvar i kylen?",
+            en: "A café purchased {w1} och {n1}/{d1} kg of cheese. After the weekend, they have consumed {w2} och {n2}/{d2} kg of it. How much cheese is left in the fridge?"
         },
         {
-            sv: "Ett akvarium hade en vattenhöjd på {w1} {n1}/{d1} dm. Under en vecka avdunstade vattnet så att nivån sjönk med {w2} {n2}/{d2} dm. Vilken är vattenhöjden nu?",
-            en: "An aquarium had a water level of {w1} {n1}/{d1} dm. During a week, the water evaporated and the level dropped by {w2} {n2}/{d2} dm. What is the level now?"
+            sv: "Ett akvarium hade en vattenhöjd på {w1} och {n1}/{d1} dm. Under en vecka avdunstade vattnet så att nivån sjönk med {w2} och {n2}/{d2} dm. Vilken är vattenhöjden nu?",
+            en: "An aquarium had a water level of {w1} och {n1}/{d1} dm. During a week, the water evaporated and the level dropped by {w2} och {n2}/{d2} dm. What is the level now?"
         },
         {
-            sv: "Du har fyllt en mopedtank med {w1} {n1}/{d1} liter bensin. Efter en åktur har du förbrukat {w2} {n2}/{d2} liter. Hur mycket bensin är kvar i tanken?",
-            en: "You filled a tank with {w1} {n1}/{d1} liters of gasoline. After a road trip, you have consumed {w2} {n2}/{d2} liters. How much gasoline is left in the tank?"
+            sv: "Du har fyllt en mopedtank med {w1} och {n1}/{d1} liter bensin. Efter en åktur har du förbrukat {w2} och {n2}/{d2} liter. Hur mycket bensin är kvar i tanken?",
+            en: "You filled a tank with {w1} och {n1}/{d1} liters of gasoline. After a road trip, you have consumed {w2} och {n2}/{d2} liters. How much gasoline is left in the tank?"
         },
         {
-            sv: "En elev har samlat ihop {w1} {n1}/{d1} kilo lera till bildlektionen. Han använder {w2} {n2}/{d2} kilo till en skulptur. Hur mycket lera finns kvar i burken?",
-            en: "A student collected {w1} {n1}/{d1} kg of clay. He uses {w2} {n2}/{d2} kg for a sculpture. How much clay is left in the container?"
+            sv: "En elev har samlat ihop {w1} och {n1}/{d1} kilo lera till bildlektionen. Han använder {w2} och {n2}/{d2} kilo till en skulptur. Hur mycket lera finns kvar i burken?",
+            en: "A student collected {w1} och {n1}/{d1} kg of clay. He uses {w2} och {n2}/{d2} kg for a sculpture. How much clay is left in the container?"
         },
         {
-            sv: "En bit dekorationsband mäter {w1} {n1}/{d1} meter. Du klipper bort en skadad ändbit på {w2} {n2}/{d2} meter. Hur långt är bandet efter kapningen?",
-            en: "A piece of ribbon measures {w1} {n1}/{d1} meters. You cut off a damaged end piece of {w2} {n2}/{d2} meters. How long is the ribbon after cutting?"
+            sv: "En bit dekorationsband mäter {w1} och {n1}/{d1} meter. Du klipper bort en skadad ändbit på {w2} och {n2}/{d2} meter. Hur långt är bandet efter kapningen?",
+            en: "A piece of ribbon measures {w1} och {n1}/{d1} meters. You cut off a damaged end piece of {w2} och {n2}/{d2} meters. How long is the ribbon after cutting?"
         },
         {
-            sv: "Du har bokat upp {w1} {n1}/{d1} GB lagringsutrymme på en disk. På grund av en rensning raderar du filer på {w2} {n2}/{d2} GB. Hur stort utrymme upptas nu?",
-            en: "You have booked {w1} {n1}/{d1} GB of storage space on a drive. Due to cleaning, you delete files of {w2} {n2}/{d2} GB. How much space is occupied now?"
+            sv: "Du har bokat upp {w1} och {n1}/{d1} GB lagringsutrymme på en disk. På grund av en rensning raderar du filer på {w2} och {n2}/{d2} GB. Hur stort utrymme upptas nu?",
+            en: "You have booked {w1} och {n1}/{d1} GB of storage space on a drive. Due to cleaning, you delete files of {w2} och {n2}/{d2} GB. How much space is occupied now?"
         },
         {
-            sv: "En idrottsförening hade {w1} {n1}/{d1} timmar halltid bokad under en månad. De avbokar {w2} {n2}/{d2} timmar. Hur mycket halltid har de kvar?",
-            en: "A sports club had {w1} {n1}/{d1} hours of gym time booked during a month. They cancel {w2} {n2}/{d2} hours. How much gym time do they have left?"
+            sv: "En idrottsförening hade {w1} och {n1}/{d1} timmar halltid bokad under en månad. De avbokar {w2} och {n2}/{d2} timmar. Hur mycket halltid har de kvar?",
+            en: "A sports club had {w1} och {n1}/{d1} hours of gym time booked during a month. They cancel {w2} och {n2}/{d2} hours. How much gym time do they have left?"
         },
         {
-            sv: "En skräddare har {w1} {n1}/{d1} meter sidentyg på rullen. Efter att ha sytt en kjol har {w2} {n2}/{d2} meter tyg gått åt. Hur mycket sidentyg finns kvar?",
-            en: "A tailor has {w1} {n1}/{d1} meters of silk fabric. After sewing a dress, {w2} {n2}/{d2} meters of fabric have been used. How much silk fabric is left on the roll?"
+            sv: "En skräddare har {w1} och {n1}/{d1} meter sidentyg på rullen. Efter att ha sytt en kjol har {w2} och {n2}/{d2} meter tyg gått åt. Hur mycket sidentyg finns kvar?",
+            en: "A tailor has {w1} och {n1}/{d1} meters of silk fabric. After sewing a dress, {w2} och {n2}/{d2} meters of fabric have been used. How much silk fabric is left on the roll?"
         },
         {
-            sv: "En glassbar har {w1} {n1}/{d1} stora lådor med glass i frysen. Efter en solig eftermiddag har man sålt bort {w2} {n2}/{d2} lådor. Hur mycket glass finns kvar?",
-            en: "An ice cream shop has {w1} {n1}/{d1} large tubs of ice cream in the freezer. After a sunny afternoon, {w2} {n2}/{d2} tubs are sold. How much ice cream is left?"
+            sv: "En glassbar har {w1} och {n1}/{d1} stora lådor med glass i frysen. Efter en solig eftermiddag har man sålt bort {w2} och {n2}/{d2} lådor. Hur mycket glass finns kvar?",
+            en: "An ice cream shop has {w1} och {n1}/{d1} large tubs of ice cream in the freezer. After a sunny afternoon, {w2} och {n2}/{d2} tubs are sold. How much ice cream is left?"
         },
         {
-            sv: "Du köpte en stor behållare med {w1} {n1}/{d1} kg proteinpulver. Efter en månad har du använt {w2} {n2}/{d2} kg. Hur mycket pulver finns kvar?",
-            en: "You bought a large container with {w1} {n1}/{d1} kg of protein powder. After a month, you have used {w2} {n2}/{d2} kg. How much powder remains?"
+            sv: "Du köpte en stor behållare med {w1} och {n1}/{d1} kg proteinpulver. Efter en månad har du använt {w2} och {n2}/{d2} kg. Hur mycket pulver finns kvar?",
+            en: "You bought a large container with {w1} och {n1}/{d1} kg of protein powder. After a month, you have used {w2} och {n2}/{d2} kg. How much powder remains?"
         },
         {
-            sv: "Ett träningskort hade en giltighetstid på {w1} {n1}/{d1} timmar. Du har utnyttjat {w2} {n2}/{d2} timmar till pass. Hur mycket tid har du kvar på kortet?",
-            en: "A gym pass had a validity of {w1} {n1}/{d1} hours. You have utilized {w2} {n2}/{d2} hours for sessions. How much time do you have left on the card?"
+            sv: "Ett träningskort hade en giltighetstid på {w1} och {n1}/{d1} timmar. Du har utnyttjat {w2} och {n2}/{d2} timmar till pass. Hur mycket tid har du kvar på kortet?",
+            en: "A gym pass had a validity of {w1} och {n1}/{d1} hours. You have utilized {w2} och {n2}/{d2} hours for sessions. How much time do you have left on the card?"
         },
         {
-            sv: "Efter ett kalas fanns det {w1} {n1}/{d1} stora flaskor med läsk kvar i köket. Under kvällen dricker familjen upp {w2} {n2}/{d2} flaskor. Hur mycket läsk finns kvar?",
-            en: "After a party, there were {w1} {n1}/{d1} large bottles of soda left in the kitchen. During the evening, the family finishes {w2} {n2}/{d2} bottles. How much soda is left?"
+            sv: "Efter ett kalas fanns det {w1} och {n1}/{d1} stora flaskor med läsk kvar i köket. Under kvällen dricker familjen upp {w2} och {n2}/{d2} flaskor. Hur mycket läsk finns kvar?",
+            en: "After a party, there were {w1} och {n1}/{d1} large bottles of soda left in the kitchen. During the evening, the family finishes {w2} och {n2}/{d2} bottles. How much soda is left?"
         },
         {
-            sv: "Ett kopieringsrum i skolan innehöll {w1} {n1}/{d1} paket papper. Lärarna använde {w2} {n2}/{d2} paket till ett prov. Hur många paket papper finns kvar i maskinen?",
-            en: "A copier station at school contained {w1} {n1}/{d1} packages of paper. The teachers used {w2} {n2}/{d2} packages for an exam. How many packages of paper are left?"
+            sv: "Ett kopieringsrum i skolan innehöll {w1} och {n1}/{d1} paket papper. Lärarna använde {w2} och {n2}/{d2} paket till ett prov. Hur många paket papper finns kvar i maskinen?",
+            en: "A copier station at school contained {w1} och {n1}/{d1} packages of paper. The teachers used {w2} och {n2}/{d2} packages for an exam. How many packages of paper are left?"
         }
     ],
 
