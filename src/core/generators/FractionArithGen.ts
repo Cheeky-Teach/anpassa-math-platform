@@ -104,21 +104,21 @@ export class FractionArithGen {
             const n2 = MathUtils.randomInt(1, d - 2);
             const sum = n1 + n2;
             
-            // 🟢 FIXED: Using beautiful LaTeX for the label, and safe strings for the values!
+            // Latex for the label, and safe strings for the values!
             const correctEq = { 
-                label: `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d}}`, 
+                label: `$\\frac{${n1}}{${d}}$ + $\\frac{${n2}}{${d}}$ = $\\frac{${sum}}{${d}}$`, 
                 value: "correct" 
             };
             const wrongEq1 = { 
-                label: `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d + d}}`, 
+                label: `$\\frac{${n1}}{${d}}$ + $\\frac{${n2}}{${d}}$ = $\\frac{${sum}}{${d + d}}$`, 
                 value: "trap_add_denom" 
             };
             const wrongEq2 = { 
-                label: `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${n1 * n2}}{${d}}`, 
+                label: `$\\frac{${n1}}{${d}}$ + $\\frac{${n2}}{${d}}$ = $\\frac{${n1 * n2}}{${d}}$`, 
                 value: "trap_mult_num" 
             };
             const wrongEq3 = { 
-                label: `\\frac{${n1}}{${d}} + \\frac{${n2}}{${d}} = \\frac{${sum}}{${d * d}}`, 
+                label: `$\\frac{${n1}}{${d}}$ + $\\frac{${n2}}{${d}}$ = $\\frac{${sum}}{${d * d}}$`, 
                 value: "trap_mult_denom" 
             };
             
