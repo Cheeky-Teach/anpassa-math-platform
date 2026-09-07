@@ -173,7 +173,10 @@ export const LEVEL_DESCRIPTIONS = {
         2: { sv: "Addition & Subtraktion (Olika)", en: "Add & Sub (Diff Denom)" },
         3: { sv: "Blandad form (+ och -)", en: "Mixed Numbers (+ and -)" },
         4: { sv: "Multiplikation", en: "Multiplication" },
-        5: { sv: "Division", en: "Division" }
+        5: { sv: "Division", en: "Division" },
+        6: { sv: "Negativa Bråk", en: "Negative Fractions" },
+        7: { sv: "Prioriteringsregler (Bråk)", en: "Order of Ops (Fractions)" },
+        8: { sv: "Potenser & Negativa Bråk", en: "Powers & Negative Fractions" }
     },
     exponents: { 
         1: { sv: "Grunder & x^0", en: "Foundations & x^0" },

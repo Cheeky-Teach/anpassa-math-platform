@@ -661,7 +661,19 @@ export const SKILL_BUCKETS = {
             tags: ["word_problem_ready"],
             contextType: "frac_division",
             extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*\\div\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
-          }
+          },
+
+          // LEVEL 6: Negativa Bråk
+          { key: 'neg_frac_add_sub', level: 6, name: { sv: 'Negativa bråk (+/-)', en: 'Negative Fractions (+/-)' }, desc: { sv: 'Addera och subtrahera negativa bråk', en: 'Add and subtract negative fractions' } },
+          { key: 'neg_frac_mult_div', level: 6, name: { sv: 'Negativa bråk (*/÷)', en: 'Negative Fractions (*/÷)' }, desc: { sv: 'Multiplicera och dividera negativa bråk', en: 'Multiply and divide negative fractions' } },
+
+          // LEVEL 7: Prioriteringsregler
+          { key: 'frac_order_mult', level: 7, name: { sv: 'Prio: Mult & Add', en: 'Order: Mult & Add' }, desc: { sv: 'Bråk med flera räknesätt', en: 'Fractions with multiple operations' } },
+          { key: 'frac_order_paren', level: 7, name: { sv: 'Prio: Parenteser', en: 'Order: Parentheses' }, desc: { sv: 'Bråk med parenteser', en: 'Fractions with parentheses' } },
+
+          // LEVEL 8: Potenser & Sammansatt
+          { key: 'boss_exp_sign', level: 8, name: { sv: 'Potenser av negativa bråk', en: 'Powers of negative fractions' }, desc: { sv: 'Teckenregler för bråk i kvadrat/kubik', en: 'Sign rules for squared/cubed fractions' } },
+          { key: 'boss_square_result', level: 8, name: { sv: 'Förenkla & Kvadrera', en: 'Simplify & Square' }, desc: { sv: 'Räkna ut parentesen, kvadrera sedan resultatet', en: 'Solve parentheses, then square result' } }
         ]
       },
       percent: {
