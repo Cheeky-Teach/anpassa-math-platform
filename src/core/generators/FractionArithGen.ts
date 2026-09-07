@@ -69,6 +69,7 @@ export class FractionArithGen {
                 return this.level7_OrderOfOps(lang, key);
             case 'boss_exp_sign':
             case 'boss_square_result':
+            case 'boss_complex_fraction':
                 return this.level8_UltimateBoss(lang, key);
             default:
                 return this.generate(1, lang);
@@ -637,9 +638,17 @@ export class FractionArithGen {
         const v = variationKey || this.getVariation(pool, options);
 
         if (v === 'frac_order_mult') {
-            const d1 = 2, d2 = 3, d3 = 4;
-            const n1 = 1, n2 = 2, n3 = 3;
-            // Structure: A + B * C
+            // Controlled sets of [d1, d2, d3] ensuring manageable LCDs and utilizing 8ths & 10ths
+            const sets = [
+                [2, 2, 3], [3, 2, 3], [6, 2, 3], // d2*d3 = 6
+                [2, 2, 4], [4, 2, 4], [8, 2, 4], // d2*d3 = 8 (includes eighths)
+                [2, 2, 5], [5, 2, 5], [10, 2, 5] // d2*d3 = 10 (includes tenths)
+            ];
+            const [d1, d2, d3] = MathUtils.randomChoice(sets);
+            const n1 = MathUtils.randomInt(1, d1 - 1) || 1;
+            const n2 = MathUtils.randomInt(1, d2 - 1) || 1;
+            const n3 = MathUtils.randomInt(1, d3 - 1) || 1;
+
             const isMultFirst = Math.random() > 0.5;
             const exprLatex = isMultFirst ? `\\frac{${n2}}{${d2}} \\cdot \\frac{${n3}}{${d3}} + \\frac{${n1}}{${d1}}` : `\\frac{${n1}}{${d1}} + \\frac{${n2}}{${d2}} \\cdot \\frac{${n3}}{${d3}}`;
             
@@ -674,18 +683,43 @@ export class FractionArithGen {
             };
         }
 
-        // frac_order_paren (A + B) * C
-        const dA = 3, dB = 6;
-        const nA = 2, nB = 1;
-        const dC = 5, nC = 2;
+        // frac_order_paren (A +/- B) * C
+        // Adding 8ths and 10ths combinations naturally here
+        const pairs = [
+            [2, 4], [2, 8], [4, 8], // LCDs = 4 or 8
+            [2, 10], [5, 10],       // LCD = 10
+            [2, 6], [3, 6]          // LCD = 6
+        ];
+        let [dA, dB] = MathUtils.randomChoice(pairs);
+        if (Math.random() > 0.5) [dA, dB] = [dB, dA];
+        
+        let nA = MathUtils.randomInt(1, dA - 1) || 1;
+        let nB = MathUtils.randomInt(1, dB - 1) || 1;
+        
+        const dC = MathUtils.randomChoice([2, 3, 4, 5]);
+        const nC = MathUtils.randomInt(1, dC - 1) || 1;
         
         const lcdAB = this.lcm(dA, dB);
-        const extA = nA * (lcdAB / dA);
-        const extB = nB * (lcdAB / dB);
-        const sumAB = extA - extB; // Let's do subtraction to keep it interesting
+        let extA = nA * (lcdAB / dA);
+        let extB = nB * (lcdAB / dB);
+        
+        let opParen = Math.random() > 0.5 ? '+' : '-';
+        let sumAB = opParen === '+' ? extA + extB : extA - extB;
+        
+        // Ensure the operation stays positive and non-zero
+        if (sumAB <= 0) {
+            sumAB = Math.abs(sumAB);
+            [nA, nB] = [nB, nA];
+            [dA, dB] = [dB, dA];
+            [extA, extB] = [extB, extA];
+            if (sumAB === 0) {
+                sumAB = extA + extB;
+                opParen = '+';
+            }
+        }
+        
         const simpAB = this.simplify(sumAB, lcdAB);
-
-        const exprLatex = `\\left(\\frac{${nA}}{${dA}} - \\frac{${nB}}{${dB}}\\right) \\cdot \\frac{${nC}}{${dC}}`;
+        const exprLatex = `\\left(\\frac{${nA}}{${dA}} ${opParen} \\frac{${nB}}{${dB}}\\right) \\cdot \\frac{${nC}}{${dC}}`;
         const finalN = simpAB.n * nC;
         const finalD = simpAB.d * dC;
         const finalSimp = this.simplify(finalN, finalD);
@@ -699,7 +733,7 @@ export class FractionArithGen {
                     latex: exprLatex
                 },
                 {
-                    text: lang === 'sv' ? `Steg 1: Räkna ut parentesen. MGN för ${dA} och ${dB} är ${lcdAB}. Subtrahera för att få $\\frac{${sumAB}}{${lcdAB}}$ som förkortas till $\\frac{${simpAB.n}}{${simpAB.d}}$.` : `Step 1: Calculate the parenthesis. LCD for ${dA} and ${dB} is ${lcdAB}. Subtract to get $\\frac{${sumAB}}{${lcdAB}}$, which simplifies to $\\frac{${simpAB.n}}{${simpAB.d}}$.`,
+                    text: lang === 'sv' ? `Steg 1: Räkna ut parentesen. MGN för ${dA} och ${dB} är ${lcdAB}. Förenkling ger $\\frac{${sumAB}}{${lcdAB}}$ som förkortas till $\\frac{${simpAB.n}}{${simpAB.d}}$.` : `Step 1: Calculate the parenthesis. LCD for ${dA} and ${dB} is ${lcdAB}. Simplification gives $\\frac{${sumAB}}{${lcdAB}}$, which reduces to $\\frac{${simpAB.n}}{${simpAB.d}}$.`,
                     latex: `\\mathbf{\\frac{${simpAB.n}}{${simpAB.d}}} \\cdot \\frac{${nC}}{${dC}}`
                 },
                 {
@@ -715,28 +749,104 @@ export class FractionArithGen {
     private level8_UltimateBoss(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'calculate'}[] = [
             { key: 'boss_exp_sign', type: 'calculate' },
-            { key: 'boss_square_result', type: 'calculate' }
+            { key: 'boss_square_result', type: 'calculate' },
+            { key: 'boss_complex_fraction', type: 'calculate' } // Added new boss variation
         ];
         const v = variationKey || this.getVariation(pool, options);
 
+        if (v === 'boss_complex_fraction') {
+            // Structure: (A +/- B) / C where all are fractions
+            const pairs = [[2, 3], [2, 4], [2, 5], [3, 4], [3, 6], [4, 8]];
+            let [dA, dB] = MathUtils.randomChoice(pairs);
+            if (Math.random() > 0.5) [dA, dB] = [dB, dA];
+            
+            let nA = MathUtils.randomInt(1, dA - 1) || 1;
+            let nB = MathUtils.randomInt(1, dB - 1) || 1;
+            
+            let op = Math.random() > 0.5 ? '+' : '-';
+            const lcdAB = this.lcm(dA, dB);
+            let extA = nA * (lcdAB / dA);
+            let extB = nB * (lcdAB / dB);
+            
+            let numAB = op === '+' ? extA + extB : extA - extB;
+            // Prevent 0 or negative for simplicity in this specific visual structure
+            if (numAB <= 0) {
+                numAB = Math.abs(numAB);
+                [nA, nB] = [nB, nA];
+                [dA, dB] = [dB, dA];
+                [extA, extB] = [extB, extA];
+                if (numAB === 0) {
+                    numAB = extA + extB;
+                    op = '+';
+                }
+            }
+            
+            const simpAB = this.simplify(numAB, lcdAB);
+            
+            // Generate the bottom fraction
+            const dC = MathUtils.randomChoice([2, 3, 4, 5]);
+            const nC = MathUtils.randomInt(1, dC - 1) || 1;
+            
+            const exprLatex = `\\frac{\\frac{${nA}}{${dA}} ${op} \\frac{${nB}}{${dB}}}{\\frac{${nC}}{${dC}}}`;
+            
+            // Division logic: Top * reciprocal of Bottom
+            const finalN = simpAB.n * dC;
+            const finalD = simpAB.d * nC;
+            const finalSimp = this.simplify(finalN, finalD);
+            
+            return {
+                renderData: { latex: exprLatex, description: lang === 'sv' ? "Förenkla det komplexa bråket." : "Simplify the complex fraction.", answerType: 'fraction' },
+                token: this.toBase64(`${finalSimp.n}/${finalSimp.d}`), variationKey: v, type: 'calculate',
+                clues: [
+                    {
+                        text: lang === 'sv' ? "Ett komplext bråk har bråk inuti sig. Det stora huvudbråkstrecket betyder division. Vi måste förenkla täljaren (där uppe) först." : "A complex fraction has fractions inside it. The large main fraction bar means division. We must simplify the numerator (top) first.",
+                        latex: exprLatex
+                    },
+                    {
+                        text: lang === 'sv' ? `Steg 1: Beräkna additionen/subtraktionen där uppe. MGN är ${lcdAB}.` : `Step 1: Calculate the addition/subtraction on top. LCD is ${lcdAB}.`,
+                        latex: `\\frac{${nA}}{${dA}} ${op} \\frac{${nB}}{${dB}} = \\frac{${extA}}{${lcdAB}} ${op} \\frac{${extB}}{${lcdAB}} = \\mathbf{\\frac{${simpAB.n}}{${simpAB.d}}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Steg 2: Skriv nu ut hela problemet som en vanlig bråkdivision sida vid sida.` : `Step 2: Now write out the whole problem as a standard side-by-side fraction division.`,
+                        latex: `\\frac{${simpAB.n}}{${simpAB.d}} \\div \\frac{${nC}}{${dC}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Steg 3: För division, byt till multiplikation och vänd på det andra bråket.` : `Step 3: For division, change to multiplication and flip the second fraction.`,
+                        latex: `\\frac{${simpAB.n}}{${simpAB.d}} \\cdot \\mathbf{\\frac{${dC}}{${nC}}} = \\mathbf{\\frac{${finalN}}{${finalD}}}`
+                    },
+                    { text: lang === 'sv' ? "Svar i enklaste form:" : "Answer in simplest form:", latex: `\\frac{${finalSimp.n}}{${finalSimp.d}}` }
+                ]
+            };
+        }
+
         if (v === 'boss_exp_sign') {
-            // (-1/2)^3 + 5/8 OR (-1/3)^2 - 1/9
-            const isCube = Math.random() > 0.5;
-            const exp = isCube ? 3 : 2;
-            const baseD = isCube ? 2 : 3;
+            // Carefully controlled d2Pools guarantee valid LCDs when adding/subtracting 
+            const combos = [
+                { exp: 3, baseD: 2, d2Pool: [2, 4, 8] },       // expResD = 8
+                { exp: 2, baseD: 2, d2Pool: [2, 4, 8, 10] },   // expResD = 4
+                { exp: 2, baseD: 3, d2Pool: [3, 6, 9] },       // expResD = 9
+                { exp: 2, baseD: 4, d2Pool: [2, 4, 8, 16] }    // expResD = 16
+            ];
+            const combo = MathUtils.randomChoice(combos);
+            const { exp, baseD, d2Pool } = combo;
+            const isCube = exp === 3;
             const baseN = -1;
             
             const expResN = Math.pow(baseN, exp);
             const expResD = Math.pow(baseD, exp);
             
-            const d2 = expResD; 
-            const n2 = MathUtils.randomInt(1, d2 - 1);
+            const d2 = MathUtils.randomChoice(d2Pool); 
+            const n2 = MathUtils.randomInt(1, d2 - 1) || 1;
             const isSub = Math.random() > 0.5;
             const op = isSub ? '-' : '+';
 
             const exprLatex = `\\left(-\\frac{1}{${baseD}}\\right)^{${exp}} ${op} \\frac{${n2}}{${d2}}`;
-            const finalRes = isSub ? expResN - n2 : expResN + n2;
-            const simp = this.simplify(finalRes, d2);
+            
+            const lcd = this.lcm(expResD, d2);
+            const ext1 = expResN * (lcd / expResD);
+            const ext2 = n2 * (lcd / d2);
+            const finalRes = isSub ? ext1 - ext2 : ext1 + ext2;
+            const simp = this.simplify(finalRes, lcd);
 
             return {
                 renderData: { latex: exprLatex, description: lang === 'sv' ? "Förenkla och beräkna." : "Simplify and evaluate.", answerType: 'fraction' },
@@ -751,46 +861,71 @@ export class FractionArithGen {
                         latex: `\\mathbf{\\frac{${expResN}}{${expResD}}} ${op} \\frac{${n2}}{${d2}}`
                     },
                     {
-                        text: lang === 'sv' ? `Steg 2: Nu har vi en vanlig ${isSub ? 'subtraktion' : 'addition'} kvar med en gemensam nämnare. Räkna ut täljaren: ${expResN} ${op} ${n2} = ${finalRes}.` : `Step 2: Now we have a regular ${isSub ? 'subtraction' : 'addition'} left with a common denominator. Calculate the numerator: ${expResN} ${op} ${n2} = ${finalRes}.`,
-                        latex: `\\frac{\\mathbf{${finalRes}}}{${d2}}`
+                        text: lang === 'sv' ? `Steg 2: Hitta minsta gemensamma nämnare (MGN) för ${expResD} och ${d2}, vilket är ${lcd}. Förläng bråken.` : `Step 2: Find the least common denominator (LCD) for ${expResD} and ${d2}, which is ${lcd}. Extend the fractions.`,
+                        latex: `\\frac{${ext1}}{${lcd}} ${op} \\frac{${ext2}}{${lcd}}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Steg 3: Räkna ut täljaren: ${ext1} ${op} ${ext2} = ${finalRes}.` : `Step 3: Calculate the numerator: ${ext1} ${op} ${ext2} = ${finalRes}.`,
+                        latex: `\\frac{\\mathbf{${finalRes}}}{${lcd}}`
                     },
                     { text: lang === 'sv' ? "Svar (förkortat):" : "Answer (simplified):", latex: `\\frac{${simp.n}}{${simp.d}}` }
                 ]
             };
         }
 
-        // boss_square_result: (1/2 - 1/3)^2
-        const dA = MathUtils.randomChoice([2, 3]);
-        const dB = MathUtils.randomChoice([3, 4, 5].filter(x => x !== dA));
+        // boss_square_result: (A +/- B)^2
+        const pairs = [
+            [2, 4], [2, 8], [4, 8], 
+            [2, 10], [5, 10], 
+            [2, 6], [3, 6],
+            [2, 5], [2, 3]
+        ];
+        let [dA, dB] = MathUtils.randomChoice(pairs);
+        if (Math.random() > 0.5) [dA, dB] = [dB, dA];
+
         const lcdAB = this.lcm(dA, dB);
-        const nA = 1, nB = 1;
-        const exprLatex = `\\left(\\frac{${nA}}{${dA}} - \\frac{${nB}}{${dB}}\\right)^2`;
+        let nA = MathUtils.randomInt(1, dA - 1) || 1;
+        let nB = MathUtils.randomInt(1, dB - 1) || 1;
         
-        const extA = nA * (lcdAB / dA);
-        const extB = nB * (lcdAB / dB);
-        const resAB = extA - extB;
+        let extA = nA * (lcdAB / dA);
+        let extB = nB * (lcdAB / dB);
         
-        const finalN = Math.pow(resAB, 2);
-        const finalD = Math.pow(lcdAB, 2);
-        const simp = this.simplify(finalN, finalD);
+        let opParen = Math.random() > 0.5 ? '+' : '-';
+        let sumAB = opParen === '+' ? extA + extB : extA - extB;
+        if (sumAB <= 0) {
+            sumAB = Math.abs(sumAB);
+            [nA, nB] = [nB, nA];
+            [dA, dB] = [dB, dA];
+            [extA, extB] = [extB, extA];
+            if (sumAB === 0) {
+                sumAB = extA + extB;
+                opParen = '+';
+            }
+        }
+        
+        const exprLatex = `\\left(\\frac{${nA}}{${dA}} ${opParen} \\frac{${nB}}{${dB}}\\right)^2`;
+        const simpAB = this.simplify(sumAB, lcdAB);
+        const finalN = Math.pow(simpAB.n, 2);
+        const finalD = Math.pow(simpAB.d, 2);
+        const finalSimp = this.simplify(finalN, finalD);
 
         return {
             renderData: { latex: exprLatex, description: lang === 'sv' ? "Beräkna." : "Evaluate.", answerType: 'fraction' },
-            token: this.toBase64(`${simp.n}/${simp.d}`), variationKey: v, type: 'calculate',
+            token: this.toBase64(`${finalSimp.n}/${finalSimp.d}`), variationKey: v, type: 'calculate',
             clues: [
                 {
                     text: lang === 'sv' ? "Här har vi en potens utanför en parentes. Parentesen går alltid först." : "Here we have a power outside a parenthesis. The parenthesis always goes first.",
                     latex: exprLatex
                 },
                 {
-                    text: lang === 'sv' ? `Steg 1: Hitta MGN (${lcdAB}) och subtrahera bråken inuti parentesen.` : `Step 1: Find the LCD (${lcdAB}) and subtract the fractions inside the parenthesis.`,
-                    latex: `\\left(\\mathbf{\\frac{${resAB}}{${lcdAB}}}\\right)^2`
+                    text: lang === 'sv' ? `Steg 1: Hitta MGN (${lcdAB}) och beräkna bråken inuti parentesen.` : `Step 1: Find the LCD (${lcdAB}) and calculate the fractions inside the parenthesis.`,
+                    latex: `\\left(\\mathbf{\\frac{${simpAB.n}}{${simpAB.d}}}\\right)^2`
                 },
                 {
-                    text: lang === 'sv' ? `Steg 2: Upphöj nu det nya bråket till 2. Täljare: ${resAB}² = ${finalN}. Nämnare: ${lcdAB}² = ${finalD}.` : `Step 2: Now raise the new fraction to the power of 2. Numerator: ${resAB}² = ${finalN}. Denominator: ${lcdAB}² = ${finalD}.`,
+                    text: lang === 'sv' ? `Steg 2: Upphöj nu det nya bråket till 2. Täljare: ${simpAB.n}² = ${finalN}. Nämnare: ${simpAB.d}² = ${finalD}.` : `Step 2: Now raise the new fraction to the power of 2. Numerator: ${simpAB.n}² = ${finalN}. Denominator: ${simpAB.d}² = ${finalD}.`,
                     latex: `\\frac{\\mathbf{${finalN}}}{\\mathbf{${finalD}}}`
                 },
-                { text: lang === 'sv' ? "Svar i enklaste form:" : "Answer in simplest form:", latex: `\\frac{${simp.n}}{${simp.d}}` }
+                { text: lang === 'sv' ? "Svar i enklaste form:" : "Answer in simplest form:", latex: `\\frac{${finalSimp.n}}{${finalSimp.d}}` }
             ]
         };
     }
