@@ -67,9 +67,9 @@ export class FractionArithGen {
             case 'frac_order_mult':
             case 'frac_order_paren':
                 return this.level7_OrderOfOps(lang, key);
-            case 'boss_exp_sign':
-            case 'boss_square_result':
-            case 'boss_complex_fraction':
+            case 'frac_exp_sign':
+            case 'frac_square_result':
+            case 'frac_complex_fraction':
                 return this.level8_UltimateBoss(lang, key);
             default:
                 return this.generate(1, lang);
@@ -748,50 +748,55 @@ export class FractionArithGen {
     // --- LEVEL 8: THE ULTIMATE BOSS (Negative Bases, Exponents, Fractions) ---
     private level8_UltimateBoss(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'calculate'}[] = [
-            { key: 'boss_exp_sign', type: 'calculate' },
-            { key: 'boss_square_result', type: 'calculate' },
-            { key: 'boss_complex_fraction', type: 'calculate' } // Added new boss variation
+            { key: 'frac_exp_sign', type: 'calculate' },
+            { key: 'frac_square_result', type: 'calculate' },
+            { key: 'frac_complex_fraction', type: 'calculate' } // Added new boss variation
         ];
         const v = variationKey || this.getVariation(pool, options);
 
-        if (v === 'boss_complex_fraction') {
-            // Structure: (A +/- B) / C where all are fractions
-            const pairs = [[2, 3], [2, 4], [2, 5], [3, 4], [3, 6], [4, 8]];
+        if (v === 'frac_complex_fraction') {
+            // Top Fraction Structure: +/- A/B - C/D (Designed to often be negative)
+            const pairs = [[2, 4], [2, 8], [3, 6], [2, 6], [4, 8]];
             let [dA, dB] = MathUtils.randomChoice(pairs);
             if (Math.random() > 0.5) [dA, dB] = [dB, dA];
             
             let nA = MathUtils.randomInt(1, dA - 1) || 1;
             let nB = MathUtils.randomInt(1, dB - 1) || 1;
             
-            let op = Math.random() > 0.5 ? '+' : '-';
             const lcdAB = this.lcm(dA, dB);
             let extA = nA * (lcdAB / dA);
             let extB = nB * (lcdAB / dB);
             
-            let numAB = op === '+' ? extA + extB : extA - extB;
-            // Prevent 0 or negative for simplicity in this specific visual structure
-            if (numAB <= 0) {
-                numAB = Math.abs(numAB);
-                [nA, nB] = [nB, nA];
-                [dA, dB] = [dB, dA];
-                [extA, extB] = [extB, extA];
-                if (numAB === 0) {
-                    numAB = extA + extB;
-                    op = '+';
-                }
-            }
+            // Randomly make the first term negative to force negative fraction arithmetic
+            const isFirstNeg = Math.random() > 0.5;
+            const signA = isFirstNeg ? -1 : 1;
             
+            let numAB = (signA * extA) - extB; 
+            if (numAB === 0) numAB = -1; // Prevent 0 to keep the division meaningful
             const simpAB = this.simplify(numAB, lcdAB);
+
+            // Formatting helpers for the top
+            const term1Latex = isFirstNeg ? `-\\frac{${nA}}{${dA}}` : `\\frac{${nA}}{${dA}}`;
+            const topLatex = `${term1Latex} - \\frac{${nB}}{${dB}}`;
+            const simpABLatex = this.formatFrac(simpAB.n, simpAB.d, true); // e.g., -\frac{3}{4}
+
+            // Bottom Fraction Structure: (-1/C)^exp
+            const isCube = Math.random() > 0.5;
+            const exp = isCube ? 3 : 2;
+            const dC = isCube ? 2 : MathUtils.randomChoice([2, 3]);
             
-            // Generate the bottom fraction
-            const dC = MathUtils.randomChoice([2, 3, 4, 5]);
-            const nC = MathUtils.randomInt(1, dC - 1) || 1;
+            const expResN = isCube ? -1 : 1;
+            const expResD = Math.pow(dC, exp);
             
-            const exprLatex = `\\frac{\\frac{${nA}}{${dA}} ${op} \\frac{${nB}}{${dB}}}{\\frac{${nC}}{${dC}}}`;
+            const bottomLatex = `\\left(-\\frac{1}{${dC}}\\right)^{${exp}}`;
+            const bottomEvalLatex = expResN === -1 ? `-\\frac{1}{${expResD}}` : `\\frac{1}{${expResD}}`;
+
+            // Combine into the ultimate complex fraction
+            const exprLatex = `\\frac{${topLatex}}{${bottomLatex}}`;
             
             // Division logic: Top * reciprocal of Bottom
-            const finalN = simpAB.n * dC;
-            const finalD = simpAB.d * nC;
+            const finalN = simpAB.n * expResD;
+            const finalD = simpAB.d * expResN; // expResN is 1 or -1, managing the sign natively
             const finalSimp = this.simplify(finalN, finalD);
             
             return {
@@ -799,27 +804,31 @@ export class FractionArithGen {
                 token: this.toBase64(`${finalSimp.n}/${finalSimp.d}`), variationKey: v, type: 'calculate',
                 clues: [
                     {
-                        text: lang === 'sv' ? "Ett komplext bråk har bråk inuti sig. Det stora huvudbråkstrecket betyder division. Vi måste förenkla täljaren (där uppe) först." : "A complex fraction has fractions inside it. The large main fraction bar means division. We must simplify the numerator (top) first.",
+                        text: lang === 'sv' ? "Ett komplext bråk har bråk inuti sig. Nu kombinerar vi det även med potenser och negativa tal. Vi löser över- och underdelen var för sig." : "A complex fraction has fractions inside it. Now we also combine it with powers and negative numbers. We solve the top and bottom separately.",
                         latex: exprLatex
                     },
                     {
-                        text: lang === 'sv' ? `Steg 1: Beräkna additionen/subtraktionen där uppe. MGN är ${lcdAB}.` : `Step 1: Calculate the addition/subtraction on top. LCD is ${lcdAB}.`,
-                        latex: `\\frac{${nA}}{${dA}} ${op} \\frac{${nB}}{${dB}} = \\frac{${extA}}{${lcdAB}} ${op} \\frac{${extB}}{${lcdAB}} = \\mathbf{\\frac{${simpAB.n}}{${simpAB.d}}}`
+                        text: lang === 'sv' ? `Steg 1: Förenkla täljaren (där uppe). MGN är ${lcdAB}.` : `Step 1: Simplify the numerator (top). LCD is ${lcdAB}.`,
+                        latex: `${topLatex} = \\frac{${signA * extA}}{${lcdAB}} - \\frac{${extB}}{${lcdAB}} = \\mathbf{${simpABLatex}}`
                     },
                     {
-                        text: lang === 'sv' ? `Steg 2: Skriv nu ut hela problemet som en vanlig bråkdivision sida vid sida.` : `Step 2: Now write out the whole problem as a standard side-by-side fraction division.`,
-                        latex: `\\frac{${simpAB.n}}{${simpAB.d}} \\div \\frac{${nC}}{${dC}}`
+                        text: lang === 'sv' ? `Steg 2: Förenkla nämnaren (där nere). Potensen har exponenten ${exp}, vilket gör att minuset ${isCube ? 'stannar kvar' : 'försvinner'}.` : `Step 2: Simplify the denominator (bottom). The power has the exponent ${exp}, which means the minus sign ${isCube ? 'stays' : 'disappears'}.`,
+                        latex: `${bottomLatex} = \\mathbf{${bottomEvalLatex}}`
                     },
                     {
-                        text: lang === 'sv' ? `Steg 3: För division, byt till multiplikation och vänd på det andra bråket.` : `Step 3: For division, change to multiplication and flip the second fraction.`,
-                        latex: `\\frac{${simpAB.n}}{${simpAB.d}} \\cdot \\mathbf{\\frac{${dC}}{${nC}}} = \\mathbf{\\frac{${finalN}}{${finalD}}}`
+                        text: lang === 'sv' ? `Steg 3: Nu kan vi skriva ut hela problemet som en vanlig bråkdivision sida vid sida.` : `Step 3: Now we can write out the entire problem as a standard side-by-side fraction division.`,
+                        latex: `${simpABLatex} \\div ${expResN === -1 ? `\\left(${bottomEvalLatex}\\right)` : bottomEvalLatex}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Steg 4: För division, byt till multiplikation och vänd på det andra bråket. Tänk på teckenreglerna!` : `Step 4: For division, change to multiplication and flip the second fraction. Remember the sign rules!`,
+                        latex: `${simpABLatex} \\cdot ${expResN === -1 ? `\\left(-\\frac{${expResD}}{1}\\right)` : `\\frac{${expResD}}{1}`} = \\mathbf{\\frac{${finalSimp.n}}{${finalSimp.d}}}`
                     },
                     { text: lang === 'sv' ? "Svar i enklaste form:" : "Answer in simplest form:", latex: `\\frac{${finalSimp.n}}{${finalSimp.d}}` }
                 ]
             };
         }
 
-        if (v === 'boss_exp_sign') {
+        if (v === 'frac_exp_sign') {
             // Carefully controlled d2Pools guarantee valid LCDs when adding/subtracting 
             const combos = [
                 { exp: 3, baseD: 2, d2Pool: [2, 4, 8] },       // expResD = 8
@@ -873,7 +882,7 @@ export class FractionArithGen {
             };
         }
 
-        // boss_square_result: (A +/- B)^2
+        // frac_square_result: (A +/- B)^2
         const pairs = [
             [2, 4], [2, 8], [4, 8], 
             [2, 10], [5, 10], 
