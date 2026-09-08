@@ -672,8 +672,10 @@ export const SKILL_BUCKETS = {
           { key: 'frac_order_paren', level: 7, name: { sv: 'Prio: Parenteser', en: 'Order: Parentheses' }, desc: { sv: 'Bråk med parenteser', en: 'Fractions with parentheses' } },
 
           // LEVEL 8: Potenser & Sammansatt
-          { key: 'boss_exp_sign', level: 8, name: { sv: 'Potenser av negativa bråk', en: 'Powers of negative fractions' }, desc: { sv: 'Teckenregler för bråk i kvadrat/kubik', en: 'Sign rules for squared/cubed fractions' } },
-          { key: 'boss_square_result', level: 8, name: { sv: 'Förenkla & Kvadrera', en: 'Simplify & Square' }, desc: { sv: 'Räkna ut parentesen, kvadrera sedan resultatet', en: 'Solve parentheses, then square result' } }
+          { key: 'frac_exp_sign', level: 8, name: { sv: 'Potenser av negativa bråk', en: 'Powers of negative fractions' }, desc: { sv: 'Teckenregler för bråk i kvadrat/kubik', en: 'Sign rules for squared/cubed fractions' } },
+          { key: 'frac_square_result', level: 8, name: { sv: 'Förenkla & Kvadrera', en: 'Simplify & Square' }, desc: { sv: 'Räkna ut parentesen, kvadrera sedan resultatet', en: 'Solve parentheses, then square result' } },
+          { key: 'frac_complex_fraction', level: 8, name: { sv: 'Komplexa bråk (Division)', en: 'Complex Fractions (Division)' }, desc: { sv: 'Förenkla täljaren och sen dividera', en: 'Simplify numerator then divide' } }
+
         ]
       },
       percent: {
