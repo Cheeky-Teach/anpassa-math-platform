@@ -992,7 +992,7 @@ export default function QuestionStudio({
           <div className="flex justify-center mb-6 gap-4">
               <div className="bg-white/80 backdrop-blur-md p-1 rounded-2xl shadow-xl flex gap-1 border border-white">
                   <button onClick={() => setCanvasMode('studio')} className={`px-8 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'studio' ? 'bg-slate-900 text-white' : 'text-slate-400'}`}><Zap size={14}/> Studio</button>
-                  {setupMode === 'worksheet' && <button onClick={() => setCanvasMode('layout')} className={`px-8 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'layout' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}><LayoutGrid size={14}/> Layout</button>}
+                  {setupMode && <button onClick={() => setCanvasMode('layout')} className={`px-8 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'layout' ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}><LayoutGrid size={14}/> {setupMode === 'donow' ? 'Grid' : 'Layout'}</button>}
               </div>
               
               {canvasMode === 'layout' && (
@@ -1031,26 +1031,28 @@ export default function QuestionStudio({
                             </div>
                         )}
                     </div>
-                    <button 
-                        onClick={() => {
-                            const nextSpacingState = !showWorkArea;
-                            setShowWorkArea(nextSpacingState);
-                            setIsSaved(false);
-                            setPacket(packet.map(item => ({
-                                ...item,
-                                showWorkArea: nextSpacingState 
-                            })));
-                        }} 
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all text-[10px] font-black uppercase shadow-lg select-none cursor-pointer ${
-                            showWorkArea 
-                                ? 'bg-white border-indigo-600 text-indigo-600 hover:bg-indigo-50/50' 
-                                : 'bg-slate-800 border-slate-800 text-white hover:bg-slate-700'
-                        }`}
-                        title={showWorkArea ? "Ändra till kompakt layout" : "Ändra till rymlig layout"}
-                    >
-                        <Square size={14} fill={showWorkArea ? "currentColor" : "none"} /> 
-                        {showWorkArea ? t.spacious : t.compact}
-                    </button>
+                    {setupMode === 'worksheet' && (
+                        <button 
+                            onClick={() => {
+                                const nextSpacingState = !showWorkArea;
+                                setShowWorkArea(nextSpacingState);
+                                setIsSaved(false);
+                                setPacket(packet.map(item => ({
+                                    ...item,
+                                    showWorkArea: nextSpacingState 
+                                })));
+                            }} 
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all text-[10px] font-black uppercase shadow-lg select-none cursor-pointer ${
+                                showWorkArea 
+                                    ? 'bg-white border-indigo-600 text-indigo-600 hover:bg-indigo-50/50' 
+                                    : 'bg-slate-800 border-slate-800 text-white hover:bg-slate-700'
+                            }`}
+                            title={showWorkArea ? "Ändra till kompakt layout" : "Ändra till rymlig layout"}
+                        >
+                            <Square size={14} fill={showWorkArea ? "currentColor" : "none"} /> 
+                            {showWorkArea ? t.spacious : t.compact}
+                        </button>
+                    )}
                 </div>
               )}
           </div>
@@ -1082,14 +1084,31 @@ export default function QuestionStudio({
                 </div>
               </div>
           ) : (
-              /* WORKSHEET ZOOMED OUT VIEW */
+              /* WORKSHEET & DO NOW ZOOMED OUT PREVIEW */
               <div className="flex-1 overflow-auto custom-scrollbar pb-24 flex justify-center items-start bg-slate-200/50 p-4 rounded-[3rem]">
                   <div 
-                    className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-[15mm] flex flex-col animate-in slide-in-from-bottom-6 origin-top"
-                    style={{ transform: 'scale(0.85)', transformOrigin: 'top center' }}
+                    className={`shadow-2xl flex flex-col animate-in slide-in-from-bottom-6 origin-top ${
+                        setupMode === 'donow' 
+                        ? 'w-full max-w-5xl bg-slate-900 rounded-[2.5rem] p-8' 
+                        : 'bg-white w-[210mm] min-h-[297mm] p-[15mm]'
+                    }`}
+                    style={setupMode === 'worksheet' ? { transform: 'scale(0.85)', transformOrigin: 'top center' } : {}}
                   >
-                      <header className="border-b-2 border-black pb-2 mb-4 flex items-end justify-between"><h1 className="text-lg font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1><div className="flex gap-6 w-2/3 justify-end text-[10px] font-black uppercase tracking-widest"><div className="border-b-2 border-slate-100 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div><div className="border-b-2 border-slate-100 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div></div></header>
-                      <div className={`grid grid-cols-6 gap-x-8 ${showWorkArea ? 'gap-y-6' : 'gap-y-1'} items-start content-start`}>
+                      {setupMode === 'worksheet' ? (
+                          <header className="border-b-2 border-black pb-2 mb-4 flex items-end justify-between">
+                              <h1 className="text-lg font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1>
+                              <div className="flex gap-6 w-2/3 justify-end text-[10px] font-black uppercase tracking-widest">
+                                  <div className="border-b-2 border-slate-100 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div>
+                                  <div className="border-b-2 border-slate-100 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div>
+                              </div>
+                          </header>
+                      ) : (
+                          <header className="border-b-2 border-slate-700 pb-4 mb-6 flex items-center justify-between">
+                              <h1 className="text-xl font-black uppercase tracking-tighter text-white italic leading-none">{sheetTitle || t.donow_title}</h1>
+                          </header>
+                      )}
+
+                      <div className={`grid grid-cols-6 gap-x-8 ${setupMode === 'donow' ? 'gap-y-6' : (showWorkArea ? 'gap-y-6' : 'gap-y-1')} items-start content-start`}>
                           {packet.map((item, idx) => {
                                 const displayStory = item.showText !== false;
                                 const displayLatex = item.showLatex !== false;
@@ -1098,8 +1117,12 @@ export default function QuestionStudio({
                                 return (
                                     <React.Fragment key={item.id}>
                                         {displayStory && (item.instructionMode === 'header' || !item.instructionMode) && (
-                                            <div className={`col-span-6 border-l-4 border-indigo-500 pl-4 bg-slate-50/50 rounded-r-2xl shadow-sm ${showWorkArea ? 'py-3 mt-6 mb-2' : 'py-1 mt-2 mb-0'}`}>
-                                                <div className="text-[11px] font-black text-slate-800 italic uppercase tracking-tight">
+                                            <div className={`col-span-6 border-l-4 border-indigo-500 pl-4 rounded-r-2xl shadow-sm ${
+                                                setupMode === 'donow' 
+                                                    ? 'bg-slate-800 py-3 mt-4 mb-2' 
+                                                    : (showWorkArea ? 'bg-slate-50/50 py-3 mt-6 mb-2' : 'bg-slate-50/50 py-1 mt-2 mb-0')
+                                            }`}>
+                                                <div className={`text-[11px] font-black italic uppercase tracking-tight ${setupMode === 'donow' ? 'text-white' : 'text-slate-800'}`}>
                                                     <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                 </div>
                                             </div>
@@ -1110,9 +1133,13 @@ export default function QuestionStudio({
                                             onDragStart={(e) => handleDragStartUnified(e, idx)} 
                                             onDragOver={(e) => handleDragOverUnified(e, idx)} 
                                             onDragEnd={handleDragEndUnified} 
-                                            className={`relative group border-2 rounded-2xl transition-all flex flex-col h-full cursor-move ${getColSpanClass(item.columnSpan)} ${showWorkArea ? 'p-4' : 'px-4 py-1'} ${draggedIdx === idx ? 'opacity-20 border-indigo-500 bg-indigo-50 scale-95' : 'border-transparent hover:border-dashed hover:border-indigo-300'}`}
+                                            className={`relative group border-2 rounded-2xl transition-all flex flex-col h-full cursor-move ${getColSpanClass(item.columnSpan)} ${
+                                                setupMode === 'donow' 
+                                                    ? 'bg-white p-6 shadow-xl border-transparent hover:border-indigo-400' 
+                                                    : (showWorkArea ? 'p-4 border-transparent hover:border-dashed hover:border-indigo-300' : 'px-4 py-1 border-transparent hover:border-dashed hover:border-indigo-300')
+                                            } ${draggedIdx === idx ? 'opacity-20 border-indigo-500 bg-indigo-50 scale-95' : ''}`}
                                         >
-                                            <div className="absolute top-2 left-2 text-slate-200 opacity-0 group-hover:opacity-100"><GripVertical size={14} /></div>
+                                            <div className="absolute top-2 left-2 text-slate-300 opacity-0 group-hover:opacity-100"><GripVertical size={14} /></div>
                                             
                                             <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-30 transition-all gap-1.5">
                                                 <div className="bg-white shadow-2xl rounded-full p-1 flex gap-1 border border-slate-200">
@@ -1133,7 +1160,7 @@ export default function QuestionStudio({
                                                     )}
                                                     
                                                     {displayLatex && item.resolvedData?.renderData.latex && (
-                                                        <div className={`${showWorkArea ? 'py-4' : 'py-1'} text-center font-serif text-lg`}>
+                                                        <div className={`${setupMode === 'donow' || showWorkArea ? 'py-4' : 'py-1'} text-center font-serif text-lg`}>
                                                             <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} />
                                                         </div>
                                                     )}
@@ -1152,7 +1179,7 @@ export default function QuestionStudio({
                                                 
                                                 <div>
                                                     <div className="mt-auto pt-4">
-                                                        {showWorkArea ? <div className="min-h-[100px] border-b-2 border-dotted border-slate-100" /> : <div className="h-0" />}
+                                                        {setupMode === 'donow' ? <div className="h-4" /> : (showWorkArea ? <div className="min-h-[100px] border-b-2 border-dotted border-slate-100" /> : <div className="h-0" />)}
                                                     </div>
 
                                                     <div className="opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-2 pt-3 border-t border-slate-100 mt-3 z-40 relative">
@@ -1170,7 +1197,8 @@ export default function QuestionStudio({
                                                                         setPacket(packet.map(p => p.id === item.id ? { 
                                                                             ...p, 
                                                                             resolvedData: data,
-                                                                            selectedStoryIndex: p.selectedStoryIndex !== undefined && p.selectedStoryIndex !== null ? p.selectedStoryIndex : 0 
+                                                                            // Only keep the selectedStoryIndex if it already existed. Do NOT default to 0.
+                                                                            selectedStoryIndex: p.selectedStoryIndex !== undefined && p.selectedStoryIndex !== null ? p.selectedStoryIndex : null 
                                                                         } : p));
                                                                         setIsSaved(false);
                                                                     } catch (err) { console.error("Number shuffle failed:", err); }
