@@ -2,6 +2,35 @@
 
 export const APP_UPDATES = [
   {
+    id: 'v018',
+    date: '2026-09-17',
+    version: '0.1.8',
+    title: { 
+      sv: "Nya nivåer & Coach i Testlabbet", 
+      en: "New levels & Coach in Test Lab" 
+    },
+    highlights: {
+      sv: "Avancerad bråkräkning, smartare inmatningsfält och steg-för-steg-stöd under tester.",
+      en: "Advanced fraction math, smarter input fields, and step-by-step support during tests."
+    },
+    changes: {
+      sv: [
+        "Nivå 6-8 för Bråk: Vi har lagt till tre helt nya nivåer. Testa dina kunskaper på negativa bråk (Nivå 6), prioriteringsregler med bråk (Nivå 7), och 'Boss-nivån' (Nivå 8) som blandar komplexa bråk, potenser och minustecken.",
+        "Coach-funktion i Testlabbet: Lärare kan nu tillåta ledtrådar när de skapar ett test. Detta ger eleverna möjlighet att öppna den animerade tavlan som steg-för-steg bryter ner exakt hur uppgiften ska lösas om de kör fast.",
+        "Smarta Exponent-fält: Fixat ett fel i Live-lektioner där elever inte kunde skriva in siffror i potenser och grundpotensform. Inmatningsfälten hanterar nu baser och exponenter felfritt på alla enheter.",
+        "Breddat Bråkstöd: Fler variationer med nämnare som 8 och 10 i de avancerade nivåerna, noga uträknat för att ge stor variation utan att MGN (Minsta Gemensamma Nämnare) blir för stort.",
+        "Stabilare generatorer: Skydd har lagts in för att säkerställa att specifika uppgiftstyper, som addition av negativa tal och att hitta exponenten, behåller sin korrekta form när de slumpas om i Question Studio."
+      ],
+      en: [
+        "Level 6-8 for Fractions: We've added three brand new levels. Test your skills on negative fractions (Level 6), order of operations with fractions (Level 7), and the ultimate 'Boss Level' (Level 8) featuring complex fractions, powers, and negative signs.",
+        "Coach Feature in Test Lab: Teachers can now enable clues when generating a test link. This allows students to open the animated whiteboard that breaks down the problem step-by-step using built-in hints if they get stuck.",
+        "Smart Exponent Inputs: Fixed a bug in Live lessons where students couldn't type into the exponent box. The input fields now flawlessly handle bases and powers across all devices.",
+        "Expanded Fraction Support: More variations involving 8ths and 10ths in advanced levels, carefully calculated to provide high variety without making the LCD (Lowest Common Denominator) unreasonably large.",
+        "Failsafe Generation: Added safeguards to ensure that specific question types, such as adding negative numbers and finding exponents, retain their correct format when reshuffled in the Question Studio."
+      ]
+    }
+  },
+  {
     id: 'v017',
     date: '2026-06-03',
     version: '0.1.7',
