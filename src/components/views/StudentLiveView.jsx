@@ -97,8 +97,17 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     // --- 2. RELAXED INPUT SHIELDING ---
     const sanitizeInput = (val, type) => {
         let str = String(val).replace(/<[^>]*>?/gm, ''); 
-        if (type === 'fraction') return str.replace(/[^0-9\s/]/g, '');
-        if (type === 'scientific' || type === 'exponent') return str.replace(/[^0-9.,+\-*^x]/g, '');
+        
+        // Include 'mixed_fraction' so spaces aren't stripped
+        if (type === 'fraction' || type === 'mixed_fraction') {
+            return str.replace(/[^0-9\s/]/g, '');
+        }
+        
+        // Include all structured types so carets ^ and semicolons ; are protected
+        if (type === 'scientific' || type === 'exponent' || type === 'structured_power' || type === 'structured_scientific') {
+            return str.replace(/[^a-zA-Z0-9+\-*/:.,><=^()\s;]/g, '');
+        }
+        
         return str.replace(/[^0-9.,*+\-xy=/: ]/gi, '');
     };
 
