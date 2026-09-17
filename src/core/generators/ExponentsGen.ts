@@ -143,7 +143,7 @@ export class ExponentsGen {
         if (v === 'foundations_spot_the_lie') {
             const b = MathUtils.randomInt(2, 5), e = MathUtils.randomInt(2, 3);
             const val = Math.pow(b, e);
-            const t1 = `${b}^{${e}} = ${val}`, t2 = `${MathUtils.randomInt(10, 99)}^{0} = 1`, lie = `${b}^{${e}} = ${b * e}`;
+            const t1 = `$${b}^{${e}} = ${val}$`, t2 = `$${MathUtils.randomInt(10, 99)}^{0} = 1$`, lie = `$${b}^{${e}} = ${b * e}$`;
 
             return {
                 renderData: {
@@ -299,16 +299,21 @@ export class ExponentsGen {
     private level3_ScientificNotation(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'scientific_to_form', type: 'calculate' },
-            { key: 'scientific_missing_mantissa', type: 'calculate' }
+            { key: 'scientific_missing_mantissa', type: 'calculate' },
+            { key: 'scientific_missing_exponent', type: 'calculate' } // <--- ADDED TO POOL
         ];
         const v = variationKey || this.getVariation(pool, options);
         const mantissa = (MathUtils.randomInt(11, 99) / 10), exponent = MathUtils.randomInt(3, 7);
         const number = mantissa * Math.pow(10, exponent);
+        
+        // Helper strings to respect comma formatting based on locale
+        const numStr = number.toLocaleString(lang);
+        const manStr = mantissa.toString().replace('.', ',');
 
         if (v === 'scientific_to_form') {
             return {
                 renderData: { 
-                    description: lang === 'sv' ? `Skriv ${number.toLocaleString(lang)} i grundpotens form.` : `Write ${number.toLocaleString(lang)} in scientific notation.`, 
+                    description: lang === 'sv' ? `Skriv ${numStr} i grundpotensform.` : `Write ${numStr} in scientific notation.`, 
                     interceptorToken: `${number} ; ${mantissa} ; ${exponent}`,
                     answerType: 'structured_scientific' 
                 },
@@ -319,25 +324,56 @@ export class ExponentsGen {
                         latex: `\\text{Mål: } ${number}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Flytta kommatecknet från slutet av talet tills det hamnar direkt efter den första siffran: ${mantissa}.` : `Flytta kommatecknet från slutet av talet tills det hamnar direkt efter den första siffran: ${mantissa}.`, 
-                        latex: `\\mathbf{${mantissa}}` 
+                        text: lang === 'sv' ? `Flytta kommatecknet från slutet av talet tills det hamnar direkt efter den första siffran: ${manStr}.` : `Move the decimal point from the end of the number until it lands right after the first digit: ${manStr}.`, 
+                        latex: `\\mathbf{${manStr}}` 
                     },
                     { 
                         text: lang === 'sv' ? `Räkna hur många steg du tvingades flytta kommat. Det var exakt ${exponent} steg, vilket blir vårt lilla hörntal.` : `Count how many steps you had to jump the comma. It was exactly ${exponent} steps, which becomes our small corner exponent.`, 
-                        latex: `${mantissa} \\cdot 10^{\\mathbf{${exponent}}}` 
+                        latex: `${manStr} \\cdot 10^{\\mathbf{${exponent}}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Svar: ${mantissa} · 10^{${exponent}}` : `Answer: ${mantissa} · 10^{${exponent}}`, 
-                        latex: `${mantissa} \\cdot 10^{${exponent}}` 
+                        text: lang === 'sv' ? `Svar: ${manStr} · 10^{${exponent}}` : `Answer: ${manStr} · 10^{${exponent}}`, 
+                        latex: `${manStr} \\cdot 10^{${exponent}}` 
                     }
                 ]
             };
         }
 
+        if (v === 'scientific_missing_exponent') {
+            return {
+                renderData: { 
+                    description: lang === 'sv' ? "Vilket tal saknas på platsen för 'n'?" : "Which number is missing in place of 'n'?", 
+                    latex: `${numStr} = ${manStr} \\cdot 10^{n}`, 
+                    interceptorToken: `${number} ; ${mantissa} ; ${exponent}`,
+                    answerType: 'numeric' 
+                },
+                token: this.toBase64(exponent.toString()), variationKey: v, type: 'calculate',
+                clues: [
+                    { 
+                        text: lang === 'sv' ? `Den lilla exponenten 'n' talar om för oss exakt hur många steg kommatecknet har flyttats.` : `The small exponent 'n' tells us exactly how many steps the decimal point has been moved.`, 
+                        latex: `${number} = ${manStr} \\cdot 10^{n}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Jämför talen. För att gå från det lilla talet ${manStr} tillbaka till ${numStr}, hur många steg åt höger måste kommatecknet hoppa?` : `Compare the numbers. To get from the small number ${manStr} back up to ${numStr}, how many steps to the right must the decimal point jump?`, 
+                        latex: `\\text{Steg: } ?` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Kommatecknet måste hoppa exakt ${exponent} steg för att fylla ut nollorna. Därför är n = ${exponent}.` : `The decimal point must jump exactly ${exponent} steps to fill out the zeros. Therefore, n = ${exponent}.`, 
+                        latex: `n = \\mathbf{${exponent}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${exponent}` : `Answer: ${exponent}`, 
+                        latex: `${exponent}` 
+                    }
+                ]
+            };
+        }
+
+        // Default fallback (scientific_missing_mantissa)
         return {
             renderData: { 
                 description: lang === 'sv' ? "Vilket tal saknas på platsen för 'a'?" : "Which number is missing in place of 'a'?", 
-                latex: `${number.toLocaleString(lang)} = a \\cdot 10^{${exponent}}`, 
+                latex: `${numStr} = a \\cdot 10^{${exponent}}`, 
                 interceptorToken: `${number} ; ${exponent} ; ${mantissa}`,
                 answerType: 'numeric' 
             },
@@ -353,11 +389,11 @@ export class ExponentsGen {
                 },
                 { 
                     text: lang === 'sv' ? `Gör om tiopotensen och räkna ut divisionen: Flytta kommatecknet i ${number} bakåt ${exponent} steg.` : `Solve the division step: Move the decimal point in ${number} backward by ${exponent} positions.`, 
-                    latex: `a = \\frac{${number}}{\\mathbf{${Math.pow(10, exponent)}}} = \\mathbf{${mantissa}}` 
+                    latex: `a = \\frac{${number}}{\\mathbf{${Math.pow(10, exponent)}}} = \\mathbf{${manStr}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Svar: ${mantissa}` : `Answer: ${mantissa}`, 
-                    latex: `${mantissa}` 
+                    text: lang === 'sv' ? `Svar: ${manStr}` : `Answer: ${manStr}`, 
+                    latex: `${manStr}` 
                 }
             ]
         };
