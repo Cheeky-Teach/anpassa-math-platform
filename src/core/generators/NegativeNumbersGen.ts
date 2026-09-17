@@ -205,6 +205,7 @@ export class NegativeNumbersGen {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'fluency_chain_4', type: 'calculate' },
             { key: 'fluency_double_neg', type: 'calculate' },
+            { key: 'fluency_plus_neg', type: 'calculate' },
             { key: 'fluency_transform_match', type: 'concept' }
         ];
         const v = variationKey || this.getVariation(pool, options);
@@ -277,6 +278,37 @@ export class NegativeNumbersGen {
             };
         }
 
+        if (v === 'fluency_plus_neg') {
+            const a = MathUtils.randomInt(-10, 15), b = MathUtils.randomInt(5, 15);
+            const ans = a - b;
+            return {
+                renderData: { 
+                    latex: `${a} + (-${b})`, 
+                    description: lang === 'sv' ? "Förenkla tecknen emellan och räkna ut svaret." : "Simplify the signs in between and calculate the answer.", 
+                    answerType: 'numeric' 
+                },
+                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+                clues: [
+                    { 
+                        text: lang === 'sv' ? "Börja med att städa bort teckenkrocken i mitten. Ett plus och ett minus intill varandra blir till ett minus." : "Start by cleaning up the sign clash in the middle. A plus and a minus next to each other turn into a minus.", 
+                        latex: `${a} \\mathbf{+ (-} ${b} )` 
+                    },
+                    { 
+                        text: lang === 'sv' ? "Skriv raden på nytt som ett enkelt minustal på tavlan:" : "Rewrite the row as a simple subtraction statement on the board:", 
+                        latex: `= ${a} \\mathbf{-} ${b}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Räkna nu ut subtraktionen från startläget ${a}: gå nedåt med ${b} steg.` : `Now calculate the subtraction from the starting point ${a}: go downwards by ${b} steps.`, 
+                        latex: `${a} - ${b} = \\mathbf{${ans}}` 
+                    },
+                    { 
+                        text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
+                        latex: `${ans}` 
+                    }
+                ]
+            };
+        }
+        
         const a = MathUtils.randomInt(-10, 10), b = MathUtils.randomInt(5, 15);
         const ans = a + b;
         return {
@@ -443,15 +475,15 @@ export class NegativeNumbersGen {
             // 🟢 FIXED: Used { label, value } objects to bypass the frontend sanitizer stripping the '\' from '\cdot'
             // 🟢 FIXED: Wrapped ALL variables in the traps with this.p() so negative numbers get their proper parentheses
             const correctEq = {
-                label: `${this.p(ans)} \\cdot ${this.p(b)} = ${a}`,
+                label: `$${this.p(ans)} \\cdot ${this.p(b)} = ${a}$`,
                 value: "correct"
             };
             const trap1 = {
-                label: `${this.p(ans)} + ${this.p(b)} = ${a}`,
+                label: `$${this.p(ans)} + ${this.p(b)} = ${a}$`,
                 value: "trap_add"
             };
             const trap2 = {
-                label: `${this.p(a)} \\cdot ${this.p(b)} = ${this.p(ans)}`,
+                label: `$${this.p(a)} \\cdot ${this.p(b)} = ${this.p(ans)}$`,
                 value: "trap_mult"
             };
 
