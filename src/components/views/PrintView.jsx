@@ -255,6 +255,7 @@ export default function PrintView({
                             const effectiveLatexSize = item.localLatexSize || globalLatexSize;
                             const latexSizeClass = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl', xl: 'text-4xl' }[effectiveLatexSize] || 'text-2xl';
                             const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
+                            const effectiveWorkspaceStyle = item.localWorkspaceStyle !== undefined ? item.localWorkspaceStyle : workspaceStyle; // 🟢 NEW
 
                             return (
                                 <React.Fragment key={item.id}>
@@ -320,10 +321,10 @@ export default function PrintView({
                                                 <div className="mt-auto pt-2">
                                                     {effectiveWorkArea > 0 && (
                                                         <div 
-                                                            className={`w-full mt-2 overflow-hidden ${workspaceStyle === 'grid' ? 'border border-slate-200 rounded-lg' : ''}`}
+                                                            className={`w-full mt-2 overflow-hidden ${effectiveWorkspaceStyle === 'grid' ? 'border border-slate-200 rounded-lg' : ''}`}
                                                             style={{ 
                                                                 height: `${effectiveWorkArea * 30}px`, 
-                                                                ...(workspaceStyle === 'grid' ? {
+                                                                ...(effectiveWorkspaceStyle === 'grid' ? {
                                                                     backgroundImage: 'linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)',
                                                                     backgroundSize: '30px 30px'
                                                                 } : { backgroundColor: 'transparent' })

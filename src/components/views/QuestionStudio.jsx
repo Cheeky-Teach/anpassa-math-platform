@@ -1186,6 +1186,7 @@ export default function QuestionStudio({
                                 const effectiveLatexSize = item.localLatexSize || globalLatexSize;
                                 const latexSizeClass = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl', xl: 'text-4xl' }[effectiveLatexSize] || 'text-2xl';
                                 const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
+                                const effectiveWorkspaceStyle = item.localWorkspaceStyle !== undefined ? item.localWorkspaceStyle : workspaceStyle;
 
                                 return (
                                     <React.Fragment key={item.id}>
@@ -1224,6 +1225,12 @@ export default function QuestionStudio({
                                                                 <span className="text-[9px] font-black w-3 text-center text-slate-600">{effectiveWorkArea}</span>
                                                                 <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceHeight', Math.min(15, effectiveWorkArea + 1)); }} className="p-1 hover:text-indigo-600"><Plus size={10}/></button>
                                                             </div>
+                                                            
+                                                            {/* 🟢 NEW: Local Background Style Toggle (Grid vs Blank) */}
+                                                            <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceStyle', effectiveWorkspaceStyle === 'grid' ? 'blank' : 'grid'); }} className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5 rounded-full transition-colors" title="Växla rutnät/tom yta">
+                                                                {effectiveWorkspaceStyle === 'grid' ? <Grid3X3 size={10} /> : <Square size={10} />}
+                                                            </button>
+
                                                             <button onClick={(e) => { e.stopPropagation(); const sizes = ['sm', 'md', 'lg', 'xl']; updatePacketItem(item.id, 'localLatexSize', sizes[(sizes.indexOf(effectiveLatexSize) + 1) % 4]); }} className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-serif font-black px-2 py-1 rounded-full italic transition-colors">A</button>
                                                         </>
                                                     )}
@@ -1268,10 +1275,10 @@ export default function QuestionStudio({
                                                     <div className="mt-auto pt-2">
                                                         {setupMode === 'worksheet' && effectiveWorkArea > 0 && (
                                                             <div 
-                                                                className={`w-full mt-2 overflow-hidden ${workspaceStyle === 'grid' ? 'border border-slate-200 rounded-lg' : ''}`}
+                                                                className={`w-full mt-2 overflow-hidden ${effectiveWorkspaceStyle === 'grid' ? 'border border-slate-200 rounded-lg' : ''}`}
                                                                 style={{ 
                                                                     height: `${effectiveWorkArea * 30}px`,
-                                                                    ...(workspaceStyle === 'grid' ? {
+                                                                    ...(effectiveWorkspaceStyle === 'grid' ? {
                                                                         backgroundImage: 'linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)',
                                                                         backgroundSize: '30px 30px'
                                                                     } : { backgroundColor: 'transparent' })
