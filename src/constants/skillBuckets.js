@@ -123,11 +123,16 @@ export const SKILL_BUCKETS = {
           { key: 'word_combined_age_tri', level: 1, name: { sv: 'Uttryck: Åldrar', en: 'Expressions: Ages' }, desc: { sv: 'Tre personers ålder', en: 'Ages of three people' } },
           { key: 'word_passengers', level: 1, name: { sv: 'Uttryck: Passagerare', en: 'Expressions: Passengers' }, desc: { sv: 'Förändring på buss', en: 'Changes on a bus' } },
 
-          // LEVEL 2: Parenteser (Parentheses)
-          { key: 'distribute_lie_partial', level: 2, name: { sv: 'Hitta felet: Parentes', en: 'Find error: Parentheses' }, desc: { sv: 'Partiell distribution', en: 'Partial distribution' } },
+          // LEVEL 2: Prioriteringsregler med Algebra (Order of Ops with Algebra)
+          { key: 'combine_mult_mixed', level: 2, name: { sv: 'Prioritering: Multiplikation', en: 'Order: Multiplication' }, desc: { sv: 'Förenkla med multiplikation (t.ex. 3 * 4x)', en: 'Simplify with multiplication' } },
+          { key: 'combine_div_mixed', level: 2, name: { sv: 'Prioritering: Division', en: 'Order: Division' }, desc: { sv: 'Förenkla med bråk/division', en: 'Simplify with division' } },
+          { key: 'combine_mult_div_boss', level: 2, name: { sv: 'Prioritering: Mult & Div', en: 'Order: Mult & Div' }, desc: { sv: 'Blandad prioritering med x-termer', en: 'Mixed order with x-terms' } },
+
+          // LEVEL 3: Parenteser (Parentheses) - Formally Level 2
+          { key: 'distribute_lie_partial', level: 3, name: { sv: 'Hitta felet: Parentes', en: 'Find error: Parentheses' }, desc: { sv: 'Partiell distribution', en: 'Partial distribution' } },
           { 
             key: 'distribute_plus', 
-            level: 2,
+            level: 3,
             name: { sv: 'Parentes (+)', en: 'Parentheses (+)' }, 
             desc: { sv: 'Multiplicera in i parentes', en: 'Multiply into parentheses' }, 
             tags: ['word_problem_ready'],
@@ -136,7 +141,7 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'distribute_minus', 
-            level: 2,
+            level: 3,
             name: { sv: 'Parentes (-)', en: 'Parentheses (-)' }, 
             desc: { sv: 'Multiplicera med negativt tecken', en: 'Multiply with negative sign' }, 
             tags: ['word_problem_ready'],
@@ -144,11 +149,11 @@ export const SKILL_BUCKETS = {
             extractorPattern: /^(?<a>\d+)x\s*-\s*\(?(?<b>\d*)x\s*\+\s*(?<c>\d+)\)?$/
           },
 
-          // LEVEL 3: Expandera och Förenkla (Distribute & Simplify)
-          { key: 'distribute_double', level: 3, name: { sv: 'Dubbla parenteser', en: 'Double parentheses' }, desc: { sv: 'Expandera två parenteser', en: 'Expand two parentheses' } },
+          // LEVEL 4: Expandera och Förenkla (Distribute & Simplify) - Formally Level 3
+          { key: 'distribute_double', level: 4, name: { sv: 'Dubbla parenteser', en: 'Double parentheses' }, desc: { sv: 'Expandera två parenteser', en: 'Expand two parentheses' } },
           { 
             key: 'distribute_combine_std', 
-            level: 3,
+            level: 4,
             name: { sv: 'Expandera & Förenkla', en: 'Expand & Simplify' }, 
             desc: { sv: 'Förenkla uttryck med parenteser', en: 'Simplify expressions with parentheses' }, 
             tags: ['word_problem_ready'],
@@ -156,10 +161,10 @@ export const SKILL_BUCKETS = {
             extractorPattern: /^(?<a>\d+)\((?<b>\d*)x\s*\+\s*(?<c>\d+)\)\s*(?<op>[\+\-])\s*(?<d>\d+)x$/
           },
 
-          // LEVEL 4: Minusparenteser (Subtract Parentheses)
-          { key: 'sub_concept_plus_logic', level: 4, name: { sv: 'Teckenregler', en: 'Sign rules' }, desc: { sv: 'Minus framför parentes', en: 'Minus in front of parentheses' } },
-          { key: 'sub_block_plus', level: 4, name: { sv: 'Minusparentes (+)', en: 'Minus parentheses (+)' }, desc: { sv: '-(ax + b)', en: '-(ax + b)' } },
-          { key: 'sub_block_minus', level: 4, name: { sv: 'Minusparentes (-)', en: 'Minus parentheses (-)' }, desc: { sv: '-(ax - b)', en: '-(ax - b)' } }
+          // LEVEL 5: Minusparenteser (Subtract Parentheses) - Formally Level 4
+          { key: 'sub_concept_plus_logic', level: 5, name: { sv: 'Teckenregler', en: 'Sign rules' }, desc: { sv: 'Minus framför parentes', en: 'Minus in front of parentheses' } },
+          { key: 'sub_block_plus', level: 5, name: { sv: 'Minusparentes (+)', en: 'Minus parentheses (+)' }, desc: { sv: '-(ax + b)', en: '-(ax + b)' } },
+          { key: 'sub_block_minus', level: 5, name: { sv: 'Minusparentes (-)', en: 'Minus parentheses (-)' }, desc: { sv: '-(ax - b)', en: '-(ax - b)' } }
         ]
       },
       algebraic_geometry: {

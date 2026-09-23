@@ -5,25 +5,26 @@ export class ExpressionSimplificationGen {
     public generate(level: number, lang: string = 'sv', options: any = {}): any {
         // Adaptive Fallback: If Level 1 concepts are mastered, push to Level 2
         if (level === 1 && options.hideConcept && options.exclude?.includes('combine_standard_mixed')) {
-            return this.level2_Parentheses(lang, undefined, options);
+            return this.level3_Parentheses(lang, undefined, options);
         }
 
         let questionData: any;
 
         switch (level) {
             case 1: questionData = this.level1_CombineTerms(lang, undefined, options); break;
-            case 2: questionData = this.level2_Parentheses(lang, undefined, options); break;
-            case 3: questionData = this.level3_DistributeAndSimplify(lang, undefined, options); break;
-            case 4: questionData = this.level4_SubtractParentheses(lang, undefined, options); break;
-            case 5: questionData = this.level5_WordProblems(lang, undefined, options); break;
-            case 6: questionData = this.level6_Mixed(lang, options); break;
+            case 2: questionData = this.level2_OrderOfOps(lang, undefined, options); break; // 🟢 NEW
+            case 3: questionData = this.level3_Parentheses(lang, undefined, options); break;
+            case 4: questionData = this.level4_DistributeAndSimplify(lang, undefined, options); break;
+            case 5: questionData = this.level5_SubtractParentheses(lang, undefined, options); break;
+            case 6: questionData = this.level6_WordProblems(lang, undefined, options); break;
+            case 7: questionData = this.level7_Mixed(lang, options); break;
             default: questionData = this.level1_CombineTerms(lang, undefined, options); break;
         }
 
-        // 🟢 Run through the decorator
+        // Run through the decorator
         enrichQuestionMetadata(questionData);
 
-        // 🟢 Practice Mode Level-Wide Override
+        // Practice Mode Level-Wide Override
         const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4, 5];
         if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
             if (!questionData.metadata) questionData.metadata = {};
@@ -43,20 +44,27 @@ export class ExpressionSimplificationGen {
             case 'combine_concept_id':
             case 'combine_standard_mixed':
                 return this.level1_CombineTerms(lang, key);
+            
+            case 'combine_mult_mixed':
+            case 'combine_div_mixed':
+            case 'combine_mult_div_boss':
+                return this.level2_OrderOfOps(lang, key);
+
             case 'distribute_lie_partial':
             case 'distribute_plus':
             case 'distribute_minus':
-                return this.level2_Parentheses(lang, key);
+                return this.level3_Parentheses(lang, key);
+            
             case 'distribute_double':
             case 'distribute_combine_std':
-                return this.level3_DistributeAndSimplify(lang, key);
+                return this.level4_DistributeAndSimplify(lang, key);
+            
             case 'sub_concept_plus_logic':
             case 'sub_block_plus':
             case 'sub_block_minus':
-                return this.level4_SubtractParentheses(lang, key);
+                return this.level5_SubtractParentheses(lang, key);
+            
             default:
-                // Legacy word problem key falls back to core 
-                // calculations layout to allow downstream interceptor matching
                 return this.level1_CombineTerms(lang, 'combine_standard_mixed');
         }
     }
@@ -192,8 +200,162 @@ export class ExpressionSimplificationGen {
         };
     }
 
-    // --- LEVEL 2: PARENTHESES ---
-    private level2_Parentheses(lang: string, variationKey?: string, options: any = {}): any {
+    // --- LEVEL 2: ORDER OF OPERATIONS WITH ALGEBRA ---
+    private level2_OrderOfOps(lang: string, variationKey?: string, options: any = {}): any {
+        const pool: {key: string, type: 'concept' | 'calculate'}[] = [
+            { key: 'combine_mult_mixed', type: 'calculate' },
+            { key: 'combine_div_mixed', type: 'calculate' },
+            { key: 'combine_mult_div_boss', type: 'calculate' }
+        ];
+        const v = variationKey || this.getVariation(pool, options);
+
+        // Helper to format terms gracefully (avoids "1x" or "+ -5")
+        const fmtX = (coef: number) => coef === 1 ? 'x' : coef === -1 ? '-x' : `${coef}x`;
+        const fmtOp = (val: number) => val < 0 ? `- ${Math.abs(val)}` : `+ ${val}`;
+
+        if (v === 'combine_mult_mixed') {
+            const a = MathUtils.randomInt(2, 6);
+            const b = MathUtils.randomInt(2, 6);
+            const p = a * b; // product
+            
+            let c = MathUtils.randomInt(2, 8);
+            const op1 = Math.random() > 0.5 ? '+' : '-';
+            const isMultFirst = Math.random() > 0.5;
+            
+            // 🟢 FIXED: Calculate finalX based on the random visual order
+            let finalX = isMultFirst ? (op1 === '+' ? p + c : p - c) : (op1 === '+' ? c + p : c - p);
+            
+            if (finalX === 0) {
+                c += 2; // Prevent 0x
+                finalX = isMultFirst ? (op1 === '+' ? p + c : p - c) : (op1 === '+' ? c + p : c - p);
+            }
+
+            const d = MathUtils.randomInt(2, 10);
+            const op2 = Math.random() > 0.5 ? '+' : '-';
+            const signD = op2 === '+' ? 1 : -1;
+
+            const exprLatex = isMultFirst 
+                ? `${a} \\cdot ${b}x ${op1} ${c}x ${op2} ${d}`
+                : `${c}x ${op1} ${a} \\cdot ${b}x ${op2} ${d}`;
+            
+            const ansLatex = `${fmtX(finalX)} ${fmtOp(signD * d)}`;
+
+            return {
+                renderData: { latex: exprLatex, description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", answerType: 'text' },
+                token: this.toBase64(ansLatex.replace(/\s+/g, '')), variationKey: v, type: 'calculate',
+                clues: [
+                    {
+                        text: lang === 'sv' ? "Enligt prioriteringsreglerna måste vi multiplicera före vi adderar eller subtraherar." : "According to the order of operations, we must multiply before adding or subtracting.",
+                        latex: exprLatex
+                    },
+                    {
+                        text: lang === 'sv' ? `Multiplicera siffrorna i den termen först: ${a} · ${b}x = ${p}x.` : `Multiply the numbers in that term first: ${a} · ${b}x = ${p}x.`,
+                        latex: isMultFirst ? `\\mathbf{${p}x} ${op1} ${c}x ${op2} ${d}` : `${c}x ${op1} \\mathbf{${p}x} ${op2} ${d}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Samla nu ihop alla x-termer för sig: ${isMultFirst ? `${p}x ${op1}${c}x` : `${c}x ${op1}${p}x`} = ${finalX}x.` : `Now combine all x-terms together: ${isMultFirst ? `${p}x ${op1}${c}x` : `${c}x ${op1}${p}x`} = ${finalX}x.`,
+                        latex: `${fmtX(finalX)} ${op2} ${d}`
+                    },
+                    { text: lang === 'sv' ? "Svar:" : "Answer:", latex: ansLatex }
+                ]
+            };
+        }
+
+        if (v === 'combine_div_mixed') {
+            const q = MathUtils.randomInt(2, 6);
+            const b = MathUtils.randomInt(2, 5);
+            const a = q * b; // ensures a/b is a clean integer q
+            
+            let c = MathUtils.randomInt(2, 8);
+            const op1 = Math.random() > 0.5 ? '+' : '-';
+            const isDivFirst = Math.random() > 0.5;
+            
+            // 🟢 FIXED: Calculate finalX based on the random visual order
+            let finalX = isDivFirst ? (op1 === '+' ? q + c : q - c) : (op1 === '+' ? c + q : c - q);
+            
+            if (finalX === 0) {
+                c += 2; // Prevent 0x
+                finalX = isDivFirst ? (op1 === '+' ? q + c : q - c) : (op1 === '+' ? c + q : c - q);
+            }
+
+            const d = MathUtils.randomInt(2, 10);
+            const op2 = Math.random() > 0.5 ? '+' : '-';
+            const signD = op2 === '+' ? 1 : -1;
+
+            const exprLatex = isDivFirst 
+                ? `\\frac{${a}x}{${b}} ${op1} ${c}x ${op2} ${d}`
+                : `${c}x ${op1} \\frac{${a}x}{${b}} ${op2} ${d}`;
+            
+            const ansLatex = `${fmtX(finalX)} ${fmtOp(signD * d)}`;
+
+            return {
+                renderData: { latex: exprLatex, description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", answerType: 'text' },
+                token: this.toBase64(ansLatex.replace(/\s+/g, '')), variationKey: v, type: 'calculate',
+                clues: [
+                    {
+                        text: lang === 'sv' ? "Bråkstrecket fungerar som division, vilket alltid går före addition och subtraktion." : "The fraction bar acts as division, which always comes before addition and subtraction.",
+                        latex: exprLatex
+                    },
+                    {
+                        text: lang === 'sv' ? `Börja med att förenkla bråket: ${a}x / ${b} = ${q}x.` : `Start by simplifying the fraction: ${a}x / ${b} = ${q}x.`,
+                        latex: isDivFirst ? `\\mathbf{${q}x} ${op1} ${c}x ${op2} ${d}` : `${c}x ${op1} \\mathbf{${q}x} ${op2} ${d}`
+                    },
+                    {
+                        text: lang === 'sv' ? `Samla nu x-termerna: ${isDivFirst ? `${q}x ${op1}${c}x` : `${c}x ${op1}${q}x`} = ${finalX}x.` : `Now combine the x-terms: ${isDivFirst ? `${q}x ${op1}${c}x` : `${c}x ${op1}${q}x`} = ${finalX}x.`,
+                        latex: `${fmtX(finalX)} ${op2} ${d}`
+                    },
+                    { text: lang === 'sv' ? "Svar:" : "Answer:", latex: ansLatex }
+                ]
+            };
+        }
+
+        // v === 'combine_mult_div_boss'
+        const a = MathUtils.randomInt(2, 5);
+        const b = MathUtils.randomInt(2, 5);
+        const p = a * b; // product
+
+        const q = MathUtils.randomInt(2, 6);
+        const d = MathUtils.randomInt(2, 4);
+        const c = q * d; // fraction top
+
+        // The order here is fixed (multiplication always first), so the finalX calculation is naturally safe
+        const op = Math.random() > 0.5 ? '+' : '-';
+        let finalX = op === '+' ? p + q : p - q;
+        
+        if (finalX === 0) {
+            finalX = p + q; // force addition to avoid 0x
+        }
+
+        const exprLatex = `${a} \\cdot ${b}x ${op === '+' ? '+' : '-'} \\frac{${c}x}{${d}}`;
+        const ansLatex = fmtX(finalX);
+
+        return {
+            renderData: { latex: exprLatex, description: lang === 'sv' ? "Förenkla uttrycket." : "Simplify the expression.", answerType: 'text' },
+            token: this.toBase64(ansLatex.replace(/\s+/g, '')), variationKey: v, type: 'calculate',
+            clues: [
+                {
+                    text: lang === 'sv' ? "Här har vi både multiplikation och division (bråket). Vi måste lösa båda dessa före vi plussar eller minusar." : "Here we have both multiplication and division (the fraction). We must solve both of these before adding or subtracting.",
+                    latex: exprLatex
+                },
+                {
+                    text: lang === 'sv' ? `Börja med multiplikationen: ${a} · ${b}x = ${p}x.` : `Start with the multiplication: ${a} · ${b}x = ${p}x.`,
+                    latex: `\\mathbf{${p}x} ${op === '+' ? '+' : '-'} \\frac{${c}x}{${d}}`
+                },
+                {
+                    text: lang === 'sv' ? `Beräkna sedan divisionen: ${c}x / ${d} = ${q}x.` : `Then calculate the division: ${c}x / ${d} = ${q}x.`,
+                    latex: `${p}x ${op === '+' ? '+' : '-'} \\mathbf{${q}x}`
+                },
+                {
+                    text: lang === 'sv' ? `Samla ihop dina x-termer för att få fram slutsvaret.` : `Combine your x-terms to get the final answer.`,
+                    latex: `\\mathbf{${finalX}x}`
+                },
+                { text: lang === 'sv' ? "Svar:" : "Answer:", latex: ansLatex }
+            ]
+        };
+    }
+
+    // --- LEVEL 3: PARENTHESES ---
+    private level3_Parentheses(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'distribute_lie_partial', type: 'concept' },
             { key: 'distribute_plus', type: 'calculate' },
@@ -274,8 +436,8 @@ export class ExpressionSimplificationGen {
         };
     }
 
-    // --- LEVEL 3: DISTRIBUTE & SIMPLIFY ---
-    private level3_DistributeAndSimplify(lang: string, variationKey?: string, options: any = {}): any {
+    // --- LEVEL 4: DISTRIBUTE & SIMPLIFY ---
+    private level4_DistributeAndSimplify(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'distribute_double', type: 'calculate' },
             { key: 'distribute_combine_std', type: 'calculate' }
@@ -365,8 +527,8 @@ export class ExpressionSimplificationGen {
         };
     }
 
-    // --- LEVEL 4: SUBTRACTING PARENTHESES ---
-    private level4_SubtractParentheses(lang: string, variationKey?: string, options: any = {}): any {
+    // --- LEVEL 5: SUBTRACTING PARENTHESES ---
+    private level5_SubtractParentheses(lang: string, variationKey?: string, options: any = {}): any {
         const pool: {key: string, type: 'concept' | 'calculate'}[] = [
             { key: 'sub_concept_plus_logic', type: 'concept' },
             { key: 'sub_block_plus', type: 'calculate' },
@@ -425,8 +587,8 @@ export class ExpressionSimplificationGen {
         };
     }
 
-    // ---  LEVEL 5: EXPRESSION WORD PROBLEMS ---
-    private level5_WordProblems(lang: string, variationKey?: string, options: any = {}): any {
+    // ---  LEVEL 6: EXPRESSION WORD PROBLEMS ---
+    private level6_WordProblems(lang: string, variationKey?: string, options: any = {}): any {
         const scenarios = ['word_candy', 'word_combined_age_tri', 'word_passengers', 'word_rect_perimeter'];
         const v = variationKey || this.getVariation(scenarios.map(s => ({key: s, type: 'calculate'})), options);
         const A = MathUtils.randomInt(2, 5), B = MathUtils.randomInt(10, 50), C = MathUtils.randomInt(2, 5);
@@ -512,7 +674,7 @@ export class ExpressionSimplificationGen {
         };
     }
 
-    private level6_Mixed(lang: string, options: any): any {
+    private level7_Mixed(lang: string, options: any): any {
         const lvl = MathUtils.randomInt(1, 5);
         return this.generate(lvl, lang, options);
     }
