@@ -110,19 +110,7 @@ export const SKILL_BUCKETS = {
             contextType: 'algebra_expressions',
             extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*(?<op2>[\+\-])\s*(?<c>\d+)x\s*(?<op3>[\+\-])\s*(?<d>\d+)$/
           },
-          { 
-            key: 'expressions_word_problem', 
-            level: 1,
-            name: { sv: 'Uttryck: Vardagsproblem', en: 'Expressions: Word Problems' }, 
-            desc: { sv: 'Förenkla uttryck utifrån textscenarier', en: 'Simplify expressions from text scenarios' },
-            tags: ['word_problem_ready'],
-            contextType: 'algebra_expressions_story',
-            extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*(?<op2>[\+\-])\s*(?<c>\d+)x\s*(?<op3>[\+\-])\s*(?<d>\d+)$/
-          },
-          { key: 'word_candy', level: 1, name: { sv: 'Uttryck: Godispåsar', en: 'Expressions: Candy bags' }, desc: { sv: 'Teckna uttryck', en: 'Formulate expression' } },
-          { key: 'word_combined_age_tri', level: 1, name: { sv: 'Uttryck: Åldrar', en: 'Expressions: Ages' }, desc: { sv: 'Tre personers ålder', en: 'Ages of three people' } },
-          { key: 'word_passengers', level: 1, name: { sv: 'Uttryck: Passagerare', en: 'Expressions: Passengers' }, desc: { sv: 'Förändring på buss', en: 'Changes on a bus' } },
-
+          
           // LEVEL 2: Prioriteringsregler med Algebra (Order of Ops with Algebra)
           { key: 'combine_mult_mixed', level: 2, name: { sv: 'Prioritering: Multiplikation', en: 'Order: Multiplication' }, desc: { sv: 'Förenkla med multiplikation (t.ex. 3 * 4x)', en: 'Simplify with multiplication' } },
           { key: 'combine_div_mixed', level: 2, name: { sv: 'Prioritering: Division', en: 'Order: Division' }, desc: { sv: 'Förenkla med bråk/division', en: 'Simplify with division' } },
