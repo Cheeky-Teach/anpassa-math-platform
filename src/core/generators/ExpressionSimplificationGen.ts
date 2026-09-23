@@ -12,12 +12,11 @@ export class ExpressionSimplificationGen {
 
         switch (level) {
             case 1: questionData = this.level1_CombineTerms(lang, undefined, options); break;
-            case 2: questionData = this.level2_OrderOfOps(lang, undefined, options); break; // 🟢 NEW
+            case 2: questionData = this.level2_OrderOfOps(lang, undefined, options); break;
             case 3: questionData = this.level3_Parentheses(lang, undefined, options); break;
             case 4: questionData = this.level4_DistributeAndSimplify(lang, undefined, options); break;
             case 5: questionData = this.level5_SubtractParentheses(lang, undefined, options); break;
-            case 6: questionData = this.level6_WordProblems(lang, undefined, options); break;
-            case 7: questionData = this.level7_Mixed(lang, options); break;
+            case 6: questionData = this.level6_Mixed(lang, options); break;
             default: questionData = this.level1_CombineTerms(lang, undefined, options); break;
         }
 
@@ -587,94 +586,7 @@ export class ExpressionSimplificationGen {
         };
     }
 
-    // ---  LEVEL 6: EXPRESSION WORD PROBLEMS ---
-    private level6_WordProblems(lang: string, variationKey?: string, options: any = {}): any {
-        const scenarios = ['word_candy', 'word_combined_age_tri', 'word_passengers', 'word_rect_perimeter'];
-        const v = variationKey || this.getVariation(scenarios.map(s => ({key: s, type: 'calculate'})), options);
-        const A = MathUtils.randomInt(2, 5), B = MathUtils.randomInt(10, 50), C = MathUtils.randomInt(2, 5);
-
-        let desc = "", ans = "", steps: any[] = [];
-
-        if (v === 'word_candy') {
-            desc = lang === 'sv' ? `Du har ${A} påsar med x godisar i varje. Du köper ${C} likadana påsar till, men äter upp ${B} godisar själv. Skriv ett förenklat uttryck.` : `You have ${A} bags with x candies each. You buy ${C} more identical bags, but eat ${B} candies yourself. Write a simplified expression.`;
-            ans = `${A+C}x - ${B}`;
-            steps = [
-                { text: lang === 'sv' ? "Steg 1: Skapa ett uttryck för de påsar du hade från början." : "Step 1: Create an expression for the bags you had from the start.", latex: `${A}x` },
-                { text: lang === 'sv' ? "Steg 2: Lägg till de nya påsarna du köpte." : "Step 2: Add the new bags you bought.", latex: `${A}x + ${C}x` },
-                { text: lang === 'sv' ? "Steg 3: Dra bort de godisar du åt upp." : "Step 3: Subtract the candies you ate.", latex: `${A}x + ${C}x - ${B}` },
-                { text: lang === 'sv' ? "Steg 4: Förenkla uttrycket genom att slå ihop x-termerna (påsarna)." : "Step 4: Simplify the expression by combining the x-terms (the bags).", latex: `${A+C}x - ${B}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
-            ];
-        } else if (v === 'word_combined_age_tri') {
-            // 1. Define list of 20 names for variety
-            const names = [
-                "Elias", "Sara", "Leo", "Maya", "Hugo", "Alice", "Liam", "Emma", 
-                "Noah", "Olivia", "William", "Ebba", "Oscar", "Astrid", "Lucas", 
-                "Ella", "Filip", "Alma", "Nils", "Vera"
-            ];
-            const name = MathUtils.randomChoice(names);
-            
-            // 2. Randomize parameters
-            const d = MathUtils.randomInt(2, 6); // Years older
-            const m = MathUtils.randomInt(3, 9); // Father multiplier (3 to 9)
-            
-            // 3. Calculate result: Child (x) + Sister (x + d) + Father (mx) = (m + 2)x + d
-            const totalX = m + 2;
-            
-            desc = lang === 'sv' 
-                ? `${name} är x år gammal. Systern är ${d} år äldre. Pappa är ${m} gånger så gammal som ${name}. Skriv ett uttryck till deras sammanlagda ålder.` 
-                : `${name} is x years old. The sister is ${d} years older. The father is ${m} times as old as ${name}. Write an expression describing their combined ages.`;
-            
-            ans = `${totalX}x + ${d}`;
-            
-            steps = [
-                { 
-                    text: lang === 'sv' ? `Steg 1: Skriv ${name}s ålder som ett uttryck.` : `Step 1: Write ${name}'s age as an expression.`, 
-                    latex: "x" 
-                },
-                { 
-                    text: lang === 'sv' ? `Steg 2: Skriv systerns ålder (${name}s ålder + ${d}).` : `Step 2: Write the sister's age (${name}'s age + ${d}).`, 
-                    latex: `x + ${d}` 
-                },
-                { 
-                    text: lang === 'sv' ? `Steg 3: Skriv pappans ålder (${m} gånger ${name}s ålder).` : `Step 3: Write the father's age (${m} times ${name}'s age).`, 
-                    latex: `${m}x` 
-                },
-                { 
-                    text: lang === 'sv' ? "Steg 4: Ställ upp summan av alla åldrar." : "Step 4: Set up the sum of all ages.", 
-                    latex: `x + (x + ${d}) + ${m}x` 
-                },
-                { 
-                    text: lang === 'sv' ? `Steg 5: Förenkla genom att addera alla x-termer: 1x + 1x + ${m}x.` : `Step 5: Simplify by adding all x-terms: 1x + 1x + ${m}x.`, 
-                    latex: `${totalX}x + ${d}` 
-                },
-                { 
-                    text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` 
-                }
-            ];
-        } else {
-            // Default generic word problem (Passengers)
-            desc = lang === 'sv' ? `Från början finns x passagerare på en buss. ${B} går av, sedan stiger ${A}x passagerare på. Skriv ett uttryck för antalet nu.` : `Initially there are x passengers on a bus. ${B} leave, then ${A}x passengers board. Write an expression for the current count.`;
-            ans = `${A+1}x - ${B}`;
-            steps = [
-                { text: lang === 'sv' ? "Steg 1: Börja med det ursprungliga antalet passagerare." : "Step 1: Start with the original number of passengers.", latex: "x" },
-                { text: lang === 'sv' ? `Steg 2: Dra bort de ${B} som gick av.` : `Step 2: Subtract the ${B} who left.`, latex: `x - ${B}` },
-                { text: lang === 'sv' ? `Steg 3: Lägg till de ${A}x som steg på.` : `Step 3: Add the ${A}x who boarded.`, latex: `x - ${B} + ${A}x` },
-                { text: lang === 'sv' ? "Steg 4: Förenkla genom att kombinera x-termerna (variablerna)." : "Step 4: Simplify by combining the x-terms (the variables).", latex: `${A+1}x - ${B}` },
-                { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}` }
-            ];
-        }
-
-        return {
-            renderData: { latex: "", description: desc, answerType: 'text' },
-            token: this.toBase64(ans.replace(/\s/g, "")),
-            variationKey: v, type: 'calculate',
-            clues: steps,
-            metadata: { variation_key: v, difficulty: 3 }
-        };
-    }
-
-    private level7_Mixed(lang: string, options: any): any {
+    private level6_Mixed(lang: string, options: any): any {
         const lvl = MathUtils.randomInt(1, 5);
         return this.generate(lvl, lang, options);
     }

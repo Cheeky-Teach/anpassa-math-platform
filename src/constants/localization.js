@@ -21,7 +21,7 @@ export const CATEGORIES = {
         id: 'algebra',
         label: { sv: "Algebra", en: "Algebra" },
         color: "indigo",
-        levels: 7,
+        levels: 6,
         topics: [
             { id: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
             { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
@@ -244,8 +244,7 @@ export const LEVEL_DESCRIPTIONS = {
         3: { sv: "Parenteser (Addition)", en: "Parentheses (Addition)" },
         4: { sv: "Parenteser (Multiplikation)", en: "Parentheses (Multiplication)" },
         5: { sv: "Parenteser (Subtraktion)", en: "Parentheses (Subtraction)" },
-        6: { sv: "Problemlösning", en: "Problem Solving" },
-        7: { sv: "Blandade Nivåer", en: "Mixed Levels" }
+        6: { sv: "Blandade Nivåer", en: "Mixed Levels" }
     },
     equation: {
         1: { sv: "Enkla steg (x+a=b)", en: "One Step" },
