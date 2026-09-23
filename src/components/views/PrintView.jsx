@@ -95,9 +95,16 @@ export default function PrintView({
     lang = 'sv', 
     includeAnswerKey, 
     answerKeyStyle, 
-    showWorkArea,
-    density = 'normal' 
+    globalLatexSize: propLatexSize,
+    workspaceHeight: propWorkHeight,
+    workspaceStyle: propWorkStyle,
+    layoutStyle: propLayoutStyle
 }) {
+    // Failsafe Extraction: Pulls from the standard prop, or falls back to our attached packet data
+    const globalLatexSize = propLatexSize ?? packet[0]?._globalLatexSize ?? 'md';
+    const workspaceHeight = propWorkHeight ?? packet[0]?._workspaceHeight ?? 3;
+    const workspaceStyle = propWorkStyle ?? packet[0]?._workspaceStyle ?? 'blank';
+    const layoutStyle = propLayoutStyle ?? packet[0]?._layoutStyle ?? 'open';
     const [zoomedIdx, setZoomedIdx] = useState(null);
 
     const t = {
@@ -175,7 +182,7 @@ export default function PrintView({
         }, 400); // 400ms ensures text symbols, options lists and charts complete rendering layout fully
 
         return () => clearTimeout(timer);
-    }, [packet, showWorkArea, density, lang]);
+    }, [packet, workspaceHeight, workspaceStyle, layoutStyle, globalLatexSize, lang]);
 
     const getFinalAnswer = (data) => {
         if (data?.answer && data.answer !== "Se lösning") return data.answer;
@@ -245,29 +252,35 @@ export default function PrintView({
                             const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
                             const isInlineMode = displayStory && item.instructionMode === 'inline';
                             
+                            const effectiveLatexSize = item.localLatexSize || globalLatexSize;
+                            const latexSizeClass = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl', xl: 'text-4xl' }[effectiveLatexSize] || 'text-2xl';
+                            const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
+
                             return (
                                 <React.Fragment key={item.id}>
                                     {/* Header Description Text Section */}
                                     {isHeaderMode && (
-                                        <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-1 mb-2 bg-slate-50/50">
-                                            <div className="text-xs font-bold italic text-slate-700">
+                                        <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-2 mb-2 bg-slate-50/50 break-inside-avoid">
+                                            <div className="text-sm font-semibold text-slate-800 leading-relaxed">
                                                 <MathDisplay content={compileAnchoredStory(item, lang)} />
                                             </div>
                                         </div>
                                     )}
                                     
-                                    <div className={`break-inside-avoid ${
+                                    <div className={`break-inside-avoid ${layoutStyle === 'framed' ? 'border-2 border-slate-200 rounded-xl p-4' : 'p-2'} ${
                                         item.columnSpan === 2 ? 'col-span-2' : 
                                         item.columnSpan === 3 ? 'col-span-3' : 'col-span-6'
                                     }`}>
-                                        <div className="relative pl-8" onClick={() => setZoomedIdx(item.originalIdx)}>
-                                            <div className="absolute left-0 top-0 font-black text-slate-900 text-xs">
-                                                {(item.originalIdx + 1).toString().padStart(2, '')}
+                                        <div className="flex items-start gap-4" onClick={() => setZoomedIdx(item.originalIdx)}>
+                                            {/* Visual Anchor Circle */}
+                                            <div className="shrink-0 w-7 h-7 rounded-full border-2 border-black flex items-center justify-center text-black font-black text-xs mt-1">
+                                                {(item.originalIdx + 1).toString()}
                                             </div>
-                                            <div className="space-y-4">
+
+                                            <div className="flex-1 min-w-0 flex flex-col h-full">
                                                 {/* Inline Description Text Section */}
                                                 {isInlineMode && (
-                                                    <div className="text-[12px] font-bold text-slate-800 leading-tight border-b border-slate-100 pb-2">
+                                                    <div className="text-sm font-semibold text-slate-800 leading-relaxed border-b border-slate-100 pb-2 mb-3">
                                                         <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                     </div>
                                                 )}
@@ -275,14 +288,13 @@ export default function PrintView({
                                                 {/* LaTeX Equation Block */}
                                                 {displayLatex && item.resolvedData?.renderData.latex && (
                                                     <div className="py-2">
-                                                        <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className="text-xl text-slate-900" />
+                                                        <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-slate-900 text-center font-serif`} />
                                                     </div>
                                                 )}
                                                 
                                                 {/* VISUAL CONTAINER */}
                                                 {displayVisual && (
                                                     <div className="flex justify-center scale-90 origin-top mt-2">
-                                                        {/* 🟢 FIXED: Called VisualRenderer with the word problem state! */}
                                                         <VisualRenderer 
                                                             data={item.resolvedData?.renderData} 
                                                             isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} 
@@ -292,20 +304,33 @@ export default function PrintView({
 
                                                 {item.resolvedData?.renderData?.options && (
                                                     <div className="grid grid-cols-1 gap-2 border-l-2 border-slate-100 pl-4 mb-2">
-                                                        {item.resolvedData.renderData.options.map((opt, i) => (
-                                                            <div key={i} className="flex gap-2 items-baseline text-[11px]">
-                                                                <span className="font-black text-slate-400">{String.fromCharCode(65 + i)})</span>
-                                                                <MathDisplay content={opt} />
-                                                            </div>
-                                                        ))}
+                                                        {item.resolvedData.renderData.options.map((opt, i) => {
+                                                            const choiceLabel = typeof opt === 'object' ? opt.label : opt;
+                                                            return (
+                                                                <div key={i} className="flex gap-2 items-baseline text-[11px]">
+                                                                    <span className="font-black text-slate-400">{String.fromCharCode(65 + i)})</span>
+                                                                    <MathDisplay content={choiceLabel} />
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 )}
                                                 
-                                                {showWorkArea && (
-                                                    <div className="w-full border border-slate-200 rounded-xl relative overflow-hidden mt-4" style={{ height: density === 'compact' ? '80px' : density === 'normal' ? '160px' : '320px' }}>
-                                                        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
-                                                    </div>
-                                                )}
+                                                {/* Dynamic Lined/Grid Paper Work Area */}
+                                                <div className="mt-auto pt-2">
+                                                    {effectiveWorkArea > 0 && (
+                                                        <div 
+                                                            className={`w-full mt-2 overflow-hidden ${workspaceStyle === 'grid' ? 'border border-slate-200 rounded-lg' : ''}`}
+                                                            style={{ 
+                                                                height: `${effectiveWorkArea * 30}px`, 
+                                                                ...(workspaceStyle === 'grid' ? {
+                                                                    backgroundImage: 'linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)',
+                                                                    backgroundSize: '30px 30px'
+                                                                } : { backgroundColor: 'transparent' })
+                                                            }} 
+                                                        />
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -359,34 +384,39 @@ export default function PrintView({
                         const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
                         const isInlineMode = displayStory && item.instructionMode === 'inline';
 
+                        // 🟢 FIXED: Apply dynamic sizes to the sandbox so it measures breaks perfectly
+                        const effectiveLatexSize = item.localLatexSize || globalLatexSize;
+                        const latexSizeClass = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl', xl: 'text-4xl' }[effectiveLatexSize] || 'text-2xl';
+                        const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
+
                         return (
                             <React.Fragment key={`sb-card-${item.id}`}>
                                 {isHeaderMode && (
-                                    <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-1 bg-slate-50/50">
-                                        <div className="text-xs font-bold italic"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
+                                    <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-2 bg-slate-50/50">
+                                        <div className="text-sm font-semibold"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
                                     </div>
                                 )}
-                                <div className={`sandbox-card ${item.columnSpan === 2 ? 'col-span-2' : item.columnSpan === 3 ? 'col-span-3' : 'col-span-6'}`}>
-                                    <div className="pl-8 space-y-4">
-                                        {isInlineMode && (
-                                            <div className="text-[12px] font-bold"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
-                                        )}
-                                        {displayLatex && item.resolvedData?.renderData.latex && (
-                                            <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} /></div>
-                                        )}
-                                        {/* VISUAL CONTAINER */}
+                                <div className={`sandbox-card ${layoutStyle === 'framed' ? 'border-2 p-4' : 'p-2'} ${item.columnSpan === 2 ? 'col-span-2' : item.columnSpan === 3 ? 'col-span-3' : 'col-span-6'}`}>
+                                    <div className="flex items-start gap-4">
+                                        <div className="shrink-0 w-7 h-7 rounded-full border-2 border-black flex items-center justify-center text-xs mt-1">
+                                            {idx + 1}
+                                        </div>
+                                        <div className="flex-1 min-w-0 flex flex-col h-full space-y-4">
+                                            {isInlineMode && (
+                                                <div className="text-sm font-semibold"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
+                                            )}
+                                            {displayLatex && item.resolvedData?.renderData.latex && (
+                                                <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-center font-serif`} /></div>
+                                            )}
                                             {displayVisual && (
                                                 <div className="flex justify-center scale-90 origin-top mt-2">
-                                                    {/* 🟢 FIXED: Called VisualRenderer with the word problem state! */}
-                                                    <VisualRenderer 
-                                                        data={item.resolvedData?.renderData} 
-                                                        isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} 
-                                                    />
+                                                    <VisualRenderer data={item.resolvedData?.renderData} isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} />
                                                 </div>
                                             )}
-                                        {showWorkArea && (
-                                            <div className="w-full border rounded-xl" style={{ height: density === 'compact' ? '80px' : density === 'normal' ? '160px' : '320px' }} />
-                                        )}
+                                            {effectiveWorkArea > 0 && (
+                                                <div className="w-full mt-2" style={{ height: `${effectiveWorkArea * 30}px` }} />
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </React.Fragment>
@@ -398,6 +428,11 @@ export default function PrintView({
             {/* DYNAMIC MEDIA PRINT STYLE HANDLERS */}
             <style dangerouslySetInnerHTML={{ __html: `
                 @media print {
+                    * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                
                     /* 1. Neutralize high-level layout layers */
                     html, body, #root, main { 
                         height: auto !important; 
@@ -437,12 +472,12 @@ export default function PrintView({
                     .break-inside-avoid { 
                         break-inside: avoid !important; 
                         page-break-inside: avoid !important;
-                        /* 🎯 SAFETY BUFFER: If an ultra-tall element is forced to split, 
+                        /* SAFETY BUFFER: If an ultra-tall element is forced to split, 
                            this padding keeps it inside the printable area of the sheet */
                         padding-top: 4mm !important;
                     }
                     
-                    /* 🎯 THE GRID-TO-FLEX OVERRIDE: 
+                    /*  THE GRID-TO-FLEX OVERRIDE: 
                        Flattens the grid container into an adjustable flex row so the browser 
                        can calculate item page breaks properly */
                     .grid-cols-6 {
