@@ -136,12 +136,13 @@ export default function PrintView({
             const sandboxCards = document.querySelectorAll('.sandbox-card');
             if (!sandboxCards.length) return;
 
-            // 🎯 Hardened Target Page Metric Area: 1123px total height - padding bounds
-            const MAX_HEIGHT_PER_PAGE = 1033; 
+            const ROW_GAP = 40; // Matches gap-y-10 (2.5rem = 40px)
+            const HEADER_OFFSET = 160; // Extra padding reserved for the page top (Title, Date block)
+            const MAX_PAGE_HEIGHT = 950; // Calibrated safe A4 height to prevent native printer overflow
             
             const pages = [];
             let currentPage = [];
-            let currentHeight = 0;
+            let currentHeight = HEADER_OFFSET;
             let currentRowWidth = 0;
             let maxHeightInCurrentRow = 0;
 
@@ -150,29 +151,60 @@ export default function PrintView({
                 const displayStory = item.showText !== false;
                 const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
 
-                // ⚡ READ ABSOLUTE REAL FOOTPRINT FROM BROWSER PAINT MATRIX
+                // ⚡ Read absolute heights from browser paint matrix
                 const targetCard = sandboxCards[idx];
-                const itemHeight = targetCard && targetCard.getBoundingClientRect().height > 0 
+                const baseItemHeight = targetCard && targetCard.getBoundingClientRect().height > 0 
                     ? targetCard.getBoundingClientRect().height 
                     : 140;
 
-                if (isHeaderMode || (currentRowWidth + colSpan > 6)) {
-                    currentHeight += maxHeightInCurrentRow; 
-                    currentRowWidth = 0;
-                    maxHeightInCurrentRow = 0;
+                // Grab the isolated header text if it exists
+                const headerEl = document.getElementById(`sandbox-header-${idx}`);
+                const headerHeight = headerEl && headerEl.getBoundingClientRect().height > 0
+                    ? headerEl.getBoundingClientRect().height
+                    : 0;
+
+                // 1. Will this item force a row wrap BEFORE we place it?
+                let forcesWrap = isHeaderMode || (currentRowWidth > 0 && currentRowWidth + colSpan > 6);
+
+                let projectedHeight = currentHeight;
+                if (forcesWrap) projectedHeight += maxHeightInCurrentRow + (currentRowWidth > 0 ? ROW_GAP : 0);
+
+                // 2. How much height does THIS entire item add to the row?
+                let addedItemHeight = 0;
+                if (isHeaderMode) {
+                    addedItemHeight += headerHeight + ROW_GAP + baseItemHeight;
+                } else {
+                    addedItemHeight = Math.max(forcesWrap ? 0 : maxHeightInCurrentRow, baseItemHeight);
                 }
 
-                if (currentHeight + itemHeight > MAX_HEIGHT_PER_PAGE && currentPage.length > 0) {
-                    pages.push(currentPage);
+                // 3. Does it exceed safe A4 bounds?
+                if (projectedHeight + addedItemHeight > MAX_PAGE_HEIGHT && currentPage.length > 0) {
+                    pages.push(currentPage);     // Page Break Triggered!
                     currentPage = [];
-                    currentHeight = 0;
+                    currentHeight = HEADER_OFFSET; // Reset to top
+                    currentRowWidth = 0;
+                    maxHeightInCurrentRow = 0;
+                    forcesWrap = false;          // It's a new page, so it doesn't wrap a row
+                }
+
+                // 4. Record the item safely into the current layout row
+                if (forcesWrap && currentRowWidth > 0) {
+                    currentHeight += maxHeightInCurrentRow + ROW_GAP;
                     currentRowWidth = 0;
                     maxHeightInCurrentRow = 0;
                 }
 
                 currentPage.push({ ...item, originalIdx: idx });
-                currentRowWidth += isHeaderMode ? 6 : colSpan;
-                maxHeightInCurrentRow = Math.max(maxHeightInCurrentRow, itemHeight);
+
+                if (isHeaderMode) {
+                    // Headers take a full row. Track their height immediately, then track the child item.
+                    currentHeight += headerHeight + ROW_GAP;
+                    currentRowWidth = colSpan;
+                    maxHeightInCurrentRow = baseItemHeight;
+                } else {
+                    currentRowWidth += colSpan;
+                    maxHeightInCurrentRow = Math.max(maxHeightInCurrentRow, baseItemHeight);
+                }
             });
 
             if (currentPage.length > 0) pages.push(currentPage);
@@ -229,7 +261,7 @@ export default function PrintView({
 
             {/* WORKSHEET PAGES — Maps across evaluated measured states */}
             {!isMeasuring && measuredPages.map((pageItems, pageIdx) => (
-                <div key={pageIdx} className="max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[8mm] flex flex-col min-h-[240mm] print:min-h-auto print:shadow-none print:my-0 print:p-[12mm] relative break-after-page">
+                <div key={pageIdx} className={`max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[8mm] flex flex-col min-h-[240mm] print:min-h-auto print:shadow-none print:my-0 print:p-[12mm] relative ${pageIdx < measuredPages.length - 1 ? 'break-after-page' : ''}`}>
                     <header className="border-b-1 border-black pb-2 mb-4 relative">
                         <div className="mb-6">
                             <div className="text-[6px] font-black uppercase text-slate-600 italic tracking-widest">{t.watermark}</div>
@@ -253,7 +285,7 @@ export default function PrintView({
                             const isInlineMode = displayStory && item.instructionMode === 'inline';
                             
                             const effectiveLatexSize = item.localLatexSize || globalLatexSize;
-                            const latexSizeClass = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl', xl: 'text-4xl' }[effectiveLatexSize] || 'text-2xl';
+                            const latexSizeClass = { sm: 'text-base', md: 'text-lg', lg: 'text-xl', xl: 'text-2xl' }[effectiveLatexSize] || 'text-lg';
                             const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
                             const effectiveWorkspaceStyle = item.localWorkspaceStyle !== undefined ? item.localWorkspaceStyle : workspaceStyle; // 🟢 NEW
 
@@ -387,13 +419,13 @@ export default function PrintView({
 
                         // 🟢 FIXED: Apply dynamic sizes to the sandbox so it measures breaks perfectly
                         const effectiveLatexSize = item.localLatexSize || globalLatexSize;
-                        const latexSizeClass = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl', xl: 'text-4xl' }[effectiveLatexSize] || 'text-2xl';
+                        const latexSizeClass = { sm: 'text-base', md: 'text-lg', lg: 'text-xl', xl: 'text-2xl' }[effectiveLatexSize] || 'text-lg';
                         const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
 
                         return (
                             <React.Fragment key={`sb-card-${item.id}`}>
                                 {isHeaderMode && (
-                                    <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-2 bg-slate-50/50">
+                                    <div id={`sandbox-header-${idx}`} className="col-span-6 border-l-4 border-slate-900 pl-4 py-2 bg-slate-50/50">
                                         <div className="text-sm font-semibold"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
                                     </div>
                                 )}
@@ -473,9 +505,6 @@ export default function PrintView({
                     .break-inside-avoid { 
                         break-inside: avoid !important; 
                         page-break-inside: avoid !important;
-                        /* SAFETY BUFFER: If an ultra-tall element is forced to split, 
-                           this padding keeps it inside the printable area of the sheet */
-                        padding-top: 4mm !important;
                     }
                     
                     /*  THE GRID-TO-FLEX OVERRIDE: 

@@ -395,16 +395,30 @@ export default function QuestionStudio({
   const loadSheet = (sheet) => {
       setPacket(sheet.packet); setSheetTitle(sheet.title); setSetupMode(sheet.type); setActiveSheetId(sheet.id); 
       setChosenVisibility(sheet.visibility || 'private'); setIsSaved(true);
+      
+      // Answer Key Configs
       if (sheet.config?.includeAnswerKey !== undefined) setIncludeAnswerKey(sheet.config.includeAnswerKey);
       if (sheet.config?.answerKeyStyle !== undefined) setAnswerKeyStyle(sheet.config.answerKeyStyle);
+      
+      // New Typography Configs
       if (sheet.config?.globalLatexSize !== undefined) setGlobalLatexSize(sheet.config.globalLatexSize);
-      if (sheet.config?.workspaceHeight !== undefined) setWorkspaceHeight(sheet.config.workspaceHeight);
-      if (sheet.config?.workspaceStyle !== undefined) setWorkspaceStyle(sheet.config.workspaceStyle);
+      
+      // Layout Style Configs
       if (sheet.config?.layoutStyle !== undefined) setLayoutStyle(sheet.config.layoutStyle);
-      // Legacy fallback for old sheets
-      if (sheet.config?.showWorkArea === false) setWorkspaceHeight(0);
-  };
+      if (sheet.config?.workspaceStyle !== undefined) setWorkspaceStyle(sheet.config.workspaceStyle);
 
+      // Workspace Height Configs (With Legacy Fallbacks)
+      if (sheet.config?.workspaceHeight !== undefined) {
+          // If the new system saved it, use it directly
+          setWorkspaceHeight(sheet.config.workspaceHeight);
+      } else if (sheet.config?.showWorkArea !== undefined) {
+          // If it's a legacy sheet, map true to 3, false to 0
+          setWorkspaceHeight(sheet.config.showWorkArea ? 3 : 0);
+      } else {
+          // Safe default if nothing exists
+          setWorkspaceHeight(0);
+      }
+  };
 
   const handleLaunchGrid = () => { 
       if (!isSaved && !window.confirm(t.unsaved_warning)) return; 
@@ -1184,7 +1198,7 @@ export default function QuestionStudio({
                                 const isInlineMode = displayStory && item.instructionMode === 'inline';
                                 
                                 const effectiveLatexSize = item.localLatexSize || globalLatexSize;
-                                const latexSizeClass = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl', xl: 'text-4xl' }[effectiveLatexSize] || 'text-2xl';
+                                const latexSizeClass = { sm: 'text-base', md: 'text-lg', lg: 'text-xl', xl: 'text-2xl' }[effectiveLatexSize] || 'text-lg';
                                 const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
                                 const effectiveWorkspaceStyle = item.localWorkspaceStyle !== undefined ? item.localWorkspaceStyle : workspaceStyle;
 
