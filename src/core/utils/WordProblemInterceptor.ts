@@ -66,11 +66,8 @@ export class WordProblemInterceptor {
                 ? " Write the formula that describes this situation." 
                 : " Bestäm formeln som beskriver mönstret.";
         } 
-        else if (
-            variationConfig.key === 'distribute_plus' || 
-            variationConfig.key === 'distribute_minus' || 
-            variationConfig.key === 'distribute_combine_std'
-        ) {
+        else if (variationConfig.contextType?.startsWith('algebra_expressions')) {
+            // 🟢 FIXED: Automatically appends the instruction to ALL expression word problems
             localizedStory += lang === 'en'
                 ? " Write and simplify the algebraic expression."
                 : " Skriv och förenkla uttrycket.";
@@ -80,24 +77,6 @@ export class WordProblemInterceptor {
             localizedStory += lang === 'en' 
                 ? " Write the equation that describes this situation." 
                 : " Teckna ekvationen som beskriver situationen.";
-        } else if (variationConfig.key === 'combine_standard_mixed') {
-            const action1 = extractedParams.op1 === '+' ? "kliver på" : "går av";
-            const action2 = extractedParams.op2 === '+' ? "kliver på" : "går av";
-            const action3 = extractedParams.op3 === '+' ? "kliver på" : "går av";
-            
-            if (lang === 'sv') {
-                localizedStory = `Inledningsvis finns det {a}x personer i ett område. Sedan ${action1} {b} personer, därefter ${action2} {c}x personer, och till sist ${action3} {d} personer. Skriv och förenkla ett uttryck för det nya antalet personer.`;
-            } else {
-                const action1En = extractedParams.op1 === '+' ? "board" : "leave";
-                const action2En = extractedParams.op2 === '+' ? "board" : "leave";
-                const action3En = extractedParams.op3 === '+' ? "board" : "leave";
-                localizedStory = `Initially there are {a}x people in an area. Then {b} people ${action1En}, next {c}x people ${action2En}, and finally {d} people ${action3En}. Write and simplify an expression for the current count.`;
-            }
-
-            Object.entries(extractedParams).forEach(([key, value]) => {
-                const cleanValue = String(value).replace(/[()]/g, '');
-                localizedStory = localizedStory.replace(new RegExp(`{${key}}`, 'g'), cleanValue);
-            });    
         } else if (
             questionData.variationKey === 'apply_factor_inc' || 
             questionData.variationKey === 'apply_factor_dec'
@@ -173,11 +152,6 @@ export class WordProblemInterceptor {
             localizedStory += lang === 'en' 
                 ? " Write the equation that describes this situation." 
                 : " Teckna ekvationen som beskriver situationen.";
-        } else if (variationConfig.key === 'expressions_word_problem') {
-            // Expression Level 5 Suffix
-            localizedStory += lang === 'en'
-                ? " Write and simplify an expression for the current count."
-                : " Skriv och förenkla ett uttryck för det nya antalet.";
         } else if (
             variationConfig.key === 'onestep_calc' ||
             variationConfig.key === 'twostep_calc' ||
