@@ -23,16 +23,16 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
             en: "A drone flies at an altitude of {valA} meters above the ground. It climbs {valB} meters, drops {valC} meters, and then flies up another {valD} meters. What altitude is it flying at now?"
         },
         {
-            sv: "Du har {valA} kr på ditt konto. Du swishar iväg {valB} kr, får tillbaka {valC} kr från en kompis och köper sedan snacks för {valD} kr. Hur mycket har du kvar på kontot?",
-            en: "You have {valA} kr in your account. You swish {valB} kr, get {valC} kr back from a friend, and then buy snacks for {valD} kr. How much do you have left in your account?"
+            sv: "Du har {valA} kr på ditt konto. Du för över {valB} kr till sparkontot, får tillbaka en utgift på {valC} kr och får sedan en insättning på {valD} kr. Hur mycket har du kvar på kontot?",
+            en: "You have {valA} kr in your account. You transfer {valB} kr, get a refund of {valC} kr, and then receive a deposit of {valD} kr. How much do you have left in your account?"
         },
         {
             sv: "En u-båt ligger på {valA} meters djup under havsytan. Den stiger {valB} meter, dyker ner {valC} meter och stiger sedan {valD} meter igen. Vilket djup ligger u-båten på nu?",
             en: "A submarine is at a depth of {valA} meters below sea level. It ascends {valB} meters, dives down {valC} meters, and then ascends {valD} meters again. What depth is the submarine at now?"
         },
         {
-            sv: "Ett nystartat UF-företag har {valA} kr i kassan. De tjänar {valB} kr på sin första försäljning, betalar {valC} kr för material och får ett bidrag på {valD} kr. Hur mycket har de i kassan nu?",
-            en: "A new student company has {valA} kr in its cash box. They earn {valB} kr on their first sale, pay {valC} kr for materials, and receive a grant of {valD} kr. How much cash do they have now?"
+            sv: "Ett nystartat UF-företag ligger ute med {valA} kr. De tjänar {valB} kr, betalar {valC} kr för material och får ett bidrag på {valD} kr. Vad är deras aktuella balans?",
+            en: "A new student company is at a balance of {valA} kr. They earn {valB} kr, pay {valC} kr for materials, and receive a grant of {valD} kr. What is their current balance?"
         },
         {
             sv: "När du spelar ett mobilspel ligger din karaktär på nivån {valA} i rankning. Du klättrar {valB} steg, halkar ner {valC} steg och klättrar sedan {valD} steg till. Vilken rankning har du nu?",
@@ -51,20 +51,20 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
             en: "A climbing wall has height markings. You start at {valA} meters, climb up {valB} meters, rappel down {valC} meters, and take a final step up of {valD} meters. Where are you now?"
         },
         {
-            sv: "Ett TikTok-konto hade {valA} följare i måndags. På tisdagen ökade det med {valB} följare, på onsdagen tappade kontot {valC} följare och på torsdagen ökade det med {valD} till. Hur många följare har kontot nu?",
-            en: "A TikTok account had {valA} followers on Monday. On Tuesday it increased by {valB} followers, on Wednesday it lost {valC} followers, and on Thursday it increased by {valD} more. How many followers does it have now?"
+            sv: "Ett TikTok-konto hade nettoförändringen {valA} följare i måndags. På tisdagen ökade det med {valB} följare, på onsdagen tappade kontot {valC} följare och på torsdagen ökade det med {valD}. Vad är veckans förändring?",
+            en: "A TikTok account had a net change of {valA} followers on Monday. On Tuesday it increased by {valB} followers, on Wednesday it lost {valC}, and on Thursday it increased by {valD}. What is the week's change?"
         },
         {
-            sv: "Temperaturen i ett växthus startar på {valA} °C. När fläkten startar sjunker den med {valB} °C, när solen går i moln sjunker den med {valC} °C till och när värmen slås på stiger den med {valD} °C. Vad är temperaturen nu?",
-            en: "The temperature in a greenhouse starts at {valA} °C. When the fan starts it drops by {valB} °C, when the sun goes behind a cloud it drops another {valC} °C, and when the heat turns on it rises by {valD} °C. What is it now?"
+            sv: "Temperaturen i ett växthus startar på {valA} °C. När fläkten stängs av stiger den med {valB} °C, när solen går i moln sjunker den med {valC} °C och när värmen slås på stiger den med {valD} °C. Vad är temperaturen nu?",
+            en: "The temperature in a greenhouse starts at {valA} °C. When the fan stops it rises by {valB} °C, when the sun goes behind a cloud it drops by {valC} °C, and when the heat turns on it rises by {valD} °C. What is it now?"
         },
         {
-            sv: "Du har lagt till {valA} låtar på en delad spellista. Din kompis lägger till {valB} låtar, raderar {valC} låtar som inte passade och lägger till {valD} låtar till. Hur många låtar har spellistan nu?",
-            en: "You added {valA} songs to a shared playlist. Your friend adds {valB} songs, deletes {valC} songs that didn't fit, and adds another {valD} songs. How many songs does the playlist have now?"
+            sv: "I ett brädspel ligger du på {valA} straffpoäng. Du tjänar tillbaka {valB} poäng, drar ett kort som ger dig {valC} straffpoäng, och vinner sedan {valD} poäng. Vad är din status nu?",
+            en: "In a board game you are at {valA} penalty points. You earn back {valB} points, draw a card giving you {valC} penalty points, and then win {valD} points. What is your status now?"
         },
         {
-            sv: "Ett gäng kompisar har en gemensam burk med speltokens. De startar med {valA} stycken. De vinner {valB} stycken, förlorar {valC} stycken i en match och köper sedan till {valD} stycken. Hur många tokens har de nu?",
-            en: "A group of friends has a shared jar of gaming tokens. They start with {valA}. They win {valB}, lose {valC} in a match, and then purchase {valD} more. How many tokens do they have now?"
+            sv: "Ett gäng kompisar har en gemensam burk med speltokens. De startar på en skuld av {valA} tokens. De vinner {valB} stycken, förlorar {valC} stycken i en match och köper sedan till {valD} stycken. Vad är saldot nu?",
+            en: "A group of friends has a shared token jar starting at a debt of {valA}. They win {valB}, lose {valC} in a match, and then purchase {valD} more. What is the balance now?"
         }
     ],
 
@@ -73,15 +73,15 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
     // =========================================================================
     neg_double_minus: [
         {
-            sv: "Temperaturen i en frys är {valA} °C. Du vrider på reglaget så att temperaturen höjs med {valB} °C. Vad visar frysens display nu?",
-            en: "The temperature in a freezer is {valA} °C. You turn the dial so the temperature is raised by {valB} °C. What does the freezer display show now?"
+            sv: "Temperaturen i en frysbox var {valA} °C. Forskaren stänger av ett extra kylelement som drog ner värmen med minus {valB} °C. Vad blir temperaturen nu?",
+            en: "The temperature in a freezer was {valA} °C. The researcher turns off an extra cooling element that dropped the heat by minus {valB} °C. What is the temperature now?"
         },
         {
             sv: "Du spelar ett onlinespel och ligger på {valA} poäng. Efter en granskning raderar systemet bort en gammal straffavgift på minus {valB} poäng. Vad blir din nya poäng?",
             en: "You are playing an online game and are at {valA} points. After a review, the system erases a previous penalty of minus {valB} points. What is your new score?"
         },
         {
-            sv: "En digital höjdmätare på en dykar klocka visar {valA} meter under havsytan. Du tar bort ett felaktigt djupavdrag på minus {valB} meter. Vilket värde visas på klockan nu?",
+            sv: "En digital höjdmätare på en dykarklocka visar {valA} meter under havsytan. Du tar bort ett felaktigt djupavdrag på minus {valB} meter. Vilket värde visas på klockan nu?",
             en: "A digital altimeter on a diving watch shows {valA} meters below sea level. You remove an incorrect depth deduction of minus {valB} meters. What value is shown on the watch now?"
         },
         {
@@ -89,48 +89,48 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
             en: "A starting value in a math app is set to {valA}. You are now going to subtract the negative number minus {valB} from the starting value. What answer do you get?"
         },
         {
-            sv: "Nils har ett saldo på {valA} kr på sitt spelkonto. Kundtjänst tar bort en felaktig minuspost på {valB} kr från kontot. Vad blir hans nya saldo?",
-            en: "Nils has a balance of {valA} kr on his gaming account. Customer service removes an incorrect negative charge of {valB} kr from the account. What is his new balance?"
+            sv: "Nils har ett saldo på {valA} kr på sitt spelkonto. Kundtjänst tar bort en felaktig minuspost på minus {valB} kr från kontot. Vad blir hans nya saldo?",
+            en: "Nils has a balance of {valA} kr on his gaming account. Customer service removes an incorrect negative charge of minus {valB} kr from the account. What is his new balance?"
         },
         {
-            sv: "I en fiktiv temperaturutmaning startar en mätare på {valA} grader. Du ska minska detta värde med minus {valB} grader. Vad stannar mätaren på?",
-            en: "In a fictional temperature challenge, a gauge starts at {valA} degrees. You need to decrease this value by minus {valB} degrees. What does the gauge stop at?"
+            sv: "I en fiktiv fysikutmaning startar en mätare på {valA} grader. Du ska minska detta värde med köldfaktorn minus {valB} grader. Vad stannar mätaren på?",
+            en: "In a fictional physics challenge, a gauge starts at {valA} degrees. You need to decrease this value by the cold factor of minus {valB} degrees. What does the gauge stop at?"
         },
         {
-            sv: "Ett fotbollslag har {valA} mål i målskillnad. Förbundet inser att de har räknat fel och tar bort ett gammal avdrag på minus {valB} mål. Vad blir lagets nya målskillnad?",
+            sv: "Ett fotbollslag har {valA} i målskillnad. Förbundet inser att de har räknat fel och tar bort ett gammalt avdrag på minus {valB} mål. Vad blir lagets nya målskillnad?",
             en: "A soccer team has a goal difference of {valA}. The league realizes a mistake and removes a previous deduction of minus {valB} goals. What is the team's new goal difference?"
         },
         {
-            sv: "Du har hamnat på minus {valA} kr på ditt skolkonto efter att ha lånat pengar. Skolan bestämmer sig för att efterskänka en skuld på {valB} kr. Vad blir din nya balans?",
-            en: "You ended up at minus {valA} kr on your school account after borrowing money. The school decides to forgive a debt of {valB} kr. What is your new balance?"
+            sv: "Du har hamnat på {valA} kr på ditt skolkonto efter att ha lånat pengar. Skolan bestämmer sig för att efterskänka en skuld på minus {valB} kr. Vad blir din nya balans?",
+            en: "You ended up at {valA} kr on your school account after borrowing money. The school decides to forgive a debt of minus {valB} kr. What is your new balance?"
         },
         {
-            sv: "Ett rymdspel mäter din position till {valA} km från baslinjen. Du rensar bort en negativ kursavvikelse på minus {valB} km. Vilket avstånd visas på skärmen nu?",
-            en: "A space game measures your position as {valA} km from the baseline. You clear a negative course deviation of minus {valB} km. What distance is shown on the screen now?"
+            sv: "Ett rymdspel mäter din kursavvikelse till {valA} km. Du rensar bort en negativ systemmodifikation på minus {valB} km. Vilket avstånd visas på skärmen nu?",
+            en: "A space game measures your course deviation at {valA} km. You clear a negative system modifier of minus {valB} km. What distance is shown on the screen now?"
         },
         {
-            sv: "En kemisk lösning håller temperaturen {valA} °C i ett labb. Forskaren programmerar om maskinen så att den drar av en köldfaktor på minus {valB} °C. Vad blir den nya temperaturen?",
-            en: "A chemical solution maintains a temperature of {valA} °C in a lab. The scientist reprograms the machine to subtract a cold factor of minus {valB} °C. What is the new temperature?"
+            sv: "En kemisk lösning håller temperaturen {valA} °C i ett labb. Forskaren programmerar om maskinen för att subtrahera en isfaktor på minus {valB} °C. Vad blir den nya temperaturen?",
+            en: "A chemical solution maintains a temperature of {valA} °C in a lab. The scientist reprograms the machine to subtract an ice factor of minus {valB} °C. What is the new temperature?"
         },
         {
-            sv: "En gamer har {valA} poäng på en global topplista. Spelets moderatorer tar bort ett felaktigt minusavdrag på {valB} poäng. Vad blir spelarens nya poängsumma?",
-            en: "A gamer has {valA} points on a global leaderboard. The game's moderators remove an incorrect negative deduction of {valB} points. What is the player's new score?"
+            sv: "En gamer har {valA} poäng på en global topplista. Spelets moderatorer stryker ett felaktigt minusavdrag på minus {valB} poäng. Vad blir spelarens nya poängsumma?",
+            en: "A gamer has {valA} points on a global leaderboard. The game's moderators strike off an incorrect negative deduction of minus {valB} points. What is the player's new score?"
         },
         {
-            sv: "Vattennivån i en testtank är {valA} cm under nollstrecket. Teknikern nollställer en felmarginal på minus {valB} cm. Vilken nivå visar tanken nu?",
-            en: "The water level in a test tank is {valA} cm below the zero mark. The technician resets an error margin of minus {valB} cm. What level does the tank show now?"
+            sv: "Vattennivån i en testtank visar ett felvärde på {valA} cm. Teknikern nollställer en felmarginal som sänkte mätaren med minus {valB} cm. Vilken nivå visar tanken nu?",
+            en: "The water level in a test tank shows an error value of {valA} cm. The technician resets an error margin that lowered the gauge by minus {valB} cm. What level does the tank show now?"
         },
         {
             sv: "Du har skrivit ett skript som ger startvärdet {valA}. Skriptet ska sedan göra en beräkning där det drar ifrån det negativa värdet minus {valB}. Vad returnerar skriptet?",
             en: "You wrote a script that gives a starting value of {valA}. The script will then perform a calculation where it subtracts the negative value minus {valB}. What does it return?"
         },
         {
-            sv: "Ett lags fairplay-konto står på {valA} poäng efter några varningar. Domaren väljer att stryka en tidigare rapporterad straffpoäng på minus {valB} poäng. Vad blir lagets nya poäng?",
-            en: "A team's fair-play account stands at {valA} points after a few warnings. The referee chooses to cancel a previously reported penalty of minus {valB} points. What is their new score?"
+            sv: "Ett lags fairplay-konto står på {valA} poäng efter några varningar. Domaren väljer att upphäva en tidigare utdömd straffpoäng på minus {valB} poäng. Vad blir lagets nya poäng?",
+            en: "A team's fair-play account stands at {valA} points after a few warnings. The referee chooses to lift a previously issued penalty of minus {valB} points. What is their new score?"
         },
         {
-            sv: "Ett batteritest startar på laddningsvärdet {valA}. Programmet rensar en kalibreringsförlust på minus {valB}. Vilket värde registrerar testet efter rensningen?",
-            en: "A battery test starts at a charge value of {valA}. The program clears a calibration loss of minus {valB}. What value does the test register after clearing?"
+            sv: "Ett batteritest startar på laddningsvärdet {valA}. Programmet plockar därefter bort en inbyggd spärr på minus {valB}. Vilket värde registrerar testet efter rensningen?",
+            en: "A battery test starts at a charge value of {valA}. The program then removes a built-in block of minus {valB}. What value does the test register after clearing?"
         }
     ],
 
@@ -143,20 +143,20 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
             en: "Your score in an arcade game changes by {valA} points each round. What is the total change after {valB} rounds?"
         },
         {
-            sv: "Temperaturen i ett frysrum sjunker regelbundet och ändras med {valA} °C varje timme. Vad är den totala temperaturändringen efter {valB} timmar?",
-            en: "The temperature in a walk-in freezer drops regularly and changes by {valA} °C every hour. What is the total temperature change after {valB} hours?"
+            sv: "Temperaturen i ett frysrum ändras med {valA} °C varje timme. Vad är den totala temperaturändringen efter {valB} timmar?",
+            en: "The temperature in a walk-in freezer changes by {valA} °C every hour. What is the total temperature change after {valB} hours?"
         },
         {
-            sv: "En liten forskningsdrönare sjunker neråt så att höjden ändras med {valA} meter varje minut. Vilken blir den totala höjdförändringen efter {valB} minuter?",
-            en: "A small research drone descends so that its altitude changes by {valA} meters every minute. What will the total altitude change be after {valB} minutes?"
+            sv: "En liten forskningsdrönare justerar sin höjd så att den ändras med {valA} meter varje minut. Vilken blir den totala höjdförändringen efter {valB} minuter?",
+            en: "A small research drone adjusts its altitude so that it changes by {valA} meters every minute. What will the total altitude change be after {valB} minutes?"
         },
         {
-            sv: "Ett gammalt mobilbatteri laddas ur snabbt och förlorar {valA}% i laddning varje timme. Hur mycket har batterinivån ändrats totalt efter {valB} timmar?",
-            en: "An old mobile battery discharges quickly and loses {valA}% of charge every hour. How much has the battery level changed in total after {valB} hours?"
+            sv: "Ett gammalt mobilbatteri förlorar ström och ändrar sin laddning med {valA}% varje timme. Hur mycket har batterinivån ändrats totalt efter {valB} timmar?",
+            en: "An old mobile battery loses power and changes its charge by {valA}% every hour. How much has the battery level changed in total after {valB} hours?"
         },
         {
-            sv: "Ett e-sportlag får ett straffavdrag på {valA} poäng för varje regelbrott de gör under en turnering. Hur mycket ändras lagets poäng totalt efter {valB} regelbrott?",
-            en: "An e-sports team gets a penalty deduction of {valA} points for each rule violation they commit during a tournament. How much does their score change in total after {valB} violations?"
+            sv: "Ett e-sportlag får ett straff på {valA} poäng för varje regelbrott. Hur mycket ändras lagets poäng totalt efter {valB} regelbrott?",
+            en: "An e-sports team gets a penalty of {valA} points for each rule violation. How much does their score change in total after {valB} violations?"
         },
         {
             sv: "En u-båt håller på att docka och ändrar sitt djup med {valA} meter varje minut. Vilken blir den totala förändringen efter {valB} minuters dockning?",
@@ -167,24 +167,24 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
             en: "A group of friends rents a server together, which changes your account balance by {valA} kr each month. What is the total change on your account after {valB} months?"
         },
         {
-            sv: "Ett techbolag förlorar pengar på en gammal app, vilket ändrar deras resultat med {valA} miljoner kr per kvartal. Vad är den totala förändringen efter {valB} kvartal?",
-            en: "A tech company is losing money on an old app, changing their financial result by {valA} million kr per quarter. What is the total change after {valB} quarters?"
+            sv: "Ett techbolag har en driftskostnad på ett projekt, vilket ändrar deras resultat med {valA} miljoner kr per kvartal. Vad är den totala förändringen efter {valB} kvartal?",
+            en: "A tech company has an operating cost on a project, changing their financial result by {valA} million kr per quarter. What is the total change after {valB} quarters?"
         },
         {
-            sv: "Du har skapat ett spel där deltagarna tappar {valA} sekunder i tid för varje gång de nuddar ett hinder. Hur mycket ändras tiden totalt om en spelare krockar {valB} gånger?",
-            en: "You created a game where players lose {valA} seconds of time every time they touch an obstacle. How much does the time change in total if a player crashes {valB} times?"
+            sv: "Du har skapat ett spel där deltagarnas tid ändras med {valA} sekunder för varje gång de nuddar ett hinder. Hur mycket ändras tiden totalt om en spelare krockar {valB} gånger?",
+            en: "You created a game where players' time changes by {valA} seconds every time they touch an obstacle. How much does the time change in total if a player crashes {valB} times?"
         },
         {
-            sv: "Vattennivån i en sjö sjunker under en torka och ändras med {valA} cm varje dygn. Vilken blir den totala nivåförändringen efter {valB} dygn?",
-            en: "The water level in a lake drops during a drought and changes by {valA} cm each day. What will the total level change be after {valB} days?"
+            sv: "Vattennivån i en sjö ändras med {valA} cm varje dygn. Vilken blir den totala nivåförändringen efter {valB} dygn?",
+            en: "The water level in a lake changes by {valA} cm each day. What will the total level change be after {valB} days?"
         },
         {
-            sv: "Ett streamingkonto tappar medlemmar i jämn takt, vilket ändrar antalet prenumeranter med {valA} personer varje dag. Vad är den totala förändringen efter {valB} dagar?",
-            en: "A streaming account is losing members at a steady rate, changing the subscriber count by {valA} people each day. What is the total change after {valB} days?"
+            sv: "Ett streamingkonto får en daglig avvikelse som ändrar antalet prenumeranter med {valA} personer varje dag. Vad är den totala förändringen efter {valB} dagar?",
+            en: "A streaming account experiences a daily deviation that changes the subscriber count by {valA} people each day. What is the total change after {valB} days?"
         },
         {
-            sv: "En kylväska tappar kyla när den står i solen. Temperaturen inuti väskan ändras med {valA} °C per minut. Vad är den totala ändringen efter {valB} minuter?",
-            en: "A cooler bag loses cold when standing in the sun. The temperature inside the bag changes by {valA} °C per minute. What is the total change after {valB} minutes?"
+            sv: "En kylväska förlorar effekt i solen. Temperaturen inuti väskan ändras med {valA} °C per minut. Vad är den totala ändringen efter {valB} minuter?",
+            en: "A cooler bag loses efficiency in the sun. The temperature inside the bag changes by {valA} °C per minute. What is the total change after {valB} minutes?"
         },
         {
             sv: "Ett instagramkonto råkar ut för en bugg som gör att antalet följare ändras med {valA} personer per timme. Vad blir den totala förändringen efter {valB} timmar?",
@@ -205,7 +205,7 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
     // =========================================================================
     neg_mult_chain: [
         {
-            sv: "Ta startvärdet {valA} i en programmerings loop. Multiplicera det med {valB} och multiplicera sedan resultatet med {valC}. Vad blir det slutgiltiga värdet?",
+            sv: "Ta startvärdet {valA} i en programmeringsloop. Multiplicera det med {valB} och multiplicera sedan resultatet med {valC}. Vad blir det slutgiltiga värdet?",
             en: "Take the starting value {valA} in a programming loop. Multiply it by {valB} and then multiply the result by {valC}. What is the final value?"
         },
         {
@@ -249,8 +249,8 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
             en: "You input the value {valA} into a calculator. You press multiplication by {valB} and immediately after press multiplication by {valC}. What is displayed on the screen?"
         },
         {
-            sv: "En ljudfil har en initial signalstyrka på {valA}. En effektbox multiplicerar styrkan med faktorn {valB} och sedan med {valC}. Vad blir den slutgiltiga signalstyrkan?",
-            en: "A audio file has an initial signal strength of {valA}. An effects unit multiplies the strength by the factor {valB} and then by {valC}. What is the final signal strength?"
+            sv: "En signalstyrka har ett initialt värde på {valA}. En algoritm multiplicerar styrkan med faktorn {valB} och sedan med {valC}. Vad blir det slutgiltiga utdatavärdet?",
+            en: "A signal strength has an initial value of {valA}. An algorithm multiplies the strength by the factor {valB} and then by {valC}. What is the final output value?"
         },
         {
             sv: "I en databas är en skalningsparameter satt till {valA}. Systemet uppdaterar parametern genom att multiplicera den med {valB} och sedan med {valC}. Vad blir det nya parametervärdet?",
@@ -261,8 +261,8 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
             en: "A math game generates the challenge to multiply {valA} by {valB} and then multiply the product by {valC}. What answer must you type in to win?"
         },
         {
-            sv: "En algoritm för bildkomprimering ändrar en färgkod utifrån startvärdet {valA}. Koden multipliceras med {valB} och sedan med {valC}. Vad returnerar komprimeringsverktyget?",
-            en: "An algorithm for image compression modifies a color code starting from the baseline {valA}. The code is multiplied by {valB} and then by {valC}. What does the compression tool return?"
+            sv: "En algoritm för komprimering utgår från basvärdet {valA}. Koden multipliceras med {valB} och sedan med {valC}. Vad returnerar verktyget?",
+            en: "An algorithm for compression starts from the baseline value {valA}. The code is multiplied by {valB} and then by {valC}. What does the tool return?"
         }
     ],
 
@@ -283,28 +283,28 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
             en: "A shared savings account for a group of friends changed by a total of {valA} kr over {valB} weeks due to server fees. What is the average change per week?"
         },
         {
-            sv: "Temperaturen i ett laboratorium föll jämnt och ändrades med totalt {valA} °C under {valB} timmar. Hur stor var temperaturförändringen i genomsnitt per timme?",
-            en: "The temperature in a laboratory dropped steadily and changed by a total of {valA} °C over {valB} hours. What was the average temperature change per hour?"
+            sv: "Temperaturen i ett laboratorium ändrades med totalt {valA} °C under {valB} timmar. Hur stor var temperaturförändringen i genomsnitt per timme?",
+            en: "The temperature in a laboratory changed by a total of {valA} °C over {valB} hours. What was the average temperature change per hour?"
         },
         {
-            sv: "En digital höjdmätare på en sjunkande drönare ändrade sitt läge med totalt {valA} meter under {valB} minuter. Hur många meter rörde den sig i genomsnitt per minut?",
-            en: "A digital altimeter on a descending drone changed its position by a total of {valA} meters over {valB} minutes. How many meters did it move on average per minute?"
+            sv: "En digital höjdmätare på en drönare ändrade sitt läge med totalt {valA} meter under {valB} minuter. Hur många meter rörde den sig i genomsnitt per minut?",
+            en: "A digital altimeter on a drone changed its position by a total of {valA} meters over {valB} minutes. How many meters did it move on average per minute?"
         },
         {
             sv: "Ett stort isblock i ett experiment har smält så att dess tjocklek har ändrats med totalt {valA} mm under {valB} timmar. Hur stor har förändringen varit i genomsnitt per timme?",
             en: "A large ice block in an experiment melted so that its thickness changed by a total of {valA} mm over {valB} hours. What was the average change per hour?"
         },
         {
-            sv: "Ett UF-företag har dragit på sig en total skuld på {valA} kr under {valB} månader. Hur stor har den månatliga ekonomiska förändringen varit i snitt?",
-            en: "A student company accumulated a total debt of {valA} kr over {valB} months. What has been the average monthly financial change?"
+            sv: "Ett UF-företag har noterat en ekonomisk saldoändring på totalt {valA} kr under {valB} månader. Hur stor har den månatliga ekonomiska förändringen varit i snitt?",
+            en: "A student company has noted an economic balance change totaling {valA} kr over {valB} months. What has been the average monthly financial change?"
         },
         {
-            sv: "En testprofil på sociala medier tappade följare under en rensning, vilket ändrade totalen med {valA} personer under {valB} dagar. Vad var förändringen i snitt per dag?",
-            en: "A test profile on social media lost followers during a cleanup, changing the total by {valA} people over {valB} days. What was the average change per day?"
+            sv: "En testprofil på sociala medier uppmätte en total följarförändring på {valA} personer under {valB} dagar. Vad var förändringen i snitt per dag?",
+            en: "A test profile on social media measured a total follower change of {valA} people over {valB} days. What was the average change per day?"
         },
         {
-            sv: "Laddningen i en powerbank sjönk under ett test och ändrades med totalt {valA} mAh under {valB} timmar. Hur stor var förändringen i genomsnitt per timme?",
-            en: "The charge in a power bank dropped during a test and changed by a total of {valA} mAh over {valB} hours. What was the average change per hour?"
+            sv: "Laddningen i en powerbank ändrades med totalt {valA} mAh under {valB} timmar. Hur stor var förändringen i genomsnitt per timme?",
+            en: "The charge in a power bank changed by a total of {valA} mAh over {valB} hours. What was the average change per hour?"
         },
         {
             sv: "Ett gäng på {valB} personer delar helt lika på en gemensam utgift som ändrade deras samlade kassa med {valA} kr. Hur mycket ändras saldot för varje person?",
@@ -315,20 +315,20 @@ export const NEGATIVE_STORIES: Record<string, StoryScenario[]> = {
             en: "A computer game automatically deleted inactive accounts. In total, the number of players in a clan changed by {valA} people over {valB} weeks. What was the average change per week?"
         },
         {
-            sv: "Oljenivån i en mopedmotor läckte ut och ändrades med totalt {valA} ml under {valB} dagar. Hur stor var läckageförändringen i genomsnitt per dag?",
-            en: "The oil level in a moped engine leaked out and changed by a total of {valA} ml over {valB} days. What was the leakage change on average per day?"
+            sv: "Oljenivån i en mopedmotor ändrades med totalt {valA} ml under {valB} dagar. Hur stor var läckageförändringen i genomsnitt per dag?",
+            en: "The oil level in a moped engine changed by a total of {valA} ml over {valB} days. What was the leakage change on average per day?"
         },
         {
             sv: "En lagringsenhet rensades på gamla filer, vilket ändrade det använda utrymmet med {valA} GB under {valB} minuter. Hur stort var dataavdraget i snitt per minut?",
             en: "A storage drive was cleared of old files, changing the used space by {valA} GB over {valB} minutes. What was the data deduction on average per minute?"
         },
         {
-            sv: "Ett gäng vänner förlorade totalt {valA} poäng i en turnering. Förlusten ska fördelas helt jämnt mellan de {valB} lagmedlemmarna. Vilken poängförändring får varje medlem?",
-            en: "A group of friends lost a total of {valA} points in a tournament. The loss is to be split completely evenly among the {valB} team members. What score change does each member receive?"
+            sv: "Ett gäng vänner fick ett samlat poängavdrag på {valA} poäng i en turnering. Avdraget ska fördelas helt jämnt mellan de {valB} lagmedlemmarna. Vilken poängförändring får varje medlem?",
+            en: "A group of friends received a collective point deduction of {valA} points in a tournament. The deduction is to be split completely evenly among the {valB} team members. What score change does each member receive?"
         },
         {
-            sv: "Vattennivån i en experimentell behållare sjönk på grund av ett litet hål. Nivån ändrades med totalt {valA} mm under {valB} minuter. Vad var ändringen i genomsnitt per minut?",
-            en: "The water level in an experimental container dropped due to a small hole. The level changed by a total of {valA} mm over {valB} minutes. What was the change on average per minute?"
+            sv: "Vattennivån i en experimentell behållare ändrades med totalt {valA} mm under {valB} minuter. Vad var ändringen i genomsnitt per minut?",
+            en: "The water level in an experimental container changed by a total of {valA} mm over {valB} minutes. What was the change on average per minute?"
         }
     ]
 };

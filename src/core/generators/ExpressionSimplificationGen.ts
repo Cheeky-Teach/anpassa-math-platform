@@ -24,7 +24,7 @@ export class ExpressionSimplificationGen {
         enrichQuestionMetadata(questionData);
 
         // Practice Mode Level-Wide Override
-        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4, 5];
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 4, 5];
         if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
             if (!questionData.metadata) questionData.metadata = {};
             questionData.metadata.levelSupportsWordProblems = true;

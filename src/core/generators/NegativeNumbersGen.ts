@@ -85,6 +85,19 @@ export class NegativeNumbersGen {
         if (options?.hideConcept) {
             filtered = filtered.filter(v => v.type !== 'concept');
         }
+
+        // 🟢 NEW: If Word Problems are ON, ban the unsafe math variations from being picked at all
+        const isWP = options?.wordProblem === 'true' || options?.wordProblem === true;
+        if (isWP) {
+            const unsafeKeys = [
+                'fluency_transform_match', // Concept
+                'mult_same_sign',          // Double negative (impossible time/people)
+                'div_same_sign',           // Double negative
+                'div_check_logic'          // Concept
+            ];
+            filtered = filtered.filter(v => !unsafeKeys.includes(v.key));
+        }
+
         if (filtered.length === 0) return pool[pool.length - 1].key;
         return MathUtils.randomChoice(filtered.map(v => v.key));
     }
@@ -345,8 +358,9 @@ export class NegativeNumbersGen {
         const v = variationKey || this.getVariation(pool, options);
 
         if (v === 'mult_chain') {
-            // Randomly generate between 3 and 5 factors
-            const numFactors = MathUtils.randomInt(3, 5); 
+            // 🟢 CAP THE CHAIN: Force exactly 3 factors if a word problem is requested
+            const isWordProblemActive = options?.wordProblem === 'true' || options?.wordProblem === true;
+            const numFactors = isWordProblemActive ? 3 : MathUtils.randomInt(3, 5); 
             const factors = [];
             for (let i = 0; i < numFactors; i++) {
                 factors.push(MathUtils.randomInt(-5, 5) || 1); // || 1 prevents multiplying by 0
