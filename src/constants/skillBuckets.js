@@ -1078,10 +1078,26 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Beräkna omkretsen av en kvadrat utifrån en känd sida", en: "Calculate the perimeter of a square from a known side length" },
             tags: ["word_problem_ready"],
             contextType: "geom_perimeter_square",
-            extractorPattern: /4\s*(?:\\cdot|·)\s*(?<s>\d+)/i
+            extractorPattern: /^(?<s>\d+)$/
           },
-          { key: 'perimeter_rect', level: 1, name: { sv: 'Omkrets: Rektangel', en: 'Perimeter: Rectangle' }, desc: { sv: '2b + 2h', en: '2w + 2h' } },
-          { key: 'perimeter_parallel', level: 1, name: { sv: 'Omkrets: Parallellogram', en: 'Perimeter: Parallelogram' }, desc: { sv: 'Samma som rektangel', en: 'Same as rectangle' } },
+          {
+            key: 'perimeter_rect',
+            level: 1,
+            name: { sv: 'Omkrets: Rektangel', en: 'Perimeter: Rectangle' },
+            desc: { sv: '2b + 2h', en: '2w + 2h' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_perimeter_rect",
+            extractorPattern: /^(?<b>\d+)\s*;\s*(?<h>\d+)$/
+          },
+          {
+            key: 'perimeter_parallel',
+            level: 1,
+            name: { sv: 'Omkrets: Parallellogram', en: 'Perimeter: Parallelogram' },
+            desc: { sv: 'Samma som rektangel', en: 'Same as rectangle' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_perimeter_rect",
+            extractorPattern: /^(?<b>\d+)\s*;\s*(?<h>\d+)$/
+          },
           {
             key: "perimeter_inverse",
             level: 1,
@@ -1089,12 +1105,20 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Hitta den saknade höjden i en rektangel utifrån omkrets och bas", en: "Find the missing height of a rectangle using perimeter and base" },
             tags: ["word_problem_ready"],
             contextType: "geom_perimeter_inverse",
-            extractorPattern: /P\s*=\s*(?<p>\d+)\s*,\s*b\s*=\s*(?<b>\d+)/i
+            extractorPattern: /^(?<p>\d+)\s*;\s*(?<b>\d+)$/
           },
           { key: 'perimeter_lie', level: 1, name: { sv: 'Hitta felet: Omkrets', en: 'Find error: Perimeter' }, desc: { sv: 'Vanliga misstag vid omkrets', en: 'Common perimeter mistakes' } },
 
           // LEVEL 2: Area (Area Basic)
-          { key: 'area_square', level: 2, name: { sv: 'Area: Kvadrat', en: 'Area: Square' }, desc: { sv: 's * s', en: 's * s' } },
+          {
+            key: 'area_square',
+            level: 2,
+            name: { sv: 'Area: Kvadrat', en: 'Area: Square' },
+            desc: { sv: 's * s', en: 's * s' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_quad",
+            extractorPattern: /^(?<b>\d+)\s*;\s*(?<h>\d+)$/
+          },
           {
             key: "area_rect",
             level: 2,
@@ -1102,9 +1126,17 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Beräkna ytan på en fyrhörning genom basen gånger höjden", en: "Calculate the surface area of a quadrilateral using base times height" },
             tags: ["word_problem_ready"],
             contextType: "geom_area_quad",
-            extractorPattern: /(?<b>\d+)\s*(?:\\cdot|·)\s*(?<h>\d+)/i
+            extractorPattern: /^(?<b>\d+)\s*;\s*(?<h>\d+)$/
           },
-          { key: 'area_parallel', level: 2, name: { sv: 'Area: Parallellogram', en: 'Area: Parallelogram' }, desc: { sv: 'Vinkelrät höjd', en: 'Perpendicular height' } },
+          {
+            key: 'area_parallel',
+            level: 2,
+            name: { sv: 'Area: Parallellogram', en: 'Area: Parallelogram' },
+            desc: { sv: 'Vinkelrät höjd', en: 'Perpendicular height' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_quad",
+            extractorPattern: /^(?<b>\d+)\s*;\s*(?<h>\d+)$/
+          },
           { key: 'area_inverse', level: 2, name: { sv: 'Area: Omvänd', en: 'Area: Inverse' }, desc: { sv: 'Hitta saknad sida från area', en: 'Find missing side from area' } },
           { key: 'area_trap', level: 2, name: { sv: 'Area: Parallelltrapets', en: 'Area: Trapezoid' }, desc: { sv: '((a+b)*h)/2', en: '((a+b)*h)/2' } },
 
@@ -1116,15 +1148,31 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Beräkna triangelns area genom basen gånger höjden delat på två", en: "Calculate triangle area using base times height divided by two" },
             tags: ["word_problem_ready"],
             contextType: "geom_area_triangle",
-            extractorPattern: /(?<base>\d+)\s*(?:\\cdot|·)\s*(?<height>\d+)\s*=\s*\d+/i
+            extractorPattern: /^(?<base>\d+)\s*;\s*(?<height>\d+)$/
           },
           { key: 'inverse_triangle', level: 3, name: { sv: 'Triangel: Omvänd', en: 'Triangle: Inverse' }, desc: { sv: 'Hitta bas/höjd från area', en: 'Find base/height from area' } },
-          { key: 'perimeter_triangle_right', level: 3, name: { sv: 'Omkrets: Rätvinklig triangel', en: 'Perimeter: Right triangle' }, desc: { sv: 'Summa av sidor', en: 'Sum of sides' } },
+          {
+            key: 'perimeter_triangle_right',
+            level: 3,
+            name: { sv: 'Omkrets: Rätvinklig triangel', en: 'Perimeter: Right triangle' },
+            desc: { sv: 'Summa av sidor', en: 'Sum of sides' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_perimeter_triangle",
+            extractorPattern: /^(?<a>\d+)\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)$/
+          },
           { key: 'perimeter_triangle_iso', level: 3, name: { sv: 'Omkrets: Likbent triangel', en: 'Perimeter: Isosceles triangle' }, desc: { sv: 'Två lika sidor', en: 'Two equal sides' } },
           { key: 'perimeter_triangle_scalene', level: 3, name: { sv: 'Omkrets: Oliksidig triangel', en: 'Perimeter: Scalene triangle' }, desc: { sv: 'Tre olika sidor', en: 'Three different sides' } },
 
           // LEVEL 4: Sammansatta Figurer (Combined Figures)
-          { key: 'combined_rect_tri', level: 4, name: { sv: 'Area: Sammansatt Rekt+Tri', en: 'Area: Comp. Rect+Tri' }, desc: { sv: 'Addera delarna', en: 'Add the parts' } },
+          {
+            key: 'combined_rect_tri',
+            level: 4,
+            name: { sv: 'Area: Sammansatt Rekt+Tri', en: 'Area: Comp. Rect+Tri' },
+            desc: { sv: 'Addera delarna', en: 'Add the parts' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_combined_rect_tri",
+            extractorPattern: /^(?<rw>\d+)\s*;\s*(?<rh>\d+)\s*;\s*(?<tb>\d+)$/
+          },
           {
             key: "combined_l_shape",
             level: 4,
@@ -1132,9 +1180,17 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Dela upp en sammansatt vinkelformad yta i två rektanglar", en: "Divide a composite L-shaped area into two separate rectangles" },
             tags: ["word_problem_ready"],
             contextType: "geom_area_l_shape",
-            extractorPattern: /vertikala rektangeln[\s\S]*?(?<vW>\d+)\s*·\s*(?<vH>\d+)[\s\S]*horisontella rektangeln[\s\S]*?(?<hW>\d+)\s*·\s*(?<hH>\d+)/i
+            extractorPattern: /^(?<vW>\d+)\s*;\s*(?<vH>\d+)\s*;\s*(?<hW>\d+)\s*;\s*(?<hH>\d+)$/
           },
-          { key: 'combined_house', level: 4, name: { sv: 'Sammansatt: Hus', en: 'Combined: House' }, desc: { sv: 'Kvadrat och triangel', en: 'Square and triangle' } },
+          {
+            key: 'combined_house',
+            level: 4,
+            name: { sv: 'Sammansatt: Hus', en: 'Combined: House' },
+            desc: { sv: 'Kvadrat och triangel', en: 'Square and triangle' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_house",
+            extractorPattern: /^(?<w>\d+)\s*;\s*(?<h>\d+)\s*;\s*(?<hr>\d+)$/
+          },
 
           // LEVEL 5: Cirklar (Circles)
           {
@@ -1144,17 +1200,73 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Beräkna cirkelns yta utifrån radie eller diameter", en: "Calculate the area of a circle using radius or diameter" },
             tags: ["word_problem_ready"],
             contextType: "geom_area_circle",
-            extractorPattern: /3,14\s*·\s*(?<r>\d+)\s*\^2/i
+            extractorPattern: /^(?<r>\d+)$/
           },
-          { key: 'circle_perimeter', level: 5, name: { sv: 'Omkrets: Cirkel', en: 'Perimeter: Circle' }, desc: { sv: 'pi*diameter', en: 'pi*diameter' } },
-          { key: 'semicircle_area', level: 5, name: { sv: 'Area: Halvcirkel', en: 'Area: Semicircle' }, desc: { sv: 'Hälften av pi*r^2', en: 'Half of pi*r^2' } },
-          { key: 'semicircle_perimeter', level: 5, name: { sv: 'Omkrets: Halvcirkel', en: 'Perimeter: Semicircle' }, desc: { sv: 'Båge + Diameter', en: 'Arc + Diameter' } },
-          { key: 'area_quarter', level: 5, name: { sv: 'Area: Kvartscirkel', en: 'Area: Quarter circle' }, desc: { sv: 'Area av 1/4 cirkel', en: 'Area of 1/4 circle' } },
-          { key: 'perimeter_quarter', level: 5, name: { sv: 'Omkrets: Kvartscirkel', en: 'Perimeter: Quarter circle' }, desc: { sv: 'Båge + 2 Radier', en: 'Arc + 2 Radii' } },
+          {
+            key: 'circle_perimeter',
+            level: 5,
+            name: { sv: 'Omkrets: Cirkel', en: 'Perimeter: Circle' },
+            desc: { sv: 'pi*diameter', en: 'pi*diameter' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_perimeter_circle",
+            extractorPattern: /^(?<r>\d+)\s*;\s*(?<d>\d+)$/
+          },
+          {
+            key: 'semicircle_area',
+            level: 5,
+            name: { sv: 'Area: Halvcirkel', en: 'Area: Semicircle' },
+            desc: { sv: 'Hälften av pi*r^2', en: 'Half of pi*r^2' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_semicircle",
+            extractorPattern: /^(?<r>\d+)$/
+          },
+          {
+            key: 'semicircle_perimeter',
+            level: 5,
+            name: { sv: 'Omkrets: Halvcirkel', en: 'Perimeter: Semicircle' },
+            desc: { sv: 'Båge + Diameter', en: 'Arc + Diameter' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_perimeter_semicircle",
+            extractorPattern: /^(?<r>\d+)\s*;\s*(?<d>\d+)$/
+          },
+          {
+            key: 'area_quarter',
+            level: 5,
+            name: { sv: 'Area: Kvartscirkel', en: 'Area: Quarter circle' },
+            desc: { sv: 'Area av 1/4 cirkel', en: 'Area of 1/4 circle' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_quarter",
+            extractorPattern: /^(?<r>\d+)$/
+          },
+          {
+            key: 'perimeter_quarter',
+            level: 5,
+            name: { sv: 'Omkrets: Kvartscirkel', en: 'Perimeter: Quarter circle' },
+            desc: { sv: 'Båge + 2 Radier', en: 'Arc + 2 Radii' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_perimeter_quarter",
+            extractorPattern: /^(?<r>\d+)\s*;\s*(?<d>\d+)$/
+          },
 
           // LEVEL 6: Avancerade Sammansatta Figurer (Composite Advanced)
-          { key: 'perimeter_house', level: 6, name: { sv: 'Omkrets: Hus', en: 'Perimeter: House' }, desc: { sv: 'Rektangel + Triangel', en: 'Rectangle + Triangle' } },
-          { key: 'perimeter_portal', level: 6, name: { sv: 'Omkrets: Portal', en: 'Perimeter: Portal' }, desc: { sv: 'Rektangel + Halvcirkel', en: 'Rectangle + Semicircle' } },
+          {
+            key: 'perimeter_house',
+            level: 6,
+            name: { sv: 'Omkrets: Hus', en: 'Perimeter: House' },
+            desc: { sv: 'Rektangel + Triangel', en: 'Rectangle + Triangle' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_perimeter_house",
+            extractorPattern: /^(?<rw>\d+)\s*;\s*(?<rh>\d+)\s*;\s*(?<roof_slant>\d+)$/
+          },
+          {
+            key: 'perimeter_portal',
+            level: 6,
+            name: { sv: 'Omkrets: Portal', en: 'Perimeter: Portal' },
+            desc: { sv: 'Rektangel + Halvcirkel', en: 'Rectangle + Semicircle' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_perimeter_portal",
+            extractorPattern: /^(?<rw>\d+)\s*;\s*(?<rh>\d+)\s*;\s*(?<arcLength>\d+)$/
+          },
           {
             key: "area_house",
             level: 6,
@@ -1162,9 +1274,17 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Avancerad area genom att addera en hussida med ett triangulärt tak", en: "Advanced area by adding a rectangular wall base with a triangular roof" },
             tags: ["word_problem_ready"],
             contextType: "geom_area_house",
-            extractorPattern: /rektangelns yta[\s\S]*?(?<w>\d+)\s*·\s*(?<h>\d+)[\s\S]*triangelns yta[\s\S]*?hr:\s*(?<hr>\d+)/i
+            extractorPattern: /^(?<w>\d+)\s*;\s*(?<h>\d+)\s*;\s*(?<hr>\d+)$/
           },
-          { key: 'area_portal', level: 6, name: { sv: 'Area: Portal', en: 'Area: Portal' }, desc: { sv: 'Rektangel + Halvcirkel', en: 'Rectangle + Semicircle' } }
+          {
+            key: 'area_portal',
+            level: 6,
+            name: { sv: 'Area: Portal', en: 'Area: Portal' },
+            desc: { sv: 'Rektangel + Halvcirkel', en: 'Rectangle + Semicircle' },
+            tags: ["word_problem_ready"],
+            contextType: "geom_area_portal",
+            extractorPattern: /^(?<rw>\d+)\s*;\s*(?<rh>\d+)$/
+          }
         ]
       },
       angles: {

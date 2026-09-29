@@ -33,11 +33,11 @@ export class LinearEquationGen {
             }
         }
 
-        // 🟢 Run through the decorator
+        // Run through the decorator
         enrichQuestionMetadata(questionData);
 
-        // 🟢 Practice Mode Level-Wide Override
-        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4, 5, 6, 7];
+        // Practice Mode Level-Wide Override
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4, 7];
         if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
             if (!questionData.metadata) questionData.metadata = {};
             questionData.metadata.levelSupportsWordProblems = true;
@@ -51,7 +51,7 @@ export class LinearEquationGen {
      * Maps ALL keys from skillBuckets.js to preserve Studio compatibility.
      */
     public generateByVariation(key: string, lang: string = 'sv'): any {
-        // 🟢 Legacy word problem routing array is completely deleted.
+        // Legacy word problem routing array is completely deleted.
         switch (key) {
             case 'onestep_concept_inverse':
             case 'onestep_spot_lie':
@@ -83,6 +83,20 @@ export class LinearEquationGen {
         if (options?.hideConcept) {
             filtered = filtered.filter(v => v.type !== 'concept');
         }
+
+        // If Word Problems are ON, ban the unsafe concept/theory variations
+        const isWP = options?.wordProblem === 'true' || options?.wordProblem === true;
+        if (isWP) {
+            const unsafeKeys = [
+                'onestep_concept_inverse', 
+                'onestep_spot_lie', 
+                'twostep_concept_order', 
+                'paren_lie_distribution', 
+                'bothsides_concept_strategy'
+            ];
+            filtered = filtered.filter(v => !unsafeKeys.includes(v.key));
+        }
+
         if (filtered.length === 0) return pool[pool.length - 1].key;
         return MathUtils.randomChoice(filtered.map(v => v.key));
     }

@@ -24,7 +24,7 @@ export class GeometryGenerator {
         enrichQuestionMetadata(questionData);
 
         // 🟢 Practice Mode Level-Wide Override
-        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 4, 5, 6];
+        const WORD_PROBLEM_ELIGIBLE_LEVELS = [1, 2, 3, 5, 6]; // level 4 is omitted as it is current too hard to imagine the pictures.
         if (WORD_PROBLEM_ELIGIBLE_LEVELS.includes(level)) {
             if (!questionData.metadata) questionData.metadata = {};
             questionData.metadata.levelSupportsWordProblems = true;
@@ -90,6 +90,16 @@ export class GeometryGenerator {
         if (options?.hideConcept) {
             filtered = filtered.filter(v => v.type !== 'concept');
         }
+
+        // If Word Problems are ON, ban the unsafe concept/theory variations
+        const isWP = options?.wordProblem === 'true' || options?.wordProblem === true;
+        if (isWP) {
+            const unsafeKeys = [
+                'perimeter_lie'
+            ];
+            filtered = filtered.filter(v => !unsafeKeys.includes(v.key));
+        }
+
         if (filtered.length === 0) return pool[pool.length - 1].key;
         return MathUtils.randomChoice(filtered.map(v => v.key));
     }
@@ -112,6 +122,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'square', width: s, height: s, labels: { b: s, h: s } },
                     description: lang === 'sv' ? "Beräkna kvadratens omkrets." : "Calculate the perimeter of the square.",
+                    interceptorToken: `${s}`, // 🟢 ADDED
                     latex: `4 \\cdot ${s}`,
                     answerType: 'numeric'
                 },
@@ -148,6 +159,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'rectangle', width: b, height: h, labels: { b, h: '?' } },
                     description: lang === 'sv' ? `En rektangel har omkretsen ${p} cm. Basen är ${b} cm. Hur lång är höjden?` : `A rectangle has a perimeter of ${p} cm. The base is ${b} cm. What is the height?`,
+                    interceptorToken: `${p} ; ${b}`, // 🟢 ADDED
                     latex: `P = ${p}, b = ${b}`,
                     answerType: 'numeric'
                 },
@@ -194,11 +206,10 @@ export class GeometryGenerator {
             renderData: {
                 geometry: { 
                     type: isParallel ? 'parallelogram' : 'rectangle', 
-                    width: b, 
-                    height: h, 
-                    labels: isParallel ? { b, s: h } : { b, h } 
+                    width: b, height: h, labels: isParallel ? { b, s: h } : { b, h } 
                 },
                 description: lang === 'sv' ? "Beräkna omkretsen." : "Calculate the perimeter.",
+                interceptorToken: `${b} ; ${h}`, // 🟢 ADDED
                 answerType: 'numeric'
             },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -241,7 +252,7 @@ export class GeometryGenerator {
             renderData: {
                 geometry: { type: v === 'area_parallel' ? 'parallelogram' : 'rectangle', width: b, height: h, labels: { b, h } },
                 description: lang === 'sv' ? "Beräkna figurens area." : "Calculate the area of the figure.",
-                latex: `${b} \\cdot ${h}`,
+                interceptorToken: `${b} ; ${h}`, // 🟢 ADDED
                 answerType: 'numeric'
             },
             token: this.toBase64((b * h).toString()), variationKey: v, type: 'calculate',
@@ -282,6 +293,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'triangle', subtype: 'right', width: a, height: b, labels: { b: a, h: b, hyp: c } },
                     description: lang === 'sv' ? "Beräkna triangelns omkrets." : "Calculate the perimeter of the triangle.",
+                    interceptorToken: `${a} ; ${b} ; ${c}`, 
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -312,6 +324,7 @@ export class GeometryGenerator {
             renderData: {
                 geometry: { type: 'triangle', width: base, height: height, labels: { b: base, h: height } },
                 description: lang === 'sv' ? "Beräkna triangelns area." : "Calculate the area of the triangle.",
+                interceptorToken: `${base} ; ${height}`, 
                 answerType: 'numeric'
             },
             token: this.toBase64(area.toString()), variationKey: v, type: 'calculate',
@@ -397,6 +410,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'circle', radius: r, labels: isDiameter ? { diameter: d } : { r }, show: isDiameter ? 'diameter' : 'radius' },
                     description: lang === 'sv' ? "Beräkna cirkelns area (använd pi = 3,14). Avrunda svaret till två decimaler." : "Calculate the area of the circle (use pi = 3.14).",
+                    interceptorToken: `${r}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -442,6 +456,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'circle', radius: r, labels: isDiameter ? { diameter: d } : { r }, show: isDiameter ? 'diameter' : 'radius' },
                     description: lang === 'sv' ? "Beräkna cirkelns omkrets (använd pi = 3,14). Avrunda svaret till två decimaler." : "Calculate the circumference of the circle (use pi = 3.14). Round answer to two decimals.",
+                    interceptorToken: `${r} ; ${d}`, 
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -456,6 +471,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'semicircle', radius: r, labels: { r }, show: 'radius' },
                     description: lang === 'sv' ? "Beräkna halvcirkelns area. Avrunda svaret till två decimaler." : "Calculate the area of the semicircle. Round answer to two decimals.",
+                    interceptorToken: `${r}`, 
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -491,6 +507,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'semicircle', radius: r, labels: { diameter: d }, show: 'diameter' },
                     description: lang === 'sv' ? "Beräkna halvcirkelns omkrets. Avrunda svaret till två decimaler." : "Calculate the perimeter of the semicircle. Round answer to two decimals.",
+                    interceptorToken: `${r} ; ${d}`, 
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -526,6 +543,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'quarter_circle', radius: r, labels: { r } },
                     description: lang === 'sv' ? "Beräkna kvartscirkelns area. Avrunda svaret till två decimaler." : "Calculate the area of the quarter circle. Round answer to two decimals.",
+                    interceptorToken: `${r}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -561,6 +579,7 @@ export class GeometryGenerator {
                 renderData: {
                     geometry: { type: 'quarter_circle', radius: r, labels: { r } },
                     description: lang === 'sv' ? "Beräkna kvartscirkelns omkrets. Avrunda svaret till två decimaler." : "Calculate the perimeter of the quarter circle. Round answer to two decimals.",
+                    interceptorToken: `${r} ; ${d}`,
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
@@ -614,6 +633,7 @@ export class GeometryGenerator {
         let clues: any[] = [];
         let rawW = 10;
         let rawH = 10;
+        let interceptorToken = ""; // 🟢 TRACKING VARIABLE ADDED
 
         // A. Handle L-Shape Configuration
         if (v === 'combined_l_shape') {
@@ -627,6 +647,8 @@ export class GeometryGenerator {
             description = lang === 'sv' 
                 ? "Beräkna arean av den sammansatta figuren." 
                 : "Calculate the area of the composite figure.";
+                
+            interceptorToken = `${vW} ; ${vH} ; ${hW} ; ${hH}`; // 🟢 TOKEN ASSIGNED
                 
             clues = [
                 {
@@ -663,6 +685,8 @@ export class GeometryGenerator {
                 ? "Figuren består av en rektangel och en triangel. Vad är totalarean?" 
                 : "The figure consists of a rectangle and a triangle. What is the total area?";
                 
+            interceptorToken = `${rw} ; ${rh} ; ${tb}`; // 🟢 TOKEN ASSIGNED
+                
             clues = [
                 {
                     text: lang === 'sv' ? "Dela upp uppgiften genom att räkna ut rektangelns yta och triangelns yta var för sig." : "Split the task by calculating the area of the rectangle and the area of the triangle separately.",
@@ -695,6 +719,8 @@ export class GeometryGenerator {
             subtype = "house";
             labelsObj = { w: rw, h: rh, h_roof: hr };
             description = lang === 'sv' ? "Beräkna husets totala area." : "Calculate the total area of the house.";
+            
+            interceptorToken = `${rw} ; ${rh} ; ${hr}`; // 🟢 TOKEN ASSIGNED
             
             clues = [
                 {
@@ -735,6 +761,8 @@ export class GeometryGenerator {
                 ? "Beräkna husets omkrets."
                 : "Calculate the perimeter of the house.";
                 
+            interceptorToken = `${rw} ; ${rh} ; ${roof_slant}`; // 🟢 TOKEN ASSIGNED
+                
             clues = [
                 {
                     text: lang === 'sv' ? "Omkretsen betyder hela varvet runt husets yttre kanter. Vi räknar inte med några streck på insidan!" : "The perimeter means the entire path around the house's outer edges. We do not count any lines on the inside!",
@@ -767,6 +795,8 @@ export class GeometryGenerator {
                 ? "Beräkna portalens totala omkrets (runt ytterkanterna)."
                 : "Calculate the total perimeter of the portal (around the outer edges).";
                 
+            interceptorToken = `${rw} ; ${rh} ; ${arcLength}`; // 🟢 TOKEN ASSIGNED
+                
             clues = [
                 {
                     text: lang === 'sv' ? "Omkretsen runt portalen består av den platta basen nertill, två stående sidoväggar och den runda bågen överst." : "The perimeter around the portal consists of the flat baseline below, two vertical side walls, and the curved round arc on top.",
@@ -790,6 +820,7 @@ export class GeometryGenerator {
                 }
             ];
         } else {
+            // Area Portal Default
             const rw = MathUtils.randomInt(20, 30) * 2; 
             const rh = MathUtils.randomInt(30, 45);
             const r = rw / 2;
@@ -801,6 +832,8 @@ export class GeometryGenerator {
             subtype = "portal";
             labelsObj = { w: rw, h: rh };
             description = lang === 'sv' ? "Beräkna figurens totala area." : "Calculate the total area of the figure.";
+            
+            interceptorToken = `${rw} ; ${rh}`; // 🟢 TOKEN ASSIGNED
             
             clues = [
                 {
@@ -843,6 +876,7 @@ export class GeometryGenerator {
                 dims: { subtype: subtype, width: rawW, height: rawH },
                 labels: labelsObj,
                 description: description,
+                interceptorToken: interceptorToken, // 🟢 SUCCESSFULLY INJECTED HERE
                 answerType: "numeric",
                 suffix: "cm²"
             },

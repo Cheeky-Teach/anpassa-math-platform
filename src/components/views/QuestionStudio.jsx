@@ -5,7 +5,7 @@ import {
   Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, X, Globe, Building2, Lock, Copy, Check, Filter,
   MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical, Brain, Calculator, Target, 
-  Image as ImageIcon, FileText as TextIcon, Monitor
+  Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer.jsx';
@@ -150,7 +150,15 @@ export default function QuestionStudio({
       clone_btn: "Kopiera", clone_success: "Kopierad!", peek_title: "Snabbkoll",
       mode_header: "Som rubrik", mode_inline: "Inuti kortet", mode_hidden: "Dölj text",
       hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Text",
-      present: "Presentera"
+      present: "Presentera",
+      // 🟢 NEW CLOUD DRIVE STRINGS
+      new_donow: "Nytt Do Now", new_worksheet: "Nytt Arbetsblad",
+      trash: "Papperskorg", new_folder: "Ny Mapp", folder: "Mapp",
+      filter_all: "Alla", create_folder_title: "Skapa ny mapp",
+      folder_name_placeholder: "Mappnamn...", cancel: "Avbryt", create: "Skapa",
+      move_file: "Flytta fil", root_dir: "Start (Hem)",
+      trash_empty: "Papperskorgen är tom.", no_files: "Inga filer hittades här.",
+      restore: "Återställ", hard_delete: "Radera permanent"
     },
     en: {
       studio: "Question Studio", library_title: "Library", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
@@ -170,7 +178,15 @@ export default function QuestionStudio({
       clone_btn: "Clone", clone_success: "Cloned!", peek_title: "Quick Peek",
       mode_header: "As Header", mode_inline: "Inside Card", mode_hidden: "Hide Text",
       hide_extra: "Hide Concepts & MCQ", type_calc: "Calculate", type_concept: "Concept", type_logic: "Logic", type_visual: "Image", type_text: "Text",
-      present: "Present"
+      present: "Present",
+      // 🟢 NEW CLOUD DRIVE STRINGS
+      new_donow: "New Do Now", new_worksheet: "New Worksheet",
+      trash: "Trash", new_folder: "New Folder", folder: "Folder",
+      filter_all: "All", create_folder_title: "Create new folder",
+      folder_name_placeholder: "Folder name...", cancel: "Cancel", create: "Create",
+      move_file: "Move file", root_dir: "Root directory",
+      trash_empty: "Trash is empty.", no_files: "No files found here.",
+      restore: "Restore", hard_delete: "Delete permanently"
     }
   }[lang];
 
@@ -207,6 +223,20 @@ export default function QuestionStudio({
   const [isGlobalShuffleOpen, setIsGlobalShuffleOpen] = useState(false);
   const [filterDocType, setFilterDocType] = useState('all');
   const [showPresentation, setShowPresentation] = useState(false); 
+
+  // --- FOLDER & RECYCLE BIN STATE ---
+  const [folders, setFolders] = useState([]);
+  const [expandedFolders, setExpandedFolders] = useState([]);
+
+  const toggleFolder = (folderId) => {
+      setExpandedFolders(prev => 
+          prev.includes(folderId) ? prev.filter(id => id !== folderId) : [...prev, folderId]
+      );
+  };
+  const [isTrashView, setIsTrashView] = useState(false);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [showMoveModal, setShowMoveModal] = useState(null); // Holds the sheet object being moved
 
   // --- UNIFIED BI-DIRECTIONAL DRAG AND DROP ---
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
@@ -254,7 +284,7 @@ export default function QuestionStudio({
   useEffect(() => { if (currentTopic?.variations?.[0]) triggerPreview(currentTopic.variations[0].key); }, [selectedTopicId]);
   useEffect(() => { setInitialPacket(packet); }, [packet]);
   useEffect(() => { setStudioMode(setupMode); }, [setupMode]);
-  useEffect(() => { fetchLibrary(); }, [setupMode, libraryTab]);
+  useEffect(() => { fetchLibrary(); }, [setupMode, libraryTab, isTrashView]);
 
   // Helper to find the translated name for a topic ID
   const getTopicLabel = (topicId) => {
@@ -315,30 +345,49 @@ export default function QuestionStudio({
     return 2; 
   };
 
+  // --- DATABASE & API LOGIC ---
+
   const fetchLibrary = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        console.warn("No active user found in Supabase context.");
-        return;
-    }
+    if (!user) return;
     
     setIsLibraryLoading(true);
     try {
+        // 1. Fetch Folders (Only needed in the Private tab and not in the trash)
+        if (libraryTab === 'private' && !isTrashView) {
+            const { data: folderData, error: folderError } = await supabase
+                .from('folders')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('name');
+            if (!folderError) setFolders(folderData || []);
+        } else {
+            setFolders([]);
+        }
+
+        // 2. Fetch Worksheets & Do Nows
         let query = supabase.from('saved_sheets').select('*').order('updated_at', { ascending: false });
         
         if (libraryTab === 'private') {
             query = query.eq('user_id', user.id);
+            if (isTrashView) {
+                // TRASH VIEW: Only show soft-deleted items
+                query = query.not('deleted_at', 'is', null);
+            } else {
+                
+                query = query.is('deleted_at', null);
+            }
         } else if (libraryTab === 'school') {
-            query = query.eq('visibility', 'school').eq('school_name', profile?.school_name);
+            query = query.eq('visibility', 'school').eq('school_name', profile?.school_name).is('deleted_at', null);
         } else {
-            query = query.eq('visibility', 'public');
+            query = query.eq('visibility', 'public').is('deleted_at', null);
         }
         
         const { data, error } = await query;
         if (error) throw error;
         setSavedSheets(data || []);
     } catch (err) { 
-        console.error("Error loading library assets directly from Supabase:", err); 
+        console.error("Error loading library assets:", err); 
     } finally { 
         setIsLibraryLoading(false); 
     }
@@ -357,6 +406,7 @@ export default function QuestionStudio({
               user_id: user.id,
               title: sheetTitle, 
               type: setupMode, 
+              folder_id: null, // 🟢 Saves to the home folder first
               packet: packet, 
               config: { globalLatexSize, workspaceHeight, workspaceStyle, layoutStyle, lang, includeAnswerKey, answerKeyStyle }, 
               visibility: chosenVisibility,
@@ -379,6 +429,76 @@ export default function QuestionStudio({
       } catch (err) { 
           alert("Fel vid sparande: " + err.message); 
       }
+  };
+
+  // --- FOLDER ACTIONS ---
+  const handleCreateFolder = async () => {
+      if (!newFolderName.trim()) return;
+      try {
+          const { data: { user } } = await supabase.auth.getUser();
+          const { error } = await supabase.from('folders').insert([{ user_id: user.id, name: newFolderName }]);
+          if (error) throw error;
+          setNewFolderName('');
+          setShowFolderModal(false);
+          fetchLibrary();
+      } catch (err) {
+          alert("Kunde inte skapa mapp: " + err.message);
+      }
+  };
+
+  const handleMoveSheet = async (sheetId, targetFolderId) => {
+      try {
+          const { error } = await supabase.from('saved_sheets').update({ folder_id: targetFolderId }).eq('id', sheetId);
+          if (error) throw error;
+          setShowMoveModal(null);
+          fetchLibrary();
+      } catch (err) {
+          alert("Kunde inte flytta filen: " + err.message);
+      }
+  };
+
+  const handleDeleteFolder = async (folderId) => {
+      try {
+          const { error } = await supabase.from('folders').delete().eq('id', folderId);
+          if (error) {
+              // Supabase ON DELETE RESTRICT will trigger an error if it's not empty
+              alert(lang === 'sv' ? "Mappen måste vara tom innan den kan raderas." : "Folder must be empty before deleting.");
+          } else {
+              fetchLibrary();
+          }
+      } catch (err) {
+          console.error(err);
+      }
+  };
+
+  // --- RECYCLE BIN ACTIONS ---
+  const handleSoftDelete = async (e, id) => {
+      e.stopPropagation();
+      try {
+          // Moves item to recycle bin
+          await supabase.from('saved_sheets').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+          fetchLibrary();
+      } catch (err) { console.error(err); }
+  };
+
+  const handleRestore = async (e, id) => {
+      e.stopPropagation();
+      try {
+          // Restores item from recycle bin
+          await supabase.from('saved_sheets').update({ deleted_at: null }).eq('id', id);
+          fetchLibrary();
+      } catch (err) { console.error(err); }
+  };
+
+  const handleHardDelete = async (e, id) => {
+      e.stopPropagation(); 
+      if (!window.confirm(t.delete_confirm)) return;
+      try {
+          // Permanently deletes item
+          const { error } = await supabase.from('saved_sheets').delete().eq('id', id);
+          if (error) throw error;
+          fetchLibrary();
+      } catch (err) { alert("Kunde inte radera: " + err.message); }
   };
 
   const handleClone = async (sheetId) => {
@@ -599,231 +719,372 @@ export default function QuestionStudio({
   .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
 
 
-    // 🟢 FULL-WIDTH STARTUP SCREEN WITH EXPANDED TITLE COLUMN
+  // 🟢 FULL-WIDTH CLOUD DRIVE LAYOUT
     if (!setupMode) {
         return (
-            <div className="flex-1 bg-[#f9fbf7] flex flex-col p-6 overflow-y-auto relative custom-scrollbar">
-            <button 
-                onClick={onClose} 
-                className="absolute top-4 right-6 p-2 bg-slate-900 text-white hover:bg-rose-600 rounded-xl shadow-lg transition-all flex items-center gap-1.5 font-black text-[9px] uppercase tracking-widest z-50 cursor-pointer"
-            >
-                <X size={16}/> {t.btn_close}
-            </button>
-            
-            {/* 🟢 CHANGED: Replaced max-w-5xl with w-full px-4 sm:px-8 to fill browser width */}
-            <div className="w-full px-4 sm:px-8 mx-auto space-y-6 relative z-10">
-                {/* Upper Mode Pickers */}
-                <div className="text-center">
-                    <h2 className="text-3xl font-black text-emerald-900 tracking-tighter uppercase italic mb-4">{t.studio}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-w-5xl mx-auto">
+            <div className="flex h-full w-full bg-[#f9fbf7] overflow-hidden relative text-slate-800">
+                {/* 1. LEFT SIDEBAR */}
+                <div className="w-64 bg-white border-r border-emerald-100 flex flex-col shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+                    <div className="p-6 border-b border-emerald-50">
+                        <h2 className="text-xl font-black text-emerald-900 tracking-tighter uppercase italic mb-6">
+                            {t.studio}
+                        </h2>
+                        
+                        {/* Create Buttons */}
+                        <div className="flex flex-col gap-2">
+                            <button 
+                                onClick={() => { setSetupMode('donow'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); setChosenVisibility('private'); }} 
+                                className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Plus size={14} /> {t.new_donow}
+                            </button>
+                            <button 
+                                onClick={() => { setSetupMode('worksheet'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); setChosenVisibility('private'); }} 
+                                className="w-full py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Plus size={14} /> {t.new_worksheet}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Navigation Menu */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-1">
+                        <p className="px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2">{t.library_title}</p>
+                        
                         <button 
-                            onClick={() => { setSetupMode('donow'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); }} 
-                            className="group p-5 bg-white border-2 border-slate-100 rounded-[2rem] hover:border-indigo-600 transition-all text-left shadow-xs hover:shadow-md active:scale-[0.98] cursor-pointer flex items-center gap-5"
+                            onClick={() => { setLibraryTab('private'); setIsTrashView(false); }} 
+                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${libraryTab === 'private' && !isTrashView ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
-                            <Grid3X3 size={28} className="text-indigo-600 shrink-0" />
-                            <div>
-                            <h3 className="text-2xl font-black text-slate-800 uppercase leading-none mb-1">{t.donow_title}</h3>
-                            <p className="text-slate-400 font-bold uppercase text-[12px] tracking-widest">För tavlan</p>
-                            </div>
+                            <FileText size={16} /> {t.tab_mine}
+                        </button>
+                        <button 
+                            onClick={() => { setLibraryTab('school'); setIsTrashView(false); }} 
+                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${libraryTab === 'school' && !isTrashView ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            <Building2 size={16} /> {t.tab_school}
+                        </button>
+                        <button 
+                            onClick={() => { setLibraryTab('public'); setIsTrashView(false); }} 
+                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${libraryTab === 'public' && !isTrashView ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            <Globe size={16} /> {t.tab_global}
                         </button>
 
+                        <div className="my-4 h-px bg-slate-100 mx-3"></div>
+                        
                         <button 
-                            onClick={() => { setSetupMode('worksheet'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); }} 
-                            className="group p-5 bg-white border-2 border-slate-100 rounded-[2rem] hover:border-emerald-600 transition-all text-left shadow-xs hover:shadow-md active:scale-[0.98] cursor-pointer flex items-center gap-5"
+                            onClick={() => { setLibraryTab('private'); setIsTrashView(true); }} 
+                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${isTrashView ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
-                            <FileText size={28} className="text-emerald-600 shrink-0" />
-                            <div>
-                            <h3 className="text-2xl font-black text-slate-800 uppercase leading-none mb-1">{t.worksheet_title}</h3>
-                            <p className="text-slate-400 font-bold uppercase text-[12px] tracking-widest">Klassiska pappersblad</p>
-                            </div>
+                            <Trash2 size={16} /> {t.trash}
                         </button>
                     </div>
                 </div>
 
-                {/* Streamlined Archive Library Card Container */}
-                <div className="bg-white rounded-[2rem] shadow-lg border border-emerald-100 overflow-hidden flex flex-col min-h-[450px] w-full">
-                    {/* Tier 1: Primary Scope Tabs */}
-                    <div className="bg-slate-900 px-6 pt-2 flex justify-between items-center">
-                        <div className="flex gap-1">
+                {/* 2. MAIN CONTENT AREA (FILE EXPLORER) */}
+                <div className="flex-1 flex flex-col relative z-10 min-w-0">
+                    {/* Breadcrumbs & Actions Header */}
+                    <div className="px-8 pt-8 pb-4 flex justify-between items-end">
+                        <div className="flex items-center gap-2 text-xl font-black tracking-tight text-slate-800">
+                            {isTrashView ? (
+                                <span>{t.trash}</span>
+                            ) : (
+                                <span>{libraryTab === 'private' ? t.tab_mine : libraryTab === 'school' ? t.tab_school : t.tab_global}</span>
+                            )}
+                        </div>
+
+                        {/* 🟢 INTEGRATED ACTION BUTTONS */}
+                        <div className="flex items-center gap-3">
+                            {/* New Folder Button (Only in Private, Non-Trash view) */}
+                            {libraryTab === 'private' && !isTrashView && (
+                                <button 
+                                    onClick={() => setShowFolderModal(true)}
+                                    className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-[11px] font-black uppercase tracking-widest hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                                >
+                                    <Plus size={14} /> {t.new_folder}
+                                </button>
+                            )}
+
                             <button 
-                                onClick={() => setLibraryTab('private')} 
-                                className={`px-5 py-2 rounded-t-lg text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'private' ? 'bg-[#f9fbf7] text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-white'}`}
+                                onClick={onClose} 
+                                className="px-4 py-2 bg-slate-900 text-white hover:bg-rose-600 rounded-lg shadow-sm transition-all flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest cursor-pointer"
                             >
-                                {t.tab_mine}
-                            </button>
-                            <button 
-                                onClick={() => setLibraryTab('school')} 
-                                className={`px-5 py-2 rounded-t-lg text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'school' ? 'bg-[#f9fbf7] text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                {t.tab_school}
-                            </button>
-                            <button 
-                                onClick={() => setLibraryTab('public')} 
-                                className={`px-5 py-2 rounded-t-lg text-[12px] font-black uppercase tracking-wider transition-all cursor-pointer ${libraryTab === 'public' ? 'bg-[#f9fbf7] text-indigo-600 shadow-xs' : 'text-slate-400 hover:text-white'}`}
-                            >
-                                {t.tab_global}
+                                <X size={14}/> {t.btn_close}
                             </button>
                         </div>
-                        <span className="text-[12px] font-black tracking-widest uppercase text-slate-500 italic mr-2">
-                            {t.library_title}
-                        </span>
                     </div>
 
-                    {/* Tier 2: Action Sub-Toolbar Utility Strip */}
-                    <div className="px-5 py-3 border-b border-emerald-100 flex flex-col lg:flex-row justify-between items-center gap-3 bg-slate-50/70">
-                        {/* Left Side: Type Sub-Filters */}
-                        <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto py-0.5">
-                            <span className="text-[12px] font-black uppercase tracking-wider text-slate-400 mr-1 select-none">
-                                {lang === 'sv' ? "Typ:" : "Type:"}
-                            </span>
+                    {/* Filters Toolbar */}
+                    <div className="px-8 py-3 bg-white/50 border-y border-emerald-100 flex flex-col lg:flex-row justify-between items-center gap-3">
+                        <div className="flex items-center gap-2 w-full lg:w-auto">
                             <div className="flex gap-1 p-0.5 bg-slate-200/60 rounded-lg border border-slate-300/40 shadow-inner">
-                                <button 
-                                    onClick={() => setFilterDocType('all')}
-                                    className={`px-3 py-1 rounded-md text-[12px] font-black uppercase transition-all cursor-pointer ${filterDocType === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
-                                >
-                                    {lang === 'sv' ? "Visa Alla" : "Show Both"}
+                                <button onClick={() => setFilterDocType('all')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all cursor-pointer ${filterDocType === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                                    {t.filter_all}
                                 </button>
-                                <button 
-                                    onClick={() => setFilterDocType('worksheet')}
-                                    className={`px-3 py-1 rounded-md text-[12px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${filterDocType === 'worksheet' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
-                                >
-                                    <FileText size={10} />
-                                    {lang === 'sv' ? "Arbetsblad" : "Worksheets"}
+                                <button onClick={() => setFilterDocType('worksheet')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${filterDocType === 'worksheet' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                                    <FileText size={10} /> {t.worksheet_title}
                                 </button>
-                                <button 
-                                    onClick={() => setFilterDocType('donow')}
-                                    className={`px-3 py-1 rounded-md text-[12px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${filterDocType === 'donow' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
-                                >
-                                    <Grid3X3 size={12} />
-                                    {lang === 'sv' ? "Do Now Grids" : "Grids"}
+                                <button onClick={() => setFilterDocType('donow')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${filterDocType === 'donow' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                                    <Grid3X3 size={12} /> {t.donow_title}
                                 </button>
                             </div>
                         </div>
                         
-                        {/* Right Side: Title Search & Topic Filters */}
-                        <div className="flex flex-col sm:flex-row gap-2 items-center w-full lg:w-auto justify-end">
+                        <div className="flex gap-2 items-center w-full lg:w-auto">
                             <div className="relative w-full sm:w-64 group">
                                 <Search className="absolute left-2.5 top-2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={13} />
-                                <input 
-                                    type="text" 
-                                    placeholder={lang === 'sv' ? "Sök titel..." : "Search title..."} 
-                                    className="w-full pl-8 pr-3 py-1.5 bg-white border border-emerald-100 focus:border-indigo-500 rounded-lg text-s font-bold outline-none transition-all shadow-s" 
-                                    value={searchTerm} 
-                                    onChange={(e) => setSearchTerm(e.target.value)} 
-                                />
+                                <input type="text" placeholder={t.search_placeholder} className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 focus:border-indigo-500 rounded-lg text-sm outline-none transition-all shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                             </div>
-                            
-                            <div className="relative w-full sm:w-auto bg-white border border-emerald-100 rounded-lg px-2.5 py-1 shadow-xs focus-within:border-indigo-500 transition-all flex items-center gap-1">
-                                <Filter size={11} className="text-slate-400" />
-                                <select 
-                                    value={filterTopic} 
-                                    onChange={(e) => setFilterTopic(e.target.value)}
-                                    className="text-[10px] font-black uppercase bg-transparent border-none rounded-md focus:ring-0 outline-none cursor-pointer pr-4 text-slate-600 hover:text-slate-900"
-                                >
+                            <div className="relative w-full sm:w-auto bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm focus-within:border-indigo-500 transition-all flex items-center gap-1">
+                                <Filter size={12} className="text-slate-400" />
+                                <select value={filterTopic} onChange={(e) => setFilterTopic(e.target.value)} className="text-[10px] font-black uppercase bg-transparent border-none rounded-md outline-none cursor-pointer pr-4 text-slate-600">
                                     <option value="all">{lang === 'sv' ? "Alla Områden" : "All Topics"}</option>
-                                    {availableTopics.map(tId => (
-                                        <option key={tId} value={tId}>
-                                            {getTopicLabel(tId).toUpperCase()}
-                                        </option>
-                                    ))}
+                                    {availableTopics.map(tId => <option key={tId} value={tId}>{getTopicLabel(tId).toUpperCase()}</option>)}
                                 </select>
                             </div>
                         </div>
                     </div>
 
-                    {/* Content Table Layout Area */}
-                    <div className="flex-1 overflow-x-auto w-full">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-emerald-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                                    {/* 🟢 CHANGED: Allocated w-2/5 to Title and w-1/4 to Content */}
-                                    <th className="px-6 py-3 w-2/5">Titel</th>
-                                    <th className="px-6 py-3 w-1/4">Innehåll</th>
-                                    <th className="px-6 py-3 text-center w-24">Uppgifter</th>
-                                    <th className="px-6 py-3 text-center w-36">Senast ändrad</th>
-                                    <th className="px-6 py-3 text-center w-48">Åtgärder</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-emerald-50/50">
-                                {filteredLibrary.map(sheet => (
-                                    <tr key={sheet.id} className="hover:bg-indigo-50/30 transition-colors group">
-                                        <td className="px-6 py-3 font-bold text-slate-700 text-m truncate max-w-0" title={sheet.title}>
-                                            {sheet.title}
-                                        </td>
-                                        <td className="px-6 py-3">
-                                            <div className="flex flex-wrap gap-1">
-                                                {sheet.auto_topics?.slice(0, 3).map(tag => (
-                                                    <span key={tag} className="text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{tag}</span>
-                                                ))}
-                                                {sheet.auto_topics?.length > 3 && (
-                                                    <span className="text-[10px] font-black text-slate-300">+{sheet.auto_topics.length - 3}</span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-3 text-center font-bold text-slate-400 text-xs">{sheet.packet?.length || 0}</td>
-                                        <td className="px-6 py-3 text-center font-medium text-slate-400 text-[11px]">{new Date(sheet.updated_at).toLocaleDateString()}</td>
-                                        <td className="px-6 py-3 text-right">
-                                            <div className="flex justify-end gap-1.5 items-center">
-                                                <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors"><Maximize2 size={15}/></button>
-                                                {libraryTab === 'private' ? (
-                                                    <>
-                                                        <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors cursor-pointer">{t.load_btn}</button>
-                                                        
-                                                        <button 
-                                                            onClick={() => { loadSheet(sheet); setShowPresentation(true); }} 
-                                                            className="bg-amber-500 text-white px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-amber-600 shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
-                                                        >
-                                                            <Monitor size={12} /> {t.present}
-                                                        </button>
-
-                                                        <button onClick={(e) => deleteSheet(e, sheet.id)} className="p-1.5 text-slate-800 hover:text-rose-500 opacity-40 group-hover:opacity-100 transition-all cursor-pointer"><Trash2 size={15}/></button>
-                                                    </>
-                                                ) : (
-                                                    <button onClick={() => handleClone(sheet.id)} className="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center gap-1 cursor-pointer"><Copy size={12}/> {t.clone_btn}</button>
-                                                )}
-                                            </div>
-                                        </td>
+                    {/* File Explorer Table */}
+                    <div className="flex-1 overflow-auto custom-scrollbar px-8 py-4">
+                        {isLibraryLoading ? (
+                            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-indigo-500" size={32} /></div>
+                        ) : (
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        <th className="pb-3 w-10 text-center"></th>
+                                        <th className="pb-3 w-2/5">{t.name_label.replace(':', '')}</th>
+                                        <th className="pb-3 w-1/4">{lang === 'sv' ? 'Innehåll' : 'Content'}</th>
+                                        <th className="pb-3 text-center w-24">{t.date_label.replace(':', '')}</th>
+                                        <th className="pb-3 text-right w-48 pr-4">{lang === 'sv' ? 'Åtgärder' : 'Actions'}</th>
                                     </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {/* 1. RENDER FOLDERS AND THEIR EXPANDED CONTENTS */}
+                                    {libraryTab === 'private' && !isTrashView && folders.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase())).map(folder => {
+                                        const isExpanded = expandedFolders.includes(folder.id);
+                                        const folderFiles = filteredLibrary.filter(sheet => sheet.folder_id === folder.id);
+
+                                        return (
+                                            <React.Fragment key={folder.id}>
+                                                {/* Folder Row */}
+                                                <tr onClick={() => toggleFolder(folder.id)} className="hover:bg-slate-50 transition-colors group cursor-pointer bg-slate-50/30">
+                                                    <td className="py-3 text-center">
+                                                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center mx-auto text-indigo-500 group-hover:bg-indigo-100 transition-colors">
+                                                            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                                        </div>
+                                                    </td>
+                                                    
+                                                    {/* 🟢 FIXED: Wrapped in a div to prevent flex/max-w-0 collapse */}
+                                                    <td className="py-3 font-black text-slate-800 text-sm max-w-0">
+                                                        <div className="flex items-center gap-2 truncate" title={folder.name}>
+                                                            <Layers size={14} className="text-indigo-400 shrink-0" /> 
+                                                            <span className="truncate">{folder.name}</span>
+                                                        </div>
+                                                    </td>
+
+                                                    <td className="py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.folder} ({folderFiles.length})</td>
+                                                    <td className="py-3 text-center text-slate-400 text-xs">{new Date(folder.created_at).toLocaleDateString()}</td>
+                                                    <td className="py-3 text-right pr-4">
+                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                                                    </td>
+                                                </tr>
+
+                                                {/* Expanded Files inside this Folder */}
+                                                {isExpanded && folderFiles.map(sheet => (
+                                                    <tr key={sheet.id} className="hover:bg-slate-50 transition-colors group bg-white">
+                                                        <td className="py-3 text-center relative">
+                                                            {/* Visual indent tree line */}
+                                                            <div className="w-px h-full bg-slate-200 ml-6 absolute -mt-3"></div>
+                                                            <div className="w-4 h-px bg-slate-200 ml-6 relative z-10 top-1/2"></div>
+                                                        </td>
+                                                        
+                                                        {/* 🟢 FIXED: Wrapped flex content in a div inside the max-w-0 cell */}
+                                                        <td className="py-3 font-bold text-slate-700 text-sm pl-4 max-w-0">
+                                                            <div className="flex items-center gap-2" title={sheet.title}>
+                                                                <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${sheet.type === 'donow' ? 'bg-indigo-50 text-indigo-500' : 'bg-emerald-50 text-emerald-500'}`}>
+                                                                    {sheet.type === 'donow' ? <Grid3X3 size={12} /> : <FileText size={12} />}
+                                                                </div>
+                                                                <span className="truncate">{sheet.title}</span>
+                                                            </div>
+                                                        </td>
+
+                                                        <td className="py-3">
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {sheet.auto_topics?.slice(0, 2).map(tag => (
+                                                                    <span key={tag} className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{tag}</span>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 text-center text-slate-400 text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
+                                                        <td className="py-3 text-right pr-4">
+                                                            <div className="flex justify-end gap-1 items-center opacity-40 group-hover:opacity-100 transition-opacity">
+                                                                <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-slate-100"><Maximize2 size={14}/></button>
+                                                                <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-indigo-600 ml-2">{t.load_btn}</button>
+                                                                <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-slate-500 hover:text-indigo-600 rounded hover:bg-slate-100 ml-1"><PanelLeftClose size={14}/></button>
+                                                                <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-slate-500 hover:text-rose-500 rounded hover:bg-rose-50 ml-1"><Trash2 size={14}/></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </React.Fragment>
+                                        );
+                                    })}
+
+                                    {/* 2. RENDER ROOT FILES */}
+                                    {filteredLibrary.filter(sheet => isTrashView || libraryTab !== 'private' || sheet.folder_id === null).map(sheet => (
+                                        <tr key={sheet.id} className="hover:bg-slate-50 transition-colors group">
+                                            <td className="py-3 text-center">
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto ${sheet.type === 'donow' ? 'bg-indigo-50 text-indigo-500' : 'bg-emerald-50 text-emerald-500'}`}>
+                                                    {sheet.type === 'donow' ? <Grid3X3 size={16} /> : <FileText size={16} />}
+                                                </div>
+                                            </td>
+
+                                            <td className="py-3 font-bold text-slate-700 text-sm max-w-0">
+                                                <div className="truncate" title={sheet.title}>
+                                                    {sheet.title}
+                                                </div>
+                                            </td>
+
+                                            <td className="py-3">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {sheet.auto_topics?.slice(0, 2).map(tag => (
+                                                        <span key={tag} className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{tag}</span>
+                                                    ))}
+                                                    {sheet.auto_topics?.length > 2 && <span className="text-[9px] font-black text-slate-400">+{sheet.auto_topics.length - 2}</span>}
+                                                </div>
+                                            </td>
+                                            <td className="py-3 text-center text-slate-400 text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
+                                            <td className="py-3 text-right pr-4">
+                                                <div className="flex justify-end gap-1 items-center opacity-40 group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-slate-100"><Maximize2 size={14}/></button>
+                                                    
+                                                    {isTrashView ? (
+                                                        <>
+                                                            <button onClick={(e) => handleRestore(e, sheet.id)} className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-emerald-200 ml-2">{t.restore}</button>
+                                                            <button onClick={(e) => handleHardDelete(e, sheet.id)} className="bg-rose-100 text-rose-700 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-rose-200 ml-1">{t.hard_delete}</button>
+                                                        </>
+                                                    ) : libraryTab === 'private' ? (
+                                                        <>
+                                                            <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-indigo-600 ml-2">{t.load_btn}</button>
+                                                            <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-slate-500 hover:text-indigo-600 rounded hover:bg-slate-100 ml-1"><PanelLeftClose size={14}/></button>
+                                                            <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-slate-500 hover:text-rose-500 rounded hover:bg-rose-50 ml-1"><Trash2 size={14}/></button>
+                                                        </>
+                                                    ) : (
+                                                        <button onClick={() => handleClone(sheet.id)} className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-indigo-200 ml-2 flex items-center gap-1"><Copy size={10}/> {t.clone_btn}</button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    
+                                    {/* Empty State */}
+                                    {filteredLibrary.length === 0 && folders.length === 0 && !isLibraryLoading && (
+                                        <tr>
+                                            <td colSpan={5} className="text-center py-12 text-slate-400 text-sm font-medium italic">
+                                                {isTrashView ? t.trash_empty : t.no_files}
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+
+                <BackgroundWave />
+
+                {/* MODALS */}
+                
+                {/* 1. New Folder Modal */}
+                {showFolderModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
+                            <h3 className="text-lg font-black text-slate-800 mb-4">{t.create_folder_title}</h3>
+                            <input 
+                                autoFocus
+                                type="text" 
+                                value={newFolderName} 
+                                onChange={(e) => setNewFolderName(e.target.value)} 
+                                placeholder={t.folder_name_placeholder}
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none mb-6 font-bold"
+                            />
+                            <div className="flex justify-end gap-2">
+                                <button onClick={() => setShowFolderModal(false)} className="px-4 py-2 text-slate-500 font-bold hover:bg-slate-100 rounded-lg transition-colors">{t.cancel}</button>
+                                <button onClick={handleCreateFolder} disabled={!newFolderName.trim()} className="px-4 py-2 bg-indigo-600 text-white font-black uppercase text-xs tracking-wider rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">{t.create}</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 2. Move Sheet Modal */}
+                {showMoveModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-black text-slate-800">{t.move_file}</h3>
+                                <button onClick={() => setShowMoveModal(null)} className="text-slate-400 hover:text-slate-800"><X size={20}/></button>
+                            </div>
+                            <p className="text-sm font-bold text-slate-500 mb-4 truncate">"{showMoveModal.title}"</p>
+                            
+                            <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar mb-6 border border-slate-100 rounded-xl p-2 bg-slate-50">
+                                <button 
+                                    onClick={() => handleMoveSheet(showMoveModal.id, null)}
+                                    className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-3 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 text-slate-600"
+                                >
+                                    <Globe size={16} className="text-slate-400" /> {t.root_dir}
+                                </button>
+                                {folders.map(folder => (
+                                    <button 
+                                        key={folder.id}
+                                        onClick={() => handleMoveSheet(showMoveModal.id, folder.id)}
+                                        className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-3 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 text-slate-600"
+                                    >
+                                        <Layers size={16} className="text-indigo-500" /> {folder.name}
+                                    </button>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <BackgroundWave /> 
-            {peekSheet && (
-                <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-xs">
-                    <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-                        <div className="p-6 border-b flex justify-between items-center bg-slate-900 text-white"><div><h3 className="text-lg font-black uppercase italic tracking-tighter leading-none">{peekSheet.title}</h3><p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-widest">{peekSheet.packet?.length || 0} Uppgifter</p></div><button onClick={() => setPeekSheet(null)} className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer"><X size={20}/></button></div>
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                            {peekSheet.packet.map((q, i) => (
-                                <div key={i} className="border-b border-slate-100 pb-6 last:border-0">
-                                    <div className="flex justify-center mb-3 scale-75 origin-top">
-                                        <VisualRenderer 
-                                            data={q.resolvedData?.renderData} 
-                                            isWordProblem={q.selectedStoryIndex !== null && q.selectedStoryIndex !== undefined} 
-                                        />
-                                    </div>
-                                    <div className="text-xs font-bold text-slate-700 leading-relaxed"><MathDisplay content={q.resolvedData?.renderData?.description} /></div>{q.resolvedData?.renderData?.latex && <div className="mt-3 p-3 bg-slate-50 rounded-xl text-center font-serif text-sm"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>}{renderOptions(q.resolvedData?.renderData?.options)}</div>
-                            ))}
+                            </div>
                         </div>
+                    </div>
+                )}
+
+                {/* 3. Peek Sheet Modal */}
+                {peekSheet && (
+                    <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-xs">
+                        <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+                            <div className="p-6 border-b flex justify-between items-center bg-slate-900 text-white"><div><h3 className="text-lg font-black uppercase italic tracking-tighter leading-none">{peekSheet.title}</h3><p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-widest">{peekSheet.packet?.length || 0} Uppgifter</p></div><button onClick={() => setPeekSheet(null)} className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer"><X size={20}/></button></div>
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                                {peekSheet.packet.map((q, i) => (
+                                    <div key={i} className="border-b border-slate-100 pb-6 last:border-0">
+                                        <div className="flex justify-center mb-3 scale-75 origin-top">
+                                            <VisualRenderer data={q.resolvedData?.renderData} isWordProblem={q.selectedStoryIndex !== null && q.selectedStoryIndex !== undefined} />
+                                        </div>
+                                        <div className="text-xs font-bold text-slate-700 leading-relaxed"><MathDisplay content={q.resolvedData?.renderData?.description} /></div>{q.resolvedData?.renderData?.latex && <div className="mt-3 p-3 bg-slate-50 rounded-xl text-center font-serif text-sm"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>}{renderOptions(q.resolvedData?.renderData?.options)}</div>
+                                ))}
+                            </div>
                             <div className="p-6 border-t bg-slate-50">
-                            {libraryTab === 'private' ? (
-                                <div className="flex gap-3">
-                                    <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); }} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-indigo-600 transition-all cursor-pointer">
-                                        {lang === 'sv' ? "Redigera" : "Edit"}
-                                    </button>
-                                    <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); setShowPresentation(true); }} className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-amber-600 transition-all flex items-center justify-center gap-2 cursor-pointer">
-                                        <Monitor size={16} /> {t.present}
-                                    </button>
-                                </div>
-                            ) : (
-                                <button onClick={() => { handleClone(peekSheet.id); setPeekSheet(null); }} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 cursor-pointer"><Copy size={16}/> {lang === 'sv' ? "Kopiera till mitt arkiv" : "Clone to my library"}</button>
-                            )}
+                                {isTrashView ? (
+                                    <div className="flex gap-3">
+                                        <button onClick={(e) => { handleRestore(e, peekSheet.id); setPeekSheet(null); }} className="flex-1 py-3 bg-emerald-100 text-emerald-700 rounded-xl font-black text-xs uppercase tracking-widest shadow-sm hover:bg-emerald-200 transition-all cursor-pointer">{t.restore}</button>
+                                        <button onClick={(e) => { handleHardDelete(e, peekSheet.id); setPeekSheet(null); }} className="flex-1 py-3 bg-rose-100 text-rose-700 rounded-xl font-black text-xs uppercase tracking-widest shadow-sm hover:bg-rose-200 transition-all cursor-pointer">{t.hard_delete}</button>
+                                    </div>
+                                ) : libraryTab === 'private' ? (
+                                    <div className="flex gap-3">
+                                        <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); }} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-indigo-600 transition-all cursor-pointer">
+                                            {lang === 'sv' ? "Redigera" : "Edit"}
+                                        </button>
+                                        <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); setShowPresentation(true); }} className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-amber-600 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                                            <Monitor size={16} /> {t.present}
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button onClick={() => { handleClone(peekSheet.id); setPeekSheet(null); }} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 cursor-pointer"><Copy size={16}/> {t.clone_btn}</button>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
             </div>
         );
     }
@@ -857,7 +1118,6 @@ export default function QuestionStudio({
                 <div className="flex items-center gap-0.5 bg-white/10 p-0.5 rounded-lg border border-white/10">
                     <button onClick={() => setChosenVisibility('private')} className={`p-1 rounded transition-all ${chosenVisibility === 'private' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Lock size={10}/></button>
                     <button onClick={() => setChosenVisibility('school')} className={`p-1 rounded transition-all ${chosenVisibility === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Building2 size={10}/></button>
-                    <button onClick={() => setChosenVisibility('public')} className={`p-1 rounded transition-all ${chosenVisibility === 'public' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Globe size={10}/></button>
                 </div>
 
                 <button 

@@ -95,6 +95,18 @@ export class ExponentsGen {
         if (options?.hideConcept) {
             filtered = filtered.filter(v => v.type !== 'concept');
         }
+
+        // If Word Problems are ON, ban the unsafe concept/theory variations
+        const isWP = options?.wordProblem === 'true' || options?.wordProblem === true;
+        if (isWP) {
+            const unsafeKeys = [
+                'zero_rule', 
+                'power_of_one', 
+                'foundations_spot_the_lie'
+            ];
+            filtered = filtered.filter(v => !unsafeKeys.includes(v.key));
+        }
+
         if (filtered.length === 0) return pool[0].key;
         return MathUtils.randomChoice(filtered.map(v => v.key));
     }
@@ -284,7 +296,12 @@ export class ExponentsGen {
 
         const ans = Math.pow(10, p);
         return {
-            renderData: { description: lang === 'sv' ? "Skriv tiopotensen som ett heltal." : "Write the power of ten as an integer.", latex: `10^{${p}}`, answerType: 'numeric' },
+            renderData: { 
+                description: lang === 'sv' ? "Skriv tiopotensen som ett heltal." : "Write the power of ten as an integer.", 
+                latex: `10^{${p}}`, 
+                interceptorToken: `${p}`, 
+                answerType: 'numeric' 
+            },
             token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
             clues: [
                 { text: lang === 'sv' ? `Steg 1: Exponenten ${p} talar om hur många gånger vi ska multiplicera 10 med sig självt.` : `Step 1: The exponent ${p} tells us how many times to multiply 10 by itself.` },
