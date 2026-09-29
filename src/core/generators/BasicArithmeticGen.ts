@@ -571,12 +571,12 @@ export class BasicArithmeticGen {
             };
         }
 
-        const correctStr = `${aStr} \\cdot ${b} = ${ansStr}`;
+        const correctStr = `$${aStr} \\cdot ${b} = ${ansStr}$`;
         const trapUp = this.formatNum(Math.round(ans * 10 * 100) / 100, lang);
         const trapDown = this.formatNum(Math.round(ans / 10 * 1000) / 1000, lang);
 
         return {
-            renderData: { description: lang === 'sv' ? "Vilken uträkning har placerat kommatecknet rätt?" : "Which calculation placed the decimal point correctly?", answerType: 'multiple_choice', options: MathUtils.shuffle([correctStr, `${aStr} \\cdot ${b} = ${trapUp}`, `${aStr} \\cdot ${b} = ${trapDown}`]) },
+            renderData: { description: lang === 'sv' ? "Vilken uträkning har placerat kommatecknet rätt?" : "Which calculation placed the decimal point correctly?", answerType: 'multiple_choice', options: MathUtils.shuffle([correctStr, `$${aStr} \\cdot ${b} = ${trapUp}$`, `$${aStr} \\cdot ${b} = ${trapDown}$`]) },
             token: this.toBase64(correctStr), variationKey: v, type: 'concept',
             clues: [
                 { 
