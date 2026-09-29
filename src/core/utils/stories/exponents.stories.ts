@@ -3,7 +3,7 @@ import { StoryScenario } from '../WordProblemInterceptor.js';
 
 export const EXPONENTS_STORIES: Record<string, StoryScenario[]> = {
     // =========================================================================
-    // ⚡ 1. FOUNDATIONS CALC (15 Stories) - Parameters: {base}, {exp}, {ans}
+    //   1. FOUNDATIONS CALC (15 Stories) - Parameters: {base}, {exp}, {ans}
     // =========================================================================
     exp_foundations_calc: [
         { sv: "En bild du delade sprider sig. Varje timme blir visningarna {base} gånger fler. Hur många visningar har den efter {exp} timmar?", en: "A picture you shared is spreading. Every hour, the views increase {base} times. How many views does it have after {exp} hours?" },
@@ -24,7 +24,7 @@ export const EXPONENTS_STORIES: Record<string, StoryScenario[]> = {
     ],
 
     // =========================================================================
-    // ⚡ 2. EXP TEN POSITIVE (15 Stories) - Parameters: {exp}, {ans}
+    //   2. EXP TEN POSITIVE (15 Stories) - Parameters: {exp}, {ans}
     // =========================================================================
     exp_ten_positive: [
         { sv: "En viral video har nått 10^{exp} visningar. Skriv detta antal som ett vanligt heltal.", en: "A viral video has reached 10^{exp} views. Write this number as a regular integer." },
@@ -45,7 +45,7 @@ export const EXPONENTS_STORIES: Record<string, StoryScenario[]> = {
     ],
 
     // =========================================================================
-    // 🎯 3. EXP TEN NEGATIVE (15 Stories) - Parameters: {exp}, {ansStr}
+    //   3. EXP TEN NEGATIVE (15 Stories) - Parameters: {exp}, {ansStr}
     // =========================================================================
     exp_ten_negative: [
         { sv: "Svarstiden för en gamingskärm är 10^{-{exp}} sekunder. Skriv denna korta tid som ett vanligt decimaltal.", en: "The response time for a gaming screen is 10^{-{exp}} seconds. Write this short time as a regular decimal number." },
@@ -66,7 +66,7 @@ export const EXPONENTS_STORIES: Record<string, StoryScenario[]> = {
     ],
 
     // =========================================================================
-    // 🎯 4. EXP TEN INVERSE (15 Stories) - Parameters: {num}, {zeros}
+    //   4. EXP TEN INVERSE (15 Stories) - Parameters: {num}, {zeros}
     // =========================================================================
     exp_ten_inverse: [
         { sv: "En video på Youtube nådde precis {num} visningar. Skriv detta stora antal som en kort tiopotens.", en: "A video on YouTube just reached {num} views. Write this large number as a short power of ten." },
@@ -87,7 +87,7 @@ export const EXPONENTS_STORIES: Record<string, StoryScenario[]> = {
     ],
 
     // =========================================================================
-    // 🎯 5. EXP SCIENTIFIC TO FORM (15 Stories) - Parameters: {number}, {mantissa}, {exponent}
+    //   5. EXP SCIENTIFIC TO FORM (15 Stories) - Parameters: {number}, {mantissa}, {exponent}
     // =========================================================================
     exp_scientific_to_form: [
         { sv: "Antalet aktiva spelare i ett globalt spel är {number}. Skriv detta stora antal i grundpotensform.", en: "The number of active players in a global game is {number}. Write this large number in scientific notation." },
@@ -108,7 +108,7 @@ export const EXPONENTS_STORIES: Record<string, StoryScenario[]> = {
     ],
 
     // =========================================================================
-    // 🎯 6. EXP SCIENTIFIC MISSING (15 Stories) - Parameters: {number}, {exponent}, {mantissa}
+    //   6. EXP SCIENTIFIC MISSING (15 Stories) - Parameters: {number}, {exponent}, {mantissa}
     // =========================================================================
     exp_scientific_missing: [
         { sv: "Ett onlinespel har {number} användare registrerade. Detta skrivs som a · 10^{exponent}. Vilket värde har 'a'?", en: "An online game has {number} users registered. This is written as a · 10^{exponent}. What value does 'a' have?" },
@@ -129,7 +129,7 @@ export const EXPONENTS_STORIES: Record<string, StoryScenario[]> = {
     ],
 
     // =========================================================================
-    // 🎯 7. EXP ROOT CALC (15 Stories) - Parameters: {square}, {base}
+    //   7. EXP ROOT CALC (15 Stories) - Parameters: {square}, {base}
     // =========================================================================
     exp_root_calc: [
         { sv: "En fyrkantig widget på din mobilskärm har arean {square} pixlar. Hur många pixlar lång är widgetens kant?", en: "A square widget on your phone screen has an area of {square} pixels. How many pixels long is the widget's edge?" },
@@ -150,7 +150,7 @@ export const EXPONENTS_STORIES: Record<string, StoryScenario[]> = {
     ],
 
     // =========================================================================
-    // 🎯 8. EXP ROOT INVERSE (15 Stories) - Parameters: {square}, {base}
+    //   8. EXP ROOT INVERSE (15 Stories) - Parameters: {square}, {base}
     // =========================================================================
     exp_root_inverse: [
         { sv: "Ekvationen x² = {square} anger arean för en kvadratisk skärm. Lös ekvationen för att hitta skärmens sidolängd x.", en: "The equation x² = {square} represents the area of a square screen. Solve the equation to find the side length x of the screen." },

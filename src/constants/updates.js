@@ -2,6 +2,36 @@
 
 export const APP_UPDATES = [
   {
+        version: "2.4.0",
+        date: "2026-09-29",
+        title: {
+            sv: "Molnlagring, Mappstruktur & Papperskorg",
+            en: "Cloud Storage, Folders & Recycle Bin"
+        },
+        description: {
+            sv: "En omfattande uppdatering av Question Studio som introducerar ett filhanteringssystem i molnstil med expanderbara mappträd, mjuk radering med papperskorg samt ett optimerat sidofältsgränssnitt.",
+            en: "A major update to Question Studio introducing a cloud-style file management system with expandable folder trees, soft-deletes via a recycle bin, and an optimized sidebar navigation layout."
+        },
+        highlights: [
+            {
+                sv: "Mapporganisering: Skapa mappar, organisera arbetsblad och Do Now-grids direkt i ett överskådligt träd.",
+                en: "Folder Organization: Create folders and organize worksheets and Do Now grids directly within an intuitive tree view."
+            },
+            {
+                sv: "Papperskorg & Återställning: Raderade filer hamnar nu i en papperskorg där de kan återställas eller raderas permanent.",
+                en: "Recycle Bin & Restoration: Deleted files now move to a dedicated trash view where they can be restored or purged permanently."
+            },
+            {
+                sv: "Nytt layout-gränssnitt: Biblioteket har flyttats till en vänstermeny för att maximera skärmutrymmet för filhantering.",
+                en: "New Layout Interface: The library has moved to a left sidebar to maximize screen real estate for file management."
+            },
+            {
+                sv: "Fullt stöd för flerspråkighet (Svenska och Engelska) i samtliga nya vyer och modaler.",
+                en: "Full multi-language support (Swedish and English) across all new views and modals."
+            }
+        ]
+    },
+  {
     id: 'v018',
     date: '2026-09-17',
     version: '0.1.8',
