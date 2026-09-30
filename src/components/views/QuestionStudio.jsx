@@ -36,17 +36,13 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
 };
 
-// Word problem / Story saver
 const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
-    // Safely look inside renderData, or fallback to the root object
     const rd = item.resolvedData?.renderData || item.resolvedData;
     
-    // Fallback: If no story index is selected, or if it isn't an intercepted problem, use server description
     if (item.selectedStoryIndex === undefined || item.selectedStoryIndex === null || !rd?.availableStories) {
         const desc = rd?.description;
         const finalDesc = typeof desc === 'object' && desc !== null ? desc[lang] : desc;
         
-        // 🟢 FIXED: Only append the LaTeX math if includeLatex is explicitly true!
         if (includeLatex && rd?.latex) {
             return finalDesc ? `${finalDesc} $${rd.latex}$` : `$${rd.latex}$`;
         }
@@ -54,16 +50,12 @@ const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
         return finalDesc || item.name;
     }
 
-    // 1. Safe boundary lookup for the locked template
     const storyPackage = rd.availableStories[item.selectedStoryIndex];
     if (!storyPackage) return rd?.description || item.name;
     
     let template = storyPackage[lang === 'en' ? 'en' : 'sv'];
-
-    // 2. Prioritize pre-extracted parameters passed down from the interceptor data payload
     let params = rd.extractedParams;
 
-    // 3. Backward compatibility fallback: run regex if extractedParams is missing from history streams
     if (!params) {
         const category = Object.values(SKILL_BUCKETS).find(cat => cat.topics[item.topicId]);
         const variation = category?.topics[item.topicId]?.variations?.find(v => v.key === item.variationKey);
@@ -77,7 +69,6 @@ const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
         }
     }
 
-    // 4. Perform placeholder variable substitution
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
             const cleanValue = String(value).replace(/[()]/g, '');
@@ -85,7 +76,6 @@ const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
         });
     }
 
-    // 5. Append the exact uniform instructional directive suffix corresponding to the current variation key context
     if (item.variationKey === 'apply_factor_inc' || item.variationKey === 'apply_factor_dec') {
         template += lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.";
     } else if (item.variationKey === 'find_original_inc' || item.variationKey === 'find_original_dec') {
@@ -151,8 +141,8 @@ export default function QuestionStudio({
       mode_header: "Som rubrik", mode_inline: "Inuti kortet", mode_hidden: "Dölj text",
       hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Text",
       present: "Presentera",
-      // 🟢 NEW CLOUD DRIVE STRINGS
       new_donow: "Nytt Do Now", new_worksheet: "Nytt Arbetsblad",
+      new_board: "Ny Presentation", board_title: "Presentation", // 🟢 NEW BOARD STRINGS
       trash: "Papperskorg", new_folder: "Ny Mapp", folder: "Mapp",
       filter_all: "Alla", create_folder_title: "Skapa ny mapp",
       folder_name_placeholder: "Mappnamn...", cancel: "Avbryt", create: "Skapa",
@@ -179,8 +169,8 @@ export default function QuestionStudio({
       mode_header: "As Header", mode_inline: "Inside Card", mode_hidden: "Hide Text",
       hide_extra: "Hide Concepts & MCQ", type_calc: "Calculate", type_concept: "Concept", type_logic: "Logic", type_visual: "Image", type_text: "Text",
       present: "Present",
-      // 🟢 NEW CLOUD DRIVE STRINGS
       new_donow: "New Do Now", new_worksheet: "New Worksheet",
+      new_board: "New Board", board_title: "Board", // 🟢 NEW BOARD STRINGS
       trash: "Trash", new_folder: "New Folder", folder: "Folder",
       filter_all: "All", create_folder_title: "Create new folder",
       folder_name_placeholder: "Folder name...", cancel: "Cancel", create: "Create",
@@ -195,6 +185,9 @@ export default function QuestionStudio({
   const [isPane4Collapsed, setIsPane4Collapsed] = useState(false);
   const [setupMode, setSetupMode] = useState(studioMode); 
   const [activeSheetId, setActiveSheetId] = useState(null); 
+  // 🟢 NEW: Store the active board sheet object if opening a presentation
+  const [activeBoardSheet, setActiveBoardSheet] = useState(null);
+
   const [savedSheets, setSavedSheets] = useState([]);
   const [libraryTab, setLibraryTab] = useState('private'); 
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
@@ -224,21 +217,17 @@ export default function QuestionStudio({
   const [filterDocType, setFilterDocType] = useState('all');
   const [showPresentation, setShowPresentation] = useState(false); 
 
-  // --- FOLDER & RECYCLE BIN STATE ---
   const [folders, setFolders] = useState([]);
   const [expandedFolders, setExpandedFolders] = useState([]);
 
   const toggleFolder = (folderId) => {
-      setExpandedFolders(prev => 
-          prev.includes(folderId) ? prev.filter(id => id !== folderId) : [...prev, folderId]
-      );
+      setExpandedFolders(prev => prev.includes(folderId) ? prev.filter(id => id !== folderId) : [...prev, folderId]);
   };
   const [isTrashView, setIsTrashView] = useState(false);
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
-  const [showMoveModal, setShowMoveModal] = useState(null); // Holds the sheet object being moved
+  const [showMoveModal, setShowMoveModal] = useState(null); 
 
-  // --- UNIFIED BI-DIRECTIONAL DRAG AND DROP ---
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
 
   const handleDragStartUnified = (e, index) => {
@@ -254,14 +243,11 @@ export default function QuestionStudio({
     e.preventDefault();
     const sourceIndex = draggedIdx !== null ? draggedIdx : draggedItemIndex;
     if (sourceIndex === null || sourceIndex === targetIndex) return;
-
     const updatedPacket = [...packet];
     const [movedItem] = updatedPacket.splice(sourceIndex, 1);
     updatedPacket.splice(targetIndex, 0, movedItem);
-
     if (draggedIdx !== null) setDraggedIdx(targetIndex);
     if (draggedItemIndex !== null) setDraggedItemIndex(targetIndex);
-    
     setPacket(updatedPacket);
     setIsSaved(false);
   };
@@ -271,7 +257,6 @@ export default function QuestionStudio({
     setDraggedItemIndex(null);
   };
 
-  // --- EFFECTS ---
   useEffect(() => {
     const stillVisible = visibleVariations.some(v => v.key === activePreviewKey);
     if (!stillVisible && visibleVariations.length > 0) {
@@ -286,7 +271,6 @@ export default function QuestionStudio({
   useEffect(() => { setStudioMode(setupMode); }, [setupMode]);
   useEffect(() => { fetchLibrary(); }, [setupMode, libraryTab, isTrashView]);
 
-  // Helper to find the translated name for a topic ID
   const getTopicLabel = (topicId) => {
       if (!topicId || topicId === 'all') return lang === 'sv' ? "Alla ämnen" : "All topics";
       for (const catKey in SKILL_BUCKETS) {
@@ -318,8 +302,7 @@ export default function QuestionStudio({
 
   const getVariationCategory = (key) => {
     const k = key.toLowerCase();
-    const isVisual = ['graph', 'plot', 'geom', 'volume', 'shape', 'area', 'perimeter', 'angle', 'pattern', 'table', 'marbles', 'spinner', 'tree'].some(kw => k.includes(kw));
-    if (isVisual) return 'visual';
+    if (['graph', 'plot', 'geom', 'volume', 'shape', 'area', 'perimeter', 'angle', 'pattern', 'table', 'marbles', 'spinner', 'tree'].some(kw => k.includes(kw))) return 'visual';
     if (['calc', 'std', 'solve'].some(kw => k.includes(kw))) return 'calculate';
     if (['concept', 'theory', 'foundations', 'id', 'inverse'].some(kw => k.includes(kw))) return 'conceptual';
     if (['lie', 'spot', 'error', 'check'].some(kw => k.includes(kw))) return 'logic';
@@ -346,37 +329,25 @@ export default function QuestionStudio({
   };
 
   // --- DATABASE & API LOGIC ---
-
   const fetchLibrary = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     
     setIsLibraryLoading(true);
     try {
-        // 1. Fetch Folders (Only needed in the Private tab and not in the trash)
         if (libraryTab === 'private' && !isTrashView) {
-            const { data: folderData, error: folderError } = await supabase
-                .from('folders')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('name');
+            const { data: folderData, error: folderError } = await supabase.from('folders').select('*').eq('user_id', user.id).order('name');
             if (!folderError) setFolders(folderData || []);
         } else {
             setFolders([]);
         }
 
-        // 2. Fetch Worksheets & Do Nows
         let query = supabase.from('saved_sheets').select('*').order('updated_at', { ascending: false });
         
         if (libraryTab === 'private') {
             query = query.eq('user_id', user.id);
-            if (isTrashView) {
-                // TRASH VIEW: Only show soft-deleted items
-                query = query.not('deleted_at', 'is', null);
-            } else {
-                
-                query = query.is('deleted_at', null);
-            }
+            if (isTrashView) query = query.not('deleted_at', 'is', null);
+            else query = query.is('deleted_at', null);
         } else if (libraryTab === 'school') {
             query = query.eq('visibility', 'school').eq('school_name', profile?.school_name).is('deleted_at', null);
         } else {
@@ -386,11 +357,7 @@ export default function QuestionStudio({
         const { data, error } = await query;
         if (error) throw error;
         setSavedSheets(data || []);
-    } catch (err) { 
-        console.error("Error loading library assets:", err); 
-    } finally { 
-        setIsLibraryLoading(false); 
-    }
+    } catch (err) { console.error(err); } finally { setIsLibraryLoading(false); }
   };
 
   const handleSave = async () => {
@@ -403,17 +370,10 @@ export default function QuestionStudio({
           const uniqueLevels = [...new Set(packet.map(q => q.resolvedData?.level || 1))];
           
           const sheetData = { 
-              user_id: user.id,
-              title: sheetTitle, 
-              type: setupMode, 
-              folder_id: null, // 🟢 Saves to the home folder first
-              packet: packet, 
+              user_id: user.id, title: sheetTitle, type: setupMode, folder_id: null, packet: packet, 
               config: { globalLatexSize, workspaceHeight, workspaceStyle, layoutStyle, lang, includeAnswerKey, answerKeyStyle }, 
-              visibility: chosenVisibility,
-              school_name: profile?.school_name || null, 
-              auto_topics: uniqueTopics, 
-              auto_levels: uniqueLevels,
-              updated_at: new Date().toISOString()
+              visibility: chosenVisibility, school_name: profile?.school_name || null, 
+              auto_topics: uniqueTopics, auto_levels: uniqueLevels, updated_at: new Date().toISOString()
           };
 
           const { data, error } = activeSheetId 
@@ -421,80 +381,50 @@ export default function QuestionStudio({
               : await supabase.from('saved_sheets').insert([sheetData]).select().single();
 
           if (error) throw error;
-
-          setActiveSheetId(data.id); 
-          setIsSaved(true); 
-          alert(t.save_success); 
-          fetchLibrary(); 
-      } catch (err) { 
-          alert("Fel vid sparande: " + err.message); 
-      }
+          setActiveSheetId(data.id); setIsSaved(true); alert(t.save_success); fetchLibrary(); 
+      } catch (err) { alert("Fel vid sparande: " + err.message); }
   };
 
-  // --- FOLDER ACTIONS ---
   const handleCreateFolder = async () => {
       if (!newFolderName.trim()) return;
       try {
           const { data: { user } } = await supabase.auth.getUser();
           const { error } = await supabase.from('folders').insert([{ user_id: user.id, name: newFolderName }]);
           if (error) throw error;
-          setNewFolderName('');
-          setShowFolderModal(false);
-          fetchLibrary();
-      } catch (err) {
-          alert("Kunde inte skapa mapp: " + err.message);
-      }
+          setNewFolderName(''); setShowFolderModal(false); fetchLibrary();
+      } catch (err) { alert("Kunde inte skapa mapp: " + err.message); }
   };
 
   const handleMoveSheet = async (sheetId, targetFolderId) => {
       try {
           const { error } = await supabase.from('saved_sheets').update({ folder_id: targetFolderId }).eq('id', sheetId);
           if (error) throw error;
-          setShowMoveModal(null);
-          fetchLibrary();
-      } catch (err) {
-          alert("Kunde inte flytta filen: " + err.message);
-      }
+          setShowMoveModal(null); fetchLibrary();
+      } catch (err) { alert("Kunde inte flytta filen: " + err.message); }
   };
 
   const handleDeleteFolder = async (folderId) => {
       try {
           const { error } = await supabase.from('folders').delete().eq('id', folderId);
-          if (error) {
-              // Supabase ON DELETE RESTRICT will trigger an error if it's not empty
-              alert(lang === 'sv' ? "Mappen måste vara tom innan den kan raderas." : "Folder must be empty before deleting.");
-          } else {
-              fetchLibrary();
-          }
-      } catch (err) {
-          console.error(err);
-      }
+          if (error) alert(lang === 'sv' ? "Mappen måste vara tom innan den kan raderas." : "Folder must be empty before deleting.");
+          else fetchLibrary();
+      } catch (err) { console.error(err); }
   };
 
-  // --- RECYCLE BIN ACTIONS ---
   const handleSoftDelete = async (e, id) => {
       e.stopPropagation();
-      try {
-          // Moves item to recycle bin
-          await supabase.from('saved_sheets').update({ deleted_at: new Date().toISOString() }).eq('id', id);
-          fetchLibrary();
-      } catch (err) { console.error(err); }
+      try { await supabase.from('saved_sheets').update({ deleted_at: new Date().toISOString() }).eq('id', id); fetchLibrary(); } catch (err) { console.error(err); }
   };
 
   const handleRestore = async (e, id) => {
       e.stopPropagation();
-      try {
-          // Restores item from recycle bin
-          await supabase.from('saved_sheets').update({ deleted_at: null }).eq('id', id);
-          fetchLibrary();
-      } catch (err) { console.error(err); }
+      try { await supabase.from('saved_sheets').update({ deleted_at: null }).eq('id', id); fetchLibrary(); } catch (err) { console.error(err); }
   };
 
   const handleHardDelete = async (e, id) => {
       e.stopPropagation(); 
       if (!window.confirm(t.delete_confirm)) return;
       try {
-          // Permanently deletes item
           const { error } = await supabase.from('saved_sheets').delete().eq('id', id);
           if (error) throw error;
           fetchLibrary();
@@ -506,60 +436,40 @@ export default function QuestionStudio({
     try {
         const { error } = await supabase.rpc('clone_worksheet', { target_id: sheetId, new_user_id: user.id });
         if (error) throw error;
-        alert(t.clone_success);
-        setLibraryTab('private');
-        fetchLibrary();
+        alert(t.clone_success); setLibraryTab('private'); fetchLibrary();
     } catch (err) { alert("Kunde inte kopiera."); }
+  };
+
+  // 🟢 NEW: Dedicated loader for presentation boards
+  const loadBoard = (sheet) => {
+      setActiveBoardSheet(sheet);
+      setShowPresentation(true);
   };
 
   const loadSheet = (sheet) => {
       setPacket(sheet.packet); setSheetTitle(sheet.title); setSetupMode(sheet.type); setActiveSheetId(sheet.id); 
       setChosenVisibility(sheet.visibility || 'private'); setIsSaved(true);
-      
-      // Answer Key Configs
       if (sheet.config?.includeAnswerKey !== undefined) setIncludeAnswerKey(sheet.config.includeAnswerKey);
       if (sheet.config?.answerKeyStyle !== undefined) setAnswerKeyStyle(sheet.config.answerKeyStyle);
-      
-      // New Typography Configs
       if (sheet.config?.globalLatexSize !== undefined) setGlobalLatexSize(sheet.config.globalLatexSize);
-      
-      // Layout Style Configs
       if (sheet.config?.layoutStyle !== undefined) setLayoutStyle(sheet.config.layoutStyle);
       if (sheet.config?.workspaceStyle !== undefined) setWorkspaceStyle(sheet.config.workspaceStyle);
-
-      // Workspace Height Configs (With Legacy Fallbacks)
-      if (sheet.config?.workspaceHeight !== undefined) {
-          // If the new system saved it, use it directly
-          setWorkspaceHeight(sheet.config.workspaceHeight);
-      } else if (sheet.config?.showWorkArea !== undefined) {
-          // If it's a legacy sheet, map true to 3, false to 0
-          setWorkspaceHeight(sheet.config.showWorkArea ? 3 : 0);
-      } else {
-          // Safe default if nothing exists
-          setWorkspaceHeight(0);
-      }
+      if (sheet.config?.workspaceHeight !== undefined) setWorkspaceHeight(sheet.config.workspaceHeight);
+      else if (sheet.config?.showWorkArea !== undefined) setWorkspaceHeight(sheet.config.showWorkArea ? 3 : 0);
+      else setWorkspaceHeight(0);
   };
 
   const handleLaunchGrid = () => { 
       if (!isSaved && !window.confirm(t.unsaved_warning)) return; 
-      
       const gridPacket = packet.map(item => ({ ...item, _globalLatexSize: globalLatexSize }));
       onDoNowGenerate({ title: sheetTitle, globalLatexSize, includeAnswerKey, answerKeyStyle }, gridPacket); 
   };
 
   const handleLaunchPrint = () => { 
       if (!isSaved && !window.confirm(t.unsaved_warning)) return; 
-      
-      // Failsafe: Attach layout config directly to the packet items 
-      // in case the parent component strips unknown config keys.
       const printPacket = packet.map(item => ({
-          ...item,
-          _globalLatexSize: globalLatexSize,
-          _workspaceHeight: workspaceHeight,
-          _workspaceStyle: workspaceStyle,
-          _layoutStyle: layoutStyle
+          ...item, _globalLatexSize: globalLatexSize, _workspaceHeight: workspaceHeight, _workspaceStyle: workspaceStyle, _layoutStyle: layoutStyle
       }));
-
       onWorksheetGenerate(printPacket, { title: sheetTitle, globalLatexSize, workspaceHeight, workspaceStyle, layoutStyle, includeAnswerKey, answerKeyStyle }); 
   };
   
@@ -569,14 +479,8 @@ export default function QuestionStudio({
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     try {
         const { data, error } = await supabase.from('rooms').insert([{ 
-            teacher_id: user.id, 
-            class_code: code, 
-            status: 'active', 
-            title: sheetTitle || "Live Session", 
-            active_worksheet_id: activeSheetId, 
-            active_question_data: { packet: packet, mode: setupMode } 
+            teacher_id: user.id, class_code: code, status: 'active', title: sheetTitle || "Live Session", active_worksheet_id: activeSheetId, active_question_data: { packet: packet, mode: setupMode } 
         }]).select().single();
-        
         if (error) throw error;
         onDoNowGenerate(null, null, { room: data, packet: packet }); 
     } catch (err) { alert("Systemfel: " + err.message); }
@@ -595,37 +499,18 @@ export default function QuestionStudio({
     try {
         const newItems = [];
         for (let i = 0; i < qty; i++) {
-            const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variation.key}&lang=${lang}&wordProblem=${useWordProblems}`);            const data = await res.json();
+            const res = await fetch(`/api/question?topic=${selectedTopicId}&variation=${variation.key}&lang=${lang}&wordProblem=${useWordProblems}`);
+            const data = await res.json();
             const isFirstInBatch = i === 0;
-            
             newItems.push({ 
-                id: crypto.randomUUID(), 
-                topicId: selectedTopicId, 
-                variationKey: variation.key, 
-                name: variation.name[lang] || variation.name.sv, 
-                columnSpan: useWordProblems ? 6 : (isFirstInBatch ? 6 : 2), 
-                resolvedData: data, 
-                instructionMode: useWordProblems ? 'inline' : (isFirstInBatch ? 'header' : 'hidden'),
-                showLatex: !useWordProblems,
-                showVisual: !useWordProblems,
-                selectedStoryIndex: useWordProblems ? 0 : null
+                id: crypto.randomUUID(), topicId: selectedTopicId, variationKey: variation.key, name: variation.name[lang] || variation.name.sv, 
+                columnSpan: useWordProblems ? 6 : (isFirstInBatch ? 6 : 2), resolvedData: data, instructionMode: useWordProblems ? 'inline' : (isFirstInBatch ? 'header' : 'hidden'),
+                showLatex: !useWordProblems, showVisual: !useWordProblems, selectedStoryIndex: useWordProblems ? 0 : null
             });
         }
         if (setupMode === 'donow' && packet.length + newItems.length > 6) { alert("Do Now max 6."); return; }
         setPacket(prev => [...prev, ...newItems]); setPendingQuantity(1);
     } catch (err) { alert(err.message); } finally { setIsPreviewLoading(false); }
-  };
-
-  const regenerateItem = async (id, topicId, variationKey) => {
-    try {
-        const item = packet.find(p => p.id === id);
-        // Look at the item's history to see if it should fetch a word problem
-        const isItemWP = item?.selectedStoryIndex !== null && item?.selectedStoryIndex !== undefined;
-
-        const res = await fetch(`/api/question?topic=${topicId}&variation=${variationKey}&lang=${lang}&wordProblem=${isItemWP}`);
-        const data = await res.json();
-        setPacket(prev => prev.map(p => p.id === id ? { ...p, resolvedData: data } : p)); setIsSaved(false);
-    } catch (err) { console.error(err); }
   };
 
   const batchShuffle = async (mode) => {
@@ -634,60 +519,31 @@ export default function QuestionStudio({
         try {
             const updatedPacket = await Promise.all(packet.map(async (item) => {
                 if (!item.topicId || !item.variationKey) return item;
-
-                // IDENTIFY ITEM STATE: Determine if THIS specific item was created as a word problem
                 const isItemWP = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
-
                 if (mode === 'stories') {
                     const rd = item.resolvedData?.renderData;
                     if (!rd?.availableStories || rd.availableStories.length <= 1) return item;
                     const newIndex = Math.floor(Math.random() * rd.availableStories.length);
                     return { ...item, selectedStoryIndex: newIndex };
                 }
-
-                // PASS ITEM STATE: Use the item's own word problem state, NOT the global toggle
                 const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWP}`);            
                 const data = await res.json();
-                
-                // SHUFFLE BOTH LOGIC: If 'both' is selected and it is a word problem, randomize the text index!
                 let nextStoryIdx = null;
                 if (isItemWP) {
                     if (mode === 'both' && data.renderData?.availableStories) {
                         nextStoryIdx = Math.floor(Math.random() * data.renderData.availableStories.length);
                     } else {
-                        nextStoryIdx = item.selectedStoryIndex; // Keep same story, just update numbers
+                        nextStoryIdx = item.selectedStoryIndex; 
                     }
                 }
-
-                return { 
-                    ...item,
-                    id: mode === 'both' ? crypto.randomUUID() : item.id, 
-                    selectedStoryIndex: nextStoryIdx,
-                    resolvedData: data 
-                };
+                return { ...item, id: mode === 'both' ? crypto.randomUUID() : item.id, selectedStoryIndex: nextStoryIdx, resolvedData: data };
             }));
-            setPacket(updatedPacket);
-            setIsSaved(false);
-        } catch (err) {
-            console.error("Batch shuffle failed:", err);
-        } finally {
-            setIsRegeneratingAll(false);
-        }
+            setPacket(updatedPacket); setIsSaved(false);
+        } catch (err) { console.error(err); } finally { setIsRegeneratingAll(false); }
   };
 
   const updatePacketItem = (id, key, val) => { setPacket(packet.map(p => p.id === id ? { ...p, [key]: val } : p)); setIsSaved(false); };
-  const deleteSheet = async (e, id) => {
-    e.stopPropagation(); 
-    if (!window.confirm(t.delete_confirm)) return;
-    try {
-        const { error } = await supabase.from('saved_sheets').delete().eq('id', id);
-        if (error) throw error;
-        setSavedSheets(savedSheets.filter(s => s.id !== id));
-    } catch (err) { 
-        alert("Kunde inte radera: " + err.message); 
-    }
-  };
-
+  
   const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => Object.entries(cat.topics).map(([id, data]) => ({ id, categoryName: cat.name[lang], categoryId: cat.id, ...data })));
   const currentTopic = allTopics.find(tp => tp.id === selectedTopicId) || allTopics[0];
   const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
@@ -702,6 +558,7 @@ export default function QuestionStudio({
         
       return matchesSearch && matchesTopic && matchesType;
   });
+  
   const availableTopics = [...new Set(savedSheets.flatMap(s => s.auto_topics || []))];
 
   const visibleVariations = (currentTopic?.variations || [])
@@ -718,9 +575,15 @@ export default function QuestionStudio({
   })
   .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
 
+  // 🟢 NEW: Utility for resolving row icons cleanly based on document type
+  const getSheetIconStyle = (type, size = 12) => {
+      if (type === 'board') return { bg: 'bg-amber-50', text: 'text-amber-600', icon: <Monitor size={size} /> };
+      if (type === 'donow') return { bg: 'bg-indigo-50', text: 'text-indigo-500', icon: <Grid3X3 size={size} /> };
+      return { bg: 'bg-emerald-50', text: 'text-emerald-500', icon: <FileText size={size} /> };
+  };
 
   // 🟢 FULL-WIDTH CLOUD DRIVE LAYOUT
-    if (!setupMode) {
+  if (!setupMode) {
         return (
             <div className="flex h-full w-full bg-[#f9fbf7] overflow-hidden relative text-slate-800">
                 {/* 1. LEFT SIDEBAR */}
@@ -732,6 +595,13 @@ export default function QuestionStudio({
                         
                         {/* Create Buttons */}
                         <div className="flex flex-col gap-2">
+                            {/* 🟢 NEW: PRESENTATION BOARD LAUNCH BUTTON */}
+                            <button 
+                                onClick={() => { setActiveBoardSheet(null); setShowPresentation(true); }} 
+                                className="w-full py-2.5 bg-amber-500 text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-amber-600 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Plus size={14} /> {t.new_board}
+                            </button>
                             <button 
                                 onClick={() => { setSetupMode('donow'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); setChosenVisibility('private'); }} 
                                 className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
@@ -783,19 +653,12 @@ export default function QuestionStudio({
 
                 {/* 2. MAIN CONTENT AREA (FILE EXPLORER) */}
                 <div className="flex-1 flex flex-col relative z-10 min-w-0">
-                    {/* Breadcrumbs & Actions Header */}
                     <div className="px-8 pt-8 pb-4 flex justify-between items-end">
                         <div className="flex items-center gap-2 text-xl font-black tracking-tight text-slate-800">
-                            {isTrashView ? (
-                                <span>{t.trash}</span>
-                            ) : (
-                                <span>{libraryTab === 'private' ? t.tab_mine : libraryTab === 'school' ? t.tab_school : t.tab_global}</span>
-                            )}
+                            {isTrashView ? <span>{t.trash}</span> : <span>{libraryTab === 'private' ? t.tab_mine : libraryTab === 'school' ? t.tab_school : t.tab_global}</span>}
                         </div>
 
-                        {/* 🟢 INTEGRATED ACTION BUTTONS */}
                         <div className="flex items-center gap-3">
-                            {/* New Folder Button (Only in Private, Non-Trash view) */}
                             {libraryTab === 'private' && !isTrashView && (
                                 <button 
                                     onClick={() => setShowFolderModal(true)}
@@ -804,11 +667,7 @@ export default function QuestionStudio({
                                     <Plus size={14} /> {t.new_folder}
                                 </button>
                             )}
-
-                            <button 
-                                onClick={onClose} 
-                                className="px-4 py-2 bg-slate-900 text-white hover:bg-rose-600 rounded-lg shadow-sm transition-all flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest cursor-pointer"
-                            >
+                            <button onClick={onClose} className="px-4 py-2 bg-slate-900 text-white hover:bg-rose-600 rounded-lg shadow-sm transition-all flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest cursor-pointer">
                                 <X size={14}/> {t.btn_close}
                             </button>
                         </div>
@@ -817,14 +676,18 @@ export default function QuestionStudio({
                     {/* Filters Toolbar */}
                     <div className="px-8 py-3 bg-white/50 border-y border-emerald-100 flex flex-col lg:flex-row justify-between items-center gap-3">
                         <div className="flex items-center gap-2 w-full lg:w-auto">
-                            <div className="flex gap-1 p-0.5 bg-slate-200/60 rounded-lg border border-slate-300/40 shadow-inner">
-                                <button onClick={() => setFilterDocType('all')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all cursor-pointer ${filterDocType === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                            <div className="flex gap-1 p-0.5 bg-slate-200/60 rounded-lg border border-slate-300/40 shadow-inner overflow-x-auto">
+                                <button onClick={() => setFilterDocType('all')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 cursor-pointer ${filterDocType === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
                                     {t.filter_all}
                                 </button>
-                                <button onClick={() => setFilterDocType('worksheet')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${filterDocType === 'worksheet' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                                {/* 🟢 NEW: BOARD FILTER TOGGLE */}
+                                <button onClick={() => setFilterDocType('board')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 flex items-center gap-1 cursor-pointer ${filterDocType === 'board' ? 'bg-amber-500 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                                    <Monitor size={12} /> {t.board_title}
+                                </button>
+                                <button onClick={() => setFilterDocType('worksheet')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 flex items-center gap-1 cursor-pointer ${filterDocType === 'worksheet' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
                                     <FileText size={10} /> {t.worksheet_title}
                                 </button>
-                                <button onClick={() => setFilterDocType('donow')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${filterDocType === 'donow' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                                <button onClick={() => setFilterDocType('donow')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 flex items-center gap-1 cursor-pointer ${filterDocType === 'donow' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
                                     <Grid3X3 size={12} /> {t.donow_title}
                                 </button>
                             </div>
@@ -861,29 +724,25 @@ export default function QuestionStudio({
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {/* 1. RENDER FOLDERS AND THEIR EXPANDED CONTENTS */}
+                                    {/* 1. RENDER FOLDERS */}
                                     {libraryTab === 'private' && !isTrashView && folders.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase())).map(folder => {
                                         const isExpanded = expandedFolders.includes(folder.id);
                                         const folderFiles = filteredLibrary.filter(sheet => sheet.folder_id === folder.id);
 
                                         return (
                                             <React.Fragment key={folder.id}>
-                                                {/* Folder Row */}
                                                 <tr onClick={() => toggleFolder(folder.id)} className="hover:bg-slate-50 transition-colors group cursor-pointer bg-slate-50/30">
                                                     <td className="py-3 text-center">
                                                         <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center mx-auto text-indigo-500 group-hover:bg-indigo-100 transition-colors">
                                                             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                                         </div>
                                                     </td>
-                                                    
-                                                    {/* 🟢 FIXED: Wrapped in a div to prevent flex/max-w-0 collapse */}
                                                     <td className="py-3 font-black text-slate-800 text-sm max-w-0">
                                                         <div className="flex items-center gap-2 truncate" title={folder.name}>
                                                             <Layers size={14} className="text-indigo-400 shrink-0" /> 
                                                             <span className="truncate">{folder.name}</span>
                                                         </div>
                                                     </td>
-
                                                     <td className="py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.folder} ({folderFiles.length})</td>
                                                     <td className="py-3 text-center text-slate-400 text-xs">{new Date(folder.created_at).toLocaleDateString()}</td>
                                                     <td className="py-3 text-right pr-4">
@@ -892,24 +751,23 @@ export default function QuestionStudio({
                                                 </tr>
 
                                                 {/* Expanded Files inside this Folder */}
-                                                {isExpanded && folderFiles.map(sheet => (
+                                                {isExpanded && folderFiles.map(sheet => {
+                                                    const style = getSheetIconStyle(sheet.type);
+                                                    return (
                                                     <tr key={sheet.id} className="hover:bg-slate-50 transition-colors group bg-white">
                                                         <td className="py-3 text-center relative">
-                                                            {/* Visual indent tree line */}
                                                             <div className="w-px h-full bg-slate-200 ml-6 absolute -mt-3"></div>
                                                             <div className="w-4 h-px bg-slate-200 ml-6 relative z-10 top-1/2"></div>
                                                         </td>
-                                                        
-                                                        {/* 🟢 FIXED: Wrapped flex content in a div inside the max-w-0 cell */}
                                                         <td className="py-3 font-bold text-slate-700 text-sm pl-4 max-w-0">
                                                             <div className="flex items-center gap-2" title={sheet.title}>
-                                                                <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${sheet.type === 'donow' ? 'bg-indigo-50 text-indigo-500' : 'bg-emerald-50 text-emerald-500'}`}>
-                                                                    {sheet.type === 'donow' ? <Grid3X3 size={12} /> : <FileText size={12} />}
+                                                                {/* 🟢 FIXED: Rendering dynamic icons depending on if it's a Board, Worksheet, or DoNow */}
+                                                                <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${style.bg} ${style.text}`}>
+                                                                    {style.icon}
                                                                 </div>
                                                                 <span className="truncate">{sheet.title}</span>
                                                             </div>
                                                         </td>
-
                                                         <td className="py-3">
                                                             <div className="flex flex-wrap gap-1">
                                                                 {sheet.auto_topics?.slice(0, 2).map(tag => (
@@ -921,32 +779,35 @@ export default function QuestionStudio({
                                                         <td className="py-3 text-right pr-4">
                                                             <div className="flex justify-end gap-1 items-center opacity-40 group-hover:opacity-100 transition-opacity">
                                                                 <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-slate-100"><Maximize2 size={14}/></button>
-                                                                <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-indigo-600 ml-2">{t.load_btn}</button>
+                                                                {/* 🟢 NEW: Context-aware routing button for Boards vs Worksheets */}
+                                                                {sheet.type === 'board' ? (
+                                                                    <button onClick={() => loadBoard(sheet)} className="bg-amber-500 text-slate-900 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-amber-600 ml-2">{lang === 'sv' ? 'Öppna' : 'Open'}</button>
+                                                                ) : (
+                                                                    <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-indigo-600 ml-2">{t.load_btn}</button>
+                                                                )}
                                                                 <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-slate-500 hover:text-indigo-600 rounded hover:bg-slate-100 ml-1"><PanelLeftClose size={14}/></button>
                                                                 <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-slate-500 hover:text-rose-500 rounded hover:bg-rose-50 ml-1"><Trash2 size={14}/></button>
                                                             </div>
                                                         </td>
                                                     </tr>
-                                                ))}
+                                                )})}
                                             </React.Fragment>
                                         );
                                     })}
 
                                     {/* 2. RENDER ROOT FILES */}
-                                    {filteredLibrary.filter(sheet => isTrashView || libraryTab !== 'private' || sheet.folder_id === null).map(sheet => (
+                                    {filteredLibrary.filter(sheet => isTrashView || libraryTab !== 'private' || sheet.folder_id === null).map(sheet => {
+                                        const style = getSheetIconStyle(sheet.type, 16);
+                                        return (
                                         <tr key={sheet.id} className="hover:bg-slate-50 transition-colors group">
                                             <td className="py-3 text-center">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto ${sheet.type === 'donow' ? 'bg-indigo-50 text-indigo-500' : 'bg-emerald-50 text-emerald-500'}`}>
-                                                    {sheet.type === 'donow' ? <Grid3X3 size={16} /> : <FileText size={16} />}
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto ${style.bg} ${style.text}`}>
+                                                    {style.icon}
                                                 </div>
                                             </td>
-
                                             <td className="py-3 font-bold text-slate-700 text-sm max-w-0">
-                                                <div className="truncate" title={sheet.title}>
-                                                    {sheet.title}
-                                                </div>
+                                                <div className="truncate" title={sheet.title}>{sheet.title}</div>
                                             </td>
-
                                             <td className="py-3">
                                                 <div className="flex flex-wrap gap-1">
                                                     {sheet.auto_topics?.slice(0, 2).map(tag => (
@@ -967,7 +828,12 @@ export default function QuestionStudio({
                                                         </>
                                                     ) : libraryTab === 'private' ? (
                                                         <>
-                                                            <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-indigo-600 ml-2">{t.load_btn}</button>
+                                                            {/* 🟢 NEW: Context-aware routing button for Boards vs Worksheets */}
+                                                            {sheet.type === 'board' ? (
+                                                                <button onClick={() => loadBoard(sheet)} className="bg-amber-500 text-slate-900 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-amber-600 ml-2">{lang === 'sv' ? 'Öppna' : 'Open'}</button>
+                                                            ) : (
+                                                                <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-indigo-600 ml-2">{t.load_btn}</button>
+                                                            )}
                                                             <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-slate-500 hover:text-indigo-600 rounded hover:bg-slate-100 ml-1"><PanelLeftClose size={14}/></button>
                                                             <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-slate-500 hover:text-rose-500 rounded hover:bg-rose-50 ml-1"><Trash2 size={14}/></button>
                                                         </>
@@ -977,15 +843,10 @@ export default function QuestionStudio({
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))}
+                                    )})}
                                     
-                                    {/* Empty State */}
                                     {filteredLibrary.length === 0 && folders.length === 0 && !isLibraryLoading && (
-                                        <tr>
-                                            <td colSpan={5} className="text-center py-12 text-slate-400 text-sm font-medium italic">
-                                                {isTrashView ? t.trash_empty : t.no_files}
-                                            </td>
-                                        </tr>
+                                        <tr><td colSpan={5} className="text-center py-12 text-slate-400 text-sm font-medium italic">{isTrashView ? t.trash_empty : t.no_files}</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -996,8 +857,6 @@ export default function QuestionStudio({
                 <BackgroundWave />
 
                 {/* MODALS */}
-                
-                {/* 1. New Folder Modal */}
                 {showFolderModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
                         <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
@@ -1018,7 +877,6 @@ export default function QuestionStudio({
                     </div>
                 )}
 
-                {/* 2. Move Sheet Modal */}
                 {showMoveModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
                         <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
@@ -1049,13 +907,22 @@ export default function QuestionStudio({
                     </div>
                 )}
 
-                {/* 3. Peek Sheet Modal */}
                 {peekSheet && (
                     <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-xs">
                         <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-                            <div className="p-6 border-b flex justify-between items-center bg-slate-900 text-white"><div><h3 className="text-lg font-black uppercase italic tracking-tighter leading-none">{peekSheet.title}</h3><p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-widest">{peekSheet.packet?.length || 0} Uppgifter</p></div><button onClick={() => setPeekSheet(null)} className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer"><X size={20}/></button></div>
+                            <div className="p-6 border-b flex justify-between items-center bg-slate-900 text-white">
+                                <div>
+                                    <h3 className="text-lg font-black uppercase italic tracking-tighter leading-none">{peekSheet.title}</h3>
+                                    {/* 🟢 NEW: Protection to parse board objects vs flat arrays so quick-peek doesn't crash! */}
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-widest">
+                                        {(peekSheet.type === 'board' ? peekSheet.packet?.livePacket?.length : peekSheet.packet?.length) || 0} Uppgifter
+                                    </p>
+                                </div>
+                                <button onClick={() => setPeekSheet(null)} className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer"><X size={20}/></button>
+                            </div>
                             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                                {peekSheet.packet.map((q, i) => (
+                                {/* 🟢 NEW: Mapped using the safe payload parser */}
+                                {(peekSheet.type === 'board' ? (peekSheet.packet?.livePacket || []) : peekSheet.packet).map((q, i) => (
                                     <div key={i} className="border-b border-slate-100 pb-6 last:border-0">
                                         <div className="flex justify-center mb-3 scale-75 origin-top">
                                             <VisualRenderer data={q.resolvedData?.renderData} isWordProblem={q.selectedStoryIndex !== null && q.selectedStoryIndex !== undefined} />
@@ -1071,12 +938,21 @@ export default function QuestionStudio({
                                     </div>
                                 ) : libraryTab === 'private' ? (
                                     <div className="flex gap-3">
-                                        <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); }} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-indigo-600 transition-all cursor-pointer">
-                                            {lang === 'sv' ? "Redigera" : "Edit"}
-                                        </button>
-                                        <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); setShowPresentation(true); }} className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-amber-600 transition-all flex items-center justify-center gap-2 cursor-pointer">
-                                            <Monitor size={16} /> {t.present}
-                                        </button>
+                                        {/* 🟢 NEW: Replaced dual-buttons with a single context-aware button for presentation boards */}
+                                        {peekSheet.type === 'board' ? (
+                                            <button onClick={() => { loadBoard(peekSheet); setPeekSheet(null); }} className="flex-1 py-3 bg-amber-500 text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-amber-600 transition-all cursor-pointer">
+                                                {lang === 'sv' ? "Öppna Presentation" : "Open Board"}
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); }} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-indigo-600 transition-all cursor-pointer">
+                                                    {lang === 'sv' ? "Redigera" : "Edit"}
+                                                </button>
+                                                <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); setShowPresentation(true); }} className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-amber-600 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                                                    <Monitor size={16} /> {t.present}
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 ) : (
                                     <button onClick={() => { handleClone(peekSheet.id); setPeekSheet(null); }} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 cursor-pointer"><Copy size={16}/> {t.clone_btn}</button>
@@ -1085,6 +961,18 @@ export default function QuestionStudio({
                         </div>
                     </div>
                 )}
+
+                {/* 🟢 NEW: Conditional renderer that sends the loaded board database payload strictly to the active presentation view */}
+                {showPresentation && (
+                    <PresentationView 
+                        packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || []) : packet} 
+                        sheetTitle={activeBoardSheet ? activeBoardSheet.title : sheetTitle} 
+                        initialSlides={activeBoardSheet ? activeBoardSheet.packet?.slides : null}
+                        boardId={activeBoardSheet ? activeBoardSheet.id : null}
+                        lang={lang} 
+                        onClose={() => { setShowPresentation(false); setActiveBoardSheet(null); }} 
+                    />
+                )}
             </div>
         );
     }
@@ -1092,7 +980,6 @@ export default function QuestionStudio({
   return (
     <div className="flex flex-col h-full bg-slate-200 font-sans overflow-hidden relative">
         <header className={`relative border-b px-6 py-1 flex items-center justify-between shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
-            {/* Left Side: Navigation Inputs */}
             <div className="flex items-center gap-3 flex-1 max-w-[40%]">
                 <div className="flex items-center gap-1.5 shrink-0">
                     <button 
@@ -1123,20 +1010,18 @@ export default function QuestionStudio({
                 <button 
                     onClick={handleSave} 
                     disabled={packet.length === 0} 
-                    className="px-3 py-1 bg-blue-500 border border-white/20 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-blue-600 text-white transition-all disabled:opacity-50 cursor-pointer"
+                    className="px-3 py-1 bg-blue-50 border border-white/20 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-blue-600 text-indigo-900 hover:text-white transition-all disabled:opacity-50 cursor-pointer"
                 >
                     <Save size={13}/> {t.save_btn}
                 </button>
             </div>
 
-            {/* Center Title Label */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
                 <span className="text-white font-black uppercase text-xs tracking-wider opacity-90">
                     {setupMode === 'donow' ? t.donow_title : setupMode === 'worksheet' ? t.worksheet_title : null}
                 </span>
             </div>
 
-            {/* Right Side Buttons */}
             <div className="flex items-center gap-2 pl-4 max-w-[45%] justify-end">
                 <button 
                     onClick={handleLaunchLive} 
@@ -1195,7 +1080,6 @@ export default function QuestionStudio({
         {/* PANE 2: Variations */}
 
         <div className="w-[300px] bg-slate-50/80 backdrop-blur-sm border-r border-slate-300 flex flex-col shrink-0">
-        {/* Header Section */}
         <div className="p-3 border-b bg-white shrink-0 shadow-sm space-y-2">
             <h1 className="text-sm font-black text-slate-900 uppercase italic truncate leading-none">{currentTopic?.name[lang]}</h1>
             
@@ -1222,18 +1106,16 @@ export default function QuestionStudio({
             </div>
         </div>
 
-        {/* Variation Cards List organized by Level Dividers */}
         <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar">
             {Object.entries(
                 visibleVariations.reduce((acc, v) => {
-                    const lvl = v.level || 1; // Fallback to 1 if not explicitly defined in skillBuckets
+                    const lvl = v.level || 1; 
                     if (!acc[lvl]) acc[lvl] = [];
                     acc[lvl].push(v);
                     return acc;
                 }, {})
             ).sort(([lvlA], [lvlB]) => Number(lvlA) - Number(lvlB)).map(([lvl, variations]) => (
                 <div key={lvl} className="space-y-2">
-                    {/* Level Divider Header */}
                     <div className="sticky top-0 bg-slate-50/95 backdrop-blur-sm pt-4 pb-2 flex items-center z-10">
                         <span className="text-[14px] font-black uppercase tracking-widest text-indigo-700">
                             {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
@@ -1241,7 +1123,6 @@ export default function QuestionStudio({
                         <div className="flex-1 h-[2px] bg-indigo-100/70 ml-3 rounded-full"></div>
                     </div>
 
-                    {/* Variations under this level */}
                     {variations.map(v => {
                         const cat = getVariationCategory(v.key);
                         const styles = getCategoryStyles(cat);
@@ -1291,10 +1172,7 @@ export default function QuestionStudio({
         {/* PANE 3: Workspace */}
         <div className="flex-1 flex flex-col overflow-hidden relative bg-[#f8fafc]">
           
-          {/* THE NEW RIBBON TOOLBAR */}
           <div className="bg-white border-b border-slate-200 px-6 py-2 flex flex-wrap items-center justify-between shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] shrink-0 z-50 min-h-[64px]">
-              
-              {/* Left Side: View Toggle */}
               <div className="flex items-center gap-4">
                   <div className="bg-slate-100 p-1 rounded-xl shadow-inner flex gap-1 border border-slate-200">
                       <button onClick={() => setCanvasMode('studio')} className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'studio' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}><Zap size={14}/> Studio</button>
@@ -1302,11 +1180,9 @@ export default function QuestionStudio({
                   </div>
               </div>
 
-              {/* Right Side: Ribbon Tool Groups */}
               {canvasMode === 'layout' && (
                   <div className="flex items-center gap-5 justify-end flex-1 pl-6">
                       
-                      {/* Generera / Shuffle Group */}
                       <div className="flex flex-col gap-1 items-center relative group">
                           <button 
                               disabled={isRegeneratingAll || packet.length === 0}
@@ -1338,7 +1214,6 @@ export default function QuestionStudio({
 
                       {setupMode === 'worksheet' && (
                           <>
-                              {/* Text Size Group */}
                               <div className="flex flex-col gap-1 items-center">
                                   <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 shadow-sm">
                                       {['sm', 'md', 'lg', 'xl'].map((size) => (
@@ -1357,7 +1232,6 @@ export default function QuestionStudio({
 
                               <div className="w-px h-8 bg-slate-200"></div>
 
-                              {/* Workspace Group */}
                               <div className="flex flex-col gap-1 items-center">
                                   <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 shadow-sm gap-1">
                                       <div className="flex items-center bg-white rounded-md border border-slate-100 shadow-sm">
@@ -1378,7 +1252,6 @@ export default function QuestionStudio({
 
                               <div className="w-px h-8 bg-slate-200"></div>
 
-                              {/* Layout Style Group */}
                               <div className="flex flex-col gap-1 items-center">
                                   <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 shadow-sm">
                                       <button onClick={() => { setLayoutStyle('open'); setIsSaved(false); }} className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'open' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' : 'text-slate-400 hover:bg-slate-200'}`}>
@@ -1424,7 +1297,6 @@ export default function QuestionStudio({
                 </div>
               </div>
           ) : (
-              /* WORKSHEET & DO NOW ZOOMED OUT PREVIEW */
               <div className="flex-1 overflow-auto custom-scrollbar pb-24 flex justify-center items-start bg-slate-200/50 p-4 rounded-[3rem]">
                   <div 
                     className={`shadow-2xl flex flex-col animate-in slide-in-from-bottom-6 origin-top ${
@@ -1464,7 +1336,6 @@ export default function QuestionStudio({
 
                                 return (
                                     <React.Fragment key={item.id}>
-                                        {/* Header Story Mode: Cleaned up typography */}
                                         {isHeaderMode && (
                                             <div className={`col-span-6 border-l-4 border-slate-900 pl-4 py-2 bg-slate-50/50 rounded-r-xl ${setupMode === 'donow' ? 'bg-slate-800 border-indigo-500 mb-2 mt-4' : 'mb-2 mt-4'}`}>
                                                 <div className={`text-sm font-semibold leading-relaxed ${setupMode === 'donow' ? 'text-white' : 'text-slate-800'}`}>
@@ -1488,7 +1359,6 @@ export default function QuestionStudio({
                                         >
                                             <div className="absolute top-2 left-2 text-slate-300 opacity-0 group-hover:opacity-100 z-10"><GripVertical size={14} /></div>
                                             
-                                            {/* Local Hover Controls */}
                                             <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-30 transition-all gap-1.5">
                                                 <div className="bg-white shadow-2xl rounded-full p-1 flex gap-1 border border-slate-200 items-center">
                                                     
@@ -1500,7 +1370,6 @@ export default function QuestionStudio({
                                                                 <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceHeight', Math.min(15, effectiveWorkArea + 1)); }} className="p-1 hover:text-indigo-600"><Plus size={10}/></button>
                                                             </div>
                                                             
-                                                            {/* 🟢 NEW: Local Background Style Toggle (Grid vs Blank) */}
                                                             <button onClick={(e) => { e.stopPropagation(); updatePacketItem(item.id, 'localWorkspaceStyle', effectiveWorkspaceStyle === 'grid' ? 'blank' : 'grid'); }} className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5 rounded-full transition-colors" title="Växla rutnät/tom yta">
                                                                 {effectiveWorkspaceStyle === 'grid' ? <Grid3X3 size={10} /> : <Square size={10} />}
                                                             </button>
@@ -1515,22 +1384,18 @@ export default function QuestionStudio({
                                                 </div>
                                             </div>
                                             
-                                            {/* Content Block with Flex Anchor */}
                                             <div className="flex items-start gap-4 flex-1">
-                                                {/* Visual Anchor Circle */}
                                                 <div className="shrink-0 w-7 h-7 rounded-full border-2 border-black flex items-center justify-center text-black font-black text-xs mt-1">
                                                     {idx + 1}
                                                 </div>
                                                 
                                                 <div className="flex-1 min-w-0 flex flex-col h-full">
-                                                    {/* Inline Story Mode */}
                                                     {isInlineMode && (
                                                         <div className="text-sm font-semibold text-slate-800 mb-3 leading-relaxed border-b border-slate-100 pb-2">
                                                             <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                         </div>
                                                     )}
                                                     
-                                                    {/* LaTeX Block */}
                                                     {displayLatex && item.resolvedData?.renderData.latex && (
                                                         <div className={`py-3 text-center font-serif text-slate-900 ${latexSizeClass}`}>
                                                             <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} />
@@ -1545,7 +1410,6 @@ export default function QuestionStudio({
                                                         </div>
                                                     )}
 
-                                                    {/* Dynamic Lined/Grid Paper Work Area */}
                                                     <div className="mt-auto pt-2">
                                                         {setupMode === 'worksheet' && effectiveWorkArea > 0 && (
                                                             <div 
@@ -1561,7 +1425,6 @@ export default function QuestionStudio({
                                                         )}
                                                     </div>
 
-                                                    {/* Lower Generation Toolbar... */}
                                                     <div className="opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-2 pt-3 mt-3 z-40 relative">
                                                         <div className="flex justify-end gap-2">
                                                             <button
@@ -1662,11 +1525,9 @@ export default function QuestionStudio({
                                 : 'bg-white border-slate-200 hover:shadow-md hover:border-slate-300 cursor-grab active:cursor-grabbing'
                             }`}
                     >
-                        {/* 🟢 FIXED: Changed to items-start and added flex-1 w-full so the text wraps and clamps properly */}
                         <div className="flex items-start gap-2 min-w-0 flex-1 w-full">
                             <GripVertical size={12} className="text-slate-800 shrink-0 group-hover:text-slate-400 transition-colors mt-1" />
                             <div className="min-w-0 flex-1">
-                                {/* 1. Header Row: Number, Mode Indicator, and Topic Title */}
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className="text-[14px] font-black text-slate-900">#{idx + 1}</span>
                                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-slate-200'}`} />
@@ -1675,7 +1536,6 @@ export default function QuestionStudio({
                                     </span>
                                 </div>
                                 
-                                {/* 2. Content Row: The actual question text, clamped to 2 lines */}
                                 <div className="text-[11px] font-bold text-slate-700 leading-tight pr-2">
                                     <MathDisplay 
                                         content={compileAnchoredStory(item, lang, true)} 
@@ -1723,14 +1583,6 @@ export default function QuestionStudio({
           )}
         </div>
       </div>
-      {showPresentation && (
-                    <PresentationView 
-                        packet={packet} 
-                        sheetTitle={sheetTitle} 
-                        lang={lang} 
-                        onClose={() => setShowPresentation(false)} 
-                    />
-                )}
       <BackgroundWave /> 
     </div>
   );

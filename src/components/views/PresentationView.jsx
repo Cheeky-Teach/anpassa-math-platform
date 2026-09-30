@@ -68,18 +68,18 @@ const compileAnchoredStory = (item, lang = 'sv') => {
     return template;
 };
 
-export default function PresentationView({ packet, sheetTitle, lang = 'sv', onClose }) {
+export default function PresentationView({ packet, sheetTitle, lang = 'sv', onClose, initialSlides, boardId: initialBoardId }) {
     // ---   NEW: MASTER SLIDE & TAB STATE ---
     const [sidebarTab, setSidebarTab] = useState('questions'); 
     //   UPDATED: Added title to initial state
-    const [slides, setSlides] = useState([{ id: `slide_${Date.now()}`, elements: [], scrollX: 0, scrollY: 0, title: 'Slide 1' }]);
+    const [slides, setSlides] = useState(initialSlides || [{ id: `slide_${Date.now()}`, elements: [], scrollX: 0, scrollY: 0, title: 'Slide 1' }]);
     const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-    //   NEW: Tracks which slide is currently being renamed
     const [editingSlideIndex, setEditingSlideIndex] = useState(null);
 
     // ---  NEW: SAVE & EXPORT STATES ---
-    const [boardId, setBoardId] = useState(null); // Tracks DB ID so subsequent saves overwrite instead of duplicating
+    const [boardId, setBoardId] = useState(initialBoardId || null); 
     const [isSaving, setIsSaving] = useState(false);
+    const [localTitle, setLocalTitle] = useState(sheetTitle || (lang === 'sv' ? "Min Presentation" : "My Presentation"));
 
     const [activeIds, setActiveIds] = useState([]);
     const [clueProgress, setClueProgress] = useState({});
@@ -181,7 +181,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
             if (!user) throw new Error("Not authenticated");
 
             const payload = {
-                title: sheetTitle || "Min Presentation",
+                title: localTitle,
                 type: 'board', // 🟢 Crucial: Flags this specifically as a Presentation Board in the DB
                 user_id: user.id,
                 packet: { slides, livePacket, settings: { bgType, viewMode, textSize } }
@@ -322,9 +322,16 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
         <div className="fixed inset-0 z-[100] bg-slate-100 flex flex-col font-sans overflow-hidden animate-in fade-in">
             {/* Header Navbar Layer */}
             <header className="bg-slate-900 text-white px-6 py-2 flex justify-between items-center shadow-md z-50 select-none">
-                <div className="flex items-center gap-2">
-                    <Monitor size={16} className="text-amber-400" />
-                    <h1 className="text-m font-black uppercase tracking-widest italic">{sheetTitle || 'Presentationsläge'}</h1>
+                <div className="flex items-center gap-2 group">
+                    <Monitor size={16} className="text-amber-400 shrink-0" />
+                    {/* 🟢 NEW: Editable Title Input */}
+                    <input 
+                        type="text"
+                        value={localTitle}
+                        onChange={(e) => setLocalTitle(e.target.value)}
+                        placeholder={lang === 'sv' ? "Namnge presentationen..." : "Name presentation..."}
+                        className="bg-white text-m font-black uppercase tracking-widest italic text-black outline-none border-b border-transparent focus:border-white/40 hover:border-white/20 transition-colors w-64 placeholder-white/30"
+                    />
                 </div>
                 
                 <div className="flex items-center gap-4">
