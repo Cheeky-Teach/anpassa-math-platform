@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Toolbar from './Toolbar';
-import { Trash2, Play, RefreshCw, BarChart2, List, Hash } from 'lucide-react';
+import { Trash2, Play, RefreshCw, BarChart2, List, Hash,
+    AlignLeft, AlignCenter, AlignRight, ListOrdered, Palette, Dices
+ } from 'lucide-react';
 import 'mathlive';
 
 export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
@@ -31,14 +33,18 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
     const [editingId, setEditingId] = useState(null);
     const [interactionMode, setInteractionMode] = useState(null);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-    
     const svgRef = useRef(null);
+
     // Ref to hold the active drawing path for zero-latency rendering
     const activePathRef = useRef(null);
+
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     // --- 2. TIMERS & EFFECTS ---
     useEffect(() => {
         const interval = setInterval(() => {
+            setCurrentTime(new Date()); // 🟢 Updates the global clock natively every second
+            
             setElements(prev => {
                 if (!prev.some(el => el.type === 'timer' && el.isRunning)) return prev;
                 return prev.map(el => {
@@ -53,9 +59,9 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         return () => clearInterval(interval);
     }, []);
 
-    // 🟢 NEW: Auto-Spawn Widgets (Calculator & Timer) without requiring a canvas click
+    // 🟢 NEW: Auto-Spawn Widgets (Calculator, Timer, & RichText) without requiring a canvas click
     useEffect(() => {
-        if (activeTool === 'calculator' || activeTool === 'timer') {
+        if (activeTool === 'calculator' || activeTool === 'timer' || activeTool === 'richText') {
             const newId = Date.now().toString();
             
             // Shared base properties
@@ -77,15 +83,29 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                 newEl.ans = ""; 
                 newEl.calcMode = "LTR";
             } else if (activeTool === 'timer') {
-                newEl.width = 360;  // 🟢 Increased from 200 to 360 for projector visibility
-                newEl.height = 360; // 🟢 Ensures it stays a perfect circle
+                newEl.width = 360;  
+                newEl.height = 360; 
                 newEl.duration = 60; 
                 newEl.timeLeft = 60; 
                 newEl.isRunning = false;
+            } else if (activeTool === 'richText') {
+                newEl.width = 500;
+                newEl.height = 300;
+                newEl.content = "<p></p>";
+            } else if (activeTool === 'realClock') {
+                newEl.width = 280;
+                newEl.height = 280;
+                newEl.clockType = 'analog'; // Default style
             }
 
             setElements(prev => [...prev, newEl]);
             setSelectedId(newId);
+            
+            // 🟢 Instantly focus the text box so the user can start typing
+            if (activeTool === 'richText') {
+                setEditingId(newId);
+            }
+            
             setActiveTool('select'); // Instantly return to pointer tool
         }
     }, [activeTool, color]);
@@ -239,14 +259,15 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         }
 
         // 1. Instant Spawn Tools
-        if (['timer', 'clock', 'ruler', 'coord', 'dice', 'math', 'richText'].includes(activeTool)) {
+        if (['timer', 'clock', 'ruler', 'coord', 'dice', 'math', 'richText', 'calculator', 'realClock'].includes(activeTool)) {
             const newId = Date.now().toString();
             let newEl = { 
                 id: newId, type: activeTool, x: x - 100, y: y - 100, 
-                width: activeTool === 'math' ? 300 : (activeTool === 'richText' ? 500 : 200), 
-                height: activeTool === 'math' ? 80 : (activeTool === 'richText' ? 300 : 200), 
+                width: activeTool === 'math' ? 300 : (activeTool === 'richText' ? 500 : (activeTool === 'calculator' || activeTool === 'realClock' ? 280 : 200)), 
+                height: activeTool === 'math' ? 80 : (activeTool === 'richText' ? 300 : (activeTool === 'calculator' ? 440 : (activeTool === 'realClock' ? 280 : 200))), 
                 stroke: color, rotation: 0, opacity: 1 
             };
+            
             if (activeTool === 'timer') { newEl.duration = 60; newEl.timeLeft = 60; newEl.isRunning = false; }
             else if (activeTool === 'clock') { newEl.hourRotation = 300; newEl.minRotation = 0; }
             else if (activeTool === 'ruler') { newEl.width = 800; newEl.height = 100; newEl.min = "0"; newEl.max = "10"; newEl.stepValue = 1; newEl.unitType = 'whole'; newEl.denom = 4; newEl.showSubnotches = true; }
@@ -255,6 +276,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             else if (activeTool === 'math') { newEl.label = ""; newEl.fontSize = 32; }
             else if (activeTool === 'richText') { newEl.content = "<p>Skriv här...</p>"; }
             else if (activeTool === 'calculator') { newEl.expression = ""; newEl.result = ""; newEl.ans = ""; }
+            else if (activeTool === 'realClock') { newEl.clockType = 'analog'; } 
 
             setElements([...elements, newEl]);
             setSelectedId(newId);
@@ -400,7 +422,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
 
     // --- 5. RENDERERS ---
     const renderHandles = (el, radius = 0) => {
-        const isC = ['circle', 'frac_circle', 'spinner', 'node', 'clock', 'timer'].includes(el.type);
+        const isC = ['circle', 'frac_circle', 'spinner', 'node', 'clock', 'timer', 'realClock'].includes(el.type);
         const isP = el.type === 'protractor';
         const botY = isP ? el.y + radius : (isC ? el.y + radius*2 : el.y + el.height);
         const cx = (isC || isP) ? el.x + radius : el.x + el.width/2;
@@ -633,22 +655,228 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
 
         // Timer
         if (el.type === 'timer') {
-            const isDone = el.timeLeft === 0, timeStr = `${Math.floor(el.timeLeft / 60)}:${(el.timeLeft % 60).toString().padStart(2, '0')}`, prog = (el.timeLeft / el.duration) * 360;
+            const isDone = el.timeLeft === 0;
+            const timeStr = `${Math.floor(el.timeLeft / 60)}:${(el.timeLeft % 60).toString().padStart(2, '0')}`;
+            const prog = (el.timeLeft / el.duration) * 360;
+            
             return (
                 <g key={el.id} transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
+                    {/* Background & Progress Ring */}
                     <circle cx={cx} cy={cy} r={r} fill={isDone ? "#fee2e2" : "#e0f2fe"} stroke={isDone ? "#ef4444" : "#3b82f6"} strokeWidth="4" />
-                    <path d={`M ${cx} ${cy-r} A ${r} ${r} 0 ${prog > 180 ? 1 : 0} 1 ${cx + r*Math.sin(prog*Math.PI/180)} ${cy - r*Math.cos(prog*Math.PI/180)}`} fill="none" stroke={isDone ? "#ef4444" : "#10b981"} strokeWidth="12" strokeLinecap="round" />
-                    <text x={cx} y={cy - 45} textAnchor="middle" fontSize={r/2.5} fontWeight="bold" fill={isDone ? "#ef4444" : "#1e293b"}>{timeStr}</text>
+                    <path 
+                        d={`M ${cx} ${cy-r} A ${r} ${r} 0 ${prog > 180 ? 1 : 0} 1 ${cx + r*Math.sin(prog*Math.PI/180)} ${cy - r*Math.cos(prog*Math.PI/180)}`} 
+                        fill="none" 
+                        stroke={isDone ? "#ef4444" : "#10b981"} 
+                        strokeWidth={Math.max(4, r * 0.08)} // Scales stroke width slightly with size
+                        strokeLinecap="round" 
+                    />
+                    
+                    {/* 🟢 PERFECTLY CENTERED TEXT */}
+                    <text 
+                        x={cx} 
+                        y={cy} 
+                        textAnchor="middle" 
+                        dominantBaseline="central" 
+                        dy="0.05em"
+                        fontSize={r / 2} 
+                        fontWeight="900" 
+                        fill={isDone ? "#ef4444" : "#1e293b"}
+                    >
+                        {timeStr}
+                    </text>
+
+                    {/* 🟢 NEW: COMPACT CONTROLS ROW UNDERNEATH THE TIMER */}
                     {showUI && (
-                        <foreignObject x={cx - r*0.9} y={cy} width={r*1.8} height={r} className="ui-ignore pointer-events-auto">
-                            <div className="flex flex-col items-center gap-3">
-                                <div className="flex gap-4"><button onPointerDown={(e)=>{ e.stopPropagation(); setElements(p=>p.map(o=>o.id===el.id?{...o, isRunning:!o.isRunning}:o)); }} className={`p-5 rounded-full shadow-2xl ${el.isRunning ? 'bg-amber-500':'bg-emerald-500'} text-white`}><Play size={32}/></button><button onPointerDown={(e)=>{ e.stopPropagation(); setElements(p=>p.map(o=>o.id===el.id?{...o, timeLeft:el.duration, isRunning:false}:o)); }} className="p-5 bg-white rounded-full shadow-xl text-slate-600 border"><RefreshCw size={32}/></button></div>
-                                <div className="flex gap-2"><button onPointerDown={(e)=>{ e.stopPropagation(); setElements(p=>p.map(o=>o.id===el.id?{...o, duration:o.duration+60, timeLeft:o.timeLeft+60}:o)); }} className="px-5 py-2.5 bg-white/90 rounded-2xl shadow-md text-sm font-black">+1m</button><button onPointerDown={(e)=>{ e.stopPropagation(); setElements(p=>p.map(o=>o.id===el.id?{...o, duration:Math.max(0,o.duration-60), timeLeft:Math.max(0,o.timeLeft-60)}:o)); }} className="px-5 py-2.5 bg-white/90 rounded-2xl shadow-md text-sm font-black">-1m</button></div>
+                        <foreignObject x={cx - 150} y={el.y + el.height + 10} width={300} height={60} className="ui-ignore pointer-events-auto overflow-visible">
+                            <div className="flex items-center justify-center gap-2 w-full h-full" onPointerDown={e => e.stopPropagation()}>
+                                {/* Start / Pause */}
+                                <button 
+                                    onPointerDown={(e) => { 
+                                        e.stopPropagation(); 
+                                        setElements(p => p.map(o => o.id === el.id ? { ...o, isRunning: !o.isRunning } : o)); 
+                                    }} 
+                                    className={`w-10 h-10 flex items-center justify-center rounded-xl shadow-sm text-white transition-all active:scale-95 cursor-pointer ${el.isRunning ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}
+                                    title={el.isRunning ? "Pausa" : "Starta"}
+                                >
+                                    <Play size={18} fill="currentColor" className={el.isRunning ? "hidden" : "block"} />
+                                    {/* Simple pause bars icon using CSS since we didn't import Pause from lucide */}
+                                    {el.isRunning && (
+                                        <div className="flex gap-1">
+                                            <div className="w-1 h-3.5 bg-white rounded-sm"></div>
+                                            <div className="w-1 h-3.5 bg-white rounded-sm"></div>
+                                        </div>
+                                    )}
+                                </button>
+                                
+                                {/* Reset */}
+                                <button 
+                                    onPointerDown={(e) => { 
+                                        e.stopPropagation(); 
+                                        setElements(p => p.map(o => o.id === el.id ? { ...o, timeLeft: el.duration, isRunning: false } : o)); 
+                                    }} 
+                                    className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl shadow-sm text-slate-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer"
+                                    title="Återställ"
+                                >
+                                    <RefreshCw size={18} />
+                                </button>
+
+                                <div className="w-px h-6 bg-slate-300 mx-1"></div>
+                                
+                                {/* Subtract 1 Min */}
+                                <button 
+                                    onPointerDown={(e) => { 
+                                        e.stopPropagation(); 
+                                        setElements(p => p.map(o => o.id === el.id ? { ...o, duration: Math.max(0, o.duration - 60), timeLeft: Math.max(0, o.timeLeft - 60) } : o)); 
+                                    }} 
+                                    className="px-3 h-10 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-black text-slate-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer"
+                                >
+                                    -1m
+                                </button>
+                                
+                                {/* Add 1 Min */}
+                                <button 
+                                    onPointerDown={(e) => { 
+                                        e.stopPropagation(); 
+                                        setElements(p => p.map(o => o.id === el.id ? { ...o, duration: o.duration + 60, timeLeft: o.timeLeft + 60 } : o)); 
+                                    }} 
+                                    className="px-3 h-10 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-black text-slate-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer"
+                                >
+                                    +1m
+                                </button>
                             </div>
                         </foreignObject>
                     )}
                     {showUI && renderHandles(el, r)}
                 </g>
+            );
+        }
+
+        // Live Real Clock
+        if (el.type === 'realClock') {
+            const isAnalog = el.clockType !== 'digital';
+            const h = currentTime.getHours();
+            const m = currentTime.getMinutes();
+            const s = currentTime.getSeconds();
+
+            // Calculate precise analog rotations
+            const secRot = s * 6;
+            const minRot = m * 6 + s * 0.1;
+            const hrRot = (h % 12) * 30 + m * 0.5;
+
+            // Locale formatted time string
+            const timeString = currentTime.toLocaleTimeString(lang === 'sv' ? 'sv-SE' : 'en-US', { 
+                hour: '2-digit', minute: '2-digit', second: '2-digit' 
+            });
+
+            // 🎨 Flat Colorful Design Palette
+            const faceColor = "#ffffff";
+            const rimColor = "#0b0b0c"; // Black
+            const hrHandColor = "#1e293b"; // Dark slate
+            const minHandColor = "#8b5cf6"; // Violet
+            const secHandColor = "#f43f5e"; // Rose accent
+            const tickColor = "#cbd5e1";
+            const fontFam = "'Nunito', 'Quicksand', 'Varela Round', sans-serif";
+
+            return (
+                <React.Fragment key={el.id}>
+                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
+                        {isAnalog ? (
+                            <>
+                                {/* Flat colorful rim and face */}
+                                <circle cx={cx} cy={cy} r={r} fill={faceColor} stroke={rimColor} strokeWidth={r * 0.08} />
+                                
+                                {/* 🟢 FIXED: Only draw small dots for minutes/seconds, leaving the hours blank */}
+                                {Array.from({length: 60}).map((_, i) => {
+                                    const isHour = i % 5 === 0;
+                                    if (isHour) return null; // Skip drawing a dot for the hour markers
+                                    const angle = i * 6 * (Math.PI / 180);
+                                    const dist = r * 0.82;
+                                    const dotR = r * 0.015;
+                                    return <circle key={i} cx={cx + dist*Math.sin(angle)} cy={cy - dist*Math.cos(angle)} r={dotR} fill={tickColor} />;
+                                })}
+                                
+                                {/* Hour Numbers (Rounded Font) */}
+                                {Array.from({length: 12}).map((_, i) => {
+                                    const hr = i === 0 ? 12 : i;
+                                    const angle = i * 30 * (Math.PI / 180);
+                                    const dist = r * 0.78;
+                                    return (
+                                        <text 
+                                            key={`n-${i}`} 
+                                            x={cx + dist*Math.sin(angle)} 
+                                            y={cy - dist*Math.cos(angle)} 
+                                            textAnchor="middle" 
+                                            dominantBaseline="central" 
+                                            dy="0.05em" 
+                                            fontSize={r * 0.19} 
+                                            fontWeight="900" 
+                                            fill={hrHandColor} 
+                                            fontFamily={fontFam}
+                                        >
+                                            {hr}
+                                        </text>
+                                    );
+                                })}
+                                
+                                {/* Hands (Thick, flat, rounded caps) */}
+                                <g transform={`rotate(${hrRot}, ${cx}, ${cy})`}>
+                                    <line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.45} stroke={hrHandColor} strokeWidth={r * 0.08} strokeLinecap="round" />
+                                </g>
+                                <g transform={`rotate(${minRot}, ${cx}, ${cy})`}>
+                                    <line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.65} stroke={minHandColor} strokeWidth={r * 0.06} strokeLinecap="round" />
+                                </g>
+                                <g transform={`rotate(${secRot}, ${cx}, ${cy})`}>
+                                    <line x1={cx} y1={cy + r * 0.15} x2={cx} y2={cy - r * 0.75} stroke={secHandColor} strokeWidth={r * 0.02} strokeLinecap="round" />
+                                    {/* Center dot attached to second hand */}
+                                    <circle cx={cx} cy={cy} r={r * 0.05} fill={secHandColor} />
+                                </g>
+                            </>
+                        ) : (
+                            <>
+                                {/* DIGITAL BOX */}
+                                <rect 
+                                    x={cx - r * 1.05} // Pushed further left to maintain exact center
+                                    y={cy - r * 0.35} 
+                                    width={r * 2.1}   // Increased width for left/right padding
+                                    height={r * 0.7} 
+                                    fill={faceColor} 
+                                    rx={r * 0.15} 
+                                    stroke={rimColor} 
+                                    strokeWidth={r * 0.06} 
+                                />
+                                <text 
+                                    x={cx} 
+                                    y={cy} 
+                                    textAnchor="middle" 
+                                    dominantBaseline="central" 
+                                    dy="0.05em"
+                                    fontSize={r * 0.35} 
+                                    fontWeight="900" 
+                                    fill={hrHandColor} 
+                                    fontFamily={fontFam} 
+                                    style={{ letterSpacing: '0.02em' }}
+                                >
+                                    {timeString}
+                                </text>
+                                
+                            </>
+                        )}
+                    </g>
+                    {/* UI Mode Toggle Button */}
+                    {showUI && (
+                        <foreignObject x={cx - 60} y={el.y + el.height + 10} width={120} height={50} className="ui-ignore pointer-events-auto">
+                            <div className="flex justify-center" onPointerDown={e => e.stopPropagation()}>
+                                <button 
+                                    onClick={() => setElements(p => p.map(o => o.id === el.id ? {...o, clockType: isAnalog ? 'digital' : 'analog'} : o))}
+                                    className="px-4 py-2 bg-indigo-500 text-white rounded-xl shadow-sm font-black text-[10px] uppercase tracking-wider hover:bg-indigo-600 transition-colors cursor-pointer"
+                                >
+                                    {isAnalog ? "Digital" : "Analog"}
+                                </button>
+                            </div>
+                        </foreignObject>
+                    )}
+                    {showUI && renderHandles(el, r)}
+                </React.Fragment>
             );
         }
 
@@ -765,12 +993,19 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
 
         // Dice
         if (el.type === 'dice') {
-            const dice = el.diceData || [], cols = Math.ceil(Math.sqrt(dice.length)), cellSize = el.width / cols;
+            const dice = el.diceData || [];
+            const cols = Math.ceil(Math.sqrt(dice.length));
+            const cellSize = el.width / cols;
+            const rows = Math.ceil(dice.length / cols);
+            const actualGridHeight = rows * cellSize; // 🟢 Accurately tracks the bottom of the dice grid
+
             return (
                 <React.Fragment key={el.id}>
                     <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move" onDoubleClick={() => rollDice(el.id)}>
                         {dice.map((d, i) => {
-                            const dx = el.x + (i % cols) * cellSize, dy = el.y + Math.floor(i / cols) * cellSize, dSize = cellSize * 0.85;
+                            const dx = el.x + (i % cols) * cellSize;
+                            const dy = el.y + Math.floor(i / cols) * cellSize;
+                            const dSize = cellSize * 0.85;
                             return (
                                 <g key={i}>
                                     <rect x={dx + cellSize * 0.075} y={dy + cellSize * 0.075} width={dSize} height={dSize} fill="white" stroke="black" strokeWidth="3" rx={dSize * 0.2} className={el.isRolling ? "animate-pulse" : ""} />
@@ -779,7 +1014,20 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                             );
                         })}
                     </g>
-                    {showUI && renderHandles(el, r)}
+                    
+                    {/* 🟢 NEW: ALWAYS-VISIBLE ROLL BUTTON */}
+                    <foreignObject x={el.x} y={el.y + actualGridHeight + 10} width={el.width} height={60} className="ui-ignore pointer-events-auto overflow-visible">
+                        <div className="flex justify-center w-full h-full" onPointerDown={e => e.stopPropagation()}>
+                            <button 
+                                onClick={() => rollDice(el.id)} 
+                                className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white font-black uppercase text-[12px] tracking-widest rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 w-max"
+                            >
+                                <Dices size={16} /> {lang === 'sv' ? "Slå" : "Roll"}
+                            </button>
+                        </div>
+                    </foreignObject>
+
+                    {showUI && renderHandles(el, el.width/2)}
                 </React.Fragment>
             );
         }
@@ -808,14 +1056,16 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             
             const applyStyle = (cmd, val = null) => {
                 if (cmd === 'fontSize') {
-                    const sizeMap = { "1": "12px", "3": "18px", "5": "32px", "7": "64px" };
+                    // Modern contentEditable hack: Apply a distinct legacy size, then convert it to strict pixels
                     document.execCommand('styleWithCSS', false, true);
                     document.execCommand('fontSize', false, "7");
-                    const selection = window.getSelection();
-                    if (selection.rangeCount > 0) {
-                        const span = document.createElement("span");
-                        span.style.fontSize = sizeMap[val] || "18px";
-                        selection.getRangeAt(0).surroundContents(span);
+                    const fontElements = document.getElementsByTagName("font");
+                    for (let i = 0; i < fontElements.length; i++) {
+                        if (fontElements[i].size === "7") {
+                            fontElements[i].removeAttribute("size");
+                            fontElements[i].style.fontSize = val + "px";
+                            fontElements[i].style.lineHeight = "1.25";
+                        }
                     }
                 } else {
                     document.execCommand(cmd, false, val);
@@ -827,9 +1077,9 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                     <g transform={transform} data-id={el.id} className="pointer-events-auto">
                         <rect 
                             x={el.x} y={el.y} width={el.width} height={el.height} 
-                            fill="white" fillOpacity={isEditing ? 1 : 0.8} 
+                            fill="white" fillOpacity={isEditing ? 1 : 1} 
                             stroke={isSelected ? "#3b82f6" : "#e2e8f0"} strokeWidth={isSelected ? 3 : 1} rx="8"
-                            style={{ cursor: isEditing ? 'default' : 'move' }}
+                            style={{ cursor: isEditing ? 'text' : 'move' }}
                             onDoubleClick={(e) => { e.stopPropagation(); setEditingId(el.id); }}
                         />
                         <foreignObject 
@@ -838,40 +1088,88 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                         >
                             <div 
                                 contentEditable={isEditing} suppressContentEditableWarning
-                                className="w-full h-full p-4 outline-none prose prose-m overflow-y-auto font-sans text-slate-800"
-                                style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-                                onBlur={(e) => setElements(prev => prev.map(item => item.id === el.id ? { ...item, content: e.currentTarget.innerHTML } : item))}
+                                // 🟢 ADDED: overflow-hidden prevents a scrollbar from flashing while typing
+                                className="w-full h-full p-4 outline-none font-sans text-slate-800 overflow-hidden [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2"
+                                style={{ 
+                                    whiteSpace: 'pre-wrap', 
+                                    wordBreak: 'break-word', 
+                                    listStylePosition: 'inside',
+                                    fontSize: '32px',
+                                    lineHeight: '1.25'
+                                }}
+                                // 🟢 NEW: Auto-expands the height dynamically without losing your cursor!
+                                onInput={(e) => {
+                                    const scrollH = e.currentTarget.scrollHeight;
+                                    if (scrollH > el.height) {
+                                        setElements(prev => prev.map(item => 
+                                            item.id === el.id ? { ...item, height: scrollH } : item
+                                        ));
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    const html = e.currentTarget.innerHTML;
+                                    setElements(prev => prev.map(item => item.id === el.id ? { ...item, content: html } : item));
+                                }}
                                 onPointerDown={(e) => e.stopPropagation()}
                                 dangerouslySetInnerHTML={{ __html: el.content || '' }}
                             />
                         </foreignObject>
 
                         {isEditing && (
-                            <foreignObject x={el.x} y={el.y - 85} width={Math.max(el.width, 420)} height={85} className="ui-ignore pointer-events-auto">
-                                <div className="flex flex-col gap-1 bg-slate-900 p-2 rounded-xl shadow-2xl border border-slate-700" onPointerDown={e => e.stopPropagation()}>
-                                    <div className="flex items-center gap-1">
-                                        <button onClick={() => applyStyle('bold')} className="w-8 h-8 text-white hover:bg-slate-700 rounded font-bold">B</button>
-                                        <button onClick={() => applyStyle('italic')} className="w-8 h-8 text-white hover:bg-slate-700 rounded italic">I</button>
-                                        <button onClick={() => applyStyle('underline')} className="w-8 h-8 text-white hover:bg-slate-700 rounded underline">U</button>
-                                        <div className="w-px h-4 bg-slate-700 mx-1" />
-                                        <button onClick={() => applyStyle('insertUnorderedList')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center"><List size={14}/></button>
-                                        <button onClick={() => applyStyle('insertOrderedList')} className="w-8 h-8 text-white hover:bg-slate-700 rounded text-[10px]">1.</button>
-                                        <div className="w-px h-4 bg-slate-700 mx-1" />
-                                        <button onClick={() => applyStyle('justifyLeft')} className="w-8 h-8 text-white hover:bg-slate-700 rounded text-xs align-left text-left">L</button>
-                                        <button onClick={() => applyStyle('justifyCenter')} className="w-8 h-8 text-white hover:bg-slate-700 rounded text-xs align-center text-center">C</button>
-                                        <button onClick={() => applyStyle('justifyRight')} className="w-8 h-8 text-white hover:bg-slate-700 rounded text-xs align-right text-right">R</button>
-                                        <button onClick={() => setEditingId(null)} className="ml-auto px-3 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase rounded-lg hover:bg-emerald-600">Klar</button>
+                            // 🟢 FIXED: Increased width to 650 to prevent toolbar cutoff
+                            <foreignObject x={el.x} y={el.y - 55} width={Math.max(el.width, 650)} height={55} className="ui-ignore pointer-events-auto overflow-visible">
+                                <div 
+                                    className="flex items-center gap-2 bg-slate-900 p-2 rounded-xl shadow-2xl border border-slate-700 w-max"
+                                    onPointerDown={e => { 
+                                        e.stopPropagation(); 
+                                        // 🟢 FIXED: Do not preventDefault on native dropdowns or color inputs so they can open!
+                                        if (e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
+                                            e.preventDefault(); 
+                                        }
+                                    }} 
+                                >
+                                    <button onClick={() => applyStyle('bold')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded font-bold">B</button>
+                                    <button onClick={() => applyStyle('italic')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded italic font-serif">I</button>
+                                    <button onClick={() => applyStyle('underline')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded underline">U</button>
+                                    
+                                    <div className="w-px h-6 bg-slate-700 mx-1" />
+                                    
+                                    <select 
+                                        onChange={(e) => applyStyle('fontSize', e.target.value)} 
+                                        className="bg-slate-800 text-white text-[12px] h-8 rounded px-2 outline-none border border-slate-700 cursor-pointer"
+                                        defaultValue="32"
+                                    >
+                                        {[12, 14, 16, 18, 20, 24, 32, 48, 64, 90, 114].map(sz => (
+                                            <option key={sz} value={sz}>{sz}px</option>
+                                        ))}
+                                    </select>
+
+                                    <div className="w-px h-6 bg-slate-700 mx-1" />
+
+                                    <button onClick={() => applyStyle('insertUnorderedList')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center" title="Punktlista"><List size={16}/></button>
+                                    <button onClick={() => applyStyle('insertOrderedList')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center" title="Numrerad lista"><ListOrdered size={16}/></button>
+                                    
+                                    <div className="w-px h-6 bg-slate-700 mx-1" />
+                                    
+                                    <button onClick={() => applyStyle('justifyLeft')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center" title="Vänsterjustera"><AlignLeft size={16}/></button>
+                                    <button onClick={() => applyStyle('justifyCenter')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center" title="Centrera"><AlignCenter size={16}/></button>
+                                    <button onClick={() => applyStyle('justifyRight')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center" title="Högerjustera"><AlignRight size={16}/></button>
+
+                                    <div className="w-px h-6 bg-slate-700 mx-1" />
+                                    
+                                    {/* 🟢 FIXED: Replaced inline colors with a native OS Color Picker */}
+                                    <div className="relative flex items-center justify-center w-8 h-8 hover:bg-slate-700 rounded overflow-hidden" title="Byt färg">
+                                        <Palette size={16} className="text-white absolute pointer-events-none" />
+                                        <input
+                                            type="color"
+                                            className="absolute inset-[-10px] w-[50px] h-[50px] cursor-pointer opacity-0 z-10"
+                                            onChange={(e) => applyStyle('foreColor', e.target.value)}
+                                        />
                                     </div>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <select onPointerDown={e => e.stopPropagation()} onChange={(e) => applyStyle('fontSize', e.target.value)} className="bg-slate-800 text-white text-[20px] rounded px-1 outline-none border border-slate-700 cursor-pointer">
-                                            <option value="1">Liten</option><option value="3" defaultValue>Normal</option><option value="5">Stor</option><option value="7">Extra Stor</option>
-                                        </select>
-                                        <div className="flex gap-1 items-center">
-                                            {['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#ffffff'].map(c => (
-                                                <button key={c} onClick={() => applyStyle('foreColor', c)} className="w-4 h-4 rounded-full border border-slate-600" style={{ background: c }} />
-                                            ))}
-                                        </div>
-                                    </div>
+
+                                    <button onClick={() => setEditingId(null)} className="ml-2 px-4 py-1.5 bg-emerald-500 text-white text-[11px] font-black uppercase tracking-wider rounded-lg hover:bg-emerald-600 active:scale-95 transition-all">
+                                        Klar
+                                    </button>
                                 </div>
                             </foreignObject>
                         )}
