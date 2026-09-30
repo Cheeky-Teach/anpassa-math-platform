@@ -5,7 +5,8 @@ import { Trash2, Play, RefreshCw, BarChart2, List, Hash,
  } from 'lucide-react';
 import 'mathlive';
 
-export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
+// 🟢 UPDATED: Added elements and setElements as props
+export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, elements = [], setElements }) {
     // --- 0. TRANSLATIONS ---
     const t = {
         sv: {
@@ -23,7 +24,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
     }[lang || 'sv'];
 
     // --- 1. ISOLATED DRAWING STATES ---
-    const [elements, setElements] = useState([]);
+    // 🟢 REMOVED: local elements state is gone. The parent controls this now.
     const [activeTool, setActiveTool] = useState('select');
     const [color, setColor] = useState('#0f172a');
     const [isDrawing, setIsDrawing] = useState(false);
@@ -43,7 +44,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
     // --- 2. TIMERS & EFFECTS ---
     useEffect(() => {
         const interval = setInterval(() => {
-            setCurrentTime(new Date()); // 🟢 Updates the global clock natively every second
+            setCurrentTime(new Date()); 
             
             setElements(prev => {
                 if (!prev.some(el => el.type === 'timer' && el.isRunning)) return prev;
@@ -57,24 +58,21 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             });
         }, 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [setElements]);
 
-    // 🟢 NEW: Auto-Spawn Widgets (Calculator, Timer, & RichText) without requiring a canvas click
     useEffect(() => {
-        if (activeTool === 'calculator' || activeTool === 'timer' || activeTool === 'richText') {
+        if (activeTool === 'calculator' || activeTool === 'timer' || activeTool === 'richText' || activeTool === 'realClock') {
             const newId = Date.now().toString();
             
-            // Shared base properties
             let newEl = { 
                 id: newId, 
                 type: activeTool, 
-                x: 300, y: 150, // Default center-ish coordinates
+                x: 300, y: 150, 
                 stroke: color, 
                 rotation: 0, 
                 opacity: 1 
             };
 
-            // Tool-specific properties & dimensions
             if (activeTool === 'calculator') {
                 newEl.width = 280; 
                 newEl.height = 440;
@@ -95,31 +93,25 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             } else if (activeTool === 'realClock') {
                 newEl.width = 280;
                 newEl.height = 280;
-                newEl.clockType = 'analog'; // Default style
+                newEl.clockType = 'analog'; 
             }
 
             setElements(prev => [...prev, newEl]);
             setSelectedId(newId);
             
-            // 🟢 Instantly focus the text box so the user can start typing
             if (activeTool === 'richText') {
                 setEditingId(newId);
             }
             
-            setActiveTool('select'); // Instantly return to pointer tool
+            setActiveTool('select'); 
         }
-    }, [activeTool, color]);
+    }, [activeTool, color, setElements]);
 
-    // GLOBAL BACKGROUND DESELECTION CONTROLLER
     useEffect(() => {
         const handleGlobalDeselect = (e) => {
-            // Ignore clicks if interacting with text editors or UI utility toolbars
             if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]')) return;
-            
-            // Ignore clicks targeted directly at drawn shapes
             if (e.target.closest('[data-id]')) return;
             
-            // If the user clicks empty space in Selection Mode, cleanly drop active selection handles
             if (activeTool === 'select') {
                 setSelectedId(null);
                 setEditingId(null);
@@ -132,17 +124,11 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         return () => window.removeEventListener('pointerdown', handleGlobalDeselect);
     }, [activeTool]);
 
-    // 🟢 NEW: GLOBAL POINTER TRACKING ATTACHMENT FOR FAST TRANSFORMATIONS
     useEffect(() => {
-        if (!isDrawing) return; // Only listen globally if actively transforming/drawing
+        if (!isDrawing) return; 
 
-        const handleGlobalMove = (e) => {
-            handlePointerMove(e);
-        };
-
-        const handleGlobalUp = (e) => {
-            handlePointerUp(e);
-        };
+        const handleGlobalMove = (e) => { handlePointerMove(e); };
+        const handleGlobalUp = (e) => { handlePointerUp(e); };
 
         window.addEventListener('pointermove', handleGlobalMove);
         window.addEventListener('pointerup', handleGlobalUp);
@@ -154,7 +140,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
     }, [isDrawing, interactionMode, selectedId, dragOffset, activeTool]); 
 
     // --- 3. ENGINE HELPERS ---
-    // curve smoother for pen strokes
     const getSmoothPathData = (points) => {
         if (!points || points.length === 0) return '';
         if (points.length === 1) return `M ${points[0].x} ${points[0].y} L ${points[0].x} ${points[0].y}`;
@@ -162,13 +147,10 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         
         let d = `M ${points[0].x} ${points[0].y}`;
         for (let i = 1; i < points.length - 1; i++) {
-            // Find the midpoint between the current point and the next point
             const xc = (points[i].x + points[i + 1].x) / 2;
             const yc = (points[i].y + points[i + 1].y) / 2;
-            // Draw a quadratic bezier curve to that midpoint
             d += ` Q ${points[i].x} ${points[i].y} ${xc} ${yc}`;
         }
-        // Draw a straight line to the final resting point
         d += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
         return d;
     };
@@ -248,17 +230,14 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
 
         const { x, y } = getCoordinates(e, false);
         
-        // 🟢 FIXED: Use native DOM hit detection to perfectly identify what is being dragged
         const targetNode = e.target.closest('[data-id]');
         const hitId = targetNode ? targetNode.getAttribute('data-id') : null;
         let hit = hitId ? elements.find(el => el.id === hitId) : null;
         
-        // Fallback to mathematical boundaries if DOM hit misses (e.g. clicking transparent center of a circle)
         if (!hit) {
             hit = [...elements].reverse().find(el => isPointInElement(x, y, el));
         }
 
-        // 1. Instant Spawn Tools
         if (['timer', 'clock', 'ruler', 'coord', 'dice', 'math', 'richText', 'calculator', 'realClock'].includes(activeTool)) {
             const newId = Date.now().toString();
             let newEl = { 
@@ -286,7 +265,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             return;
         }
 
-        // 2. Select Tool
         if (activeTool === 'select') {
             if (hit) {
                 setSelectedId(hit.id); 
@@ -304,7 +282,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             return;
         }
 
-        // 3. Drag Draw Tools
         setIsDrawing(true); 
         setInteractionMode('drawing');
         const newId = Date.now().toString();
@@ -312,11 +289,10 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         let newEl = { id: newId, type: activeTool, x: snap.x, y: snap.y, startX: snap.x, startY: snap.y, width: 0, height: 0, stroke: color, fill: 'none', strokeWidth: 4, opacity: 1, rotation: 0 };
         
         if (activeTool === 'pen' || activeTool === 'highlighter') { 
-            // 🟢 FIXED: Initialize the activePathRef instead of adding to React state immediately
             activePathRef.current = {
                 id: newId,
                 type: 'path',
-                points: [{ x: snap.x, y: snap.y }], // Use 'snap' coordinates here too for consistency
+                points: [{ x: snap.x, y: snap.y }], 
                 strokeWidth: activeTool === 'highlighter' ? 35 : 6,
                 opacity: activeTool === 'highlighter' ? 0.4 : 1,
                 stroke: color
@@ -338,19 +314,16 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         const { x, y } = getCoordinates(e, !['pen', 'highlighter', 'select'].includes(activeTool));
         const raw = getCoordinates(e, false);
 
-        // Fast-path rendering intercepts the move BEFORE React state or selectedId checks!
         if (interactionMode === 'drawing' && (activeTool === 'pen' || activeTool === 'highlighter')) {
             if (activePathRef.current) {
                 activePathRef.current.points.push({ x: raw.x, y: raw.y });
-                // Force a direct DOM update for zero latency
                 const pathNode = svgRef.current?.querySelector(`#active-drawing-path`);
                 if (pathNode) {
-                    // Apply the smooth bezier curve function
                     const d = getSmoothPathData(activePathRef.current.points);
                     pathNode.setAttribute('d', d);
                 }
             }
-            return; // Skip React state entirely!
+            return; 
         }
 
         setElements(prev => {
@@ -400,13 +373,12 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
         if (!isDrawing) return; 
         setIsDrawing(false); setInteractionMode(null); 
 
-        // 🟢 FIXED: Capture the path object in a local variable before resetting the ref!
         if ((activeTool === 'pen' || activeTool === 'highlighter') && activePathRef.current) {
-            const finalPath = activePathRef.current; // Save it to a standard variable first
+            const finalPath = activePathRef.current; 
             if (finalPath.points.length > 2) {
-                setElements(prev => [...prev, finalPath]); // Safely pass the variable to React
+                setElements(prev => [...prev, finalPath]); 
             }
-            activePathRef.current = null; // Now it is safe to reset the ref
+            activePathRef.current = null; 
         } else {
             setElements(current => current.filter(el => {
                 if (el.type === 'path') return el.points.length > 2;
@@ -525,7 +497,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
 
         // Path (Pen/Highlighter)
         if (el.type === 'path') {
-            // Apply smooth curve math and seamless line joins
             const d = getSmoothPathData(el.points);
             return <path key={el.id} data-id={el.id} d={d} stroke={el.stroke} strokeWidth={el.strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={el.opacity} className="pointer-events-auto cursor-move" />;
         }
@@ -997,7 +968,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             const cols = Math.ceil(Math.sqrt(dice.length));
             const cellSize = el.width / cols;
             const rows = Math.ceil(dice.length / cols);
-            const actualGridHeight = rows * cellSize; // 🟢 Accurately tracks the bottom of the dice grid
+            const actualGridHeight = rows * cellSize; 
 
             return (
                 <React.Fragment key={el.id}>
@@ -1015,7 +986,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                         })}
                     </g>
                     
-                    {/* 🟢 NEW: ALWAYS-VISIBLE ROLL BUTTON */}
                     <foreignObject x={el.x} y={el.y + actualGridHeight + 10} width={el.width} height={60} className="ui-ignore pointer-events-auto overflow-visible">
                         <div className="flex justify-center w-full h-full" onPointerDown={e => e.stopPropagation()}>
                             <button 
@@ -1056,7 +1026,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             
             const applyStyle = (cmd, val = null) => {
                 if (cmd === 'fontSize') {
-                    // Modern contentEditable hack: Apply a distinct legacy size, then convert it to strict pixels
                     document.execCommand('styleWithCSS', false, true);
                     document.execCommand('fontSize', false, "7");
                     const fontElements = document.getElementsByTagName("font");
@@ -1088,7 +1057,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                         >
                             <div 
                                 contentEditable={isEditing} suppressContentEditableWarning
-                                // 🟢 ADDED: overflow-hidden prevents a scrollbar from flashing while typing
                                 className="w-full h-full p-4 outline-none font-sans text-slate-800 overflow-hidden [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2"
                                 style={{ 
                                     whiteSpace: 'pre-wrap', 
@@ -1097,7 +1065,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                                     fontSize: '32px',
                                     lineHeight: '1.25'
                                 }}
-                                // 🟢 NEW: Auto-expands the height dynamically without losing your cursor!
                                 onInput={(e) => {
                                     const scrollH = e.currentTarget.scrollHeight;
                                     if (scrollH > el.height) {
@@ -1116,13 +1083,11 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                         </foreignObject>
 
                         {isEditing && (
-                            // 🟢 FIXED: Increased width to 650 to prevent toolbar cutoff
                             <foreignObject x={el.x} y={el.y - 55} width={Math.max(el.width, 650)} height={55} className="ui-ignore pointer-events-auto overflow-visible">
                                 <div 
                                     className="flex items-center gap-2 bg-slate-900 p-2 rounded-xl shadow-2xl border border-slate-700 w-max"
                                     onPointerDown={e => { 
                                         e.stopPropagation(); 
-                                        // 🟢 FIXED: Do not preventDefault on native dropdowns or color inputs so they can open!
                                         if (e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
                                             e.preventDefault(); 
                                         }
@@ -1157,7 +1122,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
 
                                     <div className="w-px h-6 bg-slate-700 mx-1" />
                                     
-                                    {/* 🟢 FIXED: Replaced inline colors with a native OS Color Picker */}
                                     <div className="relative flex items-center justify-center w-8 h-8 hover:bg-slate-700 rounded overflow-hidden" title="Byt färg">
                                         <Palette size={16} className="text-white absolute pointer-events-none" />
                                         <input
@@ -1175,183 +1139,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                         )}
                     </g>
                     {showUI && !isEditing && renderHandles(el)}
-                </React.Fragment>
-            );
-        }
-
-        // Interactive Calculator
-        if (el.type === 'calculator') {
-            const currentMode = el.calcMode || 'LTR';
-        
-            const calcButtons = [
-                '(', ')', '^', '√',
-                'AC', 'DEL', '%', '÷',
-                '7', '8', '9', '×',
-                '4', '5', '6', '-',
-                '1', '2', '3', '+',
-                '0', '.', 'π', '='
-            ];
-        
-            const handleCalcClick = (btn) => {
-                setElements(prev => prev.map(o => {
-                    if (o.id !== el.id) return o;
-                    let expr = o.expression || "";
-                    let res = o.result || "";
-                    let ans = o.ans || "";
-        
-                    if (btn === 'AC') { 
-                        expr = ""; res = ""; 
-                    } else if (btn === 'DEL') { 
-                        expr = expr.slice(0, -1); res = ""; 
-                    } else if (btn === '=') {
-                        try {
-                            let parsed = expr
-                                .replace(/×/g, '*')
-                                .replace(/÷/g, '/')
-                                .replace(/π/g, Math.PI.toString())
-                                .replace(/(\d+(\.\d+)?)%/g, (_, num) => (parseFloat(num)/100).toString());
-        
-                            let evaluated;
-                            
-                            if (currentMode === 'PEMDAS') {
-                                // STANDARD JS MATH EVALUATION
-                                let pemdasStr = parsed
-                                    .replace(/\^/g, '**')
-                                    .replace(/√\(([^)]+)\)/g, 'Math.sqrt($1)')
-                                    .replace(/√(\d+(\.\d+)?)/g, 'Math.sqrt($1)');
-                                evaluated = new Function(`return ${pemdasStr}`)();
-                            } else {
-                                // CUSTOM LEFT-TO-RIGHT (LTR) EVALUATION ENGINE
-                                const solveLTR = (equation) => {
-                                    let str = equation;
-                                    // 1. Solve roots with parens
-                                    while (str.includes('√(')) {
-                                        str = str.replace(/√\(([^()]+)\)/g, (_, inner) => Math.sqrt(solveLTR(inner)).toString());
-                                    }
-                                    // 2. Solve parens recursively
-                                    while (str.includes('(')) {
-                                        str = str.replace(/\(([^()]+)\)/g, (_, inner) => solveLTR(inner).toString());
-                                    }
-                                    // 3. Solve raw roots
-                                    str = str.replace(/√(\d+(?:\.\d+)?)/g, (_, num) => Math.sqrt(parseFloat(num)).toString());
-                                    
-                                    // 4. Tokenize: Separate ALL operators from numbers
-                                    let tokens = str.match(/\d+(?:\.\d+)?|[+\-*/^]/g);
-                                    if (!tokens) return parseFloat(str) || 0;
-                                    
-                                    let result = 0;
-                                    let startIndex = 0;
-                            
-                                    // Handle leading negative sign (e.g., "-5 + 3")
-                                    if (tokens[0] === '-') {
-                                        result = -parseFloat(tokens[1] || 0);
-                                        startIndex = 2;
-                                    } else {
-                                        result = parseFloat(tokens[0] || 0);
-                                        startIndex = 1;
-                                    }
-                                    
-                                    for (let i = startIndex; i < tokens.length; i += 2) {
-                                        let op = tokens[i];
-                                        
-                                        // Handle negative numbers written after an operator (e.g., "5 * -3")
-                                        let nextNumOffset = 1;
-                                        let isNegative = false;
-                                        if (tokens[i+1] === '-') {
-                                            isNegative = true;
-                                            nextNumOffset = 2;
-                                        }
-                                        
-                                        let nextNum = parseFloat(tokens[i + nextNumOffset] || 0);
-                                        if (isNegative) nextNum = -nextNum;
-                            
-                                        if (op === '+') result += nextNum;
-                                        else if (op === '-') result -= nextNum;
-                                        else if (op === '*') result *= nextNum;
-                                        else if (op === '/') result /= nextNum;
-                                        else if (op === '^') result = Math.pow(result, nextNum);
-                                        
-                                        if (isNegative) i++; // Skip the extra minus sign token in the loop
-                                    }
-                                    return result;
-                                };
-                                evaluated = solveLTR(parsed);
-                            }
-                            
-                            // Safe Rounding for floating point errors
-                            const final = Math.round(evaluated * 10000000) / 10000000;
-                            res = final.toString();
-                            ans = final.toString();
-                        } catch (e) {
-                            res = "Error";
-                        }
-                    } else {
-                        if (res !== "" && res !== "Error" && !['+', '-', '×', '÷', '^', '%'].includes(btn)) {
-                            expr = btn; 
-                        } else if (res !== "" && res !== "Error") {
-                            expr = res + btn; 
-                        } else {
-                            expr += btn;
-                        }
-                        res = "";
-                    }
-                    return { ...o, expression: expr, result: res, ans: ans };
-                }));
-            };
-        
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="#1e293b" rx={24 * (el.width / 280)} stroke="#334155" strokeWidth="6" className="shadow-2xl" />
-                        
-                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height}>
-                            <div 
-                                style={{ width: '280px', height: '440px', transform: `scale(${el.width / 280})`, transformOrigin: 'top left' }} 
-                                className="flex flex-col p-5 pointer-events-auto"
-                            >
-                                {/* 🟢 NEW: Hardware Header with Mode Toggle */}
-                                <div className="flex justify-between items-center mb-2 px-1 ui-ignore" onPointerDown={e => e.stopPropagation()}>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Anpassa</span>
-                                    <button 
-                                        onClick={() => setElements(prev => prev.map(o => o.id === el.id ? { ...o, calcMode: currentMode === 'LTR' ? 'PEMDAS' : 'LTR' } : o))}
-                                        className={`text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-inner transition-colors cursor-pointer
-                                            ${currentMode === 'LTR' ? 'bg-amber-500/20 text-amber-400' : 'bg-indigo-500/20 text-indigo-400'}`}
-                                        title={lang === 'sv' ? "Ändra beräkningsordning" : "Toggle Calculation Order"}
-                                    >
-                                        {currentMode === 'LTR' ? 'L->R MODE' : 'PEMDAS MODE'}
-                                    </button>
-                                </div>
-        
-                                <div className="bg-white rounded-xl h-32 mb-5 p-4 flex flex-col justify-between items-end border-4 border-slate-200 shadow-inner font-mono overflow-hidden shrink-0">
-                                    <div className="text-slate-500 font-bold text-3xl tracking-widest w-full text-right overflow-hidden break-all">
-                                        {el.expression}
-                                    </div>
-                                    <div className="text-slate-900 text-5xl font-black truncate w-full text-right mt-1">
-                                        {el.result}
-                                    </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-4 gap-2.5 flex-1 ui-ignore" onPointerDown={e => e.stopPropagation()}>
-                                    {calcButtons.map(btn => {
-                                        let bg = "bg-slate-200 hover:bg-slate-300 text-slate-800 border-b-4 border-slate-300 active:border-b-0 active:translate-y-1";
-                                        if (btn === 'AC' || btn === 'DEL') bg = "bg-rose-500 hover:bg-rose-600 text-white border-b-4 border-rose-700 active:border-b-0 active:translate-y-1";
-                                        if (btn === '=') bg = "bg-indigo-500 hover:bg-indigo-600 text-white border-b-4 border-indigo-700 active:border-b-0 active:translate-y-1";
-                                        if (['÷', '×', '-', '+'].includes(btn)) bg = "bg-amber-400 hover:bg-amber-500 text-slate-900 border-b-4 border-amber-600 active:border-b-0 active:translate-y-1";
-                                        
-                                        return (
-                                            <button 
-                                                key={btn} onClick={() => handleCalcClick(btn)}
-                                                className={`${bg} rounded-xl font-black text-lg shadow-sm flex items-center justify-center transition-all cursor-pointer`}
-                                            >
-                                                {btn}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </foreignObject>
-                    </g>
-                    {showUI && renderHandles(el)}
                 </React.Fragment>
             );
         }
@@ -1398,7 +1185,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
 
     return (
         <>
-            {/* THE DRAWING LAYER */}
             <svg 
                 ref={svgRef}
                 className={`absolute inset-0 w-full h-full z-30 ${activeTool === 'select' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair'}`}
@@ -1406,7 +1192,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
             >
                 {elements.map(renderElement)}
 
-                {/* Directly render the temporary path being drawn */}
                 {isDrawing && (activeTool === 'pen' || activeTool === 'highlighter') && activePathRef.current && (
                     <path 
                         id="active-drawing-path"
@@ -1420,7 +1205,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg }) {
                 )}
             </svg>
 
-            {/*THE HORIZONTAL TOOLBAR */}
             <Toolbar 
                 lang={lang} 
                 activeTool={activeTool} 
