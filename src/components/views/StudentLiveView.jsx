@@ -32,16 +32,75 @@ const MathDisplay = ({ content, className = "" }) => {
 };
 
 export default function StudentLiveView({ session, packet, lang = 'sv', studentAlias, onBack }) {
+    //  1. EXTRACT SETTINGS FROM SUPABASE
+    const settings = session?.active_question_data?.settings || { pacing: 'open', order: 'original', summary: true };
+
     // Logic & Navigation State
+    const [localPacket, setLocalPacket] = useState([]); //  Holds our localized/shuffled array
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState({});
     const [completed, setCompleted] = useState({}); 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [roomActive, setRoomActive] = useState(true);
     const [showFinalReview, setShowFinalReview] = useState(false);
-
-    // Mobile detection state
     const [isMobile, setIsMobile] = useState(false);
+
+    // ---  2. INITIALIZATION & REHYDRATION (Accidental Refresh Fix & Anti-Cheat) ---
+    useEffect(() => {
+        const initializeSession = async () => {
+            // A. Map the original index so the teacher's grid stays perfectly synced
+            let mappedPacket = packet.map((item, index) => ({ ...item, originalIndex: index }));
+            
+            // B. Anti-Cheat Shuffle (Only if randomized AND not in teacher-led mode)
+            if (settings.order === 'randomized' && settings.pacing !== 'teacher') {
+                for (let i = mappedPacket.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [mappedPacket[i], mappedPacket[j]] = [mappedPacket[j], mappedPacket[i]];
+                }
+            }
+            setLocalPacket(mappedPacket);
+
+            // C. Fetch past answers in case of an accidental page refresh!
+            try {
+                const { data: pastResponses, error } = await supabase
+                    .from('responses')
+                    .select('*')
+                    .eq('room_id', session.id)
+                    .eq('student_alias', studentAlias);
+
+                if (!error && pastResponses && pastResponses.length > 0) {
+                    const restoredAnswers = {};
+                    const restoredCompleted = {};
+                    
+                    pastResponses.forEach(res => {
+                        // Find where this question lives in the student's *local* shuffled array
+                        const localIdx = mappedPacket.findIndex(p => p.originalIndex === res.question_index);
+                        if (localIdx !== -1) {
+                            restoredAnswers[localIdx] = res.answer;
+                            restoredCompleted[localIdx] = res.is_correct ? 'correct' : 'wrong';
+                        }
+                    });
+
+                    setAnswers(restoredAnswers);
+                    setCompleted(restoredCompleted);
+
+                    // Auto-jump to the first unanswered question
+                    const answeredCount = Object.keys(restoredCompleted).length;
+                    if (answeredCount < mappedPacket.length) {
+                        const firstUnanswered = mappedPacket.findIndex((_, idx) => !restoredCompleted[idx]);
+                        setCurrentIndex(firstUnanswered !== -1 ? firstUnanswered : answeredCount);
+                    } else {
+                        // If they finished everything, push them straight to the end
+                        setShowFinalReview(settings.summary);
+                    }
+                }
+            } catch (err) {
+                console.error("Rehydration failed:", err);
+            }
+        };
+        
+        initializeSession();
+    }, [packet, session.id, studentAlias]);
 
     useEffect(() => {
         const checkMobile = () => {
@@ -53,7 +112,17 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // --- 1. THE KILL SWITCH ---
+    // STATE TRACKERS FOR THE WEBSOCKET ---
+    // These allow the real-time channel to access the latest data without restarting!
+    const completedRef = useRef(completed);
+    const localPacketRef = useRef(localPacket);
+
+    useEffect(() => {
+        completedRef.current = completed;
+        localPacketRef.current = localPacket;
+    }, [completed, localPacket]);
+
+    // --- 1. REAL-TIME SYNC: KILL SWITCH & TEACHER PACING ---
     useEffect(() => {
         if (!session?.id) return;
         const roomChannel = supabase.channel(`room_status_${session.id}`)
@@ -62,15 +131,48 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 schema: 'public', 
                 table: 'rooms', 
                 filter: `id=eq.${session.id}` 
-            }, (payload) => {
+            }, async (payload) => {
+                // A. The Kill Switch
                 if (payload.new.status === 'closed') {
                     setRoomActive(false);
                     setTimeout(onBack, 4000);
+                    return;
+                }
+
+                // B. Teacher-Led Pacing Sync
+                const newSettings = payload.new.active_question_data?.settings;
+                if (newSettings?.pacing === 'teacher' && newSettings.current_index !== undefined) {
+                    const newTeacherIndex = newSettings.current_index;
+                    
+                    setCurrentIndex((prevIndex) => {
+                        // 🟢 Read from the refs so we always have the latest state!
+                        const currentCompleted = completedRef.current;
+                        const currentPacket = localPacketRef.current;
+                        
+                        if (newTeacherIndex > prevIndex && !currentCompleted[prevIndex]) {
+                            const timeoutAnswer = "[TIMEOUT]";
+                            
+                            supabase.from('responses').insert([{
+                                room_id: session.id,
+                                student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
+                                question_index: currentPacket[prevIndex].originalIndex, 
+                                answer: timeoutAnswer, 
+                                is_correct: false,
+                                is_manually_corrected: false 
+                            }]).then(() => {
+                                setAnswers(prev => ({ ...prev, [prevIndex]: timeoutAnswer }));
+                                setCompleted(prev => ({ ...prev, [prevIndex]: 'wrong' }));
+                            });
+                        }
+                        return newTeacherIndex;
+                    });
                 }
             })
             .subscribe();
+            
+        // 🟢 REMOVED `completed` and `localPacket` from this array so the channel never drops!
         return () => { supabase.removeChannel(roomChannel); };
-    }, [session?.id, onBack]);
+    }, [session?.id, onBack, studentAlias]);
 
     // --- 1b. THE BLACKLIST WATCHER ---
     useEffect(() => {
@@ -129,20 +231,19 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 .replace(/·/g, '*');       // Normalize dot to asterisk for safer comparison
         };
         
-        let correctAnswer = packet[currentIndex].resolvedData?.answer;
+        let currentItem = localPacket[currentIndex]; //  Use localPacket
+        let correctAnswer = currentItem.resolvedData?.answer;
         
-        // 3. UTF-8 Safe Decoding (Mirroring server-side Buffer logic)
-        if (!correctAnswer && packet[currentIndex].resolvedData?.token) {
+        if (!correctAnswer && currentItem.resolvedData?.token) {
             try { 
-                const binaryString = atob(packet[currentIndex].resolvedData.token);
+                const binaryString = atob(currentItem.resolvedData.token);
                 const bytes = new Uint8Array(binaryString.length);
                 for (let i = 0; i < binaryString.length; i++) {
                     bytes[i] = binaryString.charCodeAt(i);
                 }
-                correctAnswer = new TextDecoder().decode(bytes); // Decodes symbols like · and ³ correctly
+                correctAnswer = new TextDecoder().decode(bytes); 
             } catch (e) {
-                console.warn("Decoding failed, falling back to standard atob.");
-                correctAnswer = atob(packet[currentIndex].resolvedData.token);
+                correctAnswer = atob(currentItem.resolvedData.token);
             }
         }
         
@@ -150,11 +251,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         setIsSubmitting(true);
 
         try {
-            // Direct database update for the Teacher dashboard
             const { error } = await supabase.from('responses').insert([{
                 room_id: session.id,
                 student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
-                question_index: currentIndex,
+                question_index: currentItem.originalIndex, //  FIXED: Sends original column to Teacher!
                 answer: String(val).substring(0, 20), 
                 is_correct: isCorrect
             }]);
@@ -162,8 +262,11 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             
             setCompleted(prev => ({ ...prev, [currentIndex]: isCorrect ? 'correct' : 'wrong' }));
             
-            if (currentIndex < packet.length - 1) {
+            if (currentIndex < localPacket.length - 1) {
                 setTimeout(() => setCurrentIndex(prev => prev + 1), 600);
+            } else if (currentIndex === localPacket.length - 1) {
+                //  NEW: If they finish the last question, auto-trigger the completion screen
+                setTimeout(() => setCompleted(prev => ({ ...prev })), 600);
             }
         } catch (err) {
             console.error("Submission error:", err);
@@ -176,7 +279,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     
 
     const renderInput = (idx = currentIndex) => {
-        const item = packet[idx];
+        const item = localPacket[idx];
         const rd = item.resolvedData?.renderData;
 
         // Ported Multiple Choice logic from TestLabView
@@ -264,6 +367,8 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         }
     };
 
+    if (localPacket.length === 0) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" size={32}/></div>;
+
     // --- 4. RENDER: FINAL REVIEW GRID ---
     if (showFinalReview) {
         return (
@@ -276,7 +381,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     <button onClick={onBack} className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-indigo-600 transition-all cursor-pointer">Stäng</button>
                 </header>
                 <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {packet.map((item, idx) => {
+                    {localPacket.map((item, idx) => {
                         const hasVisual = item.resolvedData?.renderData && 
                             (item.resolvedData.renderData.graph || 
                              item.resolvedData.renderData.geometry || 
@@ -294,7 +399,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                     {hasVisual && (
                                         <div className="w-full flex justify-center bg-slate-50/50 p-4 rounded-2xl mb-4 border border-slate-100 overflow-hidden">
                                             <div className="scale-75 origin-center max-h-[160px] flex items-center justify-center">
-                                                {renderVisual(item)}
+                                                <VisualRenderer 
+                                                    data={item.resolvedData?.renderData} 
+                                                    isWordProblem={!!item.resolvedData?.renderData?.isWordProblemApplied} 
+                                                />
                                             </div>
                                         </div>
                                     )}
@@ -383,8 +491,9 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
                     <button 
                         onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
-                        disabled={currentIndex === 0}
-                        className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 disabled:opacity-0 transition-all shrink-0"
+                        // PACING RULE: Progressive & Teacher modes disable moving backwards
+                        disabled={currentIndex === 0 || settings.pacing === 'progressive' || settings.pacing === 'teacher'}
+                        className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 disabled:opacity-20 transition-all shrink-0"
                     >
                         <ChevronLeft size={28} />
                     </button>
@@ -400,9 +509,14 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
                     <div className="flex items-center gap-1 shrink-0">
                         <button 
-                            onClick={() => setCurrentIndex(prev => Math.min(packet.length - 1, prev + 1))}
-                            disabled={currentIndex === packet.length - 1}
-                            className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 disabled:opacity-0 transition-all"
+                            onClick={() => setCurrentIndex(prev => Math.min(localPacket.length - 1, prev + 1))}
+                            //  PACING RULE: Progressive mode requires an answer to move forward. Teacher mode completely disables it.
+                            disabled={
+                                currentIndex === localPacket.length - 1 || 
+                                (settings.pacing === 'progressive' && !completed[currentIndex]) ||
+                                settings.pacing === 'teacher'
+                            }
+                            className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 disabled:opacity-20 transition-all"
                         >
                             <ChevronRight size={28} />
                         </button>
@@ -417,7 +531,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 </div>
 
                 <div className="hidden sm:flex max-w-xs mx-auto h-1 bg-slate-100 rounded-full gap-1 p-0 mt-2">
-                    {packet.map((_, i) => (
+                    {localPacket.map((_, i) => (
                         <div key={i} className={`flex-1 rounded-full transition-all duration-700 ${i === currentIndex ? 'bg-indigo-500 ring-2 ring-indigo-50' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
                     ))}
                 </div>
@@ -429,7 +543,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-y-auto lg:overflow-hidden transition-all duration-300 flex flex-col ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
                     
                     <div className="sm:hidden h-1 bg-slate-100 flex shrink-0">
-                        {packet.map((_, i) => (
+                        {localPacket.map((_, i) => (
                             <div key={i} className={`flex-1 ${i === currentIndex ? 'bg-indigo-500' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
                         ))}
                     </div>
@@ -446,12 +560,12 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         <div className="flex flex-col order-1 lg:order-2 lg:h-full lg:overflow-hidden border-b lg:border-b-0 border-slate-50">
                             <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6">
                                 <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
-                                    <MathDisplay content={packet[currentIndex].resolvedData?.renderData?.description} />
+                                    <MathDisplay content={localPacket[currentIndex].resolvedData?.renderData?.description} />
                                     
-                                    {packet[currentIndex].resolvedData?.renderData?.latex && 
-                                        !packet[currentIndex].resolvedData?.renderData?.isWordProblemApplied && 
-                                        !packet[currentIndex].resolvedData?.renderData?.geometry && (
-                                            <MathDisplay content={`$$${packet[currentIndex].resolvedData.renderData.latex}$$`} />
+                                    {localPacket[currentIndex].resolvedData?.renderData?.latex && 
+                                        !localPacket[currentIndex].resolvedData?.renderData?.isWordProblemApplied && 
+                                        !localPacket[currentIndex].resolvedData?.renderData?.geometry && (
+                                            <MathDisplay content={`$$${localPacket[currentIndex].resolvedData.renderData.latex}$$`} />
                                     )}
                                 </div>
                             </div>
@@ -460,7 +574,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 {!completed[currentIndex] ? (
                                     <div className="max-w-md mx-auto space-y-4">
                                         {renderInput()}
-                                        {!(packet[currentIndex]?.resolvedData?.renderData?.options) && (
+                                        {!(localPacket[currentIndex]?.resolvedData?.renderData?.options) && (
                                             <button 
                                                 onClick={() => handleSolve()} 
                                                 disabled={isSubmitting || !answers[currentIndex]} 
@@ -481,24 +595,24 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         </div>
 
                         {/* --- VISUAL SECTION --- */}
-                        {packet[currentIndex].resolvedData?.renderData && 
-                        (packet[currentIndex].resolvedData.renderData.graph || 
-                        packet[currentIndex].resolvedData.renderData.geometry || 
-                        packet[currentIndex].resolvedData.renderData.pattern) ? (
+                        {localPacket[currentIndex].resolvedData?.renderData && 
+                        (localPacket[currentIndex].resolvedData.renderData.graph || 
+                        localPacket[currentIndex].resolvedData.renderData.geometry || 
+                        localPacket[currentIndex].resolvedData.renderData.pattern) ? (
                             <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 lg:order-1 min-h-[400px] lg:h-full border-t lg:border-t-0 border-slate-50 pb-12 lg:pb-12 relative overflow-hidden">
                                 
                                 {/* 🎯 UNIVERSAL ASSESSMENT SHIELD: Absolute occlusion with override button deactivated */}
                                 <WordProblemVisualGuard
-                                    isActive={!!packet[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied}
+                                    isActive={!!localPacket[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied}
                                     lang={lang}
-                                    questionKey={packet[currentIndex]?.id || currentIndex}
+                                    questionKey={localPacket[currentIndex]?.id || currentIndex}
                                     allowReveal={false} // 👈 🔒 HIDES THE "REVEAL" BUTTON COMPLETELY
                                 >
                                     <div className="w-full h-full flex items-center justify-center drop-shadow-md transform scale-90 lg:scale-125">
-                                        {/* 🟢 FIXED: Called VisualRenderer with the word problem state! */}
+                                        {/*  FIXED: Called VisualRenderer with the word problem state! */}
                                         <VisualRenderer 
-                                            data={packet[currentIndex]?.resolvedData?.renderData} 
-                                            isWordProblem={!!packet[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied} 
+                                            data={localPacket[currentIndex]?.resolvedData?.renderData} 
+                                            isWordProblem={!!localPacket[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied} 
                                         />
                                     </div>
                                 </WordProblemVisualGuard>
