@@ -23,8 +23,7 @@ const Dashboard = ({
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
     timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen,
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, onLabOpen,
-    onTimesTableOpen, onWhiteboardOpen,
-    onRelaunch, onViewReport, onEdit, 
+    onTimesTableOpen, onRelaunch, onViewReport, onEdit, 
     userRole = 'teacher'
 }) => {
     // 🟢 expandedCategory now functions as our active tab state for the curriculum
@@ -39,7 +38,7 @@ const Dashboard = ({
         sv: {
             tools_section: "Verktyg", class_code_label: "Din klasskod", connected_code_label: "Ansluten till kod",
             timer_title: "Timer", timer_off: "Timer av", timer_reset: "Nollställ",
-            studio_title: "Question Studio", studio_desc: "Skapa material",
+            studio_title: "Question Studio / Presentera", studio_desc: "Skapa material",
             stats_title: "Statistik", stats_desc: "Dina framsteg",
             curriculum_title: "Kursmaterial", archive_title: "Lektionsarkiv",
             topics_count: (count) => `${count} delmoment`, select_level: "Välj nivå",
@@ -56,7 +55,7 @@ const Dashboard = ({
         en: {
             tools_section: "Tools", class_code_label: "Your Class Code", connected_code_label: "Connected to code",
             timer_title: "Timer", timer_off: "Timer Off", timer_reset: "Reset",
-            studio_title: "Question Studio", studio_desc: "Create material",
+            studio_title: "Question Studio / Slides", studio_desc: "Create material",
             stats_title: "Statistics", stats_desc: "Your progress",
             curriculum_title: "Course Material", archive_title: "Session Archive",
             topics_count: (count) => `${count} topics`, select_level: "Select Level",
@@ -230,7 +229,7 @@ const Dashboard = ({
                             <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.tools_section}</h2>
                         </div>
 
-                        {/* Question Studio */}
+                        {/* Question Studio (Now acts as the central Library & Creator hub) */}
                         {userRole === 'teacher' && (
                             <button onClick={onStudioOpen} className="group flex items-center gap-4 p-3.5 bg-emerald-900 text-white rounded-2xl hover:bg-emerald-800 transition-all shadow-md text-left w-full">
                                 <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center shrink-0">
@@ -245,7 +244,7 @@ const Dashboard = ({
 
                         {/* Test Lab */}
                         <button onClick={onLabOpen} className="group flex items-center gap-4 p-3.5 bg-indigo-50 border border-indigo-100 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all text-left w-full">
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shrink-0 group-hover:text-indigo-600">
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shrink-0 group-hover:text-white">
                                 <Beaker size={18} />
                             </div>
                             <div>
@@ -255,23 +254,6 @@ const Dashboard = ({
                                 </span>
                             </div>
                         </button>
-
-                        {/* Presentation Canvas */}
-                        {userRole === 'teacher' && (
-                            <button onClick={onWhiteboardOpen} className="group flex items-center gap-4 p-3.5 bg-white border border-slate-200 rounded-2xl hover:border-purple-600 hover:bg-purple-50 transition-all text-left w-full">
-                                <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 shrink-0 group-hover:bg-white">
-                                    <Monitor size={18} />
-                                </div>
-                                <div>
-                                    <span className="block font-bold text-sm uppercase text-slate-700 group-hover:text-purple-900 leading-tight">
-                                        {lang === 'sv' ? 'Presentation' : 'Board'}
-                                    </span>
-                                    <span className="text-[9px] font-medium text-slate-400 group-hover:text-purple-500 uppercase tracking-widest">
-                                        {lang === 'sv' ? 'Lektionsyta' : 'Blank canvas'}
-                                    </span>
-                                </div>
-                            </button>
-                        )}
 
                         {/* Timer Inline Tool */}
                         <div className="flex items-center gap-3 p-3.5 bg-emerald-50 border border-emerald-100 rounded-2xl w-full">

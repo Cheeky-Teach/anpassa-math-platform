@@ -2,6 +2,33 @@
 
 export const APP_UPDATES = [
   {
+    id: 'v020',
+    date: '2026-10-01',
+    version: '0.2.0',
+    title: { 
+      sv: "Presentationsläge & Molnsparande",
+      en: "Presentation Boards & Cloud Saving"
+    },
+    highlights: {
+      sv: "Skapa presentationer med flera sidor (slides), döp om dem och spara allt direkt i ditt bibliotek!",
+      en: "Create multi-slide presentations, rename them, and save everything directly to your library!"
+    },
+    changes: {
+      sv: [
+        "Sida för sida (Slides): Nu kan du lägga till flera sidor i dina presentationer, precis som i PowerPoint. Dubbelklicka på sidans namn i menyn för att döpa om den så att du lätt hittar rätt.",
+        "Spara ditt arbete: Vi har lagt till en 'Spara'-knapp högst upp. Hela din presentation, inklusive dina sidor, ritningar och valda matteuppgifter, sparas nu direkt på ditt konto i molnet.",
+        "Öppna från Biblioteket: Dina sparade presentationer dyker nu upp i ditt Bibliotek tillsammans med dina arbetsblad. Klicka bara på 'Öppna Presentation' för att fortsätta precis där du slutade.",
+        "Exportera till Excel: En ny exportknapp låter dig snabbt ladda ner all text du skrivit på dina sidor rakt ner i en Excel-fil (CSV)."
+      ],
+      en: [
+        "Slide by Slide: You can now add multiple slides to your presentations, just like PowerPoint. Double-click a slide's name in the menu to rename it so you can easily stay organized.",
+        "Save Your Work: We added a 'Save' button at the top. Your entire presentation, including your slides, drawings, and chosen math questions, is now saved directly to your cloud account.",
+        "Open from Library: Your saved presentations will now show up in your Library along with your worksheets. Just click 'Open Board' to jump right back in where you left off.",
+        "Export to Excel: A new export button lets you instantly download all the text you've written on your slides straight into an Excel (CSV) file."
+      ]
+    }
+  },
+  {
     id: 'v019',
     date: '2026-09-29',
     version: '0.1.9',
