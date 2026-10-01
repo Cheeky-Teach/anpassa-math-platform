@@ -185,7 +185,7 @@ export default function QuestionStudio({
   const [isPane4Collapsed, setIsPane4Collapsed] = useState(false);
   const [setupMode, setSetupMode] = useState(studioMode); 
   const [activeSheetId, setActiveSheetId] = useState(null); 
-  // 🟢 NEW: Store the active board sheet object if opening a presentation
+  //  Store the active board sheet object if opening a presentation
   const [activeBoardSheet, setActiveBoardSheet] = useState(null);
 
   const [savedSheets, setSavedSheets] = useState([]);
@@ -216,6 +216,14 @@ export default function QuestionStudio({
   const [isGlobalShuffleOpen, setIsGlobalShuffleOpen] = useState(false);
   const [filterDocType, setFilterDocType] = useState('all');
   const [showPresentation, setShowPresentation] = useState(false); 
+
+  // Live Session Pre-Flight States
+  const [showLiveModal, setShowLiveModal] = useState(false);
+  const [liveSettings, setLiveSettings] = useState({
+      pacing: 'open',      // 'open', 'progressive', 'teacher'
+      order: 'original',   // 'original', 'randomized'
+      summary: true        // true (show), false (hide)
+  });
 
   const [folders, setFolders] = useState([]);
   const [expandedFolders, setExpandedFolders] = useState([]);
@@ -440,7 +448,7 @@ export default function QuestionStudio({
     } catch (err) { alert("Kunde inte kopiera."); }
   };
 
-  // 🟢 NEW: Dedicated loader for presentation boards
+  //  Dedicated loader for presentation boards
   const loadBoard = (sheet) => {
       setActiveBoardSheet(sheet);
       setShowPresentation(true);
@@ -473,13 +481,26 @@ export default function QuestionStudio({
       onWorksheetGenerate(printPacket, { title: sheetTitle, globalLatexSize, workspaceHeight, workspaceStyle, layoutStyle, includeAnswerKey, answerKeyStyle }); 
   };
   
-  const handleLaunchLive = async () => {
+  // Now just opens the pre-flight modal
+  const handleLaunchLive = () => {
     if (!isSaved && !window.confirm(t.unsaved_warning)) return;
+    setShowLiveModal(true);
+  };
+
+  // Launches when the teacher clicks "Starta Session" inside the modal
+  const confirmLaunchLive = async () => {
+    setShowLiveModal(false);
     const { data: { user } } = await supabase.auth.getUser();
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     try {
         const { data, error } = await supabase.from('rooms').insert([{ 
-            teacher_id: user.id, class_code: code, status: 'active', title: sheetTitle || "Live Session", active_worksheet_id: activeSheetId, active_question_data: { packet: packet, mode: setupMode } 
+            teacher_id: user.id, 
+            class_code: code, 
+            status: 'active', 
+            title: sheetTitle || "Live Session", 
+            active_worksheet_id: activeSheetId, 
+            // 🟢 INJECTED SETTINGS: The live views will read these rules!
+            active_question_data: { packet: packet, mode: setupMode, settings: liveSettings } 
         }]).select().single();
         if (error) throw error;
         onDoNowGenerate(null, null, { room: data, packet: packet }); 
@@ -575,7 +596,7 @@ export default function QuestionStudio({
   })
   .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
 
-  // 🟢 NEW: Utility for resolving row icons cleanly based on document type
+  //  Utility for resolving row icons cleanly based on document type
   const getSheetIconStyle = (type, size = 12) => {
       if (type === 'board') return { bg: 'bg-amber-50', text: 'text-amber-600', icon: <Monitor size={size} /> };
       if (type === 'donow') return { bg: 'bg-indigo-50', text: 'text-indigo-500', icon: <Grid3X3 size={size} /> };
@@ -595,7 +616,7 @@ export default function QuestionStudio({
                         
                         {/* Create Buttons */}
                         <div className="flex flex-col gap-2">
-                            {/* 🟢 NEW: PRESENTATION BOARD LAUNCH BUTTON */}
+                            {/*  PRESENTATION BOARD LAUNCH BUTTON */}
                             <button 
                                 onClick={() => { setActiveBoardSheet(null); setShowPresentation(true); }} 
                                 className="w-full py-2.5 bg-amber-500 text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-amber-600 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
@@ -680,7 +701,7 @@ export default function QuestionStudio({
                                 <button onClick={() => setFilterDocType('all')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 cursor-pointer ${filterDocType === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
                                     {t.filter_all}
                                 </button>
-                                {/* 🟢 NEW: BOARD FILTER TOGGLE */}
+                                {/*  BOARD FILTER TOGGLE */}
                                 <button onClick={() => setFilterDocType('board')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 flex items-center gap-1 cursor-pointer ${filterDocType === 'board' ? 'bg-amber-500 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
                                     <Monitor size={12} /> {t.board_title}
                                 </button>
@@ -779,7 +800,7 @@ export default function QuestionStudio({
                                                         <td className="py-3 text-right pr-4">
                                                             <div className="flex justify-end gap-1 items-center opacity-40 group-hover:opacity-100 transition-opacity">
                                                                 <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-slate-100"><Maximize2 size={14}/></button>
-                                                                {/* 🟢 NEW: Context-aware routing button for Boards vs Worksheets */}
+                                                                {/*  Context-aware routing button for Boards vs Worksheets */}
                                                                 {sheet.type === 'board' ? (
                                                                     <button onClick={() => loadBoard(sheet)} className="bg-amber-500 text-slate-900 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-amber-600 ml-2">{lang === 'sv' ? 'Öppna' : 'Open'}</button>
                                                                 ) : (
@@ -828,7 +849,7 @@ export default function QuestionStudio({
                                                         </>
                                                     ) : libraryTab === 'private' ? (
                                                         <>
-                                                            {/* 🟢 NEW: Context-aware routing button for Boards vs Worksheets */}
+                                                            {/*  Context-aware routing button for Boards vs Worksheets */}
                                                             {sheet.type === 'board' ? (
                                                                 <button onClick={() => loadBoard(sheet)} className="bg-amber-500 text-slate-900 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-amber-600 ml-2">{lang === 'sv' ? 'Öppna' : 'Open'}</button>
                                                             ) : (
@@ -913,7 +934,7 @@ export default function QuestionStudio({
                             <div className="p-6 border-b flex justify-between items-center bg-slate-900 text-white">
                                 <div>
                                     <h3 className="text-lg font-black uppercase italic tracking-tighter leading-none">{peekSheet.title}</h3>
-                                    {/* 🟢 NEW: Protection to parse board objects vs flat arrays so quick-peek doesn't crash! */}
+                                    {/*  Protection to parse board objects vs flat arrays so quick-peek doesn't crash! */}
                                     <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-widest">
                                         {(peekSheet.type === 'board' ? peekSheet.packet?.livePacket?.length : peekSheet.packet?.length) || 0} Uppgifter
                                     </p>
@@ -921,7 +942,7 @@ export default function QuestionStudio({
                                 <button onClick={() => setPeekSheet(null)} className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer"><X size={20}/></button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                                {/* 🟢 NEW: Mapped using the safe payload parser */}
+                                {/*  Mapped using the safe payload parser */}
                                 {(peekSheet.type === 'board' ? (peekSheet.packet?.livePacket || []) : peekSheet.packet).map((q, i) => (
                                     <div key={i} className="border-b border-slate-100 pb-6 last:border-0">
                                         <div className="flex justify-center mb-3 scale-75 origin-top">
@@ -938,7 +959,7 @@ export default function QuestionStudio({
                                     </div>
                                 ) : libraryTab === 'private' ? (
                                     <div className="flex gap-3">
-                                        {/* 🟢 NEW: Replaced dual-buttons with a single context-aware button for presentation boards */}
+                                        {/*  Replaced dual-buttons with a single context-aware button for presentation boards */}
                                         {peekSheet.type === 'board' ? (
                                             <button onClick={() => { loadBoard(peekSheet); setPeekSheet(null); }} className="flex-1 py-3 bg-amber-500 text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-amber-600 transition-all cursor-pointer">
                                                 {lang === 'sv' ? "Öppna Presentation" : "Open Board"}
@@ -962,7 +983,7 @@ export default function QuestionStudio({
                     </div>
                 )}
 
-                {/* 🟢 NEW: Conditional renderer that sends the loaded board database payload strictly to the active presentation view */}
+                {/*  Conditional renderer that sends the loaded board database payload strictly to the active presentation view */}
                 {showPresentation && (
                     <PresentationView 
                         packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || []) : packet} 
@@ -1583,7 +1604,100 @@ export default function QuestionStudio({
           )}
         </div>
       </div>
-      <BackgroundWave /> 
+      <BackgroundWave />
+      {/* 🟢 FIXED: MODALS GO HERE AT THE VERY ROOT TO OVERLAY EVERYTHING */}
+      {showLiveModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+              <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md animate-in zoom-in-95 duration-200">
+                  <div className="flex justify-between items-center mb-6">
+                      <div>
+                          <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tight leading-none">{lang === 'sv' ? "Live-Inställningar" : "Live Settings"}</h3>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{packet.length} {lang === 'sv' ? "Uppgifter" : "Questions"}</p>
+                      </div>
+                      <button onClick={() => setShowLiveModal(false)} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"><X size={20}/></button>
+                  </div>
+
+                  <div className="space-y-6">
+                      {/* PACING CONTROLS */}
+                      <div>
+                          <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-3 block">{lang === 'sv' ? "Tempo & Navigering" : "Pacing & Navigation"}</label>
+                          <div className="flex flex-col gap-2">
+                              <button 
+                                  onClick={() => setLiveSettings({ ...liveSettings, pacing: 'open' })}
+                                  className={`p-3 rounded-xl border-2 text-left transition-all ${liveSettings.pacing === 'open' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 hover:border-slate-200'}`}
+                              >
+                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'open' ? 'text-indigo-700' : 'text-slate-600'}`}>{lang === 'sv' ? "Öppet (Egen takt)" : "Open (Free Pacing)"}</div>
+                                  <div className="text-[10px] font-bold text-slate-400 leading-tight mt-0.5">{lang === 'sv' ? "Elever kan bläddra fritt fram och tillbaka." : "Students navigate freely back and forth."}</div>
+                              </button>
+                              <button 
+                                  onClick={() => setLiveSettings({ ...liveSettings, pacing: 'progressive' })}
+                                  className={`p-3 rounded-xl border-2 text-left transition-all ${liveSettings.pacing === 'progressive' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 hover:border-slate-200'}`}
+                              >
+                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'progressive' ? 'text-indigo-700' : 'text-slate-600'}`}>{lang === 'sv' ? "Låst (En i taget)" : "Progressive Lock"}</div>
+                                  <div className="text-[10px] font-bold text-slate-400 leading-tight mt-0.5">{lang === 'sv' ? "Elever måste svara för att komma vidare. Kan ej gå tillbaka." : "Students must answer to advance. No going back."}</div>
+                              </button>
+                              <button 
+                                  onClick={() => setLiveSettings({ ...liveSettings, pacing: 'teacher', order: 'original' })}
+                                  className={`p-3 rounded-xl border-2 text-left transition-all ${liveSettings.pacing === 'teacher' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 hover:border-slate-200'}`}
+                              >
+                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'teacher' ? 'text-indigo-700' : 'text-slate-600'}`}>{lang === 'sv' ? "Lärarstyrd" : "Teacher-Led"}</div>
+                                  <div className="text-[10px] font-bold text-slate-400 leading-tight mt-0.5">{lang === 'sv' ? "Du byter uppgift för hela klassen samtidigt." : "You control the active question for the whole class."}</div>
+                              </button>
+                          </div>
+                      </div>
+
+                      {/* ANTI-CHEAT (ORDER) */}
+                      <div>
+                          <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-3 block">{lang === 'sv' ? "Uppgiftsordning" : "Question Order"}</label>
+                          <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner border border-slate-200/50">
+                              <button 
+                                  onClick={() => setLiveSettings({ ...liveSettings, order: 'original' })}
+                                  className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${liveSettings.order === 'original' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                              >
+                                  {lang === 'sv' ? "Standard" : "Standard"}
+                              </button>
+                              <button 
+                                  disabled={liveSettings.pacing === 'teacher'}
+                                  onClick={() => setLiveSettings({ ...liveSettings, order: 'randomized' })}
+                                  className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-30 ${liveSettings.order === 'randomized' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                              >
+                                  {lang === 'sv' ? "Slumpad" : "Randomized"}
+                              </button>
+                          </div>
+                          {liveSettings.pacing === 'teacher' && <p className="text-[9px] font-bold text-amber-500 mt-2 text-center">{lang === 'sv' ? "Slumpad ordning är inaktiverad i lärarstyrt läge." : "Randomization is disabled during Teacher-Led pacing."}</p>}
+                      </div>
+
+                      {/* SUMMARY VIEW TOGGLE */}
+                      <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                          <div>
+                              <div className="text-[11px] font-black uppercase text-slate-700 tracking-widest">{lang === 'sv' ? "Visa Resultatsöversikt" : "Show Final Summary"}</div>
+                              <div className="text-[9px] font-bold text-slate-400">{lang === 'sv' ? "Elever ser sina egna svar efteråt." : "Students review their answers at the end."}</div>
+                          </div>
+                          <button 
+                              onClick={() => setLiveSettings({ ...liveSettings, summary: !liveSettings.summary })} 
+                              className={`w-10 h-6 rounded-full transition-all relative p-1 shrink-0 ${liveSettings.summary ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                          >
+                              <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${liveSettings.summary ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </button>
+                      </div>
+                  </div>
+
+                  <button onClick={confirmLaunchLive} className="w-full mt-6 py-4 bg-rose-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-rose-700 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
+                      <Send size={18} /> {lang === 'sv' ? "Starta Session" : "Start Session"}
+                  </button>
+              </div>
+          </div>
+      )}
+
+      {/* Bonus Catch: Restored the presentation renderer for the editor view! */}
+      {showPresentation && (
+          <PresentationView 
+              packet={packet} 
+              sheetTitle={sheetTitle} 
+              lang={lang} 
+              onClose={() => setShowPresentation(false)} 
+          />
+      )}
     </div>
   );
 }

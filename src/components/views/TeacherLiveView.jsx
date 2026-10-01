@@ -125,6 +125,9 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const [showPrintPreview, setShowPrintPreview] = useState(false); // Added for landscape preview
     const [zoomIndex, setZoomIndex] = useState(null);
 
+    const [isPushing, setIsPushing] = useState(false);
+    const isTeacherLed = session.active_question_data?.settings?.pacing === 'teacher';
+
     const ui = UI_TEXT[lang];
     const isMounted = useRef(true);
     const channelRef = useRef(null);
@@ -295,7 +298,18 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const handleEndSession = async () => {
         if (isClosing) return;
         setIsClosing(true);
-        try { await onEnd(); } catch (err) {
+        try { 
+            // Explicitly update the database so the students' iPads get the signal!
+            const { error } = await supabase
+                .from('rooms')
+                .update({ status: 'closed' })
+                .eq('id', session.id);
+                
+            if (error) throw error;
+
+            // Now officially close the teacher's frontend view
+            await onEnd(); 
+        } catch (err) {
             alert(lang === 'sv' ? "Kunde inte avsluta sessionen." : "Could not end session.");
             setIsClosing(false);
         }
@@ -315,33 +329,14 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         };
     });
 
-    const getStatusColor = (isCorrect, answered) => {
+    const getStatusColor = (isCorrect, answered, answerText) => {
         if (!answered) return 'bg-slate-100 opacity-30';
         if (hideCorrectness) return 'bg-indigo-300';
+        
+        //  pedagogical timeout indicator
+        if (answerText === '[TIMEOUT]') return 'bg-slate-800 shadow-[0_0_8px_rgba(30,41,59,0.3)]'; 
+        
         return isCorrect ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.2)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.2)]';
-    };
-
-    const handleManualGrade = async (response) => {
-        if (!response || !response.id) return;
-
-        // 1. Optimistic local update for instant feedback
-        setResponses(prev => prev.map(r => 
-            r.id === response.id ? { ...r, is_correct: !r.is_correct } : r
-        ));
-
-        // 2. Persist to database
-        try {
-            const { error } = await supabase
-                .from('responses')
-                .update({ is_correct: !response.is_correct })
-                .eq('id', response.id);
-                
-            if (error) throw error;
-        } catch (err) {
-            console.error("Error updating grade:", err);
-            // Revert on error if necessary
-            syncData();
-        }
     };
 
     return (
@@ -579,7 +574,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                                 className="w-full h-full py-1.5 flex flex-col items-center justify-center gap-1 hover:bg-white/10 transition-colors"
                                             >
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-center">{i + 1}</span>
-                                                {/* 🟢 NEW: INJECT ANSWER KEY INTO HEADER */}
+                                                {/*  INJECT ANSWER KEY INTO HEADER */}
                                                 {showActualAnswers && (
                                                     <span className="text-[8px] text-orange-300 font-bold bg-orange-400/10 px-1.5 py-0.5 rounded truncate max-w-[50px] tracking-normal" title={getCorrectAnswer(q)}>
                                                         {getCorrectAnswer(q)}
@@ -611,18 +606,16 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                                     <td 
                                                         key={qIdx} 
                                                         className="p-1 border-r border-slate-50"
-                                                        // 🟢 FIXED: Now calls our new Optimistic Sync function if a response exists!
                                                         onClick={() => resp && handleManualOverride(resp.id, resp.is_correct)} 
                                                     >
                                                         <div 
                                                             title={resp ? `Svar: ${resp.answer} (Klicka för att ändra rättning)` : 'Inget svar'}
-                                                            // Added 'hover:scale-95 active:scale-90' so the cell "presses in" like a real button when clicked
-                                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer hover:scale-95 active:scale-90 ${getStatusColor(resp?.is_correct, !!resp)}`}
+                                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer hover:scale-95 active:scale-90 ${getStatusColor(resp?.is_correct, !!resp, resp?.answer)}`}
                                                         >
                                                             {/* Show actual answer text if toggle is active */}
                                                             {showActualAnswers && resp && (
                                                                 <span className="text-[9px] font-black text-white px-1 truncate">
-                                                                    {resp.answer}
+                                                                    {resp.answer === '[TIMEOUT]' ? 'TID' : resp.answer}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -658,8 +651,35 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
                                     {responses.filter(r => r.question_index === zoomIndex).length}/{students.length} {lang === 'sv' ? "Svar" : "Answers"}
                                 </div>
+
+                                {/*  TEACHER-LED BROADCAST BUTTON */}
+                                {isTeacherLed && (
+                                    <button 
+                                        disabled={isPushing}
+                                        onClick={async () => {
+                                            setIsPushing(true);
+                                            const updatedSettings = { 
+                                                ...session.active_question_data.settings, 
+                                                current_index: zoomIndex 
+                                            };
+                                            const payload = { 
+                                                ...session.active_question_data, 
+                                                settings: updatedSettings 
+                                            };
+                                            await supabase.from('rooms')
+                                                .update({ active_question_data: payload })
+                                                .eq('id', session.id);
+                                            setIsPushing(false);
+                                        }}
+                                        className="ml-4 px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 active:scale-95"
+                                    >
+                                        {isPushing ? <Loader2 size={14} className="animate-spin" /> : <Users size={14} />}
+                                        {lang === 'sv' ? "Tvinga hit klassen" : "Sync Class Here"}
+                                    </button>
+                                )}
                             </div>
-                            
+
+                            {/* 🟢 RESTORED: NAVIGATION BUTTONS & HEADER CLOSING DIV */}
                             <div className="flex items-center gap-2">
                                 <button 
                                     onClick={() => setZoomIndex(prev => Math.max(0, prev - 1))}
