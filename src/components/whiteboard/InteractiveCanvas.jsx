@@ -1039,6 +1039,16 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                 } else {
                     document.execCommand(cmd, false, val);
                 }
+
+                // 🟢 NEW: Instantly sync the text to the state after formatting (e.g. clicking Bullet Points)
+                const node = document.getElementById(`rich-text-${el.id}`);
+                if (node) {
+                    const html = node.innerHTML;
+                    const scrollH = node.scrollHeight;
+                    setElements(prev => prev.map(item => 
+                        item.id === el.id ? { ...item, height: Math.max(item.height || 0, scrollH), content: html } : item
+                    ));
+                }
             };
 
             return (
@@ -1056,6 +1066,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                             style={{ pointerEvents: isEditing ? 'auto' : 'none' }}
                         >
                             <div 
+                                id={`rich-text-${el.id}`} // 🟢 NEW: Added ID so the toolbar can find and save it
                                 contentEditable={isEditing} suppressContentEditableWarning
                                 className="w-full h-full p-4 outline-none font-sans text-slate-800 overflow-hidden [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2"
                                 style={{ 
@@ -1065,20 +1076,26 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                                     fontSize: '32px',
                                     lineHeight: '1.25'
                                 }}
-                                onInput={(e) => {
-                                    const scrollH = e.currentTarget.scrollHeight;
-                                    if (scrollH > el.height) {
-                                        setElements(prev => prev.map(item => 
-                                            item.id === el.id ? { ...item, height: scrollH } : item
-                                        ));
+                                // 🟢 NEW: Uncontrolled Ref loading prevents React from randomly wiping the DOM
+                                ref={(node) => {
+                                    if (node && node.getAttribute('data-init') !== 'true') {
+                                        node.innerHTML = el.content || '';
+                                        node.setAttribute('data-init', 'true');
                                     }
+                                }}
+                                // 🟢 NEW: Saves text constantly as you type
+                                onInput={(e) => {
+                                    const html = e.currentTarget.innerHTML;
+                                    const scrollH = e.currentTarget.scrollHeight;
+                                    setElements(prev => prev.map(item => 
+                                        item.id === el.id ? { ...item, height: Math.max(item.height || 0, scrollH), content: html } : item
+                                    ));
                                 }}
                                 onBlur={(e) => {
                                     const html = e.currentTarget.innerHTML;
                                     setElements(prev => prev.map(item => item.id === el.id ? { ...item, content: html } : item));
                                 }}
                                 onPointerDown={(e) => e.stopPropagation()}
-                                dangerouslySetInnerHTML={{ __html: el.content || '' }}
                             />
                         </foreignObject>
 
