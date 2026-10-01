@@ -600,9 +600,9 @@ export class ExponentsGen {
                 renderData: {
                     description: lang === 'sv' ? "Beräkna och svara i grundpotensform." : "Calculate and answer in scientific notation.",
                     latex: `${aStr} \\cdot 10^{${b}} \\cdot ${cStr} \\cdot 10^{${d}}`,
-                    answerType: 'scientific' 
+                    answerType: 'structured_scientific' // 🟢 FIXED
                 },
-                token: toBase64(`${finalMStr};${finalExp}`), 
+                token: toBase64(`${finalMantissa}*10^${finalExp}`), 
                 variationKey: v, type: 'calculate',
                 clues: [
                     {
@@ -673,9 +673,9 @@ export class ExponentsGen {
                 renderData: {
                     description: lang === 'sv' ? "Beräkna och svara i grundpotensform." : "Calculate and answer in scientific notation.",
                     latex: `\\frac{${aStr} \\cdot 10^{${b}}}{${cStr} \\cdot 10^{${d}}}`,
-                    answerType: 'scientific'
+                    answerType: 'structured_scientific' // 🟢 FIXED
                 },
-                token: toBase64(`${finalMStr};${finalExp}`),
+                token: toBase64(`${finalMantissa}*10^${finalExp}`), // 🟢 FIXED
                 variationKey: v, type: 'calculate',
                 clues: [
                     {
