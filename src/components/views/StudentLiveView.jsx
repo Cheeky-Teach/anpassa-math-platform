@@ -122,30 +122,40 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         localPacketRef.current = localPacket;
     }, [completed, localPacket]);
 
-    // --- 1. REAL-TIME SYNC: KILL SWITCH & TEACHER PACING ---
+    // --- 1. MASTER REAL-TIME SYNC (Kill Switch, Blacklist, Teacher Pacing) ---
     useEffect(() => {
         if (!session?.id) return;
-        const roomChannel = supabase.channel(`room_status_${session.id}`)
+        
+        const masterChannel = supabase.channel(`student_sync_${session.id}`)
             .on('postgres_changes', { 
                 event: 'UPDATE', 
                 schema: 'public', 
                 table: 'rooms', 
                 filter: `id=eq.${session.id}` 
-            }, async (payload) => {
-                // A. The Kill Switch
-                if (payload.new.status === 'closed') {
+            }, (payload) => {
+                const newData = payload.new;
+
+                // A. Kill Switch Check
+                if (newData.status === 'closed') {
                     setRoomActive(false);
                     setTimeout(onBack, 4000);
                     return;
                 }
 
-                // B. Teacher-Led Pacing Sync
-                const newSettings = payload.new.active_question_data?.settings;
+                // B. Blacklist Check
+                const kickedList = newData.kicked_students || [];
+                if (kickedList.includes(studentAlias)) {
+                    alert(lang === 'sv' ? "Du har blivit borttagen från sessionen." : "You have been removed from the session.");
+                    onBack();
+                    return;
+                }
+
+                // C. Teacher Pacing Sync
+                const newSettings = newData.active_question_data?.settings;
                 if (newSettings?.pacing === 'teacher' && newSettings.current_index !== undefined) {
                     const newTeacherIndex = newSettings.current_index;
                     
                     setCurrentIndex((prevIndex) => {
-                        // 🟢 Read from the refs so we always have the latest state!
                         const currentCompleted = completedRef.current;
                         const currentPacket = localPacketRef.current;
                         
@@ -170,31 +180,8 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             })
             .subscribe();
             
-        // 🟢 REMOVED `completed` and `localPacket` from this array so the channel never drops!
-        return () => { supabase.removeChannel(roomChannel); };
-    }, [session?.id, onBack, studentAlias]);
-
-    // --- 1b. THE BLACKLIST WATCHER ---
-    useEffect(() => {
-        if (!session?.id || !studentAlias) return;
-
-        const kickChannel = supabase.channel(`kick_status_${session.id}`)
-            .on('postgres_changes', { 
-                event: 'UPDATE', 
-                schema: 'public', 
-                table: 'rooms', 
-                filter: `id=eq.${session.id}` 
-            }, (payload) => {
-                const kickedList = payload.new.kicked_students || [];
-                if (kickedList.includes(studentAlias)) {
-                    alert(lang === 'sv' ? "Du har blivit borttagen från sessionen." : "You have been removed from the session.");
-                    onBack(); 
-                }
-            })
-            .subscribe();
-
-        return () => { supabase.removeChannel(kickChannel); };
-    }, [session?.id, studentAlias, onBack, lang]);
+        return () => { supabase.removeChannel(masterChannel); };
+    }, [session?.id, onBack, studentAlias, lang]);
 
     // --- 2. RELAXED INPUT SHIELDING ---
     const sanitizeInput = (val, type) => {
@@ -251,13 +238,29 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         setIsSubmitting(true);
 
         try {
+            //  NEW: JUST-IN-TIME KILL SWITCH VERIFICATION
+            // Mathematically guarantees no answers can be submitted to a closed room
+            const { data: roomCheck } = await supabase
+                .from('rooms')
+                .select('status')
+                .eq('id', session.id)
+                .single();
+                
+            if (roomCheck?.status !== 'active') {
+                setRoomActive(false); // Instantly overlays the red "Session Ended" screen
+                setTimeout(onBack, 3000);
+                return; //  Halts submission completely
+            }
+
             const { error } = await supabase.from('responses').insert([{
                 room_id: session.id,
                 student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
-                question_index: currentItem.originalIndex, //  FIXED: Sends original column to Teacher!
+                question_index: currentItem.originalIndex, 
                 answer: String(val).substring(0, 20), 
                 is_correct: isCorrect
             }]);
+            
+            //  The missing state updates, catch, and finally blocks!
             if (error) throw error;
             
             setCompleted(prev => ({ ...prev, [currentIndex]: isCorrect ? 'correct' : 'wrong' }));
@@ -265,7 +268,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             if (currentIndex < localPacket.length - 1) {
                 setTimeout(() => setCurrentIndex(prev => prev + 1), 600);
             } else if (currentIndex === localPacket.length - 1) {
-                //  NEW: If they finish the last question, auto-trigger the completion screen
                 setTimeout(() => setCompleted(prev => ({ ...prev })), 600);
             }
         } catch (err) {
