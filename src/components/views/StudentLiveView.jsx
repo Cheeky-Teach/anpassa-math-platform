@@ -151,9 +151,16 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 }
 
                 // C. Teacher Pacing Sync
-                const newSettings = newData.active_question_data?.settings;
+                // 🟢 FIX: Safely parse JSON if Supabase real-time stringifies it
+                let activeData = newData.active_question_data;
+                if (typeof activeData === 'string') {
+                    try { activeData = JSON.parse(activeData); } catch (e) {}
+                }
+                
+                const newSettings = activeData?.settings;
+                
                 if (newSettings?.pacing === 'teacher' && newSettings.current_index !== undefined) {
-                    const newTeacherIndex = newSettings.current_index;
+                    const newTeacherIndex = parseInt(newSettings.current_index, 10); // Ensure it's a number
                     
                     setCurrentIndex((prevIndex) => {
                         const currentCompleted = completedRef.current;
@@ -265,10 +272,13 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             
             setCompleted(prev => ({ ...prev, [currentIndex]: isCorrect ? 'correct' : 'wrong' }));
             
-            if (currentIndex < localPacket.length - 1) {
-                setTimeout(() => setCurrentIndex(prev => prev + 1), 600);
-            } else if (currentIndex === localPacket.length - 1) {
-                setTimeout(() => setCompleted(prev => ({ ...prev })), 600);
+            // 🟢 FIXED: Only auto-advance if the session is NOT Teacher-Led
+            if (settings.pacing !== 'teacher') {
+                if (currentIndex < localPacket.length - 1) {
+                    setTimeout(() => setCurrentIndex(prev => prev + 1), 600);
+                } else if (currentIndex === localPacket.length - 1) {
+                    setTimeout(() => setCompleted(prev => ({ ...prev })), 600);
+                }
             }
         } catch (err) {
             console.error("Submission error:", err);
@@ -589,7 +599,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 ) : (
                                     <div className="py-4 text-center">
                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] animate-pulse italic">
-                                            {lang === 'sv' ? "Fortsätt med pilen i menyn" : "Continue using navigation arrows"}
+                                            {settings.pacing === 'teacher'
+                                                ? (lang === 'sv' ? "Väntar på läraren..." : "Waiting for teacher...")
+                                                : (lang === 'sv' ? "Fortsätt med pilen i menyn" : "Continue using navigation arrows")
+                                            }
                                         </p>
                                     </div>
                                 )}
