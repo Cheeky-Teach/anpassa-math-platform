@@ -658,17 +658,29 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                         disabled={isPushing}
                                         onClick={async () => {
                                             setIsPushing(true);
+                                            
+                                            // 🟢 FIX 1: Safely parse the current database payload
+                                            let activeData = session.active_question_data;
+                                            if (typeof activeData === 'string') {
+                                                try { activeData = JSON.parse(activeData); } catch(e) {}
+                                            }
+                                            
+                                            // 🟢 FIX 2: FORCE the pacing flag to stay intact while updating index
                                             const updatedSettings = { 
-                                                ...session.active_question_data.settings, 
+                                                ...(activeData?.settings || {}), 
+                                                pacing: 'teacher', // 👈 Crucial safety lock!
                                                 current_index: zoomIndex 
                                             };
+                                            
                                             const payload = { 
-                                                ...session.active_question_data, 
+                                                ...activeData, 
                                                 settings: updatedSettings 
                                             };
+                                            
                                             await supabase.from('rooms')
                                                 .update({ active_question_data: payload })
                                                 .eq('id', session.id);
+                                                
                                             setIsPushing(false);
                                         }}
                                         className="ml-4 px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 active:scale-95"
