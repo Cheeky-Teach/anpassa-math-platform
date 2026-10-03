@@ -225,6 +225,9 @@ export default function QuestionStudio({
       summary: true        // true (show), false (hide)
   });
 
+  // State for scratchpad toggle
+  const [enableScratchpad, setEnableScratchpad] = useState(true);
+
   const [folders, setFolders] = useState([]);
   const [expandedFolders, setExpandedFolders] = useState([]);
 
@@ -500,7 +503,7 @@ export default function QuestionStudio({
             title: sheetTitle || "Live Session", 
             active_worksheet_id: activeSheetId, 
             // 🟢 INJECTED SETTINGS: The live views will read these rules!
-            active_question_data: { packet: packet, mode: setupMode, settings: liveSettings } 
+            active_question_data: { packet: packet, mode: setupMode, settings: { ...liveSettings, scratchpad: enableScratchpad } }
         }]).select().single();
         if (error) throw error;
         onDoNowGenerate(null, null, { room: data, packet: packet }); 
@@ -1678,6 +1681,20 @@ export default function QuestionStudio({
                               className={`w-10 h-6 rounded-full transition-all relative p-1 shrink-0 ${liveSettings.summary ? 'bg-indigo-600' : 'bg-slate-300'}`}
                           >
                               <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${liveSettings.summary ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </button>
+                      </div>
+
+                      {/* 🟢 ADDED: SCRATCHPAD TOGGLE */}
+                      <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                          <div>
+                              <div className="text-[11px] font-black uppercase text-slate-700 tracking-widest">{lang === 'sv' ? "Aktivera Kladdpapper" : "Enable Scratchpad"}</div>
+                              <div className="text-[9px] font-bold text-slate-400">{lang === 'sv' ? "Elever kan visa uträkningar steg-för-steg." : "Students can show work step-by-step."}</div>
+                          </div>
+                          <button 
+                              onClick={() => setEnableScratchpad(!enableScratchpad)} 
+                              className={`w-10 h-6 rounded-full transition-all relative p-1 shrink-0 ${enableScratchpad ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                          >
+                              <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${enableScratchpad ? 'translate-x-4' : 'translate-x-0'}`} />
                           </button>
                       </div>
                   </div>

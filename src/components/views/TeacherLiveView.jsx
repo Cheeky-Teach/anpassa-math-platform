@@ -3,10 +3,12 @@ import { supabase } from '../../lib/supabaseClient';
 import { 
     Users, Eye, EyeOff, Shield, BarChart3, Loader2, 
     RefreshCw, Download, Printer, Copy, Save, X, UserX,
-    ChevronLeft, ChevronRight, CheckCircle2, XCircle, Type
+    ChevronLeft, ChevronRight, CheckCircle2, XCircle, Type,
+    LayoutGrid, ArrowDownAZ, ListOrdered, Shuffle, ChevronDown
 } from 'lucide-react';
 import { UI_TEXT } from '../../constants/localization';
 import VisualRenderer from '../visuals/VisualRenderer';
+import LandscapeReport from '../reports/LandscapeReport'
 
 // --- MATH DISPLAY COMPONENT ---
 const MathDisplay = ({ content, className = "" }) => {
@@ -33,87 +35,6 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
 };
 
-// --- REFACTORED LANDSCAPE PRINT STYLES ---
-const printStyles = `
-    @media screen {
-        .landscape-report-preview {
-            width: 297mm;
-            min-height: 210mm;
-            padding: 15mm;
-            margin: 20px auto;
-            background: white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.15);
-            transform-origin: top center;
-        }
-    }
-
-    @media print {
-        @page { 
-            size: landscape; 
-            margin: 8mm; 
-        }
-        
-        /* 1. RESET BODY AND HTML FOR PRINT FLOW */
-        html, body {
-            height: auto !important;
-            overflow: visible !important;
-            background: white !important;
-        }
-
-        /* 2. FORCE MODAL TO NATURAL FLOW */
-        .print-modal-container {
-            position: relative !important;
-            height: auto !important;
-            width: 100% !important;
-            overflow: visible !important;
-            display: block !important;
-            background: white !important;
-            z-index: auto !important;
-        }
-
-        /* 3. RESET FLEX PARENTS THAT CLIP CONTENT */
-        .min-h-screen {
-            height: auto !important;
-            display: block !important;
-        }
-
-        .no-print { display: none !important; }
-
-        .landscape-report-preview {
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            transform: none !important;
-        }
-
-        /* 4. ROBUST PAGE BREAK HANDLING */
-        .avoid-break {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            display: block;
-            position: relative;
-        }
-
-        table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-            table-layout: fixed !important;
-            page-break-inside: auto;
-        }
-
-        tr {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-        }
-
-        th, td {
-            border: 1px solid #cbd5e1 !important;
-            word-wrap: break-word !important;
-        }
-    }
-`;
-
 export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, onCreateReport }) {
     const [responses, setResponses] = useState([]);
     const [isAnonymous, setIsAnonymous] = useState(true);
@@ -123,10 +44,20 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const [isSyncing, setIsSyncing] = useState(false);
     const [showWrapUp, setShowWrapUp] = useState(false); 
     const [showPrintPreview, setShowPrintPreview] = useState(false); // Added for landscape preview
+    const [printSteps, setPrintSteps] = useState(false);
     const [zoomIndex, setZoomIndex] = useState(null);
 
+    const [showWorkGrid, setShowWorkGrid] = useState(false);
+
     const [isPushing, setIsPushing] = useState(false);
+    
+    // 🟢 ADDED: State variables for sorting
+    const [sortMode, setSortMode] = useState('az'); // 'az', 'progress', 'random'
+    const [randomizedStudents, setRandomizedStudents] = useState([]);
+    const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+
     const isTeacherLed = session.active_question_data?.settings?.pacing === 'teacher';
+    const hasScratchpad = session.active_question_data?.settings?.scratchpad !== false;
 
     const ui = UI_TEXT[lang];
     const isMounted = useRef(true);
@@ -315,7 +246,38 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         }
     };
 
-    const students = [...new Set(responses.map(r => r.student_alias))].sort();
+    // 🟢 CHANGED: Explicit menu selection (forces a re-shuffle every time 'random' is clicked)
+    const applySort = (mode) => {
+        if (mode === 'random') {
+            const uniqueStudents = [...new Set(responses.map(r => r.student_alias))];
+            setRandomizedStudents(uniqueStudents.sort(() => Math.random() - 0.5));
+        }
+        setSortMode(mode);
+        setIsSortMenuOpen(false);
+    };
+
+    // 🟢 ADDED: Smart sorting logic
+    const students = React.useMemo(() => {
+        const base = [...new Set(responses.map(r => r.student_alias))];
+        
+        if (sortMode === 'az') {
+            return base.sort((a, b) => a.localeCompare(b));
+        }
+        if (sortMode === 'progress') {
+            return base.sort((a, b) => {
+                const countA = responses.filter(r => r.student_alias === a).length;
+                const countB = responses.filter(r => r.student_alias === b).length;
+                return countB - countA || a.localeCompare(b); // Sorts highest first
+            });
+        }
+        if (sortMode === 'random') {
+            // Maintains the random order, but securely appends any newly joined students to the bottom
+            const currentRandom = randomizedStudents.filter(s => base.includes(s));
+            const missing = base.filter(s => !currentRandom.includes(s));
+            return [...currentRandom, ...missing];
+        }
+        return base;
+    }, [responses, sortMode, randomizedStudents]);
     
     const questionStats = packet.map((_, qIdx) => {
         const questionResponses = responses.filter(r => r.question_index === qIdx);
@@ -341,7 +303,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
 
     return (
         <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
-            <style>{printStyles}</style>
             
             {/* 1. WRAP-UP SELECTION MODAL */}
             {showWrapUp && (
@@ -383,112 +344,15 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                 </div>
             )}
 
-            {/* --- 2. LANDSCAPE REPORT PREVIEW (FIXED FLOW) --- */}
+            {/* --- LANDSCAPE REPORT PREVIEW --- */}
             {showPrintPreview && (
-                <div className="fixed inset-0 z-[150] bg-slate-100 overflow-y-auto no-scrollbar print-modal-container">
-                    <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center z-50 no-print">
-                        <div className="flex items-center gap-4">
-                            <button onClick={() => setShowPrintPreview(false)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><ChevronLeft size={24}/></button>
-                            <h3 className="font-black uppercase italic tracking-tighter">{lang === 'sv' ? "Förhandsgranskning" : "Print Preview"}</h3>
-                        </div>
-                        <div className="flex gap-3">
-                            <button onClick={() => window.print()} className="bg-indigo-600 text-white px-8 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-indigo-700 flex items-center gap-2">
-                                <Printer size={16}/> {lang === 'sv' ? "Skriv ut" : "Print"}
-                            </button>
-                            <button onClick={() => setShowPrintPreview(false)} className="bg-slate-900 text-white px-8 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">
-                                {lang === 'sv' ? "Stäng" : "Close"}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="landscape-report-preview">
-                        <header className="flex justify-between items-end mb-6 border-b-2 border-slate-900 pb-4">
-                            <div>
-                                <h1 className="text-2xl font-black uppercase italic tracking-tight leading-none mb-1">{session.title}</h1>
-                                <p className="text-[9px] font-black uppercase text-indigo-600 tracking-[0.2em]">Resultatrapport • Live Lektion</p>
-                            </div>
-                            <div className="text-right">
-                                <div className="text-lg font-black italic">KOD: {session.class_code}</div>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</p>
-                            </div>
-                        </header>
-
-                        {/* SECTION 1: OVERVIEW */}
-                        <div className="mb-10 avoid-break">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 text-slate-400 italic">1. Översikt (Klassnivå)</h3>
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-slate-100">
-                                        <th className="p-2 text-left text-[9px] font-black uppercase w-40 border-r border-slate-300">Elev</th>
-                                        <th className="p-2 text-center text-[9px] font-black uppercase w-14 border-r border-slate-300">Res.</th>
-                                        {packet.map((_, i) => (
-                                            <th key={i} className="w-[26px] p-1 text-center text-[8px] font-black bg-slate-50 border-r border-slate-200">{i + 1}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {students.map(student => {
-                                        const studentResps = packet.map((_, qIdx) => responses.find(r => r.student_alias === student && r.question_index === qIdx));
-                                        const score = studentResps.filter(r => r?.is_correct).length;
-                                        return (
-                                            <tr key={student} className="border-b border-slate-100">
-                                                <td className="p-1.5 font-bold text-[10px] truncate border-r border-slate-100">{student}</td>
-                                                <td className="p-1.5 text-center text-[9px] font-black border-r border-slate-100 bg-slate-50/50">{score}/{packet.length}</td>
-                                                {studentResps.map((r, idx) => (
-                                                    <td key={idx} className="p-0 text-center border-r border-slate-50">
-                                                        <div className={`w-full h-7 flex items-center justify-center font-bold text-xs ${r ? (r.is_correct ? 'text-emerald-600 bg-emerald-50/50' : 'text-rose-600 bg-rose-50/50') : 'text-slate-200'}`}>
-                                                            {r ? (r.is_correct ? '✓' : '✕') : '-'}
-                                                        </div>
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* SECTION 2: DETAILED ANSWERS */}
-                        <div className="mt-12">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest mb-4 text-slate-400 italic">2. Individuella Svar (Detaljerat)</h3>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-10">
-                                {students.map(student => {
-                                    const studentResps = packet.map((q, qIdx) => ({
-                                        question: q.resolvedData?.renderData?.description || `Uppgift ${qIdx + 1}`,
-                                        resp: responses.find(r => r.student_alias === student && r.question_index === qIdx)
-                                    }));
-                                    return (
-                                        <div key={student} className="avoid-break bg-slate-50/30 p-4 rounded-2xl border border-slate-100">
-                                            <div className="flex justify-between items-center border-b border-slate-200 pb-2 mb-3">
-                                                <span className="font-black text-xs uppercase italic text-slate-800">{student}</span>
-                                                <span className="text-[9px] font-bold text-slate-400">{studentResps.filter(s => s.resp?.is_correct).length}/{packet.length} Rätt</span>
-                                            </div>
-                                            <div className="space-y-2">
-                                                {studentResps.map((item, idx) => (
-                                                    <div key={idx} className="flex gap-2 text-[9px] leading-tight">
-                                                        <span className="font-black text-slate-300 shrink-0">{idx + 1}.</span>
-                                                        <div className="flex-1">
-                                                            <div className="text-slate-500 italic mb-0.5 truncate opacity-60">
-                                                                <MathDisplay content={typeof item.question === 'string' ? item.question : 'Uppgift'} />
-                                                            </div>
-                                                            <div className={`font-bold ${item.resp ? (item.resp.is_correct ? 'text-emerald-600' : 'text-rose-600') : 'text-slate-300'}`}>
-                                                                Svar: {item.resp?.answer || '-'}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <footer className="mt-12 pt-6 border-t border-slate-100 flex justify-between items-center text-[8px] font-bold text-slate-300 uppercase tracking-widest">
-                            <div>Anpassa Math Platform • Systemgenererad Rapport</div>
-                        </footer>
-                    </div>
-                </div>
+                <LandscapeReport 
+                    session={session} 
+                    packet={packet} 
+                    responses={responses} 
+                    lang={lang} 
+                    onClose={() => setShowPrintPreview(false)} 
+                />
             )}
 
             {/* 3. MAIN DASHBOARD UI (Live Stream) */}
@@ -513,6 +377,45 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     <button onClick={syncData} disabled={isSyncing} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 transition-all shadow-sm">
                         <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
                     </button>
+                    {/* 🟢 ADDED: Sort Dropdown Menu */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setIsSortMenuOpen(!isSortMenuOpen)} 
+                            title={lang === 'sv' ? "Sortera elever" : "Sort students"} 
+                            className="p-2 bg-white border border-slate-200 rounded-lg text-slate-400 hover:border-indigo-300 hover:text-indigo-600 transition-all shadow-sm flex items-center gap-1"
+                        >
+                            {sortMode === 'az' ? <ArrowDownAZ size={14} /> : sortMode === 'progress' ? <ListOrdered size={14} /> : <Shuffle size={14} />}
+                            <ChevronDown size={12} className="opacity-50" />
+                        </button>
+
+                        {isSortMenuOpen && (
+                            <>
+                                {/* Invisible backdrop to close the menu when clicking away */}
+                                <div className="fixed inset-0 z-40" onClick={() => setIsSortMenuOpen(false)}></div>
+                                
+                                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 py-1">
+                                    <button 
+                                        onClick={() => applySort('az')} 
+                                        className={`w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-all flex items-center gap-3 text-xs font-black uppercase tracking-wider ${sortMode === 'az' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600'}`}
+                                    >
+                                        <ArrowDownAZ size={14} /> {lang === 'sv' ? "Namn (A-Ö)" : "Name (A-Z)"}
+                                    </button>
+                                    <button 
+                                        onClick={() => applySort('progress')} 
+                                        className={`w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-all flex items-center gap-3 text-xs font-black uppercase tracking-wider ${sortMode === 'progress' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600'}`}
+                                    >
+                                        <ListOrdered size={14} /> {lang === 'sv' ? "Mest aktiva" : "Most Active"}
+                                    </button>
+                                    <button 
+                                        onClick={() => applySort('random')} 
+                                        className={`w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-all flex items-center gap-3 text-xs font-black uppercase tracking-wider ${sortMode === 'random' ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600'}`}
+                                    >
+                                        <Shuffle size={14} /> {lang === 'sv' ? "Slumpa" : "Shuffle"}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
                     <button 
                         onClick={() => setShowActualAnswers(!showActualAnswers)} 
                         title={showActualAnswers ? "Visa status" : "Visa svar"} 
@@ -704,7 +607,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                     className="p-2 hover:bg-slate-200 rounded-full disabled:opacity-10 transition-all text-slate-600"
                                 ><ChevronRight size={24}/></button>
                                 <div className="w-px h-6 bg-slate-200 mx-1" />
-                                <button onClick={() => setZoomIndex(null)} className="p-2 hover:bg-rose-50 text-rose-500 rounded-full transition-all"><X size={24}/></button>
+                                <button onClick={() => { setZoomIndex(null); setShowWorkGrid(false); }} className="p-2 hover:bg-rose-50 text-rose-500 rounded-full transition-all"><X size={24}/></button>
                             </div>
                         </div>
 
@@ -730,82 +633,149 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             </div>
                         </div>
 
-                        {/* 3. MAIN CONTENT SPLIT (Optimized for window height) */}
+                        {/* 3. MAIN CONTENT SPLIT */}
                         <div className="flex-1 flex overflow-hidden w-full">
                             
-                            {/* LEFT COLUMN: Visual (Scaled to contain) */}
-                            <div className="flex-1 p-6 flex items-center justify-center bg-white overflow-hidden border-r border-slate-50">
-                                {/* VISUAL & LATEX DISPLAY */}
-                                <div className="flex-1 flex flex-col justify-center items-center py-6 min-h-[150px]">
-                                    <div className="flex justify-center scale-90 origin-top mt-2">
-                                        {/* 🟢 FIXED: Replaced renderVisual with VisualRenderer */}
-                                        <VisualRenderer 
-                                            data={packet[zoomIndex]?.resolvedData?.renderData} 
-                                            isWordProblem={packet[zoomIndex]?.selectedStoryIndex !== null && packet[zoomIndex]?.selectedStoryIndex !== undefined} 
-                                        />
-                                    </div>
-                                    {packet[zoomIndex]?.resolvedData?.renderData?.latex && (
-                                        <div className="mt-4 text-3xl font-serif text-indigo-600 bg-indigo-50 px-6 py-4 rounded-2xl">
-                                            <MathDisplay content={`$$${packet[zoomIndex].resolvedData.renderData.latex}$$`} />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* RIGHT COLUMN: Compact Power Cards */}
-                            <div className="w-64 sm:w-72 bg-slate-50/50 p-4 flex flex-col gap-3 overflow-y-auto shrink-0">
-                                
-                                {/* GREEN CARD */}
-                                <div className="bg-emerald-500 rounded-[1.5rem] p-4 text-white shadow-md">
-                                    <div className="flex items-center gap-2 mb-2 opacity-90">
-                                        <CheckCircle2 size={14} />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">{lang === 'sv' ? "Antal Rätt" : "Correct"}</span>
-                                    </div>
-                                    <div className="text-2xl font-black mb-2">
-                                        {responses.filter(r => r.question_index === zoomIndex && r.is_correct).length}
-                                    </div>
-                                    <div className="max-h-24 overflow-y-auto space-y-1 pr-1 custom-scrollbar text-[10px]">
-                                        {responses.filter(r => r.question_index === zoomIndex && r.is_correct).map((r, idx) => (
-                                            <div key={idx} className="py-1 border-b border-white/10 truncate font-bold">
-                                                {isAnonymous ? `Elev ${idx + 1}` : r.student_alias}
+                            {!showWorkGrid ? (
+                                /* --- STANDARD LAYOUT --- */
+                                <>
+                                    <div className="flex-1 p-6 flex items-center justify-center bg-white overflow-hidden border-r border-slate-50">
+                                        <div className="flex-1 flex flex-col justify-center items-center py-6 min-h-[150px]">
+                                            <div className="flex justify-center scale-90 origin-top mt-2">
+                                                <VisualRenderer 
+                                                    data={packet[zoomIndex]?.resolvedData?.renderData} 
+                                                    isWordProblem={packet[zoomIndex]?.selectedStoryIndex !== null && packet[zoomIndex]?.selectedStoryIndex !== undefined} 
+                                                />
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* RED CARD */}
-                                <div className="bg-rose-500 rounded-[1.5rem] p-4 text-white shadow-md">
-                                    <div className="flex items-center gap-2 mb-2 opacity-90">
-                                        <XCircle size={14} />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">{lang === 'sv' ? "Fel Svar" : "Errors"}</span>
-                                    </div>
-                                    <div className="space-y-2">
-                                        {(() => {
-                                            const wrongAnswers = responses.filter(r => r.question_index === zoomIndex && !r.is_correct).map(r => r.answer);
-                                            const freq = wrongAnswers.reduce((acc, curr) => { acc[curr] = (acc[curr] || 0) + 1; return acc; }, {});
-                                            const sorted = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0, 2);
-                                            
-                                            return sorted.length > 0 ? sorted.map(([ans, count]) => (
-                                                <div key={ans} className="flex justify-between items-center bg-white/10 p-1.5 px-3 rounded-lg text-[10px]">
-                                                    <span className="font-black italic truncate mr-2">"{ans}"</span>
-                                                    <span className="font-bold opacity-80 shrink-0">{count} st</span>
+                                            {packet[zoomIndex]?.resolvedData?.renderData?.latex && (
+                                                <div className="mt-4 text-3xl font-serif text-indigo-600 bg-indigo-50 px-6 py-4 rounded-2xl">
+                                                    <MathDisplay content={`$$${packet[zoomIndex].resolvedData.renderData.latex}$$`} />
                                                 </div>
-                                            )) : <span className="text-[10px] opacity-60 italic">{lang === 'sv' ? "Inga fel än" : "No errors"}</span>;
-                                        })()}
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* SLATE CARD */}
-                                <div className="bg-slate-800 rounded-[1.5rem] p-4 text-white shadow-md">
-                                    <div className="flex items-center gap-2 mb-1 opacity-80">
-                                        <Users size={14} />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">{lang === 'sv' ? "Ej klara" : "Remaining"}</span>
+                                    <div className="w-64 sm:w-72 bg-slate-50/50 p-4 flex flex-col gap-3 overflow-y-auto shrink-0">
+                                        <div className="bg-emerald-500 rounded-[1.5rem] p-4 text-white shadow-md">
+                                            <div className="flex items-center gap-2 mb-2 opacity-90">
+                                                <CheckCircle2 size={14} />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">{lang === 'sv' ? "Antal Rätt" : "Correct"}</span>
+                                            </div>
+                                            <div className="text-2xl font-black mb-2">
+                                                {responses.filter(r => r.question_index === zoomIndex && r.is_correct).length}
+                                            </div>
+                                            <div className="max-h-24 overflow-y-auto space-y-1 pr-1 custom-scrollbar text-[10px]">
+                                                {responses.filter(r => r.question_index === zoomIndex && r.is_correct).map((r, idx) => (
+                                                    <div key={idx} className="py-1 border-b border-white/10 truncate font-bold">
+                                                        {isAnonymous ? `Elev ${idx + 1}` : r.student_alias}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {hasScratchpad && (
+                                            <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col">
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <h4 className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                                                        {lang === 'sv' ? 'Anteckningar' : 'Scratchpads'}
+                                                    </h4>
+                                                    <button onClick={() => setShowWorkGrid(true)} className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-md transition-all" title="Visa i stort rutnät">
+                                                        <LayoutGrid size={14} />
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
+                                                    {responses.filter(r => r.question_index === zoomIndex && r.work_steps?.length > 0).map((r, i) => (
+                                                        <div key={i} className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
+                                                            <div className="flex justify-between items-center mb-1 text-slate-400 text-[10px] font-sans font-bold">
+                                                                <span>{isAnonymous ? `Elev ${i + 1}` : r.student_alias}</span>
+                                                                <span className={r.is_correct ? 'text-emerald-600' : 'text-rose-600'}>{r.answer}</span>
+                                                            </div>
+                                                            <div className="space-y-1 text-slate-800">
+                                                                {/* 🟢 FIXED: Wrapped steps in LaTeX display */}
+                                                                {r.work_steps.map((line, lineIdx) => (
+                                                                    <div key={lineIdx} className="overflow-x-auto custom-scrollbar pb-1">
+                                                                        <MathDisplay content={`$\\displaystyle ${line}$`} />
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="bg-rose-500 rounded-[1.5rem] p-4 text-white shadow-md mt-auto">
+                                            <div className="flex items-center gap-2 mb-2 opacity-90">
+                                                <XCircle size={14} />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">{lang === 'sv' ? "Fel Svar" : "Errors"}</span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {(() => {
+                                                    const wrongAnswers = responses.filter(r => r.question_index === zoomIndex && !r.is_correct).map(r => r.answer);
+                                                    const freq = wrongAnswers.reduce((acc, curr) => { acc[curr] = (acc[curr] || 0) + 1; return acc; }, {});
+                                                    const sorted = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0, 2);
+                                                    return sorted.length > 0 ? sorted.map(([ans, count]) => (
+                                                        <div key={ans} className="flex justify-between items-center bg-white/10 p-1.5 px-3 rounded-lg text-[10px]">
+                                                            <span className="font-black italic truncate mr-2">"{ans}"</span>
+                                                            <span className="font-bold opacity-80 shrink-0">{count} st</span>
+                                                        </div>
+                                                    )) : <span className="text-[10px] opacity-60 italic">{lang === 'sv' ? "Inga fel än" : "No errors"}</span>;
+                                                })()}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="text-xl font-black">
-                                        {students.length - responses.filter(r => r.question_index === zoomIndex).length}
+                                </>
+                            ) : (
+                                /* --- 🟢 NEW: MASSIVE SCRATCHPAD GRID VIEW --- */
+                                <>
+                                    {/* Shrunk Left Column: Keeps visual/math context alive */}
+                                    <div className="w-64 sm:w-80 p-6 flex flex-col bg-white border-r border-slate-100 overflow-y-auto shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10">
+                                        <button onClick={() => setShowWorkGrid(false)} className="w-full mb-6 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2">
+                                            <ChevronLeft size={14}/> {lang === 'sv' ? "Tillbaka till Översikt" : "Back to Summary"}
+                                        </button>
+                                        
+                                        <div className="flex justify-center scale-75 origin-top mt-2">
+                                            <VisualRenderer 
+                                                data={packet[zoomIndex]?.resolvedData?.renderData} 
+                                                isWordProblem={packet[zoomIndex]?.selectedStoryIndex !== null && packet[zoomIndex]?.selectedStoryIndex !== undefined} 
+                                            />
+                                        </div>
+                                        {packet[zoomIndex]?.resolvedData?.renderData?.latex && (
+                                            <div className="mt-4 text-xl font-serif text-indigo-600 bg-indigo-50 px-4 py-3 rounded-xl text-center">
+                                                <MathDisplay content={`$$${packet[zoomIndex].resolvedData.renderData.latex}$$`} />
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            </div>
+
+                                    {/* Massive Right Column: 4-Column Work Grid */}
+                                    <div className="flex-1 p-6 bg-slate-50 overflow-y-auto custom-scrollbar">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start content-start">
+                                            {responses.filter(r => r.question_index === zoomIndex && r.work_steps?.length > 0).map((r, i) => (
+                                                <div key={i} className="bg-white p-4 rounded-[1.5rem] border border-slate-200 shadow-sm flex flex-col">
+                                                    <div className="flex justify-between items-center mb-3 border-b border-slate-100 pb-3">
+                                                        <span className="font-black text-sm text-slate-800">{isAnonymous ? `Elev ${i + 1}` : r.student_alias}</span>
+                                                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${r.is_correct ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                                            {r.answer}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex-1 space-y-2 text-slate-700">
+                                                        {r.work_steps.map((line, lineIdx) => (
+                                                            <div key={lineIdx} className="overflow-x-auto custom-scrollbar pb-1 text-sm bg-slate-50/50 px-2 rounded">
+                                                                <MathDisplay content={`$\\displaystyle ${line}$`} />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {responses.filter(r => r.question_index === zoomIndex && r.work_steps?.length > 0).length === 0 && (
+                                                <div className="col-span-full py-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                                                    {lang === 'sv' ? "Inga anteckningar inskickade än." : "No scratchpads submitted yet."}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

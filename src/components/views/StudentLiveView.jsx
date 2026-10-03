@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, CheckCircle2, ChevronLeft, ChevronRight, Loader2, LogOut, ListChecks, LayoutGrid, XCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import MathScratchpad from '../ui/MathScratchpad';
 
 // --- VISUAL & INPUT IMPORTS ---
 import VisualRenderer from '../visuals/VisualRenderer';
@@ -35,6 +36,9 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     //  1. EXTRACT SETTINGS FROM SUPABASE
     const settings = session?.active_question_data?.settings || { pacing: 'open', order: 'original', summary: true };
 
+    // Extract scratchpad setting
+    const hasScratchpad = session?.active_question_data?.settings?.scratchpad !== false;
+
     // Logic & Navigation State
     const [localPacket, setLocalPacket] = useState([]); //  Holds our localized/shuffled array
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -44,6 +48,8 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     const [roomActive, setRoomActive] = useState(true);
     const [showFinalReview, setShowFinalReview] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+
+    const [scratchpad, setScratchpad] = useState({}); // { [questionIdx]: ["step 1", "step 2"] }
 
     // ---  2. INITIALIZATION & REHYDRATION (Accidental Refresh Fix & Anti-Cheat) ---
     useEffect(() => {
@@ -60,6 +66,8 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             }
             setLocalPacket(mappedPacket);
 
+            
+
             // C. Fetch past answers in case of an accidental page refresh!
             try {
                 const { data: pastResponses, error } = await supabase
@@ -71,18 +79,21 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 if (!error && pastResponses && pastResponses.length > 0) {
                     const restoredAnswers = {};
                     const restoredCompleted = {};
-                    
-                    pastResponses.forEach(res => {
-                        // Find where this question lives in the student's *local* shuffled array
-                        const localIdx = mappedPacket.findIndex(p => p.originalIndex === res.question_index);
-                        if (localIdx !== -1) {
-                            restoredAnswers[localIdx] = res.answer;
-                            restoredCompleted[localIdx] = res.is_correct ? 'correct' : 'wrong';
-                        }
-                    });
+                    const restoredScratchpad = {};
+                        pastResponses.forEach(res => {
+                            const localIdx = mappedPacket.findIndex(p => p.originalIndex === res.question_index);
+                            if (localIdx !== -1) {
+                                restoredAnswers[localIdx] = res.answer;
+                                restoredCompleted[localIdx] = res.is_correct ? 'correct' : 'wrong';
+                                restoredScratchpad[localIdx] = res.work_steps || [''];
+                            }
+                        });
+                        setScratchpad(restoredScratchpad);
 
                     setAnswers(restoredAnswers);
                     setCompleted(restoredCompleted);
+
+                    
 
                     // Auto-jump to the first unanswered question
                     const answeredCount = Object.keys(restoredCompleted).length;
@@ -258,12 +269,15 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 setTimeout(onBack, 3000);
                 return; //  Halts submission completely
             }
+            
+            const currentSteps = (scratchpad[currentIndex] || []).filter(s => s.trim().length > 0);
 
             const { error } = await supabase.from('responses').insert([{
                 room_id: session.id,
                 student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
                 question_index: currentItem.originalIndex, 
                 answer: String(val).substring(0, 20), 
+                work_steps: currentSteps,
                 is_correct: isCorrect
             }]);
             
@@ -492,149 +506,184 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans flex flex-col overflow-hidden">
+        // 1. THE DARK CANVAS
+        <div className="min-h-screen bg-slate-900 font-sans flex flex-col overflow-hidden">
             <style>{`
                 @media (max-width: 450px) {
                     .xs-hide { display: none !important; }
                 }
             `}</style>
 
-            <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-20 shadow-sm">
+            {/* 2. SEAMLESS DARK HEADER */}
+            <header className="bg-slate-900 border-b border-white/10 px-4 py-3 sticky top-0 z-20">
                 <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
                     <button 
                         onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
-                        // PACING RULE: Progressive & Teacher modes disable moving backwards
                         disabled={currentIndex === 0 || settings.pacing === 'progressive' || settings.pacing === 'teacher'}
-                        className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 disabled:opacity-20 transition-all shrink-0"
+                        className="p-2 hover:bg-white/10 rounded-xl text-slate-400 disabled:opacity-20 transition-all shrink-0"
                     >
                         <ChevronLeft size={28} />
                     </button>
 
                     <div className="flex flex-col items-center overflow-hidden flex-1">
-                        <h1 className="text-[9px] font-black uppercase tracking-widest text-slate-400 leading-none truncate mb-1 xs-hide">
+                        {/* Softened Typography */}
+                        <h1 className="text-sm font-bold text-slate-200 leading-none truncate mb-1.5 xs-hide">
                             {session.title}
                         </h1>
-                        <div className="bg-slate-900 text-white px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase italic shrink-0">
-                            {lang === 'sv' ? "KOD:" : "CODE:"} {session.class_code}
+                        <div className="bg-slate-800 text-slate-300 px-3 py-1 rounded-md text-xs font-bold shrink-0">
+                            {lang === 'sv' ? "Kod:" : "Code:"} {session.class_code}
                         </div>
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
                         <button 
                             onClick={() => setCurrentIndex(prev => Math.min(localPacket.length - 1, prev + 1))}
-                            //  PACING RULE: Progressive mode requires an answer to move forward. Teacher mode completely disables it.
                             disabled={
                                 currentIndex === localPacket.length - 1 || 
                                 (settings.pacing === 'progressive' && !completed[currentIndex]) ||
                                 settings.pacing === 'teacher'
                             }
-                            className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 disabled:opacity-20 transition-all"
+                            className="p-2 hover:bg-white/10 rounded-xl text-slate-400 disabled:opacity-20 transition-all"
                         >
                             <ChevronRight size={28} />
                         </button>
                         
                         <button 
                             onClick={handleExitRequest} 
-                            className="ml-1 p-2 hover:bg-rose-50 rounded-xl text-slate-300 hover:text-rose-500 transition-colors border border-slate-100"
+                            className="ml-1 p-2 hover:bg-rose-500/20 rounded-xl text-slate-400 hover:text-rose-400 transition-colors"
                         >
                             <LogOut size={18} />
                         </button>
                     </div>
                 </div>
 
-                <div className="hidden sm:flex max-w-xs mx-auto h-1 bg-slate-100 rounded-full gap-1 p-0 mt-2">
+                {/* Dark Mode Progress Bar */}
+                <div className="hidden sm:flex max-w-xs mx-auto h-1 bg-slate-800 rounded-full gap-1 p-0 mt-3">
                     {localPacket.map((_, i) => (
-                        <div key={i} className={`flex-1 rounded-full transition-all duration-700 ${i === currentIndex ? 'bg-indigo-500 ring-2 ring-indigo-50' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
+                        <div key={i} className={`flex-1 rounded-full transition-all duration-700 ${i === currentIndex ? 'bg-indigo-500 ring-2 ring-indigo-500/20' : !!completed[i] ? 'bg-indigo-900' : 'bg-transparent'}`} />
                     ))}
                 </div>
             </header>
 
-            
-            <main className="flex-1 max-w-6xl w-full mx-auto p-3 lg:p-6 overflow-hidden flex flex-col">
-                {/* CHANGE 1: Added 'overflow-y-auto lg:overflow-hidden' to allow scrolling on mobile */}
-                <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-y-auto lg:overflow-hidden transition-all duration-300 flex flex-col ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
+            <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 overflow-hidden flex flex-col">
+                <div className={`flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-y-auto lg:overflow-hidden transition-all duration-300 ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
                     
-                    <div className="sm:hidden h-1 bg-slate-100 flex shrink-0">
-                        {localPacket.map((_, i) => (
-                            <div key={i} className={`flex-1 ${i === currentIndex ? 'bg-indigo-500' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
-                        ))}
-                    </div>
-
-                    <div className="px-8 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 shrink-0">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.25em]">{lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} / {packet.length}</span>
-                        {!!completed[currentIndex] && <div className="flex items-center gap-2"><span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">{lang === 'sv' ? "Svar mottaget" : "Answer received"}</span><CheckCircle2 className="text-emerald-500" size={20} /></div>}
-                    </div>
-
-                    {/* CHANGE 2: Removed 'flex-1' and 'min-h-0' on mobile so the grid can grow naturally */}
-                    <div className="lg:flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-slate-50">
+                    {/* LEFT CARD: Question & Visual */}
+                    <div className="flex-[3] bg-white rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative min-h-[300px]">
                         
-                        {/* CHANGE 3: Changed 'h-full' to 'h-auto' on mobile so the question doesn't hog or limit space */}
-                        <div className="flex flex-col order-1 lg:order-2 lg:h-full lg:overflow-hidden border-b lg:border-b-0 border-slate-50">
-                            <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6">
-                                <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
-                                    <MathDisplay content={localPacket[currentIndex].resolvedData?.renderData?.description} />
-                                    
-                                    {localPacket[currentIndex].resolvedData?.renderData?.latex && 
-                                        !localPacket[currentIndex].resolvedData?.renderData?.isWordProblemApplied && 
-                                        !localPacket[currentIndex].resolvedData?.renderData?.geometry && (
-                                            <MathDisplay content={`$$${localPacket[currentIndex].resolvedData.renderData.latex}$$`} />
-                                    )}
-                                </div>
-                            </div>
+                        <div className="sm:hidden h-1 bg-slate-100 flex shrink-0">
+                            {localPacket.map((_, i) => (
+                                <div key={i} className={`flex-1 ${i === currentIndex ? 'bg-indigo-500' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
+                            ))}
+                        </div>
 
-                            <div className="p-6 lg:p-10 bg-slate-50/30 border-t border-slate-100 shrink-0">
-                                {!completed[currentIndex] ? (
-                                    <div className="max-w-md mx-auto space-y-4">
-                                        {renderInput()}
-                                        {!(localPacket[currentIndex]?.resolvedData?.renderData?.options) && (
-                                            <button 
-                                                onClick={() => handleSolve()} 
-                                                disabled={isSubmitting || !answers[currentIndex]} 
-                                                className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-[0.25em] shadow-xl active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 transition-all"
-                                            >
-                                                {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <><Send size={20} /> {lang === 'sv' ? "Skicka svar" : "Submit answer"}</>}
-                                            </button>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="py-4 text-center">
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] animate-pulse italic">
-                                            {settings.pacing === 'teacher'
-                                                ? (lang === 'sv' ? "Väntar på läraren..." : "Waiting for teacher...")
-                                                : (lang === 'sv' ? "Fortsätt med pilen i menyn" : "Continue using navigation arrows")
-                                            }
-                                        </p>
+                        {/* Softened Section Label */}
+                        <div className="px-6 py-4 lg:px-10 lg:py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+                            <span className="text-sm font-bold text-slate-500">
+                                {lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} av {packet.length}
+                            </span>
+                            {!!completed[currentIndex] && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-emerald-600">{lang === 'sv' ? "Svar mottaget" : "Answer received"}</span>
+                                    <CheckCircle2 className="text-emerald-500" size={18} />
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
+                            <div className="flex-1 p-6 lg:p-10 flex flex-col justify-center space-y-6 order-2 lg:order-1">
+                                <div className="text-xl lg:text-2xl font-bold text-slate-800 leading-relaxed">
+                                    <MathDisplay content={localPacket[currentIndex].resolvedData?.renderData?.description} />
+                                </div>
+                                
+                                {localPacket[currentIndex].resolvedData?.renderData?.latex && 
+                                 !localPacket[currentIndex].resolvedData?.renderData?.isWordProblemApplied && 
+                                 !localPacket[currentIndex].resolvedData?.renderData?.geometry && (
+                                    <div className="w-full bg-indigo-50/50 border border-indigo-100/50 rounded-2xl p-4 lg:p-8 overflow-x-auto custom-scrollbar">
+                                        <div className="min-w-max flex justify-center">
+                                            <div className="text-2xl lg:text-4xl text-indigo-600 font-serif">
+                                                <MathDisplay content={`$$${localPacket[currentIndex].resolvedData.renderData.latex}$$`} />
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
+
+                            {localPacket[currentIndex].resolvedData?.renderData && 
+                            (localPacket[currentIndex].resolvedData.renderData.graph || 
+                            localPacket[currentIndex].resolvedData.renderData.geometry || 
+                            localPacket[currentIndex].resolvedData.renderData.pattern) && (
+                                <div className="flex-1 p-6 lg:p-10 flex items-center justify-center bg-slate-50/50 border-b lg:border-b-0 lg:border-l border-slate-100 order-1 lg:order-2 shrink-0 min-h-[250px]">
+                                    <WordProblemVisualGuard
+                                        isActive={!!localPacket[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied}
+                                        lang={lang}
+                                        questionKey={localPacket[currentIndex]?.id || currentIndex}
+                                        allowReveal={false}
+                                    >
+                                        <div className="w-full h-full flex items-center justify-center drop-shadow-sm transform scale-90 lg:scale-100">
+                                            <VisualRenderer 
+                                                data={localPacket[currentIndex]?.resolvedData?.renderData} 
+                                                isWordProblem={!!localPacket[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied} 
+                                            />
+                                        </div>
+                                    </WordProblemVisualGuard>
+                                </div>
+                            )}
                         </div>
-
-                        {/* --- VISUAL SECTION --- */}
-                        {localPacket[currentIndex].resolvedData?.renderData && 
-                        (localPacket[currentIndex].resolvedData.renderData.graph || 
-                        localPacket[currentIndex].resolvedData.renderData.geometry || 
-                        localPacket[currentIndex].resolvedData.renderData.pattern) ? (
-                            <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 lg:order-1 min-h-[400px] lg:h-full border-t lg:border-t-0 border-slate-50 pb-12 lg:pb-12 relative overflow-hidden">
-                                
-                                {/* 🎯 UNIVERSAL ASSESSMENT SHIELD: Absolute occlusion with override button deactivated */}
-                                <WordProblemVisualGuard
-                                    isActive={!!localPacket[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied}
-                                    lang={lang}
-                                    questionKey={localPacket[currentIndex]?.id || currentIndex}
-                                    allowReveal={false} // 👈 🔒 HIDES THE "REVEAL" BUTTON COMPLETELY
-                                >
-                                    <div className="w-full h-full flex items-center justify-center drop-shadow-md transform scale-90 lg:scale-125">
-                                        {/*  FIXED: Called VisualRenderer with the word problem state! */}
-                                        <VisualRenderer 
-                                            data={localPacket[currentIndex]?.resolvedData?.renderData} 
-                                            isWordProblem={!!localPacket[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied} 
-                                        />
-                                    </div>
-                                </WordProblemVisualGuard>
-
-                            </div>
-                        ) : null}
                     </div>
+
+                    {/* RIGHT CARD: Input Area */}
+                    <div className="flex-[2] lg:max-w-[450px] bg-white rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden shrink-0">
+                        {/* Softened Section Label */}
+                        <div className="px-6 py-4 lg:px-10 lg:py-5 border-b border-slate-100 flex items-center bg-slate-50 shrink-0">
+                            <span className="text-sm font-bold text-slate-500">{lang === 'sv' ? "Din lösning" : "Your solution"}</span>
+                        </div>
+                        
+                        {/* 🟢 CHANGED: Reduced padding from p-6 lg:p-10 to p-3 sm:p-4 lg:p-6 */}
+                        <div className="flex-1 p-3 sm:p-4 lg:p-6 flex flex-col justify-between bg-white space-y-4">
+                            {!completed[currentIndex] ? (
+                                <div className="w-full space-y-4">
+                                    {/* 🟢 CHANGED: Wrapped in hasScratchpad condition */}
+                                    {hasScratchpad && (
+                                        <MathScratchpad
+                                            steps={scratchpad[currentIndex] || ['']}
+                                            onChange={(steps) => setScratchpad(prev => ({ ...prev, [currentIndex]: steps }))}
+                                            disabled={isSubmitting || !!completed[currentIndex]}
+                                            lang={lang}
+                                        />
+                                    )}
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 block mb-1">
+                                            {lang === 'sv' ? 'Slutsvar:' : 'Final Answer:'}
+                                        </label>
+                                        {renderInput()}
+                                    </div>
+
+                                    <button 
+                                        onClick={() => handleSolve()} 
+                                        disabled={isSubmitting || !answers[currentIndex]} 
+                                        className="w-full bg-indigo-600 text-white py-4 rounded-2xl text-sm font-bold active:scale-95 disabled:opacity-30 hover:bg-indigo-700 flex items-center justify-center gap-2 transition-all shadow-sm"
+                                    >
+                                        {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <><Send size={18} /> {lang === 'sv' ? 'Skicka svar' : 'Submit answer'}</>}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
+                                        <Loader2 className="animate-spin text-slate-300" size={24} />
+                                    </div>
+                                    <p className="text-sm text-slate-400 font-bold italic">
+                                        {settings.pacing === 'teacher'
+                                            ? (lang === 'sv' ? "Väntar på läraren..." : "Waiting for teacher...")
+                                            : (lang === 'sv' ? "Fortsätt med pilen i menyn" : "Continue using navigation arrows")
+                                        }
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                 </div>
             </main>
         </div>
