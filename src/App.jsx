@@ -12,7 +12,7 @@ import PrintView from './components/views/PrintView';
 import StudentLiveView from './components/views/StudentLiveView';
 import TeacherLiveView from './components/views/TeacherLiveView'; 
 import DoNowGrid from './components/views/DoNowGrid'; 
-import SessionReportView from './components/views/SessionReportView';
+import LandscapeReport from './components/reports/LandscapeReport';
 import ProfileView from './components/views/ProfileView';
 import TimesTable from './components/views/TimesTable';
 import TestLabView from './components/views/TestLabView';
@@ -763,7 +763,21 @@ function App() {
                 ) : view === 'teacher_live' && activeRoom ? (
                     <TeacherLiveView session={activeRoom} packet={savedPacket} lang={lang} onEnd={handleEndSession} onKick={handleKick} onCreateReport={(res) => { setReportData(res); setView('live_report'); }} />
                 ) : view === 'live_report' && activeRoom && reportData ? (
-                    <SessionReportView session={activeRoom} packet={savedPacket} responses={reportData} onBack={() => { if (activeRoom.status === 'closed') { setView('dashboard'); setActiveRoom(null); setReportData(null); } else { setView('teacher_live'); } }} lang={lang} />
+                    <LandscapeReport 
+                        session={activeRoom} 
+                        packet={savedPacket} 
+                        responses={reportData} 
+                        onClose={() => { 
+                            if (activeRoom.status === 'closed') { 
+                                setView('dashboard'); 
+                                setActiveRoom(null); 
+                                setReportData(null); 
+                            } else { 
+                                setView('teacher_live'); 
+                            } 
+                        }} 
+                        lang={lang} 
+                    />
                 ) : null}
             </div>
         </div>
