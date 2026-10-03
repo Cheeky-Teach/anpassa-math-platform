@@ -1,0 +1,42 @@
+@layer base {
+  :root {
+    /* --- COLORS --- */
+    --color-bg-main: 215 234 245;       /* slate-50 */
+    --color-bg-card: 255 255 255;       /* white */
+    --color-bg-header: 241 245 249;     /* slate-100 */
+    --color-text-main: 15, 23, 42;      /* slate-900 */
+    --color-text-muted: 148, 120, 107;  /* slate-500 */
+    --color-primary: 79, 70, 229;       /* indigo-600 */
+    --color-success: 16, 185, 129;      /* emerald-500 */
+    --color-error: 244, 63, 94;          /* rose-500 */
+
+    /* --- FLAT STYLE TOKENS --- */
+    /* We want a "Flat" look, so we use subtle borders instead of heavy shadows */
+    --radius-card: 1.5rem;              /* Reduced from the current 2.5rem+ */
+    --radius-button: 0.75rem;
+    --border-width: 1px;
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    
+    /* --- SPACING (Compact for lower resolutions) --- */
+    --spacing-sm: 0.5rem;               /* 8px */
+    --spacing-md: 1rem;                 /* 16px */
+    --spacing-lg: 1.5rem;               /* 24px */
+    --spacing-xl: 2rem;                 /* 32px */
+  }
+
+  /* Utility classes to make using these variables easy in your JSX */
+  .theme-bg-main { background-color: rgb(var(--color-bg-main)); }
+  .theme-bg-card { background-color: rgb(var(--color-bg-card)); }
+  .theme-bg-header { background-color: rgb(var(--color-bg-header)); }
+  .theme-text-main { color: rgb(var(--color-text-main)); }
+  .theme-text-muted { color: rgb(var(--color-text-muted)); }
+  .theme-primary { color: rgb(var(--color-primary)); }
+  .theme-success { color: rgb(var(--color-success)); }
+  .theme-error { color: rgb(var(--color-error)); }
+
+  .theme-border { border-color: rgb(var(--color-bg-header)); }
+  .theme-shadow { box-shadow: var(--shadow-sm); }
+  
+  .theme-rounded-card { border-radius: var(--radius-card); }
+  .theme-rounded-button { border-radius: var(--radius-button); }
+}
