@@ -1,42 +1,268 @@
-@layer base {
-  :root {
-    /* --- COLORS --- */
-    --color-bg-main: 215 234 245;       /* slate-50 */
-    --color-bg-card: 255 255 255;       /* white */
-    --color-bg-header: 241 245 249;     /* slate-100 */
-    --color-text-main: 15, 23, 42;      /* slate-900 */
-    --color-text-muted: 148, 120, 107;  /* slate-500 */
-    --color-primary: 79, 70, 229;       /* indigo-600 */
-    --color-success: 16, 185, 129;      /* emerald-500 */
-    --color-error: 244, 63, 94;          /* rose-500 */
+/* src/styles/theme.css */
 
-    /* --- FLAT STYLE TOKENS --- */
-    /* We want a "Flat" look, so we use subtle borders instead of heavy shadows */
-    --radius-card: 1.5rem;              /* Reduced from the current 2.5rem+ */
-    --radius-button: 0.75rem;
-    --border-width: 1px;
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    
-    /* --- SPACING (Compact for lower resolutions) --- */
-    --spacing-sm: 0.5rem;               /* 8px */
-    --spacing-md: 1rem;                 /* 16px */
-    --spacing-lg: 1.5rem;               /* 24px */
-    --spacing-xl: 2rem;                 /* 32px */
-  }
+:root {
+  /* ☀️ 1. LIGHT THEME (DEFAULT) */
+  --bg-canvas: #f8fafc;       /* slate-50 */
+  --bg-card: #ffffff;         /* white */
+  --bg-surface: #f1f5f9;      /* slate-100 */
+  --bg-surface-hover: #e2e8f0;/* slate-200 */
 
-  /* Utility classes to make using these variables easy in your JSX */
-  .theme-bg-main { background-color: rgb(var(--color-bg-main)); }
-  .theme-bg-card { background-color: rgb(var(--color-bg-card)); }
-  .theme-bg-header { background-color: rgb(var(--color-bg-header)); }
-  .theme-text-main { color: rgb(var(--color-text-main)); }
-  .theme-text-muted { color: rgb(var(--color-text-muted)); }
-  .theme-primary { color: rgb(var(--color-primary)); }
-  .theme-success { color: rgb(var(--color-success)); }
-  .theme-error { color: rgb(var(--color-error)); }
+  --text-main: #0f172a;       /* slate-900 */
+  --text-muted: #64748b;      /* slate-500 */
+  --text-inverse: #ffffff;
 
-  .theme-border { border-color: rgb(var(--color-bg-header)); }
-  .theme-shadow { box-shadow: var(--shadow-sm); }
+  --border-subtle: #f1f5f9;   /* slate-100 */
+  --border-main: #e2e8f0;     /* slate-200 */
+  --border-strong: #cbd5e1;   /* slate-300 */
+
+  /* Standardized Proportions (Maximized Screen Real Estate) */
+  --radius-card: 1.5rem;      /* Replaces 3rem */
+  --radius-btn: 0.75rem;      /* Replaces 1.5rem */
   
-  .theme-rounded-card { border-radius: var(--radius-card); }
-  .theme-rounded-button { border-radius: var(--radius-button); }
+  --pad-sm: 0.5rem;
+  --pad-md: 1rem;
+  --pad-lg: 1.5rem;           /* Replaces p-10 */
+}
+
+/* 🌙 2. FULL DARK THEME */
+/* Applied by adding className="dark" to a parent wrapper */
+.dark, [data-theme="dark"] {
+  --bg-canvas: #0f172a;       /* slate-900 */
+  --bg-card: #1e293b;         /* slate-800 */
+  --bg-surface: #334155;      /* slate-700 */
+  --bg-surface-hover: #475569;/* slate-600 */
+
+  --text-main: #f8fafc;       /* slate-50 */
+  --text-muted: #94a3b8;      /* slate-400 */
+  --text-inverse: #0f172a;
+
+  --border-subtle: #1e293b;
+  --border-main: #334155;
+  --border-strong: #475569;
+}
+
+/* 🎯 3. FOCUS THEME (For StudentLiveView & Active Practice) */
+/* Dark canvas, but keeps cards Bright White to focus attention */
+.theme-focus {
+  --bg-canvas: #0f172a;       /* slate-900 */
+  --text-canvas: #f8fafc;     /* slate-50 */
+  /* Keeps card backgrounds as standard Light Mode */
+}
+
+/* 🎨 4. DYNAMIC CATEGORY THEMES (For PracticeView & Dashboard) */
+
+/* --- LIGHT MODE (DEFAULT) --- */
+.theme-emerald { --brand-bg: #ecfdf5; --brand-border: #a7f3d0; --brand-text: #059669; --brand-solid: #10b981; }
+.theme-indigo  { --brand-bg: #eef2ff; --brand-border: #c7d2fe; --brand-text: #4f46e5; --brand-solid: #6366f1; }
+.theme-pink    { --brand-bg: #fdf2f8; --brand-border: #fbcfe8; --brand-text: #db2777; --brand-solid: #ec4899; }
+.theme-amber   { --brand-bg: #fffbeb; --brand-border: #fde68a; --brand-text: #d97706; --brand-solid: #f59e0b; }
+.theme-rose    { --brand-bg: #fff1f2; --brand-border: #fecdd3; --brand-text: #e11d48; --brand-solid: #f43f5e; }
+.theme-orange  { --brand-bg: #ffedd5; --brand-border: #fdba74; --brand-text: #ea580c; --brand-solid: #f97316; }
+.theme-blue    { --brand-bg: #dbeafe; --brand-border: #93c5fd; --brand-text: #2563eb; --brand-solid: #3b82f6; }
+.theme-purple  { --brand-bg: #faf5ff; --brand-border: #e9d5ff; --brand-text: #9333ea; --brand-solid: #a855f7; }
+.theme-cyan    { --brand-bg: #ecfeff; --brand-border: #a5f3fc; --brand-text: #0891b2; --brand-solid: #06b6d4; }
+
+/* --- DARK MODE OVERRIDES --- */
+.dark .theme-emerald, [data-theme="dark"] .theme-emerald {
+  --brand-bg: rgba(16, 185, 129, 0.15);
+  --brand-border: rgba(16, 185, 129, 0.3);
+  --brand-text: #34d399; 
+  --brand-solid: #10b981;
+}
+.dark .theme-indigo, [data-theme="dark"] .theme-indigo {
+  --brand-bg: rgba(99, 102, 241, 0.15);
+  --brand-border: rgba(99, 102, 241, 0.3);
+  --brand-text: #818cf8; 
+  --brand-solid: #6366f1; 
+}
+.dark .theme-pink, [data-theme="dark"] .theme-pink {
+  --brand-bg: rgba(236, 72, 153, 0.15);
+  --brand-border: rgba(236, 72, 153, 0.3);
+  --brand-text: #f472b6; 
+  --brand-solid: #ec4899; 
+}
+.dark .theme-amber, [data-theme="dark"] .theme-amber {
+  --brand-bg: rgba(245, 158, 11, 0.15);
+  --brand-border: rgba(245, 158, 11, 0.3);
+  --brand-text: #fbbf24; 
+  --brand-solid: #f59e0b; 
+}
+.dark .theme-rose, [data-theme="dark"] .theme-rose {
+  --brand-bg: rgba(244, 63, 94, 0.15);
+  --brand-border: rgba(244, 63, 94, 0.3);
+  --brand-text: #fb7185; 
+  --brand-solid: #f43f5e; 
+}
+.dark .theme-orange, [data-theme="dark"] .theme-orange {
+  --brand-bg: rgba(249, 115, 22, 0.15);
+  --brand-border: rgba(249, 115, 22, 0.3);
+  --brand-text: #fb923c; 
+  --brand-solid: #f97316; 
+}
+.dark .theme-blue, [data-theme="dark"] .theme-blue {
+  --brand-bg: rgba(59, 130, 246, 0.15);
+  --brand-border: rgba(59, 130, 246, 0.3);
+  --brand-text: #60a5fa; 
+  --brand-solid: #3b82f6; 
+}
+.dark .theme-purple, [data-theme="dark"] .theme-purple {
+  --brand-bg: rgba(168, 85, 247, 0.15);
+  --brand-border: rgba(168, 85, 247, 0.3);
+  --brand-text: #c084fc; 
+  --brand-solid: #a855f7; 
+}
+.dark .theme-cyan, [data-theme="dark"] .theme-cyan {
+  --brand-bg: rgba(6, 182, 212, 0.15);
+  --brand-border: rgba(6, 182, 212, 0.3);
+  --brand-text: #22d3ee; 
+  --brand-solid: #06b6d4; 
+}
+
+/* ========================================= */
+/* UTILITY CLASSES FOR COMPONENTS            */
+/* ========================================= */
+
+/* --- Global Math Formatting --- */
+.math-content {
+  color: var(--text-main); /* Forces all math text to near-black */
+  /* OR use var(--primary-color) for dark blue */
+}
+
+/* --- Layout --- */
+body {
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+}
+
+.layout-wrapper {
+  background-color: var(--bg-canvas);
+  color: var(--text-canvas, var(--text-main));
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header-glass {
+  background-color: rgba(248, 250, 252, 0.85); /* Light mode canvas (slate-50) @ 85% */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .header-glass, [data-theme="dark"] .header-glass {
+  background-color: rgba(15, 23, 42, 0.85); /* Dark mode canvas (slate-900) @ 85% */
+}
+
+.layout-twocol {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--pad-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pad-lg);
+}
+@media (min-width: 1280px) {
+  .layout-twocol { flex-direction: row; }
+}
+
+.layout-sidebar { width: 100%; flex-shrink: 0; display: flex; flex-direction: column; gap: var(--pad-lg); }
+@media (min-width: 1280px) {
+  .layout-sidebar { width: 340px; }
+}
+.layout-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--pad-lg); }
+
+/* --- Cards --- */
+.card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border-main);
+  padding: var(--pad-lg);
+  color: var(--text-main);
+}
+
+.card-interactive {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border-main);
+  padding: var(--pad-md);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.card-interactive:hover {
+  border-color: var(--brand-solid, var(--border-strong));
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Buttons --- */
+.btn-brand {
+  background-color: var(--brand-solid, #4f46e5);
+  color: #ffffff;
+  border-radius: var(--radius-btn);
+  padding: var(--pad-md);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.btn-brand:hover:not(:disabled) { opacity: 0.9; }
+.btn-brand:active:not(:disabled) { transform: scale(0.98); }
+.btn-brand:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Gamified 3D Button (For PracticeView) */
+.btn-3d {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-main);
+  border-bottom-width: 4px;
+  border-bottom-color: var(--border-strong);
+  border-radius: var(--radius-btn);
+  padding: var(--pad-md);
+  font-weight: 700;
+  transition: all 0.1s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+.btn-3d:hover:not(:disabled) {
+  background-color: var(--bg-surface-hover);
+}
+.btn-3d:active:not(:disabled) {
+  transform: translateY(3px);
+  border-bottom-width: 1px;
+  margin-top: 3px; 
+}
+.btn-3d.is-correct {
+  background-color: #10b981;
+  border-color: #047857;
+  color: white;
+}
+.btn-3d.is-wrong {
+  background-color: #f43f5e;
+  border-color: #be123c;
+  color: white;
+}
+
+/* --- Status Badges --- */
+.badge-brand {
+  background-color: var(--brand-bg, #eef2ff);
+  color: var(--brand-text, #4f46e5);
+  border: 1px solid var(--brand-border, #c7d2fe);
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+/* Apply this to wrappers containing SVGs, VisualRenderer, or standalone LaTeX math */
+.whiteboard-protect {
+  --bg-surface: #f8fafc;
+  --text-main: #0f172a;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }

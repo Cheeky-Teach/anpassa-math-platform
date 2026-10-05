@@ -12,6 +12,10 @@ import VisualRenderer from '../visuals/VisualRenderer.jsx';
 import { supabase } from '../../lib/supabaseClient'; 
 import PresentationView from '../views/PresentationView.jsx';
 
+//  CRITICAL: Imports Universal Theme and Preferences Toggle
+import '../../styles/theme.css'; 
+import PreferencesToggle from '../ui/PreferencesToggle';
+
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
     useEffect(() => {
@@ -95,14 +99,6 @@ const compileAnchoredStory = (item, lang = 'sv', includeLatex = false) => {
     return template;
 };
 
-const BackgroundWave = () => (
-    <div className="fixed bottom-0 left-0 w-full leading-[0] pointer-events-none z-[-1] overflow-hidden opacity-40">
-        <svg className="relative block w-full h-[300px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-emerald-100"></path>
-        </svg>
-    </div>
-);
-
 export default function QuestionStudio({ 
     profile,
     onDoNowGenerate, 
@@ -142,7 +138,7 @@ export default function QuestionStudio({
       hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Text",
       present: "Presentera",
       new_donow: "Nytt Do Now", new_worksheet: "Nytt Arbetsblad",
-      new_board: "Ny Presentation", board_title: "Presentation", // 🟢 NEW BOARD STRINGS
+      new_board: "Ny Presentation", board_title: "Presentation", 
       trash: "Papperskorg", new_folder: "Ny Mapp", folder: "Mapp",
       filter_all: "Alla", create_folder_title: "Skapa ny mapp",
       folder_name_placeholder: "Mappnamn...", cancel: "Avbryt", create: "Skapa",
@@ -170,7 +166,7 @@ export default function QuestionStudio({
       hide_extra: "Hide Concepts & MCQ", type_calc: "Calculate", type_concept: "Concept", type_logic: "Logic", type_visual: "Image", type_text: "Text",
       present: "Present",
       new_donow: "New Do Now", new_worksheet: "New Worksheet",
-      new_board: "New Board", board_title: "Board", // 🟢 NEW BOARD STRINGS
+      new_board: "New Board", board_title: "Board", 
       trash: "Trash", new_folder: "New Folder", folder: "Folder",
       filter_all: "All", create_folder_title: "Create new folder",
       folder_name_placeholder: "Folder name...", cancel: "Cancel", create: "Create",
@@ -185,7 +181,6 @@ export default function QuestionStudio({
   const [isPane4Collapsed, setIsPane4Collapsed] = useState(false);
   const [setupMode, setSetupMode] = useState(studioMode); 
   const [activeSheetId, setActiveSheetId] = useState(null); 
-  //  Store the active board sheet object if opening a presentation
   const [activeBoardSheet, setActiveBoardSheet] = useState(null);
 
   const [savedSheets, setSavedSheets] = useState([]);
@@ -219,13 +214,7 @@ export default function QuestionStudio({
 
   // Live Session Pre-Flight States
   const [showLiveModal, setShowLiveModal] = useState(false);
-  const [liveSettings, setLiveSettings] = useState({
-      pacing: 'open',      // 'open', 'progressive', 'teacher'
-      order: 'original',   // 'original', 'randomized'
-      summary: true        // true (show), false (hide)
-  });
-
-  // State for scratchpad toggle
+  const [liveSettings, setLiveSettings] = useState({ pacing: 'open', order: 'original', summary: true });
   const [enableScratchpad, setEnableScratchpad] = useState(true);
 
   const [folders, setFolders] = useState([]);
@@ -301,8 +290,8 @@ export default function QuestionStudio({
             {options.map((opt, i) => {
                 const choiceLabel = typeof opt === 'object' ? opt.label : opt;
                 return (
-                    <div key={i} className="flex items-center gap-2 text-[11px] bg-slate-50 border border-slate-100 p-2 rounded-lg">
-                        <span className="font-black text-indigo-600">{labels[i]}</span>
+                    <div key={i} className="flex items-center gap-2 text-[11px] bg-[var(--bg-surface)] border border-[var(--border-main)] p-2 rounded-[var(--radius-btn)]">
+                        <span className="font-black text-[var(--primary-color)]">{labels[i]}</span>
                         <MathDisplay content={choiceLabel} />
                     </div>
                 );
@@ -320,13 +309,14 @@ export default function QuestionStudio({
     return 'default';
   };
 
+  //  FIXED: Converted internal map to use Native Universal Variables safely
   const getCategoryStyles = (type) => {
     const styles = {
-        visual: { border: 'border-indigo-200', bg: 'bg-indigo-50/20', text: 'text-indigo-700', icon: <ImageIcon size={10} />, label: t.type_visual },
-        calculate: { border: 'border-emerald-200', bg: 'bg-emerald-50/20', text: 'text-emerald-700', icon: <Calculator size={10} />, label: t.type_calc },
-        conceptual: { border: 'border-amber-200', bg: 'bg-amber-50/20', text: 'text-amber-700', icon: <Brain size={10} />, label: t.type_concept },
-        logic: { border: 'border-rose-200', bg: 'bg-rose-50/20', text: 'text-rose-700', icon: <Target size={10} />, label: t.type_logic },
-        default: { border: 'border-slate-200', bg: 'bg-slate-50/20', text: 'text-slate-500', icon: <TextIcon size={10} />, label: t.type_text }
+        visual: { border: 'border-[var(--theme-indigo-border)]', bg: 'bg-[var(--theme-indigo-bg)]', text: 'text-[var(--theme-indigo-text)]', icon: <ImageIcon size={10} />, label: t.type_visual },
+        calculate: { border: 'border-[var(--theme-emerald-border)]', bg: 'bg-[var(--theme-emerald-bg)]', text: 'text-[var(--theme-emerald-text)]', icon: <Calculator size={10} />, label: t.type_calc },
+        conceptual: { border: 'border-[var(--theme-amber-border)]', bg: 'bg-[var(--theme-amber-bg)]', text: 'text-[var(--theme-amber-text)]', icon: <Brain size={10} />, label: t.type_concept },
+        logic: { border: 'border-[var(--theme-rose-border)]', bg: 'bg-[var(--theme-rose-bg)]', text: 'text-[var(--theme-rose-text)]', icon: <Target size={10} />, label: t.type_logic },
+        default: { border: 'border-[var(--border-strong)]', bg: 'bg-[var(--bg-surface)]', text: 'text-[var(--text-muted)]', icon: <TextIcon size={10} />, label: t.type_text }
     };
     return styles[type] || styles.default;
   };
@@ -451,7 +441,6 @@ export default function QuestionStudio({
     } catch (err) { alert("Kunde inte kopiera."); }
   };
 
-  //  Dedicated loader for presentation boards
   const loadBoard = (sheet) => {
       setActiveBoardSheet(sheet);
       setShowPresentation(true);
@@ -484,13 +473,11 @@ export default function QuestionStudio({
       onWorksheetGenerate(printPacket, { title: sheetTitle, globalLatexSize, workspaceHeight, workspaceStyle, layoutStyle, includeAnswerKey, answerKeyStyle }); 
   };
   
-  // Now just opens the pre-flight modal
   const handleLaunchLive = () => {
     if (!isSaved && !window.confirm(t.unsaved_warning)) return;
     setShowLiveModal(true);
   };
 
-  // Launches when the teacher clicks "Starta Session" inside the modal
   const confirmLaunchLive = async () => {
     setShowLiveModal(false);
     const { data: { user } } = await supabase.auth.getUser();
@@ -502,7 +489,6 @@ export default function QuestionStudio({
             status: 'active', 
             title: sheetTitle || "Live Session", 
             active_worksheet_id: activeSheetId, 
-            // 🟢 INJECTED SETTINGS: The live views will read these rules!
             active_question_data: { packet: packet, mode: setupMode, settings: { ...liveSettings, scratchpad: enableScratchpad } }
         }]).select().single();
         if (error) throw error;
@@ -599,42 +585,43 @@ export default function QuestionStudio({
   })
   .sort((a, b) => getDifficultyScore(a.key) - getDifficultyScore(b.key));
 
-  //  Utility for resolving row icons cleanly based on document type
   const getSheetIconStyle = (type, size = 12) => {
-      if (type === 'board') return { bg: 'bg-amber-50', text: 'text-amber-600', icon: <Monitor size={size} /> };
-      if (type === 'donow') return { bg: 'bg-indigo-50', text: 'text-indigo-500', icon: <Grid3X3 size={size} /> };
-      return { bg: 'bg-emerald-50', text: 'text-emerald-500', icon: <FileText size={size} /> };
+      if (type === 'board') return { theme: 'theme-amber', icon: <Monitor size={size} /> };
+      if (type === 'donow') return { theme: 'theme-indigo', icon: <Grid3X3 size={size} /> };
+      return { theme: 'theme-emerald', icon: <FileText size={size} /> };
   };
 
-  // 🟢 FULL-WIDTH CLOUD DRIVE LAYOUT
+  // =========================================================================
+  //  SETUP MODE (CLOUD DRIVE LAYOUT)
+  // =========================================================================
   if (!setupMode) {
         return (
-            <div className="flex h-full w-full bg-[#f9fbf7] overflow-hidden relative text-slate-800">
+            <div className="flex flex-row h-full w-full overflow-hidden relative bg-[var(--bg-canvas)] text-[var(--text-main)]">
+                
                 {/* 1. LEFT SIDEBAR */}
-                <div className="w-64 bg-white border-r border-emerald-100 flex flex-col shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-                    <div className="p-6 border-b border-emerald-50">
-                        <h2 className="text-xl font-black text-emerald-900 tracking-tighter uppercase italic mb-6">
+                <div className="w-64 bg-[var(--bg-card)] border-r border-[var(--border-main)] flex flex-col shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+                    <div className="p-6 border-b border-[var(--border-main)]">
+                        <h2 className="text-xl font-black text-emerald-600 tracking-tighter uppercase italic mb-6">
                             {t.studio}
                         </h2>
                         
-                        {/* Create Buttons */}
+                        {/* Create Buttons (Brand Protected) */}
                         <div className="flex flex-col gap-2">
-                            {/*  PRESENTATION BOARD LAUNCH BUTTON */}
                             <button 
                                 onClick={() => { setActiveBoardSheet(null); setShowPresentation(true); }} 
-                                className="w-full py-2.5 bg-amber-500 text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-amber-600 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                className="w-full py-2.5 bg-amber-500 text-slate-900 rounded-[var(--radius-btn)] font-black text-xs uppercase tracking-widest hover:bg-amber-600 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <Plus size={14} /> {t.new_board}
                             </button>
                             <button 
                                 onClick={() => { setSetupMode('donow'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); setChosenVisibility('private'); }} 
-                                className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                className="w-full py-2.5 bg-indigo-600 text-white rounded-[var(--radius-btn)] font-black text-xs uppercase tracking-widest hover:bg-indigo-700 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <Plus size={14} /> {t.new_donow}
                             </button>
                             <button 
                                 onClick={() => { setSetupMode('worksheet'); setPacket([]); setSheetTitle(""); setActiveSheetId(null); setChosenVisibility('private'); }} 
-                                className="w-full py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                                className="w-full py-2.5 bg-emerald-600 text-white rounded-[var(--radius-btn)] font-black text-xs uppercase tracking-widest hover:bg-emerald-700 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <Plus size={14} /> {t.new_worksheet}
                             </button>
@@ -643,32 +630,32 @@ export default function QuestionStudio({
 
                     {/* Navigation Menu */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-1">
-                        <p className="px-3 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 mt-2">{t.library_title}</p>
+                        <p className="px-3 text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-2 mt-2">{t.library_title}</p>
                         
                         <button 
                             onClick={() => { setLibraryTab('private'); setIsTrashView(false); }} 
-                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${libraryTab === 'private' && !isTrashView ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`w-full text-left px-3 py-2 rounded-[var(--radius-btn)] text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${libraryTab === 'private' && !isTrashView ? 'bg-[var(--theme-indigo-bg)] text-[var(--theme-indigo-text)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)]'}`}
                         >
                             <FileText size={16} /> {t.tab_mine}
                         </button>
                         <button 
                             onClick={() => { setLibraryTab('school'); setIsTrashView(false); }} 
-                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${libraryTab === 'school' && !isTrashView ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`w-full text-left px-3 py-2 rounded-[var(--radius-btn)] text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${libraryTab === 'school' && !isTrashView ? 'bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)]'}`}
                         >
                             <Building2 size={16} /> {t.tab_school}
                         </button>
                         <button 
                             onClick={() => { setLibraryTab('public'); setIsTrashView(false); }} 
-                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${libraryTab === 'public' && !isTrashView ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`w-full text-left px-3 py-2 rounded-[var(--radius-btn)] text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${libraryTab === 'public' && !isTrashView ? 'bg-[var(--theme-blue-bg)] text-[var(--theme-blue-text)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)]'}`}
                         >
                             <Globe size={16} /> {t.tab_global}
                         </button>
 
-                        <div className="my-4 h-px bg-slate-100 mx-3"></div>
+                        <div className="my-4 h-px bg-[var(--border-main)] mx-3"></div>
                         
                         <button 
                             onClick={() => { setLibraryTab('private'); setIsTrashView(true); }} 
-                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${isTrashView ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`w-full text-left px-3 py-2 rounded-[var(--radius-btn)] text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${isTrashView ? 'bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)]'}`}
                         >
                             <Trash2 size={16} /> {t.trash}
                         </button>
@@ -676,42 +663,44 @@ export default function QuestionStudio({
                 </div>
 
                 {/* 2. MAIN CONTENT AREA (FILE EXPLORER) */}
-                <div className="flex-1 flex flex-col relative z-10 min-w-0">
+                <div className="flex-1 flex flex-col relative z-10 min-w-0 bg-[var(--bg-canvas)]">
                     <div className="px-8 pt-8 pb-4 flex justify-between items-end">
-                        <div className="flex items-center gap-2 text-xl font-black tracking-tight text-slate-800">
+                        <div className="flex items-center gap-2 text-xl font-black tracking-tight text-[var(--text-main)]">
                             {isTrashView ? <span>{t.trash}</span> : <span>{libraryTab === 'private' ? t.tab_mine : libraryTab === 'school' ? t.tab_school : t.tab_global}</span>}
                         </div>
 
                         <div className="flex items-center gap-3">
+                            {/*  DROP-IN UNIVERSAL TOGGLE */}
+                            <PreferencesToggle />
+                            
                             {libraryTab === 'private' && !isTrashView && (
                                 <button 
                                     onClick={() => setShowFolderModal(true)}
-                                    className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-[11px] font-black uppercase tracking-widest hover:border-indigo-300 hover:text-indigo-600 shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                                    className="px-4 py-2 bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] rounded-[var(--radius-btn)] text-[11px] font-black uppercase tracking-widest hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)] shadow-sm transition-all flex items-center gap-2 cursor-pointer"
                                 >
                                     <Plus size={14} /> {t.new_folder}
                                 </button>
                             )}
-                            <button onClick={onClose} className="px-4 py-2 bg-slate-900 text-white hover:bg-rose-600 rounded-lg shadow-sm transition-all flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest cursor-pointer">
+                            <button onClick={onClose} className="px-4 py-2 bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] border border-[var(--theme-rose-border)] hover:bg-rose-500 hover:text-white rounded-[var(--radius-btn)] shadow-sm transition-all flex items-center gap-1.5 font-black text-[11px] uppercase tracking-widest cursor-pointer">
                                 <X size={14}/> {t.btn_close}
                             </button>
                         </div>
                     </div>
 
                     {/* Filters Toolbar */}
-                    <div className="px-8 py-3 bg-white/50 border-y border-emerald-100 flex flex-col lg:flex-row justify-between items-center gap-3">
+                    <div className="px-8 py-3 bg-[var(--bg-surface)]/50 border-y border-[var(--border-main)] flex flex-col lg:flex-row justify-between items-center gap-3">
                         <div className="flex items-center gap-2 w-full lg:w-auto">
-                            <div className="flex gap-1 p-0.5 bg-slate-200/60 rounded-lg border border-slate-300/40 shadow-inner overflow-x-auto">
-                                <button onClick={() => setFilterDocType('all')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 cursor-pointer ${filterDocType === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                            <div className="flex gap-1 p-0.5 bg-[var(--bg-surface-hover)] rounded-lg border border-[var(--border-main)] shadow-inner overflow-x-auto">
+                                <button onClick={() => setFilterDocType('all')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 cursor-pointer ${filterDocType === 'all' ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                     {t.filter_all}
                                 </button>
-                                {/*  BOARD FILTER TOGGLE */}
-                                <button onClick={() => setFilterDocType('board')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 flex items-center gap-1 cursor-pointer ${filterDocType === 'board' ? 'bg-amber-500 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                                <button onClick={() => setFilterDocType('board')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 flex items-center gap-1 cursor-pointer ${filterDocType === 'board' ? 'bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] shadow-sm border border-[var(--theme-amber-border)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                     <Monitor size={12} /> {t.board_title}
                                 </button>
-                                <button onClick={() => setFilterDocType('worksheet')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 flex items-center gap-1 cursor-pointer ${filterDocType === 'worksheet' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                                <button onClick={() => setFilterDocType('worksheet')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 flex items-center gap-1 cursor-pointer ${filterDocType === 'worksheet' ? 'bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)] shadow-sm border border-[var(--theme-emerald-border)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                     <FileText size={10} /> {t.worksheet_title}
                                 </button>
-                                <button onClick={() => setFilterDocType('donow')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 flex items-center gap-1 cursor-pointer ${filterDocType === 'donow' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                                <button onClick={() => setFilterDocType('donow')} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all shrink-0 flex items-center gap-1 cursor-pointer ${filterDocType === 'donow' ? 'bg-[var(--theme-indigo-bg)] text-[var(--theme-indigo-text)] shadow-sm border border-[var(--theme-indigo-border)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                     <Grid3X3 size={12} /> {t.donow_title}
                                 </button>
                             </div>
@@ -719,12 +708,12 @@ export default function QuestionStudio({
                         
                         <div className="flex gap-2 items-center w-full lg:w-auto">
                             <div className="relative w-full sm:w-64 group">
-                                <Search className="absolute left-2.5 top-2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={13} />
-                                <input type="text" placeholder={t.search_placeholder} className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 focus:border-indigo-500 rounded-lg text-sm outline-none transition-all shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                <Search className="absolute left-2.5 top-2 text-[var(--text-muted)] group-focus-within:text-[var(--primary-color)] transition-colors" size={13} />
+                                <input type="text" placeholder={t.search_placeholder} className="w-full pl-8 pr-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] focus:border-[var(--primary-color)] rounded-[var(--radius-btn)] text-sm outline-none transition-all shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                             </div>
-                            <div className="relative w-full sm:w-auto bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-sm focus-within:border-indigo-500 transition-all flex items-center gap-1">
-                                <Filter size={12} className="text-slate-400" />
-                                <select value={filterTopic} onChange={(e) => setFilterTopic(e.target.value)} className="text-[10px] font-black uppercase bg-transparent border-none rounded-md outline-none cursor-pointer pr-4 text-slate-600">
+                            <div className="relative w-full sm:w-auto bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-btn)] px-2.5 py-1.5 shadow-sm focus-within:border-[var(--primary-color)] transition-all flex items-center gap-1">
+                                <Filter size={12} className="text-[var(--text-muted)]" />
+                                <select value={filterTopic} onChange={(e) => setFilterTopic(e.target.value)} className="text-[10px] font-black uppercase bg-transparent border-none rounded-md outline-none cursor-pointer pr-4 text-[var(--text-main)]">
                                     <option value="all">{lang === 'sv' ? "Alla Områden" : "All Topics"}</option>
                                     {availableTopics.map(tId => <option key={tId} value={tId}>{getTopicLabel(tId).toUpperCase()}</option>)}
                                 </select>
@@ -735,11 +724,11 @@ export default function QuestionStudio({
                     {/* File Explorer Table */}
                     <div className="flex-1 overflow-auto custom-scrollbar px-8 py-4">
                         {isLibraryLoading ? (
-                            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-indigo-500" size={32} /></div>
+                            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[var(--primary-color)]" size={32} /></div>
                         ) : (
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <tr className="border-b border-[var(--border-main)] text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                                         <th className="pb-3 w-10 text-center"></th>
                                         <th className="pb-3 w-2/5">{t.name_label.replace(':', '')}</th>
                                         <th className="pb-3 w-1/4">{lang === 'sv' ? 'Innehåll' : 'Content'}</th>
@@ -747,7 +736,7 @@ export default function QuestionStudio({
                                         <th className="pb-3 text-right w-48 pr-4">{lang === 'sv' ? 'Åtgärder' : 'Actions'}</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="divide-y divide-[var(--border-subtle)]">
                                     {/* 1. RENDER FOLDERS */}
                                     {libraryTab === 'private' && !isTrashView && folders.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase())).map(folder => {
                                         const isExpanded = expandedFolders.includes(folder.id);
@@ -755,22 +744,22 @@ export default function QuestionStudio({
 
                                         return (
                                             <React.Fragment key={folder.id}>
-                                                <tr onClick={() => toggleFolder(folder.id)} className="hover:bg-slate-50 transition-colors group cursor-pointer bg-slate-50/30">
+                                                <tr onClick={() => toggleFolder(folder.id)} className="hover:bg-[var(--bg-surface)] transition-colors group cursor-pointer bg-[var(--bg-canvas)]">
                                                     <td className="py-3 text-center">
-                                                        <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center mx-auto text-indigo-500 group-hover:bg-indigo-100 transition-colors">
+                                                        <div className="w-8 h-8 rounded-lg bg-[var(--theme-indigo-bg)] flex items-center justify-center mx-auto text-[var(--theme-indigo-text)] group-hover:bg-[var(--theme-indigo-border)] transition-colors border border-[var(--theme-indigo-border)]">
                                                             {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                                         </div>
                                                     </td>
-                                                    <td className="py-3 font-black text-slate-800 text-sm max-w-0">
+                                                    <td className="py-3 font-black text-[var(--text-main)] text-sm max-w-0">
                                                         <div className="flex items-center gap-2 truncate" title={folder.name}>
-                                                            <Layers size={14} className="text-indigo-400 shrink-0" /> 
+                                                            <Layers size={14} className="text-[var(--theme-indigo-text)] shrink-0" /> 
                                                             <span className="truncate">{folder.name}</span>
                                                         </div>
                                                     </td>
-                                                    <td className="py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.folder} ({folderFiles.length})</td>
-                                                    <td className="py-3 text-center text-slate-400 text-xs">{new Date(folder.created_at).toLocaleDateString()}</td>
+                                                    <td className="py-3 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t.folder} ({folderFiles.length})</td>
+                                                    <td className="py-3 text-center text-[var(--text-muted)] text-xs">{new Date(folder.created_at).toLocaleDateString()}</td>
                                                     <td className="py-3 text-right pr-4">
-                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
+                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }} className="p-2 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-lg transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-[var(--theme-rose-border)]"><Trash2 size={16}/></button>
                                                     </td>
                                                 </tr>
 
@@ -778,16 +767,17 @@ export default function QuestionStudio({
                                                 {isExpanded && folderFiles.map(sheet => {
                                                     const style = getSheetIconStyle(sheet.type);
                                                     return (
-                                                    <tr key={sheet.id} className="hover:bg-slate-50 transition-colors group bg-white">
+                                                    <tr key={sheet.id} className="hover:bg-[var(--bg-surface)] transition-colors group bg-[var(--bg-card)]">
                                                         <td className="py-3 text-center relative">
-                                                            <div className="w-px h-full bg-slate-200 ml-6 absolute -mt-3"></div>
-                                                            <div className="w-4 h-px bg-slate-200 ml-6 relative z-10 top-1/2"></div>
+                                                            <div className="w-px h-full bg-[var(--border-strong)] ml-6 absolute -mt-3"></div>
+                                                            <div className="w-4 h-px bg-[var(--border-strong)] ml-6 relative z-10 top-1/2"></div>
                                                         </td>
-                                                        <td className="py-3 font-bold text-slate-700 text-sm pl-4 max-w-0">
+                                                        <td className="py-3 font-bold text-[var(--text-main)] text-sm pl-4 max-w-0">
                                                             <div className="flex items-center gap-2" title={sheet.title}>
-                                                                {/* 🟢 FIXED: Rendering dynamic icons depending on if it's a Board, Worksheet, or DoNow */}
-                                                                <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${style.bg} ${style.text}`}>
-                                                                    {style.icon}
+                                                                <div className={style.theme}>
+                                                                    <div className="w-6 h-6 rounded-[var(--radius-btn)] border flex items-center justify-center shrink-0 bg-[var(--brand-bg)] text-[var(--brand-solid)] border-[var(--brand-border)]">
+                                                                        {style.icon}
+                                                                    </div>
                                                                 </div>
                                                                 <span className="truncate">{sheet.title}</span>
                                                             </div>
@@ -795,22 +785,22 @@ export default function QuestionStudio({
                                                         <td className="py-3">
                                                             <div className="flex flex-wrap gap-1">
                                                                 {sheet.auto_topics?.slice(0, 2).map(tag => (
-                                                                    <span key={tag} className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{tag}</span>
+                                                                    <span key={tag} className="text-[9px] font-black uppercase tracking-widest bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-muted)] px-2 py-0.5 rounded-[var(--radius-btn)]">{tag}</span>
                                                                 ))}
                                                             </div>
                                                         </td>
-                                                        <td className="py-3 text-center text-slate-400 text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
+                                                        <td className="py-3 text-center text-[var(--text-muted)] text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
                                                         <td className="py-3 text-right pr-4">
                                                             <div className="flex justify-end gap-1 items-center opacity-40 group-hover:opacity-100 transition-opacity">
-                                                                <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-slate-100"><Maximize2 size={14}/></button>
-                                                                {/*  Context-aware routing button for Boards vs Worksheets */}
+                                                                <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)]"><Maximize2 size={14}/></button>
+                                                                
                                                                 {sheet.type === 'board' ? (
-                                                                    <button onClick={() => loadBoard(sheet)} className="bg-amber-500 text-slate-900 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-amber-600 ml-2">{lang === 'sv' ? 'Öppna' : 'Open'}</button>
+                                                                    <button onClick={() => loadBoard(sheet)} className="btn-brand bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)] px-3 py-1 text-[10px] ml-2">{lang === 'sv' ? 'Öppna' : 'Open'}</button>
                                                                 ) : (
-                                                                    <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-indigo-600 ml-2">{t.load_btn}</button>
+                                                                    <button onClick={() => loadSheet(sheet)} className="btn-brand bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] px-3 py-1 text-[10px] ml-2 hover:bg-[var(--brand-bg)] hover:text-[var(--brand-text)] hover:border-[var(--brand-border)]">{t.load_btn}</button>
                                                                 )}
-                                                                <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-slate-500 hover:text-indigo-600 rounded hover:bg-slate-100 ml-1"><PanelLeftClose size={14}/></button>
-                                                                <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-slate-500 hover:text-rose-500 rounded hover:bg-rose-50 ml-1"><Trash2 size={14}/></button>
+                                                                <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] ml-1"><PanelLeftClose size={14}/></button>
+                                                                <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-[var(--radius-btn)] ml-1"><Trash2 size={14}/></button>
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -823,46 +813,47 @@ export default function QuestionStudio({
                                     {filteredLibrary.filter(sheet => isTrashView || libraryTab !== 'private' || sheet.folder_id === null).map(sheet => {
                                         const style = getSheetIconStyle(sheet.type, 16);
                                         return (
-                                        <tr key={sheet.id} className="hover:bg-slate-50 transition-colors group">
+                                        <tr key={sheet.id} className="hover:bg-[var(--bg-surface)] transition-colors group">
                                             <td className="py-3 text-center">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto ${style.bg} ${style.text}`}>
-                                                    {style.icon}
+                                                <div className={style.theme}>
+                                                    <div className="w-8 h-8 rounded-[var(--radius-btn)] border border-[var(--brand-border)] flex items-center justify-center mx-auto bg-[var(--brand-bg)] text-[var(--brand-solid)]">
+                                                        {style.icon}
+                                                    </div>
                                                 </div>
                                             </td>
-                                            <td className="py-3 font-bold text-slate-700 text-sm max-w-0">
+                                            <td className="py-3 font-bold text-[var(--text-main)] text-sm max-w-0">
                                                 <div className="truncate" title={sheet.title}>{sheet.title}</div>
                                             </td>
                                             <td className="py-3">
                                                 <div className="flex flex-wrap gap-1">
                                                     {sheet.auto_topics?.slice(0, 2).map(tag => (
-                                                        <span key={tag} className="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{tag}</span>
+                                                        <span key={tag} className="text-[9px] font-black uppercase tracking-widest bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-muted)] px-2 py-0.5 rounded-[var(--radius-btn)]">{tag}</span>
                                                     ))}
-                                                    {sheet.auto_topics?.length > 2 && <span className="text-[9px] font-black text-slate-400">+{sheet.auto_topics.length - 2}</span>}
+                                                    {sheet.auto_topics?.length > 2 && <span className="text-[9px] font-black text-[var(--text-muted)]">+{sheet.auto_topics.length - 2}</span>}
                                                 </div>
                                             </td>
-                                            <td className="py-3 text-center text-slate-400 text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
+                                            <td className="py-3 text-center text-[var(--text-muted)] text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
                                             <td className="py-3 text-right pr-4">
                                                 <div className="flex justify-end gap-1 items-center opacity-40 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-slate-100"><Maximize2 size={14}/></button>
+                                                    <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)]"><Maximize2 size={14}/></button>
                                                     
                                                     {isTrashView ? (
                                                         <>
-                                                            <button onClick={(e) => handleRestore(e, sheet.id)} className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-emerald-200 ml-2">{t.restore}</button>
-                                                            <button onClick={(e) => handleHardDelete(e, sheet.id)} className="bg-rose-100 text-rose-700 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-rose-200 ml-1">{t.hard_delete}</button>
+                                                            <button onClick={(e) => handleRestore(e, sheet.id)} className="btn-brand bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)] border border-[var(--theme-emerald-border)] px-3 py-1 text-[10px] ml-2">{t.restore}</button>
+                                                            <button onClick={(e) => handleHardDelete(e, sheet.id)} className="btn-brand bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] border border-[var(--theme-rose-border)] px-3 py-1 text-[10px] ml-1">{t.hard_delete}</button>
                                                         </>
                                                     ) : libraryTab === 'private' ? (
                                                         <>
-                                                            {/*  Context-aware routing button for Boards vs Worksheets */}
                                                             {sheet.type === 'board' ? (
-                                                                <button onClick={() => loadBoard(sheet)} className="bg-amber-500 text-slate-900 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-amber-600 ml-2">{lang === 'sv' ? 'Öppna' : 'Open'}</button>
+                                                                <button onClick={() => loadBoard(sheet)} className="btn-brand bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)] px-3 py-1 text-[10px] ml-2">{lang === 'sv' ? 'Öppna' : 'Open'}</button>
                                                             ) : (
-                                                                <button onClick={() => loadSheet(sheet)} className="bg-slate-900 text-white px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-indigo-600 ml-2">{t.load_btn}</button>
+                                                                <button onClick={() => loadSheet(sheet)} className="btn-brand bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] hover:bg-[var(--brand-bg)] hover:text-[var(--brand-text)] hover:border-[var(--brand-border)] px-3 py-1 text-[10px] ml-2">{t.load_btn}</button>
                                                             )}
-                                                            <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-slate-500 hover:text-indigo-600 rounded hover:bg-slate-100 ml-1"><PanelLeftClose size={14}/></button>
-                                                            <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-slate-500 hover:text-rose-500 rounded hover:bg-rose-50 ml-1"><Trash2 size={14}/></button>
+                                                            <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] ml-1"><PanelLeftClose size={14}/></button>
+                                                            <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-[var(--radius-btn)] ml-1"><Trash2 size={14}/></button>
                                                         </>
                                                     ) : (
-                                                        <button onClick={() => handleClone(sheet.id)} className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded text-[10px] font-black uppercase hover:bg-indigo-200 ml-2 flex items-center gap-1"><Copy size={10}/> {t.clone_btn}</button>
+                                                        <button onClick={() => { handleClone(sheet.id); setPeekSheet(null); }} className="btn-brand bg-[var(--theme-indigo-bg)] text-[var(--theme-indigo-text)] border border-[var(--theme-indigo-border)] py-1.5 text-[10px] ml-2 gap-1"><Copy size={10}/> {t.clone_btn}</button>
                                                     )}
                                                 </div>
                                             </td>
@@ -870,7 +861,7 @@ export default function QuestionStudio({
                                     )})}
                                     
                                     {filteredLibrary.length === 0 && folders.length === 0 && !isLibraryLoading && (
-                                        <tr><td colSpan={5} className="text-center py-12 text-slate-400 text-sm font-medium italic">{isTrashView ? t.trash_empty : t.no_files}</td></tr>
+                                        <tr><td colSpan={5} className="text-center py-12 text-[var(--text-muted)] text-sm font-medium italic">{isTrashView ? t.trash_empty : t.no_files}</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -878,52 +869,52 @@ export default function QuestionStudio({
                     </div>
                 </div>
 
-                <BackgroundWave />
-
                 {/* MODALS */}
                 {showFolderModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-                        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
-                            <h3 className="text-lg font-black text-slate-800 mb-4">{t.create_folder_title}</h3>
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                        <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
+                            <h3 className="text-lg font-black text-[var(--text-main)] mb-4">{t.create_folder_title}</h3>
                             <input 
                                 autoFocus
                                 type="text" 
                                 value={newFolderName} 
                                 onChange={(e) => setNewFolderName(e.target.value)} 
                                 placeholder={t.folder_name_placeholder}
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none mb-6 font-bold"
+                                className="w-full px-4 py-2 bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] rounded-[var(--radius-btn)] focus:border-[var(--primary-color)] outline-none mb-6 font-bold"
                             />
                             <div className="flex justify-end gap-2">
-                                <button onClick={() => setShowFolderModal(false)} className="px-4 py-2 text-slate-500 font-bold hover:bg-slate-100 rounded-lg transition-colors">{t.cancel}</button>
-                                <button onClick={handleCreateFolder} disabled={!newFolderName.trim()} className="px-4 py-2 bg-indigo-600 text-white font-black uppercase text-xs tracking-wider rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors">{t.create}</button>
+                                <button onClick={() => setShowFolderModal(false)} className="px-4 py-2 text-[var(--text-muted)] font-bold hover:bg-[var(--bg-surface)] rounded-lg transition-colors">{t.cancel}</button>
+                                <button onClick={handleCreateFolder} disabled={!newFolderName.trim()} className="btn-brand">{t.create}</button>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {showMoveModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-                        <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-black text-slate-800">{t.move_file}</h3>
-                                <button onClick={() => setShowMoveModal(null)} className="text-slate-400 hover:text-slate-800"><X size={20}/></button>
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                        {/* 🟢 Expanded to max-w-lg and bumped padding to p-8 */}
+                        <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-8 w-full max-w-lg animate-in zoom-in-95 duration-200">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-black text-[var(--text-main)]">{t.move_file}</h3>
+                                <button onClick={() => setShowMoveModal(null)} className="p-2 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-lg transition-all"><X size={20}/></button>
                             </div>
-                            <p className="text-sm font-bold text-slate-500 mb-4 truncate">"{showMoveModal.title}"</p>
+                            <p className="text-base font-bold text-[var(--text-muted)] mb-4 truncate">"{showMoveModal.title}"</p>
                             
-                            <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar mb-6 border border-slate-100 rounded-xl p-2 bg-slate-50">
+                            {/* 🟢 Expanded height to 50% of the viewport (max-h-[50vh]) */}
+                            <div className="space-y-2 max-h-[50vh] overflow-y-auto custom-scrollbar mb-2 border border-[var(--border-main)] rounded-[var(--radius-card)] p-3 bg-[var(--bg-surface)]">
                                 <button 
                                     onClick={() => handleMoveSheet(showMoveModal.id, null)}
-                                    className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-3 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 text-slate-600"
+                                    className="w-full text-left px-4 py-3 rounded-[var(--radius-btn)] text-sm font-bold transition-all flex items-center gap-3 bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-strong)] text-[var(--text-main)] shadow-sm"
                                 >
-                                    <Globe size={16} className="text-slate-400" /> {t.root_dir}
+                                    <Globe size={18} className="text-[var(--text-muted)]" /> {t.root_dir}
                                 </button>
                                 {folders.map(folder => (
                                     <button 
                                         key={folder.id}
                                         onClick={() => handleMoveSheet(showMoveModal.id, folder.id)}
-                                        className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-3 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 text-slate-600"
+                                        className="w-full text-left px-4 py-3 rounded-[var(--radius-btn)] text-sm font-bold transition-all flex items-center gap-3 bg-[var(--bg-card)] border border-transparent hover:border-[var(--border-strong)] text-[var(--text-main)] shadow-sm"
                                     >
-                                        <Layers size={16} className="text-indigo-500" /> {folder.name}
+                                        <Layers size={18} className="text-[var(--primary-color)]" /> {folder.name}
                                     </button>
                                 ))}
                             </div>
@@ -933,124 +924,117 @@ export default function QuestionStudio({
 
                 {peekSheet && (
                     <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-xs">
-                        <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-                            <div className="p-6 border-b flex justify-between items-center bg-slate-900 text-white">
+                        <div className="w-full max-w-lg bg-[var(--bg-canvas)] h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 border-l border-[var(--border-main)]">
+                            <div className="p-6 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-card)]">
                                 <div>
-                                    <h3 className="text-lg font-black uppercase italic tracking-tighter leading-none">{peekSheet.title}</h3>
-                                    {/*  Protection to parse board objects vs flat arrays so quick-peek doesn't crash! */}
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-widest">
+                                    <h3 className="text-lg font-black uppercase italic tracking-tighter leading-none text-[var(--text-main)]">{peekSheet.title}</h3>
+                                    <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase mt-1 tracking-widest">
                                         {(peekSheet.type === 'board' ? peekSheet.packet?.livePacket?.length : peekSheet.packet?.length) || 0} Uppgifter
                                     </p>
                                 </div>
-                                <button onClick={() => setPeekSheet(null)} className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer"><X size={20}/></button>
+                                <button onClick={() => setPeekSheet(null)} className="btn-ghost p-1.5"><X size={20}/></button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                                {/*  Mapped using the safe payload parser */}
                                 {(peekSheet.type === 'board' ? (peekSheet.packet?.livePacket || []) : peekSheet.packet).map((q, i) => (
-                                    <div key={i} className="border-b border-slate-100 pb-6 last:border-0">
+                                    <div key={i} className="card p-6 border-b border-[var(--border-main)] pb-6 last:border-0 whiteboard-protect">
                                         <div className="flex justify-center mb-3 scale-75 origin-top">
                                             <VisualRenderer data={q.resolvedData?.renderData} isWordProblem={q.selectedStoryIndex !== null && q.selectedStoryIndex !== undefined} />
                                         </div>
-                                        <div className="text-xs font-bold text-slate-700 leading-relaxed"><MathDisplay content={q.resolvedData?.renderData?.description} /></div>{q.resolvedData?.renderData?.latex && <div className="mt-3 p-3 bg-slate-50 rounded-xl text-center font-serif text-sm"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>}{renderOptions(q.resolvedData?.renderData?.options)}</div>
+                                        <div className="text-xs font-bold text-slate-700 leading-relaxed"><MathDisplay content={q.resolvedData?.renderData?.description} /></div>
+                                        {q.resolvedData?.renderData?.latex && <div className="mt-3 p-3 bg-slate-50 rounded-xl text-center font-serif text-sm border border-slate-200"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>}
+                                        {renderOptions(q.resolvedData?.renderData?.options)}
+                                    </div>
                                 ))}
                             </div>
-                            <div className="p-6 border-t bg-slate-50">
+                            <div className="p-6 border-t border-[var(--border-main)] bg-[var(--bg-card)] flex gap-3">
                                 {isTrashView ? (
-                                    <div className="flex gap-3">
-                                        <button onClick={(e) => { handleRestore(e, peekSheet.id); setPeekSheet(null); }} className="flex-1 py-3 bg-emerald-100 text-emerald-700 rounded-xl font-black text-xs uppercase tracking-widest shadow-sm hover:bg-emerald-200 transition-all cursor-pointer">{t.restore}</button>
-                                        <button onClick={(e) => { handleHardDelete(e, peekSheet.id); setPeekSheet(null); }} className="flex-1 py-3 bg-rose-100 text-rose-700 rounded-xl font-black text-xs uppercase tracking-widest shadow-sm hover:bg-rose-200 transition-all cursor-pointer">{t.hard_delete}</button>
-                                    </div>
+                                    <>
+                                        <button onClick={(e) => { handleRestore(e, peekSheet.id); setPeekSheet(null); }} className="btn-brand flex-1 bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)] border border-[var(--theme-emerald-border)]">{t.restore}</button>
+                                        <button onClick={(e) => { handleHardDelete(e, peekSheet.id); setPeekSheet(null); }} className="btn-brand flex-1 bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] border border-[var(--theme-rose-border)]">{t.hard_delete}</button>
+                                    </>
                                 ) : libraryTab === 'private' ? (
-                                    <div className="flex gap-3">
-                                        {/*  Replaced dual-buttons with a single context-aware button for presentation boards */}
+                                    <>
                                         {peekSheet.type === 'board' ? (
-                                            <button onClick={() => { loadBoard(peekSheet); setPeekSheet(null); }} className="flex-1 py-3 bg-amber-500 text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-amber-600 transition-all cursor-pointer">
+                                            <button onClick={() => { loadBoard(peekSheet); setPeekSheet(null); }} className="btn-brand flex-1 bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)]">
                                                 {lang === 'sv' ? "Öppna Presentation" : "Open Board"}
                                             </button>
                                         ) : (
                                             <>
-                                                <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); }} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-indigo-600 transition-all cursor-pointer">
+                                                <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); }} className="btn-brand flex-1 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] hover:bg-[var(--brand-bg)] hover:text-[var(--brand-text)] hover:border-[var(--brand-border)]">
                                                     {lang === 'sv' ? "Redigera" : "Edit"}
                                                 </button>
-                                                <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); setShowPresentation(true); }} className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-amber-600 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                                                <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); setShowPresentation(true); }} className="btn-brand flex-1 bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)] flex items-center justify-center gap-2">
                                                     <Monitor size={16} /> {t.present}
                                                 </button>
                                             </>
                                         )}
-                                    </div>
+                                    </>
                                 ) : (
-                                    <button onClick={() => { handleClone(peekSheet.id); setPeekSheet(null); }} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 cursor-pointer"><Copy size={16}/> {t.clone_btn}</button>
+                                    <button onClick={() => { handleClone(peekSheet.id); setPeekSheet(null); }} className="btn-brand w-full bg-[var(--theme-indigo-bg)] text-[var(--theme-indigo-text)] border border-[var(--theme-indigo-border)] flex items-center justify-center gap-2"><Copy size={16}/> {t.clone_btn}</button>
                                 )}
                             </div>
                         </div>
                     </div>
                 )}
-
-                {/*  Conditional renderer that sends the loaded board database payload strictly to the active presentation view */}
-                {showPresentation && (
-                    <PresentationView 
-                        packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || []) : packet} 
-                        sheetTitle={activeBoardSheet ? activeBoardSheet.title : sheetTitle} 
-                        initialSlides={activeBoardSheet ? activeBoardSheet.packet?.slides : null}
-                        boardId={activeBoardSheet ? activeBoardSheet.id : null}
-                        lang={lang} 
-                        onClose={() => { setShowPresentation(false); setActiveBoardSheet(null); }} 
-                    />
-                )}
             </div>
         );
     }
 
+  // =========================================================================
+  // 🟢 ACTIVE EDITOR (STUDIO MODE)
+  // =========================================================================
   return (
-    <div className="flex flex-col h-full bg-slate-200 font-sans overflow-hidden relative">
-        <header className={`relative border-b px-6 py-1 flex items-center justify-between shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
+    <div className="layout-wrapper flex flex-col h-full font-sans overflow-hidden relative">
+        <header className={`relative flex items-center justify-between px-6 py-2 border-b shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
             <div className="flex items-center gap-3 flex-1 max-w-[40%]">
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <button 
-                        onClick={() => { if(!isSaved && !window.confirm(t.unsaved_warning)) return; setSetupMode(null); }} 
-                        className="text-[11px] font-black text-white/80 uppercase hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                        <ChevronLeft size={13}/> {t.change_mode}
-                    </button>
-                </div>
+                <button 
+                    onClick={() => { if(!isSaved && !window.confirm(t.unsaved_warning)) return; setSetupMode(null); }} 
+                    className="flex items-center gap-1 text-[11px] font-black uppercase text-white/80 hover:text-white transition-colors"
+                >
+                    <ChevronLeft size={13}/> {t.change_mode}
+                </button>
                 
-                <div className={`h-4 w-px mx-0.5 transition-colors ${setupMode === 'donow' ? 'bg-indigo-800' : 'bg-emerald-800'}`}></div>
+                <div className={`h-4 w-px mx-0.5 ${setupMode === 'donow' ? 'bg-indigo-800' : 'bg-emerald-800'}`}></div>
                 
                 <div className="relative group flex-1 max-w-xs">
                     <input 
                         type="text" 
-                        className="w-full bg-white/10 px-3 py-1 rounded-lg text-xs font-black tracking-tight outline-none focus:bg-white/20 transition-all border border-transparent hover:border-white/20 text-white placeholder-white/40" 
+                        className="w-full bg-white/10 px-3 py-1.5 rounded-[var(--radius-btn)] text-xs font-black tracking-tight outline-none focus:bg-white/20 transition-all border border-transparent focus:border-white/30 text-white placeholder-white/40" 
                         placeholder={t.title_placeholder} 
                         value={sheetTitle} 
                         onChange={(e) => { setSheetTitle(e.target.value); setIsSaved(false); }} 
                     />
                 </div>
 
-                <div className="flex items-center gap-0.5 bg-white/10 p-0.5 rounded-lg border border-white/10">
-                    <button onClick={() => setChosenVisibility('private')} className={`p-1 rounded transition-all ${chosenVisibility === 'private' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Lock size={10}/></button>
-                    <button onClick={() => setChosenVisibility('school')} className={`p-1 rounded transition-all ${chosenVisibility === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white hover:bg-white/20'}`}><Building2 size={10}/></button>
+                <div className="flex items-center gap-0.5 bg-white/10 p-1 rounded-[var(--radius-btn)] border border-white/5 shadow-inner">
+                    <button onClick={() => setChosenVisibility('private')} className={`p-1 rounded-[var(--radius-btn)] transition-all ${chosenVisibility === 'private' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white'}`}><Lock size={10}/></button>
+                    <button onClick={() => setChosenVisibility('school')} className={`p-1 rounded-[var(--radius-btn)] transition-all ${chosenVisibility === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white'}`}><Building2 size={10}/></button>
                 </div>
 
                 <button 
                     onClick={handleSave} 
                     disabled={packet.length === 0} 
-                    className="px-3 py-1 bg-blue-50 border border-white/20 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-blue-600 text-indigo-900 hover:text-white transition-all disabled:opacity-50 cursor-pointer"
+                    className="px-3 py-1.5 bg-white border border-white/20 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-slate-100 text-slate-900 transition-all disabled:opacity-50 cursor-pointer shadow-sm"
                 >
                     <Save size={13}/> {t.save_btn}
                 </button>
             </div>
 
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
-                <span className="text-white font-black uppercase text-xs tracking-wider opacity-90">
+                <span className="text-white font-black text-xl tracking-wider opacity-90">
                     {setupMode === 'donow' ? t.donow_title : setupMode === 'worksheet' ? t.worksheet_title : null}
                 </span>
             </div>
 
             <div className="flex items-center gap-2 pl-4 max-w-[45%] justify-end">
+                
+                {/* 🟢 UNIVERSAL TOGGLE */}
+                <PreferencesToggle />
+
                 <button 
                     onClick={handleLaunchLive} 
                     disabled={packet.length === 0} 
-                    className="px-3 py-1 bg-rose-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-rose-500 transition-all disabled:opacity-30 cursor-pointer"
+                    className="px-4 py-1.5 bg-rose-500 text-white rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-rose-400 transition-all disabled:opacity-30 cursor-pointer shadow-sm"
                 >
                     <Send size={13}/> {t.live_btn}
                 </button>
@@ -1058,18 +1042,18 @@ export default function QuestionStudio({
                 <button 
                     onClick={() => setShowPresentation(true)} 
                     disabled={packet.length === 0} 
-                    className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-30 shadow-md cursor-pointer"
+                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-30 shadow-md cursor-pointer"
                 >
                     <Monitor size={13}/> {t.present}
                 </button>
 
-                <div className={`h-4 w-px mx-0.5 transition-colors ${setupMode === 'donow' ? 'bg-indigo-800' : 'bg-emerald-800'}`}></div>
+                <div className={`h-4 w-px mx-0.5 ${setupMode === 'donow' ? 'bg-indigo-800' : 'bg-emerald-800'}`}></div>
 
                 {setupMode === 'donow' ? (
                     <button 
                         onClick={handleLaunchGrid} 
                         disabled={packet.length === 0} 
-                        className="px-3 py-1 bg-white text-indigo-950 hover:bg-indigo-50 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-30 shadow-md cursor-pointer"
+                        className="px-4 py-1.5 bg-indigo-500 text-white hover:bg-indigo-400 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-30 shadow-md cursor-pointer"
                     >
                         <Grid3X3 size={13}/> {t.create_donow}
                     </button>
@@ -1077,7 +1061,7 @@ export default function QuestionStudio({
                     <button 
                         onClick={handleLaunchPrint} 
                         disabled={packet.length === 0} 
-                        className="px-3 py-1 bg-white text-emerald-950 hover:bg-emerald-50 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-30 shadow-md cursor-pointer"
+                        className="px-4 py-1.5 bg-emerald-500 text-white hover:bg-emerald-400 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all disabled:opacity-30 shadow-md cursor-pointer"
                     >
                         <Printer size={13}/> {t.publish}
                     </button>
@@ -1085,7 +1069,7 @@ export default function QuestionStudio({
 
                 <button 
                     onClick={onClose} 
-                    className="p-1 text-white/60 hover:bg-rose-500 hover:text-white rounded-lg transition-all cursor-pointer"
+                    className="p-1 text-white/60 hover:bg-rose-500 hover:text-white rounded-[var(--radius-btn)] transition-all cursor-pointer ml-1"
                 >
                     <X size={16}/>
                 </button>
@@ -1094,36 +1078,58 @@ export default function QuestionStudio({
 
       <div className="flex flex-1 overflow-hidden relative z-10">
         {/* PANE 1: Topics */}
-        <div className={`bg-white border-r border-slate-300 flex flex-col shrink-0 transition-all duration-300 ${isPane1Collapsed ? 'w-16' : 'w-72'}`}>
-          <div className={`p-4 border-b flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-end'}`}><button onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors">{isPane1Collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}</button></div>
+        <div className={`bg-[var(--bg-card)] border-r border-[var(--border-main)] flex flex-col shrink-0 transition-all duration-300 ${isPane1Collapsed ? 'w-16' : 'w-72'}`}>
+          <div className={`p-4 border-b border-[var(--border-main)] flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-end'}`}>
+              <button onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} className="btn-ghost p-1">
+                  {isPane1Collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+              </button>
+          </div>
           <div className={`flex-1 overflow-y-auto custom-scrollbar transition-opacity duration-200 ${isPane1Collapsed ? 'opacity-0 invisible' : 'opacity-100 p-4 space-y-3'}`}>
-            {!isPane1Collapsed && (<><div className="relative mb-4"><Search className="absolute left-3 top-3 text-slate-400" size={16} /><input type="text" placeholder={t.search_placeholder} className="w-full pl-10 pr-4 py-2 bg-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>{Object.values(SKILL_BUCKETS).map(cat => (<div key={cat.id}><h3 className="text-[12px] font-black uppercase tracking-widest text-blue-700 mb-3 ml-2">{cat.name[lang]}</h3><div className="space-y-1">{Object.entries(cat.topics).map(([id, data]) => (<button key={id} onClick={() => setSelectedTopicId(id)} className={`w-full text-left px-3 py-1.5 text-sm rounded-xl transition-all ${selectedTopicId === id ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}>{data.name[lang]}</button>))}</div></div>))}</>)}
+            {!isPane1Collapsed && (
+                <>
+                    <div className="relative mb-4">
+                        <Search className="absolute left-3 top-2.5 text-[var(--text-muted)]" size={16} />
+                        <input type="text" placeholder={t.search_placeholder} className="w-full pl-10 pr-4 py-2 bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] rounded-[var(--radius-btn)] text-sm font-bold outline-none focus:border-[var(--brand-solid)]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    </div>
+                    {Object.values(SKILL_BUCKETS).map(cat => (
+                        <div key={cat.id}>
+                            <h3 className="text-[12px] font-black uppercase tracking-widest text-[var(--brand-solid)] mb-3 ml-2">{cat.name[lang]}</h3>
+                            <div className="space-y-1">
+                                {Object.entries(cat.topics).map(([id, data]) => (
+                                    <button key={id} onClick={() => setSelectedTopicId(id)} className={`w-full text-left px-3 py-1.5 text-sm rounded-[var(--radius-btn)] transition-all ${selectedTopicId === id ? 'bg-indigo-600 text-white font-bold shadow-md' : 'text-[var(--text-main)] hover:bg-[var(--bg-surface)]'}`}>
+                                        {data.name[lang]}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </>
+            )}
           </div>
         </div>
 
         {/* PANE 2: Variations */}
-
-        <div className="w-[300px] bg-slate-50/80 backdrop-blur-sm border-r border-slate-300 flex flex-col shrink-0">
-        <div className="p-3 border-b bg-white shrink-0 shadow-sm space-y-2">
-            <h1 className="text-sm font-black text-slate-900 uppercase italic truncate leading-none">{currentTopic?.name[lang]}</h1>
+        <div className="w-[300px] bg-[var(--bg-surface)]/80 backdrop-blur-sm border-r border-[var(--border-main)] flex flex-col shrink-0">
+        <div className="p-3 border-b border-[var(--border-main)] bg-[var(--bg-card)] shrink-0 shadow-sm space-y-2">
+            <h1 className="text-sm font-black text-[var(--text-main)] uppercase italic truncate leading-none">{currentTopic?.name[lang]}</h1>
             
-            <div className="flex items-center justify-between bg-slate-100 p-1 rounded-lg border border-slate-200 shadow-inner">
-                <span className="text-[11px] font-black uppercase text-slate-700 ml-1.5 tracking-tight">{t.hide_extra}</span>
+            <div className="flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-strong)] shadow-inner">
+                <span className="text-[11px] font-black uppercase text-[var(--text-main)] ml-1.5 tracking-tight">{t.hide_extra}</span>
                 <button 
                     onClick={() => setHideExtra(!hideExtra)} 
-                    className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${hideExtra ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                    className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${hideExtra ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}
                 >
                     <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${hideExtra ? 'translate-x-4' : 'translate-x-0'}`} />
                 </button>
             </div>
 
-            <div className="flex items-center justify-between bg-slate-100 p-1 rounded-lg border border-slate-200 shadow-inner">
-                <span className="text-[11px] font-black uppercase text-slate-700 ml-1.5 tracking-tight">
+            <div className="flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-strong)] shadow-inner">
+                <span className="text-[11px] font-black uppercase text-[var(--text-main)] ml-1.5 tracking-tight">
                     {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
                 </span>
                 <button 
                     onClick={() => setUseWordProblems(!useWordProblems)} 
-                    className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${useWordProblems ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                    className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${useWordProblems ? 'bg-[var(--theme-emerald-solid)]' : 'bg-[var(--border-strong)]'}`}
                 >
                     <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${useWordProblems ? 'translate-x-4' : 'translate-x-0'}`} />
                 </button>
@@ -1140,47 +1146,46 @@ export default function QuestionStudio({
                 }, {})
             ).sort(([lvlA], [lvlB]) => Number(lvlA) - Number(lvlB)).map(([lvl, variations]) => (
                 <div key={lvl} className="space-y-2">
-                    <div className="sticky top-0 bg-slate-50/95 backdrop-blur-sm pt-4 pb-2 flex items-center z-10">
-                        <span className="text-[14px] font-black uppercase tracking-widest text-indigo-700">
+                    <div className="sticky top-0 bg-[var(--bg-surface)]/95 backdrop-blur-sm pt-4 pb-2 flex items-center z-10">
+                        <span className="text-[14px] font-black uppercase tracking-widest text-[var(--brand-solid)]">
                             {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
                         </span>
-                        <div className="flex-1 h-[2px] bg-indigo-100/70 ml-3 rounded-full"></div>
+                        <div className="flex-1 h-[2px] bg-[var(--border-strong)] ml-3 rounded-full"></div>
                     </div>
 
                     {variations.map(v => {
                         const cat = getVariationCategory(v.key);
                         const styles = getCategoryStyles(cat);
                         const isPreviewed = activePreviewKey === v.key;
-                        const hasWordProblem = v.tags?.includes('word_problem_ready');
                         
                         return (
                             <div 
                                 key={v.key} 
                                 onClick={() => triggerPreview(v.key)} 
-                                className={`group p-3 rounded-2xl border transition-all bg-white relative overflow-hidden
-                                    ${isPreviewed ? 'border-indigo-500 shadow-md ring-2 ring-indigo-500/10' : 'border-slate-200 shadow-xs hover:border-indigo-300 cursor-pointer'}
+                                className={`group p-3 rounded-[var(--radius-card)] border transition-all bg-[var(--bg-card)] relative overflow-hidden
+                                    ${isPreviewed ? 'border-[var(--brand-solid)] shadow-md ring-2 ring-[var(--brand-solid)]/10' : 'border-[var(--border-main)] shadow-sm hover:border-[var(--brand-solid)] cursor-pointer'}
                                 `}
                             >
-                                <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg.replace('/20', '')}`} />
+                                <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg}`} />
                                 <div className="flex justify-between items-start mb-1">
-                                    <h4 className="font-black text-[11px] uppercase tracking-tight text-slate-800 leading-tight pr-2">{v.name[lang]}</h4>
+                                    <h4 className="font-black text-[11px] uppercase tracking-tight text-[var(--text-main)] leading-tight pr-2">{v.name[lang]}</h4>
                                     <div className={`shrink-0 px-1.5 py-0.5 rounded border ${styles.border} ${styles.bg} ${styles.text} text-[7px] font-black uppercase flex items-center gap-0.5`}>
                                         {styles.icon} {styles.label}
                                     </div>
                                 </div>
                                 
-                                <p className="text-[9px] font-medium text-slate-400 line-clamp-1 mb-2 italic leading-tight">{v.desc[lang]}</p>
+                                <p className="text-[9px] font-medium text-[var(--text-muted)] line-clamp-1 mb-2 italic leading-tight">{v.desc[lang]}</p>
                                 
                                 <div className="flex items-center gap-1.5">
-                                    <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
-                                        <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded transition-all text-slate-500 hover:text-indigo-600"><Minus size={10}/></button>
-                                        <span className="w-5 text-center text-[11px] font-black text-slate-700">{pendingQuantity}</span>
-                                        <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(pendingQuantity + 1); }} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded transition-all text-slate-500 hover:text-indigo-600"><Plus size={10}/></button>
+                                    <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5">
+                                        <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} className="w-5 h-5 flex items-center justify-center hover:bg-[var(--bg-card)] rounded transition-all text-[var(--text-muted)] hover:text-[var(--primary-color)]"><Minus size={10}/></button>
+                                        <span className="w-5 text-center text-[11px] font-black text-[var(--text-main)]">{pendingQuantity}</span>
+                                        <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(pendingQuantity + 1); }} className="w-5 h-5 flex items-center justify-center hover:bg-[var(--bg-card)] rounded transition-all text-[var(--text-muted)] hover:text-[var(--primary-color)]"><Plus size={10}/></button>
                                     </div>
                                     <button 
                                         disabled={isPreviewLoading} 
                                         onClick={(e) => { e.stopPropagation(); addToPacket(v, pendingQuantity); }} 
-                                        className={`flex-1 py-1.5 text-white rounded-lg text-[9px] font-black uppercase transition-all shadow-xs active:scale-95 disabled:opacity-50 ${setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                                        className={`flex-1 py-1.5 text-white rounded-[var(--radius-btn)] text-[9px] font-black uppercase transition-all shadow-sm active:scale-95 disabled:opacity-50 ${setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                                     >
                                         {isPreviewLoading && isPreviewed ? '...' : `Lägg till ${pendingQuantity}`}
                                     </button>
@@ -1194,13 +1199,13 @@ export default function QuestionStudio({
         </div>
 
         {/* PANE 3: Workspace */}
-        <div className="flex-1 flex flex-col overflow-hidden relative bg-[#f8fafc]">
+        <div className="flex-1 flex flex-col overflow-hidden relative bg-[var(--bg-canvas)]">
           
-          <div className="bg-white border-b border-slate-200 px-6 py-2 flex flex-wrap items-center justify-between shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] shrink-0 z-50 min-h-[64px]">
+          <div className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-6 py-2 flex flex-wrap items-center justify-between shadow-sm shrink-0 z-50 min-h-[64px]">
               <div className="flex items-center gap-4">
-                  <div className="bg-slate-100 p-1 rounded-xl shadow-inner flex gap-1 border border-slate-200">
-                      <button onClick={() => setCanvasMode('studio')} className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'studio' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}><Zap size={14}/> Studio</button>
-                      {setupMode && <button onClick={() => setCanvasMode('layout')} className={`px-5 py-1.5 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'layout' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800'}`}><LayoutGrid size={14}/> {setupMode === 'donow' ? 'Grid' : 'Layout'}</button>}
+                  <div className="bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-main)] flex gap-1">
+                      <button onClick={() => setCanvasMode('studio')} className={`px-5 py-1.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'studio' ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><Zap size={14}/> Studio</button>
+                      {setupMode && <button onClick={() => setCanvasMode('layout')} className={`px-5 py-1.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase flex items-center gap-2 transition-all ${canvasMode === 'layout' ? 'bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}><LayoutGrid size={14}/> {setupMode === 'donow' ? 'Grid' : 'Layout'}</button>}
                   </div>
               </div>
 
@@ -1211,81 +1216,81 @@ export default function QuestionStudio({
                           <button 
                               disabled={isRegeneratingAll || packet.length === 0}
                               onClick={() => setIsGlobalShuffleOpen(!isGlobalShuffleOpen)} 
-                              className="flex items-center gap-2 px-4 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-800 transition-all text-[10px] font-black uppercase shadow-sm hover:border-indigo-400 disabled:opacity-50 active:scale-95"
+                              className="flex items-center gap-2 px-4 py-1.5 rounded-[var(--radius-btn)] border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-main)] transition-all text-[10px] font-black uppercase shadow-sm hover:border-[var(--brand-solid)] disabled:opacity-50 active:scale-95"
                           >
-                              {isRegeneratingAll ? <Loader2 size={14} className="animate-spin text-indigo-600" /> : <Shuffle size={14} className="text-indigo-600" />} 
+                              {isRegeneratingAll ? <Loader2 size={14} className="animate-spin text-[var(--brand-solid)]" /> : <Shuffle size={14} className="text-[var(--brand-solid)]" />} 
                               {t.regenerate_all}
                           </button>
-                          <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Innehåll</span>
+                          <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Innehåll</span>
 
                           {isGlobalShuffleOpen && (
-                              <div className="absolute top-10 left-1/2 -translate-x-1/2 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 w-56 z-[60] flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-200">
-                                  <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('numbers'); }} className="w-full text-left px-4 py-2.5 hover:bg-indigo-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:text-indigo-600">
+                              <div className="absolute top-10 left-1/2 -translate-x-1/2 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-2 w-56 z-[60] flex flex-col gap-1 animate-in fade-in zoom-in-95 duration-200">
+                                  <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('numbers'); }} className="w-full text-left px-4 py-2.5 hover:bg-[var(--bg-surface)] rounded-[var(--radius-btn)] transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-[var(--text-main)] hover:text-[var(--brand-text)]">
                                       <Calculator size={14} /> {lang === 'sv' ? "Bara Siffror/Värden" : "Numbers Only"}
                                   </button>
-                                  <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('stories'); }} className="w-full text-left px-4 py-2.5 hover:bg-amber-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-slate-700 hover:text-amber-600">
+                                  <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('stories'); }} className="w-full text-left px-4 py-2.5 hover:bg-[var(--bg-surface)] rounded-[var(--radius-btn)] transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-[var(--text-main)] hover:text-[var(--theme-amber-text)]">
                                       <Type size={14} /> {lang === 'sv' ? "Bara Textberättelser" : "Word Problems Only"}
                                   </button>
-                                  <div className="h-px bg-slate-100 my-1 mx-2" />
-                                  <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('both'); }} className="w-full text-left px-4 py-2.5 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-rose-600">
+                                  <div className="h-px bg-[var(--border-main)] my-1 mx-2" />
+                                  <button onClick={async () => { setIsGlobalShuffleOpen(false); await batchShuffle('both'); }} className="w-full text-left px-4 py-2.5 hover:bg-[var(--bg-surface)] rounded-[var(--radius-btn)] transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-[var(--theme-rose-text)]">
                                       <RefreshCcw size={14} /> {lang === 'sv' ? "Slumpa Allt (Båda)" : "Reshuffle Both"}
                                   </button>
                               </div>
                           )}
                       </div>
 
-                      <div className="w-px h-8 bg-slate-200"></div>
+                      <div className="w-px h-8 bg-[var(--border-main)]"></div>
 
                       {setupMode === 'worksheet' && (
                           <>
                               <div className="flex flex-col gap-1 items-center">
-                                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 shadow-sm">
+                                  <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5 shadow-sm">
                                       {['sm', 'md', 'lg', 'xl'].map((size) => (
                                           <button 
                                               key={size}
                                               onClick={() => { setGlobalLatexSize(size); setIsSaved(false); }} 
-                                              className={`px-3 py-1 rounded-md font-serif font-black transition-all ${size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : size === 'lg' ? 'text-base' : 'text-lg'} ${globalLatexSize === size ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' : 'text-slate-400 hover:text-slate-800'}`}
+                                              className={`px-3 py-1 rounded-[var(--radius-btn)] font-serif font-black transition-all ${size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : size === 'lg' ? 'text-base' : 'text-lg'} ${globalLatexSize === size ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                                               title={`Textstorlek: ${size}`}
                                           >
                                               A
                                           </button>
                                       ))}
                                   </div>
-                                  <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Textstorlek</span>
+                                  <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Textstorlek</span>
                               </div>
 
-                              <div className="w-px h-8 bg-slate-200"></div>
+                              <div className="w-px h-8 bg-[var(--border-main)]"></div>
 
                               <div className="flex flex-col gap-1 items-center">
-                                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 shadow-sm gap-1">
-                                      <div className="flex items-center bg-white rounded-md border border-slate-100 shadow-sm">
-                                          <button onClick={() => { setWorkspaceHeight(Math.max(0, workspaceHeight - 1)); setIsSaved(false); }} className="px-2 py-1 text-slate-400 hover:text-indigo-600"><Minus size={12} /></button>
-                                          <span className="text-[10px] font-black uppercase text-slate-700 w-4 text-center">{workspaceHeight}</span>
-                                          <button onClick={() => { setWorkspaceHeight(Math.min(15, workspaceHeight + 1)); setIsSaved(false); }} className="px-2 py-1 text-slate-400 hover:text-indigo-600"><Plus size={12} /></button>
+                                  <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5 shadow-sm gap-1">
+                                      <div className="flex items-center bg-[var(--bg-card)] rounded-[var(--radius-btn)] border border-[var(--border-main)] shadow-sm">
+                                          <button onClick={() => { setWorkspaceHeight(Math.max(0, workspaceHeight - 1)); setIsSaved(false); }} className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)]"><Minus size={12} /></button>
+                                          <span className="text-[10px] font-black uppercase text-[var(--text-main)] w-4 text-center">{workspaceHeight}</span>
+                                          <button onClick={() => { setWorkspaceHeight(Math.min(15, workspaceHeight + 1)); setIsSaved(false); }} className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--brand-solid)]"><Plus size={12} /></button>
                                       </div>
-                                      <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
-                                      <button onClick={() => { setWorkspaceStyle('blank'); setIsSaved(false); }} className={`p-1 rounded-md transition-all ${workspaceStyle === 'blank' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50' : 'text-slate-400 hover:bg-slate-200'}`} title="Tom yta">
+                                      <div className="w-px h-4 bg-[var(--border-main)] mx-0.5"></div>
+                                      <button onClick={() => { setWorkspaceStyle('blank'); setIsSaved(false); }} className={`p-1 rounded-[var(--radius-btn)] transition-all ${workspaceStyle === 'blank' ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`} title="Tom yta">
                                           <Square size={14} />
                                       </button>
-                                      <button onClick={() => { setWorkspaceStyle('grid'); setIsSaved(false); }} className={`p-1 rounded-md transition-all ${workspaceStyle === 'grid' ? 'bg-white text-slate-900 shadow-sm border border-slate-200/50' : 'text-slate-400 hover:bg-slate-200'}`} title="Rutnät (8mm)">
+                                      <button onClick={() => { setWorkspaceStyle('grid'); setIsSaved(false); }} className={`p-1 rounded-[var(--radius-btn)] transition-all ${workspaceStyle === 'grid' ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`} title="Rutnät (8mm)">
                                           <Grid3X3 size={14} />
                                       </button>
                                   </div>
-                                  <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Arbetsyta</span>
+                                  <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Arbetsyta</span>
                               </div>
 
-                              <div className="w-px h-8 bg-slate-200"></div>
+                              <div className="w-px h-8 bg-[var(--border-main)]"></div>
 
                               <div className="flex flex-col gap-1 items-center">
-                                  <div className="flex items-center bg-slate-50 border border-slate-200 rounded-lg p-0.5 shadow-sm">
-                                      <button onClick={() => { setLayoutStyle('open'); setIsSaved(false); }} className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'open' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' : 'text-slate-400 hover:bg-slate-200'}`}>
+                                  <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5 shadow-sm">
+                                      <button onClick={() => { setLayoutStyle('open'); setIsSaved(false); }} className={`px-2 py-1 rounded-[var(--radius-btn)] text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'open' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`}>
                                           Öppen
                                       </button>
-                                      <button onClick={() => { setLayoutStyle('framed'); setIsSaved(false); }} className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'framed' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50' : 'text-slate-400 hover:bg-slate-200'}`}>
+                                      <button onClick={() => { setLayoutStyle('framed'); setIsSaved(false); }} className={`px-2 py-1 rounded-[var(--radius-btn)] text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'framed' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`}>
                                           Inramad
                                       </button>
                                   </div>
-                                  <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Design</span>
+                                  <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Design</span>
                               </div>
                           </>
                       )}
@@ -1295,15 +1300,16 @@ export default function QuestionStudio({
 
           <div className="flex-1 flex flex-col overflow-hidden relative">
             {canvasMode === 'studio' ? (
-              <div className="flex-1 bg-white rounded-[3rem] shadow-2xl border border-slate-300 overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300">
-                  <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center"><span className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">
-                    {t.board_label}</span>{activePreviewKey && <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-white/10 hover:bg-white/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all">
+              <div className="flex-1 bg-[var(--bg-card)] rounded-[3rem] shadow-2xl border border-[var(--border-main)] overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300 m-4">
+                  <div className="px-8 py-5 bg-[var(--text-main)] text-[var(--bg-canvas)] flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase tracking-widest opacity-60 italic">
+                    {t.board_label}</span>{activePreviewKey && <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-[var(--bg-canvas)]/10 hover:bg-[var(--bg-canvas)]/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all">
                         <RefreshCcw size={12}/> {t.new_example}</button>}
                         </div>
                   <div className="p-12 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
                     {isPreviewLoading ? <div className="h-full flex items-center justify-center">
-                        <Loader2 className="animate-spin text-indigo-600" size={48} />
-                        </div> : !previewData ? <div className="h-full flex items-center justify-center text-slate-200 uppercase font-black tracking-widest italic">
+                        <Loader2 className="animate-spin text-[var(--brand-solid)]" size={48} />
+                        </div> : !previewData ? <div className="h-full flex items-center justify-center text-[var(--border-strong)] uppercase font-black tracking-widest italic">
                             {t.select_hint}
                             </div> : <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <div className="w-full flex justify-center drop-shadow-md">
@@ -1312,30 +1318,30 @@ export default function QuestionStudio({
                                         isWordProblem={useWordProblems} 
                                     />
                                 </div>
-                                    <div className="text-2xl text-slate-800 font-bold text-center px-10 leading-relaxed">
+                                    <div className="text-2xl text-[var(--text-main)] font-bold text-center px-10 leading-relaxed">
                                         <MathDisplay content={previewData.renderData.description} />
-                                        </div>{previewData.renderData.latex && <div className="text-4xl text-indigo-600 bg-indigo-50/50 p-10 rounded-[2.5rem] border-2 border-indigo-100 shadow-inner text-center font-serif">
+                                        </div>{previewData.renderData.latex && <div className="text-4xl text-[var(--brand-solid)] bg-[var(--brand-bg)] p-10 rounded-[2.5rem] border-2 border-[var(--brand-border)] shadow-inner text-center font-serif">
                                         <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
                                         </div>}{renderOptions(previewData.renderData?.options)}
                                     </div>}
                 </div>
               </div>
           ) : (
-              <div className="flex-1 overflow-auto custom-scrollbar pb-24 flex justify-center items-start bg-slate-200/50 p-4 rounded-[3rem]">
+              <div className="flex-1 overflow-auto custom-scrollbar pb-24 flex justify-center items-start bg-[var(--bg-canvas)] p-4 rounded-[3rem]">
                   <div 
                     className={`shadow-2xl flex flex-col animate-in slide-in-from-bottom-6 origin-top ${
                         setupMode === 'donow' 
                         ? 'w-full max-w-5xl bg-slate-900 rounded-[2.5rem] p-8' 
-                        : 'bg-white w-[210mm] min-h-[297mm] p-[15mm]'
+                        : 'whiteboard-protect w-[210mm] min-h-[297mm] p-[15mm]'
                     }`}
                     style={setupMode === 'worksheet' ? { transform: 'scale(0.85)', transformOrigin: 'top center' } : {}}
                   >
                       {setupMode === 'worksheet' ? (
-                          <header className="border-b-2 border-black pb-2 mb-4 flex items-end justify-between">
-                              <h1 className="text-lg font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1>
-                              <div className="flex gap-6 w-2/3 justify-end text-[10px] font-black uppercase tracking-widest">
-                                  <div className="border-b-2 border-slate-100 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div>
-                                  <div className="border-b-2 border-slate-100 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div>
+                          <header className="border-b-2 border-slate-900 pb-2 mb-4 flex items-end justify-between">
+                              <h1 className="text-lg font-black uppercase tracking-tighter w-1/3 truncate italic leading-none text-slate-900">{sheetTitle || "Matematik"}</h1>
+                              <div className="flex gap-6 w-2/3 justify-end text-[10px] font-black uppercase tracking-widest text-slate-900">
+                                  <div className="border-b-2 border-slate-200 pb-1 flex gap-2 flex-1 max-w-[200px]"><span>{t.name_label}</span><div className="flex-1" /></div>
+                                  <div className="border-b-2 border-slate-200 pb-1 flex gap-2 w-[120px]"><span>{t.date_label}</span><div className="flex-1" /></div>
                               </div>
                           </header>
                       ) : (
@@ -1344,6 +1350,7 @@ export default function QuestionStudio({
                           </header>
                       )}
 
+                      {/*  WHITEBOARD PROTECTED CONTENT CARDS */}
                       <div className="grid grid-cols-6 gap-x-8 gap-y-6 items-start content-start">
                           {packet.map((item, idx) => {
                                 const displayStory = item.showText !== false;
@@ -1361,24 +1368,25 @@ export default function QuestionStudio({
                                 return (
                                     <React.Fragment key={item.id}>
                                         {isHeaderMode && (
-                                            <div className={`col-span-6 border-l-4 border-slate-900 pl-4 py-2 bg-slate-50/50 rounded-r-xl ${setupMode === 'donow' ? 'bg-slate-800 border-indigo-500 mb-2 mt-4' : 'mb-2 mt-4'}`}>
+                                            <div className={`col-span-6 border-l-4 pl-4 py-2 rounded-r-xl ${setupMode === 'donow' ? 'bg-slate-800 border-indigo-500 mb-2 mt-4' : 'bg-slate-50 border-slate-900 mb-2 mt-4'}`}>
                                                 <div className={`text-sm font-semibold leading-relaxed ${setupMode === 'donow' ? 'text-white' : 'text-slate-800'}`}>
                                                     <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                 </div>
                                             </div>
                                         )}
                                         
+                                        {/*  ADDED .whiteboard-protect DIRECTLY TO THE DO NOW CARDS TOO! */}
                                         <div 
                                             draggable 
                                             onDragStart={(e) => handleDragStartUnified(e, idx)} 
                                             onDragOver={(e) => handleDragOverUnified(e, idx)} 
                                             onDragEnd={handleDragEndUnified} 
-                                            className={`relative group transition-all flex flex-col h-full cursor-move ${getColSpanClass(item.columnSpan)} ${
+                                            className={`whiteboard-protect relative group transition-all flex flex-col h-full cursor-move ${getColSpanClass(item.columnSpan)} ${
                                                 setupMode === 'donow' 
-                                                    ? 'bg-white p-6 shadow-xl border-2 border-transparent hover:border-indigo-400 rounded-2xl' 
+                                                    ? 'p-6 shadow-xl border-2 border-transparent hover:border-indigo-400 rounded-2xl' 
                                                     : (layoutStyle === 'framed' 
-                                                        ? 'bg-white p-5 border-2 border-slate-200 rounded-2xl shadow-sm hover:border-indigo-400' 
-                                                        : 'p-3 border-2 border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm rounded-2xl')
+                                                        ? 'p-5 border-2 border-slate-200 rounded-2xl shadow-sm hover:border-indigo-400' 
+                                                        : 'p-3 border-2 border-transparent hover:border-slate-200 hover:shadow-sm rounded-2xl')
                                             } ${draggedIdx === idx ? 'opacity-20 border-indigo-500 bg-indigo-50 scale-95' : ''}`}
                                         >
                                             <div className="absolute top-2 left-2 text-slate-300 opacity-0 group-hover:opacity-100 z-10"><GripVertical size={14} /></div>
@@ -1409,7 +1417,7 @@ export default function QuestionStudio({
                                             </div>
                                             
                                             <div className="flex items-start gap-4 flex-1">
-                                                <div className="shrink-0 w-7 h-7 rounded-full border-2 border-black flex items-center justify-center text-black font-black text-xs mt-1">
+                                                <div className="shrink-0 w-7 h-7 rounded-full border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xs mt-1">
                                                     {idx + 1}
                                                 </div>
                                                 
@@ -1516,26 +1524,26 @@ export default function QuestionStudio({
         </div>
 
         {/* PANE 4: Selected Questions */}
-        <div className={`bg-white/90 backdrop-blur-sm border-l border-slate-300 flex flex-col shadow-2xl shrink-0 transition-all duration-300 ${isPane4Collapsed ? 'w-16' : 'w-72'}`}>
-          <div className={`p-4 border-b flex items-center ${isPane4Collapsed ? 'justify-center' : 'justify-between'} bg-slate-50/80`}>
+        <div className={`bg-[var(--bg-card)]/90 backdrop-blur-sm border-l border-[var(--border-main)] flex flex-col shadow-2xl shrink-0 transition-all duration-300 ${isPane4Collapsed ? 'w-16' : 'w-72'}`}>
+          <div className={`p-4 border-b border-[var(--border-main)] flex items-center ${isPane4Collapsed ? 'justify-center' : 'justify-between'} bg-[var(--bg-surface)]/80`}>
               {!isPane4Collapsed && (
                 <div className="flex items-center gap-2">
-                    <Layers size={14} className="text-slate-400" />
-                    <h2 className="text-[12px] font-black uppercase tracking-widest text-slate-800">{t.selected_questions}</h2>
-                    <div className="bg-slate-900 text-white px-2 py-0.5 rounded-lg text-[9px] font-black">{packet.length}</div>
+                    <Layers size={14} className="text-[var(--text-muted)]" />
+                    <h2 className="text-[12px] font-black uppercase tracking-widest text-[var(--text-main)]">{t.selected_questions}</h2>
+                    <div className="bg-[var(--text-main)] text-[var(--bg-canvas)] px-2 py-0.5 rounded-lg text-[9px] font-black">{packet.length}</div>
                 </div>
               )}
-              <button onClick={() => setIsPane4Collapsed(!isPane4Collapsed)} className="p-1 hover:bg-slate-200 rounded-lg text-slate-800 hover:text-indigo-600 transition-colors">
+              <button onClick={() => setIsPane4Collapsed(!isPane4Collapsed)} className="btn-ghost p-1">
                 {isPane4Collapsed ? <PanelRightOpen size={20} /> : <PanelRightClose size={20} />}
               </button>
           </div>
 
           {!isPane4Collapsed && (
             <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-200">
-                <div className="p-3 border-b flex justify-end">
-                    <button onClick={() => { if(window.confirm(t.clear_all + "?")) setPacket([]); }} className="text-slate-800 hover:text-rose-500 transition-colors flex items-center gap-1 text-[14px] font-black uppercase tracking-widest"><Eraser size={14}/> {t.clear_all}</button>
+                <div className="p-3 border-b border-[var(--border-main)] flex justify-end">
+                    <button onClick={() => { if(window.confirm(t.clear_all + "?")) setPacket([]); }} className="text-[var(--text-main)] hover:text-[var(--theme-rose-text)] transition-colors flex items-center gap-1 text-[14px] font-black uppercase tracking-widest"><Eraser size={14}/> {t.clear_all}</button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-slate-50/30">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-[var(--bg-canvas)]/50">
                     {packet.map((item, idx) => (
                         <div 
                         key={item.id}
@@ -1543,24 +1551,24 @@ export default function QuestionStudio({
                         onDragStart={(e) => handleDragStartUnified(e, idx)}
                         onDragOver={(e) => handleDragOverUnified(e, idx)}
                         onDragEnd={handleDragEndUnified}
-                        className={`p-3 border rounded-xl flex justify-between items-center group shadow-sm transition-all select-none
+                        className={`p-3 border rounded-[var(--radius-card)] flex justify-between items-center group shadow-sm transition-all select-none
                             ${draggedItemIndex === idx 
-                                ? 'opacity-30 bg-indigo-50 border-indigo-400 border-dashed scale-[0.98]' 
-                                : 'bg-white border-slate-200 hover:shadow-md hover:border-slate-300 cursor-grab active:cursor-grabbing'
+                                ? 'opacity-30 bg-[var(--theme-indigo-bg)] border-[var(--brand-solid)] border-dashed scale-[0.98]' 
+                                : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:shadow-md hover:border-[var(--brand-solid)] cursor-grab active:cursor-grabbing'
                             }`}
                     >
                         <div className="flex items-start gap-2 min-w-0 flex-1 w-full">
-                            <GripVertical size={12} className="text-slate-800 shrink-0 group-hover:text-slate-400 transition-colors mt-1" />
+                            <GripVertical size={12} className="text-[var(--text-muted)] shrink-0 group-hover:text-[var(--primary-color)] transition-colors mt-1" />
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-[14px] font-black text-slate-900">#{idx + 1}</span>
-                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-slate-200'}`} />
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">
+                                    <span className="text-[14px] font-black text-[var(--text-main)]">#{idx + 1}</span>
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-[var(--border-strong)]'}`} />
+                                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest truncate">
                                         {item.name}
                                     </span>
                                 </div>
                                 
-                                <div className="text-[11px] font-bold text-slate-700 leading-tight pr-2">
+                                <div className="text-[11px] font-bold text-[var(--text-muted)] leading-tight pr-2">
                                     <MathDisplay 
                                         content={compileAnchoredStory(item, lang, true)} 
                                         className="!whitespace-normal line-clamp-2" 
@@ -1572,7 +1580,7 @@ export default function QuestionStudio({
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                             <button 
                                 onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }}
-                                className="p-1 text-slate-900 hover:text-rose-500 transition-colors rounded-lg"
+                                className="p-1 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] transition-colors rounded-lg"
                                 title={t.delete_task}
                             >
                                 <Trash2 size={20} />
@@ -1582,24 +1590,24 @@ export default function QuestionStudio({
                 ))}
             </div>
             {setupMode === 'worksheet' && (
-                    <div className="p-4 border-t bg-white space-y-4">
+                    <div className="p-4 border-t border-[var(--border-main)] bg-[var(--bg-card)] space-y-4">
                         <div className="flex items-center justify-between">
-                            <span className="text-[12px] font-black uppercase text-slate-800 tracking-widest">
+                            <span className="text-[12px] font-black uppercase text-[var(--text-main)] tracking-widest">
                                 {t.answer_key_toggle}
                                 </span>
-                                <button onClick={() => setIncludeAnswerKey(!includeAnswerKey)} className={`w-10 h-5 rounded-full transition-all relative p-1 ${includeAnswerKey ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                                <button onClick={() => setIncludeAnswerKey(!includeAnswerKey)} className={`w-10 h-5 rounded-full transition-all relative p-1 ${includeAnswerKey ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}>
                                     <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${includeAnswerKey ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </button>
                         </div>
                         {includeAnswerKey && (
                             <div className="animate-in fade-in slide-in-from-bottom-2 space-y-2">
-                                <label className="text-[12px] font-black uppercase text-slate-800 block">{t.answer_style_label}
+                                <label className="text-[12px] font-black uppercase text-[var(--text-main)] block">{t.answer_style_label}
                                     </label>
-                                    <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg border border-slate-200">
-                                        <button onClick={() => setAnswerKeyStyle('compact')} className={`py-1 rounded-md text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'compact' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>
+                                    <div className="grid grid-cols-2 gap-1 p-1 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border border-[var(--border-main)]">
+                                        <button onClick={() => setAnswerKeyStyle('compact')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'compact' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
                                             Kompakt
                                             </button>
-                                            <button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-md text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Steg</button></div></div>)}
+                                            <button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>Steg</button></div></div>)}
                     </div>
                 )}
                 
@@ -1607,99 +1615,99 @@ export default function QuestionStudio({
           )}
         </div>
       </div>
-      <BackgroundWave />
-      {/* 🟢 FIXED: MODALS GO HERE AT THE VERY ROOT TO OVERLAY EVERYTHING */}
+      
+      {/* 🟢 MODALS GO HERE AT THE VERY ROOT TO OVERLAY EVERYTHING */}
       {showLiveModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
-              <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-8 w-full max-w-md animate-in zoom-in-95 duration-200">
                   <div className="flex justify-between items-center mb-6">
                       <div>
-                          <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tight leading-none">{lang === 'sv' ? "Live-Inställningar" : "Live Settings"}</h3>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{packet.length} {lang === 'sv' ? "Uppgifter" : "Questions"}</p>
+                          <h3 className="text-xl font-black text-[var(--text-main)] uppercase italic tracking-tight leading-none">{lang === 'sv' ? "Live-Inställningar" : "Live Settings"}</h3>
+                          <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">{packet.length} {lang === 'sv' ? "Uppgifter" : "Questions"}</p>
                       </div>
-                      <button onClick={() => setShowLiveModal(false)} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"><X size={20}/></button>
+                      <button onClick={() => setShowLiveModal(false)} className="btn-ghost"><X size={20}/></button>
                   </div>
 
                   <div className="space-y-6">
                       {/* PACING CONTROLS */}
                       <div>
-                          <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-3 block">{lang === 'sv' ? "Tempo & Navigering" : "Pacing & Navigation"}</label>
+                          <label className="text-[11px] font-black uppercase text-[var(--text-muted)] tracking-widest mb-3 block">{lang === 'sv' ? "Tempo & Navigering" : "Pacing & Navigation"}</label>
                           <div className="flex flex-col gap-2">
                               <button 
                                   onClick={() => setLiveSettings({ ...liveSettings, pacing: 'open' })}
-                                  className={`p-3 rounded-xl border-2 text-left transition-all ${liveSettings.pacing === 'open' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 hover:border-slate-200'}`}
+                                  className={`p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'open' ? 'border-[var(--brand-solid)] bg-[var(--brand-bg)]' : 'border-[var(--border-main)] hover:border-[var(--border-strong)]'}`}
                               >
-                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'open' ? 'text-indigo-700' : 'text-slate-600'}`}>{lang === 'sv' ? "Öppet (Egen takt)" : "Open (Free Pacing)"}</div>
-                                  <div className="text-[10px] font-bold text-slate-400 leading-tight mt-0.5">{lang === 'sv' ? "Elever kan bläddra fritt fram och tillbaka." : "Students navigate freely back and forth."}</div>
+                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'open' ? 'text-[var(--brand-text)]' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Öppet (Egen takt)" : "Open (Free Pacing)"}</div>
+                                  <div className="text-[10px] font-bold text-[var(--text-muted)] leading-tight mt-0.5">{lang === 'sv' ? "Elever kan bläddra fritt fram och tillbaka." : "Students navigate freely back and forth."}</div>
                               </button>
                               <button 
                                   onClick={() => setLiveSettings({ ...liveSettings, pacing: 'progressive' })}
-                                  className={`p-3 rounded-xl border-2 text-left transition-all ${liveSettings.pacing === 'progressive' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 hover:border-slate-200'}`}
+                                  className={`p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'progressive' ? 'border-[var(--brand-solid)] bg-[var(--brand-bg)]' : 'border-[var(--border-main)] hover:border-[var(--border-strong)]'}`}
                               >
-                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'progressive' ? 'text-indigo-700' : 'text-slate-600'}`}>{lang === 'sv' ? "Låst (En i taget)" : "Progressive Lock"}</div>
-                                  <div className="text-[10px] font-bold text-slate-400 leading-tight mt-0.5">{lang === 'sv' ? "Elever måste svara för att komma vidare. Kan ej gå tillbaka." : "Students must answer to advance. No going back."}</div>
+                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'progressive' ? 'text-[var(--brand-text)]' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Låst (En i taget)" : "Progressive Lock"}</div>
+                                  <div className="text-[10px] font-bold text-[var(--text-muted)] leading-tight mt-0.5">{lang === 'sv' ? "Elever måste svara för att komma vidare. Kan ej gå tillbaka." : "Students must answer to advance. No going back."}</div>
                               </button>
                               <button 
                                   onClick={() => setLiveSettings({ ...liveSettings, pacing: 'teacher', order: 'original' })}
-                                  className={`p-3 rounded-xl border-2 text-left transition-all ${liveSettings.pacing === 'teacher' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 hover:border-slate-200'}`}
+                                  className={`p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'teacher' ? 'border-[var(--brand-solid)] bg-[var(--brand-bg)]' : 'border-[var(--border-main)] hover:border-[var(--border-strong)]'}`}
                               >
-                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'teacher' ? 'text-indigo-700' : 'text-slate-600'}`}>{lang === 'sv' ? "Lärarstyrd" : "Teacher-Led"}</div>
-                                  <div className="text-[10px] font-bold text-slate-400 leading-tight mt-0.5">{lang === 'sv' ? "Du byter uppgift för hela klassen samtidigt." : "You control the active question for the whole class."}</div>
+                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'teacher' ? 'text-[var(--brand-text)]' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Lärarstyrd" : "Teacher-Led"}</div>
+                                  <div className="text-[10px] font-bold text-[var(--text-muted)] leading-tight mt-0.5">{lang === 'sv' ? "Du byter uppgift för hela klassen samtidigt." : "You control the active question for the whole class."}</div>
                               </button>
                           </div>
                       </div>
 
                       {/* ANTI-CHEAT (ORDER) */}
                       <div>
-                          <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest mb-3 block">{lang === 'sv' ? "Uppgiftsordning" : "Question Order"}</label>
-                          <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner border border-slate-200/50">
+                          <label className="text-[11px] font-black uppercase text-[var(--text-muted)] tracking-widest mb-3 block">{lang === 'sv' ? "Uppgiftsordning" : "Question Order"}</label>
+                          <div className="flex bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] shadow-inner border border-[var(--border-main)]">
                               <button 
                                   onClick={() => setLiveSettings({ ...liveSettings, order: 'original' })}
-                                  className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${liveSettings.order === 'original' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                  className={`flex-1 py-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all ${liveSettings.order === 'original' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                               >
                                   {lang === 'sv' ? "Standard" : "Standard"}
                               </button>
                               <button 
                                   disabled={liveSettings.pacing === 'teacher'}
                                   onClick={() => setLiveSettings({ ...liveSettings, order: 'randomized' })}
-                                  className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-30 ${liveSettings.order === 'randomized' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                  className={`flex-1 py-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-30 ${liveSettings.order === 'randomized' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                               >
                                   {lang === 'sv' ? "Slumpad" : "Randomized"}
                               </button>
                           </div>
-                          {liveSettings.pacing === 'teacher' && <p className="text-[9px] font-bold text-amber-500 mt-2 text-center">{lang === 'sv' ? "Slumpad ordning är inaktiverad i lärarstyrt läge." : "Randomization is disabled during Teacher-Led pacing."}</p>}
+                          {liveSettings.pacing === 'teacher' && <p className="text-[9px] font-bold text-[var(--theme-amber-text)] mt-2 text-center">{lang === 'sv' ? "Slumpad ordning är inaktiverad i lärarstyrt läge." : "Randomization is disabled during Teacher-Led pacing."}</p>}
                       </div>
 
                       {/* SUMMARY VIEW TOGGLE */}
-                      <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                      <div className="flex items-center justify-between p-4 bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)]">
                           <div>
-                              <div className="text-[11px] font-black uppercase text-slate-700 tracking-widest">{lang === 'sv' ? "Visa Resultatsöversikt" : "Show Final Summary"}</div>
-                              <div className="text-[9px] font-bold text-slate-400">{lang === 'sv' ? "Elever ser sina egna svar efteråt." : "Students review their answers at the end."}</div>
+                              <div className="text-[11px] font-black uppercase text-[var(--text-main)] tracking-widest">{lang === 'sv' ? "Visa Resultatsöversikt" : "Show Final Summary"}</div>
+                              <div className="text-[9px] font-bold text-[var(--text-muted)]">{lang === 'sv' ? "Elever ser sina egna svar efteråt." : "Students review their answers at the end."}</div>
                           </div>
                           <button 
                               onClick={() => setLiveSettings({ ...liveSettings, summary: !liveSettings.summary })} 
-                              className={`w-10 h-6 rounded-full transition-all relative p-1 shrink-0 ${liveSettings.summary ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                              className={`w-10 h-6 rounded-full transition-all relative p-1 shrink-0 ${liveSettings.summary ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}
                           >
                               <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${liveSettings.summary ? 'translate-x-4' : 'translate-x-0'}`} />
                           </button>
                       </div>
 
-                      {/* 🟢 ADDED: SCRATCHPAD TOGGLE */}
-                      <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                      {/* SCRATCHPAD TOGGLE */}
+                      <div className="flex items-center justify-between p-4 bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)]">
                           <div>
-                              <div className="text-[11px] font-black uppercase text-slate-700 tracking-widest">{lang === 'sv' ? "Aktivera Kladdpapper" : "Enable Scratchpad"}</div>
-                              <div className="text-[9px] font-bold text-slate-400">{lang === 'sv' ? "Elever kan visa uträkningar steg-för-steg." : "Students can show work step-by-step."}</div>
+                              <div className="text-[11px] font-black uppercase text-[var(--text-main)] tracking-widest">{lang === 'sv' ? "Aktivera Kladdpapper" : "Enable Scratchpad"}</div>
+                              <div className="text-[9px] font-bold text-[var(--text-muted)]">{lang === 'sv' ? "Elever kan visa uträkningar steg-för-steg." : "Students can show work step-by-step."}</div>
                           </div>
                           <button 
                               onClick={() => setEnableScratchpad(!enableScratchpad)} 
-                              className={`w-10 h-6 rounded-full transition-all relative p-1 shrink-0 ${enableScratchpad ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                              className={`w-10 h-6 rounded-full transition-all relative p-1 shrink-0 ${enableScratchpad ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}
                           >
                               <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${enableScratchpad ? 'translate-x-4' : 'translate-x-0'}`} />
                           </button>
                       </div>
                   </div>
 
-                  <button onClick={confirmLaunchLive} className="w-full mt-6 py-4 bg-rose-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-rose-700 transition-all flex items-center justify-center gap-2 shadow-lg active:scale-95">
+                  <button onClick={confirmLaunchLive} className="btn-brand bg-[var(--theme-rose-solid)] text-white w-full mt-6 py-4 rounded-[var(--radius-btn)] shadow-lg active:scale-95">
                       <Send size={18} /> {lang === 'sv' ? "Starta Session" : "Start Session"}
                   </button>
               </div>
