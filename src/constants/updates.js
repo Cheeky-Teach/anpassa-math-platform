@@ -2,6 +2,33 @@
 
 export const APP_UPDATES = [
   {
+    id: 'v021',
+    date: '2026-10-05',
+    version: '0.2.1',
+    title: { 
+      sv: "Mörkt läge, ljust läge & enklare språkväxling",
+      en: "Dark Mode, Light Mode & Easy Language Switch"
+    },
+    highlights: {
+      sv: "Välj mellan mörkt och ljust utseende och växla språk snabbt med nya, enkla knappar!",
+      en: "Switch between dark and light themes and easily change languages with new, quick controls!"
+    },
+    changes: {
+      sv: [
+        "Mörkt & ljust läge: Klicka på sol-/månknappen för att växla mellan ljust och mörkt tema när du vill vila ögonen eller anpassa skärmen efter ljuset i rummet.",
+        "Snabbknapp för språk: Växla smidigt mellan svenska och engelska med ett klick direkt i menyn högst upp.",
+        "Kommer ihåg dina val: Appen sparar automatiskt vilket tema och språk du valt så att allt ser likadant ut nästa gång du loggar in.",
+        "Bekvämare läsning överallt: Text, knappar och menyer har finjusterats för att vara tydliga och lätta att läsa i både ljust och mörkt läge."
+      ],
+      en: [
+        "Dark & Light Mode: Click the sun/moon icon to switch between light and dark themes anytime to reduce eye strain or fit your room's lighting.",
+        "Quick Language Switch: Effortlessly toggle between Swedish and English with a single click directly in the top bar.",
+        "Remembers Your Choices: The app automatically remembers your preferred theme and language so it's ready for you next time you return.",
+        "Easier on the Eyes Everywhere: Colors, buttons, and text across the app have been adjusted to stay sharp, clear, and easy to read in both modes."
+      ]
+    }
+  },
+  {
     id: 'v020',
     date: '2026-10-01',
     version: '0.2.0',

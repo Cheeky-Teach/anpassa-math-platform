@@ -1,5 +1,19 @@
 /* src/styles/theme.css */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700;1,800&display=swap');
 
+/* GLOBAL DEFAULT FONT FOR UI & WORKSHEETS */
+body, .font-sans {
+  font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* SHIELD LATEX, MATH, AND SERIF ELEMENTS */
+/* Equations and specific math text ignore Nunito entirely */
+.math-content, 
+.font-serif, 
+.katex,
+.katex * {
+  font-family: "KaTeX_Main", "Times New Roman", Times, serif !important;
+}
 :root {
   /* ☀️ 1. LIGHT THEME (DEFAULT) */
   --bg-canvas: #f8fafc;       /* slate-50 */
@@ -147,6 +161,17 @@ body {
   background-color: rgba(248, 250, 252, 0.85); /* Light mode canvas (slate-50) @ 85% */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  
+  /* 🟢 FORCE SLIMMER PADDING: Overrides any Tailwind py-* classes */
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+}
+
+/* 🟢 COMPRESS NUNITO'S HEIGHT: Forces the text to ignore its tall invisible bounding box */
+.header-glass h1,
+.header-glass h2,
+.header-glass span {
+  line-height: 1 !important;
 }
 
 .dark .header-glass, [data-theme="dark"] .header-glass {

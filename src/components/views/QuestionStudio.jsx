@@ -794,11 +794,13 @@ export default function QuestionStudio({
                                                             <div className="flex justify-end gap-1 items-center opacity-40 group-hover:opacity-100 transition-opacity">
                                                                 <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)]"><Maximize2 size={14}/></button>
                                                                 
-                                                                {sheet.type === 'board' ? (
-                                                                    <button onClick={() => loadBoard(sheet)} className="btn-brand bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)] px-3 py-1 text-[10px] ml-2">{lang === 'sv' ? 'Öppna' : 'Open'}</button>
-                                                                ) : (
-                                                                    <button onClick={() => loadSheet(sheet)} className="btn-brand bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] px-3 py-1 text-[10px] ml-2 hover:bg-[var(--brand-bg)] hover:text-[var(--brand-text)] hover:border-[var(--brand-border)]">{t.load_btn}</button>
-                                                                )}
+                                                                {/* 🟢 Dynamically applies the color of the document type and gives it the solid hover effect */}
+                                                                <button 
+                                                                    onClick={() => sheet.type === 'board' ? loadBoard(sheet) : loadSheet(sheet)} 
+                                                                    className={`${style.theme} bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white px-3 py-1 text-[10px] ml-2 rounded-[var(--radius-btn)] transition-all font-black uppercase tracking-widest shadow-sm`}
+                                                                >
+                                                                    {t.load_btn}
+                                                                </button>
                                                                 <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] ml-1"><PanelLeftClose size={14}/></button>
                                                                 <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-[var(--radius-btn)] ml-1"><Trash2 size={14}/></button>
                                                             </div>
@@ -839,16 +841,18 @@ export default function QuestionStudio({
                                                     
                                                     {isTrashView ? (
                                                         <>
-                                                            <button onClick={(e) => handleRestore(e, sheet.id)} className="btn-brand bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)] border border-[var(--theme-emerald-border)] px-3 py-1 text-[10px] ml-2">{t.restore}</button>
-                                                            <button onClick={(e) => handleHardDelete(e, sheet.id)} className="btn-brand bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] border border-[var(--theme-rose-border)] px-3 py-1 text-[10px] ml-1">{t.hard_delete}</button>
+                                                            <button onClick={(e) => handleRestore(e, sheet.id)} className="theme-emerald bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white px-3 py-1 text-[10px] ml-2 rounded-[var(--radius-btn)] transition-all font-black uppercase tracking-widest shadow-sm">{t.restore}</button>
+                                                            <button onClick={(e) => handleHardDelete(e, sheet.id)} className="theme-rose bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white px-3 py-1 text-[10px] ml-1 rounded-[var(--radius-btn)] transition-all font-black uppercase tracking-widest shadow-sm">{t.hard_delete}</button>
                                                         </>
                                                     ) : libraryTab === 'private' ? (
                                                         <>
-                                                            {sheet.type === 'board' ? (
-                                                                <button onClick={() => loadBoard(sheet)} className="btn-brand bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)] px-3 py-1 text-[10px] ml-2">{lang === 'sv' ? 'Öppna' : 'Open'}</button>
-                                                            ) : (
-                                                                <button onClick={() => loadSheet(sheet)} className="btn-brand bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] hover:bg-[var(--brand-bg)] hover:text-[var(--brand-text)] hover:border-[var(--brand-border)] px-3 py-1 text-[10px] ml-2">{t.load_btn}</button>
-                                                            )}
+                                                            {/* 🟢 Matches the styling of the folder buttons above */}
+                                                            <button 
+                                                                onClick={() => sheet.type === 'board' ? loadBoard(sheet) : loadSheet(sheet)} 
+                                                                className={`${style.theme} bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white px-3 py-1 text-[10px] ml-2 rounded-[var(--radius-btn)] transition-all font-black uppercase tracking-widest shadow-sm`}
+                                                            >
+                                                                {t.load_btn}
+                                                            </button>
                                                             <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] ml-1"><PanelLeftClose size={14}/></button>
                                                             <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-[var(--radius-btn)] ml-1"><Trash2 size={14}/></button>
                                                         </>
@@ -946,11 +950,13 @@ export default function QuestionStudio({
                                     </div>
                                 ))}
                             </div>
+                            
+                            {/* 🟢 FIXED: Removed the accidental duplicate wrapper div here! */}
                             <div className="p-6 border-t border-[var(--border-main)] bg-[var(--bg-card)] flex gap-3">
                                 {isTrashView ? (
                                     <>
-                                        <button onClick={(e) => { handleRestore(e, peekSheet.id); setPeekSheet(null); }} className="btn-brand flex-1 bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)] border border-[var(--theme-emerald-border)]">{t.restore}</button>
-                                        <button onClick={(e) => { handleHardDelete(e, peekSheet.id); setPeekSheet(null); }} className="btn-brand flex-1 bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] border border-[var(--theme-rose-border)]">{t.hard_delete}</button>
+                                        <button onClick={(e) => { handleRestore(e, peekSheet.id); setPeekSheet(null); }} className="theme-emerald flex-1 bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white py-3 rounded-[var(--radius-btn)] font-black uppercase tracking-widest transition-all shadow-sm">{t.restore}</button>
+                                        <button onClick={(e) => { handleHardDelete(e, peekSheet.id); setPeekSheet(null); }} className="theme-rose flex-1 bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white py-3 rounded-[var(--radius-btn)] font-black uppercase tracking-widest transition-all shadow-sm">{t.hard_delete}</button>
                                     </>
                                 ) : libraryTab === 'private' ? (
                                     <>
@@ -985,7 +991,8 @@ export default function QuestionStudio({
   // =========================================================================
   return (
     <div className="layout-wrapper flex flex-col h-full font-sans overflow-hidden relative">
-        <header className={`relative flex items-center justify-between px-6 py-2 border-b shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
+        {/* 🟢 Reduced padding from py-2 to py-1 */}
+        <header className={`relative flex items-center justify-between px-6 py-1 border-b shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
             <div className="flex items-center gap-3 flex-1 max-w-[40%]">
                 <button 
                     onClick={() => { if(!isSaved && !window.confirm(t.unsaved_warning)) return; setSetupMode(null); }} 
@@ -1021,7 +1028,7 @@ export default function QuestionStudio({
             </div>
 
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-10">
-                <span className="text-white font-black text-xl tracking-wider opacity-90">
+                <span className="text-white font-black uppercase text-xl tracking-wider opacity-90">
                     {setupMode === 'donow' ? t.donow_title : setupMode === 'worksheet' ? t.worksheet_title : null}
                 </span>
             </div>

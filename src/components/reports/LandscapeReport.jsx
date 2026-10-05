@@ -1,30 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Printer, ChevronLeft, Loader2 } from 'lucide-react';
+import MathText from '../ui/MathText';
 
-// --- MATH DISPLAY COMPONENT ---
-const MathDisplay = ({ content, className = "" }) => {
-    const containerRef = useRef(null);
-    useEffect(() => {
-        if (!content || !containerRef.current) return;
-        const renderMath = () => {
-            containerRef.current.innerText = content;
-            if (window.renderMathInElement) {
-                window.renderMathInElement(containerRef.current, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false },
-                        { left: '\\(', right: '\\)', display: false },
-                        { left: '\\[', right: '\\]', display: true }
-                    ],
-                    throwOnError: false, trust: true
-                });
-            }
-        };
-        const timer = setTimeout(renderMath, 30);
-        return () => clearTimeout(timer);
-    }, [content]);
-    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
-};
 
 // --- LANDSCAPE PRINT STYLES ---
 const printStyles = `
@@ -281,17 +258,17 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                             <div className="flex items-start gap-2 mb-3">
                                                 <span className="font-black text-slate-800">{originalIndex + 1}.</span>
                                                 <div className="font-bold text-slate-700 leading-tight">
-                                                    <MathDisplay content={q.resolvedData?.renderData?.description} />
+                                                    < MathText content={q.resolvedData?.renderData?.description} />
                                                     {q.resolvedData?.renderData?.latex && (
                                                         <div className="mt-1 font-serif text-slate-900 font-bold">
-                                                            <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
+                                                            < MathText content={`$$${q.resolvedData.renderData.latex}$$`} />
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="text-right border-t border-slate-200 pt-2 mt-auto flex justify-between items-center">
                                                 <span className="font-black uppercase tracking-widest text-slate-500 text-[8px]">{lang === 'sv' ? 'Facit:' : 'Key:'}</span>
-                                                <span className="font-black text-slate-900 text-[10px]"><MathDisplay content={getCorrectAnswer(q)} /></span>
+                                                <span className="font-black text-slate-900 text-[10px]">< MathText content={getCorrectAnswer(q)} /></span>
                                             </div>
                                         </div>
                                     );
@@ -322,7 +299,7 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                         <span className="font-black text-slate-500 shrink-0">{idx + 1}.</span>
                                                         <div className="flex-1">
                                                             <div className="text-slate-600 italic mb-0.5 truncate opacity-80 font-medium">
-                                                                <MathDisplay content={typeof item.question === 'string' ? item.question : 'Uppgift'} />
+                                                                < MathText content={typeof item.question === 'string' ? item.question : 'Uppgift'} />
                                                             </div>
                                                             <div className={`font-black text-[10px] ${item.resp ? (item.resp.is_correct ? 'text-emerald-700' : 'text-slate-900') : 'text-slate-400'}`}>
                                                                 Svar: {item.resp?.answer || '-'} 
@@ -334,7 +311,9 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                                         {lang === 'sv' ? 'Uträkning:' : 'Steps:'}
                                                                     </span>
                                                                     {item.resp.work_steps.map((line, lineIdx) => (
-                                                                        <div key={lineIdx} className="leading-tight">{line}</div>
+                                                                        <div key={lineIdx} className="leading-tight font-serif mb-1 last:mb-0">
+                                                                            <MathText text={`$$${line}$$`} />
+                                                                        </div>
                                                                     ))}
                                                                 </div>
                                                             )}
@@ -361,15 +340,15 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                             <div className="flex items-start gap-2 mb-3">
                                 <span className="font-black text-slate-800">{i + 1}.</span>
                                 <div className="font-bold text-slate-700 leading-tight">
-                                    <MathDisplay content={q.resolvedData?.renderData?.description} />
+                                    < MathText content={q.resolvedData?.renderData?.description} />
                                     {q.resolvedData?.renderData?.latex && (
-                                        <div className="mt-1 font-serif text-slate-900 font-bold"><MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} /></div>
+                                        <div className="mt-1 font-serif text-slate-900 font-bold">< MathText content={`$$${q.resolvedData.renderData.latex}$$`} /></div>
                                     )}
                                 </div>
                             </div>
                             <div className="text-right border-t border-slate-200 pt-2 mt-auto flex justify-between items-center">
                                 <span className="font-black uppercase tracking-widest text-slate-500 text-[8px]">{lang === 'sv' ? 'Facit:' : 'Key:'}</span>
-                                <span className="font-black text-slate-900 text-[10px]"><MathDisplay content={getCorrectAnswer(q)} /></span>
+                                <span className="font-black text-slate-900 text-[10px]">< MathText content={getCorrectAnswer(q)} /></span>
                             </div>
                         </div>
                     ))}
@@ -391,13 +370,17 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                     {studentResps.map((item, idx) => (
                                         <div key={idx} className="flex gap-2 text-[9px] leading-tight mb-2">
                                             <div className="flex-1">
-                                                <div className="text-slate-600 italic mb-0.5"><MathDisplay content={typeof item.question === 'string' ? item.question : 'Uppgift'} /></div>
+                                                <div className="text-slate-600 italic mb-0.5">< MathText content={typeof item.question === 'string' ? item.question : 'Uppgift'} /></div>
                                                 <div className="font-black text-[10px]">Svar: {item.resp?.answer || '-'}</div>
                                                 {printSteps && item.resp?.work_steps && item.resp.work_steps.length > 0 && (
-                                                    <div className="mt-1.5 p-2 border border-slate-300 rounded-lg text-[9px] font-mono">
-                                                        <span className="block mb-1">Steps:</span>
+                                                    <div className="mt-1.5 p-2 border border-slate-300 rounded-lg text-[10px] text-slate-800">
+                                                        <span className="block mb-1 text-[8px] font-sans font-black text-slate-500 uppercase">
+                                                            {lang === 'sv' ? 'Uträkning:' : 'Steps:'}
+                                                        </span>
                                                         {item.resp.work_steps.map((line, lineIdx) => (
-                                                            <div key={lineIdx} className="leading-tight">{line}</div>
+                                                            <div key={lineIdx} className="leading-tight font-serif mb-1 last:mb-0">
+                                                                <MathText text={`$$${line}$$`} />
+                                                            </div>
                                                         ))}
                                                     </div>
                                                 )}
