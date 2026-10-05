@@ -49,7 +49,7 @@ export const CATEGORIES = {
     statistics: { 
         id: 'statistics',
         label: { sv: "Sannolikhet & Statistik", en: "Probability & Statistics" },
-        color: "yellow", 
+        color: "cyan", 
         levels: 6,
         topics: [
              { id: 'probability', label: { sv: "Sannolikhet", en: "Probability" } },

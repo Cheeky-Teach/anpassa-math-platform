@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, createContext } from 'react';
 import { supabase } from './lib/supabaseClient';
-import { BarChart3, AlertCircle } from 'lucide-react';
+import { BarChart3, AlertCircle, ChevronLeft } from 'lucide-react';
 
 // Views
 import LandingView from './components/views/LandingView';
@@ -26,7 +26,11 @@ import StreakModal from './components/modals/StreakModal';
 import ContentModal from './components/modals/ContentModal'; 
 
 // Data & Constants
-import { UI_TEXT, LEVEL_DESCRIPTIONS } from './constants/localization';
+import { UI_TEXT, LEVEL_DESCRIPTIONS, CATEGORIES } from './constants/localization';
+
+import PreferencesToggle from './components/ui/PreferencesToggle';
+
+export const PreferencesContext = createContext();
 
 // --- DESKTOP AUTO-SCALER WRAPPER ---
 // Automatically zooms out on laptops/desktops to compensate for browser UI bars, 
@@ -74,8 +78,30 @@ function App() {
     const [profile, setProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(true);
     const [view, setView] = useState('landing'); 
-    const [lang, setLang] = useState('sv');
     const currentUserRef = useRef(null);
+
+    // 🟢 GLOBAL PREFERENCES STATE (Defaults to Dark & Swedish)
+    const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'sv');
+    const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
+
+    // React to theme changes
+    useEffect(() => {
+        const root = document.documentElement;
+        if (theme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+        localStorage.setItem('app_theme', theme);
+    }, [theme]);
+
+    // React to lang changes
+    useEffect(() => {
+        localStorage.setItem('app_lang', lang);
+    }, [lang]);
+
+    const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    const toggleLang = () => setLang(prev => prev === 'sv' ? 'en' : 'sv');
 
     // --- 2. STUDENT & LIVE SESSION STATE ---
     const [studentMode, setStudentMode] = useState(null); 
@@ -639,30 +665,84 @@ function App() {
         );
     }
 
+    // --- DYNAMIC HEADER CONTEXT (For Practice View) ---
+    let activeCategoryLabel = '';
+    let activeTopicLabel = '';
+    let activeThemeColor = 'emerald'; 
+
+    if (view === 'practice' && topic) {
+        const catKey = Object.keys(CATEGORIES).find(key => 
+            CATEGORIES[key]?.topics?.some(t => t.id === topic)
+        );
+        if (catKey) {
+            activeCategoryLabel = CATEGORIES[catKey].label[lang];
+            activeThemeColor = CATEGORIES[catKey].color || 'emerald';
+            const tData = CATEGORIES[catKey].topics.find(t => t.id === topic);
+            activeTopicLabel = tData?.label[lang] || topic;
+        }
+    }
+
     return (
-        <div className="min-h-screen flex flex-col bg-[#f9fbf7] font-sans text-slate-800 transition-colors duration-500">
-            <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
-            <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
-            <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
-            <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
-            <StreakModal 
-                visible={showStreakModal} 
-                onClose={() => { 
-                    setShowStreakModal(false); 
-                    fetchQuestion(topic, level, lang); 
-                }} 
-                streak={streak} 
-                ui={ui} 
-            />            
-            {(view === 'dashboard' || view === 'practice' || view === 'times_table') && (
-                <header className="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-emerald-100 px-4 py-0 flex justify-between items-center shadow-sm">
-                    <h1 className="text-xl font-black text-emerald-800 tracking-tighter cursor-pointer uppercase italic" onClick={quitPractice}>ANPASSA</h1>
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => setLang(lang === 'sv' ? 'en' : 'sv')} className="text-2xl hover:scale-110 transition-transform">{lang === 'sv' ? '🇸🇪' : '🇬🇧'}</button>
-                        <button onClick={() => setStatsOpen(true)} className="p-2 text-emerald-600/40 hover:text-emerald-700 rounded-full transition-all"><BarChart3 size={20} /></button>
-                        <div className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200/50">✅ {totalCorrect}</div>
-                        <div className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold border border-orange-200/50">🔥 {streak}</div>
-                        {session && <button onClick={() => supabase.auth.signOut()} className="text-[10px] font-bold text-slate-400 uppercase hover:text-rose-500 transition-colors ml-2">Logga ut</button>}
+        // 🟢 WRAP IN CONTEXT PROVIDER
+        <PreferencesContext.Provider value={{ theme, toggleTheme, lang, toggleLang }}>
+            {/* 🟢 ADDED .layout-app TO APPLY THEME BG */}
+            <div className="layout-app min-h-screen flex flex-col font-sans transition-colors duration-500">
+                <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
+                <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
+                <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
+                <StatsModal visible={statsOpen} stats={sessionStats} granularStats={granularStats} lang={lang} ui={ui} onClose={() => setStatsOpen(false)} title={ui.stats_title} />
+                <StreakModal 
+                    visible={showStreakModal} 
+                    onClose={() => { 
+                        setShowStreakModal(false); 
+                        fetchQuestion(topic, level, lang); 
+                    }} 
+                    streak={streak} 
+                    ui={ui} 
+                />            
+                {(view === 'dashboard' || view === 'practice' || view === 'times_table' || view === 'practice_lab') && (
+                <header className="sticky top-0 z-50 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
+                    {/* 🟢 Refactored to a 3-zone layout for absolute centering */}
+                    <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 py-1 flex flex-row items-center justify-between relative">
+                        
+                        {/* 1. LEFT SIDE: Logo or Back Button */}
+                        <div className="flex-1 flex justify-start">
+                            {view === 'practice' || view === 'times_table' ? (
+                                <button onClick={quitPractice} className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-black text-xs uppercase tracking-widest transition-all group shrink-0">
+                                    <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:shadow-md">
+                                        <ChevronLeft size={16}/>
+                                    </div>
+                                    <span className="hidden sm:inline-block">{lang === 'sv' ? "Tillbaka" : "Back"}</span>
+                                </button>
+                            ) : (
+                                <h1 className="text-xl font-black text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={quitPractice}>
+                                    ANPASSA
+                                </h1> 
+                            )}
+                        </div>
+
+                        {/* 2. CENTER SIDE: Active Context (Only in Practice Mode) */}
+                        {view === 'practice' && (
+                            <div className={`theme-${activeThemeColor} absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none text-center w-full max-w-[200px] sm:max-w-[300px]`}>
+                                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--brand-text)] opacity-80 truncate w-full">
+                                    {activeCategoryLabel}
+                                </span>
+                                <h2 className="text-sm sm:text-base font-black uppercase tracking-tighter text-[var(--text-main)] italic leading-none mt-0.5 truncate w-full">
+                                    {activeTopicLabel}
+                                </h2>
+                            </div>
+                        )}
+                        
+                        {/* 3. RIGHT SIDE: Tools & Stats */}
+                        <div className="flex-1 flex flex-row items-center gap-2 sm:gap-4 justify-end flex-wrap sm:flex-nowrap">
+                            <PreferencesToggle />
+                            
+                            {session && (
+                                <button onClick={() => supabase.auth.signOut()} className="text-[10px] font-bold text-[var(--text-muted)] uppercase hover:text-[var(--theme-rose-text)] transition-colors ml-1 sm:ml-2">
+                                    Logga ut
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </header>
             )}
@@ -781,6 +861,7 @@ function App() {
                 ) : null}
             </div>
         </div>
+        </PreferencesContext.Provider>
     );
 }
 

@@ -375,15 +375,15 @@ export class ExpressionSimplificationGen {
                 token: this.toBase64(lie), variationKey: v, type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "När en siffra står direkt utanför en parentes måste den gångras med ALLA kompisar på insidan." : "When a number stands right outside a parenthesis, it must be multiplied by EVERY single item on the inside.", 
+                        text: lang === 'sv' ? "När en siffra står direkt utanför en parentes måste den multipliceras med ALLA kompisar på insidan." : "When a number stands right outside a parenthesis, it must be multiplied by EVERY single item on the inside.", 
                         latex: `${k}(${a}x + ${b})` 
                     },
                     { 
-                        text: lang === 'sv' ? `Siffran ${k} ska sprutas in och gångras med både ${a}x och med ${b}.` : `The outer number ${k} must be distributed and multiplied by both ${a}x and ${b}.`, 
+                        text: lang === 'sv' ? `Siffran ${k} ska sprutas in och multipliceras med både ${a}x och med ${b}.` : `The outer number ${k} must be distributed and multiplied by both ${a}x and ${b}.`, 
                         latex: `\\mathbf{${k} \\cdot ${a}x + ${k} \\cdot ${b}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Det rätta svaret ska alltså bli ${k*a}x + ${k*b}. Det är ett vanligt fuskfel att glömma bort att gångra den sista siffran!` : `The correct answer must therefore turn into ${k*a}x + ${k*b}. It's a common mistake to forget to multiply the last number!`, 
+                        text: lang === 'sv' ? `Det rätta svaret ska alltså bli ${k*a}x + ${k*b}. Det är ett vanligt fuskfel att glömma bort att multiplicera den sista siffran!` : `The correct answer must therefore turn into ${k*a}x + ${k*b}. It's a common mistake to forget to multiply the last number!`, 
                         latex: `\\mathbf{${k*a}x + ${k*b}}` 
                     },
                     { 
@@ -416,7 +416,7 @@ export class ExpressionSimplificationGen {
                     latex: baseExpr 
                 },
                 { 
-                    text: lang === 'sv' ? (isPlus ? "Vi skriver raden på nytt utan parentesväggar:" : "Vi plockar bort parentesen och byter plustecknet på insidan till ett minus:") : (isPlus ? "We rewrite the line without the parenthesis walls:" : "We remove the parenthesis and flip the internal plus sign into a minus sign:"), 
+                    text: lang === 'sv' ? (isPlus ? "Vi skriver raden på nytt utan parentesen:" : "Vi plockar bort parentesen och byter plustecknet på insidan till ett minus:") : (isPlus ? "We rewrite the line without the parenthesis walls:" : "We remove the parenthesis and flip the internal plus sign into a minus sign:"), 
                     latex: isPlus ? `${a}x + ${b}x + ${c}` : `${a}x - ${b}x - ${c}` 
                 },
                 { 
@@ -465,11 +465,11 @@ export class ExpressionSimplificationGen {
                         latex: baseExpr 
                     },
                     { 
-                        text: lang === 'sv' ? `Gångra in ${k1} i den första parentesen: ${k1} · x och ${k1} · ${c1}.` : `Multiply ${k1} inside the first parenthesis: ${k1} · x and ${k1} · ${c1}.`, 
+                        text: lang === 'sv' ? `Multiplicera in ${k1} i den första parentesen: ${k1} · x och ${k1} · ${c1}.` : `Multiply ${k1} inside the first parenthesis: ${k1} · x and ${k1} · ${c1}.`, 
                         latex: `\\mathbf{(${k1}x + ${k1 * c1})} ${op} ${k2}(x + ${c2})` 
                     },
                     { 
-                        text: lang === 'sv' ? `Gångra nu in ${k2} i den andra parentesen. Kom ihåg minustecknet om det står ett minus emellan!` : `Now multiply ${k2} inside the second parenthesis. Watch out if there is a minus sign in between!`, 
+                        text: lang === 'sv' ? `Multiplicera nu in ${k2} i den andra parentesen. Kom ihåg minustecknet om det står ett minus emellan!` : `Now multiply ${k2} inside the second parenthesis. Watch out if there is a minus sign in between!`, 
                         latex: `${k1}x + ${k1 * c1} \\mathbf{${op} ${k2}x ${op === '-' ? '-' : '+'} ${k2 * c2}}` 
                     },
                     { 
@@ -497,13 +497,13 @@ export class ExpressionSimplificationGen {
         return {
             renderData: {
                 latex: baseExpr,
-                description: lang === 'sv' ? "Gångra in i parentesen och slå sedan ihop lika sorter." : "Multiply into the parentheses and then combine like terms.",
+                description: lang === 'sv' ? "Multiplicera in i parentesen och slå sedan ihop lika sorter." : "Multiply into the parentheses and then combine like terms.",
                 answerType: 'text'
             },
             token: this.toBase64(ansStr.replace(/\s/g, "")), variationKey: v, type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? `Börja alltid med att öppna upp parentesen. Siffran ${a} ska gångras med både ${b}x och med ${c}.` : `Always start by opening up the parenthesis block. The outer factor ${a} must be multiplied by both ${b}x and ${c}.`, 
+                    text: lang === 'sv' ? `Börja alltid med att öppna upp parentesen. Siffran ${a} ska multipliceras med både ${b}x och med ${c}.` : `Always start by opening up the parenthesis block. The outer factor ${a} must be multiplied by both ${b}x and ${c}.`, 
                     latex: baseExpr 
                 },
                 { 
@@ -561,7 +561,7 @@ export class ExpressionSimplificationGen {
         return {
             renderData: {
                 latex: baseExpr,
-                description: lang === 'sv' ? "Ta bort parentesväggarna och förenkla uttrycket." : "Remove the parenthesis walls and simplify the expression.",
+                description: lang === 'sv' ? "Ta bort parentesen och förenkla uttrycket." : "Remove the parenthesis walls and simplify the expression.",
                 answerType: 'text'
             },
             token: this.toBase64(ans.replace(/\s/g, "")), variationKey: v, type: 'calculate',

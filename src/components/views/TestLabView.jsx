@@ -16,14 +16,8 @@ import MathText from '../ui/MathText';
 import VisualRenderer from '../visuals/VisualRenderer';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 
-// --- STYLING CONSTANTS (Matched with Dashboard.jsx) ---
-const COLOR_VARIANTS = {
-    pink: { bgLight: 'bg-pink-50', bgDark: 'bg-pink-500', border: 'border-pink-100', text: 'text-pink-700', ring: 'ring-pink-500', borderSolid: 'border-pink-500', icon: 'text-pink-500' },
-    indigo: { bgLight: 'bg-indigo-50', bgDark: 'bg-indigo-500', border: 'border-indigo-100', text: 'text-indigo-700', ring: 'ring-indigo-500', borderSolid: 'border-indigo-500', icon: 'text-indigo-500' },
-    emerald: { bgLight: 'bg-emerald-50', bgDark: 'bg-emerald-600', border: 'border-emerald-100', text: 'text-emerald-700', ring: 'ring-emerald-500', borderSolid: 'border-emerald-600', icon: 'text-emerald-600' },
-    purple: { bgLight: 'bg-purple-50', bgDark: 'bg-purple-500', border: 'border-purple-100', text: 'text-purple-700', ring: 'ring-purple-500', borderSolid: 'border-purple-500', icon: 'text-purple-500' },
-    yellow: { bgLight: 'bg-amber-50', bgDark: 'bg-amber-500', border: 'border-amber-100', text: 'text-amber-700', ring: 'ring-amber-500', borderSolid: 'border-amber-500', icon: 'text-amber-500' }
-};
+// 🟢 CRITICAL: Import Universal Theme
+import '../../styles/theme.css'; 
 
 // --- MATH RENDERING HELPER ---
 const MathDisplay = ({ content, className = "" }) => {
@@ -101,7 +95,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     const [showMilestone, setShowMilestone] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [cooldown, setCooldown] = useState(0);
-    const [activeCategory, setActiveCategory] = useState('algebra'); // Default first tab
+    const [activeCategory, setActiveCategory] = useState('algebra'); 
     const [revealMilestoneAnswers, setRevealMilestoneAnswers] = useState(false);
     const [visibleClues, setVisibleClues] = useState({});
     const [showGuideModal, setShowGuideModal] = useState(false);
@@ -109,9 +103,6 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     const [allowCoach, setAllowCoach] = useState(false);
     const q = packet[currentIndex];
     const coach = useMyCoach(q, lang);
-
-    // --- HELPERS ---
-    const getStyles = (category) => COLOR_VARIANTS[category.color || 'indigo'] || COLOR_VARIANTS.indigo;
 
     const [isMobile, setIsMobile] = useState(false);
 
@@ -123,7 +114,6 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     }, []);
 
     const copyTestLink = () => {
-        // Include allowCoach in the copied link
         const updatedMeta = { ...meta, wordProblem: useWordProblems, allowCoach: allowCoach };
         const testCode = encodeConfig({ meta: updatedMeta, selection });
         const baseUrl = window.location.origin + "/lab";
@@ -255,11 +245,14 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             return (
                 <div className="grid grid-cols-1 gap-3 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
                     {(rd.options || []).map((opt, i) => {
-                        // Extract label for visual display and value for backend submission
                         const choiceLabel = typeof opt === 'object' ? opt.label : opt;
                         const choiceValue = typeof opt === 'object' ? opt.value : opt;
                         return (
-                            <button key={i} onClick={() => handleLabSubmit(choiceValue)} className="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-700 hover:border-indigo-600 hover:bg-indigo-50 transition-all shadow-sm text-center active:scale-95">
+                            // 🟢 Swapped to the Universal .btn-3d format
+                            <button key={i} onClick={() => handleLabSubmit(choiceValue)} className="btn-3d w-full flex items-center gap-3">
+                                <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shadow-inner shrink-0 bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-main)]">
+                                    {String.fromCharCode(65 + i)}
+                                </span>
                                 <MathDisplay content={String(choiceLabel)} />
                             </button>
                         );
@@ -271,17 +264,17 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         const type = rd?.answerType || rd?.inputType || item?.resolvedData?.inputType || 'text';
         switch (type) { 
             case 'mixed_fraction': 
-                return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><FractionInput value={inputValue} onChange={setInputValue} allowMixed={true} autoFocus={!isMobile} /></div></div>;
+                return <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full"><div className="transform origin-center"><FractionInput value={inputValue} onChange={setInputValue} allowMixed={true} autoFocus={!isMobile} /></div></div>;
             case 'fraction': 
-                return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><FractionInput value={inputValue} onChange={setInputValue} allowMixed={false} autoFocus={!isMobile} /></div></div>;
+                return <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full"><div className="transform origin-center"><FractionInput value={inputValue} onChange={setInputValue} allowMixed={false} autoFocus={!isMobile} /></div></div>;
             case 'exponent': 
             case 'structured_power': 
-                return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><ExponentInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} /></div></div>;
+                return <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full"><div className="transform origin-center"><ExponentInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} /></div></div>;
             case 'scientific': 
             case 'structured_scientific': 
-                return <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full"><div className="scale-110 transform origin-center"><ScientificInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} /></div></div>;
+                return <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full"><div className="transform origin-center"><ScientificInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} /></div></div>;
             default:
-                return <input type="text" autoFocus={!isMobile} className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 shadow-inner" placeholder="..." value={inputValue} maxLength={20} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLabSubmit()} />;
+                return <input type="text" autoFocus={!isMobile} className="w-full bg-[var(--bg-surface)] border-[3px] border-[var(--border-main)] rounded-[var(--radius-btn)] px-6 py-4 text-center font-bold text-2xl outline-none focus:border-[var(--brand-text)] focus:bg-[var(--bg-card)] text-[var(--text-main)] shadow-inner transition-all" placeholder="..." value={inputValue} maxLength={20} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLabSubmit()} />;
         }
     };
 
@@ -307,14 +300,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 setMeta(decoded.meta);
                 setSelection(finalSelection); 
                 
-                // Add this line to read the word problem flag from the decoded link
-                if (decoded.meta?.wordProblem !== undefined) { 
-                    setUseWordProblems(!!decoded.meta.wordProblem); 
-                }
-
-                if (decoded.meta?.allowCoach !== undefined) { 
-                    setAllowCoach(!!decoded.meta.allowCoach); 
-                }
+                if (decoded.meta?.wordProblem !== undefined) setUseWordProblems(!!decoded.meta.wordProblem); 
+                if (decoded.meta?.allowCoach !== undefined) setAllowCoach(!!decoded.meta.allowCoach); 
                 
                 setInternalMode('ACTIVE'); 
             } else { setInternalMode('SETUP'); }
@@ -331,84 +318,76 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         return () => clearInterval(timer);
     }, [showMilestone, cooldown]);
 
-    if (internalMode === 'LOADING') return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" size={48} /></div>;
+    if (internalMode === 'LOADING') return <div className="layout-wrapper flex items-center justify-center h-screen"><Loader2 className="animate-spin text-[var(--primary-color)]" size={48} /></div>;
 
     // =========================================================
-    // --- 1. SETUP UI (Harmonized with Dashboard Two-Column Layout) ---
+    // --- 1. SETUP UI (Harmonized Layout via theme.css) ---
     // =========================================================
     if (internalMode === 'SETUP') {
-        // Inject wordProblem into the meta object so the code updates instantly
-        const currentTestCode = encodeConfig({ 
-            meta: { ...meta, wordProblem: useWordProblems, allowCoach: allowCoach }, 
-            selection 
-        });
+        const currentTestCode = encodeConfig({ meta: { ...meta, wordProblem: useWordProblems, allowCoach: allowCoach }, selection });
         const activeCategoryData = CATEGORIES[activeCategory];
-        const categoryStyles = COLOR_VARIANTS[activeCategoryData?.color || 'indigo'] || COLOR_VARIANTS.indigo;
+        const themeColor = activeCategoryData?.color || 'indigo'; // Identifies the css variable string
         const totalSelectedCount = Object.keys(selection).filter(k => selection[k].enabled).length;
 
         return (
-            <div className="relative w-full overflow-hidden bg-[#f9fbf7] min-h-screen">
-                
-                {/* Widescreen Two-Column Container (Fixed for laptop protection) */}
-                <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 py-8 animate-in fade-in duration-700 flex flex-col xl:flex-row gap-8 relative z-10 font-sans">
+            // 🟢 WRAPPED IN THE DYNAMIC THEME CLASS
+            <div className={`theme-${themeColor} layout-wrapper font-sans relative z-10 animate-in fade-in`}>
+                <div className="layout-twocol">
                     
                     {/* LEFT COLUMN: COMMAND CENTER (CONFIG SIDEBAR) */}
-                    <aside className="w-full xl:w-[360px] flex-shrink-0 flex flex-col gap-6">
+                    <aside className="layout-sidebar">
                         
                         {/* Status Card & Test Code */}
-                        <div className="bg-white border border-indigo-100 p-6 rounded-[2rem] shadow-xl shadow-indigo-900/5 flex flex-col gap-5">
+                        <div className="card flex flex-col gap-5">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0">
+                                    <div className="w-12 h-12 bg-[var(--brand-solid)] rounded-2xl flex items-center justify-center text-white shadow-md shrink-0">
                                         <Beaker size={24} />
                                     </div>
                                     <div>
-                                        <h1 className="text-lg font-bold text-slate-800 leading-none mb-1">{t.title}</h1>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                        <h1 className="text-lg font-bold text-[var(--text-main)] leading-none mb-1">{t.title}</h1>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
                                             {lang === 'sv' ? 'Konfigurera pass' : 'Configure session'}
                                         </p>
                                     </div>
                                 </div>
                                 <button 
                                     onClick={() => setShowGuideModal(true)}
-                                    className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-xl transition-all border border-indigo-100 flex items-center gap-1 text-[10px] font-black uppercase"
+                                    className="p-2 text-[var(--brand-text)] hover:bg-[var(--brand-bg)] rounded-[var(--radius-btn)] transition-all border border-[var(--border-main)] flex items-center gap-1 text-[10px] font-black uppercase"
                                     title={t.guideBtn}
                                 >
                                     <HelpCircle size={16} />
                                 </button>
                             </div>
 
-                            <div className="flex flex-col items-center bg-indigo-50 px-4 py-3 rounded-2xl border border-indigo-100">
-                                <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-indigo-800/40 mb-0.5">{t.testCode}</span>
-                                <span className="text-xl font-black tracking-[0.2em] text-indigo-700 uppercase">{currentTestCode}</span>
+                            <div className="flex flex-col items-center bg-[var(--brand-bg)] px-4 py-3 rounded-[var(--radius-btn)] border border-[var(--brand-border)]">
+                                <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--brand-text)] opacity-60 mb-0.5">{t.testCode}</span>
+                                <span className="text-xl font-black tracking-[0.2em] text-[var(--brand-text)] uppercase">{currentTestCode}</span>
                             </div>
 
-                            <button 
-                                onClick={onBack} 
-                                className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-sm active:scale-95 cursor-pointer"
-                            >
+                            <button onClick={onBack} className="w-full flex items-center justify-center gap-2 py-3 bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] border border-[var(--theme-rose-border)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-sm active:scale-95 cursor-pointer">
                                 <LogOut size={14} /> {t.toDashboard}
                             </button>
                         </div>
 
                         {/* Configuration Controls Stack */}
-                        <div className="bg-white border border-slate-200 p-6 rounded-[2rem] shadow-sm flex flex-col gap-4">
+                        <div className="card flex flex-col gap-4">
                             <div className="flex items-center gap-2 ml-1">
-                                <Settings2 size={14} className="text-indigo-500" />
-                                <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                <Settings2 size={14} className="text-[var(--text-muted)]" />
+                                <h2 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                                     {lang === 'sv' ? "Inställningar" : "Settings"}
                                 </h2>
                             </div>
 
                             {/* Preset Selector */}
                             <div>
-                                <span className="block text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 ml-1">
+                                <span className="block text-[9px] font-black uppercase text-[var(--text-muted)] tracking-widest mb-1 ml-1">
                                     {lang === 'sv' ? "Snabbval (Preset)" : "Presets"}
                                 </span>
                                 <select 
                                     value={meta.bundleId || ""}
                                     onChange={(e) => applyPresetSelection(e.target.value)}
-                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-3 py-2 font-bold text-xs focus:border-indigo-500 focus:bg-white outline-none transition-all cursor-pointer"
+                                    className="w-full bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] px-3 py-2 font-bold text-xs text-[var(--text-main)] focus:border-[var(--brand-solid)] focus:bg-[var(--bg-card)] outline-none transition-all cursor-pointer"
                                 >
                                     <option value="">{lang === 'sv' ? "-- Välj snabbval --" : "-- Choose a preset ---"}</option>
                                     {Object.entries(BUNDLE_PRESETS).map(([id, data]) => (
@@ -421,10 +400,10 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             <button
                                 type="button"
                                 onClick={() => setMeta(p => ({ ...p, mode: p.mode === 'exam' ? 'practice' : 'exam' }))}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer ${
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer shadow-sm ${
                                     meta.mode === 'exam' 
-                                        ? 'bg-rose-600 border-rose-600 text-white' 
-                                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                        ? 'bg-[var(--theme-rose-bg)] border-[var(--theme-rose-border)] text-[var(--theme-rose-text)]' 
+                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--theme-rose-border)] hover:text-[var(--theme-rose-text)]'
                                 }`}
                             >
                                 <div className="flex items-center gap-2">
@@ -440,14 +419,14 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             <button
                                 type="button"
                                 onClick={() => setUseWordProblems(!useWordProblems)}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer ${
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer shadow-sm ${
                                     useWordProblems 
-                                        ? 'bg-emerald-600 border-emerald-600 text-white' 
-                                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                        ? 'bg-[var(--theme-emerald-bg)] border-[var(--theme-emerald-border)] text-[var(--theme-emerald-text)]' 
+                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--theme-emerald-border)] hover:text-[var(--theme-emerald-text)]'
                                 }`}
                             >
                                 <div className="flex items-center gap-2">
-                                    <HelpCircle size={14} fill={useWordProblems ? "rgba(255,255,255,0.2)" : "none"}/>
+                                    <HelpCircle size={14} fill={useWordProblems ? "currentColor" : "none"} className={useWordProblems ? "text-[var(--theme-emerald-bg)]" : ""}/>
                                     <span>{lang === 'sv' ? 'Problemlösning' : 'Word Problems'}</span>
                                 </div>
                                 <span className="text-[9px] opacity-80 uppercase">
@@ -459,14 +438,14 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             <button
                                 type="button"
                                 onClick={() => setAllowCoach(!allowCoach)}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer ${
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer shadow-sm ${
                                     allowCoach 
-                                        ? 'bg-blue-600 border-blue-600 text-white' 
-                                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                                        ? 'bg-[var(--theme-indigo-bg)] border-[var(--theme-indigo-border)] text-[var(--theme-indigo-text)]' 
+                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--theme-indigo-border)] hover:text-[var(--theme-indigo-text)]'
                                 }`}
                             >
                                 <div className="flex items-center gap-2">
-                                    <Info size={14} fill={allowCoach ? "rgba(255,255,255,0.2)" : "none"}/>
+                                    <Info size={14} fill={allowCoach ? "currentColor" : "none"} className={allowCoach ? "text-[var(--theme-indigo-bg)]" : ""}/>
                                     <span>{lang === 'sv' ? 'Ledtrådar / Coach' : 'Clues / Coach'}</span>
                                 </div>
                                 <span className="text-[9px] opacity-80 uppercase">
@@ -475,10 +454,10 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             </button>
 
                             {/* Question Limit Input */}
-                            <div className="flex items-center justify-between bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2">
+                            <div className="flex items-center justify-between bg-[var(--bg-surface)] border-2 border-[var(--border-strong)] rounded-[var(--radius-btn)] px-3 py-2 shadow-sm">
                                 <div className="flex items-center gap-2">
-                                    <ListChecks size={16} className="text-amber-500"/>
-                                    <span className="text-xs font-black uppercase tracking-wider text-slate-700">
+                                    <ListChecks size={16} className="text-[var(--text-muted)]"/>
+                                    <span className="text-xs font-black uppercase tracking-wider text-[var(--text-main)]">
                                         {lang === 'sv' ? 'Antal frågor:' : 'Quantity:'}
                                     </span>
                                 </div>
@@ -489,40 +468,31 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                     value={meta.limit || ''} 
                                     placeholder="∞" 
                                     onChange={(e) => setMeta(p => ({ ...p, limit: parseInt(e.target.value) || 0 }))}
-                                    className="w-12 bg-white rounded-lg text-slate-800 font-black text-xs text-center py-1 outline-none border border-slate-200 focus:border-amber-400"
+                                    className="w-12 bg-[var(--bg-card)] rounded-[var(--radius-btn)] text-[var(--text-main)] font-black text-xs text-center py-1 outline-none border border-[var(--border-main)] focus:border-[var(--brand-solid)]"
                                 />
                             </div>
 
                             {/* Action Buttons: Copy Link & Reset */}
                             <div className="grid grid-cols-2 gap-2 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={copyTestLink}
-                                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-all cursor-pointer"
-                                >
-                                    <LayoutGrid size={13}/>
-                                    {t.copyLink}
+                                <button type="button" onClick={copyTestLink} className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider bg-[var(--theme-indigo-bg)] text-[var(--theme-indigo-text)] border border-[var(--theme-indigo-border)] hover:bg-indigo-500 hover:text-white transition-all cursor-pointer shadow-sm active:scale-95">
+                                    <LayoutGrid size={13}/> {t.copyLink}
                                 </button>
-                                <button 
-                                    onClick={resetAllSelection}
-                                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl font-black uppercase text-[10px] tracking-wider transition-all cursor-pointer"
-                                >
-                                    <RefreshCcw size={13} />
-                                    {lang === 'sv' ? "Rensa" : "Reset"}
+                                <button onClick={resetAllSelection} className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] border border-[var(--theme-rose-border)] hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-sm active:scale-95">
+                                    <RefreshCcw size={13} /> {lang === 'sv' ? "Rensa" : "Reset"}
                                 </button>
                             </div>
                         </div>
 
-                        {/* Prominent Start Button Sidebar Anchor */}
+                        {/* Prominent Start Button (Now natively maps to Category Theme) */}
                         <button 
                             type="button"
                             onClick={startNewSession} 
                             disabled={totalSelectedCount === 0} 
-                            className="w-full flex items-center justify-center gap-3 py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-2xl font-black uppercase text-sm tracking-widest shadow-xl shadow-orange-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-40"
+                            className="btn-brand py-4 shadow-xl active:scale-95 disabled:opacity-40"
                         >
                             <Play size={16} fill="currentColor"/>
                             <span>{t.startBtn}</span>
-                            <span className="text-[10px] font-black bg-orange-700/50 text-orange-100 px-2 py-0.5 rounded-lg">
+                            <span className="text-[10px] font-black bg-[var(--bg-card)] text-[var(--brand-text)] px-2 py-0.5 rounded-lg border border-[var(--brand-border)]">
                                 {totalSelectedCount}
                             </span>
                         </button>
@@ -530,29 +500,28 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
 
                     {/* ➡️ RIGHT COLUMN: MAIN TOPIC SELECTION AREA */}
-                    <main className="flex-1 flex flex-col min-w-0">
+                    <main className="layout-main">
                         
                         {/* Horizontal Category Tabs */}
-                        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+                        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 mb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
                             {Object.entries(CATEGORIES).map(([catKey, category]) => {
                                 const isActive = activeCategory === catKey;
-                                const styles = COLOR_VARIANTS[category.color || 'indigo'] || COLOR_VARIANTS.indigo;
                                 const count = category.topics.filter(t => selection[t.id]?.enabled).length;
                                 
                                 return (
                                     <button 
                                         key={catKey}
                                         onClick={() => setActiveCategory(catKey)}
-                                        className={`flex items-center gap-2 px-5 py-3 rounded-2xl font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border cursor-pointer ${
+                                        className={`flex items-center gap-2 px-5 py-3 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border cursor-pointer ${
                                             isActive 
-                                                ? `${styles.bgDark} text-white border-transparent shadow-md` 
-                                                : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
+                                                ? 'bg-[var(--brand-solid)] text-white border-transparent shadow-md' 
+                                                : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-muted)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
                                         }`}
                                     >
                                         <Award size={14} />
                                         {category.label[lang]}
                                         {count > 0 && (
-                                            <span className="ml-1 px-1.5 py-0.2 bg-white/20 rounded-full text-[9px]">
+                                            <span className="ml-1 px-1.5 py-0.5 bg-[var(--bg-card)] text-[var(--brand-text)] rounded-full text-[9px]">
                                                 {count}
                                             </span>
                                         )}
@@ -562,17 +531,17 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         </div>
 
                         {/* Active Category Topics Grid */}
-                        <div className={`bg-white rounded-[2.5rem] border ${categoryStyles.border} p-6 sm:p-8 shadow-xl shadow-indigo-900/5 flex-1`}>
+                        <div className="card flex-1">
                             <div className="mb-6 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${categoryStyles.bgDark} text-white shadow-md`}>
+                                    <div className="w-10 h-10 rounded-[var(--radius-btn)] flex items-center justify-center bg-[var(--brand-solid)] text-white shadow-md">
                                         <Award size={20} />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-slate-800 tracking-tight leading-none mb-1">
+                                        <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight leading-none mb-1">
                                             {activeCategoryData.label[lang]}
                                         </h3>
-                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">
+                                        <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest leading-none">
                                             {activeCategoryData.topics.length} {lang === 'sv' ? 'tillgängliga delmoment' : 'available topics'}
                                         </p>
                                     </div>
@@ -595,32 +564,24 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                             
                                             return {
                                                 ...p,
-                                                [topic.id]: { 
-                                                    ...p[topic.id], 
-                                                    levels: newLevels,
-                                                    enabled: newLevels.length > 0 
-                                                }
+                                                [topic.id]: { ...p[topic.id], levels: newLevels, enabled: newLevels.length > 0 }
                                             };
                                         });
                                     };
 
                                     return (
-                                        <div key={topic.id} className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${isEnabled ? 'border-indigo-500 shadow-md bg-white' : 'border-slate-200 bg-slate-50/50 opacity-75'}`}>
+                                        <div key={topic.id} className={`card-interactive flex flex-col justify-between ${isEnabled ? 'border-[var(--brand-solid)] shadow-md bg-[var(--bg-card)]' : 'border-[var(--border-main)] bg-[var(--bg-surface)] opacity-75 hover:opacity-100'}`}>
                                             <div>
                                                 <div className="flex items-start justify-between mb-3">
-                                                    <h4 className="font-bold text-xs text-slate-800 leading-tight pr-2">{topic.label[lang]}</h4>
+                                                    <h4 className="font-bold text-xs text-[var(--text-main)] leading-tight pr-2">{topic.label[lang]}</h4>
                                                     <button 
                                                         onClick={() => {
                                                             setMeta(p => ({ ...p, isNationalTest: false, bundleId: null }));
                                                             setSelection(p => ({ 
-                                                                ...p, 
-                                                                [topic.id]: { 
-                                                                    enabled: !isEnabled, 
-                                                                    levels: !isEnabled ? topicLevels : [] 
-                                                                } 
+                                                                ...p, [topic.id]: { enabled: !isEnabled, levels: !isEnabled ? topicLevels : [] } 
                                                             }));
                                                         }}
-                                                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all cursor-pointer ${isEnabled ? categoryStyles.bgDark + ' text-white shadow-sm' : 'bg-white text-transparent border border-slate-300'}`}
+                                                        className={`w-7 h-7 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0 transition-all cursor-pointer ${isEnabled ? 'bg-[var(--brand-solid)] text-white shadow-sm border border-transparent' : 'bg-[var(--bg-card)] text-transparent border border-[var(--border-strong)]'}`}
                                                     >
                                                         <Check size={14} strokeWidth={3}/>
                                                     </button>
@@ -634,10 +595,10 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                                             <button
                                                                 key={lvl}
                                                                 onClick={() => toggleLevel(lvl)}
-                                                                className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all border flex items-center justify-center cursor-pointer
+                                                                className={`w-8 h-8 rounded-[var(--radius-btn)] text-[10px] font-black transition-all border flex items-center justify-center cursor-pointer
                                                                     ${isActive 
-                                                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs' 
-                                                                        : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-400'
+                                                                        ? 'bg-[var(--brand-solid)] border-[var(--brand-solid)] text-white shadow-xs' 
+                                                                        : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-muted)] hover:border-[var(--brand-text)] hover:text-[var(--brand-text)]'
                                                                     }`}
                                                             >
                                                                 {lvl}
@@ -649,12 +610,12 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
                                             {/* DYNAMIC DESCRIPTION BOX */}
                                             {selectedLevels.length > 0 && (
-                                                <div className="mt-3 p-2.5 bg-slate-50 rounded-xl border border-slate-100 max-h-24 overflow-y-auto custom-scrollbar">
+                                                <div className="mt-3 p-2.5 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border border-[var(--border-main)] max-h-24 overflow-y-auto custom-scrollbar">
                                                     <div className="space-y-1">
                                                         {selectedLevels.map(lvl => (
                                                             <div key={lvl} className="flex gap-1.5 text-[8px] leading-tight items-start">
-                                                                <span className="font-black text-indigo-500">N{lvl}</span>
-                                                                <span className="text-slate-500 font-medium truncate">
+                                                                <span className="font-black text-[var(--brand-text)]">N{lvl}</span>
+                                                                <span className="text-[var(--text-muted)] font-medium truncate">
                                                                     {LEVEL_DESCRIPTIONS[topic.id][lvl][lang]}
                                                                 </span>
                                                             </div>
@@ -673,17 +634,17 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
                 {/* --- GUIDE MODAL OVERLAY --- */}
                 {showGuideModal && (
-                    <div className="fixed inset-0 z-[200] bg-indigo-950/40 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
-                        <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95">
-                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <div className="modal-overlay">
+                        <div className="card-flat w-full max-w-xl max-h-[85vh] animate-in zoom-in-95">
+                            <div className="card-header-flat">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md"><HelpCircle size={20}/></div>
-                                    <h2 className="text-lg font-black uppercase tracking-tight italic">{t.guideTitle}</h2>
+                                    <div className="p-2.5 bg-[var(--brand-bg)] text-[var(--brand-text)] rounded-[var(--radius-btn)] border border-[var(--brand-border)]"><HelpCircle size={20}/></div>
+                                    <h2 className="text-lg font-black uppercase tracking-tight italic text-[var(--text-main)]">{t.guideTitle}</h2>
                                 </div>
-                                <button onClick={() => setShowGuideModal(false)} className="p-2 hover:bg-slate-200 rounded-full text-slate-400 transition-colors cursor-pointer"><X size={18} /></button>
+                                <button onClick={() => setShowGuideModal(false)} className="btn-ghost"><X size={18} /></button>
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar text-xs font-medium text-slate-700 leading-relaxed">
+                            <div className="card-body-flat overflow-y-auto space-y-4 custom-scrollbar text-xs font-medium text-[var(--text-main)] leading-relaxed">
                                 <p>1. {lang === 'sv' ? "Snabbval" : "Presets"}: {t.guidePreset}</p>
                                 <p>2. {lang === 'sv' ? "Frågeantal" : "Quantity"}: {t.guideCustom}</p>
                                 <p>3. {lang === 'sv' ? "Lägen" : "Modes"}: {t.guideModes}</p>
@@ -693,25 +654,19 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         </div>
                     </div>
                 )}
-
-                {/* BACKGROUND DECORATION */}
-                <div className="absolute bottom-0 left-0 w-full leading-[0] pointer-events-none z-0 overflow-hidden">
-                    <svg className="relative block w-full h-[250px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                        <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-indigo-100/40"></path>
-                    </svg>
-                </div>
             </div>
         );
     }
 
-    // --- 2. ACTIVE TEST UI ---
+    // =========================================================
+    // --- 2. ACTIVE TEST UI (Harmonized Layout via theme.css) ---
+    // =========================================================
     if (internalMode === 'ACTIVE') {
-        // Show a loader if the packet hasn't arrived yet or is generating
         if (packet.length === 0 || isGenerating) {
             return (
-                <div className="h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
-                    <Loader2 className="animate-spin text-indigo-600" size={48} />
-                    <p className="text-xs font-black uppercase text-slate-400 tracking-widest">
+                <div className="layout-wrapper flex flex-col items-center justify-center h-screen gap-4">
+                    <Loader2 className="animate-spin text-[var(--primary-color)]" size={48} />
+                    <p className="text-xs font-black uppercase text-[var(--text-muted)] tracking-widest">
                         {lang === 'sv' ? "Hämtar uppgifter..." : "Fetching questions..."}
                     </p>
                 </div>
@@ -719,223 +674,184 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         }
         
         const q = packet[currentIndex];
-
-        // Safety check if q is missing due to an API error
         if (!q || !q.resolvedData) {
             return (
-                <div className="h-screen flex items-center justify-center">
-                    <p className="text-slate-400">Error loading question. Please go back and try again.</p>
+                <div className="layout-wrapper flex items-center justify-center h-screen">
+                    <p className="text-[var(--text-muted)]">Error loading question. Please go back and try again.</p>
                 </div>
             );
         }
         
         return (
-            <div className="min-h-screen bg-slate-50 font-sans flex flex-col overflow-hidden">
-                <header className="bg-white border-b border-slate-200 px-4 py-2 sticky top-0 z-20 shadow-sm">
-                    <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
+            <div className="layout-wrapper font-sans flex flex-col overflow-hidden">
+                {/* 🟢 Swapped from header-compact to a relative block so it stacks perfectly under App.jsx */}
+                <header className="relative z-30 w-full bg-[var(--bg-surface)] border-b border-[var(--border-main)] px-4 py-2 transition-colors duration-500 no-print">
+                    <div className="max-w-6xl w-full mx-auto flex items-center justify-between gap-2">
                         
-                        {/* NEW CONTAINER FOR BACK BUTTON + CHEVRON */}
                         <div className="flex items-center gap-1">
-                            {/* 1. THE NEW "BACK TO LAB" BUTTON */}
-                            <button 
-                                onClick={() => setInternalMode('SETUP')}
-                                className="mr-2 px-3 py-2 text-[9px] font-black uppercase tracking-tight text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all border border-slate-50 flex items-center gap-1"
-                            >
+                            <button onClick={() => setInternalMode('SETUP')} className="btn-ghost mr-2 text-[9px] font-black uppercase tracking-tight py-2 border border-[var(--border-subtle)]">
                                 <Settings2 size={12} /> {t.backToLab}
                             </button>
-
-                            {/* 2. THE EXISTING LEFT CHEVRON */}
-                            <button 
-                                onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} 
-                                className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-all"
-                            >
+                            <button onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} className="btn-ghost">
                                 <ChevronLeft size={28} />
                             </button>
                         </div>
 
-                        {/* ... Central Title/Progress (Keep as is) ... */}
                         <div className="flex flex-col items-center">
-                            <h1 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.title}</h1>
-                            <div className="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase italic tracking-widest">
+                            <h1 className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">{t.title}</h1>
+                            <div className="bg-[var(--text-main)] text-[var(--bg-canvas)] px-3 py-1 rounded-[var(--radius-btn)] text-[10px] font-black uppercase italic tracking-widest">
                                 {currentIndex + 1} / {meta.limit || "∞"}
                             </div>
                         </div>
 
-                        {/* ... Right Side (LogOut / Dashboard button) ... */}
                         <div className="flex items-center gap-1">
-                            <button onClick={() => setCurrentIndex(p => Math.min(packet.length - 1, p + 1))} className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-all">
+                            <button onClick={() => setCurrentIndex(p => Math.min(packet.length - 1, p + 1))} className="btn-ghost">
                                 <ChevronRight size={28} />
                             </button>
-                            <button 
-                                onClick={onBack} 
-                                className="ml-2 px-3 py-2 text-[9px] font-black uppercase tracking-tight text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all border border-slate-50"
-                            >
+                            <button onClick={onBack} className="btn-ghost ml-2 px-3 py-2 text-[9px] font-black uppercase tracking-tight hover:!text-[var(--theme-rose-text)] hover:!bg-[var(--theme-rose-bg)] border border-[var(--border-subtle)]">
                                 {t.toDashboard}
                             </button>
                         </div>
                     </div>
                 </header>
 
-                {/* COACH MODAL */}
                 {coach.isOpen && (
                     <MyCoachModal 
-                        visible={coach.isOpen}
-                        onClose={coach.closeCoach}
-                        question={q}
-                        lang={lang}
-                        {...coach.coachProps} 
+                        visible={coach.isOpen} onClose={coach.closeCoach} question={q} lang={lang} {...coach.coachProps} 
                     />
                 )}
 
                 <main className="flex-1 max-w-6xl w-full mx-auto p-3 lg:p-6 overflow-hidden flex flex-col relative">
-                {/* 1. MAIN CARD WRAPPER: Allows scrolling on mobile, stays fixed on desktop */}
-                <div className={`flex-1 bg-white rounded-[2rem] lg:rounded-[3.5rem] shadow-2xl border border-slate-100 overflow-y-auto lg:overflow-hidden transition-all duration-300 flex flex-col ${!!responses[currentIndex] && meta.mode === 'practice' ? '' : ''}`}>
                     
-                    {/* MOBILE PROGRESS BAR */}
-                    <div className="sm:hidden h-1 bg-slate-100 flex shrink-0">
-                        {packet.map((_, i) => (
-                            <div key={i} className={`flex-1 ${i === currentIndex ? 'bg-indigo-500' : !!responses[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
-                        ))}
-                    </div>
-
-                    {/* QUESTION HEADER */}
-                    <div className="px-8 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/30 shrink-0">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.25em]">{lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} / {packet.length}</span>
+                    {/* Flush Card Container */}
+                    <div className="card p-0 flex-1 overflow-y-auto lg:overflow-hidden flex flex-col transition-all duration-300">
                         
-                        <div className="flex items-center gap-3">
-                            {/* Coach Button - Only shows if allowed and question is not yet answered */}
-                            {allowCoach && !responses[currentIndex] && (
-                                <button 
-                                    onClick={coach.openCoach} 
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all cursor-pointer"
-                                >
-                                    <Info size={14} />
-                                    {lang === 'sv' ? 'Hjälp!' : 'Help!'}
-                                </button>
-                            )}
-                            
-                            {!!responses[currentIndex] && (
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-black uppercase text-emerald-600 tracking-widest">
-                                        {lang === 'sv' ? "Svar mottaget" : "Answer received"}
-                                    </span>
-                                    <CheckCircle2 className="text-emerald-500" size={20} />
-                                </div>
-                            )}
+                        {/* MOBILE PROGRESS BAR */}
+                        <div className="sm:hidden h-1 bg-[var(--bg-surface)] flex shrink-0">
+                            {packet.map((_, i) => (
+                                <div key={i} className={`flex-1 ${i === currentIndex ? 'bg-[var(--primary-color)]' : !!responses[i] ? 'bg-[var(--border-strong)]' : 'bg-transparent'}`} />
+                            ))}
                         </div>
-                    </div>
 
-                    {/* 2. RESPONSIVE GRID: Removes 'flex-1' on mobile to allow natural vertical expansion */}
-                    <div className="lg:flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-slate-50">
-                        
-                        {/* 3. TEXT & INPUT SECTION: Restricted height only on desktop */}
-                        <div className="flex flex-col order-1 lg:h-full lg:overflow-hidden border-b lg:border-b-0 border-slate-50">
-                            <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6 overflow-y-auto">
-                                <div className="text-xl lg:text-3xl font-bold text-slate-800 leading-relaxed text-center lg:text-left">
-                                    <MathDisplay content={q?.resolvedData?.renderData?.description} />
-                                </div>
-                                        {/* HIDES THE LATEX MATH FOR WORD PROBLEMS AND GEOMETRY VISUALS */}
-                                        {q?.resolvedData?.renderData?.latex && 
-                                        !q?.resolvedData?.renderData?.isWordProblemApplied && 
-                                        !q?.resolvedData?.renderData?.geometry && (
-                                            <div className="mt-6 text-3xl lg:text-5xl text-indigo-600 font-serif border-t border-slate-100 pt-6 animate-in fade-in duration-300">
-                                                <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
-                                            </div>
-                                        )}
-                            </div>
-
-                            {/* FEEDBACK SECTION */}
-                            <div className="p-6 lg:p-10 bg-slate-50/30 border-t border-slate-100 shrink-0">
-                                {!responses[currentIndex] ? (
-                                    <div className="max-w-md mx-auto space-y-4">
-                                        {renderInput()}
-                                        {!(packet[currentIndex]?.resolvedData?.renderData?.options) && (
-                                            <button onClick={() => handleLabSubmit()} disabled={!inputValue} className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3 transition-all">
-                                                <Send size={20} /> {lang === 'sv' ? "Svara" : "Submit"}
-                                            </button>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="max-w-md mx-auto animate-in zoom-in-95 duration-300">
-                                        {meta.mode === 'practice' ? (
-                                            <div className={`p-6 rounded-[2rem] border-4 flex flex-col items-center gap-4 shadow-lg
-                                                ${responses[currentIndex].isCorrect ? 'bg-emerald-50 border-emerald-500' : 'bg-rose-50 border-rose-500'}`}>
-                                                
-                                                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white
-                                                    ${responses[currentIndex].isCorrect ? 'bg-emerald-500 animate-bounce' : 'bg-rose-500 animate-shake'}`}>
-                                                    {responses[currentIndex].isCorrect ? <Check size={32} strokeWidth={4} /> : <XCircle size={32} strokeWidth={4} />}
-                                                </div>
-                                                
-                                                <div className="text-center">
-                                                    <p className={`text-xl font-black uppercase italic tracking-tight
-                                                        ${responses[currentIndex].isCorrect ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                                        {responses[currentIndex].isCorrect 
-                                                            ? (lang === 'sv' ? "Snyggt jobbat!" : "Great job!") 
-                                                            : (lang === 'sv' ? "Inte riktigt rätt" : "Not quite right")}
-                                                    </p>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                                                        {t.nextArr}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="py-8 text-center bg-slate-100 rounded-[2rem] border-2 border-dashed border-slate-200">
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <CheckCircle2 size={32} className="text-slate-400" />
-                                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest animate-pulse italic">
-                                                        {t.answerReceived} — {t.nextArr}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        )}
+                        {/* QUESTION HEADER */}
+                        <div className="card-header-flat shrink-0">
+                            <span className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-[0.25em]">{lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} / {packet.length}</span>
+                            
+                            <div className="flex items-center gap-3">
+                                {allowCoach && !responses[currentIndex] && (
+                                    <button onClick={coach.openCoach} className="btn-brand bg-[var(--theme-indigo-bg)] text-[var(--theme-indigo-text)] py-1.5 px-3 text-[9px]">
+                                        <Info size={14} /> {lang === 'sv' ? 'Hjälp!' : 'Help!'}
+                                    </button>
+                                )}
+                                {!!responses[currentIndex] && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[9px] font-black uppercase text-[var(--theme-emerald-text)] tracking-widest">{t.answerReceived}</span>
+                                        <CheckCircle2 className="text-[var(--theme-emerald-text)]" size={20} />
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        {/* 4. VISUAL SIDE: Set a minimum height for mobile and added padding to prevent clipping */}
-                        {q?.resolvedData?.renderData && (q.resolvedData.renderData.graph || q.resolvedData.renderData.geometry || q.resolvedData.renderData.pattern) ? (
-                            <div className="p-6 lg:p-12 flex items-center justify-center bg-white order-2 min-h-[400px] lg:h-full border-t lg:border-t-0 border-slate-50 relative overflow-hidden pb-12 lg:pb-12">
-                                <div className="absolute inset-0 flex items-center justify-center p-8 lg:p-16">
-                                    <div className="flex justify-center scale-90 origin-top mt-2">
-                                        <VisualRenderer 
-                                            data={q?.resolvedData?.renderData || q?.renderData} 
-                                            isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} 
-                                        />
+                        {/* SPLIT RESPONSIVE GRID */}
+                        <div className="lg:flex-1 grid grid-cols-1 lg:grid-cols-2 lg:divide-x divide-[var(--border-subtle)]">
+                            
+                            {/* TEXT & INPUT SECTION */}
+                            <div className="flex flex-col order-1 lg:h-full lg:overflow-hidden border-b lg:border-b-0 border-[var(--border-subtle)]">
+                                <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6 overflow-y-auto">
+                                    <div className="text-xl lg:text-3xl font-bold text-[var(--text-main)] leading-relaxed text-center lg:text-left">
+                                        <MathDisplay content={q?.resolvedData?.renderData?.description} />
                                     </div>
+                                    {q?.resolvedData?.renderData?.latex && !q?.resolvedData?.renderData?.isWordProblemApplied && !q?.resolvedData?.renderData?.geometry && (
+                                        <div className="mt-6 text-3xl lg:text-5xl font-serif border-t border-[var(--border-subtle)] pt-6 animate-in fade-in duration-300 flex justify-center lg:justify-start">
+                                            <div className="whiteboard-protect px-8 py-6 rounded-[var(--radius-btn)] border border-slate-200 shadow-sm inline-block">
+                                                <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* FEEDBACK SECTION */}
+                                <div className="p-6 lg:p-10 bg-[var(--bg-surface)] border-t border-[var(--border-subtle)] shrink-0">
+                                    {!responses[currentIndex] ? (
+                                        <div className="max-w-md mx-auto space-y-4">
+                                            {renderInput()}
+                                            {!(packet[currentIndex]?.resolvedData?.renderData?.options) && (
+                                                <button onClick={() => handleLabSubmit()} disabled={!inputValue} className="btn-brand w-full py-4 text-xs shadow-xl active:scale-95 disabled:opacity-20 flex items-center justify-center gap-3">
+                                                    <Send size={20} /> {lang === 'sv' ? "Svara" : "Submit"}
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="max-w-md mx-auto animate-in zoom-in-95 duration-300">
+                                            {meta.mode === 'practice' ? (
+                                                <div className={`p-6 rounded-[var(--radius-card)] border-4 flex flex-col items-center gap-4 shadow-lg
+                                                    ${responses[currentIndex].isCorrect ? 'bg-[var(--theme-emerald-bg)] border-[var(--theme-emerald-border)]' : 'bg-[var(--theme-rose-bg)] border-[var(--theme-rose-border)]'}`}>
+                                                    
+                                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white
+                                                        ${responses[currentIndex].isCorrect ? 'bg-emerald-500 animate-bounce' : 'bg-rose-500 animate-shake'}`}>
+                                                        {responses[currentIndex].isCorrect ? <Check size={32} strokeWidth={4} /> : <XCircle size={32} strokeWidth={4} />}
+                                                    </div>
+                                                    
+                                                    <div className="text-center">
+                                                        <p className={`text-xl font-black uppercase italic tracking-tight
+                                                            ${responses[currentIndex].isCorrect ? 'text-[var(--theme-emerald-text)]' : 'text-[var(--theme-rose-text)]'}`}>
+                                                            {responses[currentIndex].isCorrect ? (lang === 'sv' ? "Snyggt jobbat!" : "Great job!") : (lang === 'sv' ? "Inte riktigt rätt" : "Not quite right")}
+                                                        </p>
+                                                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">
+                                                            {t.nextArr}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="py-8 text-center bg-[var(--bg-card)] rounded-[var(--radius-card)] border-2 border-dashed border-[var(--border-main)]">
+                                                    <div className="flex flex-col items-center gap-3">
+                                                        <CheckCircle2 size={32} className="text-[var(--text-muted)]" />
+                                                        <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest animate-pulse italic">
+                                                            {t.answerReceived} — {t.nextArr}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        ) : (
-                            <div className="hidden lg:block order-2 bg-slate-50/10" />
-                        )}
-                    </div>
 
-                    {/* MILESTONE REVIEW MODAL */}
-                    {showMilestone && (
-                        <div className="absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 rounded-[2rem] lg:rounded-[3.5rem]">
-                            <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-300">
-                                
-                                <div className="p-8 lg:p-10 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
-                                    <div>
-                                        <h2 className="text-3xl lg:text-4xl font-black text-slate-900 italic tracking-tight uppercase mb-2">
-                                            {t.milestoneTitle}
-                                        </h2>
-                                        <p className="text-slate-500 font-medium text-xs lg:text-sm">
-                                            {lang === 'sv' ? 'Granska dina senaste svar innan du går vidare.' : 'Review your recent answers before continuing.'}
-                                        </p>
+                            {/* VISUAL SIDE (Whiteboard Protected) */}
+                            {q?.resolvedData?.renderData && (q.resolvedData.renderData.graph || q.resolvedData.renderData.geometry || q.resolvedData.renderData.pattern) ? (
+                                <div className="p-6 lg:p-12 flex items-center justify-center whiteboard-protect order-2 min-h-[400px] lg:h-full border-t lg:border-t-0 border-[var(--border-subtle)] relative overflow-hidden pb-12 lg:pb-12 shadow-inner">
+                                    <div className="absolute inset-0 flex items-center justify-center p-8 lg:p-16">
+                                        <div className="flex justify-center scale-90 origin-top mt-2">
+                                            <VisualRenderer data={q?.resolvedData?.renderData || q?.renderData} isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} />
+                                        </div>
                                     </div>
-                                    <button 
-                                        onClick={() => setInternalMode('SUMMARY')} 
-                                        className="px-6 py-3 bg-rose-100 text-rose-600 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                                    >
-                                        {t.finish}
-                                    </button>
                                 </div>
+                            ) : (
+                                <div className="hidden lg:block order-2 bg-[var(--bg-surface)] opacity-30" />
+                            )}
+                        </div>
 
-                                <div className="flex-1 overflow-y-auto p-6 lg:p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50/30 custom-scrollbar">
-                                    {Object.keys(responses)
-                                        .filter(idx => idx >= currentIndex - 14 && idx <= currentIndex)
-                                        .map(idx => {
+                        {/* MILESTONE REVIEW MODAL */}
+                        {showMilestone && (
+                            <div className="modal-overlay rounded-[var(--radius-card)] lg:rounded-[3.5rem]">
+                                <div className="card-flat w-full max-w-5xl max-h-[90vh] rounded-[var(--radius-card)] lg:rounded-[3.5rem]">
+                                    
+                                    <div className="card-header-flat bg-[var(--bg-surface)] border-b border-[var(--border-main)] p-8 lg:p-10">
+                                        <div>
+                                            <h2 className="text-3xl lg:text-4xl font-black text-[var(--text-main)] italic tracking-tight uppercase mb-2">
+                                                {t.milestoneTitle}
+                                            </h2>
+                                            <p className="text-[var(--text-muted)] font-medium text-xs lg:text-sm">
+                                                {lang === 'sv' ? 'Granska dina senaste svar innan du går vidare.' : 'Review your recent answers before continuing.'}
+                                            </p>
+                                        </div>
+                                        <button onClick={() => setInternalMode('SUMMARY')} className="btn-brand bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] hover:!bg-rose-500 hover:!text-white border border-[var(--theme-rose-border)] px-6 py-3 text-[10px]">
+                                            {t.finish}
+                                        </button>
+                                    </div>
+
+                                    <div className="card-body-flat overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-[var(--bg-canvas)] custom-scrollbar">
+                                        {Object.keys(responses).filter(idx => idx >= currentIndex - 14 && idx <= currentIndex).map(idx => {
                                             const qItem = packet[idx];
                                             const res = responses[idx];
                                             const rd = qItem?.resolvedData?.renderData;
@@ -943,82 +859,56 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                             const clues = qItem?.clues || qItem?.resolvedData?.clues || [];
 
                                             return (
-                                                <div key={idx} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-sm flex flex-col justify-between relative transition-all ${res.isCorrect ? 'border-emerald-500 shadow-emerald-50/30' : 'border-rose-400 shadow-rose-50/30'}`}>
-                                                    
+                                                <div key={idx} className={`card p-6 border-4 flex flex-col justify-between transition-all ${res.isCorrect ? 'border-emerald-500 shadow-lg' : 'border-rose-400 shadow-md'}`}>
                                                     <div>
                                                         <div className="flex justify-between items-center mb-4">
-                                                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                                                                {lang === 'sv' ? "Uppgift" : "Question"} {parseInt(idx) + 1}
-                                                            </span>
+                                                            <span className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest">{lang === 'sv' ? "Uppgift" : "Question"} {parseInt(idx) + 1}</span>
                                                             {res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-400" size={20} />}
                                                         </div>
 
-                                                        {/* 🎨 REFACTORED: Renders the diagram container beautifully */}
                                                         {hasVisual && (
-                                                            <div className="w-full flex justify-center bg-slate-50 p-4 rounded-2xl mb-4 border border-slate-100 overflow-hidden">
+                                                            <div className="w-full flex justify-center whiteboard-protect p-4 rounded-[var(--radius-btn)] mb-4 border border-slate-200 shadow-sm overflow-hidden">
                                                                 <div className="flex justify-center scale-90 origin-top mt-2">
-                                                                    <VisualRenderer 
-                                                                        data={q?.resolvedData?.renderData || q?.renderData} 
-                                                                        isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} 
-                                                                    />
+                                                                    <VisualRenderer data={q?.resolvedData?.renderData || q?.renderData} isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} />
                                                                 </div>
                                                             </div>
                                                         )}
 
-                                                        <div className="space-y-3 text-slate-700 mb-6">
+                                                        <div className="space-y-3 text-[var(--text-main)] mb-6">
                                                             <div className="text-center font-bold text-[12px] leading-snug px-2">
                                                                 <MathDisplay content={typeof rd?.description === 'object' ? rd.description[lang] : rd?.description} />
                                                             </div>
-                                                            
-                                                            {/* 🔢 REFACTORED: Formal LaTeX Formula equation slot */}
                                                             {rd?.latex && (
-                                                                <div className="py-2 bg-indigo-50/30 rounded-xl border border-indigo-100/50 text-center">
-                                                                    <MathDisplay content={`$$${rd.latex}$$`} className="text-indigo-600 scale-90" />
+                                                                <div className="py-2 whiteboard-protect rounded-[var(--radius-btn)] border border-slate-200 shadow-sm text-center">
+                                                                    <MathDisplay content={`$$${rd.latex}$$`} className="scale-90" />
                                                                 </div>
                                                             )}
                                                         </div>
                                                     </div>
 
                                                     <div className="space-y-2 mt-auto">
-                                                        <div className={`p-3 rounded-2xl text-center shadow-inner ${res.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
-                                                            <span className="text-[8px] font-black text-white/60 uppercase block mb-0.5">
-                                                                {lang === 'sv' ? "Ditt Svar" : "Your Answer"}
-                                                            </span>
-                                                            <span className="font-black text-white text-xs">
-                                                                {res.answer || '-'}
-                                                            </span>
+                                                        <div className={`p-3 rounded-[var(--radius-btn)] text-center shadow-inner ${res.isCorrect ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                                                            <span className="text-[8px] font-black uppercase block mb-0.5 opacity-70">{lang === 'sv' ? "Ditt Svar" : "Your Answer"}</span>
+                                                            <span className="font-black text-xs">{res.answer || '-'}</span>
                                                         </div>
 
                                                         {clues.length > 0 && (
                                                             <div className="space-y-2">
-                                                                <button 
-                                                                    onClick={() => setVisibleClues(prev => ({ ...prev, [idx]: !prev[idx] }))}
-                                                                    className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2 cursor-pointer
-                                                                        ${visibleClues[idx] 
-                                                                            ? 'bg-amber-500 border-amber-600 text-white shadow-md' 
-                                                                            : 'bg-white border-amber-100 text-amber-500 hover:bg-amber-50'}`}
-                                                                >
+                                                                <button onClick={() => setVisibleClues(prev => ({ ...prev, [idx]: !prev[idx] }))} className={`btn-brand w-full py-2.5 text-[9px] bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)] ${visibleClues[idx] ? '!bg-amber-500 !text-white' : ''}`}>
                                                                     <Zap size={12} fill={visibleClues[idx] ? "currentColor" : "none"} />
                                                                     {visibleClues[idx] ? (lang === 'sv' ? "Dölj lösning" : "Hide Solution") : (lang === 'sv' ? "Visa lösning" : "Show Solution")}
                                                                 </button>
-
                                                                 {visibleClues[idx] && (
-                                                                    <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-100 animate-in slide-in-from-top-2 duration-200">
+                                                                    <div className="p-4 bg-[var(--theme-amber-bg)] rounded-[var(--radius-btn)] border border-[var(--theme-amber-border)] animate-in slide-in-from-top-2 duration-200">
                                                                         <div className="space-y-4">
                                                                             {clues.map((step, sIdx) => {
                                                                                 const stepText = typeof step === 'object' && step !== null ? step[lang] || step.text || Object.values(step)[0] : step;
                                                                                 const stepLatex = typeof step === 'object' && step !== null ? step.latex || step.math : null;
                                                                                 return (
-                                                                                    <div key={sIdx} className="flex gap-2 items-start border-l-2 border-amber-200 pl-2">
+                                                                                    <div key={sIdx} className="flex gap-2 items-start border-l-2 border-amber-300 pl-2">
                                                                                         <div className="flex-1 space-y-1">
-                                                                                            <div className="text-[10px] font-bold text-amber-900 leading-tight">
-                                                                                                <MathDisplay content={stepText} />
-                                                                                            </div>
-                                                                                            {stepLatex && (
-                                                                                                <div className="py-1 px-2 bg-white/60 rounded border border-amber-200/50 inline-block">
-                                                                                                    <MathDisplay content={`$$${stepLatex}$$`} className="text-indigo-600 scale-[0.8] origin-left" />
-                                                                                                </div>
-                                                                                            )}
+                                                                                            <div className="text-[10px] font-bold text-amber-900 leading-tight"><MathDisplay content={stepText} /></div>
+                                                                                            {stepLatex && <div className="py-1 px-2 bg-white/60 rounded border border-amber-200/50 inline-block"><MathDisplay content={`$$${stepLatex}$$`} className="text-[var(--text-main)] scale-[0.8] origin-left" /></div>}
                                                                                         </div>
                                                                                     </div>
                                                                                 );
@@ -1032,197 +922,119 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                                 </div>
                                             );
                                         })}
-                                </div>
+                                    </div>
 
-                                <div className="p-8 bg-white border-t border-slate-100 flex justify-center">
-                                    <button 
-                                        disabled={cooldown > 0} 
-                                        onClick={() => { 
-                                            setShowMilestone(false); 
-                                            setCurrentIndex(currentIndex + 1); 
-                                            setInputValue(''); 
-                                            setRevealMilestoneAnswers(false); 
-                                        }} 
-                                        className="px-16 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 disabled:opacity-50 transition-all flex items-center gap-4 active:scale-95"
-                                    >
-                                        {cooldown > 0 ? `${t.cooldown} (${cooldown}s)` : t.continueBtn} <ChevronRight size={20}/>
-                                    </button>
+                                    <div className="p-8 bg-[var(--bg-card)] border-t border-[var(--border-main)] flex justify-center">
+                                        <button disabled={cooldown > 0} onClick={() => { setShowMilestone(false); setCurrentIndex(currentIndex + 1); setInputValue(''); setRevealMilestoneAnswers(false); }} className="btn-brand px-16 py-5 rounded-[2rem] tracking-[0.2em] shadow-xl text-[14px]">
+                                            {cooldown > 0 ? `${t.cooldown} (${cooldown}s)` : t.continueBtn} <ChevronRight size={20}/>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </div>
-                            </main>
-                        </div>
-                    );
-                }
+                        )}
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     // --- 3. SUMMARY UI (With Full Review & Clue Toggles) ---
     if (internalMode === 'SUMMARY') {
         const { stats } = getDiagnosticStats();
-
-        const toggleSummaryClue = (idx) => {
-            setVisibleClues(prev => ({ ...prev, [idx]: !prev[idx] }));
-        };
+        const toggleSummaryClue = (idx) => { setVisibleClues(prev => ({ ...prev, [idx]: !prev[idx] })); };
 
         return (
-            <div className="min-h-screen bg-slate-50 p-4 sm:p-6 flex flex-col items-center py-12 animate-in fade-in">
-                <div className="w-full max-w-5xl bg-white rounded-[3rem] shadow-2xl overflow-hidden border-b-[12px] border-slate-200">
+            <div className="layout-wrapper p-4 sm:p-6 flex flex-col items-center py-6 animate-in fade-in">
+                {/* 🟢 Expanded max-w to 1400px to utilize widescreen resolution */}
+                <div className="card w-full max-w-[1400px] overflow-hidden border-b-[8px] p-0 border-[var(--border-main)] shadow-xl">
                     
-                    {/* 1. Header Section */}
-                    <div className="p-10 bg-slate-900 text-white flex justify-between items-center">
+                    <div className="p-6 sm:p-8 bg-[var(--text-main)] text-[var(--bg-canvas)] flex justify-between items-center">
                         <div>
                             <h2 className="text-3xl font-black italic tracking-tighter uppercase mb-1">{t.summaryTitle}</h2>
-                            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+                            <p className="opacity-70 font-bold uppercase text-[10px] tracking-widest">
                                 {Object.keys(responses).length} / {packet.length} {lang === 'sv' ? 'genomförda uppgifter' : 'tasks completed'}
                             </p>
                         </div>
-                        <Beaker size={48} className="text-indigo-400 opacity-20" />
+                        <Beaker size={40} className="opacity-20 hidden sm:block" />
                     </div>
-                    {/* 4. Dual Navigation Footer */}
-                    <div className="p-12 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-center gap-4">
-                        <button 
-                            onClick={() => {
-                                setPacket([]);
-                                setResponses({});
-                                setCurrentIndex(0);
-                                setInternalMode('SETUP');
-                            }} 
-                            className="px-10 py-5 bg-white border-2 border-slate-200 text-slate-600 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:border-indigo-600 hover:text-indigo-600 transition-all flex items-center justify-center gap-2"
-                        >
-                            <Settings2 size={18} /> {t.backToLab}
-                        </button>
 
-                        <button 
-                            onClick={onBack} 
-                            className="px-10 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-rose-600 transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
-                        >
-                            {t.toDashboard} <LogOut size={18} />
+                    {/* Compact Footer Navigation */}
+                    <div className="p-6 sm:p-8 bg-[var(--bg-surface)] border-t border-[var(--border-main)] flex flex-col sm:flex-row justify-center gap-4">
+                        <button onClick={() => { setPacket([]); setResponses({}); setCurrentIndex(0); setInternalMode('SETUP'); }} className="btn-brand bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)] px-8 py-4 rounded-[var(--radius-card)]">
+                            <Settings2 size={16} /> {t.backToLab}
+                        </button>
+                        <button onClick={onBack} className="btn-brand px-8 py-4 rounded-[var(--radius-card)]">
+                            {t.toDashboard} <LogOut size={16} />
                         </button>
                     </div>
 
-                    {/* 2. Full Question Review Grid */}
-                    <div className="p-6 sm:p-10 bg-slate-50/50 border-b border-slate-100">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6 px-2 text-center sm:text-left">
-                            {lang === 'sv' ? "Detaljerad genomgång" : "Detailed Review"}
-                        </h3>
+                    <div className="p-4 sm:p-6 bg-[var(--bg-canvas)] border-b border-[var(--border-main)]">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-4 px-2 text-center sm:text-left">{lang === 'sv' ? "Detaljerad genomgång" : "Detailed Review"}</h3>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* 🟢 Upgraded to a 4-column layout for widescreen monitors */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {packet.map((qItem, idx) => {
                                 const res = responses[idx];
-                                // Safety check: Don't render cards for questions the user didn't reach
                                 if (!res) return null; 
 
                                 const rd = qItem.resolvedData?.renderData;
                                 const hasVisual = rd?.graph || rd?.geometry || rd?.pattern;
-                                // Check both potential locations for clues
                                 const clues = qItem.clues || qItem.resolvedData?.clues || [];
 
                                 return (
-                                    <div key={idx} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-sm flex flex-col relative transition-all hover:shadow-md ${res.isCorrect ? 'border-emerald-500 shadow-emerald-50/50' : 'border-rose-400 shadow-rose-50/50'}`}>
-                                        {/* 1. HEADER: Status and Question Number */}
-                                        <div className="flex justify-between items-center mb-4">
-                                            <span className="text-[10px] font-black uppercase text-slate-600 tracking-widest">
-                                                {lang === 'sv' ? "Uppgift" : "Question"} {idx + 1}
-                                            </span>
-                                            {res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-400" size={20} />}
+                                    <div key={idx} className={`card p-4 sm:p-5 border-4 flex flex-col relative transition-all hover:shadow-md ${res.isCorrect ? 'border-emerald-500 shadow-sm' : 'border-rose-400 shadow-sm'}`}>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest">{lang === 'sv' ? "Uppgift" : "Question"} {idx + 1}</span>
+                                            {res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={18} /> : <XCircle className="text-rose-400" size={18} />}
                                         </div>
 
-                                        {/* 2. MINI VISUAL RENDER */}
                                         {hasVisual && (
-                                            <div className="w-full h-32 flex items-center justify-center bg-slate-50/50 rounded-2xl mb-4 border border-slate-100 overflow-hidden">
-                                                <div className="flex justify-center scale-90 origin-top mt-2">
-                                                    <VisualRenderer 
-                                                        data={q?.resolvedData?.renderData || q?.renderData} 
-                                                        isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} 
-                                                    />
+                                            <div className="w-full h-28 flex items-center justify-center whiteboard-protect rounded-[var(--radius-btn)] mb-3 border border-slate-200 shadow-sm overflow-hidden">
+                                                <div className="flex justify-center scale-75 origin-center">
+                                                    <VisualRenderer data={q?.resolvedData?.renderData || q?.renderData} isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} />
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* 3. QUESTION CONTEXT: Description + MathBox (LaTeX) */}
-                                        <div className="flex-1 space-y-3 mb-6">
-                                            <div className="text-center font-bold text-slate-700 text-[14px] leading-snug px-2">
+                                        <div className="flex-1 space-y-2 mb-4">
+                                            <div className="text-center font-bold text-[var(--text-main)] text-[12px] leading-snug px-1">
                                                 <MathDisplay content={rd?.description} />
                                             </div>
-                                            
-                                            {/* MathBox / LaTeX Slot */}
                                             {rd?.latex && (
-                                                <div className="py-2 bg-indigo-50/30 rounded-xl border border-indigo-100/50 text-center">
-                                                    <MathDisplay content={`$$${rd.latex}$$`} className="text-indigo-600 scale-90" />
+                                                <div className="py-2 whiteboard-protect rounded-[var(--radius-btn)] border border-slate-200 shadow-sm text-center">
+                                                    <MathDisplay content={`$$${rd.latex}$$`} className="scale-90" />
                                                 </div>
                                             )}
                                         </div>
 
-                                        {/* 4. DYNAMIC ANSWER BOX: Color changes based on correctness */}
                                         <div className="space-y-2 mt-auto">
-                                            <div className={`p-3 rounded-2xl text-center shadow-inner transition-colors duration-500 ${res.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
-                                                <span className="text-[8px] font-black text-white/50 uppercase block mb-0.5">
-                                                    {lang === 'sv' ? "Rätt Svar" : "Correct Answer"}
-                                                </span>
-                                                <span className="font-black text-white text-sm">
-                                                    {atob(qItem.resolvedData.token)}
-                                                </span>
+                                            <div className={`p-2.5 rounded-[var(--radius-btn)] text-center shadow-inner transition-colors duration-500 ${res.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                                                <span className="text-[8px] font-black text-white/50 uppercase block mb-0.5">{lang === 'sv' ? "Rätt Svar" : "Correct Answer"}</span>
+                                                <span className="font-black text-white text-xs">{atob(qItem.resolvedData.token)}</span>
                                             </div>
 
-                                            {/* 5. THE SOLUTION TOGGLE BUTTON */}
                                             {clues.length > 0 && (
                                                 <div className="space-y-2">
-                                                    <button 
-                                                        onClick={() => toggleSummaryClue(idx)}
-                                                        className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2
-                                                            ${visibleClues[idx] 
-                                                                ? 'bg-amber-500 border-amber-600 text-white shadow-lg' 
-                                                                : 'bg-white border-amber-100 text-amber-500 hover:bg-amber-50 hover:border-amber-200'}`}
-                                                    >
-                                                        <Zap size={14} fill={visibleClues[idx] ? "currentColor" : "none"} />
+                                                    <button onClick={() => toggleSummaryClue(idx)} className={`btn-brand w-full py-2 text-[9px] bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)] ${visibleClues[idx] ? '!bg-amber-500 !text-white' : ''}`}>
+                                                        <Zap size={12} fill={visibleClues[idx] ? "currentColor" : "none"} />
                                                         {visibleClues[idx] ? (lang === 'sv' ? "Dölj lösning" : "Hide Solution") : (lang === 'sv' ? "Visa lösning" : "Show Solution")}
                                                     </button>
-
-                                                    {/* FULL SOLUTION STEPS */}
                                                     {visibleClues[idx] && (
-                                                        <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-100 animate-in slide-in-from-top-2 duration-200">
-                                                            <div className="flex items-center gap-2 mb-3 opacity-50">
+                                                        <div className="p-3 bg-[var(--theme-amber-bg)] rounded-[var(--radius-btn)] border border-[var(--theme-amber-border)] animate-in slide-in-from-top-2 duration-200">
+                                                            <div className="flex items-center gap-2 mb-2 opacity-50">
                                                                 <Info size={10} />
-                                                                <span className="uppercase tracking-tighter text-[8px] font-black">
-                                                                    {lang === 'sv' ? "Steg-för-steg lösning" : "Step-by-step solution"}
-                                                                </span>
+                                                                <span className="uppercase tracking-tighter text-[8px] font-black text-[var(--theme-amber-text)]">{lang === 'sv' ? "Steg-för-steg lösning" : "Step-by-step solution"}</span>
                                                             </div>
-                                                            
-                                                            <div className="space-y-4">
+                                                            <div className="space-y-3">
                                                                 {clues.map((step, sIdx) => {
-                                                                    // Determine the text content for the step
-                                                                    const stepText = typeof step === 'object' && step !== null
-                                                                        ? step[lang] || step.text || Object.values(step)[0]
-                                                                        : step;
-
-                                                                    // Look for LaTeX calculations attached specifically to this step
-                                                                    const stepLatex = typeof step === 'object' && step !== null 
-                                                                        ? step.latex || step.math 
-                                                                        : null;
-
+                                                                    const stepText = typeof step === 'object' && step !== null ? step[lang] || step.text || Object.values(step)[0] : step;
+                                                                    const stepLatex = typeof step === 'object' && step !== null ? step.latex || step.math : null;
                                                                     return (
-                                                                        <div key={sIdx} className="flex gap-3 items-start border-l-2 border-amber-200 pl-3">
-                                                                            {/* Step Indicator */}
-                                                                            <span className="text-[8px] font-black text-amber-500 bg-white w-4 h-4 rounded-full flex items-center justify-center border border-amber-100 shrink-0 mt-0.5">
-                                                                                {sIdx + 1}
-                                                                            </span>
-                                                                            
-                                                                            <div className="flex-1 space-y-2">
-                                                                                {/* 1. Step Text Description */}
-                                                                                <div className="text-[10px] font-bold text-amber-900 leading-relaxed">
-                                                                                    <MathDisplay content={stepText} />
-                                                                                </div>
-
-                                                                                {/* 2. Step Calculation (MathBox) */}
-                                                                                {stepLatex && (
-                                                                                    <div className="py-2 px-3 bg-white/60 rounded-lg border border-amber-200/50 inline-block min-w-[60%]">
-                                                                                        <MathDisplay 
-                                                                                            content={`$$${stepLatex}$$`} 
-                                                                                            className="text-indigo-600 scale-90 origin-left" 
-                                                                                        />
-                                                                                    </div>
-                                                                                )}
+                                                                        <div key={sIdx} className="flex gap-2 items-start border-l-2 border-amber-300 pl-2">
+                                                                            <span className="text-[8px] font-black text-amber-500 bg-[var(--bg-card)] w-4 h-4 rounded-full flex items-center justify-center border border-amber-200 shrink-0 mt-0.5">{sIdx + 1}</span>
+                                                                            <div className="flex-1 space-y-1">
+                                                                                <div className="text-[9px] font-bold text-amber-900 leading-relaxed"><MathDisplay content={stepText} /></div>
+                                                                                {stepLatex && <div className="py-1.5 px-2 bg-[var(--bg-card)]/60 rounded border border-amber-200/50 inline-block min-w-[60%]"><MathDisplay content={`$$${stepLatex}$$`} className="text-[var(--text-main)] scale-90 origin-left" /></div>}
                                                                             </div>
                                                                         </div>
                                                                     );
@@ -1239,27 +1051,24 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         </div>
                     </div>
 
-                    {/* 3. Category Progress Summary */}
-                    <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-6 bg-white">
+                    <div className="p-6 sm:p-10 grid grid-cols-1 md:grid-cols-2 gap-4 bg-[var(--bg-card)]">
                         {Object.entries(stats).map(([id, data]) => {
                             if (data.total === 0) return null;
                             const score = Math.round((data.correct / data.total) * 100); 
                             const cat = CATEGORIES[id];
                             return (
-                                <div key={id} className={`p-8 rounded-[2.5rem] border-4 border-${cat.color}-100 bg-${cat.color}-50/30 flex flex-col gap-4`}>
+                                <div key={id} className={`theme-${cat.color} p-6 rounded-[var(--radius-card)] border-2 border-[var(--brand-border)] bg-[var(--brand-bg)] flex flex-col gap-3`}>
                                     <div className="flex justify-between items-center">
-                                        <h4 className="font-black uppercase italic text-sm text-slate-800">{cat.label[lang]}</h4>
-                                        <span className={`text-xl font-black text-${cat.color}-600`}>{score}%</span>
+                                        <h4 className="font-black uppercase italic text-sm text-[var(--brand-text)]">{cat.label[lang]}</h4>
+                                        <span className={`text-xl font-black text-[var(--brand-solid)]`}>{score}%</span>
                                     </div>
-                                    <div className="w-full h-3 bg-white rounded-full overflow-hidden border border-slate-100">
-                                        <div className={`h-full bg-${cat.color}-500 transition-all duration-1000`} style={{ width: `${score}%` }} />
+                                    <div className="w-full h-3 bg-[var(--bg-card)] rounded-full overflow-hidden border border-[var(--brand-border)]">
+                                        <div className={`h-full bg-[var(--brand-solid)] transition-all duration-1000`} style={{ width: `${score}%` }} />
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
-
-                    
                 </div>
             </div>
         );
