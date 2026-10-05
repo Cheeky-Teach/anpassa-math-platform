@@ -489,11 +489,11 @@ const Dashboard = ({
                     </div>
                 )}
 
-                {/* --- UPDATE LOG MODAL OVERLAY --- */}
                 {showUpdateLog && (
-                    <div className="modal-overlay">
-                        <div className="card-flat w-full max-w-2xl max-h-[80vh] animate-in zoom-in-95 p-0 border-[var(--border-main)]">
-                            <div className="card-header-flat bg-[var(--bg-surface)] p-8">
+                    /* 🟢 Added fixed positioning, high z-index, centered flex layout, and a dark backdrop blur */
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 modal-overlay">
+                        <div className="card-flat w-full max-w-2xl max-h-[80vh] animate-in zoom-in-95 p-0 border-[var(--border-main)] flex flex-col overflow-hidden">
+                            <div className="card-header-flat bg-[var(--bg-surface)] p-8 shrink-0 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
                                     <div className="p-3 bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)] border border-[var(--theme-emerald-border)] rounded-2xl shadow-sm"><Newspaper size={24}/></div>
                                     <h2 className="text-2xl font-black uppercase tracking-tight italic text-[var(--text-main)]">Ändringslogg</h2>
