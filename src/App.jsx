@@ -702,20 +702,19 @@ function App() {
                 />            
                 {(view === 'dashboard' || view === 'practice' || view === 'times_table' || view === 'practice_lab') && (
                 <header className="sticky top-0 z-50 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
-                    {/* 🟢 Refactored to a 3-zone layout for absolute centering */}
+                    {/* 🟢 Reduced y-axis padding to py-1 to slim down the global header */}
                     <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 py-1 flex flex-row items-center justify-between relative">
-                        
                         {/* 1. LEFT SIDE: Logo or Back Button */}
                         <div className="flex-1 flex justify-start">
                             {view === 'practice' || view === 'times_table' ? (
-                                <button onClick={quitPractice} className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-black text-xs uppercase tracking-widest transition-all group shrink-0">
+                                <button onClick={quitPractice} className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-xs uppercase tracking-widest transition-all group shrink-0">
                                     <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:shadow-md">
                                         <ChevronLeft size={16}/>
                                     </div>
                                     <span className="hidden sm:inline-block">{lang === 'sv' ? "Tillbaka" : "Back"}</span>
                                 </button>
                             ) : (
-                                <h1 className="text-xl font-black text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={quitPractice}>
+                                <h1 className="text-2xl font-extrabold text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={quitPractice}>
                                     ANPASSA
                                 </h1> 
                             )}
