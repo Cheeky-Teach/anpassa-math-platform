@@ -7,6 +7,7 @@ import MathScratchpad from '../ui/MathScratchpad';
 import VisualRenderer from '../visuals/VisualRenderer';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
+import PreferencesToggle from '../ui/PreferencesToggle';
 
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
@@ -414,7 +415,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                              item.resolvedData.renderData.pattern);
 
                         return (
-                            <div key={item.id} className={`bg-white p-6 rounded-[2.5rem] border-4 shadow-xl flex flex-col justify-between ${completed[idx] === 'correct' ? 'border-emerald-500 shadow-emerald-50/50' : 'border-rose-400 shadow-rose-50/50'}`}>
+                            <div key={item.id} className={`whiteboard-protect p-6 rounded-[2.5rem] border-4 shadow-xl flex flex-col justify-between ${completed[idx] === 'correct' ? 'border-emerald-500 shadow-emerald-50/50' : 'border-rose-400 shadow-rose-50/50'}`}>
                                 <div>
                                     <div className="flex justify-between items-center mb-4">
                                         <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">{lang === 'sv' ? "Uppgift" : "Question"} {idx + 1}</span>
@@ -506,36 +507,38 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     };
 
     return (
-        // 1. THE DARK CANVAS
-        <div className="min-h-screen bg-slate-900 font-sans flex flex-col overflow-hidden">
+        // 1. THE DYNAMIC CANVAS
+        <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] font-sans flex flex-col overflow-hidden transition-colors duration-500">
             <style>{`
                 @media (max-width: 450px) {
                     .xs-hide { display: none !important; }
                 }
             `}</style>
 
-            {/* 2. SEAMLESS DARK HEADER */}
-            <header className="bg-slate-900 border-b border-white/10 px-4 py-3 sticky top-0 z-20">
+            {/* 2. DYNAMIC HEADER */}
+            <header className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-4 py-3 sticky top-0 z-20 transition-colors duration-500">
                 <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
                     <button 
                         onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
                         disabled={currentIndex === 0 || settings.pacing === 'progressive' || settings.pacing === 'teacher'}
-                        className="p-2 hover:bg-white/10 rounded-xl text-slate-400 disabled:opacity-20 transition-all shrink-0"
+                        className="p-2 hover:bg-[var(--bg-surface)] rounded-xl text-[var(--text-muted)] disabled:opacity-20 transition-all shrink-0"
                     >
                         <ChevronLeft size={28} />
                     </button>
 
                     <div className="flex flex-col items-center overflow-hidden flex-1">
-                        {/* Softened Typography */}
-                        <h1 className="text-sm font-bold text-slate-200 leading-none truncate mb-1.5 xs-hide">
+                        <h1 className="text-sm font-bold text-[var(--text-main)] leading-none truncate mb-1.5 xs-hide">
                             {session.title}
                         </h1>
-                        <div className="bg-slate-800 text-slate-300 px-3 py-1 rounded-md text-xs font-bold shrink-0">
+                        <div className="bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] px-3 py-1 rounded-md text-xs font-bold shrink-0">
                             {lang === 'sv' ? "Kod:" : "Code:"} {session.class_code}
                         </div>
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
+                        {/* 🟢 PREFERENCES TOGGLE ADDED HERE */}
+                        <PreferencesToggle />
+                        
                         <button 
                             onClick={() => setCurrentIndex(prev => Math.min(localPacket.length - 1, prev + 1))}
                             disabled={
@@ -543,24 +546,24 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 (settings.pacing === 'progressive' && !completed[currentIndex]) ||
                                 settings.pacing === 'teacher'
                             }
-                            className="p-2 hover:bg-white/10 rounded-xl text-slate-400 disabled:opacity-20 transition-all"
+                            className="p-2 hover:bg-[var(--bg-surface)] rounded-xl text-[var(--text-muted)] disabled:opacity-20 transition-all"
                         >
                             <ChevronRight size={28} />
                         </button>
                         
                         <button 
                             onClick={handleExitRequest} 
-                            className="ml-1 p-2 hover:bg-rose-500/20 rounded-xl text-slate-400 hover:text-rose-400 transition-colors"
+                            className="ml-1 p-2 hover:bg-[var(--theme-rose-bg)] rounded-xl text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] transition-colors"
                         >
                             <LogOut size={18} />
                         </button>
                     </div>
                 </div>
 
-                {/* Dark Mode Progress Bar */}
-                <div className="hidden sm:flex max-w-xs mx-auto h-1 bg-slate-800 rounded-full gap-1 p-0 mt-3">
+                {/* Progress Bar */}
+                <div className="hidden sm:flex max-w-xs mx-auto h-1 bg-[var(--bg-surface)] rounded-full gap-1 p-0 mt-3">
                     {localPacket.map((_, i) => (
-                        <div key={i} className={`flex-1 rounded-full transition-all duration-700 ${i === currentIndex ? 'bg-indigo-500 ring-2 ring-indigo-500/20' : !!completed[i] ? 'bg-indigo-900' : 'bg-transparent'}`} />
+                        <div key={i} className={`flex-1 rounded-full transition-all duration-700 ${i === currentIndex ? 'bg-[var(--brand-solid)] ring-2 ring-[var(--brand-solid)]/20' : !!completed[i] ? 'bg-[var(--border-strong)]' : 'bg-transparent'}`} />
                     ))}
                 </div>
             </header>
@@ -569,8 +572,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 <div className={`flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-y-auto lg:overflow-hidden transition-all duration-300 ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
                     
                     {/* LEFT CARD: Question & Visual */}
-                    <div className="flex-[3] bg-white rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative min-h-[300px]">
-                        
+                    <div className="flex-[3] whiteboard-protect rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative min-h-[300px]">                        
                         <div className="sm:hidden h-1 bg-slate-100 flex shrink-0">
                             {localPacket.map((_, i) => (
                                 <div key={i} className={`flex-1 ${i === currentIndex ? 'bg-indigo-500' : !!completed[i] ? 'bg-indigo-200' : 'bg-transparent'}`} />
@@ -633,7 +635,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     </div>
 
                     {/* RIGHT CARD: Input Area */}
-                    <div className="flex-[2] lg:max-w-[450px] bg-white rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden shrink-0">
+                    <div className="flex-[2] lg:max-w-[450px] whiteboard-protect rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden shrink-0">
                         {/* Softened Section Label */}
                         <div className="px-6 py-4 lg:px-10 lg:py-5 border-b border-slate-100 flex items-center bg-slate-50 shrink-0">
                             <span className="text-sm font-bold text-slate-500">{lang === 'sv' ? "Din lösning" : "Your solution"}</span>

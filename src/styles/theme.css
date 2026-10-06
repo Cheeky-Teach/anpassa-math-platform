@@ -163,8 +163,8 @@ body {
   -webkit-backdrop-filter: blur(12px);
   
   /* 🟢 FORCE SLIMMER PADDING: Overrides any Tailwind py-* classes */
-  padding-top: 0.35rem !important;
-  padding-bottom: 0.35rem !important;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
 }
 
 /* 🟢 COMPRESS NUNITO'S HEIGHT: Forces the text to ignore its tall invisible bounding box */
