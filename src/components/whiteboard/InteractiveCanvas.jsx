@@ -1,12 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Toolbar from './Toolbar';
 import { Trash2, Play, RefreshCw, BarChart2, List, Hash,
-    AlignLeft, AlignCenter, AlignRight, ListOrdered, Palette, Dices
+    AlignLeft, AlignCenter, AlignRight, ListOrdered, Palette, Dices,
+    ChevronLeft, ChevronRight
  } from 'lucide-react';
 import 'mathlive';
 
-// 🟢 UPDATED: Added elements and setElements as props
-export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, elements = [], setElements }) {
+//  MathDisplay helper added so the Smart Box can render LaTeX formulas!
+const MathDisplay = ({ content, className = "" }) => {
+    const containerRef = useRef(null);
+    useEffect(() => {
+        if (!content || !containerRef.current) return;
+        containerRef.current.innerText = content;
+        if (window.renderMathInElement) {
+            window.renderMathInElement(containerRef.current, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false }
+                ], throwOnError: false, trust: true
+            });
+        }
+    }, [content]);
+    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
+};
+
+//  Added livePacket and clueProgress to sync the whiteboard with the presentation data
+export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, elements = [], setElements, livePacket = [], clueProgress = {} }) {
     // --- 0. TRANSLATIONS ---
     const t = {
         sv: {
@@ -24,7 +43,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
     }[lang || 'sv'];
 
     // --- 1. ISOLATED DRAWING STATES ---
-    // 🟢 REMOVED: local elements state is gone. The parent controls this now.
+    //   REMOVED: local elements state is gone. The parent controls this now.
     const [activeTool, setActiveTool] = useState('select');
     const [color, setColor] = useState('#0f172a');
     const [isDrawing, setIsDrawing] = useState(false);
@@ -215,10 +234,20 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         }
         
         const r = el.width / 2;
-        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart', 'math', 'dice', 'richText', 'calculator'];
-        if (bounds.some(b => el.type.includes(b))) return x >= el.x && x <= el.x + el.width && y >= el.y && y <= el.y + el.height;
-        if (el.type.includes('circle') || ['spinner', 'node', 'protractor', 'clock', 'timer'].includes(el.type)) return Math.sqrt((x - (el.x + r))**2 + (y - (el.y + r))**2) <= r;
-        if (el.type === 'line') return Math.abs((el.y2-el.y)*x - (el.x2-el.x)*y + el.x2*el.y - el.y2*el.x) / Math.sqrt((el.y2-el.y)**2 + (el.x2-el.x)**2) < 15;
+        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart', 'math', 'dice', 'richText', 'calculator', 'dynamicClues'];
+        
+        // 🟢 FIX: Added a generous 15px hit margin to all bounding boxes
+        if (bounds.some(b => el.type.includes(b))) {
+            return x >= el.x - 15 && x <= el.x + el.width + 15 && y >= el.y - 15 && y <= el.y + el.height + 15;
+        }
+        
+        if (el.type.includes('circle') || ['spinner', 'node', 'protractor', 'clock', 'timer', 'realClock'].includes(el.type)) {
+            return Math.sqrt((x - (el.x + r))**2 + (y - (el.y + r))**2) <= r + 15; 
+        }
+        
+        if (el.type === 'line') {
+            return Math.abs((el.y2-el.y)*x - (el.x2-el.x)*y + el.x2*el.y - el.y2*el.x) / Math.sqrt((el.y2-el.y)**2 + (el.x2-el.x)**2) < 25; 
+        }
         return false;
     };
 
@@ -399,7 +428,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         const botY = isP ? el.y + radius : (isC ? el.y + radius*2 : el.y + el.height);
         const cx = (isC || isP) ? el.x + radius : el.x + el.width/2;
         const rigX = (isC || isP) ? el.x + radius*2 : el.x + el.width;
-        const hasOptions = ['ruler', 'shapes_3d', 'triangle', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'coord', 'math', 'dice'].includes(el.type);
+        const hasOptions = ['ruler', 'shapes_3d', 'triangle', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'coord', 'math', 'dice', 'dynamicClues'].includes(el.type);
 
         return (
             <g className="ui-ignore pointer-events-auto">
@@ -453,6 +482,20 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                                     <select className="bg-slate-50 border rounded-md p-1 outline-none text-[10px] cursor-pointer" value={el.sides||"6"} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, sides:e.target.value}:o))}>{[4,6,8,10,12,20].map(s=><option key={s} value={s}>{s} {t.sides}</option>)}</select>
                                     <button onClick={()=>rollDice(el.id)} className="bg-emerald-500 hover:bg-emerald-600 transition-colors text-white rounded-lg px-3 py-1.5 font-black text-[10px]">{t.rollAll}</button>
                                 </div>
+                            )}
+                            {el.type === 'dynamicClues' && (
+                                <>
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, fontSize: Math.max(12, (o.fontSize||24)-2)}:o))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded font-black text-[10px]">A-</button>
+                                        <span className="text-[10px] font-black w-6 text-center">{el.fontSize||24}px</span>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, fontSize: Math.min(72, (o.fontSize||24)+2)}:o))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded font-black text-[10px]">A+</button>
+                                    </div>
+                                    <div className="w-px h-4 bg-slate-300 mx-1" />
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showText: o.showText===false}:o))} className={`px-2 py-1 rounded text-[10px] font-black transition-colors ${el.showText!==false ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>TEXT</button>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showLatex: o.showLatex===false}:o))} className={`px-2 py-1 rounded text-[10px] font-black transition-colors ${el.showLatex!==false ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>LATEX</button>
+                                    </div>
+                                </>
                             )}
                             {el.type === 'math' && (
                                 <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
@@ -630,7 +673,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             const timeStr = `${Math.floor(el.timeLeft / 60)}:${(el.timeLeft % 60).toString().padStart(2, '0')}`;
             const prog = (el.timeLeft / el.duration) * 360;
             
-            // 🟢 FIX: Handle full (360°) and zero states cleanly so the SVG arc doesn't collapse into a straight line
+            //   FIX: Handle full (360°) and zero states cleanly so the SVG arc doesn't collapse into a straight line
             const isFull = prog >= 360;
             const endAngle = (prog * Math.PI) / 180;
             const endX = cx + r * Math.sin(endAngle);
@@ -654,7 +697,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                         strokeLinecap="round" 
                     />
                     
-                    {/* 🟢 PERFECTLY CENTERED TEXT */}
+                    {/*   PERFECTLY CENTERED TEXT */}
                     <text 
                         x={cx} 
                         y={cy} 
@@ -668,7 +711,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                         {timeStr}
                     </text>
 
-                    {/* 🟢 NEW: COMPACT CONTROLS ROW UNDERNEATH THE TIMER */}
+                    {/*   NEW: COMPACT CONTROLS ROW UNDERNEATH THE TIMER */}
                     {showUI && (
                         <foreignObject x={cx - 150} y={el.y + el.height + 10} width={300} height={60} className="ui-ignore pointer-events-auto overflow-visible">
                             <div className="flex items-center justify-center gap-2 w-full h-full" onPointerDown={e => e.stopPropagation()}>
@@ -768,7 +811,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                                 {/* Flat colorful rim and face */}
                                 <circle cx={cx} cy={cy} r={r} fill={faceColor} stroke={rimColor} strokeWidth={r * 0.08} />
                                 
-                                {/* 🟢 FIXED: Only draw small dots for minutes/seconds, leaving the hours blank */}
+                                {/*   FIXED: Only draw small dots for minutes/seconds, leaving the hours blank */}
                                 {Array.from({length: 60}).map((_, i) => {
                                     const isHour = i % 5 === 0;
                                     if (isHour) return null; // Skip drawing a dot for the hour markers
@@ -911,6 +954,9 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             return (
                 <React.Fragment key={el.id}>
                     <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
+                        {/* 🟢 FIX: Invisible background allows the Ruler to be clicked easily */}
+                        <rect x={el.x} y={el.y} width={el.width} height={el.height || 100} fill="transparent" />
+                        
                         <line x1={el.x} y1={el.y+50} x2={el.x+el.width} y2={el.y+50} stroke="black" strokeWidth="5" />
                         {ticks}{hops}
                     </g>
@@ -1045,14 +1091,15 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                         if (fontElements[i].size === "7") {
                             fontElements[i].removeAttribute("size");
                             fontElements[i].style.fontSize = val + "px";
-                            fontElements[i].style.lineHeight = "1.25";
+                            //   FIX: Set line height to normal so it scales down perfectly when reducing text size
+                            fontElements[i].style.lineHeight = "normal";
                         }
                     }
                 } else {
                     document.execCommand(cmd, false, val);
                 }
 
-                // 🟢 NEW: Instantly sync the text to the state after formatting (e.g. clicking Bullet Points)
+                //   NEW: Instantly sync the text to the state after formatting (e.g. clicking Bullet Points)
                 const node = document.getElementById(`rich-text-${el.id}`);
                 if (node) {
                     const html = node.innerHTML;
@@ -1078,7 +1125,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                             style={{ pointerEvents: isEditing ? 'auto' : 'none' }}
                         >
                             <div 
-                                id={`rich-text-${el.id}`} // 🟢 NEW: Added ID so the toolbar can find and save it
+                                id={`rich-text-${el.id}`} //   NEW: Added ID so the toolbar can find and save it
                                 contentEditable={isEditing} suppressContentEditableWarning
                                 className="w-full h-full p-4 outline-none font-sans text-slate-800 overflow-hidden [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2"
                                 style={{ 
@@ -1088,14 +1135,14 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                                     fontSize: '32px',
                                     lineHeight: '1.25'
                                 }}
-                                // 🟢 NEW: Uncontrolled Ref loading prevents React from randomly wiping the DOM
+                                //   NEW: Uncontrolled Ref loading prevents React from randomly wiping the DOM
                                 ref={(node) => {
                                     if (node && node.getAttribute('data-init') !== 'true') {
                                         node.innerHTML = el.content || '';
                                         node.setAttribute('data-init', 'true');
                                     }
                                 }}
-                                // 🟢 NEW: Saves text constantly as you type
+                                //   NEW: Saves text constantly as you type
                                 onInput={(e) => {
                                     const html = e.currentTarget.innerHTML;
                                     const scrollH = e.currentTarget.scrollHeight;
@@ -1172,6 +1219,90 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             );
         }
 
+        // 🟢 NEW: The Dynamic "Smart Box" for Clues
+        if (el.type === 'dynamicClues') {
+            const q = livePacket.find(p => p.id === el.questionId);
+            const clues = q?.clues || q?.resolvedData?.clues || [];
+            const progress = el.progress || 0; // 🟢 USES LOCAL ELEMENT PROGRESS!
+            
+            return (
+                <React.Fragment key={el.id}>
+                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
+                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.95" stroke={isSelected ? "#3b82f6" : "#e2e8f0"} strokeWidth={isSelected ? 3 : 2} rx="14" />
+                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height} className="ui-ignore">
+                            {/* 🟢 FIX: Removed stopPropagation from the parent so you can click to select! */}
+                            <div className="w-full h-full flex flex-col pointer-events-auto">
+                                
+                                {/* 🟢 NEW: Visual Drag Handle added to the top */}
+                                <div className="w-full h-8 flex items-center justify-center shrink-0 opacity-40 hover:opacity-100 transition-opacity cursor-move" style={{ touchAction: 'none' }}>
+                                    <div className="w-12 h-1.5 bg-slate-400 rounded-full" />
+                                </div>
+
+                                <div 
+                                    className="flex-1 px-4 pb-4 overflow-y-auto custom-scrollbar"
+                                    onPointerDown={(e) => e.stopPropagation()} // Protects scrolling
+                                >
+                                    {clues.length === 0 ? (
+                                        <div className="text-slate-400 italic font-bold text-center mt-4 text-sm">
+                                            {lang === 'sv' ? "Inga steg tillgängliga" : "No steps available"}
+                                        </div>
+                                    ) : progress === 0 ? (
+                                        <div className="text-slate-400 italic font-bold text-center mt-10 text-sm">
+                                            {lang === 'sv' ? "Använd pilarna nedan för att visa stegen." : "Use the arrows below to reveal steps."}
+                                        </div>
+                                    ) : (
+                                        clues.slice(0, progress).map((clue, idx) => {
+                                            const text = typeof clue === 'object' ? clue[lang] || clue.text : clue;
+                                            const latex = typeof clue === 'object' ? clue.latex : null;
+                                            const fSize = el.fontSize || 24;
+                                            
+                                            return (
+                                                <div key={idx} className="pb-3 mb-3 border-b border-slate-100 last:border-0 last:mb-0 last:pb-0 animate-in fade-in slide-in-from-top-2">
+                                                    <div className="font-black text-indigo-500 uppercase tracking-widest mb-1 opacity-70" style={{ fontSize: `${Math.max(10, fSize * 0.5)}px` }}>
+                                                        {lang === 'sv' ? 'Steg' : 'Step'} {idx + 1}
+                                                    </div>
+                                                    {el.showText !== false && text && (
+                                                        <div className="font-bold text-slate-700 leading-relaxed" style={{ fontSize: `${fSize}px` }}>
+                                                            <MathDisplay content={text} />
+                                                        </div>
+                                                    )}
+                                                    {el.showLatex !== false && latex && (
+                                                        <div className="mt-2 text-center text-indigo-600 font-serif bg-indigo-50/50 py-2 rounded-lg border border-indigo-100" style={{ fontSize: `${fSize * 1.2}px` }}>
+                                                            <MathDisplay content={`$$${latex}$$`} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        })
+                                    )}
+                                </div>
+
+                                <div 
+                                    className="h-10 bg-slate-50 border-t border-slate-200 flex items-center justify-between px-3 shrink-0 rounded-b-[14px]"
+                                    onPointerDown={(e) => e.stopPropagation()} // Protects buttons
+                                >
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setElements(p=>p.map(o=>o.id===el.id?{...o, progress: Math.max(0, progress-1)}:o)); }} 
+                                        className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors"
+                                    >
+                                        <ChevronLeft size={18}/>
+                                    </button>
+                                    <span className="text-[11px] font-black text-slate-500 tracking-widest">{progress} / {clues.length}</span>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setElements(p=>p.map(o=>o.id===el.id?{...o, progress: Math.min(clues.length, progress+1)}:o)); }} 
+                                        className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors"
+                                    >
+                                        <ChevronRight size={18}/>
+                                    </button>
+                                </div>
+                            </div>
+                        </foreignObject>
+                    </g>
+                    {showUI && renderHandles(el)}
+                </React.Fragment>
+            );
+        }
+
         // Standard Shapes (Rect, Circle, Triangle, Fractions, Spinner)
         const fills = [], borderL = [];
         if (['rect', 'frac_rect', 'circle', 'frac_circle', 'spinner', 'triangle'].includes(el.type)) {
@@ -1192,10 +1323,11 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             return (
                 <g key={el.id} data-id={el.id} transform={transform} className="pointer-events-auto cursor-move">
                     {fills}
+                    {/* 🟢 FIX: Changed fill="none" to fill="transparent" so the insides of shapes are fully clickable! */}
                     {el.type === 'triangle' ? (() => {
                         const pts = el.triangleType === 'right' ? `${el.x},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height}` : el.triangleType === 'isosceles' ? `${el.x+el.width/2},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height}` : `${el.x+el.width/3},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height*0.8}`;
-                        return <polygon points={pts} fill="none" stroke="black" strokeWidth={el.strokeWidth} />;
-                    })() : el.type.includes('rect') ? <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="none" stroke="black" strokeWidth={el.strokeWidth} /> : <circle cx={cx} cy={cy} r={r} fill="none" stroke="black" strokeWidth={el.strokeWidth} />}
+                        return <polygon points={pts} fill="transparent" stroke="black" strokeWidth={el.strokeWidth} />;
+                    })() : el.type.includes('rect') ? <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="transparent" stroke="black" strokeWidth={el.strokeWidth} /> : <circle cx={cx} cy={cy} r={r} fill="transparent" stroke="black" strokeWidth={el.strokeWidth} />}
                     {borderL}
                     {el.type === 'spinner' && (
                         <g style={{ transform: `rotate(${el.arrowRotation || 0}deg)`, transition: 'transform 3s cubic-bezier(0.1, 0, 0.1, 1)', transformOrigin: `${cx}px ${cy}px` }}>

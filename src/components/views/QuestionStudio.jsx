@@ -1755,18 +1755,18 @@ export default function QuestionStudio({
           </div>
       )}
 
-      {/*   LAUNCHES STANDALONE PRESENTATION BUILDER/VIEWER */}
+      {/* 🟢 LAUNCHES STANDALONE PRESENTATION BUILDER/VIEWER */}
       {showPresentation && (
           <PresentationView 
-              // If opening a saved board, inject its data. If new, inject empty arrays.
-              packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : []} 
+              // 🟢 FIX: Fall back to the active editor's 'packet' and 'sheetTitle' if we aren't opening a saved board!
+              packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : packet} 
               initialSlides={activeBoardSheet?.packet?.slides}
-              boardId={activeBoardSheet?.id}
-              sheetTitle={activeBoardSheet?.title || ""} 
+              boardId={activeBoardSheet?.id || (setupMode === 'board' ? activeSheetId : null)}
+              sheetTitle={activeBoardSheet?.title || sheetTitle} 
               lang={lang} 
               onClose={() => { 
                   setShowPresentation(false);
-                  fetchLibrary(); //   Refreshes the library automatically so newly saved boards appear instantly
+                  fetchLibrary(); // 🟢 Refreshes the library automatically so newly saved boards appear instantly
               }} 
           />
       )}
