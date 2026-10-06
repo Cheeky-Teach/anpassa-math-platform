@@ -4,8 +4,16 @@ import 'mathlive';
 
 export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' }) {
     const mfRefs = useRef([]);
+    
+    // 🟢 1. REFS TO PREVENT STALE CLOSURES & RACE CONDITIONS
+    const stepsRef = useRef(steps);
+    const isAddingRef = useRef(false);
 
-    // 🟢 1. INJECT CUSTOM SPLIT KEYBOARD (Numpad Left, Grid Right)
+    useEffect(() => {
+        stepsRef.current = steps;
+    }, [steps]);
+
+    // 🟢 2. INJECT CUSTOM SPLIT KEYBOARD
     useEffect(() => {
         if (window.mathVirtualKeyboard) {
             window.mathVirtualKeyboard.layouts = [
@@ -13,21 +21,21 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
                     label: 'Grundskola',
                     rows: [
                         [ 
-                            "7", "8", "9", "\\div", 
+                            { class: "separator", w: 1 }, { class: "separator", w: 1 },"7", "8", "9", "\\div", 
                             { class: "separator", w: 0.5 },
                             { latex: "\\frac{a}{b}", insert: "\\frac{#@}{#?}", aside: lang === 'sv' ? "bråk" : "fraction" }, 
                             { latex: "\\sqrt{x}", insert: "\\sqrt{#0}", aside: lang === 'sv' ? "rot" : "root" }, 
                             "(", ")"
                         ],
                         [ 
-                            "4", "5", "6", "\\cdot", 
+                            { class: "separator", w: 1 }, { class: "separator", w: 1 }, "4", "5", "6", "\\cdot", 
                             { class: "separator", w: 0.5 },
                             { latex: "x^2", insert: "^2", aside: lang === 'sv' ? "kvadrat" : "square" }, 
                             { latex: "x^n", insert: "^{#?}", aside: lang === 'sv' ? "upphöjt" : "power" }, 
                             "x", "y"
                         ],
                         [ 
-                            "1", "2", "3", "-", 
+                            { class: "separator", w: 1 }, { class: "separator", w: 1 }, "1", "2", "3", "-", 
                             { class: "separator", w: 0.5 },
                             { latex: "\\cdot 10^n", insert: "\\cdot 10^{#?}", aside: lang === 'sv' ? "tiopotens" : "sci not" }, 
                             "\\pi", 
@@ -35,10 +43,11 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
                             { label: '→', command: ['performWithFeedback', 'moveToNextChar'], class: "action" }
                         ],
                         [ 
-                            "0", lang === 'sv' ? "," : ".", "=", "+", 
+                            /* 🟢 0 spans 2 columns (the spacer + the 1 column). Everything aligns perfectly! */
+                            { label: "0", insert: "0", w: 2 }, (lang === 'sv' ? "," : "."), "=", "+", 
                             { class: "separator", w: 0.5 },
                             { label: '⌫', command: ['performWithFeedback', 'deleteBackward'], class: 'action font-bold', w: 2 }, 
-                            { label: lang === 'sv' ? '↵ Ny rad' : '↵ Enter', command: ['performWithFeedback', 'commit'], class: 'action font-bold', w: 2 }
+                            { label: lang === 'sv' ? '↵ Ny rad' : '↵ Enter', insert: '§', class: 'action font-bold', w: 2 }
                         ]
                     ]
                 }
@@ -46,38 +55,10 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
         }
     }, [lang]);
 
-    const handleStepChange = (val, idx) => {
-        const next = [...steps];
-        next[idx] = val;
-        onChange(next);
-    };
-
-    const addRow = (focusIdx = null) => {
-        const next = [...steps, ''];
-        onChange(next);
-        setTimeout(() => {
-            const target = focusIdx !== null ? focusIdx : next.length - 1;
-            mfRefs.current[target]?.focus();
-        }, 50);
-    };
-
-    const removeRow = (idx) => {
-        if (steps.length <= 1) {
-            onChange(['']);
-            return;
-        }
-        const next = steps.filter((_, i) => i !== idx);
-        onChange(next);
-        setTimeout(() => {
-            mfRefs.current[Math.max(0, idx - 1)]?.focus();
-        }, 50);
-    };
-
-    // Helper to fire commands to whichever input is actively focused
     const triggerCommand = (cmd) => {
         let target = document.activeElement;
         if (!mfRefs.current.includes(target)) {
-            target = mfRefs.current[steps.length - 1]; // Default to the last field
+            target = mfRefs.current[steps.length - 1]; 
         }
         if (target) {
             target.executeCommand(cmd);
@@ -85,26 +66,71 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
         }
     };
 
-    // 🟢 2. LOCK DOWN & HOOK EVENTS
+    // 🟢 3. LOCK DOWN & HOOK EVENTS (Only runs when row count changes!)
     useEffect(() => {
         const currentRefs = mfRefs.current;
         
-        const handleInput = (e, idx) => handleStepChange(e.target.value, idx);
-        
-        const handleChange = (e, idx) => {
-            if (document.activeElement === currentRefs[idx]) {
-                addRow(idx + 1);
+        const handleInput = (e, idx) => {
+            let val = e.target.value;
+            const currentSteps = [...stepsRef.current];
+            
+            // Intercept virtual keyboard Enter (Secret symbol §)
+            if (val.includes('§')) {
+                val = val.replace(/§/g, ''); 
+                e.target.value = val;
+                currentSteps[idx] = val;
+                
+                if (!isAddingRef.current) {
+                    isAddingRef.current = true;
+                    currentSteps.splice(idx + 1, 0, ''); // Inject blank row directly underneath cursor
+                    onChange(currentSteps);
+                    setTimeout(() => { 
+                        mfRefs.current[idx + 1]?.focus();
+                        isAddingRef.current = false; 
+                    }, 50);
+                }
+                return;
             }
+            
+            currentSteps[idx] = val;
+            onChange(currentSteps);
         };
 
+        let lastDeleteTime = 0;
         const handleKeyDown = (e, idx) => {
-            if (e.key === 'Backspace' && steps[idx] === '' && steps.length > 1) {
+            const mf = currentRefs[idx];
+            
+            if (e.key === 'Enter') {
                 e.preventDefault();
-                removeRow(idx);
+                if (!isAddingRef.current) {
+                    isAddingRef.current = true;
+                    const currentSteps = [...stepsRef.current];
+                    currentSteps.splice(idx + 1, 0, '');
+                    onChange(currentSteps);
+                    setTimeout(() => { 
+                        mfRefs.current[idx + 1]?.focus();
+                        isAddingRef.current = false; 
+                    }, 50);
+                }
+            } else if (e.key === 'Backspace') {
+                // Safely check if DOM element is empty, preventing accidental row deletion
+                if (mf.value === '' && stepsRef.current.length > 1) {
+                    const now = Date.now();
+                    if (now - lastDeleteTime > 400) { 
+                        e.preventDefault();
+                        const currentSteps = stepsRef.current.filter((_, i) => i !== idx);
+                        onChange(currentSteps);
+                        setTimeout(() => {
+                            mfRefs.current[Math.max(0, idx - 1)]?.focus();
+                        }, 50);
+                        lastDeleteTime = now;
+                    } else {
+                        e.preventDefault(); // Stop rapid fire holding
+                    }
+                }
             }
         };
 
-        // 🛑 PASTE BLOCKER
         const handlePaste = (e) => {
             e.preventDefault(); 
             return false;
@@ -112,31 +138,37 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
 
         currentRefs.forEach((mf, idx) => {
             if (!mf) return;
-            
             mf.menuItems = []; 
             mf.inlineShortcuts = { '*': '\\cdot', '/': '\\div', 'pi': '\\pi' };
 
             mf.addEventListener('input', (e) => handleInput(e, idx));
-            mf.addEventListener('change', (e) => handleChange(e, idx));
             mf.addEventListener('keydown', (e) => handleKeyDown(e, idx));
-            mf.addEventListener('paste', handlePaste); // Attach paste blocker
+            mf.addEventListener('paste', handlePaste);
         });
 
         return () => {
             currentRefs.forEach((mf, idx) => {
                 if (!mf) return;
                 mf.removeEventListener('input', (e) => handleInput(e, idx));
-                mf.removeEventListener('change', (e) => handleChange(e, idx));
                 mf.removeEventListener('keydown', (e) => handleKeyDown(e, idx));
                 mf.removeEventListener('paste', handlePaste);
             });
         };
+    }, [steps.length]); // 🟢 Crucial fix: Only re-binds events when rows are added/removed, never mid-keystroke!
+
+    // 🟢 4. SAFELY SYNC REACT STATE TO MATHLIVE (Without breaking the cursor!)
+    // This ensures Undo/Redo/New Rows update the UI, but standard typing doesn't destroy cursor placement.
+    useEffect(() => {
+        mfRefs.current.forEach((mf, idx) => {
+            if (mf && steps[idx] !== undefined && mf.value !== steps[idx]) {
+                mf.value = steps[idx];
+            }
+        });
     }, [steps]);
 
     return (
         <div className="flex flex-col rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
             
-            {/* 🟢 3. SEAMLESS DARK MODE OVERRIDE */}
             <style>{`
                 math-field::part(menu-toggle) {
                     display: none !important;
@@ -163,6 +195,10 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
 
                     /* Hint Subtext (slate-400) */
                     --keycap-secondary-text: #94a3b8 !important;
+
+                    /* Fixes clipped text on custom buttons */
+                    --keycap-aside-font-size: 0.65rem !important;
+                    --keycap-aside-bottom: 2px !important;
                 }
 
                 math-virtual-keyboard .separator {
@@ -189,6 +225,8 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
                         <span className="w-5 text-right font-mono text-[11px] font-bold text-slate-400 select-none">
                             {idx + 1}.
                         </span>
+                        
+                        {/* 🟢 CRITICAL: Removed value={step} here. MathLive now manages its own cursor! */}
                         <math-field
                             ref={el => (mfRefs.current[idx] = el)}
                             disabled={disabled ? "true" : undefined}
@@ -203,20 +241,22 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
                                 color: disabled ? '#94a3b8' : '#1e293b',
                                 boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
                             }}
-                        >
-                            {step}
-                        </math-field>
+                        ></math-field>
                     </div>
                 ))}
             </div>
 
-            {/* 🟢 4. ROW CONTROLS & UNDO/REDO */}
+            {/* ROW CONTROLS & UNDO/REDO */}
             {!disabled && (
                 <div className="flex justify-between items-center pt-2 mt-2 border-t border-slate-200/60">
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            onClick={() => addRow()}
+                            onClick={() => {
+                                const next = [...stepsRef.current, ''];
+                                onChange(next);
+                                setTimeout(() => mfRefs.current[next.length - 1]?.focus(), 50);
+                            }}
                             className="text-xs font-bold text-indigo-600 flex items-center gap-1 transition-colors px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 rounded-md"
                         >
                             <Plus size={14} /> {lang === 'sv' ? 'Ny rad' : 'New line'}

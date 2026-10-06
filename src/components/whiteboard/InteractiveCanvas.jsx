@@ -415,69 +415,69 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                     <circle cx={rigX + 25} cy={botY - 10} r={10} fill="#eab308" stroke="#854d0e" strokeWidth="2" className="cursor-zoom-in" onPointerDown={(e) => { e.stopPropagation(); setInteractionMode('scaling'); setIsDrawing(true); }} />
                 )}
                 {hasOptions && (
-                    <foreignObject x={el.x} y={botY+20} width={700} height={350}>
-                        <div className="flex flex-wrap gap-4 bg-white rounded-2xl shadow-2xl border-2 border-emerald-500 p-5 pointer-events-auto text-[18px] font-black uppercase items-center" onPointerDown={e => e.stopPropagation()}>
+                    <foreignObject x={el.x} y={botY+8} width={600} height={100} className="ui-ignore pointer-events-auto overflow-visible">
+                        <div className="flex flex-wrap gap-3 bg-white rounded-xl shadow-xl border border-emerald-500 p-2.5 pointer-events-auto text-[11px] font-black uppercase items-center w-max" onPointerDown={e => e.stopPropagation()}>
                             {el.type === 'coord' && (
                                 <>
-                                    {t.stepX}<input type="text" className="w-14 border-b text-center outline-none" value={el.stepX} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepX:e.target.value}:o))} />
-                                    {t.stepY}<input type="text" className="w-14 border-b text-center outline-none" value={el.stepY} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepY:e.target.value}:o))} />
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, isFirstQuadrant:!o.isFirstQuadrant}:o))} className={`px-2 py-1 rounded ${el.isFirstQuadrant?'bg-emerald-500 text-white':'bg-slate-100'}`}>{t.quad1}</button>
-                                    <div className="flex items-center gap-2 border-l pl-4 border-slate-200 ml-2">
-                                        <span className="text-[12px] text-slate-500 font-black lowercase">y =</span>
-                                        <input type="text" placeholder="2x + 1" className="w-28 border-b-2 border-blue-500 outline-none text-center font-bold lowercase bg-blue-50/30 rounded-t" value={el.equation ? el.equation.replace('y=', '') : ""} onChange={(e) => setElements(p=>p.map(o=>o.id===el.id?{...o, equation: e.target.value ? `y=${e.target.value}` : ""}:o))} />
+                                    {t.stepX}<input type="text" className="w-10 border-b text-center outline-none" value={el.stepX} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepX:e.target.value}:o))} />
+                                    {t.stepY}<input type="text" className="w-10 border-b text-center outline-none" value={el.stepY} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepY:e.target.value}:o))} />
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, isFirstQuadrant:!o.isFirstQuadrant}:o))} className={`px-2 py-1 rounded-md transition-colors ${el.isFirstQuadrant?'bg-emerald-500 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.quad1}</button>
+                                    <div className="flex items-center gap-1.5 border-l pl-3 border-slate-200 ml-1">
+                                        <span className="text-[10px] text-slate-500 font-black lowercase">y =</span>
+                                        <input type="text" placeholder="2x + 1" className="w-20 border-b border-blue-500 outline-none text-center font-bold lowercase bg-blue-50/30 rounded-t" value={el.equation ? el.equation.replace('y=', '') : ""} onChange={(e) => setElements(p=>p.map(o=>o.id===el.id?{...o, equation: e.target.value ? `y=${e.target.value}` : ""}:o))} />
                                     </div>
                                 </>
                             )}
                             {el.type === 'tchart' && (
-                                <div className="flex gap-2">
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: [...o.rows, {label:'?', value:'0'}]}:o))} className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-xs font-black uppercase shadow-sm">{t.addRow}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: o.rows.length > 1 ? o.rows.slice(0, -1) : o.rows}:o))} className="px-3 py-2 bg-rose-100 text-rose-600 rounded-lg text-xs font-black uppercase">{t.remRow}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, chartType: o.chartType==='bar'?'line':'bar'}:o))} className="px-3 py-2 bg-slate-100 rounded-lg">{el.chartType==='bar'?<BarChart2 size={18}/>:<List size={18}/>}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showGraph:!o.showGraph}:o))} className={`px-4 py-2 rounded-lg text-xs font-black ${el.showGraph ? 'bg-emerald-600 text-white':'bg-slate-100'}`}>{t.graph}</button>
+                                <div className="flex gap-1.5">
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: [...o.rows, {label:'?', value:'0'}]}:o))} className="px-2.5 py-1.5 bg-emerald-500 text-white rounded-md text-[10px] font-black uppercase shadow-sm">{t.addRow}</button>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: o.rows.length > 1 ? o.rows.slice(0, -1) : o.rows}:o))} className="px-2.5 py-1.5 bg-rose-100 text-rose-600 rounded-md text-[10px] font-black uppercase">{t.remRow}</button>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, chartType: o.chartType==='bar'?'line':'bar'}:o))} className="px-2.5 py-1.5 bg-slate-100 rounded-md hover:bg-slate-200 transition-colors">{el.chartType==='bar'?<BarChart2 size={14}/>:<List size={14}/>}</button>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showGraph:!o.showGraph}:o))} className={`px-3 py-1.5 rounded-md text-[10px] font-black transition-colors ${el.showGraph ? 'bg-emerald-600 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.graph}</button>
                                 </div>
                             )}
                             {el.type === 'ruler' && (
-                                <div className="flex flex-wrap gap-4 items-center">
-                                    {t.min}<input type="text" className="w-14 border-b text-center outline-none" value={el.min} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, min:e.target.value}:o))} />
-                                    {t.max}<input type="text" className="w-14 border-b text-center outline-none" value={el.max} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, max:e.target.value}:o))} />
-                                    {t.calc}<input type="text" placeholder={t.eg} className="w-24 border-b border-emerald-500 text-center outline-none font-bold text-emerald-700" value={el.equation} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, equation:e.target.value}:o))} />
-                                    <select className="bg-slate-100 rounded-lg p-2 text-xs font-bold" value={el.unitType} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, unitType:e.target.value}:o))}><option value="whole">{t.whole}</option><option value="decimal">{t.decimal}</option><option value="fraction">{t.fraction}</option></select>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showSubnotches: !o.showSubnotches}:o))} className={`p-2 rounded-lg ${el.showSubnotches ? 'bg-emerald-500 text-white' : 'bg-slate-50'}`}><Hash size={20}/></button>
+                                <div className="flex flex-wrap gap-3 items-center">
+                                    {t.min}<input type="text" className="w-10 border-b text-center outline-none" value={el.min} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, min:e.target.value}:o))} />
+                                    {t.max}<input type="text" className="w-10 border-b text-center outline-none" value={el.max} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, max:e.target.value}:o))} />
+                                    {t.calc}<input type="text" placeholder={t.eg} className="w-16 border-b border-emerald-500 text-center outline-none font-bold text-emerald-700" value={el.equation} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, equation:e.target.value}:o))} />
+                                    <select className="bg-slate-100 rounded-md p-1 text-[10px] font-bold outline-none cursor-pointer" value={el.unitType} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, unitType:e.target.value}:o))}><option value="whole">{t.whole}</option><option value="decimal">{t.decimal}</option><option value="fraction">{t.fraction}</option></select>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showSubnotches: !o.showSubnotches}:o))} className={`p-1.5 rounded-md transition-colors ${el.showSubnotches ? 'bg-emerald-500 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}><Hash size={14}/></button>
                                 </div>
                             )}
                             {el.type === 'dice' && (
-                                <div className="flex items-center gap-4">
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, diceData: (o.diceData||[]).slice(0,-1)}:o))} className="w-8 h-8 bg-slate-100 rounded-lg font-black">-</button>
-                                    <span className="text-xs font-black">{(el.diceData||[]).length} {t.dice}</span>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, diceData: [...(o.diceData||[]), {value:1, color:'#ffffff'}]}:o))} className="w-8 h-8 bg-slate-100 rounded-lg font-black">+</button>
-                                    <select className="bg-slate-50 border rounded p-1 text-xs" value={el.sides||"6"} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, sides:e.target.value}:o))}>{[4,6,8,10,12,20].map(s=><option key={s} value={s}>{s} {t.sides}</option>)}</select>
-                                    <button onClick={()=>rollDice(el.id)} className="bg-emerald-500 text-white rounded-xl px-4 py-2 font-black text-xs">{t.rollAll}</button>
+                                <div className="flex items-center gap-2.5">
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, diceData: (o.diceData||[]).slice(0,-1)}:o))} className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors rounded-md font-black text-sm">-</button>
+                                    <span className="text-[10px] font-black">{(el.diceData||[]).length} {t.dice}</span>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, diceData: [...(o.diceData||[]), {value:1, color:'#ffffff'}]}:o))} className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors rounded-md font-black text-sm">+</button>
+                                    <select className="bg-slate-50 border rounded-md p-1 outline-none text-[10px] cursor-pointer" value={el.sides||"6"} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, sides:e.target.value}:o))}>{[4,6,8,10,12,20].map(s=><option key={s} value={s}>{s} {t.sides}</option>)}</select>
+                                    <button onClick={()=>rollDice(el.id)} className="bg-emerald-500 hover:bg-emerald-600 transition-colors text-white rounded-lg px-3 py-1.5 font-black text-[10px]">{t.rollAll}</button>
                                 </div>
                             )}
                             {el.type === 'math' && (
-                                <div className="flex items-center gap-3 text-xs font-black uppercase text-slate-500">
-                                    {t.size} <input type="text" className="w-16 border-b-2 border-emerald-500 text-center outline-none" value={el.fontSize} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, fontSize: e.target.value}:o))} />
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
+                                    {t.size} <input type="text" className="w-12 border-b-2 border-emerald-500 text-center outline-none" value={el.fontSize} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, fontSize: e.target.value}:o))} />
                                 </div>
                             )}
                             {el.type === 'triangle' && (
                                 <>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'right'}:o))} className={`px-3 py-1 rounded text-xs ${el.triangleType==='right'?'bg-emerald-500 text-white':'bg-slate-100'}`}>{t.right}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'isosceles'}:o))} className={`px-3 py-1 rounded text-xs ${el.triangleType==='isosceles'?'bg-emerald-500 text-white':'bg-slate-100'}`}>{t.isosceles}</button>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'right'}:o))} className={`px-2.5 py-1.5 rounded-md text-[10px] transition-colors ${el.triangleType==='right'?'bg-emerald-500 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.right}</button>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'isosceles'}:o))} className={`px-2.5 py-1.5 rounded-md text-[10px] transition-colors ${el.triangleType==='isosceles'?'bg-emerald-500 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.isosceles}</button>
                                 </>
                             )}
                             {el.type === 'shapes_3d' && (
                                 <>
                                     <span className="text-emerald-600 font-black">{el.shape3D}</span>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showInternal:!o.showInternal}:o))} className={`p-2 rounded border ${el.showInternal?'bg-emerald-500 text-white':'bg-slate-50'}`}><Hash size={18}/></button>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showInternal:!o.showInternal}:o))} className={`p-1.5 rounded-md border transition-colors ${el.showInternal?'bg-emerald-500 text-white':'bg-slate-50 hover:bg-slate-100'}`}><Hash size={14}/></button>
                                 </>
                             )}
                             {(el.divisions || el.type === 'spinner') && (
                                 <>
-                                    <button onClick={()=>updateDivisions(el.id, -1)} className="w-8 h-8 bg-slate-100 rounded font-black">-</button>
-                                    <span className="px-2">{el.divisions} {t.parts}</span>
-                                    <button onClick={()=>updateDivisions(el.id, 1)} className="w-8 h-8 bg-slate-100 rounded font-black">+</button>
-                                    <button onClick={()=>setElements(prev=>prev.map(i=>i.id===el.id?{...i, showLabel:!i.showLabel}:i))} className={`p-2 rounded-xl ml-2 border-2 ${el.showLabel ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-100 border-slate-200'}`}><Hash size={20}/></button>
-                                    {el.type==='spinner' && (<button onClick={()=>spinSpinner(el.id)} className="bg-emerald-500 text-white rounded-xl p-2 ml-2 active:scale-90 transition-transform"><Play size={18} fill="white"/></button>)}
+                                    <button onClick={()=>updateDivisions(el.id, -1)} className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors rounded-md font-black text-sm">-</button>
+                                    <span className="px-1">{el.divisions} {t.parts}</span>
+                                    <button onClick={()=>updateDivisions(el.id, 1)} className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors rounded-md font-black text-sm">+</button>
+                                    <button onClick={()=>setElements(prev=>prev.map(i=>i.id===el.id?{...i, showLabel:!i.showLabel}:i))} className={`p-1.5 rounded-lg ml-1 border-2 transition-all ${el.showLabel ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-100 border-slate-200 hover:bg-slate-200'}`}><Hash size={14}/></button>
+                                    {el.type==='spinner' && (<button onClick={()=>spinSpinner(el.id)} className="bg-emerald-500 text-white rounded-lg p-1.5 ml-1 hover:bg-emerald-600 active:scale-90 transition-transform"><Play size={14} fill="white"/></button>)}
                                 </>
                             )}
                         </div>
@@ -630,12 +630,24 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             const timeStr = `${Math.floor(el.timeLeft / 60)}:${(el.timeLeft % 60).toString().padStart(2, '0')}`;
             const prog = (el.timeLeft / el.duration) * 360;
             
+            // 🟢 FIX: Handle full (360°) and zero states cleanly so the SVG arc doesn't collapse into a straight line
+            const isFull = prog >= 360;
+            const endAngle = (prog * Math.PI) / 180;
+            const endX = cx + r * Math.sin(endAngle);
+            const endY = cy - r * Math.cos(endAngle);
+            
+            const pathData = prog <= 0 
+                ? "" 
+                : isFull 
+                    ? `M ${cx} ${cy-r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy-r}` 
+                    : `M ${cx} ${cy-r} A ${r} ${r} 0 ${prog > 180 ? 1 : 0} 1 ${endX} ${endY}`;
+            
             return (
                 <g key={el.id} transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
                     {/* Background & Progress Ring */}
                     <circle cx={cx} cy={cy} r={r} fill={isDone ? "#fee2e2" : "#e0f2fe"} stroke={isDone ? "#ef4444" : "#3b82f6"} strokeWidth="4" />
                     <path 
-                        d={`M ${cx} ${cy-r} A ${r} ${r} 0 ${prog > 180 ? 1 : 0} 1 ${cx + r*Math.sin(prog*Math.PI/180)} ${cy - r*Math.cos(prog*Math.PI/180)}`} 
+                        d={pathData} 
                         fill="none" 
                         stroke={isDone ? "#ef4444" : "#10b981"} 
                         strokeWidth={Math.max(4, r * 0.08)} // Scales stroke width slightly with size

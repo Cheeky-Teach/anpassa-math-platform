@@ -447,6 +447,12 @@ export default function QuestionStudio({
   };
 
   const loadSheet = (sheet) => {
+      //   CRITICAL FIX: Intercept Presentation Boards and route them safely to the standalone viewer!
+      if (sheet.type === 'board') {
+          loadBoard(sheet);
+          return;
+      }
+
       setPacket(sheet.packet); setSheetTitle(sheet.title); setSetupMode(sheet.type); setActiveSheetId(sheet.id); 
       setChosenVisibility(sheet.visibility || 'private'); setIsSaved(true);
       if (sheet.config?.includeAnswerKey !== undefined) setIncludeAnswerKey(sheet.config.includeAnswerKey);
@@ -608,7 +614,10 @@ export default function QuestionStudio({
                         {/* Create Buttons (Brand Protected) */}
                         <div className="flex flex-col gap-2">
                             <button 
-                                onClick={() => { setActiveBoardSheet(null); setShowPresentation(true); }} 
+                                onClick={() => { 
+                                    setActiveBoardSheet(null); 
+                                    setShowPresentation(true); 
+                                }} 
                                 className="w-full py-2.5 bg-amber-500 text-slate-900 rounded-[var(--radius-btn)] font-black text-xs uppercase tracking-widest hover:bg-amber-600 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 <Plus size={14} /> {t.new_board}
@@ -794,9 +803,9 @@ export default function QuestionStudio({
                                                             <div className="flex justify-end gap-1 items-center opacity-40 group-hover:opacity-100 transition-opacity">
                                                                 <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)]"><Maximize2 size={14}/></button>
                                                                 
-                                                                {/* 🟢 Dynamically applies the color of the document type and gives it the solid hover effect */}
+                                                                {/*   Dynamically applies the color of the document type and gives it the solid hover effect */}
                                                                 <button 
-                                                                    onClick={() => sheet.type === 'board' ? loadBoard(sheet) : loadSheet(sheet)} 
+                                                                    onClick={() => loadSheet(sheet)} 
                                                                     className={`${style.theme} bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white px-3 py-1 text-[10px] ml-2 rounded-[var(--radius-btn)] transition-all font-black uppercase tracking-widest shadow-sm`}
                                                                 >
                                                                     {t.load_btn}
@@ -846,13 +855,12 @@ export default function QuestionStudio({
                                                         </>
                                                     ) : libraryTab === 'private' ? (
                                                         <>
-                                                            {/* 🟢 Matches the styling of the folder buttons above */}
                                                             <button 
-                                                                onClick={() => sheet.type === 'board' ? loadBoard(sheet) : loadSheet(sheet)} 
-                                                                className={`${style.theme} bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white px-3 py-1 text-[10px] ml-2 rounded-[var(--radius-btn)] transition-all font-black uppercase tracking-widest shadow-sm`}
-                                                            >
-                                                                {t.load_btn}
-                                                            </button>
+                                                                    onClick={() => loadSheet(sheet)} 
+                                                                    className={`${style.theme} bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white px-3 py-1 text-[10px] ml-2 rounded-[var(--radius-btn)] transition-all font-black uppercase tracking-widest shadow-sm`}
+                                                                >
+                                                                    {t.load_btn}
+                                                                </button>
                                                             <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] ml-1"><PanelLeftClose size={14}/></button>
                                                             <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-[var(--radius-btn)] ml-1"><Trash2 size={14}/></button>
                                                         </>
@@ -896,7 +904,7 @@ export default function QuestionStudio({
 
                 {showMoveModal && (
                     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-                        {/* 🟢 Expanded to max-w-lg and bumped padding to p-8 */}
+                        {/*   Expanded to max-w-lg and bumped padding to p-8 */}
                         <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-8 w-full max-w-lg animate-in zoom-in-95 duration-200">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-black text-[var(--text-main)]">{t.move_file}</h3>
@@ -904,7 +912,7 @@ export default function QuestionStudio({
                             </div>
                             <p className="text-base font-bold text-[var(--text-muted)] mb-4 truncate">"{showMoveModal.title}"</p>
                             
-                            {/* 🟢 Expanded height to 50% of the viewport (max-h-[50vh]) */}
+                            {/*   Expanded height to 50% of the viewport (max-h-[50vh]) */}
                             <div className="space-y-2 max-h-[50vh] overflow-y-auto custom-scrollbar mb-2 border border-[var(--border-main)] rounded-[var(--radius-card)] p-3 bg-[var(--bg-surface)]">
                                 <button 
                                     onClick={() => handleMoveSheet(showMoveModal.id, null)}
@@ -951,7 +959,7 @@ export default function QuestionStudio({
                                 ))}
                             </div>
                             
-                            {/* 🟢 FIXED: Removed the accidental duplicate wrapper div here! */}
+                            {/*   FIXED: Removed the accidental duplicate wrapper div here! */}
                             <div className="p-6 border-t border-[var(--border-main)] bg-[var(--bg-card)] flex gap-3">
                                 {isTrashView ? (
                                     <>
@@ -982,16 +990,32 @@ export default function QuestionStudio({
                         </div>
                     </div>
                 )}
+
+                {/* load presentations */}
+                {showPresentation && (
+                    <PresentationView 
+                        packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : []} 
+                        initialSlides={activeBoardSheet?.packet?.slides}
+                        boardId={activeBoardSheet?.id}
+                        sheetTitle={activeBoardSheet?.title || ""} 
+                        lang={lang} 
+                        onClose={() => { 
+                            setShowPresentation(false);
+                            fetchLibrary(); 
+                        }} 
+                    />
+                )}
+
             </div>
         );
     }
 
   // =========================================================================
-  // 🟢 ACTIVE EDITOR (STUDIO MODE)
+  //   ACTIVE EDITOR (STUDIO MODE)
   // =========================================================================
   return (
     <div className="layout-wrapper flex flex-col h-full font-sans overflow-hidden relative">
-        {/* 🟢 Reduced padding from py-2 to py-1 */}
+        {/*   Reduced padding from py-2 to py-1 */}
         <header className={`relative flex items-center justify-between px-6 py-1 border-b shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
             <div className="flex items-center gap-3 flex-1 max-w-[40%]">
                 <button 
@@ -1035,7 +1059,7 @@ export default function QuestionStudio({
 
             <div className="flex items-center gap-2 pl-4 max-w-[45%] justify-end">
                 
-                {/* 🟢 UNIVERSAL TOGGLE */}
+                {/*   UNIVERSAL TOGGLE */}
                 <PreferencesToggle />
 
                 <button 
@@ -1623,7 +1647,7 @@ export default function QuestionStudio({
         </div>
       </div>
       
-      {/* 🟢 MODALS GO HERE AT THE VERY ROOT TO OVERLAY EVERYTHING */}
+      {/*   MODALS GO HERE AT THE VERY ROOT TO OVERLAY EVERYTHING */}
       {showLiveModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
               <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-8 w-full max-w-md animate-in zoom-in-95 duration-200">
@@ -1642,24 +1666,24 @@ export default function QuestionStudio({
                           <div className="flex flex-col gap-2">
                               <button 
                                   onClick={() => setLiveSettings({ ...liveSettings, pacing: 'open' })}
-                                  className={`p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'open' ? 'border-[var(--brand-solid)] bg-[var(--brand-bg)]' : 'border-[var(--border-main)] hover:border-[var(--border-strong)]'}`}
+                                  className={`theme-blue p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'open' ? 'border-[var(--brand-solid)] bg-[var(--brand-solid)] shadow-md' : 'border-[var(--border-main)] bg-[var(--bg-surface)] hover:border-[var(--brand-border)]'}`}
                               >
-                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'open' ? 'text-[var(--brand-text)]' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Öppet (Egen takt)" : "Open (Free Pacing)"}</div>
-                                  <div className="text-[10px] font-bold text-[var(--text-muted)] leading-tight mt-0.5">{lang === 'sv' ? "Elever kan bläddra fritt fram och tillbaka." : "Students navigate freely back and forth."}</div>
+                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'open' ? 'text-white' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Öppet (Egen takt)" : "Open (Free Pacing)"}</div>
+                                  <div className={`text-[10px] font-bold leading-tight mt-0.5 ${liveSettings.pacing === 'open' ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>{lang === 'sv' ? "Elever kan bläddra fritt fram och tillbaka." : "Students navigate freely back and forth."}</div>
                               </button>
                               <button 
                                   onClick={() => setLiveSettings({ ...liveSettings, pacing: 'progressive' })}
-                                  className={`p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'progressive' ? 'border-[var(--brand-solid)] bg-[var(--brand-bg)]' : 'border-[var(--border-main)] hover:border-[var(--border-strong)]'}`}
+                                  className={`theme-amber p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'progressive' ? 'border-[var(--brand-solid)] bg-[var(--brand-solid)] shadow-md' : 'border-[var(--border-main)] bg-[var(--bg-surface)] hover:border-[var(--brand-border)]'}`}
                               >
-                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'progressive' ? 'text-[var(--brand-text)]' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Låst (En i taget)" : "Progressive Lock"}</div>
-                                  <div className="text-[10px] font-bold text-[var(--text-muted)] leading-tight mt-0.5">{lang === 'sv' ? "Elever måste svara för att komma vidare. Kan ej gå tillbaka." : "Students must answer to advance. No going back."}</div>
+                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'progressive' ? 'text-white' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Låst (En i taget)" : "Progressive Lock"}</div>
+                                  <div className={`text-[10px] font-bold leading-tight mt-0.5 ${liveSettings.pacing === 'progressive' ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>{lang === 'sv' ? "Elever måste svara för att komma vidare. Kan ej gå tillbaka." : "Students must answer to advance. No going back."}</div>
                               </button>
                               <button 
                                   onClick={() => setLiveSettings({ ...liveSettings, pacing: 'teacher', order: 'original' })}
-                                  className={`p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'teacher' ? 'border-[var(--brand-solid)] bg-[var(--brand-bg)]' : 'border-[var(--border-main)] hover:border-[var(--border-strong)]'}`}
+                                  className={`theme-purple p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'teacher' ? 'border-[var(--brand-solid)] bg-[var(--brand-solid)] shadow-md' : 'border-[var(--border-main)] bg-[var(--bg-surface)] hover:border-[var(--brand-border)]'}`}
                               >
-                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'teacher' ? 'text-[var(--brand-text)]' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Lärarstyrd" : "Teacher-Led"}</div>
-                                  <div className="text-[10px] font-bold text-[var(--text-muted)] leading-tight mt-0.5">{lang === 'sv' ? "Du byter uppgift för hela klassen samtidigt." : "You control the active question for the whole class."}</div>
+                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'teacher' ? 'text-white' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Lärarstyrd" : "Teacher-Led"}</div>
+                                  <div className={`text-[10px] font-bold leading-tight mt-0.5 ${liveSettings.pacing === 'teacher' ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>{lang === 'sv' ? "Du byter uppgift för hela klassen samtidigt." : "You control the active question for the whole class."}</div>
                               </button>
                           </div>
                       </div>
@@ -1682,52 +1706,68 @@ export default function QuestionStudio({
                                   {lang === 'sv' ? "Slumpad" : "Randomized"}
                               </button>
                           </div>
-                          {liveSettings.pacing === 'teacher' && <p className="text-[9px] font-bold text-[var(--theme-amber-text)] mt-2 text-center">{lang === 'sv' ? "Slumpad ordning är inaktiverad i lärarstyrt läge." : "Randomization is disabled during Teacher-Led pacing."}</p>}
+                          
+                          {/*   NEW: Explanatory notes for the order modes */}
+                          <div className="mt-2.5 px-3 border-l-2 border-[var(--border-strong)]">
+                              <p className="text-[9.5px] font-bold text-[var(--text-muted)] leading-relaxed">
+                                  {liveSettings.order === 'original' 
+                                      ? (lang === 'sv' ? "Standard: Alla börjar på uppgift 1 och gör dem i angiven ordning." : "Standard: Everyone starts on question 1 and works in the given order.")
+                                      : (lang === 'sv' ? "Slumpad: Alla gör samma uppgifter men i helt slumpmässig ordning för att förhindra tjuvtittande från nyfikna grannar." : "Randomized: Everyone does the same questions but in completely random order to prevent screen peeking from nosy neighbors.")}
+                              </p>
+                          </div>
+
+                          {liveSettings.pacing === 'teacher' && <p className="text-[9px] font-bold text-[var(--theme-amber-text)] mt-3 text-center">{lang === 'sv' ? "Slumpad ordning är inaktiverad i lärarstyrt läge." : "Randomization is disabled during Teacher-Led pacing."}</p>}
                       </div>
 
                       {/* SUMMARY VIEW TOGGLE */}
-                      <div className="flex items-center justify-between p-4 bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)]">
+                      <div className={`theme-emerald flex items-center justify-between p-4 border rounded-[var(--radius-btn)] transition-colors duration-300 ${liveSettings.summary ? 'bg-[var(--brand-bg)] border-[var(--brand-border)]' : 'bg-[var(--bg-surface)] border-[var(--border-main)]'}`}>
                           <div>
-                              <div className="text-[11px] font-black uppercase text-[var(--text-main)] tracking-widest">{lang === 'sv' ? "Visa Resultatsöversikt" : "Show Final Summary"}</div>
-                              <div className="text-[9px] font-bold text-[var(--text-muted)]">{lang === 'sv' ? "Elever ser sina egna svar efteråt." : "Students review their answers at the end."}</div>
+                              <div className={`text-[11px] font-black uppercase tracking-widest transition-colors ${liveSettings.summary ? 'text-[var(--brand-solid)]' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Visa Resultatsöversikt" : "Show Final Summary"}</div>
+                              <div className={`text-[9px] font-bold transition-colors ${liveSettings.summary ? 'text-[var(--brand-text)]' : 'text-[var(--text-muted)]'}`}>{lang === 'sv' ? "Elever ser sina egna svar efteråt." : "Students review their answers at the end."}</div>
                           </div>
                           <button 
                               onClick={() => setLiveSettings({ ...liveSettings, summary: !liveSettings.summary })} 
-                              className={`w-10 h-6 rounded-full transition-all relative p-1 shrink-0 ${liveSettings.summary ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}
+                              className={`w-10 h-6 rounded-full transition-colors duration-300 relative p-1 shrink-0 shadow-inner ${liveSettings.summary ? 'bg-[var(--brand-solid)]' : 'bg-slate-800'}`}
                           >
-                              <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${liveSettings.summary ? 'translate-x-4' : 'translate-x-0'}`} />
+                              <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${liveSettings.summary ? 'translate-x-4' : 'translate-x-0'}`} />
                           </button>
                       </div>
 
                       {/* SCRATCHPAD TOGGLE */}
-                      <div className="flex items-center justify-between p-4 bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)]">
+                      <div className={`theme-emerald flex items-center justify-between p-4 border rounded-[var(--radius-btn)] transition-colors duration-300 ${enableScratchpad ? 'bg-[var(--brand-bg)] border-[var(--brand-border)]' : 'bg-[var(--bg-surface)] border-[var(--border-main)]'}`}>
                           <div>
-                              <div className="text-[11px] font-black uppercase text-[var(--text-main)] tracking-widest">{lang === 'sv' ? "Aktivera Kladdpapper" : "Enable Scratchpad"}</div>
-                              <div className="text-[9px] font-bold text-[var(--text-muted)]">{lang === 'sv' ? "Elever kan visa uträkningar steg-för-steg." : "Students can show work step-by-step."}</div>
+                              <div className={`text-[11px] font-black uppercase tracking-widest transition-colors ${enableScratchpad ? 'text-[var(--brand-solid)]' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Aktivera Kladdpapper" : "Enable Scratchpad"}</div>
+                              <div className={`text-[9px] font-bold transition-colors ${enableScratchpad ? 'text-[var(--brand-text)]' : 'text-[var(--text-muted)]'}`}>{lang === 'sv' ? "Elever kan visa uträkningar steg-för-steg." : "Students can show work step-by-step."}</div>
                           </div>
                           <button 
                               onClick={() => setEnableScratchpad(!enableScratchpad)} 
-                              className={`w-10 h-6 rounded-full transition-all relative p-1 shrink-0 ${enableScratchpad ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}
+                              className={`w-10 h-6 rounded-full transition-colors duration-300 relative p-1 shrink-0 shadow-inner ${enableScratchpad ? 'bg-[var(--brand-solid)]' : 'bg-slate-800'}`}
                           >
-                              <div className={`w-4 h-4 bg-white rounded-full transition-all shadow-sm ${enableScratchpad ? 'translate-x-4' : 'translate-x-0'}`} />
+                              <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${enableScratchpad ? 'translate-x-4' : 'translate-x-0'}`} />
                           </button>
                       </div>
                   </div>
 
-                  <button onClick={confirmLaunchLive} className="btn-brand bg-[var(--theme-rose-solid)] text-white w-full mt-6 py-4 rounded-[var(--radius-btn)] shadow-lg active:scale-95">
+                  <button onClick={confirmLaunchLive} className="theme-emerald btn-brand bg-[var(--brand-solid)] text-white w-full mt-6 py-4 rounded-[var(--radius-btn)] shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2">
                       <Send size={18} /> {lang === 'sv' ? "Starta Session" : "Start Session"}
                   </button>
               </div>
           </div>
       )}
 
-      {/* Bonus Catch: Restored the presentation renderer for the editor view! */}
+      {/*   LAUNCHES STANDALONE PRESENTATION BUILDER/VIEWER */}
       {showPresentation && (
           <PresentationView 
-              packet={packet} 
-              sheetTitle={sheetTitle} 
+              // If opening a saved board, inject its data. If new, inject empty arrays.
+              packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : []} 
+              initialSlides={activeBoardSheet?.packet?.slides}
+              boardId={activeBoardSheet?.id}
+              sheetTitle={activeBoardSheet?.title || ""} 
               lang={lang} 
-              onClose={() => setShowPresentation(false)} 
+              onClose={() => { 
+                  setShowPresentation(false);
+                  fetchLibrary(); //   Refreshes the library automatically so newly saved boards appear instantly
+              }} 
           />
       )}
     </div>

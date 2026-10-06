@@ -302,19 +302,19 @@ const Dashboard = ({
                     
                     {/* --- ACTIVE SESSION RESUME BANNER --- */}
                     {activeSession && userRole === 'teacher' && (
-                        <div className="mb-6 p-5 bg-[var(--theme-emerald-bg)] border-2 border-[var(--theme-emerald-border)] rounded-[var(--radius-card)] shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
+                        <div className="theme-rose mb-6 p-5 bg-[var(--brand-solid)] rounded-[var(--radius-card)] shadow-2xl shadow-[var(--brand-solid)]/20 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center border border-[var(--theme-emerald-border)] shadow-sm">
-                                    <PlayCircle size={24} className="text-[var(--theme-emerald-text)]" />
+                                <div className="w-12 h-12 bg-white rounded-[var(--radius-btn)] flex items-center justify-center shadow-sm">
+                                    <PlayCircle size={24} className="text-[var(--brand-solid)]" />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold uppercase italic tracking-tighter text-[var(--text-main)] leading-none mb-1">{t.resume_h}</h3>
-                                    <p className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-widest leading-none">
-                                        {activeSession.title} — Kod: <span className="font-black text-[var(--theme-emerald-text)]">{activeSession.class_code}</span>
+                                    <h3 className="text-lg font-black uppercase italic tracking-tighter text-white leading-none mb-1">{t.resume_h}</h3>
+                                    <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest leading-none">
+                                        {activeSession.title} — Kod: <span className="font-black text-white">{activeSession.class_code}</span>
                                     </p>
                                 </div>
                             </div>
-                            <button onClick={() => onRelaunch(activeSession)} className="w-full sm:w-auto btn-brand bg-[var(--theme-emerald-text)] hover:opacity-90 shadow-md active:scale-95 text-[10px]">
+                            <button onClick={() => onRelaunch(activeSession)} className="w-full sm:w-auto px-6 py-3 bg-white text-[var(--brand-solid)] hover:bg-slate-50 rounded-[var(--radius-btn)] font-black uppercase tracking-widest shadow-md active:scale-95 text-[10px] transition-all">
                                 {t.resume_btn}
                             </button>
                         </div>

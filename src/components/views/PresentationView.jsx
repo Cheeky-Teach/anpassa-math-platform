@@ -404,7 +404,8 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 style={{ gridTemplateColumns: `${isLeftCollapsed ? '72px' : '288px'} 1fr ${isRightCollapsed ? '64px' : '320px'}` }}
             >
                 {/* COLUMN 1: COLLAPSIBLE WORKSPACE SELECTION PICKER */}
-                <div className={`bg-white border-r border-slate-200 overflow-y-auto custom-scrollbar flex flex-col transition-all duration-300 select-none shrink-0 z-10 min-w-0 ${isLeftCollapsed ? 'p-2 items-center' : 'p-5'}`}>
+                {/* 🟢 ADDED: whiteboard-protect wrapper. */}
+                <div className={`whiteboard-protect bg-white border-r border-slate-200 overflow-y-auto custom-scrollbar flex flex-col transition-all duration-300 select-none shrink-0 z-10 min-w-0 ${isLeftCollapsed ? 'p-2 items-center' : 'p-5'}`}>
                     
                     {/*   NEW: DUAL ACTION BUTTON STRIP */}
                     <div className="w-full mb-4 shrink-0 flex flex-col gap-2">
@@ -574,8 +575,11 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 </div>
 
                 {/* COLUMN 2: WORKSPACE CANVAS INTERACTION SHELF */}
+                {/* 🟢 ADDED: whiteboard-protect wrapper. 
+                    This locks the entire presentation and canvas to Light Mode, guaranteeing that 
+                    SVGs, UI components, MathLive keyboards, and custom tool menus NEVER vanish or invert. */}
                 <main 
-                    className={`relative overflow-hidden h-full w-full flex flex-col transition-colors duration-300 ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
+                    className={`whiteboard-protect relative overflow-hidden h-full w-full flex flex-col transition-colors duration-300 ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
                     style={bgType === 'grid' ? {
                         backgroundImage: 'linear-gradient(#e2e8f0 2px, transparent 2px), linear-gradient(90deg, #e2e8f0 2px, transparent 2px)',
                         backgroundSize: '40px 40px',
@@ -807,8 +811,9 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 </main>
 
                 {/* COLUMN 3: SOLUTIONS & COMPACT ANSWER KEY DRAWER PANEL */}
+                {/* whiteboard-protect wrapper. */}
                 <div 
-                    className={`bg-white border-l border-slate-200 flex flex-col shrink-0 select-none h-full transition-all duration-300 relative min-h-0 overflow-hidden
+                    className={`whiteboard-protect bg-white border-l border-slate-200 flex flex-col shrink-0 select-none h-full transition-all duration-300 relative min-h-0 overflow-hidden
                         ${isRightCollapsed ? 'w-16 p-2 items-center justify-start pt-4' : 'w-80 p-6 gap-6'}`}
                 >
                     {isRightCollapsed ? (

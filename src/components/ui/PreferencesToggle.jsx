@@ -12,7 +12,7 @@ export default function PreferencesToggle() {
             <button 
                 onClick={toggleTheme}
                 title={lang === 'sv' ? "Ändra tema" : "Toggle theme"}
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-all"
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-all"
             >
                 {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
             </button>
