@@ -1,6 +1,31 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Printer, ChevronLeft, Loader2 } from 'lucide-react';
-import MathText from '../ui/MathText';
+import VisualRenderer from '../visuals/VisualRenderer';
+
+// 🟢 NEW: Highly stable inline MathDisplay (Replaces the bugged MathText component)
+const MathDisplay = ({ content, className = "" }) => {
+    const containerRef = useRef(null);
+    useEffect(() => {
+        if (!content || !containerRef.current) return;
+        const renderMath = () => {
+            containerRef.current.innerText = content;
+            if (window.renderMathInElement) {
+                window.renderMathInElement(containerRef.current, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
+                    ],
+                    throwOnError: false, trust: true
+                });
+            }
+        };
+        const timer = setTimeout(renderMath, 30);
+        return () => clearTimeout(timer);
+    }, [content]);
+    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
+};
 
 
 // --- LANDSCAPE PRINT STYLES ---
@@ -34,7 +59,7 @@ const printStyles = `
         tr { page-break-inside: avoid !important; break-inside: avoid !important; }
         th, td { border: 1px solid #94a3b8 !important; word-wrap: break-word !important; }
 
-        /* 🟢 GRID TO FLEX PRINT OVERRIDES: Stops grid from slicing items across pages */
+        /* Stops grid from slicing items across pages */
         .print-grid-2 { display: flex !important; flex-wrap: wrap !important; gap: 2.5rem 2rem !important; }
         .print-col-2 { width: calc(50% - 1rem) !important; flex-shrink: 0 !important; }
         
@@ -46,17 +71,14 @@ const printStyles = `
 export default function LandscapeReport({ session, packet, responses, lang = 'sv', onClose }) {
     const [printSteps, setPrintSteps] = useState(false);
     
-    // Memoize the array to break the infinite rendering loop
     const students = useMemo(() => {
         return [...new Set(responses.map(r => r.student_alias))].sort();
     }, [responses]);
 
-    // 🟢 SMART PAGINATION STATE
     const [measuredKeyPages, setMeasuredKeyPages] = useState([]);
     const [measuredStudentPages, setMeasuredStudentPages] = useState([]);
     const [isMeasuring, setIsMeasuring] = useState(true);
 
-    // Decode Answer Key Helper
     const getCorrectAnswer = (questionItem) => {
         if (!questionItem?.resolvedData) return '-';
         let ans = questionItem.resolvedData.answer; 
@@ -73,19 +95,18 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
         return ans || '-';
     };
 
-    // 🟢 DOM MEASUREMENT ENGINE (Ported from PrintView & Inverted for Landscape)
     useEffect(() => {
         setIsMeasuring(true);
         
         const timer = setTimeout(() => {
-            const MAX_LANDSCAPE_HEIGHT = 650; // Calibrated safe landscape A4 height (px)
+            const MAX_LANDSCAPE_HEIGHT = 650; 
             const ROW_GAP = 40; 
             
-            // --- 1. MEASURE ANSWER KEY (3-Column Layout) ---
+            // --- 1. MEASURE ANSWER KEY ---
             const keyCards = document.querySelectorAll('.sandbox-key-card');
             const keyPages = [];
             let currKeyPage = [];
-            let currKeyHeight = 100; // Buffer for Section Header
+            let currKeyHeight = 100; 
             let currKeyRowWidth = 0;
             let maxKeyHeightInRow = 0;
 
@@ -114,11 +135,11 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
             if (currKeyPage.length > 0) keyPages.push(currKeyPage);
             setMeasuredKeyPages(keyPages);
 
-            // --- 2. MEASURE DETAILED ANSWERS (2-Column Layout) ---
+            // --- 2. MEASURE DETAILED ANSWERS ---
             const studentCards = document.querySelectorAll('.sandbox-student-card');
             const studentPages = [];
             let currStudentPage = [];
-            let currStudentHeight = 100; // Buffer for Section Header
+            let currStudentHeight = 100; 
             let currStudentRowWidth = 0;
             let maxStudentHeightInRow = 0;
 
@@ -148,7 +169,7 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
             setMeasuredStudentPages(studentPages);
 
             setIsMeasuring(false);
-        }, 400); // Wait for DOM layouts to settle
+        }, 400); 
 
         return () => clearTimeout(timer);
     }, [packet, students, responses, printSteps]);
@@ -157,7 +178,6 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
         <div className="fixed inset-0 z-[150] bg-slate-100 overflow-y-auto no-scrollbar print-modal-container font-sans">
             <style>{printStyles}</style>
             
-            {/* 🟢 INTERACTIVE MASK COVER */}
             {isMeasuring && (
                 <div className="fixed inset-0 bg-slate-900 text-white flex flex-col items-center justify-center gap-4 z-[9999] animate-in fade-in duration-200 print:hidden">
                     <Loader2 className="animate-spin text-indigo-500" size={40} />
@@ -172,7 +192,6 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                 </div>
             )}
 
-            {/* Sticky Header */}
             <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center z-50 no-print shadow-sm">
                 <div className="flex items-center gap-4">
                     <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><ChevronLeft size={24}/></button>
@@ -194,7 +213,6 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                 </div>
             </div>
 
-            {/* 🟢 VISIBLE DOCUMENT BODY */}
             {!isMeasuring && (
                 <div className="landscape-report-preview">
                     
@@ -253,22 +271,37 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 text-[9px] print-grid-3">
                                 {pageChunk.map((q) => {
                                     const originalIndex = packet.findIndex(p => p.id === q.id);
+                                    const rd = q.resolvedData?.renderData;
+                                    const hasVisual = rd && (rd.graph || rd.geometry || rd.pattern);
+
                                     return (
                                         <div key={q.id} className="print-col-3 break-inside-avoid border border-slate-300 rounded-lg p-3 bg-slate-50/50 flex flex-col justify-between shadow-sm">
                                             <div className="flex items-start gap-2 mb-3">
                                                 <span className="font-black text-slate-800">{originalIndex + 1}.</span>
-                                                <div className="font-bold text-slate-700 leading-tight">
-                                                    < MathText content={q.resolvedData?.renderData?.description} />
-                                                    {q.resolvedData?.renderData?.latex && (
-                                                        <div className="mt-1 font-serif text-slate-900 font-bold">
-                                                            < MathText content={`$$${q.resolvedData.renderData.latex}$$`} />
+                                                <div className="font-bold text-slate-700 leading-tight w-full">
+                                                    
+                                                    {/* 🟢 FIXED: Rendering Math and Text Correctly */}
+                                                    <MathDisplay content={rd?.description} />
+                                                    
+                                                    {/* 🟢 FIXED: Constrained Visual Container to prevent overlapping */}
+                                                    {hasVisual && (
+                                                        <div className="my-3 w-full h-[90px] relative flex justify-center items-center overflow-hidden rounded-md border border-slate-200/60 bg-white">
+                                                            <div className="absolute inset-0 flex items-center justify-center transform scale-[0.45] origin-center pointer-events-none">
+                                                                <VisualRenderer data={rd} isWordProblem={false} />
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {rd?.latex && (
+                                                        <div className="mt-2 font-serif text-slate-900 font-bold">
+                                                            <MathDisplay content={`$$${rd.latex}$$`} />
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="text-right border-t border-slate-200 pt-2 mt-auto flex justify-between items-center">
                                                 <span className="font-black uppercase tracking-widest text-slate-500 text-[8px]">{lang === 'sv' ? 'Facit:' : 'Key:'}</span>
-                                                <span className="font-black text-slate-900 text-[10px]">< MathText content={getCorrectAnswer(q)} /></span>
+                                                <span className="font-black text-slate-900 text-[10px]"><MathDisplay content={getCorrectAnswer(q)} /></span>
                                             </div>
                                         </div>
                                     );
@@ -298,9 +331,12 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                     <div key={idx} className="flex gap-2 text-[9px] leading-tight mb-2">
                                                         <span className="font-black text-slate-500 shrink-0">{idx + 1}.</span>
                                                         <div className="flex-1">
+                                                            
+                                                            {/* 🟢 FIXED */}
                                                             <div className="text-slate-600 italic mb-0.5 truncate opacity-80 font-medium">
-                                                                < MathText content={typeof item.question === 'string' ? item.question : 'Uppgift'} />
+                                                                <MathDisplay content={typeof item.question === 'string' ? item.question : 'Uppgift'} />
                                                             </div>
+                                                            
                                                             <div className={`font-black text-[10px] ${item.resp ? (item.resp.is_correct ? 'text-emerald-700' : 'text-slate-900') : 'text-slate-400'}`}>
                                                                 Svar: {item.resp?.answer || '-'} 
                                                                 {item.resp && (item.resp.is_correct ? ' ✓' : ' ✕')}
@@ -312,7 +348,8 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                                     </span>
                                                                     {item.resp.work_steps.map((line, lineIdx) => (
                                                                         <div key={lineIdx} className="leading-tight font-serif mb-1 last:mb-0">
-                                                                            <MathText text={`$$${line}$$`} />
+                                                                            {/* 🟢 FIXED */}
+                                                                            <MathDisplay content={`$$${line}$$`} />
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -335,23 +372,40 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
             <div className="absolute top-0 left-0 opacity-0 pointer-events-none print:hidden z-[-100] w-[297mm] px-[15mm] box-border">
                 {/* Sandbox Answer Key */}
                 <div className="grid grid-cols-3 gap-3 text-[9px]">
-                    {packet.map((q, i) => (
-                        <div key={`sb-key-${i}`} className="sandbox-key-card border border-slate-300 rounded-lg p-3 flex flex-col justify-between">
-                            <div className="flex items-start gap-2 mb-3">
-                                <span className="font-black text-slate-800">{i + 1}.</span>
-                                <div className="font-bold text-slate-700 leading-tight">
-                                    < MathText content={q.resolvedData?.renderData?.description} />
-                                    {q.resolvedData?.renderData?.latex && (
-                                        <div className="mt-1 font-serif text-slate-900 font-bold">< MathText content={`$$${q.resolvedData.renderData.latex}$$`} /></div>
-                                    )}
+                    {packet.map((q, i) => {
+                        const rd = q.resolvedData?.renderData;
+                        const hasVisual = rd && (rd.graph || rd.geometry || rd.pattern);
+
+                        return (
+                            <div key={`sb-key-${i}`} className="sandbox-key-card border border-slate-300 rounded-lg p-3 flex flex-col justify-between">
+                                <div className="flex items-start gap-2 mb-3">
+                                    <span className="font-black text-slate-800">{i + 1}.</span>
+                                    <div className="font-bold text-slate-700 leading-tight w-full">
+                                        <MathDisplay content={rd?.description} />
+                                        
+                                        {/* 🟢 FIXED: Sandbox perfectly matches visible constraints */}
+                                        {hasVisual && (
+                                            <div className="my-3 w-full h-[90px] relative flex justify-center items-center overflow-hidden rounded-md border border-slate-200/60 bg-white">
+                                                <div className="absolute inset-0 flex items-center justify-center transform scale-[0.45] origin-center pointer-events-none">
+                                                    <VisualRenderer data={rd} isWordProblem={false} />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {rd?.latex && (
+                                            <div className="mt-2 font-serif text-slate-900 font-bold">
+                                                <MathDisplay content={`$$${rd.latex}$$`} />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="text-right border-t border-slate-200 pt-2 mt-auto flex justify-between items-center">
+                                    <span className="font-black uppercase tracking-widest text-slate-500 text-[8px]">{lang === 'sv' ? 'Facit:' : 'Key:'}</span>
+                                    <span className="font-black text-slate-900 text-[10px]"><MathDisplay content={getCorrectAnswer(q)} /></span>
                                 </div>
                             </div>
-                            <div className="text-right border-t border-slate-200 pt-2 mt-auto flex justify-between items-center">
-                                <span className="font-black uppercase tracking-widest text-slate-500 text-[8px]">{lang === 'sv' ? 'Facit:' : 'Key:'}</span>
-                                <span className="font-black text-slate-900 text-[10px]">< MathText content={getCorrectAnswer(q)} /></span>
-                            </div>
-                        </div>
-                    ))}
+                        )
+                    })}
                 </div>
 
                 {/* Sandbox Detailed Answers */}
@@ -370,7 +424,7 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                     {studentResps.map((item, idx) => (
                                         <div key={idx} className="flex gap-2 text-[9px] leading-tight mb-2">
                                             <div className="flex-1">
-                                                <div className="text-slate-600 italic mb-0.5">< MathText content={typeof item.question === 'string' ? item.question : 'Uppgift'} /></div>
+                                                <div className="text-slate-600 italic mb-0.5"><MathDisplay content={typeof item.question === 'string' ? item.question : 'Uppgift'} /></div>
                                                 <div className="font-black text-[10px]">Svar: {item.resp?.answer || '-'}</div>
                                                 {printSteps && item.resp?.work_steps && item.resp.work_steps.length > 0 && (
                                                     <div className="mt-1.5 p-2 border border-slate-300 rounded-lg text-[10px] text-slate-800">
@@ -379,7 +433,7 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                         </span>
                                                         {item.resp.work_steps.map((line, lineIdx) => (
                                                             <div key={lineIdx} className="leading-tight font-serif mb-1 last:mb-0">
-                                                                <MathText text={`$$${line}$$`} />
+                                                                <MathDisplay content={`$$${line}$$`} />
                                                             </div>
                                                         ))}
                                                     </div>
