@@ -35,7 +35,7 @@ const Toolbar = ({
             undo: "Ångra", redo: "Gör om", select: "Markera / Flytta",
             pen: "Penna", highlighter: "Överstruken", line: "Linje", math: "LaTeX", richText: "Text", timer: "Timer", realClock: "Klocka",
             rect: "Rektangel", circle: "Cirkel", triangle: "Triangel", frac_rect: "Bråk (Rektangel)", frac_circle: "Bråk (Cirkel)", shapes_3d: "3D Figurer", protractor: "Gradskiva",
-            coord: "Koordinatsystem", tchart: "Värdetabell", dice: "Tärningar", spinner: "Lyckohjul", ruler: "Linjal", clock_prac: "Klocka (Övning)", calc: "Miniräknare",
+            coord: "Koordinatsystem", tchart: "Värdetabell", dice: "Tärningar", spinner: "Lyckohjul", ruler: "Tallinje", clock_prac: "Klocka (Övning)", calc: "Miniräknare",
             color: "Välj färg", bg: "Ändra bakgrund", clear: "Rensa allt", volume_cue: "Arbetsro"
         },
         en: {
@@ -44,7 +44,7 @@ const Toolbar = ({
             undo: "Undo", redo: "Redo", select: "Select / Move",
             pen: "Pen", highlighter: "Highlighter", line: "Line", math: "Math Box", richText: "Text (Wordpad)", timer: "Timer", realClock: "Real Clock",
             rect: "Rectangle", circle: "Circle", triangle: "Triangle", frac_rect: "Fraction (Rect)", frac_circle: "Fraction (Circle)", shapes_3d: "3D Shapes", protractor: "Protractor",
-            coord: "Coordinate Plane", tchart: "T-Chart", dice: "Dice", spinner: "Spinner", ruler: "Ruler", clock_prac: "Clock (Practice)", calc: "Calculator",
+            coord: "Coordinate Plane", tchart: "T-Chart", dice: "Dice", spinner: "Spinner", ruler: "Number line", clock_prac: "Clock (Practice)", calc: "Calculator",
             color: "Choose Color", bg: "Toggle Background", clear: "Clear All", volume_cue: "Work Mode"
         }
     }[lang] || {};

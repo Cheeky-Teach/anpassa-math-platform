@@ -218,13 +218,18 @@ export class BasicArithmeticGen {
 
         // add_spot_the_lie
         const n1 = MathUtils.randomInt(10, 50), n2 = MathUtils.randomInt(10, 50);
-        const sTrue = `${n1} + ${n2} = ${n1 + n2}`;
+        // 🟢 FIX: Create a second mathematically correct statement so sFalse is the ONLY lie
+        const n3 = MathUtils.randomInt(10, 30);
+        
+        const sTrue1 = `${n1} + ${n2} = ${n1 + n2}`;
+        const sTrue2 = `${n3} + 10 = ${n3 + 10}`;
         const sFalse = `${n1} + ${n2} = ${n1 + n2 + MathUtils.randomChoice([-2, 1, 2])}`;
+        
         return {
             renderData: {
                 description: lang === 'sv' ? "Vilken uträkning är felaktig?" : "Which calculation is incorrect?",
                 answerType: 'multiple_choice',
-                options: MathUtils.shuffle([sTrue, `${MathUtils.randomInt(10,30)} + 10 = ${MathUtils.randomInt(45,60)}`, sFalse])
+                options: MathUtils.shuffle([sTrue1, sTrue2, sFalse]) // 🟢 FIX: 2 Truths, 1 Lie
             },
             token: this.toBase64(sFalse),
             variationKey: v, type: 'concept',

@@ -30,15 +30,17 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
     const t = {
         sv: {
             stepX: "Steg X:", stepY: "Steg Y:", quad1: "1:a Kvadr.", addRow: "+ Rad", remRow: "- Rad",
-            graph: "GRAF", equation: "Ekvation", right: "Rät", isosceles: "Liksid", whole: "Heltal",
+            graph: "GRAF", equation: "Ekvation", right: "Rät", isosceles: "Liksid", scalene: "Oliksidig", whole: "Heltal",
             decimal: "Decimal", fraction: "Bråk", parts: "Delar", size: "Storlek:", dice: "Tärningar",
-            sides: "Sidor", rollAll: "SLÅ ALLA", min: "Min:", max: "Max:", calc: "Räkna:", eg: "t.ex. 10-3"
+            sides: "Sidor", rollAll: "SLÅ ALLA", min: "Min:", max: "Max:", calc: "Räkna:", eg: "t.ex. 10-3",
+            horizontal: "Horisontell", vertical: "Vertikal"
         },
         en: {
             stepX: "Step X:", stepY: "Step Y:", quad1: "1st Quad", addRow: "+ Row", remRow: "- Row",
-            graph: "GRAPH", equation: "Equation", right: "Right", isosceles: "Isosceles", whole: "Whole",
+            graph: "GRAPH", equation: "Equation", right: "Right", isosceles: "Isosceles", scalene: "Scalene", whole: "Whole",
             decimal: "Decimal", fraction: "Fraction", parts: "Parts", size: "Size:", dice: "Dice",
-            sides: "Sides", rollAll: "ROLL ALL", min: "Min:", max: "Max:", calc: "Calc:", eg: "e.g. 10-3"
+            sides: "Sides", rollAll: "ROLL ALL", min: "Min:", max: "Max:", calc: "Calc:", eg: "e.g. 10-3",
+            horizontal: "Horizontal", vertical: "Vertical"
         }
     }[lang || 'sv'];
 
@@ -419,10 +421,16 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         const rigX = (isC || isP) ? el.x + radius*2 : el.x + el.width;
         const hasOptions = ['ruler', 'shapes_3d', 'triangle', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'coord', 'math', 'dice', 'dynamicClues', 'volume_cue'].includes(el.type);
 
+        // 🟢 FIX: Smart counter-rotation logic ensures menus stay horizontal!
+        const isRotatedByParent = ['line', 'coord', 'timer', 'dynamicClues', 'volume_cue', 'rect', 'circle', 'triangle', 'frac_rect', 'frac_circle', 'spinner'].includes(el.type);
+        const unrotateMenu = (el.rotation && isRotatedByParent) ? `rotate(${-el.rotation}, ${cx}, ${botY+8})` : '';
+        const unrotateTrash = (el.rotation && isRotatedByParent) ? `rotate(${-el.rotation}, ${el.x - 22.5}, ${el.y - 22.5})` : '';
+
         return (
             <g className="ui-ignore pointer-events-auto">
                 <rect x={el.x-5} y={el.y-5} width={(isC || isP ? radius*2 : el.width)+10} height={(isP ? radius : (isC ? radius*2 : el.height))+10} fill="none" stroke="#3b82f6" strokeDasharray="5" opacity="0.4" />
-                <foreignObject x={el.x - 45} y={el.y - 45} width={45} height={45}>
+                
+                <foreignObject x={el.x - 45} y={el.y - 45} width={45} height={45} transform={unrotateTrash}>
                     <button onClick={() => deleteElement(el.id)} className="text-rose-500 bg-white border-2 border-rose-500 rounded-xl shadow-lg w-10 h-10 flex items-center justify-center hover:bg-rose-50 cursor-pointer pointer-events-auto">
                         <Trash2 size={20}/>
                     </button>
@@ -433,7 +441,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                     <circle cx={rigX + 25} cy={botY - 10} r={10} fill="#eab308" stroke="#854d0e" strokeWidth="2" className="cursor-zoom-in" onPointerDown={(e) => { e.stopPropagation(); setInteractionMode('scaling'); setIsDrawing(true); }} />
                 )}
                 {hasOptions && (
-                    <foreignObject x={el.x} y={botY+8} width={600} height={100} className="ui-ignore pointer-events-auto overflow-visible">
+                    <foreignObject x={el.x} y={botY+8} width={600} height={100} transform={unrotateMenu} className="ui-ignore pointer-events-auto overflow-visible">
                         <div className="flex flex-wrap gap-3 bg-white rounded-xl shadow-xl border border-emerald-500 p-2.5 pointer-events-auto text-[11px] font-black uppercase items-center w-max" onPointerDown={e => e.stopPropagation()}>
                             {el.type === 'coord' && (
                                 <>
@@ -459,8 +467,32 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                                     {t.min}<input type="text" className="w-10 border-b text-center outline-none" value={el.min} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, min:e.target.value}:o))} />
                                     {t.max}<input type="text" className="w-10 border-b text-center outline-none" value={el.max} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, max:e.target.value}:o))} />
                                     {t.calc}<input type="text" placeholder={t.eg} className="w-16 border-b border-emerald-500 text-center outline-none font-bold text-emerald-700" value={el.equation} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, equation:e.target.value}:o))} />
-                                    <select className="bg-slate-100 rounded-md p-1 text-[10px] font-bold outline-none cursor-pointer" value={el.unitType} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, unitType:e.target.value}:o))}><option value="whole">{t.whole}</option><option value="decimal">{t.decimal}</option><option value="fraction">{t.fraction}</option></select>
+                                    
+                                    <select className="bg-slate-100 rounded-md p-1 text-[10px] font-bold outline-none cursor-pointer" value={el.unitType} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, unitType:e.target.value}:o))}>
+                                        <option value="whole">{t.whole}</option>
+                                        <option value="decimal">{t.decimal}</option>
+                                        <option value="fraction">{t.fraction}</option>
+                                    </select>
+
+                                    {el.unitType === 'fraction' ? (
+                                        <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
+                                            <span className="text-[9px] font-black uppercase text-slate-400">{lang === 'sv' ? 'Nämnare:' : 'Denom:'}</span>
+                                            <input type="number" min="1" className="w-10 border-b text-center outline-none font-bold text-indigo-600" value={el.denom || 4} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, denom: parseInt(e.target.value) || 1}:o))} />
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
+                                            <span className="text-[9px] font-black uppercase text-slate-400">{lang === 'sv' ? 'Steg:' : 'Step:'}</span>
+                                            <input type="number" step="any" className="w-12 border-b text-center outline-none font-bold text-indigo-600" value={el.stepValue || 1} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepValue: parseFloat(e.target.value) || 1}:o))} />
+                                        </div>
+                                    )}
+
                                     <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showSubnotches: !o.showSubnotches}:o))} className={`p-1.5 rounded-md transition-colors ${el.showSubnotches ? 'bg-emerald-500 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}><Hash size={14}/></button>
+
+                                    {/* 🟢 NEW: Orientation Toggle (Swaps width/height automatically) */}
+                                    <div className="w-px h-6 bg-slate-300 mx-1" />
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, orientation: o.orientation === 'vertical' ? 'horizontal' : 'vertical', width: o.height || 100, height: o.width || 800}:o))} className={`px-3 py-1.5 rounded-md transition-colors bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[10px] font-black uppercase`}>
+                                        {el.orientation === 'vertical' ? t.vertical : t.horizontal}
+                                    </button>
                                 </div>
                             )}
                             {el.type === 'dice' && (
@@ -502,6 +534,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                                 <>
                                     <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'right'}:o))} className={`px-2.5 py-1.5 rounded-md text-[10px] transition-colors ${el.triangleType==='right'?'bg-emerald-500 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.right}</button>
                                     <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'isosceles'}:o))} className={`px-2.5 py-1.5 rounded-md text-[10px] transition-colors ${el.triangleType==='isosceles'?'bg-emerald-500 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.isosceles}</button>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'scalene'}:o))} className={`px-2.5 py-1.5 rounded-md text-[10px] transition-colors ${el.triangleType==='scalene'?'bg-emerald-500 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.scalene}</button>
                                 </>
                             )}
                             {el.type === 'shapes_3d' && (
@@ -708,8 +741,9 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                     </text>
 
                     {/*   NEW: COMPACT CONTROLS ROW UNDERNEATH THE TIMER */}
+                    {/*   NEW: COMPACT CONTROLS ROW UNDERNEATH THE TIMER */}
                     {showUI && (
-                        <foreignObject x={cx - 150} y={el.y + el.height + 10} width={300} height={60} className="ui-ignore pointer-events-auto overflow-visible">
+                        <foreignObject x={cx - 150} y={el.y + el.height + 10} width={300} height={60} transform={el.rotation ? `rotate(${-el.rotation}, ${cx}, ${el.y + el.height + 10})` : ''} className="ui-ignore pointer-events-auto overflow-visible">
                             <div className="flex items-center justify-center gap-2 w-full h-full" onPointerDown={e => e.stopPropagation()}>
                                 {/* Start / Pause */}
                                 <button 
@@ -921,39 +955,141 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             );
         }
 
-        // Ruler
+        // Ruler (Number Line)
         if (el.type === 'ruler') {
-            const ticks = [], rng = el.max - el.min, pxU = el.width / rng;
-            const subStep = el.unitType === 'fraction' ? 1/el.denom : (el.unitType === 'decimal' ? 0.1 : 0.5);
-            const labelStep = (el.unitType === 'fraction' || el.unitType === 'whole') ? 1 : (el.stepValue || 1);
+            const isVertical = el.orientation === 'vertical';
+            const ticks = [];
+            const rng = parseFloat(el.max) - parseFloat(el.min);
+            const pxU = rng > 0 ? (isVertical ? el.height / rng : el.width / rng) : 0;
+            
+            let step = 1;
+            if (el.unitType === 'fraction') step = 1 / (el.denom || 4);
+            else step = el.stepValue || (el.unitType === 'decimal' ? 0.1 : 1);
+            
+            if (step <= 0 || isNaN(step)) step = 1;
+            if (rng / step > 300) step = rng / 300; 
 
-            for (let i = 0; i <= rng + 0.001; i += subStep) {
-                const val = parseFloat(el.min) + i, xp = el.x + i * pxU;
-                const isLabelTick = Math.abs(i % labelStep) < 0.001 || Math.abs((i % labelStep) - labelStep) < 0.001;
-                if (isLabelTick) {
-                    ticks.push(<line key={`m-${i}`} x1={xp} y1={el.y + 30} x2={xp} y2={el.y + 70} stroke="black" strokeWidth="4" />);
-                    ticks.push(<text key={`l-${i}`} x={xp} y={el.y + 105} textAnchor="middle" fontSize="24" fontWeight="900" fill="black">{el.unitType === 'decimal' ? val.toFixed(1) : Math.round(val).toString()}</text>);
-                } else if (el.showSubnotches) ticks.push(<line key={`s-${i}`} x1={xp} y1={el.y + 40} x2={xp} y2={el.y + 60} stroke="black" strokeWidth="2" opacity="0.5" />);
-            }
+            if (rng > 0) {
+                for (let i = 0; i <= rng + 0.0001; i += step) {
+                    const val = parseFloat(el.min) + i;
+                    
+                    if (isVertical) {
+                        // 🟢 Vertical Drawing Logic (Bottom to Top)
+                        const yp = el.y + el.height - (i * pxU);
+                        ticks.push(<line key={`m-${i}`} x1={el.x + 30} y1={yp} x2={el.x + 70} y2={yp} stroke="black" strokeWidth="4" />);
 
-            const hops = [], match = el.equation?.match(/(\d+)\s*([+-])\s*(\d+)/);
-            if (match) {
-                const startVal = parseInt(match[1]), op = match[2], count = parseInt(match[3]), dir = op === '+' ? 1 : -1, totalWidth = count * pxU, startX = el.x + (startVal - el.min) * pxU;
-                for (let j = 0; j < count; j++) {
-                    const x1 = startX + (j * dir * pxU), x2 = x1 + (dir * pxU), midX = (x1 + x2) / 2;
-                    hops.push(<path key={j} d={`M ${x1} ${el.y + 30} Q ${midX} ${el.y - 40} ${x2} ${el.y + 30}`} fill="none" stroke={el.stroke} strokeWidth="3" strokeDasharray="6,4" />);
-                    if (j === count - 1) hops.push(<path key="arrow" d={`M ${x2-5*dir} ${el.y+20} L ${x2} ${el.y+30} L ${x2-5*dir} ${el.y+40}`} fill="none" stroke={el.stroke} strokeWidth="3" />);
+                        if (el.unitType === 'fraction') {
+                            const den = el.denom || 4;
+                            const num = Math.round(val * den);
+                            if (num % den === 0) {
+                                ticks.push(<text key={`l-${i}`} x={el.x + 20} y={yp} textAnchor="end" dominantBaseline="central" fontSize="24" fontWeight="900" fill="black">{num / den}</text>);
+                            } else {
+                                ticks.push(
+                                    <g key={`l-${i}`} transform={`translate(${el.x + 10}, ${yp})`}>
+                                        <text x="-5" y="-12" textAnchor="middle" dominantBaseline="central" fontSize="18" fontWeight="900" fill="black">{num}</text>
+                                        <line x1="-15" y1="-2" x2="5" y2="-2" stroke="black" strokeWidth="2.5" />
+                                        <text x="-5" y="10" textAnchor="middle" dominantBaseline="central" fontSize="18" fontWeight="900" fill="black">{den}</text>
+                                    </g>
+                                );
+                            }
+                        } else if (el.unitType === 'decimal') {
+                            const decLabel = parseFloat(val.toFixed(4)).toString();
+                            ticks.push(<text key={`l-${i}`} x={el.x + 20} y={yp} textAnchor="end" dominantBaseline="central" fontSize="24" fontWeight="900" fill="black">{decLabel}</text>);
+                        } else {
+                            ticks.push(<text key={`l-${i}`} x={el.x + 20} y={yp} textAnchor="end" dominantBaseline="central" fontSize="24" fontWeight="900" fill="black">{Math.round(val)}</text>);
+                        }
+                    } else {
+                        // 🟢 Horizontal Drawing Logic (Left to Right)
+                        const xp = el.x + i * pxU;
+                        ticks.push(<line key={`m-${i}`} x1={xp} y1={el.y + 30} x2={xp} y2={el.y + 70} stroke="black" strokeWidth="4" />);
+
+                        if (el.unitType === 'fraction') {
+                            const den = el.denom || 4;
+                            const num = Math.round(val * den);
+                            if (num % den === 0) {
+                                ticks.push(<text key={`l-${i}`} x={xp} y={el.y + 105} textAnchor="middle" fontSize="24" fontWeight="900" fill="black">{num / den}</text>);
+                            } else {
+                                ticks.push(
+                                    <g key={`l-${i}`} transform={`translate(${xp}, ${el.y + 95})`}>
+                                        <text x="0" y="-12" textAnchor="middle" fontSize="18" fontWeight="900" fill="black">{num}</text>
+                                        <line x1="-12" y1="-4" x2="12" y2="-4" stroke="black" strokeWidth="2.5" />
+                                        <text x="0" y="14" textAnchor="middle" fontSize="18" fontWeight="900" fill="black">{den}</text>
+                                    </g>
+                                );
+                            }
+                        } else if (el.unitType === 'decimal') {
+                            const decLabel = parseFloat(val.toFixed(4)).toString();
+                            ticks.push(<text key={`l-${i}`} x={xp} y={el.y + 105} textAnchor="middle" fontSize="24" fontWeight="900" fill="black">{decLabel}</text>);
+                        } else {
+                            ticks.push(<text key={`l-${i}`} x={xp} y={el.y + 105} textAnchor="middle" fontSize="24" fontWeight="900" fill="black">{Math.round(val)}</text>);
+                        }
+                    }
                 }
-                const labelX = startX + (totalWidth / 2) * dir;
-                hops.push(<g key="lbl"><rect x={labelX - 25} y={el.y - 75} width="50" height="35" fill="white" rx="4" /><text x={labelX} y={el.y - 50} textAnchor="middle" fontSize="22" fontWeight="black" fill={el.stroke}>{op}{count}</text></g>);
+
+                if (el.showSubnotches) {
+                    const subStepSize = el.unitType === 'fraction' ? step / 2 : step / 10;
+                    for (let i = 0; i <= rng + 0.0001; i += subStepSize) {
+                        const rMod = i % step;
+                        if (rMod > 0.001 && Math.abs(rMod - step) > 0.001) {
+                            if (isVertical) {
+                                const yp = el.y + el.height - (i * pxU);
+                                ticks.push(<line key={`s-${i}`} x1={el.x + 40} y1={yp} x2={el.x + 60} y2={yp} stroke="black" strokeWidth="2" opacity="0.5" />);
+                            } else {
+                                const xp = el.x + i * pxU;
+                                ticks.push(<line key={`s-${i}`} x1={xp} y1={el.y + 40} x2={xp} y2={el.y + 60} stroke="black" strokeWidth="2" opacity="0.5" />);
+                            }
+                        }
+                    }
+                }
             }
+
+            const hops = [];
+            const match = el.equation?.match(/(\d+(?:\.\d+)?)\s*([+-])\s*(\d+(?:\.\d+)?)/);
+            if (match && rng > 0) {
+                const startVal = parseFloat(match[1]), op = match[2], count = parseFloat(match[3]), dir = op === '+' ? 1 : -1;
+                const intCount = Math.max(1, Math.floor(count));
+                
+                if (isVertical) {
+                    // Vertical Hops logic
+                    const startY = el.y + el.height - ((startVal - parseFloat(el.min)) * pxU);
+                    const yDir = dir === 1 ? -1 : 1; 
+                    const totalHeight = count * pxU;
+                    const singleHopPx = totalHeight / intCount;
+                    
+                    for (let j = 0; j < intCount; j++) {
+                        const y1 = startY + (j * yDir * singleHopPx);
+                        const y2 = y1 + (yDir * singleHopPx);
+                        const midY = (y1 + y2) / 2;
+                        hops.push(<path key={j} d={`M ${el.x + 50} ${y1} Q ${el.x + 100} ${midY} ${el.x + 50} ${y2}`} fill="none" stroke={el.stroke} strokeWidth="3" strokeDasharray="6,4" />);
+                        if (j === intCount - 1) hops.push(<path key="arrow" d={`M ${el.x+40} ${y2-5*yDir} L ${el.x+50} ${y2} L ${el.x+60} ${y2-5*yDir}`} fill="none" stroke={el.stroke} strokeWidth="3" />);
+                    }
+                    const labelY = startY + (totalHeight / 2) * yDir;
+                    hops.push(<g key="lbl"><rect x={el.x + 85} y={labelY - 17} width="50" height="35" fill="white" rx="4" /><text x={el.x + 110} y={labelY} textAnchor="middle" dominantBaseline="central" fontSize="22" fontWeight="black" fill={el.stroke}>{op}{count}</text></g>);
+                } else {
+                    // Horizontal Hops logic
+                    const totalWidth = count * pxU;
+                    const startX = el.x + (startVal - parseFloat(el.min)) * pxU;
+                    const singleHopPx = totalWidth / intCount;
+                    
+                    for (let j = 0; j < intCount; j++) {
+                        const x1 = startX + (j * dir * singleHopPx), x2 = x1 + (dir * singleHopPx), midX = (x1 + x2) / 2;
+                        hops.push(<path key={j} d={`M ${x1} ${el.y + 30} Q ${midX} ${el.y - 40} ${x2} ${el.y + 30}`} fill="none" stroke={el.stroke} strokeWidth="3" strokeDasharray="6,4" />);
+                        if (j === intCount - 1) hops.push(<path key="arrow" d={`M ${x2-5*dir} ${el.y+20} L ${x2} ${el.y+30} L ${x2-5*dir} ${el.y+40}`} fill="none" stroke={el.stroke} strokeWidth="3" />);
+                    }
+                    const labelX = startX + (totalWidth / 2) * dir;
+                    hops.push(<g key="lbl"><rect x={labelX - 25} y={el.y - 75} width="50" height="35" fill="white" rx="4" /><text x={labelX} y={el.y - 50} textAnchor="middle" fontSize="22" fontWeight="black" fill={el.stroke}>{op}{count}</text></g>);
+                }
+            }
+            
             return (
                 <React.Fragment key={el.id}>
                     <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        {/* 🟢 FIX: Invisible background allows the Ruler to be clicked easily */}
                         <rect x={el.x} y={el.y} width={el.width} height={el.height || 100} fill="transparent" />
-                        
-                        <line x1={el.x} y1={el.y+50} x2={el.x+el.width} y2={el.y+50} stroke="black" strokeWidth="5" />
+                        {isVertical ? (
+                            <line x1={el.x+50} y1={el.y} x2={el.x+50} y2={el.y+el.height} stroke="black" strokeWidth="5" />
+                        ) : (
+                            <line x1={el.x} y1={el.y+50} x2={el.x+el.width} y2={el.y+50} stroke="black" strokeWidth="5" />
+                        )}
                         {ticks}{hops}
                     </g>
                     {showUI && renderHandles(el)}
@@ -1394,24 +1530,30 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         if (el.type === 'dynamicClues') {
             const q = livePacket.find(p => p.id === el.questionId);
             const clues = q?.clues || q?.resolvedData?.clues || [];
-            const progress = el.progress || 0; // 🟢 USES LOCAL ELEMENT PROGRESS!
+            const progress = el.progress || 0; 
             
             return (
                 <React.Fragment key={el.id}>
                     <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
                         <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.95" stroke={isSelected ? "#3b82f6" : "#e2e8f0"} strokeWidth={isSelected ? 3 : 2} rx="14" />
-                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height} className="ui-ignore">
-                            {/* 🟢 FIX: Removed stopPropagation from the parent so you can click to select! */}
+                        
+                        {/* 🟢 FIX 1: Removed 'ui-ignore' so the SVG canvas can actually detect your mouse clicks! */}
+                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height}>
                             <div className="w-full h-full flex flex-col pointer-events-auto">
                                 
-                                {/* 🟢 NEW: Visual Drag Handle added to the top */}
+                                {/* 🟢 FIX 2: Drag Handle - Letting the click pass through means you can instantly drag the box! */}
                                 <div className="w-full h-8 flex items-center justify-center shrink-0 opacity-40 hover:opacity-100 transition-opacity cursor-move" style={{ touchAction: 'none' }}>
-                                    <div className="w-12 h-1.5 bg-slate-400 rounded-full" />
+                                    <div className="w-12 h-1.5 bg-slate-400 rounded-full pointer-events-none" />
                                 </div>
 
                                 <div 
-                                    className="flex-1 px-4 pb-4 overflow-y-auto custom-scrollbar"
-                                    onPointerDown={(e) => e.stopPropagation()} // Protects scrolling
+                                    className="flex-1 px-4 pb-4 overflow-y-auto custom-scrollbar cursor-text"
+                                    onPointerDown={(e) => {
+                                        // 🟢 FIX 3: We stop the canvas from dragging so you can scroll the text, 
+                                        // but we force the menu to open by selecting the box directly!
+                                        e.stopPropagation();
+                                        setSelectedId(el.id);
+                                    }} 
                                 >
                                     {clues.length === 0 ? (
                                         <div className="text-slate-400 italic font-bold text-center mt-4 text-sm">
@@ -1450,18 +1592,22 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
 
                                 <div 
                                     className="h-10 bg-slate-50 border-t border-slate-200 flex items-center justify-between px-3 shrink-0 rounded-b-[14px]"
-                                    onPointerDown={(e) => e.stopPropagation()} // Protects buttons
+                                    onPointerDown={(e) => {
+                                        // 🟢 FIX 4: Clicking the footer also selects the box without dragging
+                                        e.stopPropagation();
+                                        setSelectedId(el.id);
+                                    }} 
                                 >
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); setElements(p=>p.map(o=>o.id===el.id?{...o, progress: Math.max(0, progress-1)}:o)); }} 
-                                        className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors"
+                                        className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors cursor-pointer"
                                     >
                                         <ChevronLeft size={18}/>
                                     </button>
-                                    <span className="text-[11px] font-black text-slate-500 tracking-widest">{progress} / {clues.length}</span>
+                                    <span className="text-[11px] font-black text-slate-500 tracking-widest select-none">{progress} / {clues.length}</span>
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); setElements(p=>p.map(o=>o.id===el.id?{...o, progress: Math.min(clues.length, progress+1)}:o)); }} 
-                                        className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors"
+                                        className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors cursor-pointer"
                                     >
                                         <ChevronRight size={18}/>
                                     </button>
@@ -1525,8 +1671,13 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                 <g key={el.id} data-id={el.id} transform={transform} className="pointer-events-auto cursor-move">
                     {fills}
                     {/* 🟢 FIX: Changed fill="none" to fill="transparent" so the insides of shapes are fully clickable! */}
+                    {/* 🟢 FIX: Changed fill="none" to fill="transparent" so the insides of shapes are fully clickable! */}
                     {el.type === 'triangle' ? (() => {
-                        const pts = el.triangleType === 'right' ? `${el.x},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height}` : el.triangleType === 'isosceles' ? `${el.x+el.width/2},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height}` : `${el.x+el.width/3},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height*0.8}`;
+                        const pts = el.triangleType === 'right' 
+                            ? `${el.x},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height}` 
+                            : el.triangleType === 'isosceles' 
+                                ? `${el.x+el.width/2},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height}` 
+                                : `${el.x+el.width/4},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height}`; // 🟢 Scalene! Flat base, offset apex
                         return <polygon points={pts} fill="transparent" stroke="black" strokeWidth={el.strokeWidth} />;
                     })() : el.type.includes('rect') ? <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="transparent" stroke="black" strokeWidth={el.strokeWidth} /> : <circle cx={cx} cy={cy} r={r} fill="transparent" stroke="black" strokeWidth={el.strokeWidth} />}
                     {borderL}

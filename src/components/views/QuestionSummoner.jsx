@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Loader2, RefreshCcw, Type, Calculator, Zap } from 'lucide-react';
+import { Search, X, Loader2, RefreshCcw, Type, Calculator, Zap, Plus } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer';
 
@@ -29,6 +29,9 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
     const [previewData, setPreviewData] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isWordProblem, setIsWordProblem] = useState(false);
+    
+    // 🟢 NEW: Queue state to hold multiple questions
+    const [queue, setQueue] = useState([]);
 
     // Flatten all topics for searching
     const allTopics = Object.values(SKILL_BUCKETS).flatMap(cat => 
@@ -68,10 +71,10 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
         }
     };
 
-    const handleSummon = () => {
+    // 🟢 NEW: Pushes the current preview to the queue and instantly rolls fresh numbers
+    const handleAddToQueue = () => {
         if (!previewData) return;
         
-        // Build a standardized item object matching QuestionStudio's packet format
         const newItem = {
             id: crypto.randomUUID(),
             topicId: selectedTopicId,
@@ -86,10 +89,19 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
             selectedStoryIndex: isWordProblem ? 0 : null
         };
         
-        onSummon(newItem);
+        setQueue(prev => [...prev, newItem]);
+        fetchPreview(); // Auto-roll new numbers so the user can quickly queue variants
     };
 
-    
+    const removeFromQueue = (id) => {
+        setQueue(prev => prev.filter(q => q.id !== id));
+    };
+
+    // 🟢 UPDATED: Sends the entire array of queued questions to the parent component
+    const handleFinalSummon = () => {
+        if (queue.length === 0) return;
+        onSummon(queue);
+    };
 
     return (
         <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-8 animate-in fade-in duration-200">
@@ -101,7 +113,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                     <div className="flex items-center gap-3">
                         <div className="bg-indigo-100 p-2 rounded-xl"><Zap size={20} className="text-indigo-600" /></div>
                         <h2 className="text-lg font-black uppercase tracking-widest text-slate-800">
-                            {lang === 'sv' ? "Hämta Uppgift" : "Summon Question"}
+                            {lang === 'sv' ? "Hämta Uppgifter" : "Summon Questions"}
                         </h2>
                     </div>
                     <button onClick={onClose} className="p-2 text-slate-400 hover:bg-rose-100 hover:text-rose-600 rounded-full transition-colors">
@@ -160,7 +172,7 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                     </div>
 
                     {/* COL 3: Preview & Actions */}
-                    <div className="flex-1 min-w-[33%] flex flex-col bg-white relative">
+                    <div className="flex-1 min-w-[33%] flex flex-col bg-white relative overflow-hidden">
                         <div className="flex-1 overflow-y-auto p-8 flex flex-col items-stretch justify-center custom-scrollbar">
                             {isLoading ? (
                                 <div className="flex justify-center items-center h-full">
@@ -177,38 +189,79 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                                     <div className="text-lg text-slate-800 font-bold text-center px-4 leading-relaxed mb-6">
                                         <MathDisplay content={previewData.renderData.description} />
                                     </div>
-                                    {previewData.renderData.latex && (
-                                        <div className="text-3xl text-indigo-600 bg-indigo-50/50 px-8 py-6 rounded-3xl border-2 border-indigo-100 shadow-inner text-center font-serif w-full max-w-sm">
-                                            <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
+                                    {/* Render Multiple Choice Options in Preview */}
+                                    {previewData.renderData.options && previewData.renderData.options.length > 0 && (
+                                        <div className="mt-6 grid grid-cols-2 gap-3 w-full max-w-md px-4 shrink-0">
+                                            {previewData.renderData.options.map((opt, oIdx) => {
+                                                const choiceLabel = typeof opt === 'object' ? opt.label : opt;
+                                                return (
+                                                    <div key={oIdx} className="flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-slate-200 bg-white shadow-sm text-sm">
+                                                        <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
+                                                        <MathDisplay content={String(choiceLabel)} className="font-bold text-slate-700" />
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>
                             ) : null}
                         </div>
 
+                        {/* 🟢 NEW: Active Queue Panel */}
+                        {queue.length > 0 && (
+                            <div className="max-h-48 bg-slate-50 border-t border-slate-200 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-2 shadow-inner shrink-0 animate-in slide-in-from-bottom-2">
+                                <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 px-1">
+                                    {lang === 'sv' ? "I kön" : "In Queue"} ({queue.length})
+                                </div>
+                                {queue.map((q, i) => (
+                                    <div key={q.id} className="flex items-center justify-between bg-white border border-slate-200 p-2 rounded-lg shadow-sm">
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            <span className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-md flex items-center justify-center text-[10px] font-black shrink-0">{i + 1}</span>
+                                            <span className="text-xs font-bold text-slate-700 truncate">{q.name}</span>
+                                        </div>
+                                        <button onClick={() => removeFromQueue(q.id)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors">
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         {/* Control Panel Footer */}
-                        <div className="p-6 border-t border-slate-200 bg-slate-50 space-y-4 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+                        <div className="p-6 border-t border-slate-200 bg-white space-y-4 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] shrink-0">
                             <div className="flex gap-2">
                                 <button 
                                     onClick={fetchPreview}
-                                    className="flex-1 py-3 bg-white border border-slate-300 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
+                                    className="flex-1 py-3 bg-slate-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
                                 >
                                     <RefreshCcw size={16} /> {lang === 'sv' ? "Slumpa Siffror" : "Shuffle Numbers"}
                                 </button>
                                 <button 
                                     onClick={() => setIsWordProblem(!isWordProblem)}
-                                    className={`flex-1 py-3 border rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 ${isWordProblem ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-white border-slate-300 text-slate-700 hover:border-amber-300'}`}
+                                    className={`flex-1 py-3 border rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 ${isWordProblem ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-amber-300'}`}
                                 >
                                     <Type size={16} /> {isWordProblem ? (lang === 'sv' ? "Ta bort text" : "Remove Story") : (lang === 'sv' ? "Gör till text" : "Make Story")}
                                 </button>
                             </div>
-                            <button 
-                                onClick={handleSummon}
-                                disabled={isLoading || !previewData}
-                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-                            >
-                                <Zap size={18} /> {lang === 'sv' ? "Lägg till på tavlan" : "Summon to Board"}
-                            </button>
+                            
+                            {/* 🟢 NEW: Queue & Summon Buttons */}
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={handleAddToQueue}
+                                    disabled={isLoading || !previewData}
+                                    className="flex-1 py-4 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+                                >
+                                    <Plus size={18} /> {lang === 'sv' ? "Lägg i kö" : "Queue"}
+                                </button>
+
+                                <button 
+                                    onClick={handleFinalSummon}
+                                    disabled={queue.length === 0}
+                                    className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                                >
+                                    <Zap size={18} /> {lang === 'sv' ? `Skapa (${queue.length})` : `Summon (${queue.length})`}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
