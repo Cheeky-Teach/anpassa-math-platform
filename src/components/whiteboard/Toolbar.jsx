@@ -6,7 +6,8 @@ import {
     LineChart, Ruler, Compass, Table, Clock,
     Undo2, Redo2, RefreshCw, Share2, Triangle,
     Cone, Cylinder, Pyramid, Orbit, Home,
-    FileText, ChevronDown, ChevronUp, Grid3X3, Calculator, Watch
+    FileText, ChevronDown, ChevronUp, Grid3X3, Calculator, Watch,
+    MessageCircle
 } from 'lucide-react';
 
 const Toolbar = ({ 
@@ -35,7 +36,7 @@ const Toolbar = ({
             pen: "Penna", highlighter: "Överstruken", line: "Linje", math: "LaTeX", richText: "Text", timer: "Timer", realClock: "Klocka",
             rect: "Rektangel", circle: "Cirkel", triangle: "Triangel", frac_rect: "Bråk (Rektangel)", frac_circle: "Bråk (Cirkel)", shapes_3d: "3D Figurer", protractor: "Gradskiva",
             coord: "Koordinatsystem", tchart: "Värdetabell", dice: "Tärningar", spinner: "Lyckohjul", ruler: "Linjal", clock_prac: "Klocka (Övning)", calc: "Miniräknare",
-            color: "Välj färg", bg: "Ändra bakgrund", clear: "Rensa allt"
+            color: "Välj färg", bg: "Ändra bakgrund", clear: "Rensa allt", volume_cue: "Arbetsro"
         },
         en: {
             cube: "Cube", prism: "Prism", cylinder: "Cylinder", sphere: "Sphere", cone: "Cone", pyramid: "Pyramid", 
@@ -44,7 +45,7 @@ const Toolbar = ({
             pen: "Pen", highlighter: "Highlighter", line: "Line", math: "Math Box", richText: "Text (Wordpad)", timer: "Timer", realClock: "Real Clock",
             rect: "Rectangle", circle: "Circle", triangle: "Triangle", frac_rect: "Fraction (Rect)", frac_circle: "Fraction (Circle)", shapes_3d: "3D Shapes", protractor: "Protractor",
             coord: "Coordinate Plane", tchart: "T-Chart", dice: "Dice", spinner: "Spinner", ruler: "Ruler", clock_prac: "Clock (Practice)", calc: "Calculator",
-            color: "Choose Color", bg: "Toggle Background", clear: "Clear All"
+            color: "Choose Color", bg: "Toggle Background", clear: "Clear All", volume_cue: "Work Mode"
         }
     }[lang] || {};
 
@@ -145,6 +146,7 @@ const Toolbar = ({
                     <ToolButton id="richText" icon={FileText} category="writing" label={t.richText} />
                     <ToolButton id="timer" icon={Timer} category="writing" label={t.timer} />
                     <ToolButton id="realClock" icon={Watch} category="writing" label={t.realClock} />
+                    <ToolButton id="volume_cue" icon={MessageCircle} category="writing" label={t.volume_cue} />
                 </div>
                 <Divider />
 
