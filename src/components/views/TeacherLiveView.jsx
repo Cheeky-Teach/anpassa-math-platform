@@ -248,15 +248,17 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     };
 
     // Function to force the class to the teacher's current zoomed question
+    // 🟢 RESTORED: Function to force the class to the teacher's current zoomed question
     const handlePushToClass = async () => {
         if (!session?.id || isPushing) return;
         setIsPushing(true);
         try {
             const { error } = await supabase
                 .from('rooms')
-                .update({ active_question: zoomIndex })
+                // 🟢 FIXED: Using the exact column name from your database schema
+                .update({ current_question_index: zoomIndex }) 
                 .eq('id', session.id);
-                
+
             if (error) throw error;
         } catch (err) {
             console.error("Failed to push question:", err);
