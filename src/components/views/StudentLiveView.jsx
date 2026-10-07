@@ -163,16 +163,9 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 }
 
                 // C. Teacher Pacing Sync
-                // 🟢 FIX: Safely parse JSON if Supabase real-time stringifies it
-                let activeData = newData.active_question_data;
-                if (typeof activeData === 'string') {
-                    try { activeData = JSON.parse(activeData); } catch (e) {}
-                }
-                
-                const newSettings = activeData?.settings;
-                
-                if (newSettings?.pacing === 'teacher' && newSettings.current_index !== undefined) {
-                    const newTeacherIndex = parseInt(newSettings.current_index, 10); // Ensure it's a number
+                // 🟢 FIXED: The student now listens to the exact column the teacher is updating!
+                if (settings.pacing === 'teacher' && newData.current_question_index !== null && newData.current_question_index !== undefined) {
+                    const newTeacherIndex = parseInt(newData.current_question_index, 10);
                     
                     setCurrentIndex((prevIndex) => {
                         const currentCompleted = completedRef.current;
