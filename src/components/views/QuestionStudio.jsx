@@ -447,11 +447,14 @@ export default function QuestionStudio({
   };
 
   const loadSheet = (sheet) => {
-      //   CRITICAL FIX: Intercept Presentation Boards and route them safely to the standalone viewer!
+      // Intercept Presentation Boards and route them safely to the standalone viewer!
       if (sheet.type === 'board') {
           loadBoard(sheet);
           return;
       }
+      
+      // 🟢 FIX: If we are loading a Worksheet/DoNow, explicitly clear any lingering Board state!
+      setActiveBoardSheet(null); 
 
       setPacket(sheet.packet); setSheetTitle(sheet.title); setSetupMode(sheet.type); setActiveSheetId(sheet.id); 
       setChosenVisibility(sheet.visibility || 'private'); setIsSaved(true);
@@ -1758,7 +1761,6 @@ export default function QuestionStudio({
       {/* 🟢 LAUNCHES STANDALONE PRESENTATION BUILDER/VIEWER */}
       {showPresentation && (
           <PresentationView 
-              // 🟢 FIX: Fall back to the active editor's 'packet' and 'sheetTitle' if we aren't opening a saved board!
               packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : packet} 
               initialSlides={activeBoardSheet?.packet?.slides}
               boardId={activeBoardSheet?.id || (setupMode === 'board' ? activeSheetId : null)}
@@ -1766,7 +1768,8 @@ export default function QuestionStudio({
               lang={lang} 
               onClose={() => { 
                   setShowPresentation(false);
-                  fetchLibrary(); // 🟢 Refreshes the library automatically so newly saved boards appear instantly
+                  setActiveBoardSheet(null); // 🟢 FIX: Wipes the board from memory so it doesn't ghost your next worksheet!
+                  fetchLibrary(); 
               }} 
           />
       )}
