@@ -80,7 +80,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
     }, [setElements]);
 
     useEffect(() => {
-        if (activeTool === 'calculator' || activeTool === 'timer' || activeTool === 'richText' || activeTool === 'realClock') {
+        if (activeTool === 'calculator' || activeTool === 'timer' || activeTool === 'richText' || activeTool === 'realClock' || activeTool === 'volume_cue') {
             const newId = Date.now().toString();
             
             let newEl = { 
@@ -93,26 +93,15 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             };
 
             if (activeTool === 'calculator') {
-                newEl.width = 280; 
-                newEl.height = 440;
-                newEl.expression = ""; 
-                newEl.result = ""; 
-                newEl.ans = ""; 
-                newEl.calcMode = "LTR";
+                newEl.width = 280; newEl.height = 440; newEl.expression = ""; newEl.result = ""; newEl.ans = ""; newEl.calcMode = "LTR";
             } else if (activeTool === 'timer') {
-                newEl.width = 360;  
-                newEl.height = 360; 
-                newEl.duration = 60; 
-                newEl.timeLeft = 60; 
-                newEl.isRunning = false;
+                newEl.width = 360; newEl.height = 360; newEl.duration = 60; newEl.timeLeft = 60; newEl.isRunning = false;
             } else if (activeTool === 'richText') {
-                newEl.width = 500;
-                newEl.height = 300;
-                newEl.content = "<p></p>";
+                newEl.width = 500; newEl.height = 300; newEl.content = "<p></p>";
             } else if (activeTool === 'realClock') {
-                newEl.width = 280;
-                newEl.height = 280;
-                newEl.clockType = 'analog'; 
+                newEl.width = 280; newEl.height = 280; newEl.clockType = 'analog'; 
+            } else if (activeTool === 'volume_cue') {
+                newEl.width = 280; newEl.height = 140; newEl.volumeLevel = 'quiet'; 
             }
 
             setElements(prev => [...prev, newEl]);
@@ -234,8 +223,8 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         }
         
         const r = el.width / 2;
-        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart', 'math', 'dice', 'richText', 'calculator', 'dynamicClues'];
-        
+        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart', 'math', 'dice', 'richText', 'calculator', 'dynamicClues', 'volume_cue'];
+
         // 🟢 FIX: Added a generous 15px hit margin to all bounding boxes
         if (bounds.some(b => el.type.includes(b))) {
             return x >= el.x - 15 && x <= el.x + el.width + 15 && y >= el.y - 15 && y <= el.y + el.height + 15;
@@ -428,7 +417,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         const botY = isP ? el.y + radius : (isC ? el.y + radius*2 : el.y + el.height);
         const cx = (isC || isP) ? el.x + radius : el.x + el.width/2;
         const rigX = (isC || isP) ? el.x + radius*2 : el.x + el.width;
-        const hasOptions = ['ruler', 'shapes_3d', 'triangle', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'coord', 'math', 'dice', 'dynamicClues'].includes(el.type);
+        const hasOptions = ['ruler', 'shapes_3d', 'triangle', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'coord', 'math', 'dice', 'dynamicClues', 'volume_cue'].includes(el.type);
 
         return (
             <g className="ui-ignore pointer-events-auto">
@@ -496,6 +485,13 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                                         <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showLatex: o.showLatex===false}:o))} className={`px-2 py-1 rounded text-[10px] font-black transition-colors ${el.showLatex!==false ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>LATEX</button>
                                     </div>
                                 </>
+                            )}
+                            {el.type === 'volume_cue' && (
+                                <div className="flex gap-2">
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, volumeLevel:'quiet'}:o))} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-colors ${el.volumeLevel==='quiet'?'bg-rose-500 text-white shadow-sm':'bg-slate-100 hover:bg-slate-200 text-slate-500'}`}>🤫 {lang==='sv'?'Tyst':'Quiet'}</button>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, volumeLevel:'whisper'}:o))} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-colors ${el.volumeLevel==='whisper'?'bg-amber-500 text-white shadow-sm':'bg-slate-100 hover:bg-slate-200 text-slate-500'}`}>💬 {lang==='sv'?'Viska':'Whisper'}</button>
+                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, volumeLevel:'discuss'}:o))} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-colors ${el.volumeLevel==='discuss'?'bg-emerald-500 text-white shadow-sm':'bg-slate-100 hover:bg-slate-200 text-slate-500'}`}>🗣️ {lang==='sv'?'Grupp':'Group'}</button>
+                                </div>
                             )}
                             {el.type === 'math' && (
                                 <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
@@ -1294,6 +1290,36 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                                     >
                                         <ChevronRight size={18}/>
                                     </button>
+                                </div>
+                            </div>
+                        </foreignObject>
+                    </g>
+                    {showUI && renderHandles(el)}
+                </React.Fragment>
+            );
+        }
+
+        // 🟢 NEW: Volume Cue / Work Mode Visual Box
+        if (el.type === 'volume_cue') {
+            const levels = {
+                quiet: { emoji: '🤫', sv: 'Tyst Arbete', en: 'Quiet Work', color: 'bg-rose-50 text-rose-700 border-rose-300 shadow-rose-900/10' },
+                whisper: { emoji: '💬', sv: 'Viskröst (Par)', en: 'Whisper (Pair)', color: 'bg-amber-50 text-amber-700 border-amber-300 shadow-amber-900/10' },
+                discuss: { emoji: '🗣️', sv: 'Diskutera (Grupp)', en: 'Discuss (Group)', color: 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-emerald-900/10' }
+            };
+            const config = levels[el.volumeLevel || 'quiet'];
+            
+            return (
+                <React.Fragment key={el.id}>
+                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
+                        {/* 🟢 FIX: Invisible SVG rect behind the HTML ensures perfect clicking & dragging */}
+                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="transparent" />
+                        
+                        {/* 🟢 FIX: pointer-events-none allows clicks to pass through the HTML down to the SVG rect! */}
+                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height} className="pointer-events-none">
+                            <div className={`w-full h-full rounded-[2rem] border-[3px] flex flex-col items-center justify-center shadow-lg transition-colors duration-500 ${config.color}`}>
+                                <div className="text-5xl drop-shadow-md mb-2">{config.emoji}</div>
+                                <div className="font-black uppercase tracking-widest text-center text-[14px] leading-tight px-2">
+                                    {lang === 'sv' ? config.sv : config.en}
                                 </div>
                             </div>
                         </foreignObject>

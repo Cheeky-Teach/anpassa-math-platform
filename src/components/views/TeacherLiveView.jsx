@@ -247,6 +247,25 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         }
     };
 
+    // Function to force the class to the teacher's current zoomed question
+    const handlePushToClass = async () => {
+        if (!session?.id || isPushing) return;
+        setIsPushing(true);
+        try {
+            const { error } = await supabase
+                .from('rooms')
+                .update({ active_question: zoomIndex })
+                .eq('id', session.id);
+                
+            if (error) throw error;
+        } catch (err) {
+            console.error("Failed to push question:", err);
+            alert(lang === 'sv' ? "Kunde inte byta fråga för klassen." : "Could not push question to class.");
+        } finally {
+            setIsPushing(false);
+        }
+    };
+
     //  CHANGED: Explicit menu selection (forces a re-shuffle every time 'random' is clicked)
     const applySort = (mode) => {
         if (mode === 'random') {
@@ -563,8 +582,18 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <PreferencesToggle />
-                                
+                                {/* 🟢 RESTORED: The Push Button (Only visible in Teacher-Led mode) */}
+                                {isTeacherLed && (
+                                    <button
+                                        onClick={handlePushToClass}
+                                        disabled={isPushing}
+                                        className="bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border border-amber-500 px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 mr-2 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:hover:scale-100"
+                                    >
+                                        {isPushing ? <Loader2 size={14} className="animate-spin" /> : <Users size={14} />}
+                                        {lang === 'sv' ? "Tvinga hit klassen" : "Push to Class"}
+                                    </button>
+                                )}
+
                                 {/* 🟢 ADDED: Show Answers Toggle */}
                                 <button 
                                     onClick={() => setShowActualAnswers(!showActualAnswers)} 
