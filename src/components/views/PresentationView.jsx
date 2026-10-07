@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-    X, ChevronLeft, ChevronRight, Monitor, PanelLeftClose, 
+    X, ChevronLeft, ChevronRight, ChevronDown, Monitor, PanelLeftClose, 
     PanelLeftOpen, ZoomIn, ZoomOut, Layers, FileText, List, Plus,
-    RefreshCw, Presentation, FileQuestion, Save, Download, Trash2
+    RefreshCw, Presentation, FileQuestion, Save, Download, Trash2,
 } from 'lucide-react';
 
 import VisualRenderer from '../visuals/VisualRenderer';
@@ -94,6 +94,9 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
     const [livePacket, setLivePacket] = useState(packet || []);
     const [bgType, setBgType] = useState('blank');
     const [isSummonerOpen, setIsSummonerOpen] = useState(false);
+
+    // Tracks which question's alignment dropdown is currently open
+    const [openAlignMenuId, setOpenAlignMenuId] = useState(null);
 
     const currentFocusedQuestion = livePacket.find(p => activeIds.includes(p.id)) || livePacket[presentationIndex] || null;
     const { coachProps } = useMyCoach(currentFocusedQuestion, lang);
@@ -710,277 +713,308 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 </div>
 
                 {/* COLUMN 2: WORKSPACE CANVAS INTERACTION SHELF */}
-                <main 
-                    className={`whiteboard-protect relative overflow-hidden h-full w-full flex flex-col transition-colors duration-300 ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
-                    style={bgType === 'grid' ? {
-                        backgroundImage: 'linear-gradient(#e2e8f0 2px, transparent 2px), linear-gradient(90deg, #e2e8f0 2px, transparent 2px)',
-                        backgroundSize: '40px 40px',
-                        backgroundPosition: '-1px -1px'
-                    } : {}}
-                >
+                <main className="relative overflow-hidden h-full w-full flex flex-col bg-slate-900/5 transition-colors duration-300">
                     
-                    <div className="flex-1 overflow-y-auto custom-scrollbar pt-16 pb-[480px] px-8 flex flex-col justify-start items-center relative z-10">
-                        
-                        <div className="absolute top-2 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
-                            <button 
-                                onClick={handleCanvasPrev}
-                                disabled={sidebarTab === 'slides' ? activeSlideIndex === 0 : (livePacket.length === 0 || (activeIds.length > 0 && presentationIndex === 0))}
-                                className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
-                            >
-                                <ChevronLeft size={28} />
-                            </button>
+                    {/* Floating Navigation Header (Overlays the Canvas Layer) */}
+                    <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
+                        <button 
+                            onClick={handleCanvasPrev}
+                            disabled={sidebarTab === 'slides' ? activeSlideIndex === 0 : (livePacket.length === 0 || (activeIds.length > 0 && presentationIndex === 0))}
+                            className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
+                        >
+                            <ChevronLeft size={28} />
+                        </button>
 
-                            <div className="bg-slate-900/90 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest backdrop-blur-sm shadow border border-white/10 pointer-events-auto flex items-center gap-2 transition-all">
-                                {sidebarTab === 'slides' ? (
-                                    <>
-                                        <Presentation size={14} className="text-emerald-400"/>
-                                        <span className="truncate max-w-[150px]">{slides[activeSlideIndex]?.title}</span>
-                                        <span className="text-white/50 px-1 border-l border-white/20">{activeSlideIndex + 1} / {slides.length}</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        < FileQuestion size={14} className="text-purple-400"/>
-                                        {activeIds.length > 0 ? (lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${livePacket.length}` : `Question ${presentationIndex + 1} of ${livePacket.length}`) : (lang === 'sv' ? 'Ingen uppgift vald' : 'No Question Selected')}
-                                    </>
-                                )}
-                            </div>
-
-                            <button 
-                                onClick={handleCanvasNext}
-                                disabled={sidebarTab === 'slides' ? activeSlideIndex >= slides.length - 1 : (livePacket.length === 0 || (activeIds.length > 0 && presentationIndex >= livePacket.length - 1))}
-                                className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
-                            >
-                                <ChevronRight size={28} />
-                            </button>
+                        <div className="bg-slate-900/90 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest backdrop-blur-sm shadow border border-white/10 pointer-events-auto flex items-center gap-2 transition-all">
+                            {sidebarTab === 'slides' ? (
+                                <>
+                                    <Presentation size={14} className="text-emerald-400"/>
+                                    <span className="truncate max-w-[150px]">{slides[activeSlideIndex]?.title}</span>
+                                    <span className="text-white/50 px-1 border-l border-white/20">{activeSlideIndex + 1} / {slides.length}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <FileQuestion size={14} className="text-purple-400"/>
+                                    {activeIds.length > 0 ? (lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${livePacket.length}` : `Question ${presentationIndex + 1} of ${livePacket.length}`) : (lang === 'sv' ? 'Ingen uppgift vald' : 'No Question Selected')}
+                                </>
+                            )}
                         </div>
 
-                        {viewMode === 'sheet' ? (
-                            <div className="bg-white shadow-2xl w-[210mm] h-auto min-h-[297mm] p-[15mm] pb-[40mm] flex flex-col rounded-sm border border-slate-300 animate-in fade-in zoom-in-95 duration-300 select-none mb-8 mt-2 relative z-20">
-                                <header className="border-b-2 border-black pb-2 mb-6 flex items-end justify-between">
-                                    <h1 className="text-md font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1>
-                                    <div className="flex gap-6 w-2/3 justify-end text-[9px] font-black uppercase tracking-widest text-slate-400">
-                                        <div className="border-b border-slate-200 pb-0.5 flex gap-2 flex-1 max-w-[160px]"><span>{lang === 'sv' ? "Namn:" : "Name:"}</span></div>
-                                        <div className="border-b border-slate-200 pb-0.5 flex gap-2 w-[100px]"><span>{lang === 'sv' ? "Datum:" : "Date:"}</span></div>
-                                    </div>
-                                </header>
+                        <button 
+                            onClick={handleCanvasNext}
+                            disabled={sidebarTab === 'slides' ? activeSlideIndex >= slides.length - 1 : (livePacket.length === 0 || (activeIds.length > 0 && presentationIndex >= livePacket.length - 1))}
+                            className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-indigo-600 transition-all disabled:opacity-0 disabled:pointer-events-none cursor-pointer border-2 border-white/20 hover:border-white pointer-events-auto animate-in fade-in"
+                        >
+                            <ChevronRight size={28} />
+                        </button>
+                    </div>
 
-                                <div className="grid grid-cols-6 gap-x-8 gap-y-6 items-start content-start relative">
-                                    {livePacket.map((item, idx) => {
-                                        const isFocused = activeIds.includes(item.id);
-                                        const hasAnyFocus = activeIds.length > 0;
-                                        
-                                        const displayStory = item.showText !== false;
-                                        const displayLatex = item.showLatex !== false && !rd?.geometry;;
-                                        const displayVisual = item.showVisual !== false;
-                                        const rd = item.resolvedData?.renderData;
+                    {/* 🟢 NEW: The Responsive 16:9 Presentation Boundary Wrapper */}
+                    <div className="flex-1 w-full h-full flex items-center justify-center p-4 sm:p-12 overflow-hidden">
+                        
+                        <div 
+                            className={`relative w-full h-full flex flex-col items-center shadow-2xl rounded-xl border border-slate-300 transition-colors duration-300 overflow-hidden ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
+                            style={{
+                                aspectRatio: '16/9',
+                                maxHeight: '100%',
+                                maxWidth: '100%',
+                                ...(bgType === 'grid' ? {
+                                    backgroundImage: 'linear-gradient(#e2e8f0 2px, transparent 2px), linear-gradient(90deg, #e2e8f0 2px, transparent 2px)',
+                                    backgroundSize: '40px 40px',
+                                    backgroundPosition: '-1px -1px'
+                                } : {})
+                            }}
+                        >
+                            
+                            {/* Slide Content Layers */}
+                            {viewMode === 'sheet' ? (
+                                <div className="absolute inset-0 overflow-y-auto custom-scrollbar pt-16 pb-32 flex flex-col justify-start items-center z-10 pointer-events-auto">
+                                    <div className="bg-white shadow-2xl w-[210mm] h-auto min-h-[297mm] p-[15mm] pb-[40mm] flex flex-col rounded-sm border border-slate-300 animate-in fade-in zoom-in-95 duration-300 select-none mb-8 mt-2 relative z-20">
+                                        <header className="border-b-2 border-black pb-2 mb-6 flex items-end justify-between">
+                                            <h1 className="text-md font-black uppercase tracking-tighter w-1/3 truncate italic leading-none">{sheetTitle || "Matematik"}</h1>
+                                            <div className="flex gap-6 w-2/3 justify-end text-[9px] font-black uppercase tracking-widest text-slate-400">
+                                                <div className="border-b border-slate-200 pb-0.5 flex gap-2 flex-1 max-w-[160px]"><span>{lang === 'sv' ? "Namn:" : "Name:"}</span></div>
+                                                <div className="border-b border-slate-200 pb-0.5 flex gap-2 w-[100px]"><span>{lang === 'sv' ? "Datum:" : "Date:"}</span></div>
+                                            </div>
+                                        </header>
 
-                                        return (
-                                            <React.Fragment key={item.id}>
-                                                {displayStory && (item.instructionMode === 'header' || !item.instructionMode) && (
-                                                    <div className={`col-span-6 border-l-4 border-indigo-500 pl-4 bg-slate-50/40 rounded-r-xl py-2.5 transition-all duration-300
-                                                        ${hasAnyFocus && !isFocused ? 'opacity-25' : 'opacity-100'}`}>
-                                                        <div className={`font-black text-slate-800 italic uppercase tracking-tight ${sizeClasses.headerText}`}>
-                                                            <MathDisplay content={compileAnchoredStory(item, lang)} />
-                                                        </div>
-                                                    </div>
-                                                )}
+                                        <div className="grid grid-cols-6 gap-x-8 gap-y-6 items-start content-start relative">
+                                            {livePacket.map((item, idx) => {
+                                                const isFocused = activeIds.includes(item.id);
+                                                const hasAnyFocus = activeIds.length > 0;
+                                                
+                                                const displayStory = item.showText !== false;
+                                                const rd = item.resolvedData?.renderData;
+                                                const displayLatex = item.showLatex !== false && !rd?.geometry;
+                                                const displayVisual = item.showVisual !== false;
 
-                                                <div 
-                                                    onClick={() => focusSingleQuestionOnWorksheet(item.id)}
-                                                    className={`relative transition-all duration-300 rounded-2xl flex flex-col p-3 cursor-pointer group
-                                                        ${getColSpanClass(item.columnSpan || 6)}
-                                                        ${isFocused ? 'bg-indigo-50/50 ring-2 ring-indigo-500/30 opacity-100 scale-[1.01]' : hasAnyFocus ? 'opacity-25' : 'hover:bg-slate-50'}`}
-                                                >
-                                                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50 flex gap-1 bg-white p-1 rounded-full shadow-lg border border-slate-200" onPointerDown={(e) => e.stopPropagation()}>
-                                                        <div className="flex bg-slate-100 rounded-full p-0.5">
-                                                            {['start', 'center', 'end'].map(align => (
-                                                                <button key={align} onClick={() => {
-                                                                    setLivePacket(prev => prev.map(p => p.id === item.id ? { ...p, align } : p));
-                                                                    setIsSaving(false);
-                                                                }} className={`px-2 py-1 rounded-full text-[9px] font-black uppercase transition-all ${item.align === align ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-indigo-600'}`}>
-                                                                    {align}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                        <div className="flex bg-slate-100 rounded-full p-0.5">
-                                                            {[2, 3, 4, 6].map(span => (
-                                                                <button key={span} onClick={() => {
-                                                                    setLivePacket(prev => prev.map(p => p.id === item.id ? { ...p, columnSpan: span } : p));
-                                                                    setIsSaving(false);
-                                                                }} className={`px-2 py-1 rounded-full text-[9px] font-black uppercase transition-all ${item.columnSpan === span ? 'bg-amber-500 text-white' : 'text-slate-500 hover:text-amber-600'}`}>
-                                                                    W{span}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    <div className={`text-xs flex flex-col h-full justify-between items-${item.align || 'center'} text-${item.align === 'start' ? 'left' : item.align === 'end' ? 'right' : 'center'}`}>
-                                                        <div>
-                                                            <div className="font-black mb-1 text-slate-400 text-[10px] tracking-widest">
-                                                                {idx + 1}.
-                                                            </div>
-                                                            
-                                                            {displayStory && item.instructionMode === 'inline' && (
-                                                                <div className={`font-bold text-slate-800 mb-2 leading-tight border-b border-slate-100 pb-2 ${sizeClasses.desc}`}>
+                                                return (
+                                                    <React.Fragment key={item.id}>
+                                                        {displayStory && (item.instructionMode === 'header' || !item.instructionMode) && (
+                                                            <div className={`col-span-6 border-l-4 border-indigo-500 pl-4 bg-slate-50/40 rounded-r-xl py-2.5 transition-all duration-300
+                                                                ${hasAnyFocus && !isFocused ? 'opacity-25' : 'opacity-100'}`}>
+                                                                <div className={`font-black text-slate-800 italic uppercase tracking-tight ${sizeClasses.headerText}`}>
                                                                     <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                                 </div>
-                                                            )}
-                                                            
-                                                            {displayLatex && rd?.latex && (
-                                                                <div className={`py-3 text-center font-serif text-slate-900 ${sizeClasses.latex}`}>
-                                                                    <MathDisplay content={`$$${rd.latex}$$`} />
-                                                                </div>
-                                                            )}
-                                                            
-                                                            {rd?.options && rd.options.length > 0 && (
-                                                                <div className="mt-2 grid grid-cols-2 gap-1.5 w-full">
-                                                                    {rd.options.map((opt, oIdx) => (
-                                                                        <div key={oIdx} className="flex items-center gap-1.5 text-[10px] bg-slate-50/60 p-1.5 rounded-lg border border-slate-100">
-                                                                            <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
-                                                                            <MathDisplay content={opt} />
-                                                                        </div>
+                                                            </div>
+                                                        )}
+
+                                                        <div 
+                                                            onClick={() => focusSingleQuestionOnWorksheet(item.id)}
+                                                            className={`relative transition-all duration-300 rounded-2xl flex flex-col p-3 cursor-pointer group
+                                                                ${getColSpanClass(item.columnSpan || 6)}
+                                                                ${isFocused ? 'bg-indigo-50/50 ring-2 ring-indigo-500/30 opacity-100 scale-[1.01]' : hasAnyFocus ? 'opacity-25' : 'hover:bg-slate-50'}`}
+                                                        >
+                                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50 flex gap-1 bg-white p-1 rounded-full shadow-lg border border-slate-200" onPointerDown={(e) => e.stopPropagation()}>
+                                                                <div className="flex bg-slate-100 rounded-full p-0.5">
+                                                                    {['start', 'center', 'end'].map(align => (
+                                                                        <button key={align} onClick={() => {
+                                                                            setLivePacket(prev => prev.map(p => p.id === item.id ? { ...p, align } : p));
+                                                                            setIsSaving(false);
+                                                                        }} className={`px-2 py-1 rounded-full text-[9px] font-black uppercase transition-all ${item.align === align ? 'bg-indigo-500 text-white' : 'text-slate-500 hover:text-indigo-600'}`}>
+                                                                            {align}
+                                                                        </button>
                                                                     ))}
                                                                 </div>
-                                                            )}
-                                                            
-                                                            {displayVisual && rd && (
-                                                                <div 
-                                                                    onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
-                                                                    className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 relative z-30 ${sizeClasses.visualClass}`}
-                                                                >
-                                                                    <VisualRenderer 
-                                                                        data={rd} 
-                                                                        isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} 
-                                                                    />
+                                                                <div className="flex bg-slate-100 rounded-full p-0.5">
+                                                                    {[2, 3, 4, 6].map(span => (
+                                                                        <button key={span} onClick={() => {
+                                                                            setLivePacket(prev => prev.map(p => p.id === item.id ? { ...p, columnSpan: span } : p));
+                                                                            setIsSaving(false);
+                                                                        }} className={`px-2 py-1 rounded-full text-[9px] font-black uppercase transition-all ${item.columnSpan === span ? 'bg-amber-500 text-white' : 'text-slate-500 hover:text-amber-600'}`}>
+                                                                            W{span}
+                                                                        </button>
+                                                                    ))}
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="w-full h-full min-h-screen relative flex items-start select-none pt-6 pb-[70px] z-20">
-                                
-                                {clueViewMode === 'coach' ? (
-                                    <MyCoachModal
-                                        lang={lang}
-                                        inlineMode={true} 
-                                        question={currentFocusedQuestion} 
-                                        {...coachProps} 
-                                    />
-                                ) : activeIds.length === 0 ? (
-                                    <div className="absolute top-5 left-5 flex items-center gap-2 text-slate-400/50 bg-white/50 px-3 py-1.5 rounded-lg border border-slate-200/50 pointer-events-none select-none z-0">
-                                        <ChevronLeft size={14} className="animate-pulse" />
-                                        <span className="font-black uppercase tracking-widest text-[9px]">
-                                            {lang === 'sv' ? "Välj uppgift för att presentera" : "Select question to present"}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    activeIds.map((id, index) => {
-                                        const q = livePacket.find(p => p.id === id);
-                                        if (!q) return null;
-                                        const rd = q.resolvedData?.renderData;
-                                        const masterIndex = livePacket.findIndex(p => p.id === id) + 1;
-
-                                        const alignClass = q.align === 'start' ? 'items-start' : q.align === 'end' ? 'items-end' : 'items-center';
-                                        const textAlignClass = q.align === 'start' ? 'text-left' : q.align === 'end' ? 'text-right' : 'text-center';
-
-                                        return (
-                                            <div 
-                                                key={id} 
-                                                className={`group flex flex-col flex-1 px-8 relative h-full ${alignClass} justify-start animate-in zoom-in-95 duration-200`}
-                                            >
-                                                <div className="absolute top-0 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50 flex gap-1 bg-white/90 backdrop-blur-sm p-1 rounded-full shadow-lg border border-slate-200 pointer-events-auto" onPointerDown={(e) => e.stopPropagation()}>
-                                                    <div className="flex bg-slate-100 rounded-full p-0.5">
-                                                        {['start', 'center', 'end'].map(align => (
-                                                            <button key={align} onClick={() => {
-                                                                setLivePacket(prev => prev.map(p => p.id === q.id ? { ...p, align } : p));
-                                                                setIsSaving(false);
-                                                            }} className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${q.align === align ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-200'}`}>
-                                                                {align === 'start' ? (lang === 'sv' ? 'Vänster' : 'Left') : align === 'end' ? (lang === 'sv' ? 'Höger' : 'Right') : (lang === 'sv' ? 'Mitten' : 'Center')}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {index > 0 && (
-                                                    <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
-                                                )}
-
-                                                {/*  Reduced mt-10 to mt-4, and mb-6 to mb-3 to close the vertical gaps! */}
-                                                <div className="flex items-center gap-3 mb-3 shrink-0 relative z-40 mt-1">
-                                                    <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block uppercase tracking-wider shadow-sm">
-                                                        {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
-                                                    </div>
-                                                    
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleRegenerateQuestion(q.id); }}
-                                                        className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all active:scale-90 cursor-pointer ui-ignore"
-                                                        title={lang === 'sv' ? "Slå om tal / slumpa nya värden" : "Roll fresh question numbers"}
-                                                    >
-                                                        <RefreshCw size={18} className="transition-transform duration-300 hover:rotate-180" />
-                                                    </button>
-                                                </div>
-
-                                                {/*  Swapped max-w-prose for max-w-md so the text acts as a strict, neat column! */}
-                                                {q.showText !== false && (
-                                                    <div className={`font-bold text-slate-800 ${textAlignClass} leading-relaxed max-w-md w-full shrink-0 break-words px-4 mb-2 ${sizeClasses.desc}`}>
-                                                        <MathDisplay content={compileAnchoredStory(q, lang)} />
-                                                    </div>
-                                                )}
-                                                
-                                                {/*  Added w-full max-w-md px-4 so the visual is perfectly centered within the exact same invisible column as the text! */}
-                                                {q.showVisual !== false && rd && (
-                                                    <div 
-                                                        onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
-                                                        className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 w-full max-w-md px-4 ${sizeClasses.visualClass}`}
-                                                    >
-                                                        <VisualRenderer 
-                                                            data={rd} 
-                                                            isWordProblem={q.selectedStoryIndex !== null && q.selectedStoryIndex !== undefined} 
-                                                        />
-                                                    </div>
-                                                )}
-
-                                                {/* Added px-4 to perfectly align the options with the text and visuals */}
-                                                {rd?.options && rd.options.length > 0 && (
-                                                    <div className="mt-6 grid grid-cols-2 gap-4 w-full max-w-md px-4 shrink-0 relative z-30">
-                                                        {rd.options.map((opt, oIdx) => (
-                                                            <div key={oIdx} className={`flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-slate-200 bg-white shadow-sm ${sizeClasses.desc}`}>
-                                                                <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
-                                                                <MathDisplay content={opt} className="font-bold text-slate-700" />
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                )}
 
-                                                {/*   FIX: Added !rd?.geometry to prevent calculation spoilers on shapes */}
-                                                {q.showLatex !== false && rd?.latex && !rd?.geometry && (
-                                                    <div className={`mt-6 py-4 bg-indigo-50/40 rounded-2xl text-center font-serif text-indigo-950 border border-indigo-100/60 shadow-inner w-full max-w-xs shrink-0 ${sizeClasses.latex}`}>
-                                                        <MathDisplay content={`$$${rd.latex}$$`} />
+                                                            <div className={`text-xs flex flex-col h-full justify-between items-${item.align || 'center'} text-${item.align === 'start' ? 'left' : item.align === 'end' ? 'right' : 'center'}`}>
+                                                                <div>
+                                                                    <div className="font-black mb-1 text-slate-400 text-[10px] tracking-widest">
+                                                                        {idx + 1}.
+                                                                    </div>
+                                                                    
+                                                                    {displayStory && item.instructionMode === 'inline' && (
+                                                                        <div className={`font-bold text-slate-800 mb-2 leading-tight border-b border-slate-100 pb-2 ${sizeClasses.desc}`}>
+                                                                            <MathDisplay content={compileAnchoredStory(item, lang)} />
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {displayLatex && rd?.latex && (
+                                                                        <div className={`py-3 text-center font-serif text-slate-900 ${sizeClasses.latex}`}>
+                                                                            <MathDisplay content={`$$${rd.latex}$$`} />
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {rd?.options && rd.options.length > 0 && (
+                                                                        <div className="mt-2 grid grid-cols-2 gap-1.5 w-full">
+                                                                            {rd.options.map((opt, oIdx) => (
+                                                                                <div key={oIdx} className="flex items-center gap-1.5 text-[10px] bg-slate-50/60 p-1.5 rounded-lg border border-slate-100">
+                                                                                    <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
+                                                                                    <MathDisplay content={opt} />
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {displayVisual && rd && (
+                                                                        <div 
+                                                                            onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
+                                                                            className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 relative z-30 ${sizeClasses.visualClass}`}
+                                                                        >
+                                                                            <VisualRenderer 
+                                                                                data={rd} 
+                                                                                isWordProblem={item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined} 
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </React.Fragment>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+                                    <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full pointer-events-none">
+                                        <foreignObject x="0" y="0" width="1920" height="1080" className="pointer-events-none">
+                                            <div className="w-full h-full relative flex items-start select-none pt-[80px] pb-[80px] pointer-events-auto">
+                                                
+                                                {clueViewMode === 'coach' ? (
+                                                    <MyCoachModal
+                                                        lang={lang}
+                                                        inlineMode={true} 
+                                                        question={currentFocusedQuestion} 
+                                                        {...coachProps} 
+                                                    />
+                                                ) : activeIds.length === 0 ? (
+                                                    <div className="absolute top-5 left-5 flex items-center gap-2 text-slate-400/50 bg-white/50 px-3 py-1.5 rounded-lg border border-slate-200/50 pointer-events-none select-none z-0">
+                                                        <ChevronLeft size={14} className="animate-pulse" />
+                                                        <span className="font-black uppercase tracking-widest text-[9px]">
+                                                            {lang === 'sv' ? "Välj uppgift för att presentera" : "Select question to present"}
+                                                        </span>
                                                     </div>
+                                                ) : (
+                                                    activeIds.map((id, index) => {
+                                                        const q = livePacket.find(p => p.id === id);
+                                                        if (!q) return null;
+                                                        const rd = q.resolvedData?.renderData;
+                                                        const masterIndex = livePacket.findIndex(p => p.id === id) + 1;
+
+                                                        const alignClass = q.align === 'start' ? 'items-start' : q.align === 'end' ? 'items-end' : 'items-center';
+                                                        const textAlignClass = q.align === 'start' ? 'text-left' : q.align === 'end' ? 'text-right' : 'text-center';
+
+                                                        return (
+                                                            <div 
+                                                                key={id} 
+                                                                className={`group flex flex-col flex-1 px-8 relative h-full ${alignClass} justify-start animate-in zoom-in-95 duration-200`}
+                                                            >
+                                                                {index > 0 && (
+                                                                    <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
+                                                                )}
+
+                                                                <div className={`flex flex-col mb-3 shrink-0 relative z-40 mt-4 items-${q.align === 'start' ? 'start' : q.align === 'end' ? 'end' : 'center'}`}>
+                                                                    <div className="flex items-center gap-3">
+                                                                        
+                                                                        <button 
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setOpenAlignMenuId(prev => prev === q.id ? null : q.id);
+                                                                            }}
+                                                                            className="flex items-center gap-1.5 text-[14px] font-black text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 hover:border-indigo-200 rounded-md px-2.5 py-1 uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer pointer-events-auto"
+                                                                            title={lang === 'sv' ? "Ändra justering" : "Change alignment"}
+                                                                        >
+                                                                            {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
+                                                                            <ChevronDown size={16} className={`transition-transform duration-200 ${openAlignMenuId === q.id ? 'rotate-180' : ''}`} />
+                                                                        </button>
+                                                                        
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleRegenerateQuestion(q.id); }}
+                                                                            className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all active:scale-90 cursor-pointer pointer-events-auto ui-ignore"
+                                                                            title={lang === 'sv' ? "Slå om tal / slumpa nya värden" : "Roll fresh question numbers"}
+                                                                        >
+                                                                            <RefreshCw size={18} className="transition-transform duration-300 hover:rotate-180" />
+                                                                        </button>
+                                                                    </div>
+
+                                                                    {openAlignMenuId === q.id && (
+                                                                        <div className="absolute top-full mt-1.5 animate-in fade-in slide-in-from-top-1 duration-200 flex bg-white/95 backdrop-blur-sm p-1 rounded-xl shadow-md border border-slate-200 pointer-events-auto z-50" onPointerDown={(e) => e.stopPropagation()}>
+                                                                            <div className="flex bg-slate-100 rounded-lg p-0.5">
+                                                                                {['start', 'center', 'end'].map(align => (
+                                                                                    <button key={align} onClick={() => {
+                                                                                        setLivePacket(prev => prev.map(p => p.id === q.id ? { ...p, align } : p));
+                                                                                        setIsSaving(false);
+                                                                                        setOpenAlignMenuId(null); 
+                                                                                    }} className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${q.align === align ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-200'}`}>
+                                                                                        {align === 'start' ? (lang === 'sv' ? 'Vänster' : 'Left') : align === 'end' ? (lang === 'sv' ? 'Höger' : 'Right') : (lang === 'sv' ? 'Mitten' : 'Center')}
+                                                                                    </button>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {q.showText !== false && (
+                                                                    <div className={`font-bold text-slate-800 ${textAlignClass} leading-relaxed max-w-md w-full shrink-0 break-words px-4 mb-2 ${sizeClasses.desc}`}>
+                                                                        <MathDisplay content={compileAnchoredStory(q, lang)} />
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {q.showVisual !== false && rd && (
+                                                                    <div 
+                                                                        onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
+                                                                        className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 w-full max-w-md px-4 pointer-events-auto ${sizeClasses.visualClass}`}
+                                                                    >
+                                                                        <VisualRenderer 
+                                                                            data={rd} 
+                                                                            isWordProblem={q.selectedStoryIndex !== null && q.selectedStoryIndex !== undefined} 
+                                                                        />
+                                                                    </div>
+                                                                )}
+
+                                                                {rd?.options && rd.options.length > 0 && (
+                                                                    <div className="mt-6 grid grid-cols-2 gap-4 w-full max-w-md px-4 shrink-0 relative z-30 pointer-events-auto">
+                                                                        {rd.options.map((opt, oIdx) => (
+                                                                            <div key={oIdx} className={`flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-slate-200 bg-white shadow-sm ${sizeClasses.desc}`}>
+                                                                                <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
+                                                                                <MathDisplay content={opt} className="font-bold text-slate-700" />
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+
+                                                                {q.showLatex !== false && rd?.latex && !rd?.geometry && (
+                                                                    <div className={`mt-6 py-4 bg-indigo-50/40 rounded-2xl text-center font-serif text-indigo-950 border border-indigo-100/60 shadow-inner w-full max-w-xs shrink-0 pointer-events-auto ${sizeClasses.latex}`}>
+                                                                        <MathDisplay content={`$$${rd.latex}$$`} />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    }) 
                                                 )}
                                             </div>
-                                        );
-                                    }) 
-                                )}
-                            </div>
-                        )}
+                                        </foreignObject>
+                                    </svg>
+                                </div>
+                            )}
+
+                            {/* Whiteboard Layer */}
+                            <InteractiveCanvas 
+                                key={slides[activeSlideIndex]?.id} 
+                                elements={slides[activeSlideIndex]?.elements || []}
+                                setElements={updateCurrentSlideElements}
+                                lang={lang} 
+                                bgType={bgType} 
+                                onToggleBg={() => setBgType(prev => prev === 'blank' ? 'grid' : 'blank')} 
+                                livePacket={livePacket}
+                                clueProgress={clueProgress}
+                                resolution={{ w: 1920, h: 1080 }}
+                            />
+                        </div>
                     </div>
-                    <InteractiveCanvas 
-                        key={slides[activeSlideIndex]?.id} 
-                        elements={slides[activeSlideIndex]?.elements || []}
-                        setElements={updateCurrentSlideElements}
-                        lang={lang} 
-                        bgType={bgType} 
-                        onToggleBg={() => setBgType(prev => prev === 'blank' ? 'grid' : 'blank')} 
-                        livePacket={livePacket}
-                        clueProgress={clueProgress}
-                    />
                 </main>
 
                 {/* COLUMN 3: SOLUTIONS & COMPACT ANSWER KEY DRAWER PANEL */}
