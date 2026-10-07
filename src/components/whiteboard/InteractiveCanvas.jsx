@@ -24,8 +24,8 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
 };
 
-//  Added livePacket and clueProgress to sync the whiteboard with the presentation data
-export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, elements = [], setElements, livePacket = [], clueProgress = {} }) {
+// 🟢 NEW: Added resolution prop (defaults to standard 1080p 16:9)
+export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, elements = [], setElements, livePacket = [], clueProgress = {}, resolution = { w: 1920, h: 1080 } }) {
     // --- 0. TRANSLATIONS ---
     const t = {
         sv: {
@@ -1700,6 +1700,8 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         <>
             <svg 
                 ref={svgRef}
+                viewBox={`0 0 ${resolution.w} ${resolution.h}`}
+                preserveAspectRatio="xMidYMid meet"
                 className={`absolute inset-0 w-full h-full z-30 ${activeTool === 'select' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair'}`}
                 onPointerDown={handlePointerDown}
             >
