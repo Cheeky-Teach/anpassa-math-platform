@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
     X, ChevronLeft, ChevronRight, Monitor, PanelLeftClose, 
     PanelLeftOpen, ZoomIn, ZoomOut, Layers, FileText, List, Plus,
-    RefreshCw, Presentation, Sparkles, Save, Download, Trash2
+    RefreshCw, Presentation, FileQuestion, Save, Download, Trash2
 } from 'lucide-react';
 
 import VisualRenderer from '../visuals/VisualRenderer';
@@ -191,6 +191,31 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
         e.stopPropagation();
         const newSlide = { id: `slide_${Date.now()}`, elements: [], scrollX: 0, scrollY: 0, title: `Slide ${slides.length + 1}`, activeIds: [qId] };
         setSlides(prev => [...prev, newSlide]);
+    };
+
+    const handleDeleteQuestion = (e, targetId) => {
+        e.stopPropagation();
+        if (!window.confirm(lang === 'sv' ? "Är du säker på att du vill ta bort denna uppgift?" : "Are you sure you want to delete this question?")) return;
+
+        // 1. Remove from the main packet
+        setLivePacket(prev => prev.filter(q => q.id !== targetId));
+
+        // 2. Remove from active focus (if the teacher was looking at it)
+        setActiveIds(prev => prev.filter(id => id !== targetId));
+
+        // 3. Unpin it from ANY slides it was attached to
+        setSlides(prev => prev.map(s => ({
+            ...s,
+            activeIds: (s.activeIds || []).filter(id => id !== targetId)
+        })));
+
+        // 4. Adjust the presentation index so we don't go out of bounds
+        setPresentationIndex(prev => {
+            if (prev >= livePacket.length - 1) return Math.max(0, livePacket.length - 2);
+            return prev;
+        });
+        
+        setIsSaving(false); // Flags that changes were made
     };
 
     const handleAutoDistribute = () => {
@@ -469,8 +494,8 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                 <button onClick={handleAddSlide} className="w-12 h-12 bg-emerald-500 text-white hover:bg-emerald-600 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer mx-auto" title={lang === 'sv' ? "Lägg till Slide" : "Add Slide"}>
                                     <Presentation size={20} strokeWidth={2.5} />
                                 </button>
-                                <button onClick={() => setIsSummonerOpen(true)} className="w-12 h-12 bg-purple-600 text-white hover:bg-purple-700 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer mx-auto" title={lang === 'sv' ? "Hämta ny uppgift" : "Summon Question"}>
-                                    <Sparkles size={20} strokeWidth={2.5} />
+                                <button onClick={() => setIsSummonerOpen(true)} className="w-12 h-12 bg-purple-600 text-white hover:bg-purple-700 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 cursor-pointer mx-auto" title={lang === 'sv' ? "Välj ny uppgift" : "Select Question"}>
+                                    <FileQuestion size={20} strokeWidth={2.5} />
                                 </button>
                             </>
                         ) : (
@@ -480,7 +505,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                     {lang === 'sv' ? "Ny Slide" : "New Slide"}
                                 </button>
                                 <button onClick={() => setIsSummonerOpen(true)} className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-1.5 transition-all shadow-md active:scale-[0.98] cursor-pointer">
-                                    <Sparkles size={18} strokeWidth={2.5} />
+                                    < FileQuestion size={18} strokeWidth={2.5} />
                                     {lang === 'sv' ? "Ny Uppgift" : "Add Math"}
                                 </button>
                             </div>
@@ -500,7 +525,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                             className={`flex-1 py-2 flex items-center justify-center rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${sidebarTab === 'questions' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                             title={lang === 'sv' ? "Uppgifter" : "Questions"}
                         >
-                            {isLeftCollapsed ? <Sparkles size={16} /> : (lang === 'sv' ? 'Uppgifter' : 'Questions')}
+                            {isLeftCollapsed ? < FileQuestion size={16} /> : (lang === 'sv' ? 'Uppgifter' : 'Questions')}
                         </button>
                     </div>
 
@@ -510,7 +535,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                 onClick={handleAutoDistribute} 
                                 className="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
                             >
-                                <Sparkles size={14}/> {lang === 'sv' ? "Fördela 1 per slide" : "1 per slide"}
+                                < FileQuestion size={14}/> {lang === 'sv' ? "Fördela 1 uppgift per slide" : "1 question per slide"}
                             </button>
                         </div>
                     )}
@@ -617,7 +642,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                 <span className="text-[14px] font-black text-purple-900 uppercase tracking-wider">
                                                     {lang === 'sv' ? 'Uppgift' : 'Question'} {idx + 1}
                                                 </span>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1.5">
                                                     <button 
                                                         onClick={(e) => togglePinToSpecificSlide(e, q.id, activeSlideIndex)}
                                                         className={`p-1.5 rounded-lg border transition-all ${
@@ -629,7 +654,15 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                     >
                                                         <Monitor size={14}/>
                                                     </button>
-                                                    {isActive && <span className="w-2 h-2 rounded-full bg-purple-500 shadow-sm" />}
+                                                    {/* Delete Button */}
+                                                    <button
+                                                        onClick={(e) => handleDeleteQuestion(e, q.id)}
+                                                        className="p-1.5 rounded-lg border bg-white text-slate-300 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-200 border-slate-200 transition-all"
+                                                        title={lang === 'sv' ? "Ta bort uppgift" : "Delete question"}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                    {isActive && <span className="w-2 h-2 rounded-full bg-purple-500 shadow-sm ml-0.5" />}
                                                 </div>
                                             </div>
                                             
@@ -706,7 +739,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                     </>
                                 ) : (
                                     <>
-                                        <Sparkles size={14} className="text-purple-400"/>
+                                        < FileQuestion size={14} className="text-purple-400"/>
                                         {activeIds.length > 0 ? (lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${livePacket.length}` : `Question ${presentationIndex + 1} of ${livePacket.length}`) : (lang === 'sv' ? 'Ingen uppgift vald' : 'No Question Selected')}
                                     </>
                                 )}
@@ -737,7 +770,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                         const hasAnyFocus = activeIds.length > 0;
                                         
                                         const displayStory = item.showText !== false;
-                                        const displayLatex = item.showLatex !== false;
+                                        const displayLatex = item.showLatex !== false && !rd?.geometry;;
                                         const displayVisual = item.showVisual !== false;
                                         const rd = item.resolvedData?.renderData;
 
@@ -878,7 +911,8 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                     <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
                                                 )}
 
-                                                <div className="flex items-center gap-3 mb-6 shrink-0 relative z-40 mt-10">
+                                                {/*  Reduced mt-10 to mt-4, and mb-6 to mb-3 to close the vertical gaps! */}
+                                                <div className="flex items-center gap-3 mb-3 shrink-0 relative z-40 mt-1">
                                                     <div className="text-[14px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md px-2.5 py-1 inline-block uppercase tracking-wider shadow-sm">
                                                         {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
                                                     </div>
@@ -892,16 +926,18 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                     </button>
                                                 </div>
 
+                                                {/*  Swapped max-w-prose for max-w-md so the text acts as a strict, neat column! */}
                                                 {q.showText !== false && (
-                                                    <div className={`font-bold text-slate-800 ${textAlignClass} leading-relaxed max-w-prose w-full break-words px-4 mb-1 ${sizeClasses.desc}`}>
+                                                    <div className={`font-bold text-slate-800 ${textAlignClass} leading-relaxed max-w-md w-full shrink-0 break-words px-4 mb-2 ${sizeClasses.desc}`}>
                                                         <MathDisplay content={compileAnchoredStory(q, lang)} />
                                                     </div>
                                                 )}
                                                 
+                                                {/*  Added w-full max-w-md px-4 so the visual is perfectly centered within the exact same invisible column as the text! */}
                                                 {q.showVisual !== false && rd && (
                                                     <div 
                                                         onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
-                                                        className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 ${sizeClasses.visualClass}`}
+                                                        className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 w-full max-w-md px-4 ${sizeClasses.visualClass}`}
                                                     >
                                                         <VisualRenderer 
                                                             data={rd} 
@@ -910,8 +946,9 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                     </div>
                                                 )}
 
+                                                {/* Added px-4 to perfectly align the options with the text and visuals */}
                                                 {rd?.options && rd.options.length > 0 && (
-                                                    <div className="mt-6 grid grid-cols-2 gap-4 w-full max-w-md shrink-0 relative z-30">
+                                                    <div className="mt-6 grid grid-cols-2 gap-4 w-full max-w-md px-4 shrink-0 relative z-30">
                                                         {rd.options.map((opt, oIdx) => (
                                                             <div key={oIdx} className={`flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-slate-200 bg-white shadow-sm ${sizeClasses.desc}`}>
                                                                 <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
@@ -921,7 +958,8 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                                     </div>
                                                 )}
 
-                                                {q.showLatex !== false && rd?.latex && (
+                                                {/*   FIX: Added !rd?.geometry to prevent calculation spoilers on shapes */}
+                                                {q.showLatex !== false && rd?.latex && !rd?.geometry && (
                                                     <div className={`mt-6 py-4 bg-indigo-50/40 rounded-2xl text-center font-serif text-indigo-950 border border-indigo-100/60 shadow-inner w-full max-w-xs shrink-0 ${sizeClasses.latex}`}>
                                                         <MathDisplay content={`$$${rd.latex}$$`} />
                                                     </div>
@@ -1175,13 +1213,26 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 <QuestionSummoner 
                     lang={lang} 
                     onClose={() => setIsSummonerOpen(false)} 
-                    onSummon={(newItem) => {
-                        const updatedPacket = [...livePacket, newItem];
+                    onSummon={(newItems) => {
+                        // Safety check: ensure array isn't empty
+                        if (!newItems || newItems.length === 0) return;
+
+                        //  1. Spread the entire array of queued items into the live packet
+                        const updatedPacket = [...livePacket, ...newItems];
                         setLivePacket(updatedPacket);
                         
-                        setActiveIds([newItem.id]);
-                        setClueProgress({ ...clueProgress, [newItem.id]: 0 });
-                        setPresentationIndex(updatedPacket.length - 1);
+                        //  2. Auto-focus the FIRST question from the newly queued batch
+                        setActiveIds([newItems[0].id]);
+                        
+                        //  3. Initialize the clue progress at 0 for EVERY new item
+                        const updatedProgress = { ...clueProgress };
+                        newItems.forEach(item => {
+                            updatedProgress[item.id] = 0;
+                        });
+                        setClueProgress(updatedProgress);
+                        
+                        //  4. Move the presentation view to the start of the new batch
+                        setPresentationIndex(livePacket.length);
                         
                         setSidebarTab('questions');
                         setIsSummonerOpen(false);
