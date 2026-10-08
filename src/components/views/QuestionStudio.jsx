@@ -1761,7 +1761,7 @@ export default function QuestionStudio({
       {/* 🟢 LAUNCHES STANDALONE PRESENTATION BUILDER/VIEWER */}
       {showPresentation && (
           <PresentationView 
-              packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : packet} 
+              packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : packet}
               initialSlides={activeBoardSheet?.packet?.slides}
               boardId={activeBoardSheet?.id || (setupMode === 'board' ? activeSheetId : null)}
               sheetTitle={activeBoardSheet?.title || sheetTitle} 
@@ -1770,7 +1770,11 @@ export default function QuestionStudio({
                   setShowPresentation(false);
                   setActiveBoardSheet(null); // 🟢 FIX: Wipes the board from memory so it doesn't ghost your next worksheet!
                   fetchLibrary(); 
-              }} 
+              }}
+              onLaunchLive={(roomData) => {
+                  // Fire the same callback the rest of the studio uses to launch Live!
+                  onDoNowGenerate(null, null, { room: roomData, packet: roomData.active_question_data.packet });
+              }}
           />
       )}
     </div>

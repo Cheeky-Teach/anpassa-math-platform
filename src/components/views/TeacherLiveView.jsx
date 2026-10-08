@@ -4,12 +4,16 @@ import {
     Users, Eye, EyeOff, Shield, BarChart3, Loader2, 
     RefreshCw, Download, Printer, Copy, Save, X, UserX,
     ChevronLeft, ChevronRight, CheckCircle2, XCircle, Type,
-    LayoutGrid, ArrowDownAZ, ListOrdered, Shuffle, ChevronDown
+    LayoutGrid, ArrowDownAZ, ListOrdered, Shuffle, ChevronDown,
+    MessageSquare, Monitor
 } from 'lucide-react';
 import { UI_TEXT } from '../../constants/localization';
 import VisualRenderer from '../visuals/VisualRenderer';
 import LandscapeReport from '../reports/LandscapeReport';
 import PreferencesToggle from '../ui/PreferencesToggle';
+
+// 🟢 NEW: Import the shared renderer
+import SlideRenderer from '../shared/SlideRenderer';
 
 // --- MATH DISPLAY COMPONENT ---
 const MathDisplay = ({ content, className = "" }) => {
@@ -44,18 +48,22 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const [connStatus, setConnStatus] = useState('CONNECTING');
     const [isSyncing, setIsSyncing] = useState(false);
     const [showWrapUp, setShowWrapUp] = useState(false); 
-    const [showPrintPreview, setShowPrintPreview] = useState(false); // Added for landscape preview
-    const [printSteps, setPrintSteps] = useState(false);
+    const [showPrintPreview, setShowPrintPreview] = useState(false); 
     const [zoomIndex, setZoomIndex] = useState(null);
-
     const [showWorkGrid, setShowWorkGrid] = useState(false);
-
     const [isPushing, setIsPushing] = useState(false);
     
-    //    State variables for sorting
-    const [sortMode, setSortMode] = useState('az'); // 'az', 'progress', 'random'
+    // Sorting
+    const [sortMode, setSortMode] = useState('az'); 
     const [randomizedStudents, setRandomizedStudents] = useState([]);
     const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+
+    // 🟢 NEW: Presentation Mode States
+    const isPresentationMode = session?.active_question_data?.mode === 'presentation';
+    const slides = session?.active_question_data?.slides || [];
+    const globalZoom = session?.active_question_data?.settings?.globalZoom || 1.0;
+    const [activeSlideIndex, setActiveSlideIndex] = useState(session?.current_slide_index || 0);
+    const [freeTextReviewResp, setFreeTextReviewResp] = useState(null); // Holds data for the private text review modal
 
     const isTeacherLed = session.active_question_data?.settings?.pacing === 'teacher';
     const hasScratchpad = session.active_question_data?.settings?.scratchpad !== false;
@@ -64,14 +72,23 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const isMounted = useRef(true);
     const channelRef = useRef(null);
     
-    const [showActualAnswers, setShowActualAnswers] = useState(false); // Toggle between answer icons and text
+    const [showActualAnswers, setShowActualAnswers] = useState(false);
 
-    // Helper function to decode the answer key from the packet token
+    // 🟢 NEW: Sync slide changes to the database to pace the students
+    const handleSlideChange = async (newIdx) => {
+        setActiveSlideIndex(newIdx);
+        try {
+            await supabase.from('rooms').update({ current_slide_index: newIdx }).eq('id', session.id);
+        } catch (err) {
+            console.error("Failed to sync slide index:", err);
+        }
+    };
+
     const getCorrectAnswer = (questionItem) => {
         if (!questionItem?.resolvedData) return '-';
-        let ans = questionItem.resolvedData.answer; // If it's stored in plain text
+        if (questionItem.answerType === 'free_text') return lang === 'sv' ? 'Text' : 'Text'; // Custom Prompts
         
-        // If it's secured in a token, decode it
+        let ans = questionItem.resolvedData.answer; 
         if (!ans && questionItem.resolvedData.token) {
             try {
                 const binaryString = atob(questionItem.resolvedData.token);
@@ -79,7 +96,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                 for (let i = 0; i < binaryString.length; i++) {
                     bytes[i] = binaryString.charCodeAt(i);
                 }
-                ans = new TextDecoder().decode(bytes); // UTF-8 Safe Decoding
+                ans = new TextDecoder().decode(bytes);
             } catch (e) {
                 ans = atob(questionItem.resolvedData.token);
             }
@@ -87,30 +104,19 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         return ans || '-';
     };
 
-    
-
     const syncData = async () => {
         if (!session?.id || !isMounted.current) return;
         setIsSyncing(true);
         try {
-            const { data, error } = await supabase
-                .from('responses')
-                .select('*')
-                .eq('room_id', session.id);
-            if (!error && data && isMounted.current) {
-                setResponses(data);
-            }
-        } catch (err) {
-            console.error("Sync failed:", err);
-        } finally {
+            const { data, error } = await supabase.from('responses').select('*').eq('room_id', session.id);
+            if (!error && data && isMounted.current) setResponses(data);
+        } catch (err) { console.error("Sync failed:", err); } finally {
             if (isMounted.current) setIsSyncing(false);
         }
     };
 
     const handleKickStudent = (alias) => {
-        const confirmMsg = lang === 'sv' 
-            ? `Vill du verkligen ta bort ${alias} från sessionen? All data raderas.` 
-            : `Are you sure you want to kick ${alias}? All data for this student will be deleted.`;
+        const confirmMsg = lang === 'sv' ? `Vill du verkligen ta bort ${alias} från sessionen? All data raderas.` : `Are you sure you want to kick ${alias}? All data for this student will be deleted.`;
         if (window.confirm(confirmMsg)) {
             onKick(alias);
             setResponses(prev => prev.filter(r => r.student_alias !== alias));
@@ -119,43 +125,17 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
 
     const handleManualOverride = async (responseId, currentIsCorrect) => {
         const newStatus = !currentIsCorrect;
-        
-        // 1. Snapshot for rollback
         const previousResponses = [...responses];
+        
+        setResponses(prevResponses => prevResponses.map(res => res.id === responseId ? { ...res, is_correct: newStatus, is_manually_corrected: true } : res));
 
-        // 2. OPTIMISTIC UI UPDATE: Instant visual feedback
-        setResponses(prevResponses => 
-            prevResponses.map(res => 
-                res.id === responseId 
-                    ? { ...res, is_correct: newStatus, is_manually_corrected: true } 
-                    : res
-            )
-        );
-
-        // 3. BACKGROUND SYNC: Update Supabase silently
         try {
-            const { data, error } = await supabase
-                .from('responses')
-                .update({ is_correct: newStatus })
-                .eq('id', responseId)
-                .select(); //  ADD THIS: Forces Supabase to return the updated row
-
+            const { data, error } = await supabase.from('responses').update({ is_correct: newStatus }).eq('id', responseId).select();
             if (error) throw error;
-
-            //  NEW SAFETY CHECK: If RLS blocks the update, data will be empty!
-            if (!data || data.length === 0) {
-                throw new Error("Update blocked by Supabase RLS. 0 rows updated.");
-            }
-            
+            if (!data || data.length === 0) throw new Error("Update blocked by Supabase RLS. 0 rows updated.");
         } catch (error) {
-            console.error("Database sync failed for manual override:", error);
-            
-            // 4. ROLLBACK ON ERROR
             setResponses(previousResponses);
-            alert(lang === 'sv' 
-                ? "Databasfel: Din ändring sparades inte. Kontrollera Supabase RLS-rättigheter." 
-                : "Database Error: Your change was not saved. Check Supabase RLS policies."
-            );
+            alert(lang === 'sv' ? "Databasfel: Din ändring sparades inte. Kontrollera Supabase RLS-rättigheter." : "Database Error: Your change was not saved. Check Supabase RLS policies.");
         }
     };
 
@@ -166,9 +146,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         const setupRealtime = () => {
             if (channelRef.current) supabase.removeChannel(channelRef.current);
             const channel = supabase.channel(`room_${session.id.slice(0,8)}`)
-                .on('postgres_changes', { 
-                    event: 'INSERT', schema: 'public', table: 'responses', filter: `room_id=eq.${session.id}` 
-                }, (payload) => {
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'responses', filter: `room_id=eq.${session.id}` }, (payload) => {
                     if (isMounted.current) {
                         setResponses(prev => {
                             if (prev.some(r => r.id === payload.new.id)) return prev;
@@ -176,9 +154,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                         });
                     }
                 })
-                .on('postgres_changes', {
-                    event: 'DELETE', schema: 'public', table: 'responses'
-                }, () => { syncData(); })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'responses' }, () => { syncData(); })
                 .subscribe(async (status) => {
                     if (!isMounted.current) return;
                     setConnStatus(status);
@@ -222,24 +198,15 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
             const item = new ClipboardItem({ 'text/html': blob });
             await navigator.clipboard.write([item]);
             alert(lang === 'sv' ? "Kompakt tabell har kopierats!" : "Compact table copied!");
-        } catch (err) {
-            alert(lang === 'sv' ? "Kunde inte kopiera." : "Could not copy.");
-        }
+        } catch (err) { alert(lang === 'sv' ? "Kunde inte kopiera." : "Could not copy."); }
     };
 
     const handleEndSession = async () => {
         if (isClosing) return;
         setIsClosing(true);
         try { 
-            // Explicitly update the database so the students' iPads get the signal!
-            const { error } = await supabase
-                .from('rooms')
-                .update({ status: 'closed' })
-                .eq('id', session.id);
-                
+            const { error } = await supabase.from('rooms').update({ status: 'closed' }).eq('id', session.id);
             if (error) throw error;
-
-            // Now officially close the teacher's frontend view
             await onEnd(); 
         } catch (err) {
             alert(lang === 'sv' ? "Kunde inte avsluta sessionen." : "Could not end session.");
@@ -247,28 +214,18 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         }
     };
 
-    // Function to force the class to the teacher's current zoomed question
-    // 🟢 RESTORED: Function to force the class to the teacher's current zoomed question
     const handlePushToClass = async () => {
         if (!session?.id || isPushing) return;
         setIsPushing(true);
         try {
-            const { error } = await supabase
-                .from('rooms')
-                // 🟢 FIXED: Using the exact column name from your database schema
-                .update({ current_question_index: zoomIndex }) 
-                .eq('id', session.id);
-
+            const { error } = await supabase.from('rooms').update({ current_question_index: zoomIndex }).eq('id', session.id);
             if (error) throw error;
         } catch (err) {
             console.error("Failed to push question:", err);
             alert(lang === 'sv' ? "Kunde inte byta fråga för klassen." : "Could not push question to class.");
-        } finally {
-            setIsPushing(false);
-        }
+        } finally { setIsPushing(false); }
     };
 
-    //  CHANGED: Explicit menu selection (forces a re-shuffle every time 'random' is clicked)
     const applySort = (mode) => {
         if (mode === 'random') {
             const uniqueStudents = [...new Set(responses.map(r => r.student_alias))];
@@ -278,22 +235,17 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         setIsSortMenuOpen(false);
     };
 
-    //    Smart sorting logic
     const students = React.useMemo(() => {
         const base = [...new Set(responses.map(r => r.student_alias))];
-        
-        if (sortMode === 'az') {
-            return base.sort((a, b) => a.localeCompare(b));
-        }
+        if (sortMode === 'az') return base.sort((a, b) => a.localeCompare(b));
         if (sortMode === 'progress') {
             return base.sort((a, b) => {
                 const countA = responses.filter(r => r.student_alias === a).length;
                 const countB = responses.filter(r => r.student_alias === b).length;
-                return countB - countA || a.localeCompare(b); // Sorts highest first
+                return countB - countA || a.localeCompare(b);
             });
         }
         if (sortMode === 'random') {
-            // Maintains the random order, but securely appends any newly joined students to the bottom
             const currentRandom = randomizedStudents.filter(s => base.includes(s));
             const missing = base.filter(s => !currentRandom.includes(s));
             return [...currentRandom, ...missing];
@@ -306,22 +258,122 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         const total = students.length || 0;
         const correct = questionResponses.filter(r => r.is_correct).length;
         const wrong = questionResponses.filter(r => !r.is_correct).length;
-        return {
-            correctPct: total > 0 ? (correct / total) * 100 : 0,
-            wrongPct: total > 0 ? (wrong / total) * 100 : 0,
-            remaining: total - questionResponses.length
-        };
+        return { correctPct: total > 0 ? (correct / total) * 100 : 0, wrongPct: total > 0 ? (wrong / total) * 100 : 0, remaining: total - questionResponses.length };
     });
 
-    const getStatusColor = (isCorrect, answered, answerText) => {
+    // 🟢 UPDATED: Color generator now handles Free Text responses
+    const getStatusColor = (isCorrect, answered, answerText, answerType) => {
         if (!answered) return 'bg-slate-100 opacity-30';
+        if (answerType === 'free_text') return 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]'; 
         if (hideCorrectness) return 'bg-indigo-300';
-        
-        //  pedagogical timeout indicator
         if (answerText === '[TIMEOUT]') return 'bg-slate-800 shadow-[0_0_8px_rgba(30,41,59,0.3)]'; 
-        
         return isCorrect ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.2)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.2)]';
     };
+
+    // 🟢 NEW: Filter the packet indices to only show what is on the active slide
+    const activePacketIndices = isPresentationMode && slides[activeSlideIndex]
+        ? packet.reduce((acc, q, idx) => {
+            if (slides[activeSlideIndex].activeIds.includes(q.id)) acc.push(idx);
+            return acc;
+        }, [])
+        : packet.map((_, idx) => idx);
+
+    // 🟢 NEW: Matrix Table Generator (Used in both layout modes)
+    const renderMatrixTable = () => (
+        <table className="w-full text-left border-collapse table-fixed min-w-[600px]">
+            <thead className="sticky top-0 z-10 shadow-sm">
+                <tr className="bg-[var(--bg-surface)] border-b border-[var(--border-main)]">
+                    <th className="p-3 w-48 bg-[var(--bg-surface-hover)] border-r border-[var(--border-main)]">
+                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{lang === 'sv' ? "Klassens resultat" : "Class results"}</span>
+                    </th>
+                    <th className="p-3 w-20 border-r border-[var(--border-main)] bg-[var(--bg-surface-hover)]"></th>
+                    {activePacketIndices.map((qIdx) => {
+                        const stats = questionStats[qIdx];
+                        const isFreeText = packet[qIdx].answerType === 'free_text';
+                        return (
+                            <th key={`stat-${qIdx}`} className="p-1.5 border-r border-[var(--border-main)] align-bottom">
+                                <div className="w-full h-12 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg overflow-hidden flex flex-col-reverse relative group cursor-help">
+                                    {!isFreeText ? (
+                                        <>
+                                            <div style={{ height: `${stats.correctPct}%` }} className="bg-emerald-500 transition-all duration-500" />
+                                            <div style={{ height: `${stats.wrongPct}%` }} className="bg-rose-500 transition-all duration-500" />
+                                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-slate-900/90 flex items-center justify-center transition-opacity">
+                                                <span className="text-[9px] text-white font-black">{Math.round(stats.correctPct)}%</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div style={{ height: `${(responses.filter(r => r.question_index === qIdx).length / Math.max(1, students.length)) * 100}%` }} className="bg-blue-500 transition-all duration-500 opacity-50" />
+                                    )}
+                                </div>
+                            </th>
+                        );
+                    })}
+                </tr>
+                <tr className="bg-[var(--bg-surface-hover)] border-b border-[var(--border-main)] text-[var(--text-main)]">
+                    <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-[var(--border-main)]">{lang === 'sv' ? "Elev" : "Student"}</th>
+                    <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-[var(--border-main)]">{lang === 'sv' ? "Klar" : "Done"}</th>
+                    {activePacketIndices.map((qIdx) => (
+                        <th key={`head-${qIdx}`} className="p-0 border-r border-[var(--border-main)]">
+                            <button onClick={() => setZoomIndex(qIdx)} className="w-full h-full py-1.5 flex flex-col items-center justify-center gap-1 hover:bg-[var(--bg-surface)] transition-colors">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-center text-[var(--text-muted)]">Q{qIdx + 1}</span>
+                                {showActualAnswers && (
+                                    <span className="theme-orange text-[8px] text-[var(--brand-solid)] font-black bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded truncate max-w-[50px] tracking-normal shadow-sm" title={getCorrectAnswer(packet[qIdx])}>
+                                        {getCorrectAnswer(packet[qIdx])}
+                                    </span>
+                                )}
+                            </button>
+                        </th>
+                    ))}
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border-subtle)]">
+                {students.map((student, sIdx) => {
+                    const studentResps = responses.filter(r => r.student_alias === student);
+                    const progress = Math.round((studentResps.length / packet.length) * 100);
+                    return (
+                        <tr key={student} className="hover:bg-[var(--bg-surface)] transition-colors group/row">
+                            <td className="p-2 border-r border-[var(--border-subtle)] font-bold text-[var(--text-main)] text-xs truncate flex items-center justify-between">
+                                <span>{isAnonymous ? `Elev ${sIdx + 1}` : student}</span>
+                                <button onClick={() => handleKickStudent(student)} className="opacity-0 group-hover/row:opacity-100 p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all"><UserX size={14} /></button>
+                            </td>
+                            <td className="p-2 border-r border-[var(--border-subtle)] text-center">
+                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${progress === 100 ? 'bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)]' : 'bg-[var(--bg-surface-hover)] text-[var(--text-muted)]'}`}>
+                                    {progress}%
+                                </span>
+                            </td>
+                            {activePacketIndices.map((qIdx) => {
+                                const resp = responses.find(r => r.student_alias === student && r.question_index === qIdx);
+                                const isFreeText = packet[qIdx].answerType === 'free_text';
+                                return (
+                                    <td 
+                                        key={`cell-${sIdx}-${qIdx}`} 
+                                        className="p-1 border-r border-[var(--border-subtle)]"
+                                        onClick={() => {
+                                            if (!resp) return;
+                                            // 🟢 NEW: Route clicks based on answer type
+                                            if (isFreeText) setFreeTextReviewResp(resp);
+                                            else handleManualOverride(resp.id, resp.is_correct);
+                                        }} 
+                                    >
+                                        <div 
+                                            title={resp ? (isFreeText ? "Klicka för att läsa svar" : `Svar: ${resp.answer} (Klicka för att ändra rättning)`) : 'Inget svar'}
+                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer hover:scale-95 active:scale-90 ${getStatusColor(resp?.is_correct, !!resp, resp?.answer, packet[qIdx].answerType)}`}
+                                        >
+                                            {showActualAnswers && resp && (
+                                                <span className="text-[9px] font-black text-white px-1 truncate flex items-center justify-center">
+                                                    {isFreeText ? <MessageSquare size={10} /> : (resp.answer === '[TIMEOUT]' ? 'TID' : resp.answer)}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                );
+                            })}
+                        </tr>
+                    );
+                })}
+            </tbody>
+        </table>
+    );
 
     return (
         <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans transition-colors duration-500">
@@ -366,6 +418,33 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                 </div>
             )}
 
+            {/* --- 🟢 NEW: SECURE FREE-TEXT REVIEW DRAWER --- */}
+            {freeTextReviewResp && (
+                <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl p-8 w-full max-w-lg border-2 border-blue-200 animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><MessageSquare size={20} /></div>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter leading-none">
+                                        {isAnonymous ? "Elevsvar" : freeTextReviewResp.student_alias}
+                                    </h3>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Fråga {freeTextReviewResp.question_index + 1}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setFreeTextReviewResp(null)} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"><X size={20}/></button>
+                        </div>
+                        <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 text-slate-700 text-base leading-relaxed font-medium min-h-[120px] max-h-[40vh] overflow-y-auto custom-scrollbar">
+                            {/* React strictly evaluates this as text, preventing XSS HTML execution */}
+                            {freeTextReviewResp.answer}
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <button onClick={() => setFreeTextReviewResp(null)} className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest text-[11px] rounded-xl transition-all">Stäng</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* --- LANDSCAPE REPORT PREVIEW --- */}
             {showPrintPreview && (
                 <LandscapeReport 
@@ -377,7 +456,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                 />
             )}
 
-            {/* 3. MAIN DASHBOARD UI (Live Stream) */}
+            {/* 3. MAIN DASHBOARD HEADER */}
             <header className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-4 py-2 sticky top-0 z-40 shadow-sm flex items-center justify-between gap-4 no-print transition-colors duration-500">
                 <div className="flex items-center gap-3">
                     <div className="bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] px-3 py-1.5 rounded-xl flex flex-col items-center shadow-md">
@@ -397,13 +476,12 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                         {connStatus === 'SUBSCRIBED' ? 'Live' : connStatus}
                     </div>
                     
-                    {/*  PREFERENCES TOGGLE ADDED HERE */}
                     <PreferencesToggle />
 
                     <button onClick={syncData} disabled={isSyncing} className="p-2 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg text-[var(--text-muted)] hover:text-indigo-600 transition-all shadow-sm">
                         <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
                     </button>
-                    {/* 🟢 ADDED: Sort Dropdown Menu (Theme Supported) */}
+                    
                     <div className="relative">
                         <button 
                             onClick={() => setIsSortMenuOpen(!isSortMenuOpen)} 
@@ -442,7 +520,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                         )}
                     </div>
                     
-                    {/* 🟢 BRANDED & DYNAMIC ACTION BUTTONS */}
                     <button 
                         onClick={() => setShowActualAnswers(!showActualAnswers)} 
                         title={showActualAnswers ? (lang === 'sv' ? "Visa status" : "Show status") : (lang === 'sv' ? "Visa svar" : "Show answers")} 
@@ -465,108 +542,80 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                 </div>
             </header>
 
+            {/* 4. DYNAMIC VIEW: Split Presentation OR Standard Grid */}
             <main className="flex-1 overflow-auto p-4 lg:p-6 no-print">
-                <div className="max-w-[1600px] mx-auto bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-main)] overflow-hidden flex flex-col h-full min-h-[600px]">
-                    <div className="p-4 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-surface)]">
-                        <div className="flex items-center gap-3">
-                            <BarChart3 className="text-[var(--primary-color, #4f46e5)]" size={18} />
-                            <h2 className="text-sm font-black uppercase italic tracking-tighter text-[var(--text-main)] leading-none">{session.title}</h2>
-                        </div>
-                        <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{students.length} {lang === 'sv' ? "Elever anslutna" : "Students connected"}</div>
-                    </div>
+                {isPresentationMode ? (
+                    <div className="flex flex-col lg:flex-row gap-6 h-full max-w-[2000px] mx-auto">
+                        
+                        {/* THE TELEPROMPTER (Left Side) */}
+                        <div className="w-full lg:w-5/12 xl:w-1/2 flex flex-col gap-4">
+                            <div className="flex justify-between items-center bg-[var(--bg-card)] px-4 py-3 rounded-2xl shadow-sm border border-[var(--border-main)] shrink-0">
+                                <button 
+                                    onClick={() => handleSlideChange(activeSlideIndex - 1)} 
+                                    disabled={activeSlideIndex === 0} 
+                                    className="p-2.5 bg-[var(--bg-surface)] hover:bg-[var(--theme-indigo-bg)] text-[var(--text-muted)] hover:text-[var(--theme-indigo-text)] rounded-xl disabled:opacity-30 transition-all cursor-pointer"
+                                ><ChevronLeft size={20}/></button>
+                                <div className="text-sm font-black uppercase tracking-widest text-[var(--text-main)] flex items-center gap-2">
+                                    <Monitor size={16} className="text-[var(--primary-color)]" />
+                                    {slides[activeSlideIndex]?.title || `Slide ${activeSlideIndex + 1}`} <span className="opacity-50">({activeSlideIndex + 1} / {slides.length})</span>
+                                </div>
+                                <button 
+                                    onClick={() => handleSlideChange(activeSlideIndex + 1)} 
+                                    disabled={activeSlideIndex === slides.length - 1} 
+                                    className="p-2.5 bg-[var(--bg-surface)] hover:bg-[var(--theme-indigo-bg)] text-[var(--text-muted)] hover:text-[var(--theme-indigo-text)] rounded-xl disabled:opacity-30 transition-all cursor-pointer"
+                                ><ChevronRight size={20}/></button>
+                            </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse table-fixed min-w-[800px]">
-                            <thead className="sticky top-0 z-10 shadow-sm">
-                                <tr className="bg-[var(--bg-surface)] border-b border-[var(--border-main)]">
-                                    <th className="p-3 w-48 bg-[var(--bg-surface-hover)] border-r border-[var(--border-main)]">
-                                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{lang === 'sv' ? "Klassens resultat" : "Class results"}</span>
-                                    </th>
-                                    <th className="p-3 w-20 border-r border-[var(--border-main)] bg-[var(--bg-surface-hover)]"></th>
-                                    {questionStats.map((stats, i) => (
-                                        <th key={`stat-${i}`} className="p-1.5 border-r border-[var(--border-main)] align-bottom">
-                                            <div className="w-full h-12 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg overflow-hidden flex flex-col-reverse relative group cursor-help">
-                                                <div style={{ height: `${stats.correctPct}%` }} className="bg-emerald-500 transition-all duration-500" />
-                                                <div style={{ height: `${stats.wrongPct}%` }} className="bg-rose-500 transition-all duration-500" />
-                                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-slate-900/90 flex items-center justify-center transition-opacity">
-                                                    <span className="text-[9px] text-white font-black">{Math.round(stats.correctPct)}%</span>
-                                                </div>
-                                            </div>
-                                        </th>
-                                    ))}
-                                </tr>
-                                {/* 🟢 Normalized header with adaptive theme-orange badges */}
-                                <tr className="bg-[var(--bg-surface-hover)] border-b border-[var(--border-main)] text-[var(--text-main)]">
-                                    <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-[var(--border-main)]">{lang === 'sv' ? "Elev" : "Student"}</th>
-                                    <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-[var(--border-main)]">{lang === 'sv' ? "Klar" : "Done"}</th>
-                                    {packet.map((q, i) => (
-                                        <th key={i} className="p-0 border-r border-[var(--border-main)]">
-                                            <button onClick={() => setZoomIndex(i)}
-                                                className="w-full h-full py-1.5 flex flex-col items-center justify-center gap-1 hover:bg-[var(--bg-surface)] transition-colors"
-                                            >
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-center text-[var(--text-muted)]">{i + 1}</span>
-                                                {showActualAnswers && (
-                                                    <span className="theme-orange text-[8px] text-[var(--brand-solid)] font-black bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded truncate max-w-[50px] tracking-normal shadow-sm" title={getCorrectAnswer(q)}>
-                                                        {getCorrectAnswer(q)}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--border-subtle)]">
-                                {students.map((student, sIdx) => {
-                                    const studentResps = responses.filter(r => r.student_alias === student);
-                                    const progress = Math.round((studentResps.length / packet.length) * 100);
-                                    return (
-                                        <tr key={student} className="hover:bg-[var(--bg-surface)] transition-colors group/row">
-                                            <td className="p-2 border-r border-[var(--border-subtle)] font-bold text-[var(--text-main)] text-xs truncate flex items-center justify-between">
-                                                <span>{isAnonymous ? `Elev ${sIdx + 1}` : student}</span>
-                                                <button onClick={() => handleKickStudent(student)} className="opacity-0 group-hover/row:opacity-100 p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all"><UserX size={14} /></button>
-                                            </td>
-                                            <td className="p-2 border-r border-[var(--border-subtle)] text-center">
-                                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${progress === 100 ? 'bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)]' : 'bg-[var(--bg-surface-hover)] text-[var(--text-muted)]'}`}>
-                                                    {progress}%
-                                                </span>
-                                            </td>
-                                            {packet.map((_, qIdx) => {
-                                                const resp = responses.find(r => r.student_alias === student && r.question_index === qIdx);
-                                                return (
-                                                    <td 
-                                                        key={qIdx} 
-                                                        className="p-1 border-r border-[var(--border-subtle)]"
-                                                        onClick={() => resp && handleManualOverride(resp.id, resp.is_correct)} 
-                                                    >
-                                                        <div 
-                                                            title={resp ? `Svar: ${resp.answer} (Klicka för att ändra rättning)` : 'Inget svar'}
-                                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer hover:scale-95 active:scale-90 ${getStatusColor(resp?.is_correct, !!resp, resp?.answer)}`}
-                                                        >
-                                                            {showActualAnswers && resp && (
-                                                                <span className="text-[9px] font-black text-white px-1 truncate">
-                                                                    {resp.answer === '[TIMEOUT]' ? 'TID' : resp.answer}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                );
-                                            })}
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                            <div className="relative w-full aspect-video bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-slate-200/50">
+                                {/* 🟢 THE SHARED COMPONENT */}
+                                <SlideRenderer
+                                    activeIds={slides[activeSlideIndex]?.activeIds || []}
+                                    livePacket={packet}
+                                    lang={lang}
+                                    sizeClasses={{ desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px] mb-2' }}
+                                    clueViewMode="answers" // Shows answers for the teacher
+                                    authorMode={false} // Hides the editing pills!
+                                    globalZoom={globalZoom}
+                                />
+                            </div>
+                        </div>
+
+                        {/* THE FOCUSED MATRIX (Right Side) */}
+                        <div className="w-full lg:w-7/12 xl:w-1/2 bg-[var(--bg-card)] rounded-3xl shadow-xl border border-[var(--border-main)] overflow-hidden flex flex-col h-full">
+                            <div className="p-4 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-surface)]">
+                                <div className="flex items-center gap-3">
+                                    <BarChart3 className="text-[var(--primary-color)]" size={18} />
+                                    <h2 className="text-sm font-black uppercase italic tracking-tighter text-[var(--text-main)] leading-none">{lang === 'sv' ? "Aktiva Elever" : "Active Students"}</h2>
+                                </div>
+                                <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{students.length} {lang === 'sv' ? "Anslutna" : "Connected"}</div>
+                            </div>
+                            <div className="overflow-x-auto overflow-y-auto custom-scrollbar flex-1">
+                                {renderMatrixTable()}
+                            </div>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    // STANDARD WORKSHEET LAYOUT
+                    <div className="max-w-[1600px] mx-auto bg-[var(--bg-card)] rounded-2xl shadow-xl border border-[var(--border-main)] overflow-hidden flex flex-col h-full min-h-[600px]">
+                        <div className="p-4 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-surface)]">
+                            <div className="flex items-center gap-3">
+                                <BarChart3 className="text-[var(--primary-color, #4f46e5)]" size={18} />
+                                <h2 className="text-sm font-black uppercase italic tracking-tighter text-[var(--text-main)] leading-none">{session.title}</h2>
+                            </div>
+                            <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{students.length} {lang === 'sv' ? "Elever anslutna" : "Students connected"}</div>
+                        </div>
+                        <div className="overflow-x-auto custom-scrollbar flex-1">
+                            {renderMatrixTable()}
+                        </div>
+                    </div>
+                )}
             </main>
 
-            {/* --- COMPACT ZOOM-IN QUESTION OVERLAY --- */}
+            {/* --- COMPACT ZOOM-IN QUESTION OVERLAY (Still available in all modes) --- */}
             {zoomIndex !== null && (
-                <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center no-print">
-                    {/* 🟢 Removed whiteboard-protect from the root, allowing dynamic theme colors to flow through */}
-                    <div className="bg-[var(--bg-canvas)] text-[var(--text-main)] w-full h-full flex flex-col overflow-hidden animate-in fade-in duration-300 shadow-2xl">
+                <div className="fixed inset-0 z-[300] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center no-print animate-in fade-in duration-200">
+                    <div className="bg-[var(--bg-canvas)] text-[var(--text-main)] w-full h-full flex flex-col overflow-hidden shadow-2xl">
                         
-                        {/* 1. DYNAMIC HEADER */}
                         <div className="px-6 py-3 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-card)] shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] px-3 py-1 rounded-lg flex flex-col items-center shadow-sm">
@@ -584,7 +633,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             </div>
 
                             <div className="flex items-center gap-2">
-                                {/* 🟢 RESTORED: The Push Button (Only visible in Teacher-Led mode) */}
                                 {isTeacherLed && (
                                     <button
                                         onClick={handlePushToClass}
@@ -596,7 +644,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                     </button>
                                 )}
 
-                                {/* 🟢 ADDED: Show Answers Toggle */}
                                 <button 
                                     onClick={() => setShowActualAnswers(!showActualAnswers)} 
                                     title={showActualAnswers ? (lang === 'sv' ? "Visa status" : "Show status") : (lang === 'sv' ? "Visa svar" : "Show answers")} 
@@ -630,7 +677,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             </div>
                         </div>
 
-                        {/* 2. DYNAMIC QUESTION ZONE */}
                         <div className="px-8 py-4 bg-[var(--bg-surface)] border-b border-[var(--border-main)] shrink-0 relative">
                             {showActualAnswers && (
                                 <div className="theme-orange absolute top-1/2 -translate-y-1/2 right-6 bg-[var(--brand-bg)] border border-[var(--brand-border)] text-[var(--brand-solid)] px-4 py-2 rounded-xl text-lg font-black shadow-sm flex items-center gap-2">
@@ -650,13 +696,10 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             </div>
                         </div>
 
-                        {/* 3. MAIN CONTENT SPLIT */}
                         <div className="flex-1 flex overflow-hidden w-full">
                             
                             {!showWorkGrid ? (
-                                /* --- STANDARD LAYOUT --- */
                                 <>
-                                    {/* 🟢 PROTECTED: Drawing stays pure white to preserve the math diagrams */}
                                     <div className="whiteboard-protect flex-1 p-6 flex items-center justify-center overflow-hidden border-r border-[var(--border-main)]">
                                         <div className="flex-1 flex flex-col justify-center items-center py-6 min-h-[150px]">
                                             <div className="flex justify-center scale-90 origin-top mt-2">
@@ -673,7 +716,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                         </div>
                                     </div>
 
-                                    {/* 🟢 THEMED: Stats and Scratchpad Lists */}
                                     <div className="w-64 sm:w-72 bg-[var(--bg-surface)] p-4 flex flex-col gap-3 overflow-y-auto shrink-0">
                                         <div className="bg-emerald-500 rounded-[1.5rem] p-4 text-white shadow-md">
                                             <div className="flex items-center gap-2 mb-2 opacity-90">
@@ -744,9 +786,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                     </div>
                                 </>
                             ) : (
-                                /* --- 🟢 NEW: MASSIVE SCRATCHPAD GRID VIEW --- */
                                 <>
-                                    {/* 🟢 PROTECTED: Left visual column stays white */}
                                     <div className="whiteboard-protect w-64 sm:w-80 p-6 flex flex-col border-r border-[var(--border-main)] overflow-y-auto shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-10">
                                         <button onClick={() => setShowWorkGrid(false)} className="w-full mb-6 py-2 bg-[var(--theme-indigo-bg)] hover:bg-[var(--theme-indigo-border)] text-[var(--theme-indigo-text)] font-black text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2">
                                             <ChevronLeft size={14}/> {lang === 'sv' ? "Tillbaka" : "Back"}
@@ -765,7 +805,6 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                         )}
                                     </div>
 
-                                    {/* 🟢 THEMED: 4-Column Grid View */}
                                     <div className="flex-1 p-6 bg-[var(--bg-canvas)] overflow-y-auto custom-scrollbar">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-start content-start">
                                             {responses.filter(r => r.question_index === zoomIndex && r.work_steps?.length > 0).map((r, i) => (
