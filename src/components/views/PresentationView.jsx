@@ -3,6 +3,7 @@ import {
     X, ChevronLeft, ChevronRight, ChevronDown, Monitor, PanelLeftClose, 
     PanelLeftOpen, ZoomIn, ZoomOut, Layers, FileText, List, Plus,
     RefreshCw, Presentation, FileQuestion, Save, Download, Trash2,
+    MessageSquare
 } from 'lucide-react';
 
 import VisualRenderer from '../visuals/VisualRenderer';
@@ -12,11 +13,14 @@ import { supabase } from '../../lib/supabaseClient';
 import { useMyCoach } from '../../hooks/useMyCoach';
 import MyCoachModal from '../modals/MyCoachModal';
 
-// 🟢 NEW: Imported extracted modular functions
+
+// Imported extracted modular functions
 import MathDisplay from '../shared/MathDisplay';
 import { compileAnchoredStory } from '../../core/utils/storyCompiler';
+import SlideRenderer from '../shared/SlideRenderer';
 
-export default function PresentationView({ packet, sheetTitle, lang = 'sv', onClose, initialSlides, boardId: initialBoardId }) {
+export default function PresentationView({ packet, sheetTitle, lang = 'sv', onClose, initialSlides, boardId: initialBoardId, 
+    onLaunchLive }) {
     // --- MASTER SLIDE & TAB STATE ---
     const [sidebarTab, setSidebarTab] = useState('questions'); 
     
@@ -35,13 +39,17 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
     const [isLeftCollapsed, setIsLeftCollapsed] = useState(false); 
     const [isRightCollapsed, setIsRightCollapsed] = useState(true);
-    const [textSize, setTextSize] = useState('base'); 
+    const [globalZoom, setGlobalZoom] = useState(1.0); 
     const [viewMode, setViewMode] = useState('list'); 
-    const [clueViewMode, setClueViewMode] = useState('steps'); 
+    const [clueViewMode, setClueViewMode] = useState('steps');
 
     const [livePacket, setLivePacket] = useState(packet || []);
     const [bgType, setBgType] = useState('blank');
     const [isSummonerOpen, setIsSummonerOpen] = useState(false);
+
+    // Custom Prompt States
+    const [isPromptBuilderOpen, setIsPromptBuilderOpen] = useState(false);
+    const [customPromptText, setCustomPromptText] = useState('');
 
     // Tracks which question's alignment dropdown is currently open
     const [openAlignMenuId, setOpenAlignMenuId] = useState(null);
@@ -100,6 +108,55 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
         }
     };
     
+    // 🟢 NEW: The Broadcast Handler
+    const handleGoLive = async () => {
+        if (!window.confirm(lang === 'sv' ? "Starta live-lektion med denna presentation?" : "Start live lesson with this presentation?")) return;
+        
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("Not authenticated");
+
+            // Generate a random 6-character room code
+            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+            // Structure the live payload
+            const sessionPayload = {
+                mode: 'presentation', 
+                slides: slides,
+                packet: livePacket,
+                settings: { bgType, viewMode, globalZoom } // Save the global zoom state
+            };
+
+            // Upsert the teacher's active room
+            // Create a NEW active room (Matching QuestionStudio's behavior)
+            const { data: roomData, error } = await supabase
+                .from('rooms')
+                .insert([{ 
+                    teacher_id: user.id, 
+                    class_code: code,
+                    status: 'active',
+                    current_slide_index: 0, 
+                    active_question_data: sessionPayload,
+                    title: localTitle || (lang === 'sv' ? "Live Presentation" : "Live Presentation")
+                }])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Trigger QuestionStudio to mount TeacherLiveView without double-routing!
+            if (onLaunchLive) {
+                onLaunchLive(roomData);
+            } else {
+                console.warn("Missing onLaunchLive prop");
+            }
+            
+        } catch (err) {
+            console.error("Failed to start live session:", err);
+            alert(lang === 'sv' ? "Kunde inte starta live-lektionen." : "Failed to start live session.");
+        }
+    };
+
     // --- SLIDE MANAGEMENT ---
     const handleAddSlide = () => {
         const newSlide = { id: `slide_${Date.now()}`, elements: [], scrollX: 0, scrollY: 0, title: `Slide ${slides.length + 1}`, activeIds: [] };
@@ -178,6 +235,33 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
         setSidebarTab('slides');
     };
 
+    // Custom Prompt Builder Logic
+    const handleAddCustomPrompt = () => {
+        if (!customPromptText.trim()) return;
+        
+        const newItem = {
+            id: `prompt_${Date.now()}`,
+            type: 'custom_prompt',
+            answerType: 'free_text', // Signals StudentLiveView to show a textarea
+            text: customPromptText.trim(),
+            align: 'center',
+            scale: 1.0,
+            columnSpan: 6,
+            showLatex: false,  // Custom prompts don't have LaTeX math
+            showVisual: false  // Custom prompts don't have generated shapes
+        };
+        
+        const updatedPacket = [...livePacket, newItem];
+        setLivePacket(updatedPacket);
+        setActiveIds([newItem.id]);
+        setClueProgress({ ...clueProgress, [newItem.id]: 0 });
+        setPresentationIndex(livePacket.length);
+        setSidebarTab('questions');
+        setIsPromptBuilderOpen(false);
+        setCustomPromptText('');
+        setIsSaving(false);
+    };
+
     const pushClueToCanvas = (clue, mode = 'both') => {
         const text = typeof clue === 'object' ? clue[lang] || clue.text : clue;
         const latex = typeof clue === 'object' ? clue.latex : null;
@@ -249,6 +333,13 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 tempDiv.innerHTML = el.content || "";
                 let rawText = tempDiv.textContent || tempDiv.innerText || "";
                 rawText = rawText.replace(/"/g, '""');
+                
+                // CSV Injection Prevention
+                // If text starts with a formula trigger, neutralize it for Excel
+                if (/^[=+\-@]/.test(rawText.trim())) {
+                    rawText = "'" + rawText.trim();
+                }
+
                 csvContent += `${idx + 1},"${slide.title}","${rawText}"\n`;
             });
         });
@@ -324,17 +415,8 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
         }
     };
 
-    const getTextSizeClass = (type) => {
-        const textMap = {
-            'base': { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px] mb-2' },
-            'lg': { desc: 'text-xl', latex: 'text-2xl', clue: 'text-xl', headerText: 'text-xl', visualClass: 'scale-125 max-h-[240px] mb-6' },
-            'xl': { desc: 'text-2xl', latex: 'text-3xl', clue: 'text-2xl', headerText: 'text-2xl', visualClass: 'scale-150 max-h-[320px] mb-12' },
-            '2xl': { desc: 'text-3xl', latex: 'text-4xl', clue: 'text-3xl', headerText: 'text-3xl', visualClass: 'scale-[1.85] max-h-[420px] mb-20' }
-        };
-        return textMap[textSize] || textMap['base'];
-    };
-
-    const sizeClasses = getTextSizeClass();
+    // 🟢 NEW: Static base sizes (Zoom handles the rest)
+    const sizeClasses = { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px] mb-2' };
     const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
 
     return (
@@ -364,14 +446,15 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
                     <div className="w-px h-6 bg-slate-700/60" />
 
+                    {/* 🟢 NEW: Universal Slide Zoom Toggle */}
                     <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/60 gap-1 shadow-inner">
-                        <button disabled={textSize === 'base'} onClick={() => setTextSize(prev => prev === '2xl' ? 'xl' : prev === 'xl' ? 'lg' : 'base')} className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-slate-500 disabled:opacity-20 cursor-pointer transition-colors">
+                        <button onClick={() => setGlobalZoom(prev => Math.max(0.5, prev - 0.1))} className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-slate-500 cursor-pointer transition-colors" title="Zoom Out">
                             <ZoomOut size={14} />
                         </button>
-                        <span className="text-[12px] font-black uppercase tracking-widest text-slate-100 px-2 min-w-[70px] text-center">
-                            {lang === 'sv' ? `TEXT: ${textSize.toUpperCase()}` : `SIZE: ${textSize.toUpperCase()}`}
+                        <span className="text-[12px] font-black uppercase tracking-widest text-slate-100 px-2 min-w-[60px] text-center select-none">
+                            {Math.round(globalZoom * 100)}%
                         </span>
-                        <button disabled={textSize === '2xl'} onClick={() => setTextSize(prev => prev === 'base' ? 'lg' : prev === 'lg' ? 'xl' : '2xl')} className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-slate-700 disabled:opacity-20 cursor-pointer transition-colors">
+                        <button onClick={() => setGlobalZoom(prev => Math.min(2.5, prev + 0.1))} className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-slate-700 cursor-pointer transition-colors" title="Zoom In">
                             <ZoomIn size={14} />
                         </button>
                     </div>
@@ -407,6 +490,19 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                             <Save size={14} />
                             <span className="text-[12px] font-black uppercase tracking-wider hidden md:inline">
                                 {isSaving ? (lang === 'sv' ? "Sparar..." : "Saving...") : (lang === 'sv' ? "Spara" : "Save")}
+                            </span>
+                        </button>
+
+                        {/* 🟢 NEW: Branded Red 'Go Live' Button */}
+                        <div className="w-px h-4 bg-slate-600 mx-1" />
+                        <button 
+                            onClick={handleGoLive}
+                            className="p-1.5 px-3 rounded-lg text-white bg-rose-600 hover:bg-rose-500 transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-rose-900/50 hover:scale-105 active:scale-95"
+                            title={lang === 'sv' ? "Starta Live" : "Go Live"}
+                        >
+                            <Monitor size={14} />
+                            <span className="text-[12px] font-black uppercase tracking-wider hidden md:inline">
+                                {lang === 'sv' ? "Gå Live" : "Go Live"}
                             </span>
                         </button>
                     </div>
@@ -449,10 +545,16 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                     <Presentation size={18} strokeWidth={2.5} />
                                     {lang === 'sv' ? "Ny Slide" : "New Slide"}
                                 </button>
-                                <button onClick={() => setIsSummonerOpen(true)} className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center justify-center gap-1.5 transition-all shadow-md active:scale-[0.98] cursor-pointer">
-                                    < FileQuestion size={18} strokeWidth={2.5} />
-                                    {lang === 'sv' ? "Ny Uppgift" : "Add Math"}
-                                </button>
+                                <div className="flex-1 flex flex-col gap-2">
+                                    <button onClick={() => setIsSummonerOpen(true)} className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] cursor-pointer">
+                                        <FileQuestion size={14} strokeWidth={2.5} />
+                                        {lang === 'sv' ? "Uppgift" : "Math"}
+                                    </button>
+                                    <button onClick={() => setIsPromptBuilderOpen(true)} className="flex-1 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] cursor-pointer">
+                                        <MessageSquare size={14} strokeWidth={2.5} />
+                                        {lang === 'sv' ? "Textfråga" : "Prompt"}
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -820,128 +922,22 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                     </div>
                                 </div>
                             ) : (
-                                <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
-                                    {/* 🟢 FIX: Moved the comment INSIDE the div so it doesn't break the ternary operator! */}
-                                    <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full pointer-events-none">
-                                        <foreignObject x="0" y="0" width="1920" height="1080" className="pointer-events-none">
-                                            <div className="w-full h-full relative flex items-start select-none pt-[80px] pb-[80px] pointer-events-auto">
-                                                
-                                                {clueViewMode === 'coach' ? (
-                                                    <MyCoachModal
-                                                        lang={lang}
-                                                        inlineMode={true} 
-                                                        question={currentFocusedQuestion} 
-                                                        {...coachProps} 
-                                                    />
-                                                ) : activeIds.length === 0 ? (
-                                                    <div className="absolute top-5 left-5 flex items-center gap-2 text-slate-400/50 bg-white/50 px-3 py-1.5 rounded-lg border border-slate-200/50 pointer-events-none select-none z-0">
-                                                        <ChevronLeft size={14} className="animate-pulse" />
-                                                        <span className="font-black uppercase tracking-widest text-[9px]">
-                                                            {lang === 'sv' ? "Välj uppgift för att presentera" : "Select question to present"}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    activeIds.map((id, index) => {
-                                                        const q = livePacket.find(p => p.id === id);
-                                                        if (!q) return null;
-                                                        const rd = q.resolvedData?.renderData;
-                                                        const masterIndex = livePacket.findIndex(p => p.id === id) + 1;
-
-                                                        const alignClass = q.align === 'start' ? 'items-start' : q.align === 'end' ? 'items-end' : 'items-center';
-                                                        const textAlignClass = q.align === 'start' ? 'text-left' : q.align === 'end' ? 'text-right' : 'text-center';
-
-                                                        return (
-                                                            <div 
-                                                                key={id} 
-                                                                className={`group flex flex-col flex-1 px-8 relative h-full ${alignClass} justify-start animate-in zoom-in-95 duration-200`}
-                                                            >
-                                                                {index > 0 && (
-                                                                    <div className="absolute top-0 bottom-0 left-0 border-l-4 border-dashed border-slate-400/80 -translate-x-1/2 pointer-events-none" />
-                                                                )}
-
-                                                                <div className={`flex flex-col mb-3 shrink-0 relative z-40 mt-4 items-${q.align === 'start' ? 'start' : q.align === 'end' ? 'end' : 'center'}`}>
-                                                                    <div className="flex items-center gap-3">
-                                                                        
-                                                                        <button 
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setOpenAlignMenuId(prev => prev === q.id ? null : q.id);
-                                                                            }}
-                                                                            className="flex items-center gap-1.5 text-[14px] font-black text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 hover:border-indigo-200 rounded-md px-2.5 py-1 uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer pointer-events-auto"
-                                                                            title={lang === 'sv' ? "Ändra justering" : "Change alignment"}
-                                                                        >
-                                                                            {lang === 'sv' ? `Uppgift ${masterIndex}` : `Question ${masterIndex}`}
-                                                                            <ChevronDown size={16} className={`transition-transform duration-200 ${openAlignMenuId === q.id ? 'rotate-180' : ''}`} />
-                                                                        </button>
-                                                                        
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); handleRegenerateQuestion(q.id); }}
-                                                                            className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all active:scale-90 cursor-pointer pointer-events-auto ui-ignore"
-                                                                            title={lang === 'sv' ? "Slå om tal / slumpa nya värden" : "Roll fresh question numbers"}
-                                                                        >
-                                                                            <RefreshCw size={18} className="transition-transform duration-300 hover:rotate-180" />
-                                                                        </button>
-                                                                    </div>
-
-                                                                    {openAlignMenuId === q.id && (
-                                                                        <div className="absolute top-full mt-1.5 animate-in fade-in slide-in-from-top-1 duration-200 flex bg-white/95 backdrop-blur-sm p-1 rounded-xl shadow-md border border-slate-200 pointer-events-auto z-50" onPointerDown={(e) => e.stopPropagation()}>
-                                                                            <div className="flex bg-slate-100 rounded-lg p-0.5">
-                                                                                {['start', 'center', 'end'].map(align => (
-                                                                                    <button key={align} onClick={() => {
-                                                                                        setLivePacket(prev => prev.map(p => p.id === q.id ? { ...p, align } : p));
-                                                                                        setIsSaving(false);
-                                                                                        setOpenAlignMenuId(null); 
-                                                                                    }} className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase transition-all ${q.align === align ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-200'}`}>
-                                                                                        {align === 'start' ? (lang === 'sv' ? 'Vänster' : 'Left') : align === 'end' ? (lang === 'sv' ? 'Höger' : 'Right') : (lang === 'sv' ? 'Mitten' : 'Center')}
-                                                                                    </button>
-                                                                                ))}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                {q.showText !== false && (
-                                                                    <div className={`font-bold text-slate-800 ${textAlignClass} leading-relaxed max-w-md w-full shrink-0 break-words px-4 mb-2 ${sizeClasses.desc}`}>
-                                                                        <MathDisplay content={compileAnchoredStory(q, lang)} />
-                                                                    </div>
-                                                                )}
-                                                                
-                                                                {q.showVisual !== false && rd && (
-                                                                    <div 
-                                                                        onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
-                                                                        className={`flex justify-center origin-top transition-all duration-300 cursor-zoom-in hover:opacity-80 overflow-visible shrink-0 relative z-30 w-full max-w-md px-4 pointer-events-auto ${sizeClasses.visualClass}`}
-                                                                    >
-                                                                        <VisualRenderer 
-                                                                            data={rd} 
-                                                                            isWordProblem={q.selectedStoryIndex !== null && q.selectedStoryIndex !== undefined} 
-                                                                        />
-                                                                    </div>
-                                                                )}
-
-                                                                {rd?.options && rd.options.length > 0 && (
-                                                                    <div className="mt-6 grid grid-cols-2 gap-4 w-full max-w-md px-4 shrink-0 relative z-30 pointer-events-auto">
-                                                                        {rd.options.map((opt, oIdx) => (
-                                                                            <div key={oIdx} className={`flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-slate-200 bg-white shadow-sm ${sizeClasses.desc}`}>
-                                                                                <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
-                                                                                <MathDisplay content={opt} className="font-bold text-slate-700" />
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-
-                                                                {q.showLatex !== false && rd?.latex && !rd?.geometry && (
-                                                                    <div className={`mt-6 py-4 bg-indigo-50/40 rounded-2xl text-center font-serif text-indigo-950 border border-indigo-100/60 shadow-inner w-full max-w-xs shrink-0 pointer-events-auto ${sizeClasses.latex}`}>
-                                                                        <MathDisplay content={`$$${rd.latex}$$`} />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    }) 
-                                                )}
-                                            </div>
-                                        </foreignObject>
-                                    </svg>
-                                </div>
+                                /* Slide Renderer */
+                                <SlideRenderer
+                                    activeIds={activeIds}
+                                    livePacket={livePacket}
+                                    setLivePacket={setLivePacket}
+                                    lang={lang}
+                                    sizeClasses={sizeClasses}
+                                    clueViewMode={clueViewMode}
+                                    currentFocusedQuestion={currentFocusedQuestion}
+                                    coachProps={coachProps}
+                                    onSpotlight={setSpotlightVisual}
+                                    onRegenerate={handleRegenerateQuestion}
+                                    setIsSaving={setIsSaving}
+                                    authorMode={true}
+                                    globalZoom={globalZoom}
+                                />
                             )}
 
                             {/* Whiteboard Layer */}
@@ -1215,6 +1211,45 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                         setIsSummonerOpen(false);
                     }} 
                 />
+            )}
+            {/* SECURITY-HARDENED CUSTOM PROMPT MODAL */}
+            {isPromptBuilderOpen && (
+                <div className="fixed inset-0 z-[400] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-lg">
+                        <h3 className="text-lg font-black text-slate-800 mb-4 uppercase tracking-wider">
+                            {lang === 'sv' ? "Skapa Diskussionsfråga" : "Create Discussion Prompt"}
+                        </h3>
+                        <textarea 
+                            value={customPromptText}
+                            onChange={(e) => setCustomPromptText(e.target.value)}
+                            maxLength={1500} // 🔒 SECURITY: Payload Bloat Protection
+                            className="w-full h-32 p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none resize-none mb-2 font-medium text-slate-700"
+                            placeholder={lang === 'sv' ? "Skriv din fråga här (t.ex. 'Förklara hur du tänkte...')" : "Type your prompt here..."}
+                        />
+                        <div className="flex justify-between items-center mb-6">
+                            <span className="text-xs font-bold text-slate-400">
+                                {customPromptText.length}/1500
+                            </span>
+                            {customPromptText.length > 1400 && (
+                                <span className="text-xs font-bold text-rose-500 animate-pulse">
+                                    {lang === 'sv' ? "Närmar sig maxgränsen" : "Approaching limit"}
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => { setIsPromptBuilderOpen(false); setCustomPromptText(''); }} className="px-5 py-2.5 text-slate-500 font-bold hover:bg-slate-100 rounded-xl transition-all">
+                                {lang === 'sv' ? "Avbryt" : "Cancel"}
+                            </button>
+                            <button 
+                                onClick={handleAddCustomPrompt}
+                                disabled={!customPromptText.trim()}
+                                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl transition-all disabled:opacity-50"
+                            >
+                                {lang === 'sv' ? "Lägg till fråga" : "Add Prompt"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

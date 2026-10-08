@@ -1,5 +1,13 @@
 export const compileAnchoredStory = (item, lang = 'sv') => {
+    if (item.type === 'custom_prompt') {
+        return item.text; // Returns raw text (React MathDisplay will auto-escape HTML tags!)
+    }
+
     const rd = item.resolvedData?.renderData;
+    
+    if (item.selectedStoryIndex === undefined || item.selectedStoryIndex === null || !rd?.availableStories) {
+        return rd?.description || item.name;
+    }
     
     if (item.selectedStoryIndex === undefined || item.selectedStoryIndex === null || !rd?.availableStories) {
         return rd?.description || item.name;
