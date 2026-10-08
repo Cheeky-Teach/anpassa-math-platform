@@ -12,61 +12,9 @@ import { supabase } from '../../lib/supabaseClient';
 import { useMyCoach } from '../../hooks/useMyCoach';
 import MyCoachModal from '../modals/MyCoachModal';
 
-// Standard Math Renderer
-const MathDisplay = ({ content, className = "" }) => {
-    const containerRef = useRef(null);
-    useEffect(() => {
-        if (!content || !containerRef.current) return;
-        containerRef.current.innerText = content;
-        if (window.renderMathInElement) {
-            window.renderMathInElement(containerRef.current, {
-                delimiters: [
-                    { left: '$$', right: '$$', display: true },
-                    { left: '$', right: '$', display: false }
-                ], throwOnError: false, trust: true
-            });
-        }
-    }, [content]);
-    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
-};
-
-// Word Problem Story Compiler
-const compileAnchoredStory = (item, lang = 'sv') => {
-    const rd = item.resolvedData?.renderData;
-    if (item.selectedStoryIndex === undefined || item.selectedStoryIndex === null || !rd?.availableStories) {
-        return rd?.description || item.name;
-    }
-    const storyPackage = rd.availableStories[item.selectedStoryIndex];
-    if (!storyPackage) return rd?.description || item.name;
-    
-    let template = storyPackage[lang === 'en' ? 'en' : 'sv'];
-    let params = rd.extractedParams;
-
-    if (params) {
-        Object.entries(params).forEach(([key, value]) => {
-            const cleanValue = String(value).replace(/[()]/g, '');
-            template = template.replace(new RegExp(`\\{${key}\\}`, 'g'), cleanValue);
-        });
-    }
-
-    if (item.variationKey === 'apply_factor_inc' || item.variationKey === 'apply_factor_dec') {
-        template += lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.";
-    } else if (item.variationKey === 'find_original_inc' || item.variationKey === 'find_original_dec') {
-        template += lang === 'en' ? " Calculate the original value." : " Beräkna det ursprungliga värdet.";
-    } else if (item.variationKey === 'sequential_factors') {
-        template += lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.";
-    } else if (item.topicId === 'equations' || item.topicId === 'equations_word') {
-        if (item.resolvedData?.metadata?.difficulty === 5) {
-            template += lang === 'en' ? " Write the equation that describes this situation." : " Teckna ekvationen som beskriver situationen.";
-        } else {
-            template += lang === 'en' ? " Calculate the value of x." : " Beräkna värdet på x.";
-        }
-    } else if (item.topicId === 'expressions') {
-        template += lang === 'en' ? " Write and simplify the algebraic expression." : " Skriv och förenkla uttrycket.";
-    }
-
-    return template;
-};
+// 🟢 NEW: Imported extracted modular functions
+import MathDisplay from '../shared/MathDisplay';
+import { compileAnchoredStory } from '../../core/utils/storyCompiler';
 
 export default function PresentationView({ packet, sheetTitle, lang = 'sv', onClose, initialSlides, boardId: initialBoardId }) {
     // --- MASTER SLIDE & TAB STATE ---
@@ -200,25 +148,19 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
         e.stopPropagation();
         if (!window.confirm(lang === 'sv' ? "Är du säker på att du vill ta bort denna uppgift?" : "Are you sure you want to delete this question?")) return;
 
-        // 1. Remove from the main packet
         setLivePacket(prev => prev.filter(q => q.id !== targetId));
-
-        // 2. Remove from active focus (if the teacher was looking at it)
         setActiveIds(prev => prev.filter(id => id !== targetId));
-
-        // 3. Unpin it from ANY slides it was attached to
         setSlides(prev => prev.map(s => ({
             ...s,
             activeIds: (s.activeIds || []).filter(id => id !== targetId)
         })));
 
-        // 4. Adjust the presentation index so we don't go out of bounds
         setPresentationIndex(prev => {
             if (prev >= livePacket.length - 1) return Math.max(0, livePacket.length - 2);
             return prev;
         });
         
-        setIsSaving(false); // Flags that changes were made
+        setIsSaving(false);
     };
 
     const handleAutoDistribute = () => {
@@ -879,6 +821,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                                 </div>
                             ) : (
                                 <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
+                                    {/* 🟢 FIX: Moved the comment INSIDE the div so it doesn't break the ternary operator! */}
                                     <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet" className="absolute inset-0 w-full h-full pointer-events-none">
                                         <foreignObject x="0" y="0" width="1920" height="1080" className="pointer-events-none">
                                             <div className="w-full h-full relative flex items-start select-none pt-[80px] pb-[80px] pointer-events-auto">
