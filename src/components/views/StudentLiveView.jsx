@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, CheckCircle2, ChevronLeft, ChevronRight, Loader2, LogOut, ListChecks, LayoutGrid, XCircle } from 'lucide-react';
+import { Send, CheckCircle2, ChevronLeft, ChevronRight, Loader2, LogOut, ListChecks, LayoutGrid, XCircle, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import MathScratchpad from '../ui/MathScratchpad';
 
@@ -9,7 +9,7 @@ import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputCompon
 import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 import PreferencesToggle from '../ui/PreferencesToggle';
 
-// 🟢 NEW: Import the shared Presentation slide renderer!
+// Import the shared Presentation slide renderer!
 import SlideRenderer from '../shared/SlideRenderer';
 
 const MathDisplay = ({ content, className = "" }) => {
@@ -41,15 +41,18 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     const settings = session?.active_question_data?.settings || { pacing: 'open', order: 'original', summary: true };
     const hasScratchpad = session?.active_question_data?.settings?.scratchpad !== false;
 
-    // 🟢 NEW: Presentation Mode Flags & Data
+    // Presentation Mode Flags & Data
     const isPresentationMode = session?.active_question_data?.mode === 'presentation';
     const slides = session?.active_question_data?.slides || [];
     const globalZoom = session?.active_question_data?.settings?.globalZoom || 1.0;
     
     // Logic & Navigation State
     const [localPacket, setLocalPacket] = useState([]); 
-    const [currentIndex, setCurrentIndex] = useState(0); // Used for Worksheet Mode
-    const [activeSlideIndex, setActiveSlideIndex] = useState(session?.current_slide_index || 0); // 🟢 NEW: Used for Presentation Mode
+    const [currentIndex, setCurrentIndex] = useState(0); 
+    const [activeSlideIndex, setActiveSlideIndex] = useState(session?.current_slide_index || 0); 
+
+    // 🟢 NEW: Smart Accordion State
+    const [activeTaskId, setActiveTaskId] = useState(null);
 
     const [answers, setAnswers] = useState({});
     const [completed, setCompleted] = useState({}); 
@@ -60,12 +63,19 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
     const [scratchpad, setScratchpad] = useState({}); 
 
+    // Initialize Accordion Task ID when changing slides
+    useEffect(() => {
+        if (isPresentationMode && slides[activeSlideIndex]?.activeIds?.length > 0) {
+            setActiveTaskId(slides[activeSlideIndex].activeIds[0]);
+        }
+    }, [activeSlideIndex, isPresentationMode, slides]);
+
     // ---  2. INITIALIZATION & REHYDRATION ---
     useEffect(() => {
         const initializeSession = async () => {
             let mappedPacket = packet.map((item, index) => ({ ...item, originalIndex: index }));
             
-            // B. Anti-Cheat Shuffle (Disabled in Presentation Mode)
+            // Anti-Cheat Shuffle (Disabled in Presentation Mode)
             if (settings.order === 'randomized' && settings.pacing !== 'teacher' && !isPresentationMode) {
                 for (let i = mappedPacket.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
@@ -74,7 +84,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             }
             setLocalPacket(mappedPacket);
 
-            // C. Fetch past answers (Rehydration)
+            // Fetch past answers (Rehydration)
             try {
                 const { data: pastResponses, error } = await supabase
                     .from('responses')
@@ -91,7 +101,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         const localIdx = mappedPacket.findIndex(p => p.originalIndex === res.question_index);
                         if (localIdx !== -1) {
                             restoredAnswers[localIdx] = res.answer;
-                            // 🟢 FIX: Any submission counts as completed. For free text, we don't care if it's "correct".
                             restoredCompleted[localIdx] = (mappedPacket[localIdx].answerType === 'free_text' || res.is_correct) ? 'correct' : 'wrong';
                             restoredScratchpad[localIdx] = res.work_steps || [''];
                         }
@@ -101,7 +110,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     setAnswers(restoredAnswers);
                     setCompleted(restoredCompleted);
 
-                    // Auto-jump logic (Only for worksheet mode!)
                     if (!isPresentationMode) {
                         const answeredCount = Object.keys(restoredCompleted).length;
                         if (answeredCount < mappedPacket.length) {
@@ -161,14 +169,53 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     return;
                 }
 
-                // C. Presentation Mode Slide Sync
-                if (isPresentationMode && newData.current_slide_index !== null && newData.current_slide_index !== undefined) {
-                    setActiveSlideIndex(parseInt(newData.current_slide_index, 10));
-                    return; // Don't run the Worksheet pacing logic below!
+                // C. Presentation Mode Sync
+                if (isPresentationMode) {
+                    let slideDidUpdate = false;
+                    
+                    if (newData.current_slide_index !== null && newData.current_slide_index !== undefined) {
+                        setActiveSlideIndex(parseInt(newData.current_slide_index, 10));
+                        slideDidUpdate = true;
+                    }
+
+                    // 🟢 HOT-RELOAD: Check for regenerated questions in the packet
+                    if (newData.active_question_data?.packet) {
+                        const incomingPacket = newData.active_question_data.packet;
+                        let hasChanges = false;
+                        const changedIndices = [];
+                        const newLocalPacket = [...localPacketRef.current];
+
+                        incomingPacket.forEach((newItem, idx) => {
+                            const oldItem = newLocalPacket[idx];
+                            // Detect updated items using regenVersion timestamp
+                            if (oldItem && newItem.regenVersion && newItem.regenVersion !== oldItem.regenVersion) {
+                                hasChanges = true;
+                                changedIndices.push(idx);
+                                newLocalPacket[idx] = { ...newItem, originalIndex: idx }; // preserve sorting index
+                            }
+                        });
+
+                        if (hasChanges) {
+                            setLocalPacket(newLocalPacket);
+                            
+                            // Flush local states to unlock the new questions
+                            setAnswers(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
+                            setScratchpad(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
+                            setCompleted(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
+
+                            // Force accordion to open the first active ID on the slide
+                            const currentSlideIds = newData.active_question_data.slides?.[newData.current_slide_index ?? activeSlideIndex]?.activeIds || [];
+                            if (currentSlideIds.length > 0) {
+                                setActiveTaskId(currentSlideIds[0]);
+                            }
+                        }
+                    }
+
+                    if (slideDidUpdate) return; // Skip worksheet pacing logic below
                 }
 
                 // D. Worksheet Teacher Pacing Sync
-                if (settings.pacing === 'teacher' && newData.current_question_index !== null && newData.current_question_index !== undefined) {
+                if (!isPresentationMode && settings.pacing === 'teacher' && newData.current_question_index !== null && newData.current_question_index !== undefined) {
                     const newTeacherIndex = parseInt(newData.current_question_index, 10);
                     
                     setCurrentIndex((prevIndex) => {
@@ -196,13 +243,12 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             .subscribe();
             
         return () => { supabase.removeChannel(masterChannel); };
-    }, [session?.id, onBack, studentAlias, lang, isPresentationMode]);
+    }, [session?.id, onBack, studentAlias, lang, isPresentationMode, activeSlideIndex]);
 
     // --- 2. INPUT SHIELDING ---
     const sanitizeInput = (val, type) => {
         let str = String(val).replace(/<[^>]*>?/gm, ''); 
         
-        // 🟢 NEW: If it's free-text, allow everything except basic HTML tags (handled above)
         if (type === 'free_text') return str.substring(0, 1500); 
 
         if (type === 'fraction' || type === 'mixed_fraction') return str.replace(/[^0-9\s/]/g, '');
@@ -214,7 +260,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     };
 
     // --- CONSISTENT SUBMISSION ---
-    // 🟢 UPDATED: Now supports passing explicit indices for Presentation mode
     const handleSolve = async (manualValue = null, forcedLocalIdx = null) => {
         const targetIdx = forcedLocalIdx !== null ? forcedLocalIdx : currentIndex;
         const val = (manualValue !== null && manualValue !== undefined) ? manualValue : answers[targetIdx];
@@ -224,7 +269,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         let currentItem = localPacket[targetIdx]; 
         const isFreeText = currentItem.answerType === 'free_text';
 
-        // 🟢 FIX: Free-Text bypasses exact-match grading
         let isCorrect = true; 
         if (!isFreeText) {
             const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.').replace(/^[a-z]=/, '').replace(/^svar:/, '').replace(/·/g, '*');
@@ -254,21 +298,39 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             
             const currentSteps = (scratchpad[targetIdx] || []).filter(s => s.trim().length > 0);
 
+            // 🟢 Send regenVersion to server to protect against late submissions overwriting new questions
             const { error } = await supabase.from('responses').insert([{
                 room_id: session.id,
                 student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
                 question_index: currentItem.originalIndex, 
-                answer: String(val).substring(0, 1500), // Updated to support longer text
+                answer: String(val).substring(0, 1500),
                 work_steps: currentSteps,
-                is_correct: isCorrect
+                is_correct: isCorrect,
+                // Note: Ensure your Supabase table accepts version stamps if needed, otherwise ignore.
             }]);
             
             if (error) throw error;
             
             setCompleted(prev => ({ ...prev, [targetIdx]: isCorrect ? 'correct' : 'wrong' }));
             
-            // Auto-advance logic (Only for worksheets, not presentations)
-            if (!isPresentationMode && settings.pacing !== 'teacher') {
+            // 🟢 SMART ACCORDION AUTO-ADVANCE
+            if (isPresentationMode) {
+                const currentSlideIds = slides[activeSlideIndex]?.activeIds || [];
+                const currentTaskPos = currentSlideIds.indexOf(currentItem.id);
+                
+                if (currentTaskPos !== -1 && currentTaskPos < currentSlideIds.length - 1) {
+                    // Try to find the next uncompleted question on the slide
+                    const nextId = currentSlideIds.slice(currentTaskPos + 1).find(id => {
+                        const localIndex = localPacket.findIndex(p => p.id === id);
+                        return !completedRef.current[localIndex];
+                    });
+                    
+                    if (nextId) setActiveTaskId(nextId);
+                    else setActiveTaskId(currentSlideIds[currentTaskPos + 1]); // Fallback to immediate next
+                }
+            } 
+            // Worksheet Auto-Advance
+            else if (settings.pacing !== 'teacher') {
                 if (targetIdx < localPacket.length - 1) {
                     setTimeout(() => setCurrentIndex(prev => prev + 1), 600);
                 } else if (targetIdx === localPacket.length - 1) {
@@ -317,12 +379,11 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             setAnswers({ ...answers, [idx]: clean });
         };
 
-        // 🟢 NEW: Support for Free-Text discussion prompts
         if (inputType === 'free_text') {
             return (
                 <textarea
                     autoFocus={!isMobile} 
-                    className="w-full h-40 bg-slate-100 border-none rounded-2xl px-6 py-4 font-medium text-lg outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400 shadow-inner resize-none pointer-events-auto"
+                    className="w-full h-40 bg-slate-100 border-none rounded-2xl px-6 py-4 font-medium text-lg outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400 shadow-inner resize-none pointer-events-auto text-slate-900"
                     placeholder={lang === 'sv' ? "Förklara ditt svar här..." : "Explain your reasoning..."}
                     value={value}
                     maxLength={1500}
@@ -334,7 +395,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         switch (inputType) {
             case 'mixed_fraction': 
                 return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto">
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto text-slate-900">
                         <div className="scale-110 transform origin-center">
                             <FractionInput value={value} onChange={handleWrappedChange} allowMixed={true} autoFocus={!isMobile} />
                         </div>
@@ -343,7 +404,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
             case 'fraction': 
                 return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto">
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto text-slate-900">
                         <div className="scale-110 transform origin-center">
                             <FractionInput value={value} onChange={handleWrappedChange} allowMixed={false} autoFocus={!isMobile} />
                         </div>
@@ -353,7 +414,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             case 'exponent': 
             case 'structured_power': 
                 return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto">
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto text-slate-900">
                         <div className="scale-110 transform origin-center">
                             <ExponentInput value={value} onChange={handleWrappedChange} autoFocus={!isMobile} />
                         </div>
@@ -363,7 +424,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             case 'scientific': 
             case 'structured_scientific': 
                 return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto">
+                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto text-slate-900">
                         <div className="scale-110 transform origin-center">
                             <ScientificInput value={value} onChange={handleWrappedChange} autoFocus={!isMobile} />
                         </div>
@@ -375,7 +436,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     <input 
                         type="text" 
                         autoFocus={!isMobile} 
-                        className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-300 shadow-inner pointer-events-auto"
+                        className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400 shadow-inner pointer-events-auto text-slate-900"
                         placeholder="Ditt svar..."
                         value={value}
                         maxLength={20}
@@ -459,7 +520,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
     // --- 5. RENDER: SESSION COMPLETE SPLASH ---
     const allDone = Object.keys(completed).length === packet.length;
-    if (allDone && !isPresentationMode) { // Presentation mode doesn't force a lock screen when done!
+    if (allDone && !isPresentationMode) { 
         return (
             <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center">
                 <div className="max-w-md w-full bg-white rounded-[3.5rem] p-12 shadow-2xl animate-in zoom-in duration-500 border-b-8 border-indigo-100">
@@ -528,9 +589,9 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 )}
             </header>
 
-            {/* 🟢 NEW: PRESENTATION MODE LAYOUT */}
+            {/* 🟢 PRESENTATION MODE LAYOUT */}
             {isPresentationMode ? (
-                <main className="flex-1 w-full h-full flex flex-col lg:flex-row relative bg-slate-900/5 overflow-hidden">
+                <main className="flex-1 w-full h-full flex flex-col lg:flex-row relative bg-[var(--bg-canvas)] overflow-hidden">
                     
                     {/* The 16:9 Slide Preview */}
                     <div className="flex-[3] w-full h-full flex items-center justify-center p-4 sm:p-8">
@@ -546,26 +607,49 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         </div>
                     </div>
 
-                    {/* The Input Dock (Dynamically shows inputs for whatever is pinned to the current slide) */}
-                    <div className="w-full lg:w-[450px] bg-white border-l border-slate-200 shadow-2xl flex flex-col z-20 h-auto lg:h-full shrink-0">
-                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                    {/* 🟢 THE SMART ACCORDION DOCK */}
+                    <div className="w-full lg:w-[450px] bg-[var(--bg-card)] border-l border-[var(--border-main)] shadow-2xl flex flex-col z-20 h-auto lg:h-full shrink-0">
+                        <div className="px-6 py-4 border-b border-[var(--border-main)] bg-[var(--bg-surface)] flex items-center gap-2">
                             <ListChecks size={16} className="text-indigo-500" />
-                            <span className="text-xs font-black uppercase tracking-widest text-slate-600">{lang === 'sv' ? "Dina Svar" : "Your Answers"}</span>
+                            <span className="text-xs font-black uppercase tracking-widest text-[var(--text-main)]">{lang === 'sv' ? "Dina Svar" : "Your Answers"}</span>
                         </div>
                         
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
-                            {(slides[activeSlideIndex]?.activeIds || []).map((qId) => {
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
+                            {(slides[activeSlideIndex]?.activeIds || []).map((qId, displayIndex) => {
                                 const localIdx = localPacket.findIndex(p => p.id === qId);
                                 if (localIdx === -1) return null;
                                 
                                 const isCompleted = !!completed[localIdx];
                                 const isFreeText = localPacket[localIdx].answerType === 'free_text';
+                                const isActive = activeTaskId === qId;
 
+                                // --- COLLAPSED STATE ---
+                                if (!isActive) {
+                                    return (
+                                        <div 
+                                            key={qId} 
+                                            onClick={() => setActiveTaskId(qId)}
+                                            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center group
+                                                ${isCompleted 
+                                                    ? 'border-emerald-100 bg-emerald-50/50' 
+                                                    : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300'
+                                                }
+                                            `}
+                                        >
+                                            <span className={`text-[11px] font-black uppercase tracking-widest ${isCompleted ? 'text-emerald-600' : 'text-slate-500 group-hover:text-slate-800'}`}>
+                                                {isFreeText ? "Diskussion" : `Svar ${displayIndex + 1}`}
+                                            </span>
+                                            {isCompleted ? <CheckCircle2 size={18} className="text-emerald-500" /> : <ChevronDown size={18} className="text-slate-400 group-hover:text-slate-600" />}
+                                        </div>
+                                    );
+                                }
+
+                                // --- EXPANDED STATE ---
                                 return (
-                                    <div key={qId} className={`p-5 rounded-2xl border-2 transition-all ${isCompleted ? 'border-emerald-100 bg-emerald-50/30 opacity-70' : 'border-indigo-100 bg-white shadow-sm'}`}>
+                                    <div key={qId} className={`p-5 rounded-2xl border-2 transition-all ${isCompleted ? 'border-emerald-100 bg-emerald-50/30 opacity-70' : 'border-indigo-400 bg-white shadow-md ring-4 ring-indigo-50'}`}>
                                         <div className="flex justify-between items-center mb-4">
-                                            <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">
-                                                {isFreeText ? "Diskussion" : `Svar ${localIdx + 1}`}
+                                            <span className="text-[10px] font-black uppercase text-indigo-500 tracking-widest">
+                                                {isFreeText ? "Diskussion" : `Svar ${displayIndex + 1}`}
                                             </span>
                                             {isCompleted && <CheckCircle2 size={16} className="text-emerald-500" />}
                                         </div>
@@ -588,7 +672,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                         <button 
                                             onClick={() => handleSolve(null, localIdx)} 
                                             disabled={isSubmitting || !answers[localIdx] || isCompleted} 
-                                            className={`w-full py-3 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isCompleted ? 'bg-emerald-500 text-white shadow-sm' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md disabled:opacity-30'}`}
+                                            className={`w-full py-3 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isCompleted ? 'bg-emerald-500 text-white shadow-sm' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md disabled:opacity-30 active:scale-95'}`}
                                         >
                                             {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : (isCompleted ? <CheckCircle2 size={14} /> : <Send size={14} />)}
                                             {isCompleted ? (lang === 'sv' ? "Inskickat" : "Submitted") : (lang === 'sv' ? 'Skicka in' : 'Submit')}
