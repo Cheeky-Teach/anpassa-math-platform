@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Printer, ChevronLeft, Loader2 } from 'lucide-react';
 import VisualRenderer from '../visuals/VisualRenderer';
 
-// 🟢 NEW: Highly stable inline MathDisplay (Replaces the bugged MathText component)
+// 🟢 Highly stable inline MathDisplay (Replaces the bugged MathText component)
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
     useEffect(() => {
@@ -15,7 +15,7 @@ const MathDisplay = ({ content, className = "" }) => {
                         { left: '$$', right: '$$', display: true },
                         { left: '$', right: '$', display: false },
                         { left: '\\(', right: '\\)', display: false },
-                        { left: '\\[', right: '\\]', display: true }
+                        { left: '[', right: ']', display: true }
                     ],
                     throwOnError: false, trust: true
                 });
@@ -24,7 +24,8 @@ const MathDisplay = ({ content, className = "" }) => {
         const timer = setTimeout(renderMath, 30);
         return () => clearTimeout(timer);
     }, [content]);
-    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
+    // 🟢 FORCED TEXT COLOR: Ensures math inherits black text in print mode
+    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-black ${className}`} />;
 };
 
 
@@ -36,7 +37,8 @@ const printStyles = `
             min-height: 210mm;
             padding: 15mm;
             margin: 20px auto;
-            background: white;
+            background: white !important; /* Force white background */
+            color: black !important; /* Force black text */
             box-shadow: 0 0 20px rgba(0,0,0,0.15);
             transform-origin: top center;
         }
@@ -46,18 +48,18 @@ const printStyles = `
         @page { size: A4 landscape; margin: 8mm; }
         html, body { height: auto !important; overflow: visible !important; background: white !important; color: black !important; }
         
-        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color: black !important; }
 
         .print-modal-container { position: relative !important; height: auto !important; width: 100% !important; overflow: visible !important; display: block !important; background: white !important; z-index: auto !important; }
         .no-print { display: none !important; }
-        .landscape-report-preview { width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; transform: none !important; }
+        .landscape-report-preview { width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; transform: none !important; background: white !important; color: black !important; }
         
         .break-inside-avoid { page-break-inside: avoid !important; break-inside: avoid !important; display: block; position: relative; }
         .break-after-page { display: block !important; break-after: page !important; page-break-after: always !important; }
 
         table { width: 100% !important; border-collapse: collapse !important; table-layout: fixed !important; page-break-inside: auto; }
         tr { page-break-inside: avoid !important; break-inside: avoid !important; }
-        th, td { border: 1px solid #94a3b8 !important; word-wrap: break-word !important; }
+        th, td { border: 1px solid #94a3b8 !important; word-wrap: break-word !important; color: black !important; }
 
         /* Stops grid from slicing items across pages */
         .print-grid-2 { display: flex !important; flex-wrap: wrap !important; gap: 2.5rem 2rem !important; }
@@ -175,7 +177,8 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
     }, [packet, students, responses, printSteps]);
 
     return (
-        <div className="fixed inset-0 z-[150] bg-slate-100 overflow-y-auto no-scrollbar print-modal-container font-sans">
+        // 🟢 FORCED LIGHT THEME: Using `bg-slate-100` and `text-slate-900` rather than dynamic variables
+        <div className="fixed inset-0 z-[150] bg-slate-100 text-slate-900 overflow-y-auto no-scrollbar print-modal-container font-sans">
             <style>{printStyles}</style>
             
             {isMeasuring && (
@@ -192,7 +195,7 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                 </div>
             )}
 
-            <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center z-50 no-print shadow-sm">
+            <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center z-50 no-print shadow-sm text-slate-900">
                 <div className="flex items-center gap-4">
                     <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><ChevronLeft size={24}/></button>
                     <h3 className="font-black uppercase italic tracking-tighter">{lang === 'sv' ? "Förhandsgranskning" : "Print Preview"}</h3>
@@ -214,17 +217,17 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
             </div>
 
             {!isMeasuring && (
-                <div className="landscape-report-preview">
+                <div className="landscape-report-preview text-slate-900 bg-white">
                     
                     {/* PAGE 1: HEADER & CLASS MATRIX */}
                     <div className="break-after-page">
                         <header className="flex justify-between items-end mb-6 border-b-2 border-slate-900 pb-4">
                             <div>
-                                <h1 className="text-2xl font-black uppercase italic tracking-tight leading-none mb-1">{session.title}</h1>
+                                <h1 className="text-2xl font-black uppercase italic tracking-tight leading-none mb-1 text-black">{session.title}</h1>
                                 <p className="text-[9px] font-black uppercase text-indigo-600 tracking-[0.2em]">Resultatrapport • Live Lektion</p>
                             </div>
                             <div className="text-right">
-                                <div className="text-lg font-black italic">KOD: {session.class_code || session.id?.slice(0,6)}</div>
+                                <div className="text-lg font-black italic text-black">KOD: {session.class_code || session.id?.slice(0,6)}</div>
                                 <p className="text-[9px] font-bold text-slate-400 uppercase">{new Date().toLocaleDateString()}</p>
                             </div>
                         </header>
@@ -234,10 +237,10 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                             <table className="w-full">
                                 <thead>
                                     <tr className="bg-slate-100">
-                                        <th className="p-2 text-left text-[9px] font-black uppercase w-40 border-r border-slate-300">Elev</th>
-                                        <th className="p-2 text-center text-[9px] font-black uppercase w-14 border-r border-slate-300">Res.</th>
+                                        <th className="p-2 text-left text-[9px] font-black uppercase w-40 border-r border-slate-300 text-black">Elev</th>
+                                        <th className="p-2 text-center text-[9px] font-black uppercase w-14 border-r border-slate-300 text-black">Res.</th>
                                         {packet.map((_, i) => (
-                                            <th key={i} className="w-[26px] p-1 text-center text-[8px] font-black bg-slate-50 border-r border-slate-300">{i + 1}</th>
+                                            <th key={i} className="w-[26px] p-1 text-center text-[8px] font-black bg-slate-50 border-r border-slate-300 text-black">{i + 1}</th>
                                         ))}
                                     </tr>
                                 </thead>
@@ -248,10 +251,11 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                         return (
                                             <tr key={student} className="border-b border-slate-300">
                                                 <td className="p-1.5 font-bold text-[10px] truncate border-r border-slate-300 text-slate-800">{student}</td>
-                                                <td className="p-1.5 text-center text-[9px] font-black border-r border-slate-300 bg-slate-50">{score}/{packet.length}</td>
+                                                <td className="p-1.5 text-center text-[9px] font-black border-r border-slate-300 bg-slate-50 text-slate-900">{score}/{packet.length}</td>
                                                 {studentResps.map((r, idx) => (
                                                     <td key={idx} className="p-0 text-center border-r border-slate-300">
-                                                        <div className={`w-full h-7 flex items-center justify-center text-xs font-black ${r ? (r.is_correct ? 'text-slate-800' : 'text-slate-900') : 'text-slate-300'}`}>
+                                                        {/* 🟢 HARDCODED TEXT COLORS FOR THE MATRIX SYMBOLS */}
+                                                        <div className={`w-full h-7 flex items-center justify-center text-xs font-black ${r ? (r.is_correct ? 'text-black' : 'text-slate-800') : 'text-slate-400'}`}>
                                                             {r ? (r.is_correct ? '✓' : '✕') : '-'}
                                                         </div>
                                                     </td>
@@ -280,10 +284,8 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                 <span className="font-black text-slate-800">{originalIndex + 1}.</span>
                                                 <div className="font-bold text-slate-700 leading-tight w-full">
                                                     
-                                                    {/* 🟢 FIXED: Rendering Math and Text Correctly */}
                                                     <MathDisplay content={rd?.description} />
                                                     
-                                                    {/* 🟢 FIXED: Constrained Visual Container to prevent overlapping */}
                                                     {hasVisual && (
                                                         <div className="my-3 w-full h-[90px] relative flex justify-center items-center overflow-hidden rounded-md border border-slate-200/60 bg-white">
                                                             <div className="absolute inset-0 flex items-center justify-center transform scale-[0.45] origin-center pointer-events-none">
@@ -332,7 +334,6 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                         <span className="font-black text-slate-500 shrink-0">{idx + 1}.</span>
                                                         <div className="flex-1">
                                                             
-                                                            {/* 🟢 FIXED */}
                                                             <div className="text-slate-600 italic mb-0.5 truncate opacity-80 font-medium">
                                                                 <MathDisplay content={typeof item.question === 'string' ? item.question : 'Uppgift'} />
                                                             </div>
@@ -347,8 +348,7 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                                         {lang === 'sv' ? 'Uträkning:' : 'Steps:'}
                                                                     </span>
                                                                     {item.resp.work_steps.map((line, lineIdx) => (
-                                                                        <div key={lineIdx} className="leading-tight font-serif mb-1 last:mb-0">
-                                                                            {/* 🟢 FIXED */}
+                                                                        <div key={lineIdx} className="leading-tight font-serif mb-1 last:mb-0 text-slate-900">
                                                                             <MathDisplay content={`$$${line}$$`} />
                                                                         </div>
                                                                     ))}
@@ -369,7 +369,7 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
             )}
 
             {/* 🟢 HIDDEN SANDBOX (For Measurement Only) */}
-            <div className="absolute top-0 left-0 opacity-0 pointer-events-none print:hidden z-[-100] w-[297mm] px-[15mm] box-border">
+            <div className="absolute top-0 left-0 opacity-0 pointer-events-none print:hidden z-[-100] w-[297mm] px-[15mm] box-border text-slate-900 bg-white">
                 {/* Sandbox Answer Key */}
                 <div className="grid grid-cols-3 gap-3 text-[9px]">
                     {packet.map((q, i) => {
@@ -383,7 +383,6 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                     <div className="font-bold text-slate-700 leading-tight w-full">
                                         <MathDisplay content={rd?.description} />
                                         
-                                        {/* 🟢 FIXED: Sandbox perfectly matches visible constraints */}
                                         {hasVisual && (
                                             <div className="my-3 w-full h-[90px] relative flex justify-center items-center overflow-hidden rounded-md border border-slate-200/60 bg-white">
                                                 <div className="absolute inset-0 flex items-center justify-center transform scale-[0.45] origin-center pointer-events-none">
@@ -425,14 +424,14 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                         <div key={idx} className="flex gap-2 text-[9px] leading-tight mb-2">
                                             <div className="flex-1">
                                                 <div className="text-slate-600 italic mb-0.5"><MathDisplay content={typeof item.question === 'string' ? item.question : 'Uppgift'} /></div>
-                                                <div className="font-black text-[10px]">Svar: {item.resp?.answer || '-'}</div>
+                                                <div className="font-black text-[10px] text-slate-900">Svar: {item.resp?.answer || '-'}</div>
                                                 {printSteps && item.resp?.work_steps && item.resp.work_steps.length > 0 && (
-                                                    <div className="mt-1.5 p-2 border border-slate-300 rounded-lg text-[10px] text-slate-800">
+                                                    <div className="mt-1.5 p-2 border border-slate-300 rounded-lg text-[10px] text-slate-800 bg-white">
                                                         <span className="block mb-1 text-[8px] font-sans font-black text-slate-500 uppercase">
                                                             {lang === 'sv' ? 'Uträkning:' : 'Steps:'}
                                                         </span>
                                                         {item.resp.work_steps.map((line, lineIdx) => (
-                                                            <div key={lineIdx} className="leading-tight font-serif mb-1 last:mb-0">
+                                                            <div key={lineIdx} className="leading-tight font-serif mb-1 last:mb-0 text-slate-900">
                                                                 <MathDisplay content={`$$${line}$$`} />
                                                             </div>
                                                         ))}

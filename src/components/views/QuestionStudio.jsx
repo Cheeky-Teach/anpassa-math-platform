@@ -1004,8 +1004,13 @@ export default function QuestionStudio({
                         lang={lang} 
                         onClose={() => { 
                             setShowPresentation(false);
+                            setActiveBoardSheet(null);
                             fetchLibrary(); 
                         }} 
+                        onLaunchLive={(roomData) => {
+                            setShowPresentation(false);
+                            onDoNowGenerate(null, null, { room: roomData, packet: roomData.active_question_data.packet });
+                        }}
                     />
                 )}
 
