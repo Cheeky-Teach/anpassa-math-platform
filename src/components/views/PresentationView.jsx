@@ -300,7 +300,7 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
                 title: localTitle,
                 type: 'board', 
                 user_id: user.id,
-                packet: { slides, livePacket, settings: { bgType, viewMode, textSize } }
+                packet: { slides, livePacket, settings: { bgType, viewMode,  globalZoom } }
             };
 
             let res;
