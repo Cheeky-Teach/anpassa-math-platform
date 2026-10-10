@@ -361,30 +361,38 @@ export default function QuestionStudio({
     } catch (err) { console.error(err); } finally { setIsLibraryLoading(false); }
   };
 
-  const handleSave = async () => {
-      if (!sheetTitle) { alert(t.title_placeholder); return; }
-      try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
+  // --- SUPABASE SAVE PIPELINE ---
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("Not authenticated");
 
-          const uniqueTopics = [...new Set(packet.map(q => q.topicId))];
-          const uniqueLevels = [...new Set(packet.map(q => q.resolvedData?.level || 1))];
-          
-          const sheetData = { 
-              user_id: user.id, title: sheetTitle, type: setupMode, folder_id: null, packet: packet, 
-              config: { globalLatexSize, workspaceHeight, workspaceStyle, layoutStyle, lang, includeAnswerKey, answerKeyStyle }, 
-              visibility: chosenVisibility, school_name: profile?.school_name || null, 
-              auto_topics: uniqueTopics, auto_levels: uniqueLevels, updated_at: new Date().toISOString()
-          };
+            const payload = {
+                title: localTitle,
+                type: 'board', 
+                user_id: user.id,
+                // 🟢 FIX: Changed 'textSize' to 'globalZoom' to match our new zoom logic!
+                packet: { slides, livePacket, settings: { bgType, viewMode, globalZoom } }
+            };
 
-          const { data, error } = activeSheetId 
-              ? await supabase.from('saved_sheets').update(sheetData).eq('id', activeSheetId).select().single()
-              : await supabase.from('saved_sheets').insert([sheetData]).select().single();
+            let res;
+            if (boardId) {
+                res = await supabase.from('saved_sheets').update(payload).eq('id', boardId).select().single();
+            } else {
+                res = await supabase.from('saved_sheets').insert(payload).select().single();
+            }
 
-          if (error) throw error;
-          setActiveSheetId(data.id); setIsSaved(true); alert(t.save_success); fetchLibrary(); 
-      } catch (err) { alert("Fel vid sparande: " + err.message); }
-  };
+            if (res.error) throw res.error;
+            setBoardId(res.data.id); 
+            alert(lang === 'sv' ? "Presentationen har sparats i molnet!" : "Presentation saved to cloud!");
+        } catch (err) {
+            console.error("Save Error:", err);
+            alert(lang === 'sv' ? "Kunde inte spara presentationen." : "Failed to save presentation.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
   const handleCreateFolder = async () => {
       if (!newFolderName.trim()) return;
@@ -1768,16 +1776,18 @@ export default function QuestionStudio({
           <PresentationView 
               packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : packet}
               initialSlides={activeBoardSheet?.packet?.slides}
-              boardId={activeBoardSheet?.id || (setupMode === 'board' ? activeSheetId : null)}
+              
+              // 🟢 THE TRUE FIX: Only pass the activeSheetId if the loaded sheet's TYPE is 'board'
+              boardId={activeBoardSheet?.id || (peekSheet?.type === 'board' || savedSheets.find(s => s.id === activeSheetId)?.type === 'board' ? activeSheetId : null)}
+              
               sheetTitle={activeBoardSheet?.title || sheetTitle} 
               lang={lang} 
               onClose={() => { 
                   setShowPresentation(false);
-                  setActiveBoardSheet(null); // 🟢 FIX: Wipes the board from memory so it doesn't ghost your next worksheet!
+                  setActiveBoardSheet(null);
                   fetchLibrary(); 
               }}
               onLaunchLive={(roomData) => {
-                  // Fire the same callback the rest of the studio uses to launch Live!
                   onDoNowGenerate(null, null, { room: roomData, packet: roomData.active_question_data.packet });
               }}
           />
