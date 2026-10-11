@@ -1349,8 +1349,8 @@ export default function QuestionStudio({
 
           <div className="flex-1 flex flex-col overflow-hidden relative">
             {canvasMode === 'studio' ? (
-              <div className="flex-1 bg-[var(--bg-card)] rounded-[3rem] shadow-2xl border border-[var(--border-main)] overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300 m-4">
-                  <div className="px-8 py-5 bg-[var(--text-main)] text-[var(--bg-canvas)] flex justify-between items-center">
+                <div className="whiteboard-protect bg-white flex-1 rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300 m-4">
+                    <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center">
                       <span className="text-[10px] font-black uppercase tracking-widest opacity-60 italic">
                     {t.board_label}</span>{activePreviewKey && <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-[var(--bg-canvas)]/10 hover:bg-[var(--bg-canvas)]/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all">
                         <RefreshCcw size={12}/> {t.new_example}</button>}

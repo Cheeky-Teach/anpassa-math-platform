@@ -342,16 +342,7 @@ const Dashboard = ({
                     {/* --- CONTENT TABS & MAP NAV --- */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div className="flex gap-2 w-fit">
-                            {/* NEW: Hub Manager Tab (Teachers Only) */}
-                            {userRole === 'teacher' && (
-                                <button 
-                                    onClick={() => setActiveTab('hub')} 
-                                    className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'hub' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                                >
-                                    <Layers size={14}/> {lang === 'sv' ? "Arbetsområde" : "Custom Unit"}
-                                </button>
-                            )}
-                            
+                                                       
                             {/* Existing Tabs */}
                             <button 
                                 onClick={() => setActiveTab('curriculum')} 
@@ -359,6 +350,17 @@ const Dashboard = ({
                             >
                                 <Book size={14}/> {t.curriculum_title}
                             </button>
+
+                            {/* NEW: Hub Manager Tab (Teachers Only) */}
+                            {userRole === 'teacher' && (
+                                <button 
+                                    onClick={() => setActiveTab('hub')} 
+                                    className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'hub' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                >
+                                    <Layers size={14}/> {lang === 'sv' ? "Grupper" : "Custom Unit"}
+                                </button>
+                            )}
+
                             {userRole === 'teacher' && (
                                 <button 
                                     onClick={() => setActiveTab('archive')} 

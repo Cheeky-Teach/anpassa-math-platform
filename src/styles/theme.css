@@ -36,6 +36,11 @@ body, .font-sans {
   --pad-sm: 0.5rem;
   --pad-md: 1rem;
   --pad-lg: 1.5rem;           /* Replaces p-10 */
+
+  /* AMBIENT BACKGROUND WAVES (Light) */
+  --ambient-emerald: rgba(110, 231, 183, 0.3);
+  --ambient-indigo: rgba(165, 180, 252, 0.3);
+  --ambient-amber: rgba(253, 230, 138, 0.2);
 }
 
 /* 🌙 2. FULL DARK THEME */
@@ -53,6 +58,11 @@ body, .font-sans {
   --border-subtle: #1e293b;
   --border-main: #334155;
   --border-strong: #475569;
+
+  /* AMBIENT BACKGROUND WAVES (Dark) */
+  --ambient-emerald: rgba(6, 78, 59, 0.2);
+  --ambient-indigo: rgba(49, 46, 129, 0.2);
+  --ambient-amber: rgba(120, 53, 15, 0.1);
 }
 
 /* 🎯 3. FOCUS THEME (For StudentLiveView & Active Practice) */
@@ -142,32 +152,92 @@ body, .font-sans {
   /* OR use var(--primary-color) for dark blue */
 }
 
-/* --- Layout --- */
+
+/* ========================================= */
+/* 1. BASE LAYOUT & HONEYCOMB BACKGROUND     */
+/* ========================================= */
 body {
   background-color: var(--bg-canvas);
   color: var(--text-main);
   font-family: 'Inter', sans-serif;
 }
 
-.layout-wrapper {
+.layout-app, .layout-wrapper {
   background-color: var(--bg-canvas);
-  color: var(--text-canvas, var(--text-main));
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
-.header-glass {
-  background-color: rgba(248, 250, 252, 0.85); /* Light mode canvas (slate-50) @ 85% */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+
+/* ========================================= */
+/* 1. BASE LAYOUT & HONEYCOMB BACKGROUND     */
+/* ========================================= */
+body {
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+}
+
+/* 🟢 RESTORE SOLID BACKGROUND: This ensures Dark Mode works perfectly */
+.layout-app, .layout-wrapper {
+  background-color: var(--bg-canvas) !important;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* 🟢 THE HONEYCOMB FADE EFFECT (Applied ONLY to layout-wrapper to prevent doubling) */
+.layout-wrapper::before {
+  content: "";
+  position: fixed; /* Locks the honeycomb to the screen so it doesn't move or tile weirdly */
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   
-  /* 🟢 FORCE SLIMMER PADDING: Overrides any Tailwind py-* classes */
-  padding-top: 0.25rem !important;
-  padding-bottom: 0.25rem !important;
+  background-image: 
+    radial-gradient(circle at 100% 100%, var(--text-main) 0%, transparent 60%),
+    radial-gradient(circle at 0% 0%, var(--text-main) 0%, transparent 35%);
+  
+  opacity: 0.04; 
+  
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
+  -webkit-mask-size: 40px;
+  mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
+  mask-size: 40px;
 }
 
-/* 🟢 COMPRESS NUNITO'S HEIGHT: Forces the text to ignore its tall invisible bounding box */
+/* Ensure the app content floats ABOVE the honeycomb */
+.layout-app > *, .layout-wrapper > * {
+  position: relative;
+  z-index: 10;
+}
+
+/* ========================================= */
+/* 2. FLOATING BRANDED HEADER ISLAND         */
+/* ========================================= */
+.header-glass {
+  /* Transforms the edge-to-edge bar into a floating solid pill */
+  background-color: var(--bg-card) !important;
+  margin: 1rem auto;
+  border-radius: var(--radius-card);
+  width: calc(100% - 2rem) !important;
+  max-width: 1400px;
+  
+  /* Replaces the hard bottom border with a soft drop shadow */
+  border: 1px solid var(--border-main) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Removes the blurry glass effect since it is now solid */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
 .header-glass h1,
 .header-glass h2,
 .header-glass span {

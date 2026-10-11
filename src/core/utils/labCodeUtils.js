@@ -28,7 +28,10 @@ export const TOPIC_INDEX = [
     'angles',                   // 18
     'probability',              // 19
     'statistics',               // 20
-    'change_factor'             // 21
+    'change_factor',             // 21
+    'place_value',              // 22
+    'algebraic_geometry',       // 23
+    'unit_conversion'           // 24
 ];
 
 // 2. NATIONAL TEST BUNDLE PRESETS

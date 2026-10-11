@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, createContext } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { BarChart3, AlertCircle, ChevronLeft } from 'lucide-react';
+import { Analytics } from "@vercel/analytics/react";
 
 // Views
 import LandingView from './components/views/LandingView';
@@ -1035,6 +1036,7 @@ function App() {
                     }
                 }} 
             />
+            <Analytics/>
         </div>
         </PreferencesContext.Provider>
     );
