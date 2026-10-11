@@ -20,7 +20,8 @@ const PracticeView = ({
     handleSubmit, handleHint, handleSolution, handleSkip, 
     handleChangeLevel, revealedClues, uiState, actions, 
     levelUpAvailable, setLevelUpAvailable, isSolutionRevealed, 
-    timerSettings, formatTime, toast, useWordProblems, setUseWordProblems
+    timerSettings, formatTime, toast, useWordProblems, setUseWordProblems,
+    activeBucket, isDetourActive
 }) => {
     const inputRef = useRef(null);
     const scrollContainerRef = useRef(null);
@@ -147,31 +148,62 @@ const PracticeView = ({
             <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 pt-0">
                 <div className="layout-twocol">
                     <div className="layout-main">
-                        {/* LEVEL PILLS */}
-                        <div className="bg-[var(--bg-card)] rounded-[var(--radius-card)] shadow-sm border border-[var(--border-main)] p-1.5 flex items-center overflow-x-auto no-scrollbar snap-x relative z-20 mb-2">
-                            <div ref={scrollContainerRef} className="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-1 px-1">
-                                {Object.entries(LEVEL_DESCRIPTIONS[uiState.topic] || {}).map(([lvl, desc]) => {
-                                    const lNum = parseInt(lvl);
-                                    const isActive = uiState.level === lNum;
-                                    return (
-                                        <button
-                                            key={lvl}
-                                            onClick={() => !isActive && handleChangeLevel(lNum - uiState.level)}
-                                            className={`snap-center shrink-0 min-w-[120px] p-2 rounded-[var(--radius-btn)] border transition-all flex flex-col items-center gap-0.5
-                                                ${isActive 
-                                                    ? `active-pill bg-[var(--brand-solid)] border-transparent text-white shadow-md scale-105` 
-                                                    : `bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] shadow-sm`
-                                                }`}
-                                        >
-                                            <span className="text-[10px] font-black uppercase tracking-tighter">Lvl {lNum}</span>
-                                            <span className={`text-[9px] font-bold uppercase truncate w-full text-center px-1 ${isActive ? 'text-white/90' : 'text-[var(--text-muted)]'}`}>
-                                                {desc[lang]}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
+                        {/* DYNAMIC HEADER: Detour vs Curated Unit vs Free Play */}
+                        {isDetourActive ? (
+                            <div className="bg-amber-50 border-2 border-amber-400 p-4 rounded-[var(--radius-card)] shadow-sm flex items-center justify-center gap-3 mb-2 animate-in slide-in-from-top-4 duration-500">
+                                <Zap className="text-amber-500 fill-amber-500 animate-pulse" size={24} />
+                                <div className="text-center">
+                                    <span className="block text-[10px] font-black uppercase tracking-widest text-amber-600">
+                                        {lang === 'sv' ? "Uppvärmning (Detour)" : "Warm-up (Detour)"}
+                                    </span>
+                                    <span className="text-sm font-bold text-amber-900">
+                                        {lang === 'sv' ? `Nivå ${uiState.level}` : `Level ${uiState.level}`} — {LEVEL_DESCRIPTIONS[uiState.topic]?.[uiState.level]?.[lang] || ""}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        ) : activeBucket && activeBucket !== 'FREE_PLAY' ? (
+                            <div className="bg-[var(--bg-card)] border-2 border-[var(--brand-solid)] p-4 rounded-[var(--radius-card)] shadow-sm flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-[var(--brand-bg)] text-[var(--brand-text)] rounded-[var(--radius-btn)] flex items-center justify-center shadow-inner shrink-0">
+                                        <Lock size={18} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="block text-[10px] font-black uppercase tracking-widest text-[var(--brand-text)] truncate">
+                                            {activeBucket.name}
+                                        </span>
+                                        <span className="text-sm font-bold text-[var(--text-main)] truncate">
+                                            {lang === 'sv' ? `Nivå ${uiState.level}` : `Level ${uiState.level}`} — {LEVEL_DESCRIPTIONS[uiState.topic]?.[uiState.level]?.[lang] || ""}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            /* EXISTING LEVEL PILLS FOR FREE PLAY */
+                            <div className="bg-[var(--bg-card)] rounded-[var(--radius-card)] shadow-sm border border-[var(--border-main)] p-1.5 flex items-center overflow-x-auto no-scrollbar snap-x relative z-20 mb-2">
+                                <div ref={scrollContainerRef} className="flex-1 flex gap-2 overflow-x-auto no-scrollbar py-1 px-1">
+                                    {Object.entries(LEVEL_DESCRIPTIONS[uiState.topic] || {}).map(([lvl, desc]) => {
+                                        const lNum = parseInt(lvl);
+                                        const isActive = uiState.level === lNum;
+                                        return (
+                                            <button
+                                                key={lvl}
+                                                onClick={() => !isActive && handleChangeLevel(lNum - uiState.level)}
+                                                className={`snap-center shrink-0 min-w-[120px] p-2 rounded-[var(--radius-btn)] border transition-all flex flex-col items-center gap-0.5
+                                                    ${isActive 
+                                                        ? `active-pill bg-[var(--brand-solid)] border-transparent text-white shadow-md scale-105` 
+                                                        : `bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] shadow-sm`
+                                                    }`}
+                                            >
+                                                <span className="text-[10px] font-black uppercase tracking-tighter">Lvl {lNum}</span>
+                                                <span className={`text-[9px] font-bold uppercase truncate w-full text-center px-1 ${isActive ? 'text-white/90' : 'text-[var(--text-muted)]'}`}>
+                                                    {desc[lang]}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         {/* MAIN PRACTICE CARD */}
                         {/* 🟢 REPLACED PADDING/ROUNDING STRINGS WITH .card CLASS */}
@@ -281,6 +313,7 @@ const PracticeView = ({
                                                                     ref={inputRef} 
                                                                     type="text" 
                                                                     value={input} 
+                                                                    maxLength={100}
                                                                     onChange={handleInputChange} 
                                                                     autoComplete="off"
                                                                     className={`w-full p-4 text-center text-2xl font-black border-[3px] rounded-[var(--radius-btn)] outline-none shadow-inner transition-all

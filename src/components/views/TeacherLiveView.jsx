@@ -16,31 +16,7 @@ import PreferencesToggle from '../ui/PreferencesToggle';
 // Import the shared renderer
 import SlideRenderer from '../shared/SlideRenderer';
 import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
-
-// --- MATH DISPLAY COMPONENT ---
-const MathDisplay = ({ content, className = "" }) => {
-    const containerRef = useRef(null);
-    useEffect(() => {
-        if (!content || !containerRef.current) return;
-        const renderMath = () => {
-            containerRef.current.innerText = content;
-            if (window.renderMathInElement) {
-                window.renderMathInElement(containerRef.current, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false },
-                        { left: '\\(', right: '\\)', display: false },
-                        { left: '\\[', right: '\\]', display: true }
-                    ],
-                    throwOnError: false, trust: true
-                });
-            }
-        };
-        const timer = setTimeout(renderMath, 30);
-        return () => clearTimeout(timer);
-    }, [content]);
-    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
-};
+import MathDisplay from '../shared/MathDisplay';
 
 export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, onCreateReport }) {
     // 🟢 NEW: Mutable Live Packet State

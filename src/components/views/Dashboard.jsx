@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { 
-  ChevronDown, ChevronUp, ChevronRight, Zap, Play, Clock, Book, Map, Info, 
+  ChevronLeft, ChevronDown, ChevronUp, ChevronRight, Zap, Play, Clock, Book, Map, Info, 
   Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, User, 
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet, MoreHorizontal,
   PlayCircle, CheckCircle2, AlertCircle, Grid3X3, Monitor, Beaker, Newspaper, X, 
-  ArrowUpRight
+  ArrowUpRight, Layers
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
 import { APP_UPDATES } from '@/constants/updates';
+import TeacherHubManager from './TeacherHubManager';
+import { CONTENT_MAP } from '../../constants/content_map';
+import MathDisplay from '../shared/MathDisplay';
+
+import MapGenerator from '../MapGenerator';
 
 const Dashboard = ({ 
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
     timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen,
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, onLabOpen,
-    onTimesTableOpen, onRelaunch, onViewReport, onEdit, 
+    onTimesTableOpen, onRelaunch, onViewReport, onEdit, activeBucket, onBackToGateway,
     userRole = 'teacher'
 }) => {
     const [expandedCategory, setExpandedCategory] = useState('arithmetic');
@@ -133,10 +138,24 @@ const Dashboard = ({
     const activeCategoryData = CATEGORIES[expandedCategory];
     const themeColorString = activeCategoryData?.color || 'emerald';
 
+    // --- GROUP CURATED PAYLOAD ---
+    let groupedCuratedPayload = {};
+    if (activeBucket && activeBucket !== 'FREE_PLAY') {
+        groupedCuratedPayload = activeBucket.payload.reduce((acc, item) => {
+            if (!acc[item.topic]) acc[item.topic] = [];
+            acc[item.topic].push(item.level);
+            return acc;
+        }, {});
+        
+        // Sort the levels numerically inside each topic
+        Object.keys(groupedCuratedPayload).forEach(topic => {
+            groupedCuratedPayload[topic].sort((a, b) => a - b);
+        });
+    }
+
     return (
         <div className="layout-wrapper relative z-10 animate-in fade-in pb-10">
-            <div className="layout-twocol pt-8">
-                
+            <div className="layout-twocol pt-8">                
                 {/* ========================================================= */}
                 {/* LEFT COLUMN: COMMAND CENTER (PROFILE & TOOLS)        */}
                 {/* ========================================================= */}
@@ -323,6 +342,17 @@ const Dashboard = ({
                     {/* --- CONTENT TABS & MAP NAV --- */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div className="flex gap-2 w-fit">
+                            {/* NEW: Hub Manager Tab (Teachers Only) */}
+                            {userRole === 'teacher' && (
+                                <button 
+                                    onClick={() => setActiveTab('hub')} 
+                                    className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'hub' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                >
+                                    <Layers size={14}/> {lang === 'sv' ? "Arbetsområde" : "Custom Unit"}
+                                </button>
+                            )}
+                            
+                            {/* Existing Tabs */}
                             <button 
                                 onClick={() => setActiveTab('curriculum')} 
                                 className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'curriculum' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
@@ -350,79 +380,184 @@ const Dashboard = ({
                     </div>
 
                     {/* --- TAB CONTENT --- */}
-                    {activeTab === 'curriculum' ? (
+                    {activeTab === 'hub' ? (
+                        <div className="animate-in slide-in-from-right-4 duration-500 pb-20">
+                            <TeacherHubManager lang={lang} teacherId={profile?.id} />
+                        </div>
+                    ) : activeTab === 'curriculum' ? (
                         <div className="flex flex-col animate-in slide-in-from-right-4 duration-500">
                             
-                            {/* HORIZONTAL CATEGORY TABS */}
-                            <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-                                {Object.entries(CATEGORIES).map(([catKey, category]) => {
-                                    const isActive = expandedCategory === catKey;
-                                    const themeColorStr = category.color || 'emerald';
-                                    
-                                    return (
-                                        <div key={catKey} className={`theme-${themeColorStr}`}>
-                                            <button 
-                                                onClick={() => setExpandedCategory(catKey)}
-                                                className={`flex items-center gap-2 px-5 py-3 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border-2 cursor-pointer ${
-                                                    isActive 
-                                                        ? `bg-[var(--brand-solid)] text-white border-[var(--brand-solid)]` 
-                                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
-                                                }`}
-                                            >
-                                                {isActive && <Award size={14} />}
-                                                {category.label[lang]}
-                                            </button>
+                            {/* --- NEW: CURATED BUCKET VIEW --- */}
+                            {userRole === 'student' && activeBucket && activeBucket !== 'FREE_PLAY' ? (
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between bg-[var(--bg-card)] p-6 rounded-[var(--radius-card)] border border-[var(--border-main)] shadow-sm">
+                                        <div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">
+                                                {lang === 'sv' ? "Aktiv Grupp" : "Active Group"}
+                                            </span>
+                                            <h2 className="text-2xl font-black uppercase italic text-[var(--text-main)] tracking-tight">
+                                                {activeBucket.name}
+                                            </h2>
                                         </div>
-                                    );
-                                })}
-                            </div>
-
-                            {/* ACTIVE CATEGORY TOPICS GRID */}
-                            <div className={`theme-${themeColorString} card p-6 sm:p-8 border-2 border-[var(--brand-border)]`}>
-                                <div className="mb-6 flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-[var(--radius-btn)] flex items-center justify-center bg-[var(--brand-solid)] text-white shadow-md">
-                                        <Award size={20} />
+                                        <button 
+                                            onClick={onBackToGateway}
+                                            className="px-4 py-2 bg-[var(--bg-surface)] hover:bg-[var(--border-main)] text-[var(--text-main)] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2 border border-[var(--border-strong)]"
+                                        >
+                                            <ChevronLeft size={16}/> {lang === 'sv' ? "Byt Grupp" : "Change Group"}
+                                        </button>
                                     </div>
-                                    <div>
-                                        <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight leading-none mb-1">
-                                            {activeCategoryData.label[lang]}
-                                        </h3>
-                                        <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest leading-none">
-                                            {t.topics_count(activeCategoryData.topics.length)}
-                                        </p>
-                                    </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                    {activeCategoryData.topics.map(topic => (
-                                        <div key={topic.id} className="bg-[var(--bg-card)] rounded-[var(--radius-card)] p-5 border-2 border-[var(--border-main)] hover:border-[var(--brand-solid)] shadow-sm hover:shadow-lg transition-all group">
-                                            <div className="font-bold text-[var(--text-main)] mb-4 flex items-center justify-between text-sm leading-tight">
-                                                {topic.label[lang]}
-                                                <div className="w-2 h-2 rounded-full bg-[var(--brand-solid)] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                            </div>
-                                            <div className="relative">
-                                                <select 
-                                                    value={selectedTopic === topic.id ? selectedLevel : 0} 
-                                                    onChange={(e) => onSelect(topic.id, Number(e.target.value))} 
-                                                    className={`w-full p-3 pl-4 bg-[var(--bg-surface)] border-2 rounded-[var(--radius-btn)] text-xs font-bold text-[var(--text-main)] appearance-none transition-all cursor-pointer outline-none ${
-                                                        selectedTopic === topic.id ? `border-[var(--brand-solid)] shadow-md` : 'border-[var(--border-strong)] focus:border-[var(--brand-solid)]'
-                                                    }`}
-                                                >
-                                                    <option value={0} disabled>{t.select_level}</option>
-                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl] && (
-                                                        <option key={lvl} value={lvl}>
-                                                            {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} — {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[var(--text-muted)]">
-                                                    <ChevronDown size={16} />
+                                    {/* GROUPED TOPIC CARDS */}
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        {Object.entries(groupedCuratedPayload).map(([topicId, levels]) => {
+                                            // Get category and localized topic name
+                                            const catKey = Object.keys(CATEGORIES).find(key => CATEGORIES[key]?.topics?.some(t => t.id === topicId));
+                                            const topicData = CATEGORIES[catKey]?.topics?.find(t => t.id === topicId);
+                                            const topicName = topicData?.label[lang] || topicId;
+
+                                            // Find the topic in CONTENT_MAP to extract the rich math examples
+                                            let contentMapTopic = null;
+                                            for (const cat of CONTENT_MAP) {
+                                                const found = cat.topics.find(t => t.id === topicId);
+                                                if (found) {
+                                                    contentMapTopic = found;
+                                                    break;
+                                                }
+                                            }
+
+                                            return (
+                                                <div key={topicId} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                                                    {/* Topic Header */}
+                                                    <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                                            <Layers size={16} />
+                                                        </div>
+                                                        <h3 className="font-black text-sm text-slate-800 uppercase tracking-widest">{topicName}</h3>
+                                                    </div>
+
+                                                    {/* Condensed Level Rows */}
+                                                    <div className="flex flex-col divide-y divide-slate-100">
+                                                        {levels.map(lvl => {
+                                                            const levelDesc = LEVEL_DESCRIPTIONS[topicId]?.[lvl]?.[lang] || "";
+                                                            const isSelected = selectedTopic === topicId && selectedLevel === lvl;
+                                                            
+                                                            // Pull the explicit math example for this specific level
+                                                            const levelData = contentMapTopic?.levels?.find(l => l.lvl === lvl);
+                                                            const mathExample = levelData?.ex || "";
+
+                                                            return (
+                                                                <div 
+                                                                    key={lvl}
+                                                                    onClick={() => onSelect(topicId, lvl)}
+                                                                    className={`group flex items-stretch cursor-pointer transition-all ${
+                                                                        isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                                                                    }`}
+                                                                >
+                                                                    {/* Level Badge */}
+                                                                    <div className={`w-10 shrink-0 flex items-center justify-center font-black text-xs transition-colors ${isSelected ? 'bg-indigo-500 text-white' : 'bg-slate-50 text-slate-400 border-r border-slate-100'}`}>
+                                                                        {lvl}
+                                                                    </div>
+                                                                    
+                                                                    {/* Description & Math Example */}
+                                                                    <div className="flex-1 p-3 flex flex-col justify-center min-w-0">
+                                                                        <p className={`text-[11px] font-bold leading-tight mb-1 truncate transition-colors ${isSelected ? 'text-indigo-900' : 'text-slate-700'}`}>
+                                                                            {levelDesc}
+                                                                        </p>
+                                                                        {mathExample && (
+                                                                            <div className="font-serif italic text-[11px] text-slate-500 flex items-center overflow-x-auto no-scrollbar">
+                                                                                <MathDisplay content={mathExample} className="inline-block" />
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    
+                                                                    {/* Selection Radio Circle */}
+                                                                    <div className="w-12 shrink-0 flex items-center justify-center border-l border-slate-100">
+                                                                        <div className={`w-4 h-4 rounded-full border-2 transition-all ${isSelected ? 'border-indigo-500 bg-indigo-500 shadow-sm' : 'border-slate-300 group-hover:border-indigo-400'}`}></div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ) : (
+                                /* --- EXISTING FULL CURRICULUM VIEW (Free Play / Teacher) --- */
+                                <>
+                                    {/* HORIZONTAL CATEGORY TABS */}
+                                    <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+                                        {Object.entries(CATEGORIES).map(([catKey, category]) => {
+                                            const isActive = expandedCategory === catKey;
+                                            const themeColorStr = category.color || 'emerald';
+                                            
+                                            return (
+                                                <div key={catKey} className={`theme-${themeColorStr}`}>
+                                                    <button 
+                                                        onClick={() => setExpandedCategory(catKey)}
+                                                        className={`flex items-center gap-2 px-5 py-3 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border-2 cursor-pointer ${
+                                                            isActive 
+                                                                ? `bg-[var(--brand-solid)] text-white border-[var(--brand-solid)]` 
+                                                                : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
+                                                        }`}
+                                                    >
+                                                        {isActive && <Award size={14} />}
+                                                        {category.label[lang]}
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* ACTIVE CATEGORY TOPICS GRID */}
+                                    <div className={`theme-${themeColorString} card p-6 sm:p-8 border-2 border-[var(--brand-border)]`}>
+                                        <div className="mb-6 flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-[var(--radius-btn)] flex items-center justify-center bg-[var(--brand-solid)] text-white shadow-md">
+                                                <Award size={20} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight leading-none mb-1">
+                                                    {activeCategoryData.label[lang]}
+                                                </h3>
+                                                <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest leading-none">
+                                                    {t.topics_count(activeCategoryData.topics.length)}
+                                                </p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                            {activeCategoryData.topics.map(topic => (
+                                                <div key={topic.id} className="bg-[var(--bg-card)] rounded-[var(--radius-card)] p-5 border-2 border-[var(--border-main)] hover:border-[var(--brand-solid)] shadow-sm hover:shadow-lg transition-all group">
+                                                    <div className="font-bold text-[var(--text-main)] mb-4 flex items-center justify-between text-sm leading-tight">
+                                                        {topic.label[lang]}
+                                                        <div className="w-2 h-2 rounded-full bg-[var(--brand-solid)] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                    </div>
+                                                    <div className="relative">
+                                                        <select 
+                                                            value={selectedTopic === topic.id ? selectedLevel : 0} 
+                                                            onChange={(e) => onSelect(topic.id, Number(e.target.value))} 
+                                                            className={`w-full p-3 pl-4 bg-[var(--bg-surface)] border-2 rounded-[var(--radius-btn)] text-xs font-bold text-[var(--text-main)] appearance-none transition-all cursor-pointer outline-none ${
+                                                                selectedTopic === topic.id ? `border-[var(--brand-solid)] shadow-md` : 'border-[var(--border-strong)] focus:border-[var(--brand-solid)]'
+                                                            }`}
+                                                        >
+                                                            <option value={0} disabled>{t.select_level}</option>
+                                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(lvl => LEVEL_DESCRIPTIONS[topic.id]?.[lvl] && (
+                                                                <option key={lvl} value={lvl}>
+                                                                    {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`} — {LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || ""}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[var(--text-muted)]">
+                                                            <ChevronDown size={16} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     ) : (
                         <div className="animate-in slide-in-from-right-4 duration-500 space-y-4 pb-20">

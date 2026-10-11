@@ -19,8 +19,9 @@ import MathDisplay from '../shared/MathDisplay';
 import { compileAnchoredStory } from '../../core/utils/storyCompiler';
 import SlideRenderer from '../shared/SlideRenderer';
 
-export default function PresentationView({ packet, sheetTitle, lang = 'sv', onClose, initialSlides, boardId: initialBoardId, 
-    onLaunchLive }) {
+export default function PresentationView({ 
+    packet, sheetTitle, lang = 'sv', onClose, initialSlides, boardId: initialBoardId, onLaunchLive,
+    initialSettings }) {
     // --- MASTER SLIDE & TAB STATE ---
     const [sidebarTab, setSidebarTab] = useState('questions'); 
     
@@ -39,12 +40,14 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
 
     const [isLeftCollapsed, setIsLeftCollapsed] = useState(false); 
     const [isRightCollapsed, setIsRightCollapsed] = useState(true);
-    const [globalZoom, setGlobalZoom] = useState(1.0); 
-    const [viewMode, setViewMode] = useState('list'); 
+    
+    // 🟢 ALL 3 settings now pull from the saved database object!
+    const [globalZoom, setGlobalZoom] = useState(initialSettings?.globalZoom || 1.6);
+    const [viewMode, setViewMode] = useState(initialSettings?.viewMode || 'list'); 
+    const [bgType, setBgType] = useState(initialSettings?.bgType || 'blank');
     const [clueViewMode, setClueViewMode] = useState('steps');
 
     const [livePacket, setLivePacket] = useState(packet || []);
-    const [bgType, setBgType] = useState('blank');
     const [isSummonerOpen, setIsSummonerOpen] = useState(false);
 
     // Custom Prompt States
@@ -326,17 +329,19 @@ export default function PresentationView({ packet, sheetTitle, lang = 'sv', onCl
         let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
         csvContent += (lang === 'sv' ? "Slide,Titel,Textinnehåll\n" : "Slide,Title,Text Content\n");
 
+        // Secure DOM Parser (Doesn't execute scripts like innerHTML does)
+        const parser = new DOMParser();
+
         slides.forEach((slide, idx) => {
             const textElements = slide.elements.filter(el => el.type === 'richText');
             textElements.forEach(el => {
-                const tempDiv = document.createElement("div");
-                tempDiv.innerHTML = el.content || "";
-                let rawText = tempDiv.textContent || tempDiv.innerText || "";
+                const doc = parser.parseFromString(el.content || "", 'text/html');
+                let rawText = doc.body.textContent || "";
+                
                 rawText = rawText.replace(/"/g, '""');
                 
-                // CSV Injection Prevention
-                // If text starts with a formula trigger, neutralize it for Excel
-                if (/^[=+\-@]/.test(rawText.trim())) {
+                // CSV Injection Prevention (Catches =, +, -, @, \t, \r)
+                if (/^[=+\-@\t\r]/.test(rawText.trim())) {
                     rawText = "'" + rawText.trim();
                 }
 

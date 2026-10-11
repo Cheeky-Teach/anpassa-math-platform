@@ -24,11 +24,21 @@ import LgrModal from './components/modals/LgrModal';
 import StatsModal from './components/modals/StatsModal';
 import StreakModal from './components/modals/StreakModal'; 
 import ContentModal from './components/modals/ContentModal'; 
+import DetourModal from './components/modals/DetourModal'; 
 
 // Data & Constants
 import { UI_TEXT, LEVEL_DESCRIPTIONS, CATEGORIES } from './constants/localization';
 
 import PreferencesToggle from './components/ui/PreferencesToggle';
+
+//user counter/gatekeeper and student gateway
+import StudentGateway from './components/views/StudentGateway';
+import GhostRadioGatekeeper from './components/GhostRadioGatekeeper';
+
+// Data, Constants & Rules
+import { CONTENT_MAP } from './constants/content_map';
+import { checkDetourTrigger, checkDetourCompletion } from './core/rules/progressionEngine';
+
 
 export const PreferencesContext = createContext();
 
@@ -84,6 +94,15 @@ function App() {
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'sv');
     const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
 
+    // Teacher buckets / groups
+    const [studentBuckets, setStudentBuckets] = useState([]);
+    const [loadingBuckets, setLoadingBuckets] = useState(false);
+
+    const [isDetourModalOpen, setIsDetourModalOpen] = useState(false);
+    const [pendingDetour, setPendingDetour] = useState(null);
+
+    const [activeBucket, setActiveBucket] = useState(null);
+
     // React to theme changes
     useEffect(() => {
         const root = document.documentElement;
@@ -124,6 +143,10 @@ function App() {
     const [isSolutionRevealed, setIsSolutionRevealed] = useState(false);
     const [usedHelp, setUsedHelp] = useState(false);
     const [useWordProblems, setUseWordProblems] = useState(false);
+
+    // ---  DETOUR / PREREQUISITE STATE ---
+    const [isDetourActive, setIsDetourActive] = useState(false);
+    const [originalTask, setOriginalTask] = useState(null);
 
     // --- 4. SESSION STATS & HISTORY ---
     const [sessionStats, setSessionStats] = useState({ attempted: 0, correctNoHelp: 0, correctHelp: 0, incorrect: 0, skipped: 0, maxStreak: 0 });
@@ -426,6 +449,35 @@ function App() {
         }
     };
 
+    // --- FETCH STUDENT BUCKETS ---
+    useEffect(() => {
+        const fetchStudentBuckets = async () => {
+            if (view === 'dashboard' && profile?.role === 'student' && activeClass?.id) {
+                setLoadingBuckets(true);
+                try {
+                    const now = new Date().toISOString();
+                    const { data, error } = await supabase
+                        .from('teacher_buckets')
+                        .select('*')
+                        .eq('teacher_id', activeClass.id)
+                        // Only fetch buckets that haven't expired
+                        .gt('expires_at', now) 
+                        // Note: is_visible = true is automatically enforced by the RLS policy we wrote
+                        .order('created_at', { ascending: false });
+                    
+                    if (error) throw error;
+                    setStudentBuckets(data || []);
+                } catch (err) {
+                    console.error("Error fetching buckets:", err);
+                } finally {
+                    setLoadingBuckets(false);
+                }
+            }
+        };
+
+        fetchStudentBuckets();
+    }, [view, profile?.role, activeClass?.id]);
+
     const handleStudentExitLive = () => {
         setActiveRoom(null);
         setStudentAlias('');
@@ -433,14 +485,26 @@ function App() {
         setView('landing'); 
     };
 
+    const goHome = () => { 
+        setStreak(0); 
+        setView('dashboard'); 
+        setQuestion(null); 
+        setTimerSettings(prev => ({ ...prev, isActive: false })); 
+        setActiveBucket(null); 
+        setIsDetourActive(false); 
+        setOriginalTask(null);
+    };
+
     const quitPractice = () => { 
         setStreak(0); 
         setView('dashboard'); 
         setQuestion(null); 
         setTimerSettings(prev => ({ ...prev, isActive: false })); 
+        setIsDetourActive(false); 
+        setOriginalTask(null);
     };
 
-    // --- SUBMIT LOGIC ---
+    // --- SUBMIT LOGIC W/ PROGRESSION ENGINE ---
     const handleSubmit = async (e, directInput) => {
         if (e) e.preventDefault();
         if (feedback === 'correct') return;
@@ -465,10 +529,24 @@ function App() {
                     setStreak(result.newStreak); setTotalCorrect(prev => prev + 1);
                     updateStats(helpUsed ? 'correctHelp' : 'correctNoHelp');
 
+                    // --- DETOUR COMPLETION CHECK ---
+                    if (isDetourActive && checkDetourCompletion(result.newStreak)) {
+                        setFeedback('correct');
+                        setTimeout(() => {
+                            alert(lang === 'sv' ? "Snyggt jobbat! Nu är du redo för den ursprungliga uppgiften igen." : "Great job! You're ready for the original task again.");
+                            setIsDetourActive(false);
+                            setTopic(originalTask.topic);
+                            setLevel(originalTask.level);
+                            setStreak(0);
+                            fetchQuestion(originalTask.topic, originalTask.level, lang);
+                            setOriginalTask(null);
+                        }, 1500);
+                        return;
+                    }
+
                     // Show the Choice Modal
                     if (result.levelUp) {
                         setFeedback('correct');
-                        // Wait 1 second so they see the green checkmark before the modal pops up
                         setTimeout(() => setLevelUpAvailable(true), 1000);
                         return;
                     }
@@ -478,13 +556,33 @@ function App() {
                 }
                 setFeedback('correct');
             } else {
-                setHistory(prev => [{ topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
+                // Track history immediately for engine evaluation
+                const newHistoryEntry = { topic, level, correct: false, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() };
+                const updatedHistory = [newHistoryEntry, ...history];
+                setHistory(updatedHistory);
+
                 setQuestion({...question, attempts: (question.attempts || 0) + 1});
                 updateStats('incorrect');
                 if ((question.attempts || 0) + 1 >= 2) { 
                     setRevealedClues(question.clues || []); setIsSolutionRevealed(true); setStreak(0);
                 }
                 setFeedback('incorrect'); setStreak(0);
+
+                // --- DETOUR TRIGGER CHECK ---
+                if (!isDetourActive) {
+                    const detourCheck = checkDetourTrigger(updatedHistory, topic, level, CONTENT_MAP);
+                    if (detourCheck.shouldDetour) {
+                        setTimeout(() => {
+                            // 1. Save the recommendation to state, but DON'T execute it yet
+                            setPendingDetour({
+                                topic: detourCheck.detourTopic,
+                                level: detourCheck.detourLevel
+                            });
+                            // 2. Just open the choice modal
+                            setIsDetourModalOpen(true);
+                        }, 1500);
+                    }
+                }
             }
         } catch (e) { console.error(e); }
     };
@@ -671,14 +769,21 @@ function App() {
     let activeThemeColor = 'emerald'; 
 
     if (view === 'practice' && topic) {
-        const catKey = Object.keys(CATEGORIES).find(key => 
-            CATEGORIES[key]?.topics?.some(t => t.id === topic)
-        );
-        if (catKey) {
-            activeCategoryLabel = CATEGORIES[catKey].label[lang];
-            activeThemeColor = CATEGORIES[catKey].color || 'emerald';
-            const tData = CATEGORIES[catKey].topics.find(t => t.id === topic);
+        if (isDetourActive) {
+            activeCategoryLabel = lang === 'sv' ? 'Uppvärmning' : 'Warm-up';
+            activeThemeColor = 'amber';
+            const tData = CONTENT_MAP.flatMap(c => c.topics).find(t => t.id === topic);
             activeTopicLabel = tData?.label[lang] || topic;
+        } else {
+            const catKey = Object.keys(CATEGORIES).find(key => 
+                CATEGORIES[key]?.topics?.some(t => t.id === topic)
+            );
+            if (catKey) {
+                activeCategoryLabel = CATEGORIES[catKey].label[lang];
+                activeThemeColor = CATEGORIES[catKey].color || 'emerald';
+                const tData = CATEGORIES[catKey].topics.find(t => t.id === topic);
+                activeTopicLabel = tData?.label[lang] || topic;
+            }
         }
     }
 
@@ -707,14 +812,14 @@ function App() {
                         {/* 1. LEFT SIDE: Logo or Back Button */}
                         <div className="flex-1 flex justify-start">
                             {view === 'practice' || view === 'times_table' ? (
-                                <button onClick={quitPractice} className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-xs uppercase tracking-widest transition-all group shrink-0">
+                                <button onClick={goHome} className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold text-xs uppercase tracking-widest transition-all group shrink-0">
                                     <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center shadow-sm border border-[var(--border-main)] group-hover:shadow-md">
                                         <ChevronLeft size={16}/>
                                     </div>
                                     <span className="hidden sm:inline-block">{lang === 'sv' ? "Tillbaka" : "Back"}</span>
                                 </button>
                             ) : (
-                                <h1 className="text-2xl font-extrabold text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={quitPractice}>
+                                <h1 className="text-2xl font-extrabold text-[#10b981] tracking-tighter cursor-pointer uppercase italic shrink-0" onClick={goHome}>
                                     ANPASSA
                                 </h1> 
                             )}
@@ -749,35 +854,65 @@ function App() {
             <div className="flex-1 flex flex-col relative overflow-x-hidden">
                 {view === 'dashboard' ? (
                     <DesktopZoomWrapper>
-                    <Dashboard 
-                        profile={profile} 
-                        lang={lang} 
-                        selectedTopic={topic} 
-                        selectedLevel={level} 
-                        userRole={profile?.role || 'student'} 
-                        onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
-                        onStart={startPractice} 
-                        ui={ui} 
-                        onStudioOpen={() => setView('question_studio')} 
-                        onLabOpen={() => setView('practice_lab')}
-                        onProfileOpen={() => setView('profile')} 
-                        onTimesTableOpen={() => setView('times_table')}
-                        onWhiteboardOpen={() => {
-                            setSavedPacket([]); 
-                            setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
-                            setView('presentation');
-                        }}
-                        onRelaunch={handleRelaunchSession} 
-                        onViewReport={handleViewArchiveReport} 
-                        onEdit={handleEditArchivedPacket}
-                        onStatsOpen={() => setStatsOpen(true)}
-                        onLgrOpen={() => setLgrOpen(true)}
-                        onAboutOpen={() => setAboutOpen(true)}
-                        onContentOpen={() => setContentOpen(true)}
-                        timerSettings={timerSettings} 
-                        toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} 
-                        resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
-                    />
+                        {/* Show Gateway ONLY if student hasn't selected a bucket yet */}
+                        {profile?.role === 'student' && !activeBucket ? (
+                            <GhostRadioGatekeeper 
+                                classCode={activeClass?.class_code} 
+                                lang={lang}
+                                onDisconnect={handleStudentExitLive}
+                            >
+                                {loadingBuckets ? (
+                                    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                                        <div className="animate-spin h-10 w-10 border-4 border-indigo-600 border-t-transparent rounded-full" />
+                                    </div>
+                                ) : (
+                                    <StudentGateway 
+                                        classCode={activeClass?.class_code}
+                                        buckets={studentBuckets}
+                                        onSelectFreePlay={() => {
+                                            setActiveBucket('FREE_PLAY'); // Bypass gateway for full curriculum
+                                        }}
+                                        onSelectBucket={(bucket) => {
+                                            setActiveBucket(bucket); // Lock dashboard to this bucket
+                                        }}
+                                        onLeave={handleStudentExitLive}
+                                        lang={lang}
+                                    />
+                                )}
+                            </GhostRadioGatekeeper>
+                        ) : (
+                            <Dashboard 
+                                profile={profile} 
+                                lang={lang} 
+                                selectedTopic={topic} 
+                                selectedLevel={level} 
+                                userRole={profile?.role || 'student'} 
+                                activeBucket={activeBucket} 
+                                onBackToGateway={() => setActiveBucket(null)} 
+                                onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
+                                onStart={startPractice} 
+                                ui={ui} 
+                                onStudioOpen={() => setView('question_studio')} 
+                                onLabOpen={() => setView('practice_lab')}
+                                onProfileOpen={() => setView('profile')} 
+                                onTimesTableOpen={() => setView('times_table')}
+                                onWhiteboardOpen={() => {
+                                    setSavedPacket([]); 
+                                    setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
+                                    setView('presentation');
+                                }}
+                                onRelaunch={handleRelaunchSession} 
+                                onViewReport={handleViewArchiveReport} 
+                                onEdit={handleEditArchivedPacket}
+                                onStatsOpen={() => setStatsOpen(true)}
+                                onLgrOpen={() => setLgrOpen(true)}
+                                onAboutOpen={() => setAboutOpen(true)}
+                                onContentOpen={() => setContentOpen(true)}
+                                timerSettings={timerSettings} 
+                                toggleTimer={(m) => setTimerSettings({duration: m*60, remaining: m*60, isActive: m > 0})} 
+                                resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
+                            />
+                        )}
                     </DesktopZoomWrapper>
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />
@@ -807,6 +942,8 @@ function App() {
                             setUseWordProblems={setUseWordProblems}
                             levelUpAvailable={levelUpAvailable}
                             setLevelUpAvailable={setLevelUpAvailable}
+                            activeBucket={activeBucket}
+                            isDetourActive={isDetourActive}
                         />
                         </DesktopZoomWrapper>
                 ) : view === 'question_studio' ? (
@@ -831,13 +968,19 @@ function App() {
                     </DesktopZoomWrapper>
                 ) : view === 'live_session' && activeRoom ? (
                     <DesktopZoomWrapper>
-                    <StudentLiveView 
-                        session={activeRoom} 
-                        packet={activeRoom.active_question_data?.packet || []} 
-                        lang={lang} 
-                        studentAlias={studentAlias} 
-                        onBack={handleStudentExitLive} 
-                    />
+                        <GhostRadioGatekeeper 
+                            classCode={activeRoom.class_code} 
+                            lang={lang}
+                            onDisconnect={handleStudentExitLive}
+                        >
+                            <StudentLiveView 
+                                session={activeRoom} 
+                                packet={activeRoom.active_question_data?.packet || []} 
+                                lang={lang} 
+                                studentAlias={studentAlias} 
+                                onBack={handleStudentExitLive} 
+                            />
+                        </GhostRadioGatekeeper>
                     </DesktopZoomWrapper>
                 ) : view === 'teacher_live' && activeRoom ? (
                     <TeacherLiveView session={activeRoom} packet={savedPacket} lang={lang} onEnd={handleEndSession} onKick={handleKick} onCreateReport={(res) => { setReportData(res); setView('live_report'); }} />
@@ -859,6 +1002,39 @@ function App() {
                     />
                 ) : null}
             </div>
+            <DetourModal 
+                isOpen={isDetourModalOpen} 
+                lang={lang}
+                onAskCoach={() => {
+                    setIsDetourModalOpen(false);
+                    setPendingDetour(null); // Clear the pending drop
+                    
+                    // Reset history so the engine doesn't instantly re-trigger the detour on the next mistake
+                    setHistory([]); 
+                    
+                    // Open your coach modal (ensure you have this state/component defined in App.jsx)
+                    // setIsCoachModalOpen(true); 
+                }}
+                onAcceptDetour={() => {
+                    setIsDetourModalOpen(false);
+                    
+                    if (pendingDetour) {
+                        // NOW we actually execute the drop!
+                        setOriginalTask({ topic, level });
+                        setIsDetourActive(true);
+                        setTopic(pendingDetour.topic);
+                        setLevel(pendingDetour.level);
+                        setStreak(0);
+                        
+                        // Clear their history so they get a fresh start on the lower level
+                        setHistory([]); 
+                        
+                        // Fetch the new, easier question
+                        fetchQuestion(pendingDetour.topic, pendingDetour.level, lang);
+                        setPendingDetour(null);
+                    }
+                }} 
+            />
         </div>
         </PreferencesContext.Provider>
     );

@@ -901,6 +901,7 @@ export default function QuestionStudio({
                                 autoFocus
                                 type="text" 
                                 value={newFolderName} 
+                                maxLength={50}
                                 onChange={(e) => setNewFolderName(e.target.value)} 
                                 placeholder={t.folder_name_placeholder}
                                 className="w-full px-4 py-2 bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] rounded-[var(--radius-btn)] focus:border-[var(--primary-color)] outline-none mb-6 font-bold"
@@ -1048,7 +1049,8 @@ export default function QuestionStudio({
                         type="text" 
                         className="w-full bg-white/10 px-3 py-1.5 rounded-[var(--radius-btn)] text-xs font-black tracking-tight outline-none focus:bg-white/20 transition-all border border-transparent focus:border-white/30 text-white placeholder-white/40" 
                         placeholder={t.title_placeholder} 
-                        value={sheetTitle} 
+                        value={sheetTitle}
+                        maxLength={100}
                         onChange={(e) => { setSheetTitle(e.target.value); setIsSaved(false); }} 
                     />
                 </div>
@@ -1771,13 +1773,14 @@ export default function QuestionStudio({
           </div>
       )}
 
-      {/* 🟢 LAUNCHES STANDALONE PRESENTATION BUILDER/VIEWER */}
+      {/* LAUNCHES STANDALONE PRESENTATION BUILDER/VIEWER */}
       {showPresentation && (
           <PresentationView 
               packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : packet}
               initialSlides={activeBoardSheet?.packet?.slides}
-              
-              // 🟢 THE TRUE FIX: Only pass the activeSheetId if the loaded sheet's TYPE is 'board'
+              // Pass the saved settings down so it remembers zoom and backgrounds!
+              initialSettings={activeBoardSheet?.packet?.settings}
+              // Only pass the activeSheetId if the loaded sheet's TYPE is 'board'
               boardId={activeBoardSheet?.id || (peekSheet?.type === 'board' || savedSheets.find(s => s.id === activeSheetId)?.type === 'board' ? activeSheetId : null)}
               
               sheetTitle={activeBoardSheet?.title || sheetTitle} 

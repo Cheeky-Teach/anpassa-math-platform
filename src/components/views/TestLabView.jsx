@@ -16,35 +16,11 @@ import MathText from '../ui/MathText';
 import VisualRenderer from '../visuals/VisualRenderer';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 
+import MathDisplay from '../shared/MathDisplay';
+
 // 🟢 CRITICAL: Import Universal Theme
 import '../../styles/theme.css'; 
 
-// --- MATH RENDERING HELPER ---
-const MathDisplay = ({ content, className = "" }) => {
-    const containerRef = useRef(null);
-    useEffect(() => {
-        if (!content || !containerRef.current) return;
-        const renderMath = () => {
-            if (containerRef.current) {
-                containerRef.current.innerText = content;
-                if (window.renderMathInElement) {
-                    window.renderMathInElement(containerRef.current, {
-                        delimiters: [
-                            { left: '$$', right: '$$', display: true },
-                            { left: '$', right: '$', display: false },
-                            { left: '\\(', right: '\\)', display: false },
-                            { left: '\\[', right: '\\]', display: true }
-                        ],
-                        throwOnError: false, trust: true
-                    });
-                }
-            }
-        };
-        const timer = setTimeout(renderMath, 50);
-        return () => clearTimeout(timer);
-    }, [content]);
-    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap min-h-[1.5em] ${className}`} />;
-};
 
 const LAB_TEXT = {
     sv: {

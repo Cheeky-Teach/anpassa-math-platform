@@ -132,12 +132,12 @@ export default function MyCoachModal({
 
     return (
         <div className={inlineMode ? "w-full h-full p-0 select-none" : "fixed inset-0 z-[400] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none animate-in fade-in duration-200"}>
-            {/* Main Shell Panel Container - EXPANDED TO FULL AVAILABLE WIDTH */}
-            <div className={`bg-white w-full border border-slate-200/60 flex flex-col overflow-hidden duration-300 ${
+            {/* Main Shell Panel Container */}
+            <div className={`bg-[var(--bg-card)] w-full border border-[var(--border-main)] flex flex-col overflow-hidden duration-300 ${
                 inlineMode ? 'h-full rounded-[2rem] shadow-inner' : 'w-[98vw] max-w-none h-[92vh] rounded-[2rem] shadow-2xl animate-in zoom-in-95'
             }`}>
                 
-                {/* Upper Status Navbar Strip - COMPRESSED VERTICALLY */}
+                {/* Upper Status Navbar Strip (Kept strictly dark for high contrast) */}
                 <header className="bg-slate-900 px-6 py-2.5 flex justify-between items-center text-white border-b border-slate-800 shrink-0">
                     <div className="flex items-center gap-3">
                         <h2 className="text-[13px] font-black uppercase tracking-wider text-amber-400 leading-none">{ui.title}</h2>
@@ -175,12 +175,12 @@ export default function MyCoachModal({
                 <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
                     
                     {/* LEFT PANEL: Traditional Whiteboard styled like square-grid graph paper */}
-                    <div className="flex-1 bg-[#fcfdfa] relative overflow-y-auto custom-scrollbar p-6 flex flex-col justify-start border-b md:border-b-0 md:border-r border-slate-200">
+                    <div className="flex-1 bg-[var(--bg-surface)] relative overflow-y-auto custom-scrollbar p-6 flex flex-col justify-start border-b md:border-b-0 md:border-r border-[var(--border-main)]">
                         {/* Blueprint Math Graph Paper Effect Layer */}
                         <div 
-                            className="absolute inset-0 opacity-[0.035] pointer-events-none z-0" 
+                            className="absolute inset-0 opacity-[0.035] pointer-events-none z-0 dark:opacity-[0.08]" 
                             style={{ 
-                                backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)',
+                                backgroundImage: 'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)',
                                 backgroundSize: '24px 24px'
                             }} 
                         />
@@ -192,7 +192,7 @@ export default function MyCoachModal({
                             {historyStack.map((line, idx) => (
                                 <div 
                                     key={`hist-${idx}`} 
-                                    className="opacity-40 blur-[0.4px] transition-all duration-500 scale-95 origin-center text-slate-800 text-xl border-b border-slate-100 pb-2"
+                                    className="opacity-40 blur-[0.4px] transition-all duration-500 scale-95 origin-center text-[var(--text-main)] text-xl border-b border-[var(--border-main)] pb-2"
                                 >
                                     <CoachMathDisplay content={`$$${line.latex}$$`} />
                                 </div>
@@ -200,30 +200,29 @@ export default function MyCoachModal({
 
                             {/* Active, High-Contrast Equation Row */}
                             {activeLine && (
-                                <div className="bg-amber-50/50 border-2 border-amber-200/40 p-4 rounded-2xl text-center font-serif text-indigo-950 shadow-md animate-in slide-in-from-top-4 fade-in duration-300 text-2xl font-black">
+                                <div className="bg-[var(--bg-card)] border-2 border-[var(--border-strong)] p-4 rounded-2xl text-center font-serif text-[var(--text-main)] shadow-md animate-in slide-in-from-top-4 fade-in duration-300 text-2xl font-black">
                                     <CoachMathDisplay content={`$$${activeLine}$$`} />
                                 </div>
                             )}
 
                             {/* STICKY GEOMETRIC DIAGRAM AT THE BASE HEAD OF THE WHITEBOARD CHALKBOARD */}
                             {rd && (rd.graph || rd.geometry || rd.volume || rd.pattern || rd.probabilityTree || rd.probabilityMarbles || rd.probabilitySpinner || rd.scale || rd.similarity || rd.compareShapesArea || rd.frequencyTable || rd.percentGrid || rd.angles) && (
-                                <div className="bg-white border border-slate-200/60 shadow-sm p-4 pt-6 rounded-2xl flex justify-center items-center max-w-sm mx-auto shrink-0 mb-2 relative overflow-visible animate-in zoom-in-95 duration-200">
+                                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] shadow-sm p-4 pt-6 rounded-2xl flex justify-center items-center max-w-sm mx-auto shrink-0 mb-2 relative overflow-visible animate-in zoom-in-95 duration-200">
                                     <div className="w-full flex items-center justify-center overflow-visible">
                                         {renderCoachVisual(rd)}
                                     </div>
-                                    <div className="absolute top-1.5 left-3 text-[8px] font-black text-slate-300 uppercase tracking-widest">
+                                    <div className="absolute top-1.5 left-3 text-[8px] font-black text-[var(--text-muted)] uppercase tracking-widest">
                                         {lang === 'sv' ? "Figur" : "Diagram"}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Anchor div used to force sticky viewport scrolls */}
                             <div ref={boardEndRef} />
                         </div>
                     </div>
 
                     {/* RIGHT PANEL: Instructor Voice / Guidance Center */}
-                    <div className="w-full md:w-[420px] bg-slate-50 flex flex-col min-h-0 overflow-hidden shrink-0">
+                    <div className="w-full md:w-[420px] bg-[var(--bg-surface)] flex flex-col min-h-0 overflow-hidden shrink-0">
                         
                         {/* Explanation Box Log Container */}
                         <div className="flex-1 p-6 overflow-y-auto custom-scrollbar flex flex-col justify-start items-center space-y-4 min-h-0 py-6">
@@ -235,11 +234,11 @@ export default function MyCoachModal({
                                     return (
                                         <div 
                                             key={`text-hist-${idx}`}
-                                            className="bg-white/70 p-3.5 rounded-2xl border border-slate-200/40 shadow-xs w-full max-w-sm opacity-35 blur-[0.2px] scale-95 origin-center transition-all duration-500 shrink-0"
+                                            className="bg-[var(--bg-card)] p-3.5 rounded-2xl border border-[var(--border-main)] shadow-xs w-full max-w-sm opacity-35 blur-[0.2px] scale-95 origin-center transition-all duration-500 shrink-0"
                                         >
                                             <CoachMathDisplay 
                                                 content={step.text} 
-                                                className="text-slate-600 font-bold text-xs text-center leading-relaxed" 
+                                                className="text-[var(--text-muted)] font-bold text-xs text-center leading-relaxed" 
                                             />
                                         </div>
                                     );
@@ -248,22 +247,21 @@ export default function MyCoachModal({
                                 return (
                                     <div 
                                         key={`text-active-${idx}`}
-                                        className="bg-white p-5 rounded-3xl border-2 border-purple-500/80 border-l-8 shadow-lg w-full max-w-sm animate-in zoom-in-95 duration-200 min-h-[100px] flex flex-col justify-center shrink-0"
+                                        className="bg-[var(--bg-card)] p-5 rounded-3xl border-2 border-[var(--brand-solid)] border-l-8 shadow-lg w-full max-w-sm animate-in zoom-in-95 duration-200 min-h-[100px] flex flex-col justify-center shrink-0"
                                     >
                                         <CoachMathDisplay 
                                             content={step.text} 
-                                            className="text-slate-800 font-black text-sm text-center leading-relaxed" 
+                                            className="text-[var(--text-main)] font-black text-sm text-center leading-relaxed" 
                                         />
                                     </div>
                                 );
                             })}
 
-                            {/* Anchor element used to anchor automated scroll focuses */}
                             <div ref={textEndRef} />
 
                             {/* Note-Taking Pacing Indicator Box */}
                             {isCooldownActive && activeLine && (
-                                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-purple-600 animate-pulse bg-purple-50 px-4 py-1.5 rounded-full border border-purple-100 shrink-0">
+                                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[var(--brand-text)] animate-pulse bg-[var(--brand-bg)] px-4 py-1.5 rounded-full border border-[var(--brand-border)] shrink-0">
                                     <span className="inline-block animate-bounce font-serif font-normal text-base">✏️</span>
                                     {ui.copyCue}
                                 </div>
@@ -271,21 +269,21 @@ export default function MyCoachModal({
 
                             {/* Success Celebration Alert Callout */}
                             {currentStep === totalSteps - 1 && (
-                                <div className="text-xs font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 animate-in fade-in duration-500 shrink-0">
+                                <div className="text-xs font-black uppercase tracking-widest text-[var(--theme-emerald-text)] bg-[var(--theme-emerald-bg)] px-4 py-2 rounded-xl border border-[var(--theme-emerald-border)] animate-in fade-in duration-500 shrink-0">
                                     {ui.done}
                                 </div>
                             )}
                         </div>
 
                         {/* Player Controls Footbar */}
-                        <footer className="p-4 bg-white border-t border-slate-200 flex items-center justify-between gap-4 shrink-0">
+                        <footer className="p-4 bg-[var(--bg-card)] border-t border-[var(--border-main)] flex items-center justify-between gap-4 shrink-0">
                             {/* Autoplay Sequencer Loop Toggle */}
                             <button
                                 onClick={toggleAutoplay}
                                 className={`p-2.5 rounded-xl border transition-all active:scale-95 cursor-pointer ui-ignore flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest min-w-[110px]
                                     ${isAutoplayActive 
                                         ? 'bg-amber-500 border-amber-600 text-white' 
-                                        : 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200/80'}`}
+                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'}`}
                             >
                                 {isAutoplayActive ? (
                                     <><Pause size={13} fill="currentColor" /> {ui.pause}</>
@@ -295,23 +293,23 @@ export default function MyCoachModal({
                             </button>
 
                             {/* Manual Progression Tracking Buttons */}
-                            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1 shadow-inner">
+                            <div className="flex items-center bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)] gap-1 shadow-inner">
                                 <button
                                     onClick={prevStep}
                                     disabled={currentStep === 0}
-                                    className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white disabled:opacity-20 cursor-pointer transition-all disabled:hover:bg-transparent"
+                                    className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] disabled:opacity-20 cursor-pointer transition-all disabled:hover:bg-transparent"
                                 >
                                     <ChevronLeft size={16} strokeWidth={2.5} />
                                 </button>
                                 
-                                <span className="text-[11px] font-black tracking-widest text-slate-500 px-3 min-w-[45px] text-center">
+                                <span className="text-[11px] font-black tracking-widest text-[var(--text-muted)] px-3 min-w-[45px] text-center">
                                     {currentStep + 1} / {totalSteps}
                                 </span>
 
                                 <button
                                     onClick={nextStep}
                                     disabled={currentStep === totalSteps - 1 || isCooldownActive}
-                                    className="p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white disabled:opacity-20 cursor-pointer transition-all disabled:hover:bg-transparent"
+                                    className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] disabled:opacity-20 cursor-pointer transition-all disabled:hover:bg-transparent"
                                 >
                                     <ChevronRight size={16} strokeWidth={2.5} />
                                 </button>

@@ -1,32 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Printer, ChevronLeft, Loader2 } from 'lucide-react';
 import VisualRenderer from '../visuals/VisualRenderer';
-
-// 🟢 Highly stable inline MathDisplay (Replaces the bugged MathText component)
-const MathDisplay = ({ content, className = "" }) => {
-    const containerRef = useRef(null);
-    useEffect(() => {
-        if (!content || !containerRef.current) return;
-        const renderMath = () => {
-            containerRef.current.innerText = content;
-            if (window.renderMathInElement) {
-                window.renderMathInElement(containerRef.current, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false },
-                        { left: '\\(', right: '\\)', display: false },
-                        { left: '[', right: ']', display: true }
-                    ],
-                    throwOnError: false, trust: true
-                });
-            }
-        };
-        const timer = setTimeout(renderMath, 30);
-        return () => clearTimeout(timer);
-    }, [content]);
-    // 🟢 FORCED TEXT COLOR: Ensures math inherits black text in print mode
-    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-black ${className}`} />;
-};
+import MathDisplay from '../shared/MathDisplay';
 
 
 // --- LANDSCAPE PRINT STYLES ---
