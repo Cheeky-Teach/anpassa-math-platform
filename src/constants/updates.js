@@ -2,6 +2,30 @@
 
 export const APP_UPDATES = [
   {
+    id: 'v022',
+    date: '2026-10-11',
+    version: '0.2.2',
+    title: { 
+      sv: "Skapa custom arbetsområde, Enklare Elevyta vid inloggning",
+      en: "Create custom units, Simpler Student View on login"
+    },
+    highlights: {
+      sv: "Nu kan man skapa en grupp eller arbetsområde för att förenkla elevens vy och hitta det de behöver snabbare",
+      en: "Now you can create a custom grouop or unit to simplify the student's view to find what they need faster"
+    },
+    changes: {
+      sv: [
+        "Ny knapp i Dashboard GRUPPER. Skapa en mapp och lägg till en grupp. Du kan välja ut vilka generator och nivåer ska ingå i arbetsområdet",
+        "Vid inloggningen med din klasskod kommer dina elever se dina custom arbetsområde som de har tillgång till. När eleven väljer arbetsområdet då ser de bara det du valde ut när du skapade arbetesområdet. Lättare att hitta rätt för dina elever!",
+        ""
+      ],
+      en: [
+        "New button in dashboard CUSTOM UNIT. Create a folder and add a group. You can choose which generators and levels that should be included in the custom unit",
+        "When a student logs in with your class code, they'll see all units you have created and can click on the one relevant to them. Clicking on a unit will give the student a new dashboard that only has what you selected for them. Easier to find what they need to practice!"
+      ]
+    }
+  },
+  {
     id: 'v021',
     date: '2026-10-05',
     version: '0.2.1',

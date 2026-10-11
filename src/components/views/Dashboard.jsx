@@ -176,37 +176,42 @@ const Dashboard = ({
                                 </p>
                             </div>
                         </div>
+                    {/* ONLY SHOW TO TEACHERS & SUPER ADMINS */}
+                    {['teacher', 'super_admin'].includes(userRole) && (
+                        <>
+                            {/* Subscription Date */}
+                            {(() => {
+                                const sub = formatSubscriptionDate(profile?.subscription_end_date || profile?.subscription_ends_at, lang);
+                                if (!sub) return null;
+                                return (
+                                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-[var(--bg-surface)] p-2 rounded-[var(--radius-btn)] border border-[var(--border-main)]">
+                                        <span className={`w-2 h-2 rounded-full ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                                        <span className={sub.isExpired ? 'text-[var(--theme-rose-text)] font-black' : 'text-[var(--text-muted)]'}>
+                                            {sub.text}
+                                        </span>
+                                    </div>
+                                );
+                            })()}
 
-                        {/* Subscription Date */}
-                        {(() => {
-                            const sub = formatSubscriptionDate(profile?.subscription_end_date || profile?.subscription_ends_at, lang);
-                            if (!sub) return null;
-                            return (
-                                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-[var(--bg-surface)] p-2 rounded-[var(--radius-btn)] border border-[var(--border-main)]">
-                                    <span className={`w-2 h-2 rounded-full ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`} />
-                                    <span className={sub.isExpired ? 'text-[var(--theme-rose-text)] font-black' : 'text-[var(--text-muted)]'}>
-                                        {sub.text}
-                                    </span>
-                                </div>
-                            );
-                        })()}
+                            {/* Class Code */}
+                            <div className="flex flex-col items-center bg-[var(--brand-bg)] px-4 py-3 rounded-[var(--radius-btn)] border border-[var(--brand-border)]">
+                                <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--brand-text)] opacity-80 mb-0.5">
+                                    {userRole === 'teacher' ? t.class_code_label : t.connected_code_label}
+                                </span>
+                                <span className="text-xl font-black tracking-[0.2em] text-[var(--brand-text)] uppercase">
+                                    {profile?.class_code || "---"}
+                                </span>
+                            </div>
 
-                        {/* Class Code */}
-                        <div className="flex flex-col items-center bg-[var(--brand-bg)] px-4 py-3 rounded-[var(--radius-btn)] border border-[var(--brand-border)]">
-                            <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--brand-text)] opacity-80 mb-0.5">
-                                {userRole === 'teacher' ? t.class_code_label : t.connected_code_label}
-                            </span>
-                            <span className="text-xl font-black tracking-[0.2em] text-[var(--brand-text)] uppercase">
-                                {profile?.class_code || "---"}
-                            </span>
-                        </div>
-
-                        <button 
-                            onClick={onProfileOpen} 
-                            className="w-full flex items-center justify-center gap-2 py-3 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-widest hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)] transition-all shadow-sm active:scale-95 cursor-pointer"
-                        >
-                            <Settings size={14} /> {t.profile_btn}
-                        </button>
+                            {/* Profile/Settings Button */}
+                            <button 
+                                onClick={onProfileOpen} 
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-widest hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)] transition-all shadow-sm active:scale-95 cursor-pointer"
+                            >
+                                <Settings size={14} /> {t.profile_btn}
+                            </button>
+                        </>
+                    )}
                     </div>
 
                     {/* --- NEWS / UPDATES MICRO-CARD --- */}
