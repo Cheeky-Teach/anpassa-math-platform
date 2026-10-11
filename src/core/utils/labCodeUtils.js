@@ -7,28 +7,28 @@
 // This list MUST remain in this exact order to ensure codes are valid forever.
 // It maps the Topic IDs used in api/batch.ts and api/question.ts to a 2-digit index.
 export const TOPIC_INDEX = [
-    'arithmetic',           // 00
-    'order_of_operations',  // 01
-    'fraction_basics',      // 02
-    'fraction_arith',       // 03
-    'negative',             // 04
-    'ten_powers',           // 05
-    'exponents',            // 06
-    'percent',              // 07
-    'simplify',             // 08
-    'equation',             // 09
-    'equations_word',       // 10
-    'patterns',             // 11
-    'graphs',               // 12
-    'geometry',             // 13
-    'scale',                // 14
-    'volume',               // 15
-    'similarity',           // 16
-    'pythagoras',           // 17
-    'angles',               // 18
-    'probability',          // 19
-    'statistics',           // 20
-    'change_factor'         // 21
+    'basic_arithmetic',         // 00
+    'order_of_operations',      // 01
+    'fractions_basics',          // 02
+    'fraction_arith',           // 03
+    'negatives',                 // 04
+    'ten_powers',               // 05
+    'exponents',                // 06
+    'percent',                  // 07
+    'expressions',                 // 08
+    'equations',                 // 09
+    'equations_word',           // 10
+    'patterns',                 // 11
+    'graphs',                   // 12
+    'geometry',                 // 13
+    'scale',                    // 14
+    'volume',                   // 15
+    'similarity',               // 16
+    'pythagoras',               // 17
+    'angles',                   // 18
+    'probability',              // 19
+    'statistics',               // 20
+    'change_factor'             // 21
 ];
 
 // 2. NATIONAL TEST BUNDLE PRESETS

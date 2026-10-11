@@ -133,7 +133,17 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         if (Number(meta.limit) > 0 && packet.length >= Number(meta.limit)) return;
         setIsGenerating(true);
         try {
-            const enabledTopics = Object.keys(selection).filter(id => selection[id].enabled);
+            // Safely use ?.enabled in case the selection object is malformed
+            const enabledTopics = Object.keys(selection).filter(id => selection[id]?.enabled);
+            
+            // 🟢 CRITICAL FIX: Prevent crash if the link contains outdated/invalid topics
+            if (enabledTopics.length === 0) {
+                alert(lang === 'sv' ? "Denna testlänk är föråldrad eller ogiltig. Vänligen skapa ett nytt test." : "This test link is outdated or invalid. Please create a new test.");
+                setInternalMode('SETUP');
+                setIsGenerating(false);
+                return;
+            }
+
             let batchSize = 15;
             if (Number(meta.limit) > 0) {
                 batchSize = Math.min(15, Number(meta.limit) - packet.length);
