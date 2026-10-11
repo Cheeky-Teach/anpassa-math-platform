@@ -37,7 +37,7 @@ import GhostRadioGatekeeper from './components/GhostRadioGatekeeper';
 
 // Data, Constants & Rules
 import { CONTENT_MAP } from './constants/content_map';
-import { checkDetourTrigger, checkDetourCompletion } from './core/rules/progressionEngine';
+import { checkDetourTrigger, checkDetourCompletion } from './core/rules/ProgressionEngine';
 
 
 export const PreferencesContext = createContext();
