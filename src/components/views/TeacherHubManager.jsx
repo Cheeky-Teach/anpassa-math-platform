@@ -116,18 +116,20 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
     };
 
     // --- Toggles & Deletes ---
-    const toggleFocus = async (id) => { /* ... unchanged ... */
+    const toggleFocus = async (id) => { 
         const target = buckets.find(b => b.id === id);
         if (!target) return;
         const newValue = !target.is_focused;
-        setBuckets(prev => prev.map(b => {
-            if (b.id === id) return { ...b, is_focused: newValue };
-            return newValue ? { ...b, is_focused: false } : b;
-        }));
+        
+        // Update local state without resetting others
+        setBuckets(prev => prev.map(b => b.id === id ? { ...b, is_focused: newValue } : b));
+        
         try {
-            if (newValue) await supabase.from('teacher_buckets').update({ is_focused: false }).eq('teacher_id', teacherId);
+            // Update database without resetting others
             await supabase.from('teacher_buckets').update({ is_focused: newValue }).eq('id', id);
-        } catch (err) {}
+        } catch (err) { 
+            console.error("Error toggling focus:", err); 
+        }
     };
 
     const toggleVisibility = async (id) => { /* ... unchanged ... */

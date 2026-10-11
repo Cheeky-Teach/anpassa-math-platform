@@ -429,7 +429,7 @@ const PracticeView = ({
                                 <div className="w-7 h-7 rounded-lg bg-[var(--brand-bg)] flex items-center justify-center text-[var(--brand-text)]"><Zap size={14}/></div>
                                 <h3 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] italic">{cluesLabel}</h3>
                             </div>
-                            <div className="scale-95 origin-top-left w-[105%]">
+                            <div className="scale-95 origin-top-left w-[105%] text-[var(--text-main)]">
                                 <CluePanel revealedClues={revealedClues} question={question} ui={ui} isSolutionRevealed={isSolutionRevealed} lang={lang} />
                             </div>
                         </div>

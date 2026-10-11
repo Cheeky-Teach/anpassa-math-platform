@@ -5,12 +5,15 @@ export const CATEGORIES = {
         color: "pink",
         levels: 11,
         topics: [
-            { id: 'arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
+            // FIXED: 'arithmetic' -> 'basic_arithmetic'
+            { id: 'basic_arithmetic', label: { sv: "De Fyra Räknesätten", en: "Basic Counting" } },
             { id: 'place_value', label: { sv: "Positionssystemet & Avrundning", en: "Place Value & Rounding" } }, 
             { id: 'order_of_operations', label: { sv: "Prioriteringsregler", en: "Order of Operations" } },
-            { id: 'fraction_basics', label: { sv: "Bråk: Grunder", en: "Fractions: Basics" } }, 
+            // FIXED: 'fraction_basics' -> 'fractions_basics'
+            { id: 'fractions_basics', label: { sv: "Bråk: Grunder", en: "Fractions: Basics" } }, 
             { id: 'fraction_arith', label: { sv: "Bråk: Räkna", en: "Fractions: Arithmetic" } }, 
-            { id: 'negative', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
+            // FIXED: 'negative' -> 'negatives'
+            { id: 'negatives', label: { sv: "Negativa Tal", en: "Negative Numbers" } },
             { id: 'ten_powers', label: { sv: "10, 100, 1000", en: "10, 100, 1000" } },
             { id: 'exponents', label: { sv: "Potenser & Rötter", en: "Exponents & Roots" } },
             { id: 'percent', label: { sv: "Procent", en: "Percentage" } }
@@ -23,8 +26,10 @@ export const CATEGORIES = {
         color: "indigo",
         levels: 6,
         topics: [
-            { id: 'simplify', label: { sv: "Uttryck", en: "Expressions" } },
-            { id: 'equation', label: { sv: "Ekvationer", en: "Equations" } },
+            // FIXED: 'simplify' -> 'expressions'
+            { id: 'expressions', label: { sv: "Uttryck", en: "Expressions" } },
+            // FIXED: 'equation' -> 'equations'
+            { id: 'equations', label: { sv: "Ekvationer", en: "Equations" } },
             { id: 'patterns', label: { sv: "Algebraiska mönster", en: "Algebraic patterns" } },
             { id: 'algebraic_geometry', label: { sv: "Geometri med Algebra", en: "Geometry with Algebra" } }
         ]
@@ -54,7 +59,8 @@ export const CATEGORIES = {
         topics: [
              { id: 'probability', label: { sv: "Sannolikhet", en: "Probability" } },
              { id: 'statistics', label: { sv: "Statistik", en: "Statistics" } },
-             { id: 'linear_graph', label: { sv: "Räta Linjen", en: "Linear Graphs" } },
+             // FIXED: 'linear_graph' -> 'graphs'
+             { id: 'graphs', label: { sv: "Räta Linjen", en: "Linear Graphs" } },
              { id: 'change_factor', label: { sv: "Förändringsfaktor", en: "Change Factor" } }
         ]
     }
@@ -161,7 +167,8 @@ export const LEVEL_DESCRIPTIONS = {
         3: { sv: "Beräkna gamla värdet", en: "Find Original Value" },
         4: { sv: "Total förändring", en: "Total Change" }
     },
-    fraction_basics: {
+    // FIXED: fraction_basics -> fractions_basics
+    fractions_basics: {
         1: { sv: "Visuella Bråk", en: "Visual Fractions" },
         2: { sv: "Beräkna delen", en: "Parts of a Quantity" },
         3: { sv: "Blandad & Bråkform", en: "Mixed & Improper" },
@@ -187,7 +194,8 @@ export const LEVEL_DESCRIPTIONS = {
         6: { sv: "Potenslagar (Avancerad)", en: "Exponent Laws (Adv)" },
         7: { sv: "Räkna med grundpotens", en: "Calculate with Scientific Notation" }
     },
-    arithmetic: {
+    // FIXED: arithmetic -> basic_arithmetic
+    basic_arithmetic: {
         1: { sv: "Addition (Uppställning)", en: "Addition (Vertical)" },
         2: { sv: "Subtraktion (Uppställning)", en: "Subtraction (Vertical)" },
         3: { sv: "Decimaltal (+/-)", en: "Decimals (+/-)" },
@@ -200,7 +208,8 @@ export const LEVEL_DESCRIPTIONS = {
         10: { sv: "Blandade Heltal", en: "Mixed Integers" }, 
         11: { sv: "Blandade Decimaltal", en: "Mixed Decimals" } 
     },
-    negative: {
+    // FIXED: negative -> negatives
+    negatives: {
         1: { sv: "Enkel Addition/Subtraktion", en: "Simple Add/Sub" },
         2: { sv: "Svårare Addition/Subtraktion", en: "Harder Add/Sub" },
         3: { sv: "Multiplikation", en: "Multiplication" },
@@ -238,7 +247,8 @@ export const LEVEL_DESCRIPTIONS = {
         5: { sv: "Tabell och Diagram", en: "Tables and Graphs" },
         6: { sv: "Blandade begrepp", en: "Mixed Concepts" }
     },
-    simplify: {
+    // FIXED: simplify -> expressions
+    expressions: {
         1: { sv: "Förenkla Uttryck (Enkel)", en: "Simplify Expressions (Easy)" },
         2: { sv: "Prioriteringsregler med x", en: "Order of Ops with x" },
         3: { sv: "Parenteser (Addition)", en: "Parentheses (Addition)" },
@@ -246,7 +256,8 @@ export const LEVEL_DESCRIPTIONS = {
         5: { sv: "Parenteser (Subtraktion)", en: "Parentheses (Subtraction)" },
         6: { sv: "Blandade Nivåer", en: "Mixed Levels" }
     },
-    equation: {
+    // FIXED: equation -> equations
+    equations: {
         1: { sv: "Enkla steg (x+a=b)", en: "One Step" },
         2: { sv: "Två steg (ax+b=c)", en: "Two Steps" },
         3: { sv: "Med Parenteser", en: "With Parentheses" },
@@ -255,7 +266,8 @@ export const LEVEL_DESCRIPTIONS = {
         6: { sv: "Lös Problem (Ekvation)", en: "Solve Word Problems" },
         7: { sv: "Blandade Ekvationer", en: "Mixed Equations" }
     },
-    linear_graph: {
+    // FIXED: linear_graph -> graphs
+    graphs: {
         1: { sv: "Hitta m-värdet", en: "Find m-value" },
         2: { sv: "Hitta k-värdet (Positiv)", en: "Find k-value (Positive)" },
         3: { sv: "Hitta k-värdet (Negativ)", en: "Find k-value (Negative)" },

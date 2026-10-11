@@ -308,8 +308,8 @@ const Dashboard = ({
 
                     {/* Left Footer Links */}
                     <footer className="mt-auto pt-8 pb-4 flex flex-col gap-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
-                        <button onClick={onLgrOpen} className="flex items-center gap-2 hover:text-[var(--primary-color)] transition-colors"><Book size={14} /> {t.lgr_link}</button>
-                        <button onClick={onAboutOpen} className="flex items-center gap-2 hover:text-[var(--primary-color)] transition-colors"><Info size={14} /> {t.about_link}</button>
+                        <button onClick={onLgrOpen} className="flex items-center gap-2 hover:text-[var(--brand-solid)] transition-colors"><Book size={14} /> {t.lgr_link}</button>
+                        <button onClick={onAboutOpen} className="flex items-center gap-2 hover:text-[var(--brand-solid)] transition-colors"><Info size={14} /> {t.about_link}</button>
                     </footer>
                 </aside>
 
@@ -371,7 +371,7 @@ const Dashboard = ({
 
                         <button 
                             onClick={onContentOpen} 
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-[var(--radius-btn)] bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--primary-color)] hover:text-[var(--primary-color)] font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm group"
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-[var(--radius-btn)] bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-solid)] font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm group"
                         >
                             <Map size={14} className="group-hover:scale-110 transition-transform" /> 
                             {t.content_map}
@@ -390,9 +390,9 @@ const Dashboard = ({
                             {/* --- NEW: CURATED BUCKET VIEW --- */}
                             {userRole === 'student' && activeBucket && activeBucket !== 'FREE_PLAY' ? (
                                 <div className="space-y-6">
-                                    <div className="flex items-center justify-between bg-[var(--bg-card)] p-6 rounded-[var(--radius-card)] border border-[var(--border-main)] shadow-sm">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-card)] p-6 rounded-[var(--radius-card)] border border-[var(--border-main)] shadow-sm">
                                         <div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--brand-text)]">
                                                 {lang === 'sv' ? "Aktiv Grupp" : "Active Group"}
                                             </span>
                                             <h2 className="text-2xl font-black uppercase italic text-[var(--text-main)] tracking-tight">
@@ -401,7 +401,7 @@ const Dashboard = ({
                                         </div>
                                         <button 
                                             onClick={onBackToGateway}
-                                            className="px-4 py-2 bg-[var(--bg-surface)] hover:bg-[var(--border-main)] text-[var(--text-main)] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2 border border-[var(--border-strong)]"
+                                            className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-[var(--border-strong)]"
                                         >
                                             <ChevronLeft size={16}/> {lang === 'sv' ? "Byt Grupp" : "Change Group"}
                                         </button>
@@ -414,6 +414,7 @@ const Dashboard = ({
                                             const catKey = Object.keys(CATEGORIES).find(key => CATEGORIES[key]?.topics?.some(t => t.id === topicId));
                                             const topicData = CATEGORIES[catKey]?.topics?.find(t => t.id === topicId);
                                             const topicName = topicData?.label[lang] || topicId;
+                                            const topicTheme = CATEGORIES[catKey]?.color || 'indigo';
 
                                             // Find the topic in CONTENT_MAP to extract the rich math examples
                                             let contentMapTopic = null;
@@ -426,17 +427,17 @@ const Dashboard = ({
                                             }
 
                                             return (
-                                                <div key={topicId} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                                                <div key={topicId} className={`theme-${topicTheme} bg-[var(--bg-card)] rounded-2xl border border-[var(--border-main)] shadow-sm overflow-hidden flex flex-col`}>
                                                     {/* Topic Header */}
-                                                    <div className="bg-slate-50 px-5 py-3 border-b border-slate-200 flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                                    <div className="bg-[var(--bg-surface)] px-5 py-3 border-b border-[var(--border-main)] flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-[var(--brand-bg)] text-[var(--brand-text)] flex items-center justify-center border border-[var(--brand-border)]">
                                                             <Layers size={16} />
                                                         </div>
-                                                        <h3 className="font-black text-sm text-slate-800 uppercase tracking-widest">{topicName}</h3>
+                                                        <h3 className="font-black text-sm text-[var(--text-main)] uppercase tracking-widest">{topicName}</h3>
                                                     </div>
 
                                                     {/* Condensed Level Rows */}
-                                                    <div className="flex flex-col divide-y divide-slate-100">
+                                                    <div className="flex flex-col divide-y divide-[var(--border-subtle)]">
                                                         {levels.map(lvl => {
                                                             const levelDesc = LEVEL_DESCRIPTIONS[topicId]?.[lvl]?.[lang] || "";
                                                             const isSelected = selectedTopic === topicId && selectedLevel === lvl;
@@ -450,29 +451,29 @@ const Dashboard = ({
                                                                     key={lvl}
                                                                     onClick={() => onSelect(topicId, lvl)}
                                                                     className={`group flex items-stretch cursor-pointer transition-all ${
-                                                                        isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                                                                        isSelected ? 'bg-[var(--brand-bg)]' : 'bg-[var(--bg-card)] hover:bg-[var(--bg-surface-hover)]'
                                                                     }`}
                                                                 >
                                                                     {/* Level Badge */}
-                                                                    <div className={`w-10 shrink-0 flex items-center justify-center font-black text-xs transition-colors ${isSelected ? 'bg-indigo-500 text-white' : 'bg-slate-50 text-slate-400 border-r border-slate-100'}`}>
+                                                                    <div className={`w-10 shrink-0 flex items-center justify-center font-black text-xs transition-colors ${isSelected ? 'bg-[var(--brand-solid)] text-white' : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-r border-[var(--border-subtle)]'}`}>
                                                                         {lvl}
                                                                     </div>
                                                                     
                                                                     {/* Description & Math Example */}
                                                                     <div className="flex-1 p-3 flex flex-col justify-center min-w-0">
-                                                                        <p className={`text-[11px] font-bold leading-tight mb-1 truncate transition-colors ${isSelected ? 'text-indigo-900' : 'text-slate-700'}`}>
+                                                                        <p className={`text-[11px] font-bold leading-tight mb-1 truncate transition-colors ${isSelected ? 'text-[var(--brand-text)]' : 'text-[var(--text-main)]'}`}>
                                                                             {levelDesc}
                                                                         </p>
                                                                         {mathExample && (
-                                                                            <div className="font-serif italic text-[11px] text-slate-500 flex items-center overflow-x-auto no-scrollbar">
+                                                                            <div className="font-serif italic text-[11px] text-[var(--text-muted)] flex items-center overflow-x-auto no-scrollbar">
                                                                                 <MathDisplay content={mathExample} className="inline-block" />
                                                                             </div>
                                                                         )}
                                                                     </div>
                                                                     
                                                                     {/* Selection Radio Circle */}
-                                                                    <div className="w-12 shrink-0 flex items-center justify-center border-l border-slate-100">
-                                                                        <div className={`w-4 h-4 rounded-full border-2 transition-all ${isSelected ? 'border-indigo-500 bg-indigo-500 shadow-sm' : 'border-slate-300 group-hover:border-indigo-400'}`}></div>
+                                                                    <div className="w-12 shrink-0 flex items-center justify-center border-l border-[var(--border-subtle)]">
+                                                                        <div className={`w-4 h-4 rounded-full border-2 transition-all ${isSelected ? 'border-[var(--brand-solid)] bg-[var(--brand-solid)] shadow-sm' : 'border-[var(--border-strong)] group-hover:border-[var(--brand-solid)] group-hover:bg-[var(--bg-surface)]'}`}></div>
                                                                     </div>
                                                                 </div>
                                                             );
@@ -562,7 +563,7 @@ const Dashboard = ({
                     ) : (
                         <div className="animate-in slide-in-from-right-4 duration-500 space-y-4 pb-20">
                             {isLoadingArchive ? (
-                                <div className="flex items-center justify-center p-20"><div className="animate-spin h-10 w-10 border-4 border-[var(--primary-color)] border-t-transparent rounded-full" /></div>
+                                <div className="flex items-center justify-center p-20"><div className="animate-spin h-10 w-10 border-4 border-[var(--brand-solid)] border-t-transparent rounded-full" /></div>
                             ) : archivedSessions.length === 0 ? (
                                 <div className="card p-20 text-center border-2 border-dashed border-[var(--border-strong)]">
                                     <History size={48} className="mx-auto text-[var(--text-muted)] mb-4 opacity-50" />
@@ -616,7 +617,7 @@ const Dashboard = ({
                 {/* --- START PRACTICE FLOATING ACTION BUTTON --- */}
                 {activeTab === 'curriculum' && (
                     <div className={`fixed bottom-8 right-8 flex justify-end pointer-events-none z-30 transition-all duration-500 ${selectedTopic ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-                        <div className="theme-orange">
+                        <div className="theme-emerald">
                             <button onClick={onStart} className="btn-brand px-10 py-5 rounded-[2rem] font-bold text-xl pointer-events-auto flex items-center gap-4 hover:scale-105 active:scale-95 transition-all tracking-tight border-b-[6px] border-[var(--brand-border)] shadow-2xl">
                                 {t.start_btn} <Play fill="currentColor" size={24} />
                             </button>
@@ -625,30 +626,29 @@ const Dashboard = ({
                 )}
 
                 {showUpdateLog && (
-                    /* 🟢 Added fixed positioning, high z-index, centered flex layout, and a dark backdrop blur */
                     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 modal-overlay">
                         <div className="card-flat w-full max-w-2xl max-h-[80vh] animate-in zoom-in-95 p-0 border-[var(--border-main)] flex flex-col overflow-hidden">
                             <div className="card-header-flat bg-[var(--bg-surface)] p-8 shrink-0 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)] border border-[var(--theme-emerald-border)] rounded-2xl shadow-sm"><Newspaper size={24}/></div>
+                                    <div className="p-3 bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)] rounded-2xl shadow-sm"><Newspaper size={24}/></div>
                                     <h2 className="text-2xl font-black uppercase tracking-tight italic text-[var(--text-main)]">Ändringslogg</h2>
                                 </div>
-                                <button onClick={() => setShowUpdateLog(false)} className="btn-ghost"><X /></button>
+                                <button onClick={() => setShowUpdateLog(false)} className="btn-ghost"><X className="text-[var(--text-main)]" /></button>
                             </div>
                             
                             <div className="card-body-flat overflow-y-auto p-8 space-y-10 custom-scrollbar bg-[var(--bg-card)]">
                                 {APP_UPDATES.map((update) => (
                                     <div key={update.id} className="relative pl-8 border-l-2 border-[var(--border-strong)] pb-2">
-                                        <div className="absolute -left-[9px] top-0 w-4 h-4 bg-[var(--bg-card)] border-2 border-[var(--theme-emerald-text)] rounded-full" />
+                                        <div className="absolute -left-[9px] top-0 w-4 h-4 bg-[var(--bg-card)] border-2 border-[var(--brand-text)] rounded-full" />
                                         <div className="flex items-center gap-3 mb-2">
-                                            <span className="text-[10px] font-black text-[var(--theme-emerald-text)] bg-[var(--theme-emerald-bg)] border border-[var(--theme-emerald-border)] px-2 py-1 rounded-md">{update.date}</span>
+                                            <span className="text-[10px] font-black text-[var(--brand-text)] bg-[var(--brand-bg)] border border-[var(--brand-border)] px-2 py-1 rounded-md">{update.date}</span>
                                             <span className="text-[10px] font-black text-[var(--text-muted)]">VERSION {update.version}</span>
                                         </div>
                                         <h3 className="text-lg font-black text-[var(--text-main)] uppercase tracking-tight mb-4">{update.title[lang]}</h3>
                                         <ul className="space-y-3">
                                             {update.changes[lang].map((change, i) => (
                                                 <li key={i} className="flex gap-3 text-sm text-[var(--text-main)] opacity-90 leading-relaxed">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--theme-emerald-text)] mt-2 shrink-0" />
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--brand-text)] mt-2 shrink-0" />
                                                     {change}
                                                 </li>
                                             ))}

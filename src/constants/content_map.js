@@ -106,11 +106,13 @@ export const CONTENT_MAP = Object.entries(SKILL_BUCKETS).map(([categoryId, categ
                     levelMap[lvl] = {
                         lvl: lvl,
                         ex: "", 
-                        highestPriority: -99, // NEW: Track the best preview score
+                        highestPriority: -99,
                         desc: variation.name, 
+                        // 👇 CHANGE THIS LINE 👇
                         student_desc: (LEVEL_DESCRIPTIONS[topicId] && LEVEL_DESCRIPTIONS[topicId][lvl]) 
                             ? LEVEL_DESCRIPTIONS[topicId][lvl] 
-                            : variation.name,
+                            : { sv: variation.name, en: variation.name },
+                        // 👆 ---------------- 👆
                         teacher_desc: variation.desc,
                         prerequisite: lvl > 1 ? { topic: topicId, level: lvl - 1 } : null,
                         variations: [] 
