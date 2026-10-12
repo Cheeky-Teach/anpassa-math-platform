@@ -23,16 +23,16 @@ export default function DetourModal({ isOpen, onAcceptDetour, onAskCoach, lang =
                 </p>
                 
                 <div className="flex flex-col gap-3">
-                    {/* OPTION 1: Use the Coach - Anchored to brand solid for reliable contrast */}
+                    {/* OPTION 1: High-Contrast Inverted Button (Theme Safe) */}
                     <button 
                         onClick={onAskCoach}
-                        className="w-full h-[52px] bg-[var(--brand-solid)] text-white rounded-xl font-black uppercase tracking-widest text-sm hover:opacity-90 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                        className="w-full h-[52px] bg-[var(--text-main)] text-[var(--bg-card)] rounded-xl font-black uppercase tracking-widest text-sm hover:opacity-90 transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                     >
                         <Lightbulb size={18} />
                         {lang === 'sv' ? "Hjälp mig med denna" : "Help me with this"}
                     </button>
 
-                    {/* OPTION 2: Accept the detour */}
+                    {/* OPTION 2: Standard Surface Button */}
                     <button 
                         onClick={onAcceptDetour}
                         className="w-full h-[52px] bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-main)] rounded-xl font-black uppercase tracking-widest text-sm hover:bg-[var(--bg-surface-hover)] transition-all flex items-center justify-center gap-2 cursor-pointer"

@@ -1727,14 +1727,14 @@ export default function QuestionStudio({
                           <div className="flex bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] shadow-inner border border-[var(--border-main)]">
                               <button 
                                   onClick={() => setLiveSettings({ ...liveSettings, order: 'original' })}
-                                  className={`flex-1 py-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all ${liveSettings.order === 'original' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                  className={`flex-1 py-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all ${liveSettings.order === 'original' ? 'bg-[var(--text-main)] text-[var(--bg-card)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                               >
                                   {lang === 'sv' ? "Standard" : "Standard"}
                               </button>
                               <button 
                                   disabled={liveSettings.pacing === 'teacher'}
                                   onClick={() => setLiveSettings({ ...liveSettings, order: 'randomized' })}
-                                  className={`flex-1 py-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-30 ${liveSettings.order === 'randomized' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                  className={`flex-1 py-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-30 ${liveSettings.order === 'randomized' ? 'bg-[var(--text-main)] text-[var(--bg-card)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                               >
                                   {lang === 'sv' ? "Slumpad" : "Randomized"}
                               </button>
@@ -1780,9 +1780,18 @@ export default function QuestionStudio({
                       </div>
                   </div>
 
-                  <button onClick={confirmLaunchLive} className="theme-emerald btn-brand bg-[var(--brand-solid)] text-white w-full mt-6 py-4 rounded-[var(--radius-btn)] shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2">
-                      <Send size={18} /> {lang === 'sv' ? "Starta Session" : "Start Session"}
-                  </button>
+                  <div className="flex flex-col gap-2 mt-6">
+                      <button onClick={confirmLaunchLive} className="w-full py-4 rounded-[var(--radius-btn)] shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 bg-[var(--text-main)] text-[var(--bg-card)] font-black uppercase tracking-widest">
+                          <Send size={18} /> {lang === 'sv' ? "Starta Session" : "Start Session"}
+                      </button>
+                      
+                      <button 
+                          onClick={() => setShowLiveModal(false)} 
+                          className="w-full py-3 rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] transition-all flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] font-black uppercase tracking-widest text-[11px]"
+                      >
+                          {lang === 'sv' ? "Avbryt" : "Cancel"}
+                      </button>
+                  </div>
               </div>
           </div>
       )}
