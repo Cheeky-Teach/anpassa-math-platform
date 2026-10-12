@@ -20,6 +20,8 @@ export function useProgressData(filters) {
                 .limit(2000); // Pulls the latest 2,000 progress events
 
             if (qErr) throw qErr;
+            // 🟢 ADD THIS LOG:
+            console.log("Raw Supabase Telemetry Data:", data);
             setRawLogs(data || []);
         } catch (err) {
             console.error('Failed to fetch progress logs from Supabase:', err.message);

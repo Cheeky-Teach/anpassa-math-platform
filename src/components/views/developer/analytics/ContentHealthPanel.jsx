@@ -4,7 +4,7 @@ import { AlertCircle, CheckCircle2, RefreshCw, Edit3, PenTool, BookOpen } from '
 import { RatioComparisonBar } from './ComparativeCharts';
 
 export default function ContentHealthPanel({ data }) {
-    const { frictionMatrix = [], overrides = [], scratchpadCorrelations, testModeSplit } = data;
+    const { frictionMatrix = [], overrides = [], scratchpadCorrelations, testModeSplit, scratchpadEfficacy } = data;
     const [overrideSearch, setOverrideSearch] = useState('');
 
     const filteredOverrides = overrides.filter(o => 
@@ -22,9 +22,9 @@ export default function ContentHealthPanel({ data }) {
     
     return (
         <div className="space-y-6">
-            {/* Top Diagnostic Badges */}
+            {/* Top Diagnostic Badges - STRICTLY KPI NUMBERS */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div className="bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                <div className="bg-[var(--bg-surface)] p-3 rounded-xl border border-[var(--border-main)] shadow-sm">
                     <span className="block text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">
                         Manual Overrides Recorded
                     </span>
@@ -32,24 +32,17 @@ export default function ContentHealthPanel({ data }) {
                         <Edit3 size={16} /> {overrides.length}
                     </span>
                 </div>
-                <div className="bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+                
+                <div className="bg-[var(--bg-surface)] p-3 rounded-xl border border-[var(--border-main)] shadow-sm">
                     <span className="block text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">
-                        Scratchpad Accuracy Boost
+                        Scratchpad Delta
                     </span>
                     <span className="text-xl font-black text-indigo-500 flex items-center gap-1.5">
                         <PenTool size={16} /> {withScratchAcc}% vs {withoutScratchAcc}%
                     </span>
-                    {/* Efficacy Correlation Chart */}
-                    <RatioComparisonBar 
-                        title="Korrekt Svar: Kladdpapper Korrelation"
-                        description="Jämför träffsäkerhet när kladdpappret är öppet vs stängt på Nivå 3+"
-                        labelA="Utan kladdpapper"
-                        valueA={42} // We'll hook this to real data next!
-                        labelB="Med kladdpapper"
-                        valueB={78} 
-                    />
                 </div>
-                <div className="bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+
+                <div className="bg-[var(--bg-surface)] p-3 rounded-xl border border-[var(--border-main)] shadow-sm">
                     <span className="block text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">
                         Exam Mode Accuracy
                     </span>
@@ -58,7 +51,8 @@ export default function ContentHealthPanel({ data }) {
                         {testModeSplit.exam.total > 0 ? Math.round((testModeSplit.exam.correct / testModeSplit.exam.total) * 100) : 0}%
                     </span>
                 </div>
-                <div className="bg-[var(--bg-surface)] p-1 rounded-xl border border-[var(--border-main)]">
+
+                <div className="bg-[var(--bg-surface)] p-3 rounded-xl border border-[var(--border-main)] shadow-sm">
                     <span className="block text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">
                         Practice Mode Accuracy
                     </span>
@@ -69,28 +63,48 @@ export default function ContentHealthPanel({ data }) {
                 </div>
             </div>
 
+            {/* Visual Insights Tier - CHARTS ONLY */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <RatioComparisonBar 
+                    title="Korrekt Svar: Kladdpapper Korrelation"
+                    description="Jämför träffsäkerhet när kladdpappret är öppet vs stängt (Endast Nivå 3+)."
+                    labelA="Utan kladdpapper"
+                    valueA={scratchpadEfficacy?.without || 0}
+                    labelB="Med kladdpapper"
+                    valueB={scratchpadEfficacy?.with || 0} 
+                />
+                
+                {/* Placeholder for future secondary chart (e.g., Time-to-Answer correlation) */}
+                <div className="bg-[var(--bg-surface)] p-6 rounded-[2rem] border border-[var(--border-main)] border-dashed flex flex-col items-center justify-center text-center opacity-50">
+                    <AlertCircle size={24} className="text-[var(--text-muted)] mb-2" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Future Visualization Space</span>
+                </div>
+            </div>
+
             {/* Friction Matrix Table */}
-            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl overflow-hidden">
-                <div className="p-1 bg-[var(--bg-surface)] border-b border-[var(--border-main)]">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl overflow-hidden shadow-sm">
+                <div className="p-3 bg-[var(--bg-surface)] border-b border-[var(--border-main)]">
                     <h4 className="font-black text-xs uppercase tracking-widest text-[var(--text-main)]">
                         Topic Difficulty & Re-Roll Hotspots
                     </h4>
                 </div>
                 <div className="overflow-x-auto max-h-[360px] custom-scrollbar">
                     <table className="w-full text-left border-collapse text-xs">
-                        <thead className="sticky top-0 bg-[var(--bg-surface)] border-b border-[var(--border-main)] text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                        <thead className="sticky top-0 bg-[var(--bg-surface)] border-b border-[var(--border-main)] text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] z-10">
                             <tr>
                                 <th className="p-3">Topic</th>
                                 <th className="p-3 text-center">Level</th>
                                 <th className="p-3 text-right">Attempts</th>
                                 <th className="p-3 text-right">Accuracy</th>
-                                <th className="p-3 text-right">Re-Rolls Triggered</th>
+                                <th className="p-3 text-right">Avg Time</th>
+                                <th className="p-3 text-right">Avg Clues</th>
+                                <th className="p-3 text-right">Re-Rolls</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--border-subtle)]">
                             {frictionMatrix.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="p-6 text-center text-[var(--text-muted)] italic">No questions submitted yet.</td>
+                                    <td colSpan={7} className="p-6 text-center text-[var(--text-muted)] italic">No questions submitted yet.</td>
                                 </tr>
                             ) : (
                                 frictionMatrix.map((row, i) => (
@@ -103,6 +117,8 @@ export default function ContentHealthPanel({ data }) {
                                                 {row.accuracy}%
                                             </span>
                                         </td>
+                                        <td className="p-3 text-right font-mono text-slate-500">{row.avgTime}s</td>
+                                        <td className="p-3 text-right font-mono text-indigo-500">{row.avgClues}</td>
                                         <td className="p-3 text-right font-mono text-amber-500 font-bold">{row.reRolls}</td>
                                     </tr>
                                 ))
@@ -113,20 +129,20 @@ export default function ContentHealthPanel({ data }) {
             </div>
 
             {/* Auto-Grader Override Hitlist */}
-            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl overflow-hidden">
-                <div className="p-1 bg-[var(--bg-surface)] border-b border-[var(--border-main)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-xl overflow-hidden shadow-sm">
+                <div className="p-3 bg-[var(--bg-surface)] border-b border-[var(--border-main)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <h4 className="font-black text-xs uppercase tracking-widest text-[var(--text-main)] flex items-center gap-1.5">
                             <AlertCircle size={14} className="text-rose-500" /> Auto-Grader Override Log
                         </h4>
-                        <p className="text-[10px] text-[var(--text-muted)]">Inspect student answers teachers manually marked correct/incorrect.</p>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Inspect student answers teachers manually marked correct/incorrect.</p>
                     </div>
                     <input 
                         type="text" 
                         placeholder="Search student input or topic..." 
                         value={overrideSearch} 
                         onChange={e => setOverrideSearch(e.target.value)}
-                        className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg px-2.5 py-1 text-xs outline-none w-full sm:w-56"
+                        className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg px-2.5 py-1.5 text-xs outline-none w-full sm:w-56 focus:border-[var(--brand-solid)] transition-colors"
                     />
                 </div>
                 <div className="overflow-x-auto max-h-[300px] custom-scrollbar">
