@@ -163,7 +163,7 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
             </header>
 
             {/* SIDEBAR LAYOUT */}
-            <main className="flex-1 w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-6 p-4 sm:p-8 relative z-10">
+            <main className={`flex-1 w-full ${activeTab === 'developer' ? 'px-4 sm:px-6' : 'max-w-6xl mx-auto px-4 sm:px-8'} flex flex-col md:flex-row gap-6 py-6 relative z-10`}>
                 
                 <aside className="w-full md:w-64 shrink-0 flex flex-col gap-2">
                     {navItems.map(item => (

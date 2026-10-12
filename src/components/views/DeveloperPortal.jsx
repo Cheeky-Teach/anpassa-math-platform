@@ -9,7 +9,7 @@ export default function DeveloperPortal({ lang }) {
     const [devTab, setDevTab] = useState('stress_tester');
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-300">
+        <div className="w-full px-4 sm:px-6 lg:px-8 space-y-6 animate-in fade-in duration-300">
             {/* Dev Portal Header */}
             <div className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -41,16 +41,15 @@ export default function DeveloperPortal({ lang }) {
             </div>
 
             {/* Dev Portal Content Area */}
-            <div className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] p-6 shadow-sm min-h-[500px]">
+            <div className="w-full bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] p-6 shadow-sm min-h-[500px]">
                 
                 {devTab === 'stress_tester' && <StressTesterTab lang={lang} />}
                 {devTab === 'translations' && <TranslationMatrixTab />}
-                {/* 🟢 ADD TAB RENDERER */}
                 {devTab === 'sessions' && <LiveSessionsTab />}
                 {devTab === 'analytics' && <AnalyticsTab />}
                 
                 {/* Fallback for unbuilt tabs */}
-                {devTab !== 'stress_tester' && devTab !== 'translations' && devTab !== 'sessions' && (
+                {devTab !== 'stress_tester' && devTab !== 'translations' && devTab !== 'sessions' && devTab !== 'analytics' && (
                     <div className="flex flex-col items-center justify-center h-[400px] text-[var(--text-muted)] opacity-50">
                         <Terminal size={48} className="mb-4" />
                         <p className="text-sm font-black uppercase tracking-widest">Module under construction</p>
