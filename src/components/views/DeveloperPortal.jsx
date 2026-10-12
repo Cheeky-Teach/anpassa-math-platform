@@ -1,12 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Terminal, Activity, Languages, MonitorPlay, Bug } from 'lucide-react';
 import StressTesterTab from './developer/StressTesterTab';
 import TranslationMatrixTab from './developer/TranslationMatrixTab';
 import LiveSessionsTab from './developer/LiveSessionsTab';
 import AnalyticsTab from './developer/AnalyticsTab';
 
-export default function DeveloperPortal({ lang }) {
-    const [devTab, setDevTab] = useState('stress_tester');
+export default function DeveloperPortal({ lang, profile }) {
+    // 1. HARD SECURITY GATE
+    if (profile?.role !== 'super_admin') {
+        return <div className="p-8 text-center text-rose-500 font-bold">Unauthorized Access</div>;
+    }
+
+    // 2. PERSISTENT STATE
+    const [devTab, setDevTab] = useState(() => {
+        return sessionStorage.getItem('devPortal_activeTab') || 'stress_tester';
+    });
+
+    useEffect(() => {
+        sessionStorage.setItem('devPortal_activeTab', devTab);
+    }, [devTab]);
 
     return (
         <div className="w-full px-4 sm:px-6 lg:px-8 space-y-6 animate-in fade-in duration-300">

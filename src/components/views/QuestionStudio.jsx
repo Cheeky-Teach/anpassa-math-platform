@@ -11,8 +11,9 @@ import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer.jsx';
 import { supabase } from '../../lib/supabaseClient'; 
 import PresentationView from '../views/PresentationView.jsx';
+import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 
-//  CRITICAL: Imports Universal Theme and Preferences Toggle
+// CRITICAL: Imports Universal Theme and Preferences Toggle
 import '../../styles/theme.css'; 
 import PreferencesToggle from '../ui/PreferencesToggle';
 
@@ -138,7 +139,7 @@ export default function QuestionStudio({
       hide_extra: "Dölj Begrepp & Flerval", type_calc: "Räkna", type_concept: "Begrepp", type_logic: "Felsök", type_visual: "Bild", type_text: "Text",
       present: "Presentera",
       new_donow: "Nytt Do Now", new_worksheet: "Nytt Arbetsblad",
-      new_board: "Ny Presentation", board_title: "Presentation", 
+      new_board: "Nytt Board", board_title: "Presentation", 
       trash: "Papperskorg", new_folder: "Ny Mapp", folder: "Mapp",
       filter_all: "Alla", create_folder_title: "Skapa ny mapp",
       folder_name_placeholder: "Mappnamn...", cancel: "Avbryt", create: "Skapa",
@@ -309,7 +310,6 @@ export default function QuestionStudio({
     return 'default';
   };
 
-  //  FIXED: Converted internal map to use Native Universal Variables safely
   const getCategoryStyles = (type) => {
     const styles = {
         visual: { border: 'border-[var(--theme-indigo-border)]', bg: 'bg-[var(--theme-indigo-bg)]', text: 'text-[var(--theme-indigo-text)]', icon: <ImageIcon size={10} />, label: t.type_visual },
@@ -372,7 +372,6 @@ export default function QuestionStudio({
                 title: localTitle,
                 type: 'board', 
                 user_id: user.id,
-                // 🟢 FIX: Changed 'textSize' to 'globalZoom' to match our new zoom logic!
                 packet: { slides, livePacket, settings: { bgType, viewMode, globalZoom } }
             };
 
@@ -455,13 +454,11 @@ export default function QuestionStudio({
   };
 
   const loadSheet = (sheet) => {
-      // Intercept Presentation Boards and route them safely to the standalone viewer!
       if (sheet.type === 'board') {
           loadBoard(sheet);
           return;
       }
       
-      // 🟢 FIX: If we are loading a Worksheet/DoNow, explicitly clear any lingering Board state!
       setActiveBoardSheet(null); 
 
       setPacket(sheet.packet); setSheetTitle(sheet.title); setSetupMode(sheet.type); setActiveSheetId(sheet.id); 
@@ -476,14 +473,31 @@ export default function QuestionStudio({
       else setWorkspaceHeight(0);
   };
 
+  // Progress sync WIRED
   const handleLaunchGrid = () => { 
       if (!isSaved && !window.confirm(t.unsaved_warning)) return; 
+      
+      syncBatchProgress('donow_generated', packet, { 
+          app_mode: 'test_lab',
+          include_answer_key: includeAnswerKey 
+      });
+
       const gridPacket = packet.map(item => ({ ...item, _globalLatexSize: globalLatexSize }));
       onDoNowGenerate({ title: sheetTitle, globalLatexSize, includeAnswerKey, answerKeyStyle }, gridPacket); 
   };
 
+  // Wired via progressSync
   const handleLaunchPrint = () => { 
       if (!isSaved && !window.confirm(t.unsaved_warning)) return; 
+      
+      syncBatchProgress('worksheet_printed', packet, { 
+          app_mode: 'test_lab',
+          include_answer_key: includeAnswerKey,
+          answer_style: answerKeyStyle,
+          layout_style: layoutStyle,
+          workspace_height: workspaceHeight
+      });
+
       const printPacket = packet.map(item => ({
           ...item, _globalLatexSize: globalLatexSize, _workspaceHeight: workspaceHeight, _workspaceStyle: workspaceStyle, _layoutStyle: layoutStyle
       }));
@@ -495,8 +509,17 @@ export default function QuestionStudio({
     setShowLiveModal(true);
   };
 
+  // progressSync
   const confirmLaunchLive = async () => {
     setShowLiveModal(false);
+    
+    syncBatchProgress('live_session_started', packet, {
+        app_mode: 'teacher_live',
+        pacing: liveSettings.pacing,
+        order: liveSettings.order,
+        scratchpad: enableScratchpad
+    });
+
     const { data: { user } } = await supabase.auth.getUser();
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     try {
@@ -690,7 +713,6 @@ export default function QuestionStudio({
                         </div>
 
                         <div className="flex items-center gap-3">
-                            {/*  DROP-IN UNIVERSAL TOGGLE */}
                             <PreferencesToggle />
                             
                             {libraryTab === 'private' && !isTrashView && (
@@ -814,7 +836,6 @@ export default function QuestionStudio({
                                                             <div className="flex justify-end gap-1 items-center opacity-40 group-hover:opacity-100 transition-opacity">
                                                                 <button onClick={() => setPeekSheet(sheet)} title={t.peek_title} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)]"><Maximize2 size={14}/></button>
                                                                 
-                                                                {/*   Dynamically applies the color of the document type and gives it the solid hover effect */}
                                                                 <button 
                                                                     onClick={() => loadSheet(sheet)} 
                                                                     className={`${style.theme} bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white px-3 py-1 text-[10px] ml-2 rounded-[var(--radius-btn)] transition-all font-black uppercase tracking-widest shadow-sm`}
@@ -867,11 +888,11 @@ export default function QuestionStudio({
                                                     ) : libraryTab === 'private' ? (
                                                         <>
                                                             <button 
-                                                                    onClick={() => loadSheet(sheet)} 
-                                                                    className={`${style.theme} bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white px-3 py-1 text-[10px] ml-2 rounded-[var(--radius-btn)] transition-all font-black uppercase tracking-widest shadow-sm`}
-                                                                >
-                                                                    {t.load_btn}
-                                                                </button>
+                                                                onClick={() => loadSheet(sheet)} 
+                                                                className={`${style.theme} bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white px-3 py-1 text-[10px] ml-2 rounded-[var(--radius-btn)] transition-all font-black uppercase tracking-widest shadow-sm`}
+                                                            >
+                                                                {t.load_btn}
+                                                            </button>
                                                             <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] ml-1"><PanelLeftClose size={14}/></button>
                                                             <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-[var(--radius-btn)] ml-1"><Trash2 size={14}/></button>
                                                         </>
@@ -916,7 +937,6 @@ export default function QuestionStudio({
 
                 {showMoveModal && (
                     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-                        {/*   Expanded to max-w-lg and bumped padding to p-8 */}
                         <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-8 w-full max-w-lg animate-in zoom-in-95 duration-200">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-black text-[var(--text-main)]">{t.move_file}</h3>
@@ -924,7 +944,6 @@ export default function QuestionStudio({
                             </div>
                             <p className="text-base font-bold text-[var(--text-muted)] mb-4 truncate">"{showMoveModal.title}"</p>
                             
-                            {/*   Expanded height to 50% of the viewport (max-h-[50vh]) */}
                             <div className="space-y-2 max-h-[50vh] overflow-y-auto custom-scrollbar mb-2 border border-[var(--border-main)] rounded-[var(--radius-card)] p-3 bg-[var(--bg-surface)]">
                                 <button 
                                     onClick={() => handleMoveSheet(showMoveModal.id, null)}
@@ -971,7 +990,6 @@ export default function QuestionStudio({
                                 ))}
                             </div>
                             
-                            {/*   FIXED: Removed the accidental duplicate wrapper div here! */}
                             <div className="p-6 border-t border-[var(--border-main)] bg-[var(--bg-card)] flex gap-3">
                                 {isTrashView ? (
                                     <>
@@ -1028,11 +1046,10 @@ export default function QuestionStudio({
     }
 
   // =========================================================================
-  //   ACTIVE EDITOR (STUDIO MODE)
+  //  ACTIVE EDITOR (STUDIO MODE)
   // =========================================================================
   return (
     <div className="layout-wrapper flex flex-col h-full font-sans overflow-hidden relative">
-        {/*   Reduced padding from py-2 to py-1 */}
         <header className={`relative flex items-center justify-between px-6 py-1 border-b shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
             <div className="flex items-center gap-3 flex-1 max-w-[40%]">
                 <button 
@@ -1077,7 +1094,6 @@ export default function QuestionStudio({
 
             <div className="flex items-center gap-2 pl-4 max-w-[45%] justify-end">
                 
-                {/*   UNIVERSAL TOGGLE */}
                 <PreferencesToggle />
 
                 <button 
@@ -1424,7 +1440,6 @@ export default function QuestionStudio({
                                             </div>
                                         )}
                                         
-                                        {/*  ADDED .whiteboard-protect DIRECTLY TO THE DO NOW CARDS TOO! */}
                                         <div 
                                             draggable 
                                             onDragStart={(e) => handleDragStartUnified(e, idx)} 
@@ -1665,7 +1680,7 @@ export default function QuestionStudio({
         </div>
       </div>
       
-      {/*   MODALS GO HERE AT THE VERY ROOT TO OVERLAY EVERYTHING */}
+      {/* MODALS GO HERE AT THE VERY ROOT TO OVERLAY EVERYTHING */}
       {showLiveModal && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
               <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-8 w-full max-w-md animate-in zoom-in-95 duration-200">
@@ -1725,7 +1740,6 @@ export default function QuestionStudio({
                               </button>
                           </div>
                           
-                          {/*   NEW: Explanatory notes for the order modes */}
                           <div className="mt-2.5 px-3 border-l-2 border-[var(--border-strong)]">
                               <p className="text-[9.5px] font-bold text-[var(--text-muted)] leading-relaxed">
                                   {liveSettings.order === 'original' 
@@ -1778,9 +1792,7 @@ export default function QuestionStudio({
           <PresentationView 
               packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : packet}
               initialSlides={activeBoardSheet?.packet?.slides}
-              // Pass the saved settings down so it remembers zoom and backgrounds!
               initialSettings={activeBoardSheet?.packet?.settings}
-              // Only pass the activeSheetId if the loaded sheet's TYPE is 'board'
               boardId={activeBoardSheet?.id || (peekSheet?.type === 'board' || savedSheets.find(s => s.id === activeSheetId)?.type === 'board' ? activeSheetId : null)}
               
               sheetTitle={activeBoardSheet?.title || sheetTitle} 

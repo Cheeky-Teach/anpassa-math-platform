@@ -12,6 +12,8 @@ import { UI_TEXT } from '../../constants/localization';
 import VisualRenderer from '../visuals/VisualRenderer';
 import LandscapeReport from '../reports/LandscapeReport';
 import PreferencesToggle from '../ui/PreferencesToggle';
+import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
+
 
 // Import the shared renderer
 import SlideRenderer from '../shared/SlideRenderer';
@@ -74,6 +76,12 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     // Sync slide changes to the database
     const handleSlideChange = async (newIdx) => {
         setActiveSlideIndex(newIdx);
+        
+        syncProgress('live_slide_changed', {
+            app_mode: 'teacher_live',
+            target_slide_index: newIdx
+        });
+
         try {
             await supabase.from('rooms').update({ current_slide_index: newIdx }).eq('id', session.id);
         } catch (err) {
@@ -105,6 +113,10 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
 
         setIsRegenerating(true);
         try {
+
+            syncBatchProgress('live_question_regenerated', activeItems.map(obj => obj.item), {
+                app_mode: 'teacher_live'
+            });
             // 3. Fetch new variations concurrently
             const updatedItems = await Promise.all(activeItems.map(async ({ item }) => {
                 if (item.answerType === 'free_text' || (!item.topicId && !item.variationKey)) {
@@ -202,6 +214,8 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const handleKickStudent = (alias) => {
         const confirmMsg = lang === 'sv' ? `Vill du verkligen ta bort ${alias} från sessionen? All data raderas.` : `Are you sure you want to kick ${alias}? All data for this student will be deleted.`;
         if (window.confirm(confirmMsg)) {
+            syncProgress('live_student_kicked', { app_mode: 'teacher_live' });
+            
             onKick(alias);
             setResponses(prev => prev.filter(r => r.student_alias !== alias));
         }
@@ -210,6 +224,19 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const handleManualOverride = async (responseId, currentIsCorrect) => {
         const newStatus = !currentIsCorrect;
         const previousResponses = [...responses];
+        
+        // Find the specific response and its corresponding question data
+        const targetResponse = responses.find(r => r.id === responseId);
+        const targetQuestion = targetResponse ? livePacket[targetResponse.question_index] : null;
+        
+        syncProgress('live_manual_correction', {
+            app_mode: 'teacher_live',
+            changed_to_correct: newStatus,
+            topic: targetQuestion?.topicId || 'unknown',
+            level: targetQuestion?.resolvedData?.level || targetQuestion?.metadata?.difficulty || 1,
+            answer_type: targetQuestion?.answerType || 'unknown',
+            student_answer: targetResponse?.answer || ''
+        });
         
         setResponses(prevResponses => prevResponses.map(res => res.id === responseId ? { ...res, is_correct: newStatus, is_manually_corrected: true } : res));
 
@@ -288,6 +315,17 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const handleEndSession = async () => {
         if (isClosing) return;
         setIsClosing(true);
+        
+        const totalStudents = [...new Set(responses.map(r => r.student_alias))].length;
+        const totalAnswers = responses.length;
+        const totalCorrect = responses.filter(r => r.is_correct).length;
+        
+        syncBatchProgress('live_session_ended', livePacket, {
+            app_mode: 'teacher_live',
+            total_students_joined: totalStudents,
+            final_class_accuracy: totalAnswers > 0 ? parseFloat((totalCorrect / totalAnswers).toFixed(2)) : 0
+        });
+
         try { 
             const { error } = await supabase.from('rooms').update({ status: 'closed' }).eq('id', session.id);
             if (error) throw error;

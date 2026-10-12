@@ -8,6 +8,8 @@ import VisualRenderer from '../visuals/VisualRenderer';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 import PreferencesToggle from '../ui/PreferencesToggle';
+import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
+
 
 // Import the shared Presentation slide renderer!
 import SlideRenderer from '../shared/SlideRenderer';
@@ -28,7 +30,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     const [currentIndex, setCurrentIndex] = useState(0); 
     const [activeSlideIndex, setActiveSlideIndex] = useState(session?.current_slide_index || 0); 
 
-    // 🟢 NEW: Smart Accordion State
+    //  NEW: Smart Accordion State
     const [activeTaskId, setActiveTaskId] = useState(null);
 
     const [answers, setAnswers] = useState({});
@@ -86,6 +88,14 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     setScratchpad(restoredScratchpad);
                     setAnswers(restoredAnswers);
                     setCompleted(restoredCompleted);
+
+                    //  SYNC WIRED
+                    if (Object.keys(restoredCompleted).length > 0) {
+                        syncProgress('student_session_rehydrated', {
+                            app_mode: 'student_live',
+                            restored_answer_count: Object.keys(restoredCompleted).length
+                        });
+                    }
 
                     if (!isPresentationMode) {
                         const answeredCount = Object.keys(restoredCompleted).length;
@@ -155,7 +165,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         slideDidUpdate = true;
                     }
 
-                    // 🟢 HOT-RELOAD: Check for regenerated questions in the packet
+                    //  HOT-RELOAD: Check for regenerated questions in the packet
                     if (newData.active_question_data?.packet) {
                         const incomingPacket = newData.active_question_data.packet;
                         let hasChanges = false;
@@ -275,7 +285,19 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             
             const currentSteps = (scratchpad[targetIdx] || []).filter(s => s.trim().length > 0);
 
-            // 🟢 Send regenVersion to server to protect against late submissions overwriting new questions
+            //  SYNC WIRED: Track deep submission metrics
+            syncProgress('student_answer_submitted', {
+                app_mode: 'student_live',
+                topic: currentItem.topicId || 'unknown',
+                level: currentItem.resolvedData?.level || currentItem.metadata?.difficulty || 1,
+                answer_type: currentItem.answerType || 'unknown',
+                is_correct: isCorrect,
+                used_scratchpad: currentSteps.length > 0,
+                scratchpad_lines: currentSteps.length,
+                student_answer: String(val).substring(0, 100) // Truncate to prevent payload bloat
+            });
+
+            //  Send regenVersion to server to protect against late submissions overwriting new questions
             const { error } = await supabase.from('responses').insert([{
                 room_id: session.id,
                 student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
@@ -290,7 +312,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             
             setCompleted(prev => ({ ...prev, [targetIdx]: isCorrect ? 'correct' : 'wrong' }));
             
-            // 🟢 SMART ACCORDION AUTO-ADVANCE
+            //  SMART ACCORDION AUTO-ADVANCE
             if (isPresentationMode) {
                 const currentSlideIds = slides[activeSlideIndex]?.activeIds || [];
                 const currentTaskPos = currentSlideIds.indexOf(currentItem.id);
@@ -507,7 +529,13 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     <h2 className="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2 italic">{lang === 'sv' ? "Aktivitet klar" : "Activity done"}</h2>
                     <p className="text-slate-500 font-medium leading-relaxed mb-10">{lang === 'sv' ? "Alla svar skickades in." : "All answers have been submitted."}</p>
                     
-                    <button onClick={() => setShowFinalReview(true)} className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-[0.15em] hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-xl">
+                    <button 
+                        onClick={() => {
+                            syncProgress('student_reviewed_results', { app_mode: 'student_live' });
+                            setShowFinalReview(true);
+                        }} 
+                        className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-[0.15em] hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-xl"
+                    >
                         <LayoutGrid size={20} /> {lang === 'sv' ? "Granska resultat" : "Preview results"}
                     </button>
                 </div>
@@ -530,7 +558,11 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
     const handleExitRequest = () => {
         const msg = lang === 'sv' ? "Är du säker på att du vill lämna sessionen? Du kan inte fortsätta där du var sist om du lämnar nu." : "Are you sure you want to leave the session? You cannot continue where you left off if you leave before finishing.";
-        if (window.confirm(msg)) onBack();
+        if (window.confirm(msg)) {
+            //  SYNC WIRED
+            syncProgress('student_abandoned_session', { app_mode: 'student_live' });
+            onBack();
+        }
     };
 
     return (
@@ -566,7 +598,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 )}
             </header>
 
-            {/* 🟢 PRESENTATION MODE LAYOUT */}
+            {/*  PRESENTATION MODE LAYOUT */}
             {isPresentationMode ? (
                 <main className="flex-1 w-full h-full flex flex-col lg:flex-row relative bg-[var(--bg-canvas)] overflow-hidden">
                     
@@ -584,7 +616,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         </div>
                     </div>
 
-                    {/* 🟢 THE SMART ACCORDION DOCK */}
+                    {/*  THE SMART ACCORDION DOCK */}
                     <div className="w-full lg:w-[450px] bg-[var(--bg-card)] border-l border-[var(--border-main)] shadow-2xl flex flex-col z-20 h-auto lg:h-full shrink-0">
                         <div className="px-6 py-4 border-b border-[var(--border-main)] bg-[var(--bg-surface)] flex items-center gap-2">
                             <ListChecks size={16} className="text-indigo-500" />
@@ -668,7 +700,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 </main>
 
             ) : (
-                /* 🟢 STANDARD WORKSHEET LAYOUT */
+                /*  STANDARD WORKSHEET LAYOUT */
                 <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 overflow-hidden flex flex-col">
                     <div className={`flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-y-auto lg:overflow-hidden transition-all duration-300 ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
                         

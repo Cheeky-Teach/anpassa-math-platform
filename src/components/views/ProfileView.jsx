@@ -332,7 +332,7 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
 
                     {/* TAB 3: DEVELOPER PORTAL */}
                     {activeTab === 'developer' && profile?.role === 'super_admin' && (
-                        <DeveloperPortal lang={lang} />
+                        <DeveloperPortal lang={lang} profile={profile} />
                     )}
 
                 </div>

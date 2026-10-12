@@ -16,9 +16,11 @@ import MathText from '../ui/MathText';
 import VisualRenderer from '../visuals/VisualRenderer';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 
+import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
+
 import MathDisplay from '../shared/MathDisplay';
 
-// 🟢 CRITICAL: Import Universal Theme
+//  CRITICAL: Import Universal Theme
 import '../../styles/theme.css'; 
 
 
@@ -63,7 +65,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     // --- STATE ---
     const [internalMode, setInternalMode] = useState('LOADING'); 
     const [selection, setSelection] = useState({});
-    const [meta, setMeta] = useState({ mode: 'practice', limit: 0, globalMaxLevel: 9 });
+    const [meta, setMeta] = useState({ mode: 'practice', limit: 20, globalMaxLevel: 9 });
     const [packet, setPacket] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [responses, setResponses] = useState({}); 
@@ -120,6 +122,17 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     };
 
     const startNewSession = () => {
+        //  SYNC WIRED: Track session configurations
+        syncProgress('test_session_started', {
+            app_mode: 'test_lab',
+            test_mode: meta.mode,
+            limit: meta.limit === 0 ? 'infinite' : meta.limit,
+            use_word_problems: useWordProblems,
+            allow_coach: allowCoach,
+            selected_preset: meta.bundleId || 'custom',
+            enabled_topic_count: Object.keys(selection).filter(id => selection[id]?.enabled).length
+        });
+
         setResponses({});
         setVisibleClues({});
         setCurrentIndex(0);
@@ -129,6 +142,18 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         setTimeout(() => { setInternalMode('ACTIVE'); }, 50);
     };
 
+    //  SYNC WIRED: Intercept the back button to track abandonment
+    const handleQuit = () => {
+        if (internalMode === 'ACTIVE' && packet.length > 0) {
+            syncProgress('test_session_abandoned', {
+                app_mode: 'test_lab',
+                questions_answered: currentIndex,
+                test_mode: meta.mode
+            });
+        }
+        onBack();
+    };
+
     const fetchNextSprint = async () => {
         if (Number(meta.limit) > 0 && packet.length >= Number(meta.limit)) return;
         setIsGenerating(true);
@@ -136,7 +161,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             // Safely use ?.enabled in case the selection object is malformed
             const enabledTopics = Object.keys(selection).filter(id => selection[id]?.enabled);
             
-            // 🟢 CRITICAL FIX: Prevent crash if the link contains outdated/invalid topics
+            //  CRITICAL FIX: Prevent crash if the link contains outdated/invalid topics
             if (enabledTopics.length === 0) {
                 alert(lang === 'sv' ? "Denna testlänk är föråldrad eller ogiltig. Vänligen skapa ett nytt test." : "This test link is outdated or invalid. Please create a new test.");
                 setInternalMode('SETUP');
@@ -183,16 +208,39 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             });
             const result = await res.json();
             
+            // 🟢 SYNC WIRED: Track question accuracy & text inputs
+            syncProgress('test_question_answered', {
+                app_mode: 'test_lab',
+                topic: currentQ.topicId || currentQ.topic || 'unknown',
+                level: currentQ.level || currentQ.resolvedData?.level || 1,
+                answer_type: currentQ.answerType || currentQ.resolvedData?.renderData?.answerType || 'unknown',
+                is_correct: result.correct,
+                student_answer: String(val).substring(0, 100),
+                test_mode: meta.mode
+            });
+
             setResponses(prev => ({
                 ...prev,
-                [currentIndex]: { answer: val, isCorrect: result.correct, topic_id: currentQ.topic_id }
+                [currentIndex]: { answer: val, isCorrect: result.correct, topic_id: currentQ.topic_id || currentQ.topicId }
             }));
 
             const advance = () => {
                 const nextIndex = currentIndex + 1;
                 const limit = Number(meta.limit);
 
-                if (limit > 0 && nextIndex === limit) { setInternalMode('SUMMARY'); return; }
+                if (limit > 0 && nextIndex === limit) { 
+                    // 🟢 SYNC WIRED: Track final completion
+                    const finalCorrect = Object.values(responses).filter(r => r.isCorrect).length + (result.correct ? 1 : 0);
+                    syncProgress('test_session_completed', {
+                        app_mode: 'test_lab',
+                        total_questions: limit,
+                        final_accuracy: parseFloat((finalCorrect / limit).toFixed(2)),
+                        test_mode: meta.mode
+                    });
+                    
+                    setInternalMode('SUMMARY'); 
+                    return; 
+                }
                 const halfwayPoint = limit > 0 ? Math.floor(limit / 2) : 15;
                 const shouldPause = limit > 0 ? nextIndex === halfwayPoint : nextIndex % 15 === 0;
 
@@ -234,7 +282,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         const choiceLabel = typeof opt === 'object' ? opt.label : opt;
                         const choiceValue = typeof opt === 'object' ? opt.value : opt;
                         return (
-                            // 🟢 Swapped to the Universal .btn-3d format
+                            //  Swapped to the Universal .btn-3d format
                             <button key={i} onClick={() => handleLabSubmit(choiceValue)} className="btn-3d w-full flex items-center gap-3">
                                 <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shadow-inner shrink-0 bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-main)]">
                                     {String.fromCharCode(65 + i)}
@@ -316,7 +364,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         const totalSelectedCount = Object.keys(selection).filter(k => selection[k].enabled).length;
 
         return (
-            // 🟢 WRAPPED IN THE DYNAMIC THEME CLASS
+            //  WRAPPED IN THE DYNAMIC THEME CLASS
             <div className={`theme-${themeColor} layout-wrapper font-sans relative z-10 animate-in fade-in`}>
                 <div className="layout-twocol">
                     
@@ -439,23 +487,31 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                 </span>
                             </button>
 
-                            {/* Question Limit Input */}
+                            {/* Question Limit Toggle */}
                             <div className="flex items-center justify-between bg-[var(--bg-surface)] border-2 border-[var(--border-strong)] rounded-[var(--radius-btn)] px-3 py-2 shadow-sm">
                                 <div className="flex items-center gap-2">
                                     <ListChecks size={16} className="text-[var(--text-muted)]"/>
                                     <span className="text-xs font-black uppercase tracking-wider text-[var(--text-main)]">
-                                        {lang === 'sv' ? 'Antal frågor:' : 'Quantity:'}
+                                        {lang === 'sv' ? 'Längd:' : 'Length:'}
                                     </span>
                                 </div>
-                                <input 
-                                    type="number" 
-                                    min="1" 
-                                    max="100" 
-                                    value={meta.limit || ''} 
-                                    placeholder="∞" 
-                                    onChange={(e) => setMeta(p => ({ ...p, limit: parseInt(e.target.value) || 0 }))}
-                                    className="w-12 bg-[var(--bg-card)] rounded-[var(--radius-btn)] text-[var(--text-main)] font-black text-xs text-center py-1 outline-none border border-[var(--border-main)] focus:border-[var(--brand-solid)]"
-                                />
+                                
+                                {/* 🟢 UI FIX: Clear preset toggles instead of a blank input box */}
+                                <div className="flex items-center gap-1 bg-[var(--bg-card)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-main)] shadow-inner">
+                                    {[5, 10, 15, 20, 30, 40, 50, 0].map(val => (
+                                        <button 
+                                            key={val}
+                                            onClick={() => setMeta(p => ({ ...p, limit: val }))}
+                                            className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${
+                                                meta.limit === val 
+                                                    ? 'bg-[var(--brand-solid)] text-white shadow-sm' 
+                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
+                                            }`}
+                                        >
+                                            {val === 0 ? '∞' : val}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Action Buttons: Copy Link & Reset */}
@@ -670,7 +726,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         
         return (
             <div className="layout-wrapper font-sans flex flex-col overflow-hidden">
-                {/* 🟢 Swapped from header-compact to a relative block so it stacks perfectly under App.jsx */}
+                {/*  Swapped from header-compact to a relative block so it stacks perfectly under App.jsx */}
                 <header className="relative z-30 w-full bg-[var(--bg-surface)] border-b border-[var(--border-main)] px-4 py-2 transition-colors duration-500 no-print">
                     <div className="max-w-6xl w-full mx-auto flex items-center justify-between gap-2">
                         
@@ -931,7 +987,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
         return (
             <div className="layout-wrapper p-4 sm:p-6 flex flex-col items-center py-6 animate-in fade-in">
-                {/* 🟢 Expanded max-w to 1400px to utilize widescreen resolution */}
+                {/*  Expanded max-w to 1400px to utilize widescreen resolution */}
                 <div className="card w-full max-w-[1400px] overflow-hidden border-b-[8px] p-0 border-[var(--border-main)] shadow-xl">
                     
                     <div className="p-6 sm:p-8 bg-[var(--text-main)] text-[var(--bg-canvas)] flex justify-between items-center">
@@ -957,7 +1013,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     <div className="p-4 sm:p-6 bg-[var(--bg-canvas)] border-b border-[var(--border-main)]">
                         <h3 className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-4 px-2 text-center sm:text-left">{lang === 'sv' ? "Detaljerad genomgång" : "Detailed Review"}</h3>
                         
-                        {/* 🟢 Upgraded to a 4-column layout for widescreen monitors */}
+                        {/*  Upgraded to a 4-column layout for widescreen monitors */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             {packet.map((qItem, idx) => {
                                 const res = responses[idx];

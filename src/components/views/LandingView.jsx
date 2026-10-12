@@ -1,3 +1,4 @@
+// LandingView.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { 
     Zap, FileText, Grid3X3, Users, Globe, CheckCircle2,
@@ -265,20 +266,20 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                         <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm"><Users size={28} /></div>
                         <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-800">{t.path_live_h}</h3>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-8 leading-relaxed">{t.path_live_p}</p>
-                        <div className="w-full space-y-3">
+                        <form onSubmit={(e) => { e.preventDefault(); onStudentJoin('live', liveCode); }} className="w-full space-y-3">
                             <input type="text" maxLength={6} value={liveCode} onChange={(e) => setLiveCode(e.target.value.toUpperCase())} placeholder="ROOM-ID" className="w-full px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center font-black text-2xl tracking-[0.3em] outline-none focus:border-emerald-500 focus:bg-white transition-all" />
-                            <button onClick={() => onStudentJoin('live', liveCode)} className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-emerald-500 shadow-lg active:scale-95 transition-all">{t.btn_live}</button>
-                        </div>
+                            <button type="submit" className="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-emerald-500 shadow-lg active:scale-95 transition-all">{t.btn_live}</button>
+                        </form>
                     </div>
                     {/* SELF PRACTICE BOX */}
                     <div className="bg-white p-8 rounded-[3rem] shadow-xl border border-amber-100 flex flex-col items-center text-center group hover:border-amber-500 transition-all">
                         <div className="w-14 h-14 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm"><GraduationCap size={28} /></div>
                         <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-800">{t.path_practice_h}</h3>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-8 leading-relaxed">{t.path_practice_p}</p>
-                        <div className="w-full space-y-3">
+                        <form onSubmit={(e) => { e.preventDefault(); onStudentJoin('practice', classCode); }} className="w-full space-y-3">
                             <input type="text" maxLength={12} value={classCode} onChange={(e) => setClassCode(e.target.value.toUpperCase())} placeholder="CLASS-CODE" className="w-full px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center font-black text-2xl tracking-[0.1em] outline-none focus:border-amber-500 focus:bg-white transition-all" />
-                            <button onClick={() => onStudentJoin('practice', classCode)} className="w-full py-5 bg-amber-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-amber-600 shadow-lg active:scale-95 transition-all">{t.btn_practice}</button>
-                        </div>
+                            <button type="submit" className="w-full py-5 bg-amber-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-amber-600 shadow-lg active:scale-95 transition-all">{t.btn_practice}</button>
+                        </form>
                     </div>
                 </div>
             </header>

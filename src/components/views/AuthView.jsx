@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// AuthView.jsx
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { 
     Mail, Lock, User, ChevronLeft, Zap, 
@@ -14,6 +15,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
     const [showOnboarding, setShowOnboarding] = useState(false); 
     const [pendingUser, setPendingUser] = useState(null);
     const [authMode, setAuthMode] = useState('login'); 
+    const [showExpired, setShowExpired] = useState(false);
 
     // --- 2. TEACHER ONBOARDING STATE ---
     const [fullName, setFullName] = useState('');
@@ -25,6 +27,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
 
     // --- 3. STUDENT STATE ---
     const [code, setCode] = useState(initialCode || '');
+    const nameInputRef = useRef(null); // 🟢 ADDED: Ref for auto-focusing the name input
 
     // --- 4. MANUAL AUTH STATE ---
     const [email, setEmail] = useState('');
@@ -103,27 +106,41 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
     // --- AUTH LISTENER ---
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session?.user) {
+            if (session?.user && event === 'SIGNED_IN') {
                 const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+                
+                // 1. Missing Onboarding
                 if (!profile || !profile.subscription_status || !profile.class_code) {
                     setPendingUser(session.user);
                     setFullName(prev => (prev !== '' ? prev : session.user.user_metadata?.full_name || ''));
                     setShowOnboarding(true);
                     setLoading(false);
+                    return;
                 }
+
+                // 2. Expiration Gatekeeper
+                const isExpired = profile.subscription_status === 'expired' || 
+                                 (profile.subscription_end_date && new Date(profile.subscription_end_date) < new Date());
+                
+                if (isExpired) {
+                    setShowExpired(true);
+                    setLoading(false);
+                    return;
+                }
+
+                // If all good, let App.jsx handle the authenticated state
             }
         });
         return () => subscription.unsubscribe();
     }, []);
 
-    // --- ROBUST STUDENT JOIN HANDLER ---
-    const handleStudentJoin = async (e) => {
-        e.preventDefault();
+    // 🟢 ADDED: Extracted core join logic
+    const executeStudentJoin = async (targetCode) => {
         setLoading(true);
         setMessage(null);
 
         try {
-            const cleanInput = code.trim().toUpperCase();
+            const cleanInput = targetCode.trim().toUpperCase();
             const rawNoHyphens = cleanInput.replace(/-/g, '');
             const potentialMatches = [cleanInput, rawNoHyphens];
             if (rawNoHyphens.length === 6) {
@@ -144,14 +161,13 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                 onSuccess({ role: 'live', room, student_name: fullName.trim() });
 
             } else {
-                const { data: teacher, error } = await supabase
-                    .from('teacher_lookup')
-                    .select('*')
-                    .in('class_code', potentialMatches)
-                    .maybeSingle();
+                // ✅ SECURE RPC QUERY
+                const { data: teachers, error } = await supabase
+                    .rpc('get_active_class', { search_codes: potentialMatches });
+
+                const teacher = teachers && teachers.length > 0 ? teachers[0] : null;
 
                 if (error || !teacher) throw new Error(t.error_code);
-
                 onSuccess({ role: 'student', class: teacher });
             }
         } catch (err) {
@@ -159,6 +175,25 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         } finally {
             setLoading(false);
         }
+    };
+
+    // 🟢 ADDED: Auto-execute or Auto-focus effect
+    useEffect(() => {
+        if (studentMode === 'practice' && initialCode) {
+            // For practice, we have everything we need. Join instantly!
+            executeStudentJoin(initialCode);
+        } else if (studentMode === 'live' && initialCode) {
+            // For live, we need their name. Focus the input so they can just type and press enter.
+            if (nameInputRef.current) {
+                nameInputRef.current.focus();
+            }
+        }
+    }, [initialCode, studentMode]); // Run once on mount when props are available
+
+    // 🟢 UPDATED: Wrapper for the form submit
+    const handleStudentJoin = async (e) => {
+        e.preventDefault();
+        await executeStudentJoin(code);
     };
 
     // --- SCHOOL SEARCH ---
@@ -180,7 +215,6 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         setLoading(true);
         setMessage(null);
         try {
-            // 🟢 GATEKEEPER: Prevent Google redirect if there is no valid invite code
             if (authMode === 'signup') {
                 if (!inviteCodeInput.trim()) {
                     throw new Error(lang === 'sv' ? "Vänligen ange en lärarkod först." : "Please enter a teacher invite code first.");
@@ -195,7 +229,6 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                 if (!verifyRes.ok) throw new Error(t.error_invite);
             }
 
-            // Only proceeds to Google if the code was valid (or if they are just logging in)
             await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo: window.location.origin }
@@ -212,7 +245,6 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         setMessage(null);
         try {
             if (authMode === 'signup') {
-                // 1. GATEKEEPER: Verify the master invite code BEFORE creating the Auth record
                 const verifyRes = await fetch('/api/verify-invite', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -221,7 +253,6 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
 
                 if (!verifyRes.ok) throw new Error(t.error_invite);
 
-                // 2. Only proceed to Auth if the code is verified
                 const { data, error } = await supabase.auth.signUp({ 
                     email, 
                     password,
@@ -236,6 +267,19 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
             } else {
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+                
+                // 🟢 NEW: Fetch profile and check expiration before letting them in
+                const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).maybeSingle();
+                
+                const isExpired = profile?.subscription_status === 'expired' || 
+                                 (profile?.subscription_end_date && new Date(profile?.subscription_end_date) < new Date());
+                                 
+                if (isExpired) {
+                    setShowExpired(true);
+                    setLoading(false);
+                    return;
+                }
+
                 onSuccess({ role: 'teacher', user: data.user });
             }
         } catch (err) { 
@@ -323,7 +367,33 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
     };
 
     // --- RENDERING ---
-
+    if (showExpired) {
+        return (
+            <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans text-center">
+                <div className="w-full max-w-md bg-white rounded-[3.5rem] shadow-2xl p-12 border border-rose-50 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Lock size={32} />
+                    </div>
+                    <h2 className="text-3xl font-bold uppercase italic tracking-tighter text-slate-800 mb-4">
+                        {lang === 'sv' ? "Prenumeration Utgången" : "Subscription Expired"}
+                    </h2>
+                    <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">
+                        {lang === 'sv' 
+                            ? "Din tillgång till plattformen har löpt ut. Vänligen kontakta support för att förnya din licens och återfå åtkomst till Anpassa." 
+                            : "Your access to the platform has expired. Please contact support to renew your license and regain access to Anpassa."}
+                    </p>
+                    <a href="mailto:anpassa@proton.me" className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2 mb-6 shadow-lg">
+                        <Mail size={18} /> {lang === 'sv' ? "Kontakta Support" : "Contact Support"}
+                    </a>
+                    {/* handleAbort signs them out so they aren't trapped in a dead session */}
+                    <button onClick={handleAbort} className="text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors">
+                        {lang === 'sv' ? "Logga ut och gå tillbaka" : "Sign out & go back"}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+    
     if (showPlanPicker) {
         return (
             <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans">
@@ -442,6 +512,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                                 <div className="relative">
                                     <User className="absolute left-5 top-5 text-emerald-200" size={18} />
                                     <input 
+                                        ref={nameInputRef} // 🟢 ADDED THIS REF
                                         type="text" 
                                         placeholder={t.name_placeholder} 
                                         value={fullName} 

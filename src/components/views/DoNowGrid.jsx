@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import VisualRenderer from '../visuals/VisualRenderer';
+import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 import { 
     X, Maximize, Minimize, ZoomIn, ZoomOut, RefreshCw, 
     Eye, EyeOff, Loader2, Play, Pause, RotateCcw, ChevronUp, ChevronDown,
     Shuffle, Calculator, Type as TextIcon, RefreshCcw
 } from 'lucide-react';
+
 
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
@@ -298,6 +300,14 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang }) {
 
     useEffect(() => {
         setGridQuestions(questions);
+        
+        //  SYNC WIRED: Track the session launch
+        if (questions && questions.length > 0) {
+            syncBatchProgress('donow_session_started', questions, {
+                app_mode: 'teacher_live',
+                initial_timer_seconds: timerSeconds
+            });
+        }
     }, [questions]);
 
     useEffect(() => {
@@ -359,6 +369,15 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang }) {
     const handleRefreshNumbers = async (i) => {
         const item = gridQuestions[i];
         if (!item) return;
+        
+        //  SYNC WIRED
+        syncProgress('donow_question_regenerated', {
+            app_mode: 'teacher_live',
+            topic: item.topicId || 'unknown',
+            level: item.resolvedData?.level || 1,
+            shuffle_type: 'numbers'
+        });
+        
         try {
             const isItemWordProblem = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
             const res = await fetch(`/api/question?topic=${item.topicId}&variation=${item.variationKey}&lang=${lang}&wordProblem=${isItemWordProblem}`);
@@ -379,6 +398,14 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang }) {
         const rd = item?.resolvedData?.renderData;
         if (!rd?.availableStories || rd.availableStories.length <= 1) return;
 
+        //  SYNCWIRED
+        syncProgress('donow_question_regenerated', {
+            app_mode: 'teacher_live',
+            topic: item.topicId || 'unknown',
+            level: item.resolvedData?.level || 1,
+            shuffle_type: 'stories'
+        });
+
         const totalStories = rd.availableStories.length;
         const currentStoryIdx = item.selectedStoryIndex !== undefined && item.selectedStoryIndex !== null ? item.selectedStoryIndex : 0;
 
@@ -397,6 +424,12 @@ export default function DoNowGrid({ questions, ui, onBack, onClose, lang }) {
     const handleGridShuffle = async (mode) => {
         if (gridQuestions.length === 0 || isGlobalRefreshing) return;
         setIsGlobalRefreshing(true);
+
+        // 🟢 TELEMETRY WIRED
+        syncBatchProgress('donow_grid_shuffled', gridQuestions, {
+            app_mode: 'teacher_live',
+            shuffle_mode: mode // 'numbers', 'stories', or 'both'
+        });
 
         if (mode === 'both' || mode === 'numbers') {
             setRevealed({});

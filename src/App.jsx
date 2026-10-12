@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, createContext, Suspense } from 'react';
 import { supabase } from './lib/supabaseClient';
-import { BarChart3, AlertCircle, ChevronLeft } from 'lucide-react';
+import { BarChart3, AlertCircle, ChevronLeft, Lock, Mail } from 'lucide-react';
 
 // Views
 import LandingView from './components/views/LandingView';
@@ -109,6 +109,8 @@ function App() {
     const [view, setView] = useState('landing'); 
     const currentUserRef = useRef(null);
 
+    const [showExpired, setShowExpired] = useState(false);
+
     // 🟢 GLOBAL PREFERENCES STATE (Defaults to Dark & Swedish)
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'sv');
     const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
@@ -121,6 +123,8 @@ function App() {
     const [pendingDetour, setPendingDetour] = useState(null);
 
     const [activeBucket, setActiveBucket] = useState(null);
+
+
 
     // React to theme changes
     useEffect(() => {
@@ -460,7 +464,6 @@ function App() {
 
     // --- PROFILE GATEKEEPER ---
     const fetchProfile = async (uid, isSilent = false) => {
-        // Only show the loading spinner if it's NOT a silent background update
         if (!isSilent) setLoadingProfile(true);
         
         try {
@@ -470,15 +473,25 @@ function App() {
             setProfile(data);
             
             const isSetupIncomplete = !data || !data.subscription_status || !data.class_code;
+            const isExpired = data?.subscription_status === 'expired' || 
+                             (data?.subscription_end_date && new Date(data.subscription_end_date) < new Date());
+
+            // 🟢 TRAP EXPIRED USERS
+            if (isExpired && data?.role === 'teacher') {
+                setShowExpired(true);
+                return;
+            }
 
             setView(currentView => {
-                // Keep the user where they are if they are already in a specific view
                 if (currentView === 'profile') return 'profile';
                 if (isSetupIncomplete) return 'auth';
                 if (pendingLabConfig) return 'practice_lab';
                 
-                // If they are on a "guest" page, move them to the dashboard
-                if (currentView === 'landing' || currentView === 'auth') return 'dashboard';
+                // If they logged in on a guest page, respect their deep link!
+                if (currentView === 'landing' || currentView === 'auth') {
+                    if (topic && level) return 'practice';
+                    return 'dashboard';
+                }
                 
                 return currentView;
             });
@@ -764,8 +777,43 @@ function App() {
         return () => clearInterval(interval);
     }, [timerSettings.isActive, timerSettings.remaining, view, isFocused]);
 
+    // --- 🟢 DEEP LINK AUTO-FETCHER ---
+    // If the user lands directly on a practice URL (or is routed here after auth), automatically load the question.
+    useEffect(() => {
+        if (view === 'practice' && topic && level && !question && !loading) {
+            fetchQuestion(topic, level, lang);
+        }
+    }, [view, topic, level, lang]);
+
     // --- VIEW ORCHESTRATION ---
     if (loadingProfile) return <div className="h-screen flex items-center justify-center bg-[#f9fbf7]"><div className="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full" /></div>;
+
+    // --- 🟢 EXPIRED GATEWAY UI ---
+    if (showExpired) {
+        return (
+            <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans text-center">
+                <div className="w-full max-w-md bg-white rounded-[3.5rem] shadow-2xl p-12 border border-rose-50 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Lock size={32} />
+                    </div>
+                    <h2 className="text-3xl font-bold uppercase italic tracking-tighter text-slate-800 mb-4">
+                        {lang === 'sv' ? "Prenumeration Utgången" : "Subscription Expired"}
+                    </h2>
+                    <p className="text-sm font-medium text-slate-500 mb-8 leading-relaxed">
+                        {lang === 'sv' 
+                            ? "Din tillgång till plattformen har löpt ut. Vänligen kontakta support för att förnya din licens och återfå åtkomst till dina klassrum." 
+                            : "Your access to the platform has expired. Please contact support to renew your license and regain access to your classrooms."}
+                    </p>
+                    <a href="mailto:support@anpassa.se" className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2 mb-6 shadow-lg">
+                        <Mail size={18} /> {lang === 'sv' ? "Kontakta Support" : "Contact Support"}
+                    </a>
+                    <button onClick={() => { supabase.auth.signOut(); setShowExpired(false); setView('landing'); }} className="text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors">
+                        {lang === 'sv' ? "Logga ut och gå tillbaka" : "Sign out & go back"}
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (view === 'landing' && !session) return (
         <LandingView 
@@ -790,10 +838,14 @@ function App() {
                     if (data.role === 'student') {
                         setActiveClass(data.class);
                         setProfile({ role: 'student', subscription_status: 'active' }); 
+                        
+                        // 🟢 ROUTING PRIORITY: Lab Config -> Deep Link -> Dashboard
                         if (pendingLabConfig) {
-                        setView('practice_lab');
-                    } else {
-                        setView('dashboard');
+                            setView('practice_lab');
+                        } else if (topic && level) {
+                            setView('practice');
+                        } else {
+                            setView('dashboard');
                         }
                     } else if (data.role === 'live') {
                         setActiveRoom(data.room);

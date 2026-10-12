@@ -13,6 +13,9 @@ import { supabase } from '../../lib/supabaseClient';
 import { useMyCoach } from '../../hooks/useMyCoach';
 import MyCoachModal from '../modals/MyCoachModal';
 
+import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
+
+
 
 // Imported extracted modular functions
 import MathDisplay from '../shared/MathDisplay';
@@ -41,7 +44,7 @@ export default function PresentationView({
     const [isLeftCollapsed, setIsLeftCollapsed] = useState(false); 
     const [isRightCollapsed, setIsRightCollapsed] = useState(true);
     
-    // 🟢 ALL 3 settings now pull from the saved database object!
+    //  ALL 3 settings now pull from the saved database object!
     const [globalZoom, setGlobalZoom] = useState(initialSettings?.globalZoom || 1.6);
     const [viewMode, setViewMode] = useState(initialSettings?.viewMode || 'list'); 
     const [bgType, setBgType] = useState(initialSettings?.bgType || 'blank');
@@ -110,55 +113,8 @@ export default function PresentationView({
             console.error("Error cycling question parameters:", err);
         }
     };
-    
-    // 🟢 NEW: The Broadcast Handler
-    const handleGoLive = async () => {
-        if (!window.confirm(lang === 'sv' ? "Starta live-lektion med denna presentation?" : "Start live lesson with this presentation?")) return;
-        
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("Not authenticated");
 
-            // Generate a random 6-character room code
-            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-            // Structure the live payload
-            const sessionPayload = {
-                mode: 'presentation', 
-                slides: slides,
-                packet: livePacket,
-                settings: { bgType, viewMode, globalZoom } // Save the global zoom state
-            };
-
-            // Upsert the teacher's active room
-            // Create a NEW active room (Matching QuestionStudio's behavior)
-            const { data: roomData, error } = await supabase
-                .from('rooms')
-                .insert([{ 
-                    teacher_id: user.id, 
-                    class_code: code,
-                    status: 'active',
-                    current_slide_index: 0, 
-                    active_question_data: sessionPayload,
-                    title: localTitle || (lang === 'sv' ? "Live Presentation" : "Live Presentation")
-                }])
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            // Trigger QuestionStudio to mount TeacherLiveView without double-routing!
-            if (onLaunchLive) {
-                onLaunchLive(roomData);
-            } else {
-                console.warn("Missing onLaunchLive prop");
-            }
-            
-        } catch (err) {
-            console.error("Failed to start live session:", err);
-            alert(lang === 'sv' ? "Kunde inte starta live-lektionen." : "Failed to start live session.");
-        }
-    };
 
     // --- SLIDE MANAGEMENT ---
     const handleAddSlide = () => {
@@ -238,20 +194,85 @@ export default function PresentationView({
         setSidebarTab('slides');
     };
 
-    // Custom Prompt Builder Logic
+
+    const pushDynamicCluesToCanvas = (qId) => {
+        updateCurrentSlideElements(prev => [...prev, {
+            id: Date.now().toString(), type: 'dynamicClues', x: 50, y: 150, width: 450, height: 400,
+            questionId: qId, stroke: '#1e293b', rotation: 0, opacity: 1
+        }]);
+    };
+
+    //    WIRED via progressSync
+    const handleGoLive = async () => {
+        if (!window.confirm(lang === 'sv' ? "Starta live-lektion med denna presentation?" : "Start live lesson with this presentation?")) return;
+        
+        syncBatchProgress('presentation_live_started', livePacket, {
+            app_mode: 'teacher_live'
+        });
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("Not authenticated");
+
+            // Generate a random 6-character room code
+            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+            // Structure the live payload
+            const sessionPayload = {
+                mode: 'presentation', 
+                slides: slides,
+                packet: livePacket,
+                settings: { bgType, viewMode, globalZoom } // Save the global zoom state
+            };
+
+            // Upsert the teacher's active room
+            const { data: roomData, error } = await supabase
+                .from('rooms')
+                .insert([{ 
+                    teacher_id: user.id, 
+                    class_code: code,
+                    status: 'active',
+                    current_slide_index: 0, 
+                    active_question_data: sessionPayload,
+                    title: localTitle || (lang === 'sv' ? "Live Presentation" : "Live Presentation")
+                }])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Trigger QuestionStudio to mount TeacherLiveView without double-routing!
+            if (onLaunchLive) {
+                onLaunchLive(roomData);
+            } else {
+                console.warn("Missing onLaunchLive prop");
+            }
+            
+        } catch (err) {
+            console.error("Failed to start live session:", err);
+            alert(lang === 'sv' ? "Kunde inte starta live-lektionen." : "Failed to start live session.");
+        }
+    };
+    
+    //    WIRED via progressSync
     const handleAddCustomPrompt = () => {
         if (!customPromptText.trim()) return;
+        
+        syncProgress('custom_prompt_added', {
+            app_mode: 'presentation_builder',
+            prompt_length: customPromptText.trim().length
+        });
         
         const newItem = {
             id: `prompt_${Date.now()}`,
             type: 'custom_prompt',
-            answerType: 'free_text', // Signals StudentLiveView to show a textarea
+            answerType: 'free_text',
             text: customPromptText.trim(),
             align: 'center',
             scale: 1.0,
             columnSpan: 6,
-            showLatex: false,  // Custom prompts don't have LaTeX math
-            showVisual: false  // Custom prompts don't have generated shapes
+            showLatex: false,  
+            showVisual: false  
         };
         
         const updatedPacket = [...livePacket, newItem];
@@ -265,9 +286,17 @@ export default function PresentationView({
         setIsSaving(false);
     };
 
+    //    WIRED via progressSync
     const pushClueToCanvas = (clue, mode = 'both') => {
         const text = typeof clue === 'object' ? clue[lang] || clue.text : clue;
         const latex = typeof clue === 'object' ? clue.latex : null;
+        
+        syncProgress('whiteboard_clue_pushed', {
+            app_mode: 'presentation_builder',
+            tool_used: mode, // 'text', 'math', or 'both'
+            has_latex: !!latex,
+            has_text: !!text
+        });
         
         let newElements = [];
         if ((mode === 'both' || mode === 'text') && text && text.trim() !== '') {
@@ -285,16 +314,13 @@ export default function PresentationView({
         updateCurrentSlideElements(prev => [...prev, ...newElements]);
     };
 
-    const pushDynamicCluesToCanvas = (qId) => {
-        updateCurrentSlideElements(prev => [...prev, {
-            id: Date.now().toString(), type: 'dynamicClues', x: 50, y: 150, width: 450, height: 400,
-            questionId: qId, stroke: '#1e293b', rotation: 0, opacity: 1
-        }]);
-    };
-
-    // --- SUPABASE SAVE PIPELINE ---
+    //    WIRED via progressSync
     const handleSave = async () => {
         setIsSaving(true);
+        syncBatchProgress('presentation_saved', livePacket, {
+            app_mode: 'presentation_builder'
+        });
+        
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Not authenticated");
@@ -420,7 +446,7 @@ export default function PresentationView({
         }
     };
 
-    // 🟢 NEW: Static base sizes (Zoom handles the rest)
+    //  NEW: Static base sizes (Zoom handles the rest)
     const sizeClasses = { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px] mb-2' };
     const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
 
@@ -451,7 +477,7 @@ export default function PresentationView({
 
                     <div className="w-px h-6 bg-slate-700/60" />
 
-                    {/* 🟢 NEW: Universal Slide Zoom Toggle */}
+                    {/*  NEW: Universal Slide Zoom Toggle */}
                     <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/60 gap-1 shadow-inner">
                         <button onClick={() => setGlobalZoom(prev => Math.max(0.5, prev - 0.1))} className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-slate-500 cursor-pointer transition-colors" title="Zoom Out">
                             <ZoomOut size={14} />
@@ -498,7 +524,7 @@ export default function PresentationView({
                             </span>
                         </button>
 
-                        {/* 🟢 NEW: Branded Red 'Go Live' Button */}
+                        {/*  NEW: Branded Red 'Go Live' Button */}
                         <div className="w-px h-4 bg-slate-600 mx-1" />
                         <button 
                             onClick={handleGoLive}
@@ -798,7 +824,7 @@ export default function PresentationView({
                         </button>
                     </div>
 
-                    {/* 🟢 NEW: The Responsive 16:9 Presentation Boundary Wrapper */}
+                    {/*  NEW: The Responsive 16:9 Presentation Boundary Wrapper */}
                     <div className="flex-1 w-full h-full flex items-center justify-center p-4 sm:p-12 overflow-hidden">
                         
                         <div 
