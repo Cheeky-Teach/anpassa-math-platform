@@ -17,7 +17,9 @@ import questionHandler from './api/question';
 import answerHandler from './api/answer';
 import curriculumHandler from './api/curriculum';
 import batchHandler from './api/batch'; 
-import verifyInviteHandler from './api/verify-invite'; // <--- ADDED: Import the invite verifier
+import verifyInviteHandler from './api/verify-invite'
+import syncHandler from './api/sync';
+
 
 const app = express();
 const PORT = 3001;
@@ -40,7 +42,8 @@ app.get('/api/question', adapter(questionHandler));
 app.post('/api/answer', adapter(answerHandler));
 app.get('/api/curriculum', adapter(curriculumHandler));
 app.post('/api/batch', adapter(batchHandler)); 
-app.post('/api/verify-invite', adapter(verifyInviteHandler)); // <--- ADDED: Register the POST route
+app.post('/api/verify-invite', adapter(verifyInviteHandler));
+app.post('/api/save-progress', adapter(syncHandler));
 
 // 5. Start Server
 app.listen(PORT, () => {
@@ -49,6 +52,7 @@ app.listen(PORT, () => {
     console.log(`   - /api/answer`);
     console.log(`   - /api/curriculum`);
     console.log(`   - /api/batch`);
-    console.log(`   - /api/verify-invite`); // <--- ADDED: Log the new route
+    console.log(`   - /api/verify-invite`);
+    console.log(`   - /api/save-progress`);
     console.log(`\n🎨 Frontend running at http://localhost:5173 (Proxy active)\n`);
 });

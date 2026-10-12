@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef, createContext } from 'react';
+import React, { useState, useEffect, useRef, createContext, Suspense } from 'react';
 import { supabase } from './lib/supabaseClient';
 import { BarChart3, AlertCircle, ChevronLeft } from 'lucide-react';
-import { Analytics } from "@vercel/analytics/react";
 
 // Views
 import LandingView from './components/views/LandingView';
@@ -30,6 +29,25 @@ import DetourModal from './components/modals/DetourModal';
 // Data & Constants
 import { UI_TEXT, LEVEL_DESCRIPTIONS, CATEGORIES } from './constants/localization';
 
+import { useSessionSync } from './hooks/useSessionSync';
+
+// Dynamically load the Analytics component. If blocked, return an empty ghost component.
+const IsolatedTracker = React.lazy(() => 
+    import('@vercel/analytics/react')
+        .then((mod) => ({ default: mod.Analytics }))
+        .catch(() => ({ default: () => null }))
+);
+
+// Dynamically load the custom event tracker. If blocked, fail silently.
+const safeTrack = (eventName, data) => {
+    setTimeout(() => {
+        import('@vercel/analytics')
+            .then((mod) => {
+                if (mod && mod.track) mod.track(eventName, data);
+            })
+            .catch(() => {});
+    }, 100);
+};
 import PreferencesToggle from './components/ui/PreferencesToggle';
 
 //user counter/gatekeeper and student gateway
@@ -181,6 +199,27 @@ function App() {
     const [labConfig, setLabConfig] = useState(null); // The active "Source of Truth"
 
     const ui = UI_TEXT[lang];
+
+    // --- 10. SESSION MANAGER --- 
+    const { setAppMode, syncNow, savePracticeEntry, saveFeatureState } = useSessionSync();
+    const [questionStartTime, setQuestionStartTime] = useState(Date.now());
+
+    // Flush on tab close
+    useEffect(() => {
+        const handleBeforeUnload = () => syncNow();
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [syncNow]);
+
+    // Track mode switches automatically
+    useEffect(() => {
+        setAppMode(view);
+    }, [view, setAppMode]);
+
+    // Reset interaction timer when a new question loads
+    useEffect(() => {
+        if (question) setQuestionStartTime(Date.now());
+    }, [question]);
 
     // --- HELPERS ---
     const formatTime = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
@@ -523,8 +562,13 @@ function App() {
                 }) 
             });
             const result = await res.json();
+
+            // Save to local accumulator
+            const timeSpent = Math.round((Date.now() - questionStartTime) / 1000);
+            savePracticeEntry(topic, level, result.correct, revealedClues.length, timeSpent);
             
             if (result.correct) {
+                safeTrack('Answer_Correct', { topic: topic, level: level.toString(), mode: view });
                 if (!isSolutionRevealed) {
                     setHistory(prev => [{ topic, level, correct: true, text: question.renderData.latex || question.renderData.description, clueUsed: helpUsed, time: Date.now() }, ...prev]);
                     setStreak(result.newStreak); setTotalCorrect(prev => prev + 1);
@@ -949,7 +993,28 @@ function App() {
                         </DesktopZoomWrapper>
                 ) : view === 'question_studio' ? (
                     <DesktopZoomWrapper forceConstrain={true}>
-                    <QuestionStudio profile={profile} ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} onWorksheetGenerate={(p) => { setSavedPacket(p); setView('print'); }} onDoNowGenerate={(conf, pack, liveData) => { if (liveData?.room) { setActiveRoom(liveData.room); setSavedPacket(liveData.packet); setView('teacher_live'); } else if (pack) { setSavedPacket(pack); if (conf?.title) setSheetTitle(conf.title); setView('do_now'); } }} />
+                    <QuestionStudio profile={profile} ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} 
+                        onWorksheetGenerate={(p) => { 
+                            setSavedPacket(p); 
+                            setView('print');
+                            
+                            safeTrack('Worksheet_Generated', { size: p.length.toString() });
+                            saveFeatureState('worksheet_export', { count: 1, avg_size: p.length });
+                        }}
+                        onDoNowGenerate={(conf, pack, liveData) => { 
+                            if (liveData?.room) { 
+                                setActiveRoom(liveData.room); 
+                                setSavedPacket(liveData.packet); 
+                                setView('teacher_live'); 
+                            } else if (pack) { 
+                                setSavedPacket(pack); 
+                                if (conf?.title) setSheetTitle(conf.title); 
+                                setView('do_now'); 
+                                
+                                safeTrack('DoNow_Generated', { size: pack.length.toString() });
+                                saveFeatureState('donow_generation', { count: 1, size: pack.length });
+                            } 
+                        }} />
                     </DesktopZoomWrapper>
                 ) : view === 'print' ? (
                     <PrintView packet={savedPacket} title={sheetTitle} lang={lang} onBack={() => setView('question_studio')} includeAnswerKey={includeAnswerKey} answerKeyStyle={answerKeyStyle} />
@@ -1036,7 +1101,10 @@ function App() {
                     }
                 }} 
             />
-            <Analytics/>
+            {/* Safely render Vercel Analytics in the background */}
+            <Suspense fallback={null}>
+                <IsolatedTracker />
+            </Suspense>
         </div>
         </PreferencesContext.Provider>
     );

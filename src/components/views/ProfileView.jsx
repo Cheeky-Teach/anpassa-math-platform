@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import DeveloperPortal from './DeveloperPortal';
 import { 
-    User, Shield, School, CreditCard, CheckCircle2, XCircle, 
-    Loader2, Save, ChevronLeft, Zap, Star, Building2, Target,
-    Lock, KeyRound, Eye, EyeOff
+    User, Shield, CreditCard, CheckCircle2, XCircle, 
+    Loader2, Save, ChevronLeft, Zap, Building2,
+    Lock, KeyRound, Eye, EyeOff, Terminal, Activity,
+    Languages, MonitorPlay, Bug
 } from 'lucide-react';
 
+// =========================================================================
+// MAIN PROFILE VIEW
+// =========================================================================
 export default function ProfileView({ profile, onBack, lang = 'sv' }) {
+    const [activeTab, setActiveTab] = useState('profile');
+    const [isSaving, setIsSaving] = useState(false);
+    const [codeStatus, setCodeStatus] = useState('idle');
+    const [originalCode] = useState(profile?.class_code || '');
+    const [showPassword, setShowPassword] = useState(false);
+    const [isGoogleUser, setIsGoogleUser] = useState(false);
+
     const [formData, setFormData] = useState({
         full_name: profile?.full_name || '',
         class_code: profile?.class_code || '',
@@ -14,79 +26,36 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
         new_password: '',
         confirm_password: ''
     });
-    
-    const [isSaving, setIsSaving] = useState(false);
-    const [codeStatus, setCodeStatus] = useState('idle');
-    const [originalCode] = useState(profile?.class_code || '');
-    const [showPassword, setShowPassword] = useState(false);
 
-    // Detect if user is using Google OAuth (Password fields are useless for them)
-    const [isGoogleUser, setIsGoogleUser] = useState(false);
+    const [subscriptionEndDate, setSubscriptionEndDate] = useState(profile?.subscription_end_date || null);
+    const [isLoadingSub, setIsLoadingSub] = useState(false);
 
     useEffect(() => {
         const checkProvider = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            const isGoogle = user?.app_metadata?.provider === 'google' || 
-                             user?.identities?.some(id => id.provider === 'google');
+            const isGoogle = user?.app_metadata?.provider === 'google' || user?.identities?.some(id => id.provider === 'google');
             setIsGoogleUser(isGoogle);
         };
         checkProvider();
     }, []);
 
-    // State to hold subscription details
-    const [subscriptionEndDate, setSubscriptionEndDate] = useState(profile?.subscription_end_date || null);
-    const [isLoadingSub, setIsLoadingSub] = useState(false);
-    const getSubscriptionStatus = (dateString) => {
-        if (!dateString) return null;
-
-        const endDate = new Date(dateString);
-        const now = new Date();
-        const isActive = endDate > now;
-
-        const formattedDate = endDate.toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
-        return { formattedDate, isActive };
-    };
-
     useEffect(() => {
-        // If it's already in the profile prop, use it directly
         if (profile?.subscription_end_date) {
             setSubscriptionEndDate(profile.subscription_end_date);
             return;
         }
-
-        // Otherwise, fetch it directly from Supabase for the current user
         const fetchSubscription = async () => {
             setIsLoadingSub(true);
             try {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) return;
-
-                // Thanks to RLS, querying profiles with .eq('id', user.id) is completely secure
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('subscription_end_date') // Ensure this column name matches your database schema
-                    .eq('id', user.id)
-                    .single();
-
-                if (!error && data) {
-                    setSubscriptionEndDate(data.subscription_end_date);
-                }
-            } catch (err) {
-                console.error("Error fetching subscription date:", err);
-            } finally {
-                setIsLoadingSub(false);
-            }
+                const { data, error } = await supabase.from('profiles').select('subscription_end_date').eq('id', user.id).single();
+                if (!error && data) setSubscriptionEndDate(data.subscription_end_date);
+            } catch (err) { console.error(err); } finally { setIsLoadingSub(false); }
         };
-
         fetchSubscription();
     }, [profile]);
 
-    // --- FIX: Sync internal state if profile prop updates ---
     useEffect(() => {
         if (profile) {
             setFormData(prev => ({
@@ -98,331 +67,276 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
         }
     }, [profile]);
 
-    // --- CODE AVAILABILITY CHECKER ---
     useEffect(() => {
         const checkCode = async () => {
             const code = formData.class_code.toUpperCase().trim();
             if (code.length < 3 || code.length > 12 || !/^[A-Z0-9-]+$/.test(code)) {
-                setCodeStatus('invalid');
-                return;
+                setCodeStatus('invalid'); return;
             }
-            if (code === originalCode) {
-                setCodeStatus('available');
-                return;
-            }
+            if (code === originalCode) { setCodeStatus('available'); return; }
             setCodeStatus('checking');
             const { data, error } = await supabase.rpc('check_code_available', { requested_code: code });
             if (!error) setCodeStatus(data ? 'available' : 'taken');
         };
-
-        const timer = setTimeout(checkCode, 500); // Debounce
+        const timer = setTimeout(checkCode, 500);
         return () => clearTimeout(timer);
     }, [formData.class_code, originalCode]);
+
+    const getSubscriptionStatus = (dateString) => {
+        if (!dateString) return null;
+        const endDate = new Date(dateString);
+        const isActive = endDate > new Date();
+        const formattedDate = endDate.toLocaleDateString(lang === 'sv' ? 'sv-SE' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        return { formattedDate, isActive };
+    };
 
     const handleSave = async () => {
         if (!profile?.id) return;
         if (codeStatus !== 'available' && formData.class_code !== originalCode) return;
-        
-        // Validation for password change
         if (formData.new_password && formData.new_password !== formData.confirm_password) {
-            alert(lang === 'sv' ? "Lösenorden matchar inte." : "Passwords do not match.");
-            return;
+            alert(lang === 'sv' ? "Lösenorden matchar inte." : "Passwords do not match."); return;
         }
 
         setIsSaving(true);
         try {
-            // --- NEW: SCHOOL ID RESOLUTION LOGIC ---
-            // Ensures we never create a row with a name but no ID
             let resolvedSchoolId = profile.school_id;
             let finalSchoolName = formData.school_name.trim();
 
             if (!resolvedSchoolId && finalSchoolName) {
-                // 1. Try to find if this school already exists in our system
-                const { data: existingSchool } = await supabase
-                    .from('schools')
-                    .select('id')
-                    .eq('name', finalSchoolName)
-                    .maybeSingle();
-
-                if (existingSchool) {
-                    resolvedSchoolId = existingSchool.id;
-                } else {
-                    // 2. Create the school entry if it is truly unique/new
-                    const { data: newS, error: sErr } = await supabase
-                        .from('schools')
-                        .insert([{ name: finalSchoolName }])
-                        .select()
-                        .single();
+                const { data: existingSchool } = await supabase.from('schools').select('id').eq('name', finalSchoolName).maybeSingle();
+                if (existingSchool) resolvedSchoolId = existingSchool.id;
+                else {
+                    const { data: newS, error: sErr } = await supabase.from('schools').insert([{ name: finalSchoolName }]).select().single();
                     if (sErr) throw sErr;
                     resolvedSchoolId = newS.id;
                 }
             }
 
-            // 1. Update Profile Information
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .update({
-                    full_name: formData.full_name.trim(),
-                    class_code: formData.class_code.toUpperCase().trim(),
-                    school_name: finalSchoolName,
-                    school_id: resolvedSchoolId, // The UUID link is now guaranteed
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', profile.id);
+            const { error: profileError } = await supabase.from('profiles').update({
+                full_name: formData.full_name.trim(),
+                class_code: formData.class_code.toUpperCase().trim(),
+                school_name: finalSchoolName,
+                school_id: resolvedSchoolId, 
+                updated_at: new Date().toISOString()
+            }).eq('id', profile.id);
 
             if (profileError) throw profileError;
 
-            // 2. Update Password if provided
             if (formData.new_password) {
-                const { error: authError } = await supabase.auth.updateUser({
-                    password: formData.new_password
-                });
+                const { error: authError } = await supabase.auth.updateUser({ password: formData.new_password });
                 if (authError) throw authError;
             }
 
             alert(lang === 'sv' ? "Ändringar sparade!" : "Changes saved!");
-            onBack(); 
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            setIsSaving(false);
-        }
+            setFormData(prev => ({ ...prev, new_password: '', confirm_password: '' }));
+        } catch (err) { alert("Error: " + err.message); } finally { setIsSaving(false); }
     };
 
+    const navItems = [
+        { id: 'profile', icon: <User size={18} />, label: lang === 'sv' ? 'Profil & Inställningar' : 'Profile & Settings' },
+        ...(!isGoogleUser ? [{ id: 'security', icon: <Shield size={18} />, label: lang === 'sv' ? 'Säkerhet' : 'Security' }] : []),
+        ...(profile?.role === 'super_admin' ? [{ id: 'developer', icon: <Terminal size={18} />, label: 'Developer Portal', isDev: true }] : [])
+    ];
+
     return (
-        <div className="min-h-screen bg-[#f9fbf7] font-sans pb-40 relative overflow-hidden">
-            <header className="bg-white/70 backdrop-blur-md border-b border-emerald-100 px-6 py-5 sticky top-0 z-20">
-                <div className="max-w-4xl mx-auto flex justify-between items-center">
-                    <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold uppercase text-emerald-700 hover:text-emerald-900 transition-colors">
-                        <ChevronLeft size={20}/> Dashboard
-                    </button>
-                    <h1 className="text-lg font-black uppercase tracking-tight text-slate-800">
-                        {lang === 'sv' ? 'Profil & Säkerhet' : 'Profile & Security'}
-                    </h1>
-                    <div className="w-24" /> 
-                </div>
-            </header>
-
-            <main className="max-w-4xl mx-auto p-6 space-y-10 relative z-10">
-                {/* --- SECTION: PRENUMERATION / SUBSCRIPTION --- */}
-                <section className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/5 border border-emerald-50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="p-8 border-b border-emerald-50 bg-emerald-50/30 flex items-center gap-4">
-                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-                            <CreditCard size={20} />
-                        </div>
-                        <h2 className="font-bold uppercase text-xs tracking-widest text-indigo-900">
-                            {lang === 'sv' ? 'Prenumerationsstatus' : 'Subscription Status'}
-                        </h2>
-                    </div>
-
-                    <div className="p-8">
-                        {isLoadingSub ? (
-                            <div className="flex items-center gap-3 text-slate-400 py-4">
-                                <Loader2 className="animate-spin text-indigo-600" size={20} />
-                                <span className="text-xs font-bold uppercase tracking-wider">
-                                    {lang === 'sv' ? 'Hämtar prenumeration...' : 'Loading subscription details...'}
-                                </span>
-                            </div>
-                        ) : (() => {
-                            const status = getSubscriptionStatus(subscriptionEndDate);
-
-                            if (!status) {
-                                return (
-                                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
-                                        <XCircle className="text-slate-400 shrink-0" size={28} />
-                                        <div>
-                                            <p className="font-bold text-slate-700 text-sm">
-                                                {lang === 'sv' ? 'Ingen aktiv prenumeration hittades' : 'No active subscription found'}
-                                            </p>
-                                            <p className="text-xs text-slate-400 font-medium mt-0.5">
-                                                {lang === 'sv' ? 'Kontakta support om du tror detta är ett fel.' : 'Contact support if you believe this is an error.'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <div className={`p-6 rounded-2xl border-2 flex items-center justify-between gap-4 ${
-                                    status.isActive 
-                                        ? 'bg-emerald-50/50 border-emerald-200' 
-                                        : 'bg-rose-50/50 border-rose-200'
-                                }`}>
-                                    <div className="flex items-center gap-4">
-                                        {status.isActive ? (
-                                            <CheckCircle2 className="text-emerald-500 shrink-0" size={32} />
-                                        ) : (
-                                            <XCircle className="text-rose-500 shrink-0" size={32} />
-                                        )}
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider ${
-                                                    status.isActive 
-                                                        ? 'bg-emerald-100 text-emerald-800' 
-                                                        : 'bg-rose-100 text-rose-800'
-                                                }`}>
-                                                    {status.isActive 
-                                                        ? (lang === 'sv' ? 'Aktiv' : 'Active') 
-                                                        : (lang === 'sv' ? 'Utgången' : 'Expired')}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm font-bold text-slate-800 mt-2">
-                                                {status.isActive
-                                                    ? (lang === 'sv' ? `Aktiv till och med ${status.formattedDate}` : `Active until ${status.formattedDate}`)
-                                                    : (lang === 'sv' ? `Gick ut den ${status.formattedDate}` : `Expired on ${status.formattedDate}`)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-                    </div>
-                </section>
-
-                {/* --- SECTION: PERSONUPPGIFTER --- */}
-                <section className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/5 border border-emerald-50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="p-8 border-b border-emerald-50 bg-emerald-50/30 flex items-center gap-4">
-                        <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white">
-                            <User size={20} />
-                        </div>
-                        <h2 className="font-bold uppercase text-xs tracking-widest text-emerald-900">Personuppgifter</h2>
-                    </div>
-                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-bold uppercase text-slate-400 ml-2 tracking-wider">Fullständigt Namn</label>
-                            <input 
-                                type="text"
-                                className="w-full px-6 py-4 bg-[#f9fbf7] border-2 border-emerald-50 rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all"
-                                value={formData.full_name}
-                                onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                            />
-                        </div>
-
-                        {/* --- SAFEGUARD: SCHOOL LOCKING --- */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-bold uppercase text-slate-400 ml-2 tracking-wider">Skola / Organisation</label>
-                            <div className="relative">
-                                <Building2 className={`absolute left-5 top-5 ${profile?.school_id ? 'text-slate-300' : 'text-emerald-200'}`} size={18} />
-                                <input 
-                                    type="text"
-                                    disabled={!!profile?.school_id} // LOCK if ID is assigned
-                                    className={`w-full pl-14 pr-6 py-4 rounded-2xl font-bold transition-all border-2 ${
-                                        profile?.school_id 
-                                        ? 'bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed' 
-                                        : 'bg-[#f9fbf7] border-emerald-50 text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none'
-                                    }`}
-                                    value={formData.school_name}
-                                    onChange={(e) => setFormData({...formData, school_name: e.target.value})}
-                                />
-                                {profile?.school_id && (
-                                    <div className="mt-2 ml-2 flex items-center gap-1.5 text-[9px] font-bold text-amber-600 uppercase italic">
-                                        <Lock size={10} /> Kontakta support för att byta organisation
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* --- SECTION: SÄKERHET (Only for Email users) --- */}
-                {!isGoogleUser && (
-                    <section className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/5 border border-emerald-50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-75">
-                        <div className="p-8 border-b border-emerald-50 bg-emerald-50/30 flex items-center gap-4">
-                            <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-white">
-                                <Shield size={20} />
-                            </div>
-                            <h2 className="font-bold uppercase text-xs tracking-widest text-slate-800">Säkerhet</h2>
-                        </div>
-                        <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-3">
-                                <label className="text-[11px] font-bold uppercase text-slate-400 ml-2 tracking-wider">Nytt Lösenord</label>
-                                <div className="relative">
-                                    <KeyRound className="absolute left-5 top-5 text-slate-300" size={18} />
-                                    <input 
-                                        type={showPassword ? "text" : "password"}
-                                        className="w-full pl-14 pr-14 py-4 bg-[#f9fbf7] border-2 border-slate-100 rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all"
-                                        placeholder="••••••••"
-                                        value={formData.new_password}
-                                        onChange={(e) => setFormData({...formData, new_password: e.target.value})}
-                                    />
-                                    <button 
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-5 top-5 text-slate-300 hover:text-slate-600 transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[11px] font-bold uppercase text-slate-400 ml-2 tracking-wider">Bekräfta Lösenord</label>
-                                <input 
-                                    type={showPassword ? "text" : "password"}
-                                    className="w-full px-6 py-4 bg-[#f9fbf7] border-2 border-slate-100 rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all"
-                                    placeholder="••••••••"
-                                    value={formData.confirm_password}
-                                    onChange={(e) => setFormData({...formData, confirm_password: e.target.value})}
-                                />
-                            </div>
-                        </div>
-                    </section>
-                )}
-
-                {/* --- SECTION: ÖVNINGSKOD --- */}
-                <section className="bg-white rounded-[2.5rem] shadow-xl shadow-emerald-900/5 border border-emerald-50 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150">
-                    <div className="p-8 border-b border-orange-50 bg-orange-50/30 flex items-center gap-4">
-                        <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white">
-                            <Zap size={20} />
-                        </div>
-                        <h1 className="font-bold uppercase text-xs tracking-widest text-orange-900">Uppdatera Övningskod</h1>
-                    </div>
-                    <div className="p-8 flex flex-col md:flex-row gap-10 items-start">
-                        <div className="flex-1">
-                            <p className="text-m text-slate-500 mb-6 leading-relaxed font-medium">
-                                Denna kod används för att dina elever ska kunna logga in på din dashboard och öva på egen hand. Du kan skriva din egen kod så länge att den är unik och tillgänglig.
-                            </p>
-                            <div className="relative max-w-sm">
-                                <input 
-                                    type="text"
-                                    maxLength={12}
-                                    className={`w-full px-8 py-5 rounded-[2rem] font-black text-3xl tracking-[0.2em] uppercase outline-none transition-all border-4 ${
-                                        codeStatus === 'available' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' :
-                                        codeStatus === 'taken' ? 'border-rose-500 bg-rose-50 text-rose-700' :
-                                        'border-[#f9fbf7] bg-[#f9fbf7] text-slate-900'
-                                    }`}
-                                    value={formData.class_code}
-                                    onChange={(e) => setFormData({...formData, class_code: e.target.value})}
-                                />
-                                <div className="absolute right-6 top-1/2 -translate-y-1/2">
-                                    {codeStatus === 'checking' && <Loader2 className="animate-spin text-emerald-600" />}
-                                    {codeStatus === 'available' && <CheckCircle2 className="text-emerald-500" size={24} />}
-                                    {codeStatus === 'taken' && <XCircle className="text-rose-500" size={24} />}
-                                </div>
-                            </div>
-                            <div className="mt-4 px-4">
-                                {codeStatus === 'taken' && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wide">Koden är upptagen</p>}
-                                {codeStatus === 'available' && <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">Koden är tillgänglig!</p>}
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </main>
-
-            <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-50 animate-in slide-in-from-bottom-6 duration-500">
+        <div className="layout-wrapper flex flex-col min-h-screen font-sans">
+            
+            {/* COMPACT STICKY HEADER */}
+            <header className="sticky top-0 z-50 bg-[var(--bg-card)]/90 backdrop-blur-md border-b border-[var(--border-main)] px-6 py-3 flex justify-between items-center shadow-sm">
+                <button onClick={onBack} className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
+                    <ChevronLeft size={16}/> {lang === 'sv' ? 'Tillbaka' : 'Back'}
+                </button>
+                
+                <h1 className="text-sm font-black uppercase tracking-tight text-[var(--text-main)] absolute left-1/2 -translate-x-1/2 hidden md:block">
+                    {lang === 'sv' ? 'Kontoinställningar' : 'Account Settings'}
+                </h1>
+                
+                {/* 🟢 FIXED BUTTON COLORS: Hardcoded to standard Emerald so it won't disappear */}
                 <button 
                     onClick={handleSave}
-                    disabled={isSaving || (codeStatus !== 'available' && formData.class_code !== originalCode)}
-                    className="w-full bg-emerald-900 text-white py-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(6,78,59,0.3)] hover:bg-emerald-700 hover:-translate-y-1 transition-all font-black uppercase tracking-widest flex items-center justify-center gap-4 disabled:opacity-30 disabled:pointer-events-none active:scale-95"
+                    disabled={isSaving || (codeStatus !== 'available' && formData.class_code !== originalCode) || activeTab === 'developer'}
+                    className="bg-emerald-600 text-white px-5 py-2 rounded-[var(--radius-btn)] font-black uppercase tracking-widest text-[10px] hover:bg-emerald-500 transition-all disabled:opacity-30 disabled:pointer-events-none active:scale-95 flex items-center gap-2 shadow-sm"
                 >
-                    {isSaving ? <Loader2 className="animate-spin" /> : <Save size={22}/>}
-                    Spara Ändringar
+                    {isSaving ? <Loader2 className="animate-spin" size={14}/> : <Save size={14}/>}
+                    <span className="hidden sm:inline-block">{lang === 'sv' ? 'Spara Ändringar' : 'Save Changes'}</span>
                 </button>
-            </div>
+            </header>
 
-            <div className="absolute bottom-0 left-0 w-full leading-[0] pointer-events-none z-0">
-                <svg className="relative block w-full h-[400px]" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                    <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,2,1200,1.13V120H0Z" className="fill-emerald-100/40"></path>
-                </svg>
-            </div>
+            {/* SIDEBAR LAYOUT */}
+            <main className="flex-1 w-full max-w-6xl mx-auto flex flex-col md:flex-row gap-6 p-4 sm:p-8 relative z-10">
+                
+                <aside className="w-full md:w-64 shrink-0 flex flex-col gap-2">
+                    {navItems.map(item => (
+                        <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-widest transition-all text-left ${activeTab === item.id ? (item.isDev ? 'bg-slate-900 text-emerald-400 shadow-md' : 'bg-[var(--text-main)] text-[var(--bg-canvas)] shadow-md') : 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)]'}`}
+                        >
+                            {item.icon} {item.label}
+                        </button>
+                    ))}
+                </aside>
+
+                <div className="flex-1 min-w-0">
+                    
+                    {/* TAB 1: PROFILE */}
+                    {activeTab === 'profile' && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Subscription Box */}
+                                <div className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] p-5 shadow-sm">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        {/* 🟢 FIXED COLORS */}
+                                        <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                            <CreditCard size={16} />
+                                        </div>
+                                        <h2 className="font-black uppercase text-[10px] tracking-widest text-[var(--text-main)]">
+                                            {lang === 'sv' ? 'Prenumeration' : 'Subscription'}
+                                        </h2>
+                                    </div>
+                                    {isLoadingSub ? (
+                                        <Loader2 className="animate-spin text-emerald-500 mx-auto my-4" size={24} />
+                                    ) : (() => {
+                                        const status = getSubscriptionStatus(subscriptionEndDate);
+                                        if (!status) return <p className="text-xs font-bold text-[var(--text-muted)]">{lang === 'sv' ? 'Ingen aktiv prenumeration hittades.' : 'No active subscription found.'}</p>;
+                                        return (
+                                            <div>
+                                                {/* 🟢 FIXED COLORS */}
+                                                <div className={`inline-block px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest mb-2 ${status.isActive ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400'}`}>
+                                                    {status.isActive ? (lang === 'sv' ? 'Aktiv' : 'Active') : (lang === 'sv' ? 'Utgången' : 'Expired')}
+                                                </div>
+                                                <p className="text-xs font-bold text-[var(--text-main)]">
+                                                    {status.isActive ? (lang === 'sv' ? `Gäller t.o.m. ${status.formattedDate}` : `Valid until ${status.formattedDate}`) : (lang === 'sv' ? `Gick ut ${status.formattedDate}` : `Expired on ${status.formattedDate}`)}
+                                                </p>
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+
+                                {/* Class Code Box */}
+                                <div className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] p-5 shadow-sm">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        {/* 🟢 FIXED COLORS */}
+                                        <div className="w-8 h-8 bg-amber-100 dark:bg-amber-500/20 rounded-lg flex items-center justify-center text-amber-600 dark:text-amber-400">
+                                            <Zap size={16} />
+                                        </div>
+                                        <h2 className="font-black uppercase text-[10px] tracking-widest text-[var(--text-main)]">
+                                            {lang === 'sv' ? 'Inloggningskod' : 'Class Code'}
+                                        </h2>
+                                    </div>
+                                    <div className="relative">
+                                        {/* 🟢 FIXED INPUT BORDERS & TEXT */}
+                                        <input 
+                                            type="text" maxLength={12}
+                                            className={`w-full bg-[var(--bg-surface)] border-2 rounded-xl px-4 py-3 font-black text-xl tracking-[0.2em] uppercase outline-none transition-all ${
+                                                codeStatus === 'available' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' :
+                                                codeStatus === 'taken' ? 'border-rose-500 text-rose-600 dark:text-rose-400' :
+                                                'border-[var(--border-main)] focus:border-emerald-500 text-[var(--text-main)]'
+                                            }`}
+                                            value={formData.class_code}
+                                            onChange={(e) => setFormData({...formData, class_code: e.target.value})}
+                                        />
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                            {codeStatus === 'checking' && <Loader2 className="animate-spin text-[var(--text-muted)]" size={18}/>}
+                                            {codeStatus === 'available' && <CheckCircle2 className="text-emerald-500" size={18} />}
+                                            {codeStatus === 'taken' && <XCircle className="text-rose-500" size={18} />}
+                                        </div>
+                                    </div>
+                                    <p className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-2 ml-1">
+                                        {codeStatus === 'taken' ? 'Koden är upptagen' : 'Elevernas inloggningskod'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Bento Row 2: Personal Info */}
+                            <div className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] p-6 shadow-sm">
+                                <h2 className="font-black uppercase text-xs tracking-widest text-[var(--text-main)] mb-5 border-b border-[var(--border-main)] pb-3">
+                                    {lang === 'sv' ? 'Personuppgifter' : 'Personal Info'}
+                                </h2>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] ml-1">Fullständigt Namn</label>
+                                        <input 
+                                            type="text"
+                                            className="w-full bg-[var(--bg-surface)] border border-[var(--border-main)] focus:border-emerald-500 rounded-[var(--radius-btn)] px-4 py-3 font-bold text-[var(--text-main)] outline-none transition-all"
+                                            value={formData.full_name}
+                                            onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] ml-1">Skola / Organisation</label>
+                                        <div className="relative">
+                                            <Building2 className={`absolute left-4 top-1/2 -translate-y-1/2 ${profile?.school_id ? 'text-[var(--text-muted)] opacity-50' : 'text-emerald-500'}`} size={16} />
+                                            <input 
+                                                type="text"
+                                                disabled={!!profile?.school_id}
+                                                className={`w-full pl-12 pr-4 py-3 rounded-[var(--radius-btn)] font-bold transition-all border ${
+                                                    profile?.school_id 
+                                                    ? 'bg-[var(--bg-surface-hover)] border-[var(--border-main)] text-[var(--text-muted)] cursor-not-allowed opacity-70' 
+                                                    : 'bg-[var(--bg-surface)] border-[var(--border-main)] focus:border-emerald-500 text-[var(--text-main)] outline-none'
+                                                }`}
+                                                value={formData.school_name}
+                                                onChange={(e) => setFormData({...formData, school_name: e.target.value})}
+                                            />
+                                            {profile?.school_id && (
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 group">
+                                                    <Lock size={14} className="text-[var(--text-muted)] opacity-50" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TAB 2: SECURITY */}
+                    {activeTab === 'security' && !isGoogleUser && (
+                        <div className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] p-6 shadow-sm animate-in fade-in duration-300">
+                            <h2 className="font-black uppercase text-xs tracking-widest text-[var(--text-main)] mb-5 border-b border-[var(--border-main)] pb-3">
+                                {lang === 'sv' ? 'Byt Lösenord' : 'Change Password'}
+                            </h2>
+                            <div className="max-w-md space-y-5">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] ml-1">Nytt Lösenord</label>
+                                    <div className="relative">
+                                        <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] opacity-60" size={16} />
+                                        <input 
+                                            type={showPassword ? "text" : "password"}
+                                            className="w-full pl-11 pr-12 py-3 bg-[var(--bg-surface)] border border-[var(--border-main)] focus:border-emerald-500 rounded-[var(--radius-btn)] font-bold text-[var(--text-main)] outline-none transition-all"
+                                            placeholder="••••••••"
+                                            value={formData.new_password}
+                                            onChange={(e) => setFormData({...formData, new_password: e.target.value})}
+                                        />
+                                        <button onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
+                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] ml-1">Bekräfta Lösenord</label>
+                                    <input 
+                                        type={showPassword ? "text" : "password"}
+                                        className="w-full px-4 py-3 bg-[var(--bg-surface)] border border-[var(--border-main)] focus:border-emerald-500 rounded-[var(--radius-btn)] font-bold text-[var(--text-main)] outline-none transition-all"
+                                        placeholder="••••••••"
+                                        value={formData.confirm_password}
+                                        onChange={(e) => setFormData({...formData, confirm_password: e.target.value})}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TAB 3: DEVELOPER PORTAL */}
+                    {activeTab === 'developer' && profile?.role === 'super_admin' && (
+                        <DeveloperPortal lang={lang} />
+                    )}
+
+                </div>
+            </main>
         </div>
     );
 }

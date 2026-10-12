@@ -72,13 +72,13 @@ const Dashboard = ({
 
     useEffect(() => {
         fetchActiveSession();
-        if (activeTab === 'archive' && userRole === 'teacher') {
+        if (activeTab === 'archive' && ['teacher', 'super_admin'].includes(userRole)) {
             fetchArchive();
         }
     }, [activeTab]);
 
     const fetchActiveSession = async () => {
-        if (userRole !== 'teacher' || !profile?.id) return;
+        if (!['teacher', 'super_admin'].includes(userRole) || !profile?.id) return;
         try {
             const { data } = await supabase
                 .from('rooms')
@@ -165,11 +165,11 @@ const Dashboard = ({
                     <div className="card theme-emerald flex flex-col gap-4">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-[var(--brand-solid)] rounded-[var(--radius-btn)] flex items-center justify-center text-white shadow-md shrink-0">
-                                {userRole === 'teacher' ? <Users size={24} /> : <User size={24} />}
+                                {['teacher', 'super_admin'].includes(userRole) ? <Users size="{24}"/> : <User size="{24}"/>}
                             </div>
                             <div className="min-w-0">
                                 <h1 className="text-lg font-bold text-[var(--text-main)] leading-none mb-1 truncate">
-                                    {userRole === 'teacher' ? (profile?.full_name || "Lärare") : (profile?.full_name || "Elev")}
+                                    {['teacher', 'super_admin'].includes(userRole) ? (profile?.full_name || "Lärare") : (profile?.full_name || "Elev")}
                                 </h1>
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] flex items-center gap-1.5 truncate">
                                     <Target size={10}/> {profile?.school_name || "Anpassa Math Platform"}
@@ -196,7 +196,7 @@ const Dashboard = ({
                             {/* Class Code */}
                             <div className="flex flex-col items-center bg-[var(--brand-bg)] px-4 py-3 rounded-[var(--radius-btn)] border border-[var(--brand-border)]">
                                 <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--brand-text)] opacity-80 mb-0.5">
-                                    {userRole === 'teacher' ? t.class_code_label : t.connected_code_label}
+                                    {['teacher', 'super_admin'].includes(userRole) ? t.class_code_label : t.connected_code_label}
                                 </span>
                                 <span className="text-xl font-black tracking-[0.2em] text-[var(--brand-text)] uppercase">
                                     {profile?.class_code || "---"}
@@ -215,7 +215,7 @@ const Dashboard = ({
                     </div>
 
                     {/* --- NEWS / UPDATES MICRO-CARD --- */}
-                    {userRole === 'teacher' && (
+                    {['teacher', 'super_admin'].includes(userRole) && (
                         <div className="theme-orange">
                             <button 
                                 onClick={() => setShowUpdateLog(true)}
@@ -245,7 +245,7 @@ const Dashboard = ({
                         </div>
 
                         {/* Question Studio */}
-                        {userRole === 'teacher' && (
+                        {['teacher', 'super_admin'].includes(userRole) && (
                             <div className="theme-emerald">
                                 <button onClick={onStudioOpen} className="group flex items-center gap-4 p-4 bg-[var(--brand-solid)] text-white rounded-[var(--radius-card)] hover:opacity-90 transition-all shadow-md text-left w-full">
                                     <div className="w-10 h-10 bg-white/20 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0">
@@ -325,7 +325,7 @@ const Dashboard = ({
                 <main className="layout-main">
                     
                     {/* --- ACTIVE SESSION RESUME BANNER --- */}
-                    {activeSession && userRole === 'teacher' && (
+                    {activeSession && ['teacher', 'super_admin'].includes(userRole) && (
                         <div className="theme-rose mb-6 p-5 bg-[var(--brand-solid)] rounded-[var(--radius-card)] shadow-2xl shadow-[var(--brand-solid)]/20 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-white rounded-[var(--radius-btn)] flex items-center justify-center shadow-sm">
@@ -357,7 +357,7 @@ const Dashboard = ({
                             </button>
 
                             {/* NEW: Hub Manager Tab (Teachers Only) */}
-                            {userRole === 'teacher' && (
+                            {['teacher', 'super_admin'].includes(userRole) && (
                                 <button 
                                     onClick={() => setActiveTab('hub')} 
                                     className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'hub' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
@@ -366,7 +366,7 @@ const Dashboard = ({
                                 </button>
                             )}
 
-                            {userRole === 'teacher' && (
+                            {['teacher', 'super_admin'].includes(userRole) && (
                                 <button 
                                     onClick={() => setActiveTab('archive')} 
                                     className={`px-6 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${activeTab === 'archive' ? 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] shadow-sm' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
