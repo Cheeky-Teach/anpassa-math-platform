@@ -155,11 +155,11 @@ const Dashboard = ({
 
     return (
         <div className="layout-wrapper relative z-10 animate-in fade-in pb-10">
-            <div className="layout-twocol pt-8">                
+            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr] gap-6 lg:gap-8 pt-6 w-full max-w-[1600px] mx-auto px-4 sm:px-6">           
                 {/* ========================================================= */}
                 {/* LEFT COLUMN: COMMAND CENTER (PROFILE & TOOLS)        */}
                 {/* ========================================================= */}
-                <aside className="layout-sidebar">
+                <aside className="w-full flex flex-col gap-4">
                     
                     {/* --- HEADER STATUS CARD --- */}
                     <div className="card theme-emerald flex flex-col gap-4">
@@ -322,7 +322,7 @@ const Dashboard = ({
                 {/* ========================================================= */}
                 {/* ➡️ RIGHT COLUMN: MAIN CONTENT (CURRICULUM & ARCHIVE)    */}
                 {/* ========================================================= */}
-                <main className="layout-main">
+                <main className="w-full min-w-0 flex flex-col">
                     
                     {/* --- ACTIVE SESSION RESUME BANNER --- */}
                     {activeSession && ['teacher', 'super_admin'].includes(userRole) && (
@@ -534,7 +534,7 @@ const Dashboard = ({
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3.5">
                                             {activeCategoryData.topics.map(topic => (
                                                 <div key={topic.id} className="bg-[var(--bg-card)] rounded-[var(--radius-card)] p-5 border-2 border-[var(--border-main)] hover:border-[var(--brand-solid)] shadow-sm hover:shadow-lg transition-all group">
                                                     <div className="font-bold text-[var(--text-main)] mb-4 flex items-center justify-between text-sm leading-tight">
