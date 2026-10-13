@@ -1,11 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// 🟢 Reusing your exact lazy-loader pattern from answer.ts
+// Strict Least-Privilege Setup
 const getSupabase = () => {
     const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    // Prefer service role key on the backend; fall back to anon key
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    const key = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
     if (!url || !key) {
         console.warn("Supabase credentials missing. Telemetry sync skipped.");
