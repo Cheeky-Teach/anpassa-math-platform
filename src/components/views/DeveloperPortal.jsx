@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Activity, Languages, MonitorPlay, Bug } from 'lucide-react';
+import { Terminal, Activity, Languages, MonitorPlay, Bug } from 'lucide-react'; 
 import StressTesterTab from './developer/StressTesterTab';
 import TranslationMatrixTab from './developer/TranslationMatrixTab';
 import LiveSessionsTab from './developer/LiveSessionsTab';

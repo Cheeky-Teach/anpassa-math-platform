@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import DeveloperPortal from './DeveloperPortal';
+import PreferencesToggle from '../ui/PreferencesToggle';
+import '../../styles/theme.css';
 import { 
     User, Shield, CreditCard, CheckCircle2, XCircle, 
     Loader2, Save, ChevronLeft, Zap, Building2,
     Lock, KeyRound, Eye, EyeOff, Terminal, Activity,
-    Languages, MonitorPlay, Bug
+    Languages, MonitorPlay, Bug, Globe
 } from 'lucide-react';
 
 // =========================================================================
 // MAIN PROFILE VIEW
 // =========================================================================
-export default function ProfileView({ profile, onBack, lang = 'sv' }) {
+export default function ProfileView({ profile, onBack, lang = 'sv', onLanguageChange }) {
     const [activeTab, setActiveTab] = useState('profile');
     const [isSaving, setIsSaving] = useState(false);
     const [codeStatus, setCodeStatus] = useState('idle');
@@ -147,19 +149,52 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                     <ChevronLeft size={16}/> {lang === 'sv' ? 'Tillbaka' : 'Back'}
                 </button>
                 
-                <h1 className="text-sm font-black uppercase tracking-tight text-[var(--text-main)] absolute left-1/2 -translate-x-1/2 hidden md:block">
+                <h1 className="text-sm font-black uppercase tracking-tight text-[var(--text-main)] hidden lg:block">
                     {lang === 'sv' ? 'Kontoinställningar' : 'Account Settings'}
                 </h1>
                 
-                {/* 🟢 FIXED BUTTON COLORS: Hardcoded to standard Emerald so it won't disappear */}
-                <button 
-                    onClick={handleSave}
-                    disabled={isSaving || (codeStatus !== 'available' && formData.class_code !== originalCode) || activeTab === 'developer'}
-                    className="bg-emerald-600 text-white px-5 py-2 rounded-[var(--radius-btn)] font-black uppercase tracking-widest text-[10px] hover:bg-emerald-500 transition-all disabled:opacity-30 disabled:pointer-events-none active:scale-95 flex items-center gap-2 shadow-sm"
-                >
-                    {isSaving ? <Loader2 className="animate-spin" size={14}/> : <Save size={14}/>}
-                    <span className="hidden sm:inline-block">{lang === 'sv' ? 'Spara Ändringar' : 'Save Changes'}</span>
-                </button>
+                {/* ACTIONS: PREFERENCES TOGGLE, LANGUAGE SWITCHER & SAVE */}
+                <div className="flex items-center gap-3">
+                    {/* Light/Dark Mode Toggle */}
+                    <PreferencesToggle />
+
+                    {/* Language Toggle (SV / EN) */}
+                    {onLanguageChange && (
+                        <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5 shadow-xs">
+                            <button
+                                onClick={() => onLanguageChange('sv')}
+                                className={`px-2 py-1 rounded-[var(--radius-btn)] text-[10px] font-black transition-all ${
+                                    lang === 'sv'
+                                        ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-xs'
+                                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                }`}
+                                title="Svenska"
+                            >
+                                SV
+                            </button>
+                            <button
+                                onClick={() => onLanguageChange('en')}
+                                className={`px-2 py-1 rounded-[var(--radius-btn)] text-[10px] font-black transition-all ${
+                                    lang === 'en'
+                                        ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-xs'
+                                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                }`}
+                                title="English"
+                            >
+                                EN
+                            </button>
+                        </div>
+                    )}
+
+                    <button 
+                        onClick={handleSave}
+                        disabled={isSaving || (codeStatus !== 'available' && formData.class_code !== originalCode) || activeTab === 'developer'}
+                        className="bg-emerald-600 text-white px-5 py-2 rounded-[var(--radius-btn)] font-black uppercase tracking-widest text-[10px] hover:bg-emerald-500 transition-all disabled:opacity-30 disabled:pointer-events-none active:scale-95 flex items-center gap-2 shadow-sm"
+                    >
+                        {isSaving ? <Loader2 className="animate-spin" size={14}/> : <Save size={14}/>}
+                        <span className="hidden sm:inline-block">{lang === 'sv' ? 'Spara Ändringar' : 'Save Changes'}</span>
+                    </button>
+                </div>
             </header>
 
             {/* SIDEBAR LAYOUT */}
@@ -187,7 +222,6 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                                 {/* Subscription Box */}
                                 <div className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] p-5 shadow-sm">
                                     <div className="flex items-center gap-3 mb-4">
-                                        {/* 🟢 FIXED COLORS */}
                                         <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                                             <CreditCard size={16} />
                                         </div>
@@ -202,7 +236,6 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                                         if (!status) return <p className="text-xs font-bold text-[var(--text-muted)]">{lang === 'sv' ? 'Ingen aktiv prenumeration hittades.' : 'No active subscription found.'}</p>;
                                         return (
                                             <div>
-                                                {/* 🟢 FIXED COLORS */}
                                                 <div className={`inline-block px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest mb-2 ${status.isActive ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400'}`}>
                                                     {status.isActive ? (lang === 'sv' ? 'Aktiv' : 'Active') : (lang === 'sv' ? 'Utgången' : 'Expired')}
                                                 </div>
@@ -217,7 +250,6 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                                 {/* Class Code Box */}
                                 <div className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] p-5 shadow-sm">
                                     <div className="flex items-center gap-3 mb-4">
-                                        {/* 🟢 FIXED COLORS */}
                                         <div className="w-8 h-8 bg-amber-100 dark:bg-amber-500/20 rounded-lg flex items-center justify-center text-amber-600 dark:text-amber-400">
                                             <Zap size={16} />
                                         </div>
@@ -226,7 +258,6 @@ export default function ProfileView({ profile, onBack, lang = 'sv' }) {
                                         </h2>
                                     </div>
                                     <div className="relative">
-                                        {/* 🟢 FIXED INPUT BORDERS & TEXT */}
                                         <input 
                                             type="text" maxLength={12}
                                             className={`w-full bg-[var(--bg-surface)] border-2 rounded-xl px-4 py-3 font-black text-xl tracking-[0.2em] uppercase outline-none transition-all ${

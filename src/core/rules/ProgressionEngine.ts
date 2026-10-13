@@ -2,7 +2,7 @@
  * Configuration for how the system handles struggles and success.
  */
 export const PROGRESSION_THRESHOLDS = {
-    FAILURES_TO_DETOUR: 3, // Consecutive incorrect answers required to trigger a detour
+    FAILURES_TO_DETOUR: 6, // Consecutive incorrect answers required to trigger a detour
     STREAK_TO_RETURN: 3    // Consecutive correct answers required to complete the warm-up detour
 };
 

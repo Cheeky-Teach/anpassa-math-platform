@@ -30,6 +30,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             payload = JSON.parse(payload);
         }
 
+        // 🟢 DEFENSE LAYER: Reject oversized payloads
+        const payloadString = JSON.stringify(payload);
+        if (payloadString.length > 5000) { // Max 5KB per request
+            console.warn("🟡 [BACKEND] Payload too large. Rejecting.");
+            return res.status(200).send('OK'); // Return 200 so the bot thinks it worked
+        }
+
         const { app_mode, device_type, progress } = payload;
 
         if (!progress || Object.keys(progress).length === 0) {
@@ -49,7 +56,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     device_type,
                     metrics: progress
                 }])
-                .select();
 
             if (error) {
                 console.error("🔴 [BACKEND] SUPABASE ERROR:", error);

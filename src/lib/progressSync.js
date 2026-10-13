@@ -8,7 +8,7 @@ export const syncProgress = (actionName, payload = {}) => {
     try {
         const { app_mode = 'system', ...metrics } = payload;
         
-        fetch('/api/save-progress', {
+        fetch('/api/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
