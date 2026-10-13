@@ -230,6 +230,7 @@ export default function QuestionStudio({
   const [showMoveModal, setShowMoveModal] = useState(null); 
 
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleDragStartUnified = (e, index) => {
     setDraggedIdx(index);
@@ -361,37 +362,50 @@ export default function QuestionStudio({
     } catch (err) { console.error(err); } finally { setIsLibraryLoading(false); }
   };
 
-  // --- SUPABASE SAVE PIPELINE ---
-    const handleSave = async () => {
-        setIsSaving(true);
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("Not authenticated");
+    // --- SUPABASE SAVE PIPELINE ---
+  const handleSave = async () => {
+      setIsSaving(true);
+      try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error("Not authenticated");
 
-            const payload = {
-                title: localTitle,
-                type: 'board', 
-                user_id: user.id,
-                packet: { slides, livePacket, settings: { bgType, viewMode, globalZoom } }
-            };
+          const payload = {
+              title: sheetTitle || (lang === 'sv' ? "Namnlöst arbete" : "Untitled Work"),
+              type: setupMode || 'worksheet', 
+              user_id: user.id,
+              visibility: chosenVisibility,
+              packet: packet,
+              config: {
+                  includeAnswerKey,
+                  answerKeyStyle,
+                  globalLatexSize,
+                  layoutStyle,
+                  workspaceStyle,
+                  workspaceHeight
+              },
+              auto_topics: [...new Set(packet.map(p => p.topicId))]
+          };
 
-            let res;
-            if (boardId) {
-                res = await supabase.from('saved_sheets').update(payload).eq('id', boardId).select().single();
-            } else {
-                res = await supabase.from('saved_sheets').insert(payload).select().single();
-            }
+          let res;
+          if (activeSheetId) {
+              res = await supabase.from('saved_sheets').update(payload).eq('id', activeSheetId).select().single();
+          } else {
+              res = await supabase.from('saved_sheets').insert(payload).select().single();
+          }
 
-            if (res.error) throw res.error;
-            setBoardId(res.data.id); 
-            alert(lang === 'sv' ? "Presentationen har sparats i molnet!" : "Presentation saved to cloud!");
-        } catch (err) {
-            console.error("Save Error:", err);
-            alert(lang === 'sv' ? "Kunde inte spara presentationen." : "Failed to save presentation.");
-        } finally {
-            setIsSaving(false);
-        }
-    };
+          if (res.error) throw res.error;
+          
+          setActiveSheetId(res.data.id); 
+          setIsSaved(true);
+          fetchLibrary(); // Refresh the sidebar library automatically
+          alert(t.save_success);
+      } catch (err) {
+          console.error("Save Error:", err);
+          alert(lang === 'sv' ? "Kunde inte spara." : "Failed to save.");
+      } finally {
+          setIsSaving(false);
+      }
+  };
 
   const handleCreateFolder = async () => {
       if (!newFolderName.trim()) return;
