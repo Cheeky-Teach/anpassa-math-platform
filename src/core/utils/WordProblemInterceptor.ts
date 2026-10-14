@@ -1,5 +1,13 @@
 import { GLOBAL_STORY_REGISTRY } from './stories/index.js'; // 🟢 Dynamic content link
 
+
+export interface VariationConfig {
+    key: string;
+    contextType?: string;
+    extractorPattern?: RegExp;
+    [key: string]: any;
+}
+
 export interface StoryScenario {
     sv: string;
     en: string;

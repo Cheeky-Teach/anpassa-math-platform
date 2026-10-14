@@ -16,7 +16,6 @@
     "strict": false,               
     "noImplicitAny": false,        
     "strictNullChecks": false,     
-    "suppressImplicitAnyIndexErrors": true, 
     
     "baseUrl": ".",
     "paths": {
