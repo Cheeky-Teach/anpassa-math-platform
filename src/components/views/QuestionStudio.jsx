@@ -5,7 +5,7 @@ import {
   Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, X, Globe, Building2, Lock, Copy, Check, Filter,
   MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical, Brain, Calculator, Target, 
-  Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown
+  Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown, Edit2
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer.jsx';
@@ -145,7 +145,8 @@ export default function QuestionStudio({
       folder_name_placeholder: "Mappnamn...", cancel: "Avbryt", create: "Skapa",
       move_file: "Flytta fil", root_dir: "Start (Hem)",
       trash_empty: "Papperskorgen är tom.", no_files: "Inga filer hittades här.",
-      restore: "Återställ", hard_delete: "Radera permanent"
+      restore: "Återställ", hard_delete: "Radera permanent", duplicate_btn: "Duplicera",
+      duplicate_success: "Kopia skapad!", rename_folder: "Byt namn på mapp", rename_folder_title: "Ändra mappnamn",
     },
     en: {
       studio: "Question Studio", library_title: "Library", donow_title: "Do Now Grid", worksheet_title: "Worksheet",
@@ -173,7 +174,8 @@ export default function QuestionStudio({
       folder_name_placeholder: "Folder name...", cancel: "Cancel", create: "Create",
       move_file: "Move file", root_dir: "Root directory",
       trash_empty: "Trash is empty.", no_files: "No files found here.",
-      restore: "Restore", hard_delete: "Delete permanently"
+      restore: "Restore", hard_delete: "Delete permanently",
+      duplicate_btn: "Duplicate", duplicate_success: "Copy created!", rename_folder: "Rename folder", rename_folder_title: "Rename folder",
     }
   }[lang];
 
@@ -228,6 +230,8 @@ export default function QuestionStudio({
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [showMoveModal, setShowMoveModal] = useState(null); 
+  const [editingFolder, setEditingFolder] = useState(null); 
+  const [editingFolderName, setEditingFolderName] = useState(''); 
 
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -275,10 +279,16 @@ export default function QuestionStudio({
 
   const getTopicLabel = (topicId) => {
       if (!topicId || topicId === 'all') return lang === 'sv' ? "Alla ämnen" : "All topics";
+      
+      // Direct alias check in case your sheets save 'patterns' or 'pattern'
+      if (topicId === 'patterns' || topicId === 'pattern') {
+          return lang === 'sv' ? "Mönster" : "Patterns";
+      }
+
       for (const catKey in SKILL_BUCKETS) {
           const category = SKILL_BUCKETS[catKey];
           if (category.topics && category.topics[topicId]) {
-              return category.topics[topicId].name[lang] || topicId;
+              return category.topics[topicId].name[lang] || category.topics[topicId].name.sv || topicId;
           }
       }
       return topicId.charAt(0).toUpperCase() + topicId.slice(1).replace('_', ' ');
@@ -374,6 +384,7 @@ export default function QuestionStudio({
               type: setupMode || 'worksheet', 
               user_id: user.id,
               visibility: chosenVisibility,
+              school_name: profile?.school_name?.trim() || null,
               packet: packet,
               config: {
                   includeAnswerKey,
@@ -417,6 +428,24 @@ export default function QuestionStudio({
       } catch (err) { alert("Kunde inte skapa mapp: " + err.message); }
   };
 
+  const handleRenameFolder = async () => {
+      if (!editingFolder?.id || !editingFolderName.trim()) return;
+      try {
+          const { error } = await supabase
+              .from('folders')
+              .update({ name: editingFolderName.trim() })
+              .eq('id', editingFolder.id);
+
+          if (error) throw error;
+
+          setEditingFolder(null);
+          setEditingFolderName('');
+          fetchLibrary();
+      } catch (err) {
+          alert((lang === 'sv' ? "Kunde inte byta namn: " : "Failed to rename: ") + err.message);
+      }
+  };
+
   const handleMoveSheet = async (sheetId, targetFolderId) => {
       try {
           const { error } = await supabase.from('saved_sheets').update({ folder_id: targetFolderId }).eq('id', sheetId);
@@ -453,6 +482,39 @@ export default function QuestionStudio({
       } catch (err) { alert("Kunde inte radera: " + err.message); }
   };
 
+  const handleDuplicate = async (e, sheet) => {
+      e?.stopPropagation();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return alert("Not authenticated");
+
+      try {
+          const copyPrefix = lang === 'sv' ? "Kopia av " : "Copy of ";
+          const newTitle = `${copyPrefix}${sheet.title || (lang === 'sv' ? "Namnlöst arbete" : "Untitled Work")}`;
+
+          const duplicatePayload = {
+              title: newTitle,
+              type: sheet.type,
+              user_id: user.id,
+              visibility: 'private', // Duplicates start as private in your own library
+              school_name: profile?.school_name?.trim() || null,
+              school_id: profile?.school_id || null,
+              packet: sheet.packet,
+              config: sheet.config || {},
+              auto_topics: sheet.auto_topics || [],
+              folder_id: sheet.folder_id || null
+          };
+
+          const { error } = await supabase.from('saved_sheets').insert([duplicatePayload]);
+          if (error) throw error;
+
+          alert(lang === 'sv' ? "Kopia skapad!" : "Copy created!");
+          fetchLibrary();
+      } catch (err) {
+          console.error("Duplicate Error:", err);
+          alert(lang === 'sv' ? "Kunde inte duplicera." : "Failed to duplicate.");
+      }
+  };
+  
   const handleClone = async (sheetId) => {
     const { data: { user } } = await supabase.auth.getUser();
     try {
@@ -623,7 +685,12 @@ export default function QuestionStudio({
       return matchesSearch && matchesTopic && matchesType;
   });
   
-  const availableTopics = [...new Set(savedSheets.flatMap(s => s.auto_topics || []))];
+  // 🟢 FIX: Include all registered curriculum topics from SKILL_BUCKETS so "mönster" (patterns) is always filterable
+  const allCurriculumTopicIds = Object.values(SKILL_BUCKETS).flatMap(cat => Object.keys(cat.topics || {}));
+  const availableTopics = [...new Set([
+      ...allCurriculumTopicIds,
+      ...savedSheets.flatMap(s => s.auto_topics || [])
+  ])].sort((a, b) => getTopicLabel(a).localeCompare(getTopicLabel(b), lang, { sensitivity: 'base' }));
 
   const visibleVariations = (currentTopic?.variations || [])
   .filter(v => {
@@ -815,7 +882,30 @@ export default function QuestionStudio({
                                                     <td className="py-3 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">{t.folder} ({folderFiles.length})</td>
                                                     <td className="py-3 text-center text-[var(--text-muted)] text-xs">{new Date(folder.created_at).toLocaleDateString()}</td>
                                                     <td className="py-3 text-right pr-4">
-                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }} className="p-2 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-lg transition-all opacity-0 group-hover:opacity-100 border border-transparent hover:border-[var(--theme-rose-border)]"><Trash2 size={16}/></button>
+                                                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <button 
+                                                                onClick={(e) => { 
+                                                                    e.stopPropagation(); 
+                                                                    setEditingFolder(folder); 
+                                                                    setEditingFolderName(folder.name); 
+                                                                }} 
+                                                                title={t.rename_folder} 
+                                                                className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] rounded-lg transition-all border border-transparent hover:border-[var(--border-main)]"
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </button>
+
+                                                            <button 
+                                                                onClick={(e) => { 
+                                                                    e.stopPropagation(); 
+                                                                    handleDeleteFolder(folder.id); 
+                                                                }} 
+                                                                title={t.trash}
+                                                                className="p-1.5 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-lg transition-all border border-transparent hover:border-[var(--theme-rose-border)]"
+                                                            >
+                                                                <Trash2 size={14}/>
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
 
@@ -856,7 +946,9 @@ export default function QuestionStudio({
                                                                 >
                                                                     {t.load_btn}
                                                                 </button>
+                                                                <button onClick={(e) => handleDuplicate(e, sheet)} title={lang === 'sv' ? "Duplicera" : "Duplicate"} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] ml-1"><Copy size={14}/></button>
                                                                 <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] ml-1"><PanelLeftClose size={14}/></button>
+                                                                
                                                                 <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-[var(--radius-btn)] ml-1"><Trash2 size={14}/></button>
                                                             </div>
                                                         </td>
@@ -908,6 +1000,7 @@ export default function QuestionStudio({
                                                                 {t.load_btn}
                                                             </button>
                                                             <button onClick={() => setShowMoveModal(sheet)} title={t.move_file} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] ml-1"><PanelLeftClose size={14}/></button>
+                                                            <button onClick={(e) => handleDuplicate(e, sheet)} title={lang === 'sv' ? "Duplicera" : "Duplicate"} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--primary-color)] rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] ml-1"><Copy size={14}/></button>
                                                             <button onClick={(e) => handleSoftDelete(e, sheet.id)} title={t.trash} className="p-1.5 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] hover:bg-[var(--theme-rose-bg)] rounded-[var(--radius-btn)] ml-1"><Trash2 size={14}/></button>
                                                         </>
                                                     ) : (
@@ -928,6 +1021,39 @@ export default function QuestionStudio({
                 </div>
 
                 {/* MODALS */}
+                {/* 🟢 RENAME FOLDER MODAL */}
+                {editingFolder && (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                        <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
+                            <h3 className="text-lg font-black text-[var(--text-main)] mb-4">{t.rename_folder_title}</h3>
+                            <input 
+                                autoFocus
+                                type="text" 
+                                value={editingFolderName} 
+                                maxLength={50}
+                                onChange={(e) => setEditingFolderName(e.target.value)} 
+                                placeholder={t.folder_name_placeholder}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(); }}
+                                className="w-full px-4 py-2 bg-[var(--bg-surface)] border border-[var(--border-main)] text-[var(--text-main)] rounded-[var(--radius-btn)] focus:border-[var(--brand-solid)] outline-none mb-6 font-bold"
+                            />
+                            <div className="flex justify-end gap-2">
+                                <button 
+                                    onClick={() => { setEditingFolder(null); setEditingFolderName(''); }} 
+                                    className="px-4 py-2 text-[var(--text-muted)] font-bold hover:bg-[var(--bg-surface)] rounded-lg transition-colors text-xs uppercase tracking-wider"
+                                >
+                                    {t.cancel}
+                                </button>
+                                <button 
+                                    onClick={handleRenameFolder} 
+                                    disabled={!editingFolderName.trim()} 
+                                    className="btn-brand text-xs uppercase tracking-wider px-4 py-2"
+                                >
+                                    {lang === 'sv' ? "Spara" : "Save"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 {showFolderModal && (
                     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
                         <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
@@ -1023,6 +1149,9 @@ export default function QuestionStudio({
                                                 </button>
                                                 <button onClick={() => { loadSheet(peekSheet); setPeekSheet(null); setShowPresentation(true); }} className="btn-brand flex-1 bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)] flex items-center justify-center gap-2">
                                                     <Monitor size={16} /> {t.present}
+                                                </button>
+                                                <button onClick={(e) => { handleDuplicate(e, peekSheet); setPeekSheet(null); }} className="btn-brand flex-1 bg-[var(--theme-indigo-bg)] text-[var(--theme-indigo-text)] border border-[var(--theme-indigo-border)] flex items-center justify-center gap-2">
+                                                    <Copy size={16} /> {lang === 'sv' ? "Duplicera" : "Duplicate"}
                                                 </button>
                                             </>
                                         )}
@@ -1327,7 +1456,12 @@ export default function QuestionStudio({
                                       {['sm', 'md', 'lg', 'xl'].map((size) => (
                                           <button 
                                               key={size}
-                                              onClick={() => { setGlobalLatexSize(size); setIsSaved(false); }} 
+                                              onClick={() => { 
+                                                  setGlobalLatexSize(size); 
+                                                  // 🟢 FIX: Clear all local overrides so the entire sheet inherits the global size
+                                                  setPacket(prev => prev.map(item => ({ ...item, localLatexSize: null })));
+                                                  setIsSaved(false); 
+                                              }} 
                                               className={`px-3 py-1 rounded-[var(--radius-btn)] font-serif font-black transition-all ${size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : size === 'lg' ? 'text-base' : 'text-lg'} ${globalLatexSize === size ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
                                               title={`Textstorlek: ${size}`}
                                           >
