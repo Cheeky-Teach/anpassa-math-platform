@@ -3,7 +3,7 @@ import {
     X, ChevronLeft, ChevronRight, ChevronDown, Monitor, PanelLeftClose, 
     PanelLeftOpen, ZoomIn, ZoomOut, Layers, FileText, List, Plus,
     RefreshCw, Presentation, FileQuestion, Save, Download, Trash2,
-    MessageSquare
+    MessageSquare, Copy, GripVertical
 } from 'lucide-react';
 
 import VisualRenderer from '../visuals/VisualRenderer';
@@ -31,6 +31,71 @@ export default function PresentationView({
     const [slides, setSlides] = useState(initialSlides || [{ id: `slide_${Date.now()}`, elements: [], scrollX: 0, scrollY: 0, title: 'Slide 1', activeIds: [] }]);
     const [activeSlideIndex, setActiveSlideIndex] = useState(0);
     const [editingSlideIndex, setEditingSlideIndex] = useState(null);
+
+    // 🟢 NEW: Slide Reordering & Duplication State
+    const [draggedSlideIndex, setDraggedSlideIndex] = useState(null);
+
+    const handleSlideDragStart = (e, index) => {
+        setDraggedSlideIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        
+        // Hide the default drag ghost image for a cleaner look
+        const img = new Image();
+        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        e.dataTransfer.setDragImage(img, 0, 0);
+    };
+
+    const handleSlideDragOver = (e, index) => {
+        e.preventDefault();
+        if (draggedSlideIndex === null || draggedSlideIndex === index) return;
+        
+        setSlides(prev => {
+            const newSlides = [...prev];
+            const [moved] = newSlides.splice(draggedSlideIndex, 1);
+            newSlides.splice(index, 0, moved);
+            return newSlides;
+        });
+        
+        // Keep the active slide perfectly in sync as things shift around
+        setActiveSlideIndex(prev => {
+            if (prev === draggedSlideIndex) return index;
+            if (draggedSlideIndex < prev && index >= prev) return prev - 1;
+            if (draggedSlideIndex > prev && index <= prev) return prev + 1;
+            return prev;
+        });
+        
+        setDraggedSlideIndex(index);
+    };
+
+    const handleSlideDragEnd = () => {
+        setDraggedSlideIndex(null);
+        setIsSaving(false);
+    };
+
+    const handleDuplicateSlide = (e, index) => {
+        e.stopPropagation();
+        const sourceSlide = slides[index];
+        // Deep copy the elements to ensure unique IDs for cloned canvas objects
+        const clonedElements = sourceSlide.elements.map(el => ({
+            ...el,
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 5)
+        }));
+        
+        const newSlide = { 
+            ...sourceSlide, 
+            id: `slide_${Date.now()}`, 
+            title: `${sourceSlide.title} (Kopia)`,
+            elements: clonedElements
+        };
+        
+        setSlides(prev => {
+            const next = [...prev];
+            next.splice(index + 1, 0, newSlide);
+            return next;
+        });
+        setActiveSlideIndex(index + 1);
+        setIsSaving(false);
+    };
 
     // --- SAVE & EXPORT STATES ---
     const [boardId, setBoardId] = useState(initialBoardId || null); 
@@ -648,10 +713,18 @@ export default function PresentationView({
                                 
                                 return (
                                     <div 
-                                        key={slide.id} onClick={() => setActiveSlideIndex(idx)}
-                                        className={`group p-3 rounded-2xl border-2 cursor-pointer transition-all shrink-0 min-w-0 flex items-center justify-between ${isActive ? 'border-emerald-500 bg-emerald-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 bg-white'}`}
+                                        key={slide.id} 
+                                        draggable
+                                        onDragStart={(e) => handleSlideDragStart(e, idx)}
+                                        onDragOver={(e) => handleSlideDragOver(e, idx)}
+                                        onDragEnd={handleSlideDragEnd}
+                                        onClick={() => setActiveSlideIndex(idx)}
+                                        className={`group p-3 rounded-2xl border-2 cursor-pointer transition-all shrink-0 min-w-0 flex items-center justify-between ${isActive ? 'border-emerald-500 bg-emerald-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 bg-white'} ${draggedSlideIndex === idx ? 'opacity-40 border-dashed border-emerald-400' : ''}`}
                                     >
                                         <div className="flex items-center gap-3 overflow-hidden w-full">
+                                            {/* 🟢 NEW: Drag Handle Icon */}
+                                            <GripVertical size={14} className="text-slate-300 shrink-0 cursor-grab group-hover:text-slate-400" />
+                                            
                                             <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-black text-[11px] ${isActive ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
                                                 {idx + 1}
                                             </div>
@@ -684,15 +757,26 @@ export default function PresentationView({
                                             )}
                                         </div>
 
-                                        {slides.length > 1 && (
+                                        <div className={`flex gap-1 shrink-0 ml-2 transition-all opacity-0 group-hover:opacity-100 ${isActive ? 'opacity-100' : ''}`}>
+                                            {/* 🟢 NEW: Duplicate Slide Button */}
                                             <button
-                                                onClick={(e) => handleDeleteSlide(e, idx)}
-                                                className={`p-1.5 ml-2 rounded-lg transition-all text-slate-300 hover:text-rose-500 hover:bg-rose-100 shrink-0 opacity-0 group-hover:opacity-100 ${isActive ? 'opacity-100' : ''}`}
-                                                title={lang === 'sv' ? "Ta bort slide" : "Delete slide"}
+                                                onClick={(e) => handleDuplicateSlide(e, idx)}
+                                                className="p-1.5 rounded-lg transition-all text-slate-300 hover:text-indigo-500 hover:bg-indigo-100"
+                                                title={lang === 'sv' ? "Duplicera slide" : "Duplicate slide"}
                                             >
-                                                <Trash2 size={14} />
+                                                <Copy size={14} />
                                             </button>
-                                        )}
+                                            
+                                            {slides.length > 1 && (
+                                                <button
+                                                    onClick={(e) => handleDeleteSlide(e, idx)}
+                                                    className="p-1.5 rounded-lg transition-all text-slate-300 hover:text-rose-500 hover:bg-rose-100"
+                                                    title={lang === 'sv' ? "Ta bort slide" : "Delete slide"}
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })

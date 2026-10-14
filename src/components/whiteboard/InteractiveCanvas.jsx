@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Toolbar from './Toolbar';
 import { Trash2, Play, RefreshCw, BarChart2, List, Hash,
     AlignLeft, AlignCenter, AlignRight, ListOrdered, Palette, Dices,
-    ChevronLeft, ChevronRight
+    ChevronLeft, ChevronRight, Copy, Layers, GripVertical
  } from 'lucide-react';
 import 'mathlive';
 
@@ -181,6 +181,58 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         setElements(prev => prev.filter(el => el.id !== id));
         setSelectedId(null);
     };
+
+    // 🟢 NEW: Duplicate an element in place
+    const duplicateElement = (id) => {
+        setElements(prev => {
+            const el = prev.find(e => e.id === id);
+            if (!el) return prev;
+            const newEl = { ...el, id: Date.now().toString(), x: el.x + 30, y: el.y + 30 };
+            if (newEl.type === 'line') { newEl.x2 += 30; newEl.y2 += 30; }
+            if (newEl.type === 'path') { newEl.points = newEl.points.map(p => ({ x: p.x + 30, y: p.y + 30 })); }
+            setSelectedId(newEl.id);
+            return [...prev, newEl];
+        });
+    };
+
+    // 🟢 NEW: Global Copy / Paste Listener for transferring between slides
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Prevent interference while typing inside input fields or rich text blocks
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+            
+            // CTRL+C / CMD+C
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && selectedId) {
+                setElements(prev => {
+                    const elToCopy = prev.find(el => el.id === selectedId);
+                    if (elToCopy) {
+                        sessionStorage.setItem('canvasClipboard', JSON.stringify(elToCopy));
+                    }
+                    return prev;
+                });
+            }
+            
+            // CTRL+V / CMD+V
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+                const clip = sessionStorage.getItem('canvasClipboard');
+                if (clip) {
+                    try {
+                        const parsed = JSON.parse(clip);
+                        const newId = Date.now().toString();
+                        parsed.id = newId;
+                        parsed.x += 30; 
+                        parsed.y += 30;
+                        if (parsed.type === 'line') { parsed.x2 += 30; parsed.y2 += 30; }
+                        if (parsed.type === 'path') { parsed.points = parsed.points.map(p => ({ x: p.x + 30, y: p.y + 30 })); }
+                        setElements(prev => [...prev, parsed]);
+                        setSelectedId(newId);
+                    } catch(err) {}
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedId, setElements]);
 
     const updateDivisions = (id, delta) => setElements(prev => prev.map(el => el.id === id ? { ...el, divisions: Math.max(1, (el.divisions || 1) + delta), sliceColors: {} } : el));
     const spinSpinner = (id) => setElements(prev => prev.map(el => el.id === id ? { ...el, arrowRotation: (el.arrowRotation || 0) + 1440 + Math.random() * 360 } : el));
@@ -430,10 +482,15 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             <g className="ui-ignore pointer-events-auto">
                 <rect x={el.x-5} y={el.y-5} width={(isC || isP ? radius*2 : el.width)+10} height={(isP ? radius : (isC ? radius*2 : el.height))+10} fill="none" stroke="#3b82f6" strokeDasharray="5" opacity="0.4" />
                 
-                <foreignObject x={el.x - 45} y={el.y - 45} width={45} height={45} transform={unrotateTrash}>
-                    <button onClick={() => deleteElement(el.id)} className="text-rose-500 bg-white border-2 border-rose-500 rounded-xl shadow-lg w-10 h-10 flex items-center justify-center hover:bg-rose-50 cursor-pointer pointer-events-auto">
-                        <Trash2 size={20}/>
-                    </button>
+                <foreignObject x={el.x - 45} y={el.y - 45} width={95} height={45} transform={unrotateTrash}>
+                    <div className="flex gap-1 pointer-events-auto">
+                        <button onClick={() => duplicateElement(el.id)} className="text-slate-500 bg-white border-2 border-slate-200 rounded-xl shadow-lg w-10 h-10 flex items-center justify-center hover:bg-slate-50 hover:text-indigo-600 cursor-pointer pointer-events-auto" title={lang === 'sv' ? 'Kopiera' : 'Copy'}>
+                            <Copy size={16}/>
+                        </button>
+                        <button onClick={() => deleteElement(el.id)} className="text-rose-500 bg-white border-2 border-rose-500 rounded-xl shadow-lg w-10 h-10 flex items-center justify-center hover:bg-rose-50 cursor-pointer pointer-events-auto" title={lang === 'sv' ? 'Ta bort' : 'Delete'}>
+                            <Trash2 size={20}/>
+                        </button>
+                    </div>
                 </foreignObject>
                 <circle cx={cx} cy={el.y-55} r={12} fill="white" stroke="#3b82f6" strokeWidth="2" className="cursor-alias" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating'); setIsDrawing(true);}} />
                 <rect x={rigX-5} y={botY-5} width={20} height={20} fill="white" stroke="#3b82f6" strokeWidth={2} className="cursor-nwse-resize" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('resizing'); setIsDrawing(true);}} />
@@ -511,6 +568,13 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                                         <span className="text-[10px] font-black w-6 text-center">{el.fontSize||24}px</span>
                                         <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, fontSize: Math.min(72, (o.fontSize||24)+2)}:o))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded font-black text-[10px]">A+</button>
                                     </div>
+
+                                    {/* 🟢 NEW: Toggle for List vs Paging */}
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, clueLayout: 'list'}:o))} className={`px-2 py-1 rounded text-[10px] font-black transition-colors ${el.clueLayout !== 'paging' ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`} title="List View"><List size={12}/></button>
+                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, clueLayout: 'paging'}:o))} className={`px-2 py-1 rounded text-[10px] font-black transition-colors ${el.clueLayout === 'paging' ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`} title="Paging View"><Layers size={12}/></button>
+                                    </div>
+                                    
                                     <div className="w-px h-4 bg-slate-300 mx-1" />
                                     <div className="flex items-center gap-1">
                                         <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showText: o.showText===false}:o))} className={`px-2 py-1 rounded text-[10px] font-black transition-colors ${el.showText!==false ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>TEXT</button>
@@ -1564,29 +1628,33 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                                             {lang === 'sv' ? "Använd pilarna nedan för att visa stegen." : "Use the arrows below to reveal steps."}
                                         </div>
                                     ) : (
-                                        clues.slice(0, progress).map((clue, idx) => {
-                                            const text = typeof clue === 'object' ? clue[lang] || clue.text : clue;
-                                            const latex = typeof clue === 'object' ? clue.latex : null;
-                                            const fSize = el.fontSize || 24;
-                                            
-                                            return (
-                                                <div key={idx} className="pb-3 mb-3 border-b border-slate-100 last:border-0 last:mb-0 last:pb-0 animate-in fade-in slide-in-from-top-2">
-                                                    <div className="font-black text-indigo-500 uppercase tracking-widest mb-1 opacity-70" style={{ fontSize: `${Math.max(10, fSize * 0.5)}px` }}>
-                                                        {lang === 'sv' ? 'Steg' : 'Step'} {idx + 1}
-                                                    </div>
-                                                    {el.showText !== false && text && (
-                                                        <div className="font-bold text-slate-700 leading-relaxed" style={{ fontSize: `${fSize}px` }}>
-                                                            <MathDisplay content={text} />
-                                                        </div>
-                                                    )}
-                                                    {el.showLatex !== false && latex && (
-                                                        <div className="mt-2 text-center text-indigo-600 font-serif bg-indigo-50/50 py-2 rounded-lg border border-indigo-100" style={{ fontSize: `${fSize * 1.2}px` }}>
-                                                            <MathDisplay content={`$$${latex}$$`} />
-                                                        </div>
-                                                    )}
+                                        <div className="space-y-2.5">
+                                                    {/* 🟢 NEW: Dynamic Array Generation based on layout mode */}
+                                                    {(el.clueLayout === 'paging' ? (progress > 0 ? [clues[progress - 1]] : []) : clues.slice(0, progress)).map((clue, arrayIdx) => {
+                                                        const idx = el.clueLayout === 'paging' ? progress - 1 : arrayIdx;
+                                                        const text = typeof clue === 'object' ? clue[lang] || clue.text : clue;
+                                                        const latex = typeof clue === 'object' ? clue.latex : null;
+                                                        const fSize = el.fontSize || 24;
+                                                        
+                                                        return (
+                                                            <div key={idx} className="pb-3 mb-3 border-b border-slate-100 last:border-0 last:mb-0 last:pb-0 animate-in fade-in slide-in-from-top-2">
+                                                                <div className="font-black text-indigo-500 uppercase tracking-widest mb-1 opacity-70" style={{ fontSize: `${Math.max(10, fSize * 0.5)}px` }}>
+                                                                    {lang === 'sv' ? 'Steg' : 'Step'} {idx + 1}
+                                                                </div>
+                                                                {el.showText !== false && text && (
+                                                                    <div className="font-bold text-slate-700 leading-relaxed" style={{ fontSize: `${fSize}px` }}>
+                                                                        <MathDisplay content={text} />
+                                                                    </div>
+                                                                )}
+                                                                {el.showLatex !== false && latex && (
+                                                                    <div className="mt-2 text-center text-indigo-600 font-serif bg-indigo-50/50 py-2 rounded-lg border border-indigo-100" style={{ fontSize: `${fSize * 1.2}px` }}>
+                                                                        <MathDisplay content={`$$${latex}$$`} />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
-                                            )
-                                        })
                                     )}
                                 </div>
 
