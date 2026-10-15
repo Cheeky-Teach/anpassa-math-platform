@@ -13,6 +13,10 @@ export interface VariationConfig {
 
 export class WordProblemInterceptor {
     public static process(questionData: any, variationConfig: VariationConfig, lang: string = 'sv'): any {
+        if (!questionData) {
+            return this.markFallback(questionData);
+        }
+
         if (!variationConfig || !variationConfig.contextType || !variationConfig.extractorPattern) {
             return this.markFallback(questionData);
         }
@@ -29,7 +33,25 @@ export class WordProblemInterceptor {
             return this.markFallback(questionData);
         }
 
-        const extractedParams = matchResult.groups;
+        const extractedParams = { ...matchResult.groups };
+        if (!extractedParams.label1) extractedParams.label1 = lang === 'en' ? 'red' : 'röda';
+        if (!extractedParams.label2) extractedParams.label2 = lang === 'en' ? 'blue' : 'blåa';
+        if (extractedParams.favorable && !extractedParams.match) {
+            extractedParams.match = extractedParams.favorable;
+        }
+        if (extractedParams.match && !extractedParams.favorable) {
+            extractedParams.favorable = extractedParams.match;
+        }
+
+        // 2.5 Auto-derive compound parameters BEFORE rule evaluation
+        if (extractedParams.knownList && !extractedParams.currentSum) {
+            const sum = String(extractedParams.knownList)
+                .split(/[,\s]+/)
+                .map(s => parseFloat(s.trim().replace(',', '.')))
+                .filter(n => !isNaN(n))
+                .reduce((a, b) => a + b, 0);
+            extractedParams.currentSum = String(sum);
+        }
 
         // 3. Retrieve raw registry entry
         let entry: any = (GLOBAL_STORY_REGISTRY as Record<string, any>)[variationConfig.contextType];
@@ -50,7 +72,7 @@ export class WordProblemInterceptor {
 
         const candidateArray: StoryScenario[] = Array.isArray(entry) ? entry : [entry];
 
-        // 5. Filter viable stories using evaluateStoryRules
+        // 5. Filter viable stories using evaluateStoryRules (currentSum is now available!)
         const viableStories = candidateArray.filter(scenario => 
             evaluateStoryRules(scenario.rules, extractedParams).isValid
         );
@@ -60,19 +82,35 @@ export class WordProblemInterceptor {
             return this.markFallback(questionData);
         }
 
-        // 7. Deterministic selection from viable stories
-        const seedValue = Object.values(extractedParams).reduce((acc, val) => {
-            const num = parseInt(String(val).replace(/[()]/g, ''), 10) || 0;
-            return acc + num;
+        // 7. Robust deterministic selection (handles strings, floats, ints evenly)
+        const seedValue = Object.entries(extractedParams).reduce((acc, [key, val]) => {
+            const str = `${key}:${String(val).replace(/[()]/g, '')}`;
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0;
+            }
+            return acc + Math.abs(hash);
         }, 0);
+
         const selectedIndex = Math.abs(seedValue) % viableStories.length;
         const activeScenario = viableStories[selectedIndex];
 
-        // 8. Template placeholder replacement
-        let localizedStory = lang === 'en' ? activeScenario.en : activeScenario.sv;
+        // 8. Template placeholder replacement with defensive fallback
+        let localizedStory = (lang === 'en' ? activeScenario.en : activeScenario.sv) 
+            || activeScenario.sv 
+            || activeScenario.en 
+            || '';
+
+        if (!localizedStory) {
+            return this.markFallback(questionData);
+        }
+
         Object.entries(extractedParams).forEach(([key, value]) => {
-            const cleanValue = String(value).replace(/[()]/g, '');
-            localizedStory = localizedStory.replace(new RegExp(`{${key}}`, 'g'), cleanValue);
+            if (value !== undefined && value !== null) {
+                const cleanValue = String(value).replace(/[()]/g, '');
+                localizedStory = localizedStory.replace(new RegExp(`{${key}}`, 'g'), cleanValue);
+            }
         });
 
         // 9. Standard instruction suffixes
@@ -88,12 +126,18 @@ export class WordProblemInterceptor {
             },
             metadata: {
                 ...questionData.metadata,
-                isWordProblemApplied: true
+                isWordProblemApplied: true,
+                activeStoryId: activeScenario.id || null
             }
         };
     }
 
     private static markFallback(questionData: any): any {
+        if (!questionData) {
+            return {
+                metadata: { isWordProblemApplied: false }
+            };
+        }
         return {
             ...questionData,
             metadata: {
@@ -105,100 +149,88 @@ export class WordProblemInterceptor {
 
     private static appendInstructionSuffix(story: string, variationConfig: VariationConfig, questionData: any, lang: string): string {
         let text = story;
+        const vKey = questionData.variationKey || variationConfig.key;
+        const ctx = variationConfig.contextType || '';
 
-        if (variationConfig.key === 'table_formula' || variationConfig.key === 'find_formula') {
-            text += lang === 'en' 
+        // 1. Explicit Formula / Equation Prompts
+        if (vKey === 'table_formula' || vKey === 'find_formula') {
+            return text + (lang === 'en' 
                 ? " Write the formula that describes this situation." 
-                : " Bestäm formeln som beskriver mönstret.";
-        } else if (variationConfig.contextType?.startsWith('algebra_expressions')) {
-            text += lang === 'en'
+                : " Bestäm formeln som beskriver mönstret.");
+        } 
+        
+        if (ctx.startsWith('algebra_expressions')) {
+            return text + (lang === 'en'
                 ? " Write and simplify the algebraic expression."
-                : " Skriv och förenkla uttrycket.";
-        } else if (questionData.metadata?.difficulty === 5 || variationConfig.key === 'twostep_write_problem') {
-            text += lang === 'en' 
+                : " Skriv och förenkla uttrycket.");
+        } 
+        
+        if (questionData.metadata?.difficulty === 5 || vKey === 'twostep_write_problem') {
+            return text + (lang === 'en' 
                 ? " Write the equation that describes this situation." 
-                : " Teckna ekvationen som beskriver situationen.";
-        } else if (
-            questionData.variationKey === 'apply_factor_inc' || 
-            questionData.variationKey === 'apply_factor_dec'
-        ) {
-            text += lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.";
-        } else if (
-            questionData.variationKey === 'find_original_inc' || 
-            questionData.variationKey === 'find_original_dec'
-        ) {
-            text += lang === 'en' ? " Calculate the original value." : " Beräkna det ursprungliga värdet.";
-        } else if (questionData.variationKey === 'sequential_factors') {
-            text += lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.";
-        } else if (
-            // Native Narrative bypass keys
-            questionData.variationKey === 'high_term' ||
-            questionData.variationKey === 'visual_calc' ||
-            questionData.variationKey === 'reverse_calc' ||
-            questionData.variationKey === 'add_std_horizontal' ||
-            questionData.variationKey === 'sub_std_horizontal' ||
-            questionData.variationKey === 'mult_table_std' ||
-            questionData.variationKey === 'div_basic_std' ||
-            questionData.variationKey === 'vol_cuboid_std' ||
-            questionData.variationKey === 'vol_tri_prism_std' ||
-            questionData.variationKey === 'vol_cyl_std' ||
-            questionData.variationKey === 'vol_pyramid_std' ||
-            questionData.variationKey === 'vol_cone_std' ||
-            questionData.variationKey === 'vol_sphere_std' ||
-            questionData.variationKey === 'sim_calc_big' ||
-            questionData.variationKey === 'sim_calc_small' ||
-            questionData.variationKey === 'sim_find_k' ||
-            questionData.variationKey === 'transversal_total' ||
-            questionData.variationKey === 'transversal_extension' ||
-            questionData.variationKey === 'calc_real' ||
-            questionData.variationKey === 'calc_image' ||
-            questionData.variationKey === 'map_real' ||
-            questionData.variationKey === 'blueprint_draw' ||
-            questionData.variationKey === 'area_reverse' ||
-            questionData.variationKey === 'area_calc_large' ||
-            questionData.variationKey === 'microscope_calc' ||
-            questionData.variationKey === 'find_mode' ||
-            questionData.variationKey === 'find_range' ||
-            questionData.variationKey === 'calc_mean' ||
-            questionData.variationKey === 'median_odd' ||
-            questionData.variationKey === 'reverse_mean_calc' ||
-            questionData.variationKey === 'freq_count' ||
-            questionData.variationKey === 'freq_mode' ||
-            questionData.variationKey === 'foundations_calc' ||
-            questionData.variationKey === 'ten_positive_exponent' ||
-            questionData.variationKey === 'ten_negative_exponent' ||
-            questionData.variationKey === 'ten_inverse_counting' ||
-            questionData.variationKey === 'scientific_to_form' ||
-            questionData.variationKey === 'scientific_missing_mantissa' ||
-            questionData.variationKey === 'root_calc' ||
-            questionData.variationKey === 'root_inverse_algebra' ||
-            questionData.variationKey === 'intercept_id' ||
-            questionData.variationKey === 'slope_pos_int' ||
-            questionData.variationKey === 'slope_pos_frac' ||
-            questionData.variationKey === 'slope_neg_int' ||
-            questionData.variationKey === 'slope_neg_frac' ||
-            questionData.variationKey === 'eq_standard' ||
-            questionData.variationKey === 'eq_no_m' ||
-            questionData.variationKey === 'eq_horizontal' ||
-            questionData.variationKey === 'hyp_visual' ||
-            questionData.variationKey === 'leg_visual' ||
-            questionData.variationKey === 'app_diagonal'
-        ) {
-            // Bypass
-        } else if (
-            variationConfig.key === 'onestep_calc' ||
-            variationConfig.key === 'twostep_calc' ||
-            variationConfig.key === 'twostep_solve_problem' || 
-            variationConfig.key === 'paren_calc' ||       
-            variationConfig.key === 'bothsides_calc' ||   
-            variationConfig.key === 'mult_same_sign' ||
-            variationConfig.key === 'mult_diff_sign' ||
-            variationConfig.contextType?.startsWith('algebra_onestep') ||
-            variationConfig.contextType?.startsWith('algebra_twostep') ||
-            variationConfig.contextType?.startsWith('algebra_parentheses') ||
-            variationConfig.contextType?.startsWith('algebra_bothsides')
-        ) {
-            const isNegativeMath = variationConfig.key.startsWith('mult_');
+                : " Teckna ekvationen som beskriver situationen.");
+        }
+
+        // 2. Change Factor Instruction Suffixes
+        if (vKey === 'apply_factor_inc' || vKey === 'apply_factor_dec') {
+            return text + (lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.");
+        }
+        if (vKey === 'find_original_inc' || vKey === 'find_original_dec') {
+            return text + (lang === 'en' ? " Calculate the original value." : " Beräkna det ursprungliga värdet.");
+        }
+        if (vKey === 'sequential_factors' || vKey === 'factor_compound') {
+            return text + (lang === 'en' ? " Calculate the total combined change factor." : " Beräkna den totala förändringsfaktorn.");
+        }
+
+        // 3. Complete Self-Contained Native Narrative Domains (No Suffix Needed)
+        const isSelfContainedDomain = 
+            ctx.startsWith('geom_') ||
+            ctx.startsWith('units_') ||
+            ctx.startsWith('prob_') ||
+            ctx.startsWith('percent_') ||
+            ctx.startsWith('value_delta') ||
+            ctx.startsWith('pyth_') ||
+            ctx.startsWith('sim_') ||
+            ctx.startsWith('transversal_') ||
+            ctx.startsWith('scale_') ||
+            ctx.startsWith('stats_') ||
+            ctx.startsWith('exp_') ||
+            ctx.startsWith('volume_');
+
+        if (isSelfContainedDomain) {
+            return text;
+        }
+
+        // 4. Specific Native Narrative bypass variations
+        const bypassKeys = new Set([
+            'high_term', 'visual_calc', 'reverse_calc',
+            'add_std_horizontal', 'sub_std_horizontal',
+            'mult_table_std', 'div_basic_std',
+            'len_basic', 'len_decimals', 'weight_basic', 'weight_decimals', 'vol_basic', 'vol_decimals',
+            'intercept_id', 'slope_pos_int', 'slope_pos_frac', 'slope_neg_int', 'slope_neg_frac',
+            'eq_standard', 'eq_no_m', 'eq_horizontal'
+        ]);
+
+        if (bypassKeys.has(vKey)) {
+            return text;
+        }
+
+        // 5. Traditional Algebra & Arithmetic Equation Solvers
+        const isAlgebraOrArithmeticEquation = 
+            vKey === 'onestep_calc' ||
+            vKey === 'twostep_calc' ||
+            vKey === 'twostep_solve_problem' || 
+            vKey === 'paren_calc' ||       
+            vKey === 'bothsides_calc' ||   
+            vKey === 'mult_same_sign' ||
+            vKey === 'mult_diff_sign' ||
+            ctx.startsWith('algebra_onestep') ||
+            ctx.startsWith('algebra_twostep') ||
+            ctx.startsWith('algebra_parentheses') ||
+            ctx.startsWith('algebra_bothsides');
+
+        if (isAlgebraOrArithmeticEquation) {
+            const isNegativeMath = vKey.startsWith('mult_');
             text += isNegativeMath 
                 ? (lang === 'sv' ? " Beräkna." : " Calculate.") 
                 : (lang === 'sv' ? " Beräkna värdet på x." : " Calculate the value of x.");

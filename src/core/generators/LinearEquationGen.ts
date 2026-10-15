@@ -51,7 +51,6 @@ export class LinearEquationGen {
      * Maps ALL keys from skillBuckets.js to preserve Studio compatibility.
      */
     public generateByVariation(key: string, lang: string = 'sv'): any {
-        // Legacy word problem routing array is completely deleted.
         switch (key) {
             case 'onestep_concept_inverse':
             case 'onestep_spot_lie':
@@ -60,6 +59,13 @@ export class LinearEquationGen {
             case 'twostep_concept_order':
             case 'twostep_calc':
                 return this.level2_TwoStep(lang, key);
+            case 'twostep_write_problem':
+            case 'twostep_solve_problem':
+                // Delegate to problemGen if it has generateByVariation, or call generate(5/6)
+                if (typeof (this.problemGen as any).generateByVariation === 'function') {
+                    return (this.problemGen as any).generateByVariation(key, lang);
+                }
+                return this.problemGen.generate(key === 'twostep_write_problem' ? 5 : 6, lang);
             case 'paren_lie_distribution':
             case 'paren_calc':
                 return this.level3_Parentheses(lang, key);
@@ -313,22 +319,28 @@ export class LinearEquationGen {
         const isPlus = Math.random() > 0.5; // Toggle between +b and -b
         
         const a = MathUtils.randomInt(2, 6);
-        const b = MathUtils.randomInt(1, 15);
+        let b = MathUtils.randomInt(1, 15);
         let x: number, c: number, intermediate: number;
         let equationLatex: string;
 
         if (isMultiplication) {
             x = MathUtils.randomInt(2, 12);
             intermediate = a * x;
-            c = isPlus ? intermediate + b : intermediate - b;
-            equationLatex = `${a}x ${isPlus ? '+' : '-'} ${b} = ${c}`;
+            // Ensure b < intermediate so c is strictly positive
+            const maxB = isPlus ? 15 : Math.min(15, intermediate - 1);
+            const actualB = MathUtils.randomInt(1, Math.max(1, maxB));
+            c = isPlus ? intermediate + actualB : intermediate - actualB;
+            equationLatex = `${a}x ${isPlus ? '+' : '-'} ${actualB} = ${c}`;
+            b = actualB;
         } else {
-            // Ensure integer results: c must be integer, so result of x/a must be integer
             const k = MathUtils.randomInt(2, 10); // Result of x/a
             x = k * a;
             intermediate = k;
-            c = isPlus ? intermediate + b : intermediate - b;
-            equationLatex = `\\frac{x}{${a}} ${isPlus ? '+' : '-'} ${b} = ${c}`;
+            const maxB = isPlus ? 15 : Math.min(15, intermediate - 1);
+            const actualB = MathUtils.randomInt(1, Math.max(1, maxB));
+            c = isPlus ? intermediate + actualB : intermediate - actualB;
+            equationLatex = `\\frac{x}{${a}} ${isPlus ? '+' : '-'} ${actualB} = ${c}`;
+            b = actualB;
         }
 
         const clues = [

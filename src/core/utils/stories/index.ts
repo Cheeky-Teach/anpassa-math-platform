@@ -17,6 +17,7 @@ import { STATISTICS_STORIES } from './statistics.stories.js';
 import { EXPONENTS_STORIES } from './exponents.stories.js';
 import { LINEAR_GRAPHS_STORIES } from './linearGraphs.stories.js';
 import { PYTHAGORAS_STORIES } from './pythagoras.stories.js';
+import { UNIT_CONVERSION_STORIES } from './unitConversion.stories.js';
 
 export const GLOBAL_STORY_REGISTRY: Record<string, any> = {
     ...ARITHMETIC_STORIES,
@@ -36,5 +37,6 @@ export const GLOBAL_STORY_REGISTRY: Record<string, any> = {
     ...SCALE_STORIES,
     ...STATISTICS_STORIES,
     ...TENPOWERS_STORIES,
-    ...VOLUME_STORIES
+    ...VOLUME_STORIES,
+    ...UNIT_CONVERSION_STORIES
 };

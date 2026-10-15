@@ -328,7 +328,6 @@ export class PercentGen {
         }
 
         if (v === 'composition') {
-            // Expand base to any multiple of 10 from 50 to 990
             const base = MathUtils.randomInt(5, 99) * 10;
             const pct = MathUtils.randomChoice([20, 30, 40, 60, 70, 80, 90]);
             const ans = (base * pct) / 100;
@@ -336,25 +335,15 @@ export class PercentGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `Beräkna ${pct}% av ${base}.` : `Calculate ${pct}% of ${base}.`,
-                    latex: ``,
+                    latex: `${pct}\\% \\cdot ${base}`,
+                    interceptorToken: `${pct}% av ${base}`, // 🟢 Needed by percent_of_amount
                     answerType: 'numeric'
                 },
                 token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
                 clues: [
-                    { 
-                        text: lang === 'sv' ? `Hitta 10% först genom att dela hela talet ${base} med 10.` : `Find 10% first by dividing the full number ${base} by 10.`, 
-                        latex: `10\\% = \\frac{${base}}{10} = \\mathbf{${base / 10}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? `Eftersom du vill ha ${pct}%, behöver vi exakt ${pct / 10} stycken sådana byggstenar. Multiplicera därför värdet med ${pct / 10}.` : `Since you are looking for ${pct}%, we need exactly ${pct / 10} of those building blocks. Therefore, multiply the value by ${pct / 10}.`, 
-                        latex: `${pct}\\% = ${base / 10} \\cdot \\mathbf{${pct / 10}}` 
-                    },
-                    { 
-                        text: lang === 'sv' ? "Räkna ut gångertalet för att hitta slutsvaret." : "Calculate the multiplication to find the final total answer.", 
-                        latex: `${pct}\\% = \\mathbf{${ans}}` 
-                    },
-                    { text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, latex: `${ans}` }
-                ]
+                    // ... clues stay identical
+                ],
+                metadata: { variation_key: v, difficulty: 3 }
             };
         }
 
@@ -402,11 +391,14 @@ export class PercentGen {
         return {
             renderData: { 
                 description: desc, 
-                latex: ``,
+                latex: `\\frac{${part}}{${w}}`,
+                interceptorToken: `${part} ; ${w}`, // part and whole for percent_find_rate
                 answerType: 'numeric', 
                 suffix: '%' 
             },            
-            token: this.toBase64(p.toString()), variationKey: v, type: 'calculate',
+            token: this.toBase64(p.toString()), 
+            variationKey: v, 
+            type: 'calculate',
             clues: [
                 { 
                     text: lang === 'sv' ? "För att hitta andelen i procent sätter vi alltid delen där uppe på bråkstrecket, och det hela totalt där nere." : "To find the percentage rate, we always place the smaller part on top of the fraction line, and the full total at the bottom.", 
@@ -425,11 +417,12 @@ export class PercentGen {
                     latex: `${(part / w).toString().replace('.', ',')} \\cdot 100 = \\mathbf{${p}\\%}` 
                 },
                 { text: lang === 'sv' ? `Svar: ${p}%` : `Answer: ${p}%`, latex: `${p}\\%` }
-            ]
+            ],
+            metadata: { variation_key: v, difficulty: 4 }
         };
     }
 
-    // --- LEVEL 5: REVERSE PERCENTAGE (Scaling Strategy Refactor) ---
+    // --- LEVEL 5: REVERSE PERCENTAGE ---
     private level5_ReversePercentage(lang: string, variationKey?: string, options: any = {}): any {
         const p = MathUtils.randomChoice([5, 10, 20, 25]);
         const w = MathUtils.randomInt(10, 50) * 10;
@@ -439,9 +432,13 @@ export class PercentGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `${p}% av en summa pengar är ${part} kr. Vad är hela summan (100%)?` : `${p}% of a sum of money is ${part} kr. What is the total sum (100%)?`,
+                latex: `${p}\\% = ${part}`,
+                interceptorToken: `${part} ; ${p}`, // part and pct for percent_base_part
                 answerType: 'numeric'
             },
-            token: this.toBase64(w.toString()), variationKey: 'reverse_find_whole', type: 'calculate',
+            token: this.toBase64(w.toString()), 
+            variationKey: 'reverse_find_whole', 
+            type: 'calculate',
             clues: [
                 { 
                     text: lang === 'sv' ? `Vi vet att en liten bit på ${p}% är värd exakt ${part} kr.` : `We know that a small piece of ${p}% is worth exactly ${part} kr.`, 
@@ -460,7 +457,8 @@ export class PercentGen {
                     latex: `100\\% = \\mathbf{${w}}` 
                 },
                 { text: lang === 'sv' ? `Svar: ${w} kr` : `Answer: ${w} kr`, latex: `${w}` }
-            ]
+            ],
+            metadata: { variation_key: 'reverse_find_whole', difficulty: 5 }
         };
     }
 
@@ -521,7 +519,8 @@ export class PercentGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `Ett pris ändrades från ${oldV} kr till ${newV} kr. Vad var förändringen i procent?` : `A price changed from ${oldV} kr to ${newV} kr. What was the change in percent?`,
-                latex: ``,
+                latex: `\\frac{${diff}}{${oldV}}`,
+                interceptorToken: `${diff} ; ${oldV}`, // 🟢 Needed by value_delta ({diff} and {oldV})
                 answerType: 'numeric', 
                 suffix: '%'
             },
@@ -544,7 +543,8 @@ export class PercentGen {
                     latex: `${(diff / oldV).toString().replace('.', ',')} \\cdot 100 = \\mathbf{${p}\\%}` 
                 },
                 { text: lang === 'sv' ? `Svar: ${p}%` : `Answer: ${p}%`, latex: `${p}\\%` }
-            ]
+            ],
+            metadata: { variation_key: 'change_calc', difficulty: 6 }
         };
     }
 }

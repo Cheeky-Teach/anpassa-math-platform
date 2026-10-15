@@ -22,7 +22,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Lös enkla x + a = b eller x - a = b', en: 'Solve simple x + a = b or x - a = b' },
             tags: ['word_problem_ready'],
             contextType: 'algebra_onestep',
-            extractorPattern: /^(?<type>multiply|add|sub)\s*;\s*(?<a>\d+)\s*;\s*(?<b>\d+)$/
+            // Allow negative numbers (-?\d+)
+            extractorPattern: /^(?<type>multiply|add|sub)\s*;\s*(?<a>-?\d+)\s*;\s*(?<b>-?\d+)$/
           },
           { key: 'onestep_concept_inverse', level: 1, name: { sv: 'Ensteg: Invers', en: 'One-step: Inverse' }, desc: { sv: 'Välj rätt räknesätt (+/-/*/÷)', en: 'Choose the correct operation' } },
           { key: 'onestep_spot_lie', level: 1, name: { sv: 'Hitta felet: Ensteg', en: 'Find the error: One-step' }, desc: { sv: 'Identifiera felaktig lösning', en: 'Identify incorrect solutions' } },
@@ -35,7 +36,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'ax + b = c eller ax - b = c', en: 'ax + b = c or ax - b = c' },
             tags: ['word_problem_ready'],
             contextType: 'algebra_twostep',
-            extractorPattern: /^(?<type>multiply|divide)\s*;\s*(?<a>\d+)\s*;\s*(?<op>[\+\-])\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)$/
+            // Allow negative numbers and division slash / or minus operator
+            extractorPattern: /^(?<type>multiply|divide)\s*;\s*(?<a>-?\d+)\s*;\s*(?<op>[\+\-\*\/])\s*;\s*(?<b>-?\d+)\s*;\s*(?<c>-?\d+)$/
           },
           { key: 'twostep_concept_order', level: 2, name: { sv: 'Tvåsteg: Ordning', en: 'Two-step: Order' }, desc: { sv: 'Vilket steg tas först?', en: 'Which step is taken first?' } },
           { 
@@ -45,7 +47,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Skriv ekvationen utifrån en text', en: 'Write equation from a story' },
             tags: ['word_problem_ready'],
             contextType: 'algebra_twostep_formulation',
-            extractorPattern: /^(?<type>multiply|divide)\s*;\s*(?<a>\d+)\s*;\s*(?<op>[\+\-])\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)$/
+            extractorPattern: /^(?<type>multiply|divide)\s*;\s*(?<a>-?\d+)\s*;\s*(?<op>[\+\-\*\/])\s*;\s*(?<b>-?\d+)\s*;\s*(?<c>-?\d+)$/
           },
           { 
             key: 'twostep_solve_problem', 
@@ -54,7 +56,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Beräkna x utifrån en text', en: 'Calculate x from a story' },
             tags: ['word_problem_ready'],
             contextType: 'algebra_twostep_solver',
-            extractorPattern: /^(?<type>multiply|divide)\s*;\s*(?<a>\d+)\s*;\s*(?<op>[\+\-])\s*;\s*(?<b>\d+)\s*;\s*(?<c>\d+)$/
+            extractorPattern: /^(?<type>multiply|divide)\s*;\s*(?<a>-?\d+)\s*;\s*(?<op>[\+\-\*\/])\s*;\s*(?<b>-?\d+)\s*;\s*(?<c>-?\d+)$/
           },
 
           // LEVEL 3: Parenteser (Parentheses)
@@ -202,13 +204,12 @@ export const SKILL_BUCKETS = {
           { key: 'formula_missing', level: 3, name: { sv: 'Hitta formeln (Bild)', en: 'Find formula (Visual)' }, desc: { sv: 'Koppla bild till uttryck', en: 'Link image to expression' } },
           { 
             key: 'visual_calc', 
-            level: 3,
-            name: { sv: 'Beräkna antal (Bild)', en: 'Calculate count (Visual)' }, 
-            desc: { sv: 'Hur många tändstickor?', en: 'How many matches?' },
-            tags: ['word_problem_ready'],
-            contextType: 'pattern_linear_calc',
-            // Parses out: {a} (growth coefficient rate), {target} (target steps evaluation count), {b} (base value)
-            extractorPattern: /^(?<a>\d+)\s*·\s*(?<target>\d+)\s*\+\s*(?<b>\d+)$/
+            level: 3, 
+            name: { sv: 'Mönster: Figurberäkning', en: 'Pattern: Figure Calculation' }, 
+            desc: { sv: 'Beräkna värdet för figur n', en: 'Calculate value for figure n' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'pattern_linear_calc', 
+            extractorPattern: /^(?<a>-?\d+)\s*(?:[\u00B7\u22C5\u2022\*\.]|·|\\cdot)\s*(?<target>-?\d+)\s*(?<op>[\+\-])\s*(?<b>-?\d+)$/
           },
           { key: 'find_formula', level: 3, name: { sv: 'Skriv formeln', en: 'Write the formula' }, desc: { sv: 'Skapa y = kn + m', en: 'Create y = kn + m' } },
 
@@ -363,8 +364,24 @@ export const SKILL_BUCKETS = {
           { key: 'div_rule_tf', level: 8, name: { sv: 'Delbarhet: Sant/Falskt', en: 'Divisibility: T/F' }, desc: { sv: 'Logik för 2, 3, 5 och 10', en: 'Logic for 2, 3, 5 and 10' } },
           
           // LEVEL 9: DECIMAL DIVISION
-          { key: 'div_decimal_dividend', level: 9, name: { sv: 'Division: Decimal i täljaren', en: 'Division: Decimal in dividend' }, desc: { sv: 'Dela ett decimaltal', en: 'Divide a decimal' }, tags: ['word_problem_ready'], contextType: 'arithmetic_div_std', extractorPattern: /^(?<prod>[\d,.]+)\s*\/\s*(?<f1>\d+)$/ },
-          { key: 'div_decimal_divisor', level: 9, name: { sv: 'Division: Decimal i nämnaren', en: 'Division: Decimal in divisor' }, desc: { sv: 'Dela med ett decimaltal', en: 'Divide by a decimal' }, tags: ['word_problem_ready'], contextType: 'arithmetic_div_std', extractorPattern: /^(?<prod>[\d,.]+)\s*\/\s*(?<f1>[\d,.]+)$/ }
+          { 
+            key: 'div_decimal_dividend', 
+            level: 9, 
+            name: { sv: 'Division: Decimal i täljaren', en: 'Division: Decimal in dividend' }, 
+            desc: { sv: 'Dela ett decimaltal', en: 'Divide a decimal' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'arithmetic_div_std', 
+            extractorPattern: /^\s*(?<prod>-?[\d.,]+)\s*\/\s*(?<f1>-?[\d.,]+)\s*$/
+          },
+          { 
+            key: 'div_decimal_divisor', 
+            level: 9, 
+            name: { sv: 'Division: Decimal i nämnaren', en: 'Division: Decimal in divisor' }, 
+            desc: { sv: 'Dela med ett decimaltal', en: 'Divide by a decimal' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'arithmetic_div_std', 
+            extractorPattern: /^(?<prod>-?\d+(?:[.,]\d+)?)\s*\/\s*(?<f1>-?\d+(?:[.,]\d+)?)$/ 
+          },
         ]
       },
       place_value: {
@@ -444,7 +461,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: '+(-a) = -a', en: '+(-a) = -a' },
             tags: ['word_problem_ready'],
             contextType: 'neg_double_minus',
-            extractorPattern: /^(?<valA>-?\d+)\s*-\s*\(-(?<valB>\d+)\)$/
+            // Matches both "a - (-b)" and "a + (-b)" with or without outer parentheses
+            extractorPattern: /^\s*(?<valA>-?\d+)\s*[\+\-]\s*\(?-?(?<valB>\d+)\)?\s*$/
           },
           { key: 'fluency_transform_match', level: 2, name: { sv: 'Matcha uttryck', en: 'Match expressions' }, desc: { sv: 'Olika skrivsätt', en: 'Different notations' } },
           
@@ -474,7 +492,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'a * ? = b', en: 'a * ? = b' },
             tags: ['word_problem_ready'],
             contextType: 'neg_multiplication',
-            extractorPattern: /^(?<valA>\(-?\d+\)|-?\d+)\s*·\s*(?<valB>\(-?\d+\)|-?\d+)$/
+            // Matches *, ·, and \cdot with optional parentheses around negatives
+            extractorPattern: /^\s*\(?(?<valA>-?\d+)\)?\s*(?:\*|·|\\cdot)\s*\(?(?<valB>-?\d+)\)?\s*$/
           },
           { 
             key: 'mult_chain', 
@@ -483,7 +502,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Jämnt/Udda antal minus', en: 'Even/Odd number of minuses' },
             tags: ['word_problem_ready'],
             contextType: 'neg_mult_chain',
-            extractorPattern: /^(?<valA>\(-?\d+\)|-?\d+)\s*·\s*(?<valB>\(-?\d+\)|-?\d+)\s*·\s*(?<valC>\(-?\d+\)|-?\d+)$/
+            // Captures the first 3 factors while allowing arbitrarily long product chains
+            extractorPattern: /^\s*\(?(?<valA>-?\d+)\)?\s*(?:\*|·|\\cdot)\s*\(?(?<valB>-?\d+)\)?\s*(?:\*|·|\\cdot)\s*\(?(?<valC>-?\d+)\)?/
           },
           
           // LEVEL 4: Division (Division)
@@ -515,7 +535,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Räkna ut täljaren först (inkluderar multiplikation)', en: 'Calculate numerator first (includes multiplication)' },
             tags: ['word_problem_ready'],
             contextType: 'neg_order_ops',
-            extractorPattern: /\\frac\{(?<a>-?\d+)\s*\+\s*(?<b>-?\d+)\s*\\cdot\s*(?<c>-?\d+)\}\{(?<d>-?\d+)\}/
+            // Tolerant to multiple spaces, LaTeX \cdot, and parentheses in numerator
+            extractorPattern: /\\frac\{\s*(?<a>-?\d+)\s*\+\s*\(?(?<b>-?\d+)\)?\s*(?:\\cdot|\*|·)\s*\(?(?<c>-?\d+)\)?\s*\}\{\s*(?<d>-?\d+)\s*\}/
           },
           { 
             key: 'neg_order_frac_paren', 
@@ -524,8 +545,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Räkna ut parentesen i täljaren först', en: 'Calculate parentheses in numerator first' },
             tags: ['word_problem_ready'],
             contextType: 'neg_order_ops',
-            extractorPattern: /\\frac\{(?<a>-?\d+)\s*\\cdot\s*\((?<b>-?\d+)\s*\+\s*(?<c>-?\d+)\)\}\{(?<d>-?\d+)\}/
-          }
+            extractorPattern: /\\frac\{\s*(?<a>-?\d+)\s*(?:\\cdot|\*|·)\s*\(\s*(?<b>-?\d+)\s*\+\s*\(?(?<c>-?\d+)\)?\s*\)\s*\}\{\s*(?<d>-?\d+)\s*\}/
+          },
         ]
       },
       fractions_basics: {
@@ -653,7 +674,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Dividera bråk genom att multiplicera med inverterat", en: "Divide fractions by multiplying by the reciprocal" },
             tags: ["word_problem_ready"],
             contextType: "frac_division",
-            extractorPattern: /\\frac{\s*(?<n1>\d+)\s*}{\s*(?<d1>\d+)\s*}\s*\\div\s*\\frac{\s*(?<n2>\d+)\s*}{\s*(?<d2>\d+)\s*}/
+            extractorPattern: /\\frac\{\s*(?<n1>\d+)\s*\}\{\s*(?<d1>\d+)\s*\}\s*(?:\\div|\/)\s*\\frac\{\s*(?<n2>\d+)\s*\}\{\s*(?<d2>\d+)\s*\}/
           },
 
           // LEVEL 6: Negativa Bråk
@@ -689,7 +710,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: '10%, 25%, 50%', en: '10%, 25%, 50%' },
             tags: ['word_problem_ready'],
             contextType: 'percent_of_amount',
-            extractorPattern: /^(?<pct>\d+)\\%\\s*\\cdot\\s*(?<base>\d+)/
+            extractorPattern: /^\s*(?<pct>\d+)\s*\\?%\s*(?:\\cdot|\*|·)\s*(?<base>\d+)/
           },
           {
             key: 'benchmark_inverse',
@@ -698,19 +719,19 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Om 10% är 5, vad är allt?', en: 'If 10% is 5, what is total?' },
             tags: ['word_problem_ready'],
             contextType: 'percent_base_part',
-            extractorPattern: /^(?<pct>\d+)\\%\\s*=\\s*(?<part>\d+)/
+            extractorPattern: /^\s*(?<pct>\d+)\s*\\?%\s*=\s*(?<part>\d+)/
           },
           { key: 'benchmark_commutative', level: 2, name: { sv: 'Kommutativa lagen', en: 'Commutative property' }, desc: { sv: 'A% av B = B% av A', en: 'A% of B = B% of A' } },
 
           // LEVEL 3: Byggstenar & Beräkningar (Building Blocks & Calculations)
-          {
-            key: 'composition',
-            level: 3,
-            name: { sv: 'Beräkna 30, 40...90%', en: 'Calculate 30, 40...90%' },
-            desc: { sv: 'Procent: Tiotal', en: 'Percent: Even 10s' },
-            tags: ['word_problem_ready'],
-            contextType: 'percent_of_amount',
-            extractorPattern: /^(?<pct>\d+)\\%\\s*\\cdot\\s*(?<base>\d+)/
+          { 
+            key: 'composition', 
+            level: 3, 
+            name: { sv: 'Sammansatta procent', en: 'Composite percentages' }, 
+            desc: { sv: '20%, 30%, 70%', en: '20%, 30%, 70%' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'percent_of_amount', 
+            extractorPattern: /^(?<pct>\d+)\s*%\s*(?:av|of)?\s*(?<base>\d+)/ 
           },
           { key: 'decomposition', level: 3, name: { sv: 'Beräkna (5%)', en: 'Calculate (5%)' }, desc: { sv: 'Använd 10% för att hitta 5%', en: 'Use 10% to find 5%' } },
           { key: 'estimation', level: 3, name: { sv: 'Uppskatta procent', en: 'Estimate percent' }, desc: { sv: 'Ungefärlig beräkning', en: 'Approximate calculation' } },
@@ -726,35 +747,36 @@ export const SKILL_BUCKETS = {
 
           // LEVEL 4: Andelen & Procentekvationen (The Percent Equation)
           { key: 'find_percent_basic', level: 4, name: { sv: 'Andelen (Grund)', en: 'Find Percent (Basic)' }, desc: { sv: 'Hur många procent?', en: 'How many percent?' } },
-          {
-            key: 'find_percent_test',
-            level: 4,
-            name: { sv: 'Andelen (Prov)', en: 'Find Percent (Test)' },
-            desc: { sv: 'Delen / Hela', en: 'Part / Whole' },
-            tags: ['word_problem_ready'],
-            contextType: 'percent_find_rate',
-            extractorPattern: /\\frac\{(?<part>\d+)\}\{(?<whole>\d+)\}/
+          { 
+            key: 'find_percent_test', 
+            level: 4, 
+            name: { sv: 'Andel: Provresultat', en: 'Rate: Test scores' }, 
+            desc: { sv: 'Delen / Det hela', en: 'Part / Whole' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'percent_find_rate', 
+            extractorPattern: /^(?<part>\d+)\s*;\s*(?<whole>\d+)$/ 
           },
-          {
-            key: 'find_percent_discount',
-            level: 4,
-            name: { sv: 'Andelen (Rabatt)', en: 'Percent: Discount' },
-            desc: { sv: 'Beräkna andelen', en: 'Calculate share' },
-            tags: ['word_problem_ready'],
-            contextType: 'percent_find_rate',
-            extractorPattern: /\\frac\{(?<part>\d+)\}\{(?<whole>\d+)\}/
+          { 
+            key: 'find_percent_discount', 
+            level: 4, 
+            name: { sv: 'Andel: Rabatter', en: 'Rate: Discounts' }, 
+            desc: { sv: 'Prissänkning i procent', en: 'Price drop in percent' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'percent_find_rate', 
+            extractorPattern: /^(?<part>\d+)\s*;\s*(?<whole>\d+)/ 
           },
           { key: 'find_percent_group', level: 4, name: { sv: 'Andelen (Grupp)', en: 'Percent: Group' }, desc: { sv: 'Andel av en grupp', en: 'Share of a group' } },
 
           // LEVEL 5: Omvända Procentproblem (Reverse Percentage)
-          {
-            key: 'reverse_find_whole',
-            level: 5,
-            name: { sv: 'Det hela', en: 'Find the whole' },
-            desc: { sv: 'Beräkna hela summan', en: 'Calculate total sum' },
-            tags: ['word_problem_ready'],
-            contextType: 'percent_base_part',
-            extractorPattern: /^(?<pct>\d+)\\%\\s*=\\s*(?<part>\d+)/
+          { 
+            key: 'reverse_find_whole', 
+            level: 5, 
+            name: { sv: 'Hitta det hela', en: 'Find the whole' }, 
+            desc: { sv: 'Givet delen, hitta 100%', en: 'Given the part, find 100%' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'percent_base_part', 
+            // 🟢 Change (?<part>\d+) to (?<part>[\d.,]+)
+            extractorPattern: /^(?<part>[\d.,]+)\s*;\s*(?<pct>\d+)/ 
           },
           { key: 'reverse_scaling', level: 5, name: { sv: 'Det hela (Skalning)', en: 'Find whole (Scaling)' }, desc: { sv: 'Skala upp till 100%', en: 'Scale up to 100%' } },
           { key: 'reverse_concept', level: 5, name: { sv: 'Koncept: Det hela', en: 'Concept: The whole' }, desc: { sv: 'Förstå samband', en: 'Understand relationship' } },
@@ -762,12 +784,12 @@ export const SKILL_BUCKETS = {
           // LEVEL 6: Procentuell Förändring (Percentage Change)
           { 
             key: 'change_calc', 
-            level: 6,
+            level: 6, 
             name: { sv: 'Beräkna förändring', en: 'Calculate change' }, 
-            desc: { sv: 'Skillnad / Ursprung', en: 'Difference / Original' },
-            tags: ['word_problem_ready'],
-            contextType: 'value_delta',
-            extractorPattern: /\\frac\{(?<diff>\d+)\}\{(?<oldV>\d+)\}/
+            desc: { sv: 'Skillnad / Ursprungsvärde', en: 'Difference / Original' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'value_delta', 
+            extractorPattern: /^(?<diff>\d+)\s*;\s*(?<oldV>\d+)/ 
           },
           { key: 'change_multiplier', level: 6, name: { sv: 'Förändringsfaktor', en: 'Change Factor' }, desc: { sv: '1,0 +/- %', en: '1.0 +/- %' } },
           { key: 'change_trap', level: 6, name: { sv: 'Hitta felet: Förändring', en: 'Find error: Change' }, desc: { sv: 'Vanliga misstag vid %-förändring', en: 'Common mistakes in % change' } }
@@ -856,10 +878,11 @@ export const SKILL_BUCKETS = {
             key: 'ten_positive_exponent', 
             level: 2,
             name: { sv: 'Tiopotenser (Pos)', en: 'Powers of ten (Pos)' }, 
-            desc: { sv: 'Skriv en positiv tiopotens som ett heltal', en: 'Write a positive power of ten as an integer' },
-            tags: ['word_problem_ready'],
-            contextType: 'exp_ten_positive',
-            extractorPattern: /^(?<exp>\d+)\s*;\s*(?<ans>\d+)/
+            desc: { sv: 'Skriv en positiv tiopotens som ett heltal', en: 'Write a positive power of ten as an integer' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'exp_ten_positive', 
+            // Matches both bare exponent "3", semicolon pair "3 ; 1000", or LaTeX "10^{3}"
+            extractorPattern: /^(?:10\^\{?(?<exp>\d+)\}?|(?<exp>\d+)(?:\s*;\s*(?<ans>\d+))?)$/
           },
           { 
             key: 'ten_negative_exponent', 
@@ -948,7 +971,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Multiplicera decimaltal med 10, 100, 1000", en: "Multiply decimals by 10, 100, 1000" },
             tags: ["word_problem_ready"],
             contextType: "ten_powers_mult_large",
-            extractorPattern: /(?<num>[\d,.]+)\s*·\s*(?<power>10|100|1000|10000)/
+            extractorPattern: /(?<num>-?\d+(?:[.,]\d+)?)\s*(?:·|\\cdot|\*)\s*(?<power>10|100|1000|10000)/
           },
           {
             key: "big_div_std",
@@ -957,7 +980,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Dividera decimaltal med 10, 100, 1000", en: "Divide decimals by 10, 100, 1000" },
             tags: ["word_problem_ready"],
             contextType: "ten_powers_div_large",
-            extractorPattern: /\\frac{\s*(?<num>[\d,.]+)\s*}{\s*(?<power>10|100|1000|10000)\s*}/
+            extractorPattern: /(?:\\frac{\s*(?<num>-?\d+(?:[.,]\d+)?)\s*}{\s*(?<power>10|100|1000|10000)\s*}|(?<num>-?\d+(?:[.,]\d+)?)\s*\/\s*(?<power>10|100|1000|10000))/
           },
           { key: 'big_missing_factor', level: 1, name: { sv: 'Hitta 10-faktorn', en: 'Find 10-factor' }, desc: { sv: 'Vad multiplicerades?', en: 'What was multiplied?' } },
           { key: 'power_discovery', level: 1, name: { sv: 'Potensform', en: 'Power form' }, desc: { sv: 'Skriv som 10^n', en: 'Write as 10^n' } },
@@ -974,7 +997,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Multiplicera med decimala tiopotenser (0,1, 0,01)", en: "Multiply by decimal powers of ten (0.1, 0.01)" },
             tags: ["word_problem_ready"],
             contextType: "ten_powers_mult_small",
-            extractorPattern: /(?<num>[\d,.]+)\s*·\s*(?<factor>0[.,]0*1)/
+            extractorPattern: /(?<num>-?\d+(?:[.,]\d+)?)\s*(?:·|\\cdot|\*)\s*(?<factor>0[.,]0*1)/
           },
           {
             key: "decimal_div_std",
@@ -983,7 +1006,7 @@ export const SKILL_BUCKETS = {
             desc: { sv: "Dividera med decimala tiopotenser (0,1, 0,01)", en: "Divide by decimal powers of ten (0.1, 0.01)" },
             tags: ["word_problem_ready"],
             contextType: "ten_powers_div_small",
-            extractorPattern: /\\frac{\s*(?<num>[\d,.]+)\s*}{\s*(?<factor>0[.,]0*1)\s*}/
+            extractorPattern: /(?:\\frac{\s*(?<num>-?\d+(?:[.,]\d+)?)\s*}{\s*(?<factor>0[.,]0*1)\s*}|(?<num>-?\d+(?:[.,]\d+)?)\s*\/\s*(?<factor>0[.,]0*1))/
           },
           { key: 'decimal_logic_trap', level: 3, name: { sv: 'Logisk fälla (Decimaler)', en: 'Logical trap (Decimals)' }, desc: { sv: 'Analysera decimalmultiplikationens effekt', en: 'Analyze decimal multiplication effects' } }
         ]
@@ -1005,20 +1028,20 @@ export const SKILL_BUCKETS = {
           { 
             key: 'len_basic', 
             level: 1, 
-            name: { sv: 'Längd: Heltal', en: 'Length: Whole numbers' }, 
-            desc: { sv: 'Omvandla m, dm, cm, mm (inga decimaler)', en: 'Convert m, dm, cm, mm (no decimals)' },
-            tags: ['word_problem_ready'],
-            contextType: 'units_length',
-            extractorPattern: /^(?<val>\d+)\s*;\s*(?<fromUnit>[a-z]+)\s*;\s*(?<toUnit>[a-z]+)/
+            name: { sv: 'Längd: Grundläggande', en: 'Length: Basic' }, 
+            desc: { sv: 'm, dm, cm, mm', en: 'm, dm, cm, mm' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'units_length', 
+            extractorPattern: /^(?<val>[\d.,]+)\s*;\s*(?<fromUnit>\w+)\s*;\s*(?<toUnit>\w+)\s*;\s*(?<ans>[\d.,]+)/ 
           },
           { 
             key: 'len_decimals', 
             level: 1, 
             name: { sv: 'Längd: Decimaler', en: 'Length: Decimals' }, 
-            desc: { sv: 'Omvandla längd med decimaltal', en: 'Convert length with decimal numbers' },
-            tags: ['word_problem_ready'],
-            contextType: 'units_length_dec',
-            extractorPattern: /^(?<val>[\d,.]+)\s*;\s*(?<fromUnit>[a-z]+)\s*;\s*(?<toUnit>[a-z]+)/
+            desc: { sv: 'Omvandla med decimaltal', en: 'Convert with decimals' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'units_length', 
+            extractorPattern: /^(?<val>[\d.,]+)\s*;\s*(?<fromUnit>\w+)\s*;\s*(?<toUnit>\w+)\s*;\s*(?<ans>[\d.,]+)/ 
           },
           { key: 'len_km_m', level: 1, name: { sv: 'Längd: km till m', en: 'Length: km to m' }, desc: { sv: 'Stora avstånd', en: 'Large distances' } },
           { key: 'len_concept', level: 1, name: { sv: 'Välj rätt enhet (Längd)', en: 'Choose unit (Length)' }, desc: { sv: 'Är en penna 15 m eller 15 cm?', en: 'Is a pencil 15 m or 15 cm?' } },
@@ -1027,20 +1050,20 @@ export const SKILL_BUCKETS = {
           { 
             key: 'weight_basic', 
             level: 2, 
-            name: { sv: 'Vikt: Heltal', en: 'Weight: Whole numbers' }, 
-            desc: { sv: 'Omvandla kg, hg, g', en: 'Convert kg, hg, g' },
-            tags: ['word_problem_ready'],
-            contextType: 'units_weight',
-            extractorPattern: /^(?<val>\d+)\s*;\s*(?<fromUnit>[a-z]+)\s*;\s*(?<toUnit>[a-z]+)/
+            name: { sv: 'Vikt: Grundläggande', en: 'Weight: Basic' }, 
+            desc: { sv: 'kg, hg, g', en: 'kg, hg, g' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'units_weight', 
+            extractorPattern: /^(?<val>[\d.,]+)\s*;\s*(?<fromUnit>\w+)\s*;\s*(?<toUnit>\w+)\s*;\s*(?<ans>[\d.,]+)/ 
           },
           { 
             key: 'weight_decimals', 
             level: 2, 
             name: { sv: 'Vikt: Decimaler', en: 'Weight: Decimals' }, 
-            desc: { sv: 'Omvandla vikt med decimaltal', en: 'Convert weight with decimals' },
-            tags: ['word_problem_ready'],
-            contextType: 'units_weight_dec',
-            extractorPattern: /^(?<val>[\d,.]+)\s*;\s*(?<fromUnit>[a-z]+)\s*;\s*(?<toUnit>[a-z]+)/
+            desc: { sv: 'Omvandla med decimaltal', en: 'Convert with decimals' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'units_weight', 
+            extractorPattern: /^(?<val>[\d.,]+)\s*;\s*(?<fromUnit>\w+)\s*;\s*(?<toUnit>\w+)\s*;\s*(?<ans>[\d.,]+)/ 
           },
           { key: 'weight_ton_kg', level: 2, name: { sv: 'Vikt: Ton till kg', en: 'Weight: Ton to kg' }, desc: { sv: 'Stora vikter', en: 'Large weights' } },
           { key: 'weight_concept', level: 2, name: { sv: 'Välj rätt enhet (Vikt)', en: 'Choose unit (Weight)' }, desc: { sv: 'Väger en bil 1,5 kg eller 1,5 ton?', en: 'Does a car weigh 1.5 kg or 1.5 tons?' } },
@@ -1049,20 +1072,20 @@ export const SKILL_BUCKETS = {
           { 
             key: 'vol_basic', 
             level: 3, 
-            name: { sv: 'Volym: Heltal', en: 'Volume: Whole numbers' }, 
-            desc: { sv: 'Omvandla liter, dl, cl, ml', en: 'Convert liters, dl, cl, ml' },
-            tags: ['word_problem_ready'],
-            contextType: 'units_volume',
-            extractorPattern: /^(?<val>\d+)\s*;\s*(?<fromUnit>[a-z]+)\s*;\s*(?<toUnit>[a-z]+)/
+            name: { sv: 'Volym: Grundläggande', en: 'Volume: Basic' }, 
+            desc: { sv: 'l, dl, cl, ml', en: 'l, dl, cl, ml' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'units_volume', 
+            extractorPattern: /^(?<val>[\d.,]+)\s*;\s*(?<fromUnit>\w+)\s*;\s*(?<toUnit>\w+)\s*;\s*(?<ans>[\d.,]+)/ 
           },
           { 
             key: 'vol_decimals', 
             level: 3, 
             name: { sv: 'Volym: Decimaler', en: 'Volume: Decimals' }, 
-            desc: { sv: 'Omvandla volym med decimaltal', en: 'Convert volume with decimals' },
-            tags: ['word_problem_ready'],
-            contextType: 'units_volume_dec',
-            extractorPattern: /^(?<val>[\d,.]+)\s*;\s*(?<fromUnit>[a-z]+)\s*;\s*(?<toUnit>[a-z]+)/
+            desc: { sv: 'Omvandla med decimaltal', en: 'Convert with decimals' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'units_volume', 
+            extractorPattern: /^(?<val>[\d.,]+)\s*;\s*(?<fromUnit>\w+)\s*;\s*(?<toUnit>\w+)\s*;\s*(?<ans>[\d.,]+)/ 
           },
           { key: 'vol_concept', level: 3, name: { sv: 'Välj rätt enhet (Volym)', en: 'Choose unit (Volume)' }, desc: { sv: 'Rymmer ett glas 2 liter eller 2 dl?', en: 'Does a glass hold 2 liters or 2 dl?' } }
         ]
@@ -1391,19 +1414,28 @@ export const SKILL_BUCKETS = {
             key: 'sim_calc_big', 
             level: 2, 
             name: { sv: 'Beräkna stor sida', en: 'Calculate large side' }, 
-            desc: { sv: 'Använd skalfaktor uppåt', en: 'Use scale factor upwards' } 
+            desc: { sv: 'Använd skalfaktor uppåt', en: 'Use scale factor upwards' },
+            tags: ['word_problem_ready'],
+            contextType: 'similarity_calc_big',
+            extractorPattern: /^(?<s1>\d+)\s*;\s*(?<s2>\d+)\s*;\s*(?<bigS2>\d+)/
           },
           { 
             key: 'sim_calc_small', 
             level: 2, 
             name: { sv: 'Beräkna liten sida', en: 'Calculate small side' }, 
-            desc: { sv: 'Använd skalfaktor nedåt', en: 'Use scale factor downwards' } 
+            desc: { sv: 'Använd skalfaktor nedåt', en: 'Use scale factor downwards' },
+            tags: ['word_problem_ready'],
+            contextType: 'similarity_calc_small',
+            extractorPattern: /^(?<bigS1>\d+)\s*;\s*(?<bigS2>\d+)\s*;\s*(?<s2>\d+)/
           },
           { 
             key: 'sim_find_k', 
             level: 2, 
             name: { sv: 'Bestäm skalfaktor', en: 'Determine scale factor' }, 
-            desc: { sv: 'Hitta k utifrån två kända sidor', en: 'Find k from two known sides' } 
+            desc: { sv: 'Hitta k utifrån två kända sidor', en: 'Find k from two known sides' },
+            tags: ['word_problem_ready'],
+            contextType: 'similarity_find_k',
+            extractorPattern: /^(?<s1>\d+)\s*;\s*(?<s2>\d+)\s*;\s*(?<bigS1>\d+)\s*;\s*(?<bigS2>\d+)/
           },
 
           // LEVEL 3: Topptriangelsatsen & Transversalsatsen (Top Triangle & Transversals)
@@ -1411,13 +1443,19 @@ export const SKILL_BUCKETS = {
             key: 'transversal_total', 
             level: 3, 
             name: { sv: 'Topptriangelsatsen', en: 'Top Triangle Theorem' }, 
-            desc: { sv: 'Beräkna totala längder', en: 'Calculate total lengths' } 
+            desc: { sv: 'Beräkna totala längder', en: 'Calculate total lengths' },
+            tags: ['word_problem_ready'],
+            contextType: 'transversal_total',
+            extractorPattern: /^(?<top>\d+)\s*;\s*(?<extra>\d+)\s*;\s*(?<smallBase>\d+)\s*;\s*(?<totSide>\d+)/
           },
           { 
             key: 'transversal_extension', 
             level: 3, 
             name: { sv: 'Transversalsatsen', en: 'Transversal Theorem' }, 
-            desc: { sv: 'Beräkna delsträckor', en: 'Calculate partial lengths' } 
+            desc: { sv: 'Beräkna delsträckor', en: 'Calculate partial lengths' },
+            tags: ['word_problem_ready'],
+            contextType: 'transversal_extension',
+            extractorPattern: /^(?<top>\d+)\s*;\s*(?<extra>\d+)\s*;\s*(?<smallBase>\d+)/
           }
         ]
       },
@@ -1462,12 +1500,12 @@ export const SKILL_BUCKETS = {
           },
           { 
             key: 'blueprint_draw', 
-            level: 3,
-            name: { sv: 'Ritning: Skala', en: 'Blueprint: Scale' },
-            desc: { sv: 'Räkna ut längd på ritning', en: 'Calculate length on drawing' },
-            tags: ['word_problem_ready'],
-            contextType: 'scale_blueprint_draw',
-            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<realM>\d+)\s*;\s*(?<ans>\d+)/
+            level: 3, 
+            name: { sv: 'Ritning: Skala', en: 'Blueprint: Scale' }, 
+            desc: { sv: 'Räkna ut längd på ritning', en: 'Calculate length on drawing' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'scale_blueprint_draw', 
+            extractorPattern: /^(?<scale>\d+)\s*;\s*(?<realM>-?\d+(?:[.,]\d+)?)\s*;\s*(?<ans>-?\d+(?:[.,]\d+)?)/ 
           },
           { 
             key: 'microscope_calc', 
@@ -1626,10 +1664,11 @@ export const SKILL_BUCKETS = {
             key: 'calc_mean', 
             level: 2, 
             name: { sv: 'Beräkna medelvärde', en: 'Calculate mean' }, 
-            desc: { sv: 'Summan delat på antalet', en: 'Sum divided by count' },
-            tags: ['word_problem_ready'],
-            contextType: 'stats_mean_calc',
-            extractorPattern: /^(?<sum>\d+)\s*;\s*(?<count>\d+)\s*;\s*(?<mean>[\d.]+)/
+            desc: { sv: 'Summan delat på antalet', en: 'Sum divided by count' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'stats_mean_calc', 
+            // Handles both "sum ; count ; mean" and "list ; sum ; count ; mean"
+            extractorPattern: /^(?:(?<list>[^;]+?)\s*;\s*)?(?<sum>\d+)\s*;\s*(?<count>\d+)\s*;\s*(?<mean>[\d.,]+)$/
           },
           { key: 'mean_concept_balance', level: 2, name: { sv: 'Koncept: Balans', en: 'Concept: Balance' }, desc: { sv: 'Förstå medelvärdet som en balanspunkt', en: 'Understand mean as a balance point' } },
           { key: 'mean_negatives', level: 2, name: { sv: 'Medelvärde (Negativa tal)', en: 'Mean (Negative numbers)' }, desc: { sv: 'Medelvärde med minusgrader/skulder', en: 'Mean involving negatives' } },
@@ -1644,10 +1683,11 @@ export const SKILL_BUCKETS = {
             key: 'reverse_mean_calc', 
             level: 4, 
             name: { sv: 'Hitta saknat värde', en: 'Find missing value' }, 
-            desc: { sv: 'Givet medelvärdet, hitta x', en: 'Given the mean, find x' },
-            tags: ['word_problem_ready'],
-            contextType: 'stats_mean_reverse',
-            extractorPattern: /^(?<mean>[\d.]+)\s*;\s*(?<count>\d+)\s*;\s*(?<currentSum>\d+)/
+            desc: { sv: 'Givet medelvärdet, hitta x', en: 'Given the mean, find x' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'stats_mean_reverse', 
+            // Handles "mean ; currentSum ; count" and "mean ; knownList ; count"
+            extractorPattern: /^(?<mean>[\d.,]+)\s*;\s*(?<knownList>[^;]+?)\s*;\s*(?<count>\d+)$/
           },
           { key: 'mean_target_score', level: 4, name: { sv: 'Målpoäng', en: 'Target score' }, desc: { sv: 'Vad krävs för att höja snittet?', en: 'What is needed to raise the average?' } },
 
@@ -1676,43 +1716,43 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Gynsamma / Möjliga', en: 'Favorable / Possible' }, 
             tags: ['word_problem_ready'],
             contextType: 'discrete_pool',
-            extractorPattern: /\\frac\{(?<match>\d+)\}\{(?<total>\d+)\}/
+            extractorPattern: /^(?:\\frac\{(?<match>\d+)\}\{(?<total>\d+)\}|(?<match>\d+)\s*\/\s*(?<total>\d+))/
           },
           { key: 'visual_not', level: 1, name: { sv: 'Komplementhändelse', en: 'Complementary event' }, desc: { sv: 'Sannolikheten för "Inte"', en: 'Probability of "Not"' } },
           { key: 'visual_or', level: 1, name: { sv: 'Bild: Eller', en: 'Visual: Or' }, desc: { sv: 'Sannolikheten för A eller B', en: 'Probability of A or B' } },
           { key: 'visual_spinner', level: 1, name: { sv: 'Lyckohjul', en: 'Lucky wheel' }, desc: { sv: 'Sektorernas andel', en: 'Sector share' } },
-          {
-            key: "comp_multi",
-            level: 1,
-            name: { sv: "Komplement: Procent", en: "Complement: Percent" },
-            desc: { sv: "Beräkna sannolikheten att något INTE händer utifrån procent", en: "Calculate the probability of an event NOT happening using percentages" },
-            tags: ["word_problem_ready"],
-            contextType: "prob_complement_pct",
-            extractorPattern: /lotteri\s*är\s*(?<pWin>\d+)\s*%/i
+          { 
+            key: 'comp_multi', 
+            level: 1, 
+            name: { sv: 'Komplementhändelse', en: 'Complementary Event' }, 
+            desc: { sv: 'Sannolikhet för komplement', en: 'Complement probability' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'prob_complement_pct', 
+            extractorPattern: /^(?<pWin>\d+)\s*;\s*(?<pLose>\d+)/ 
           },
           { key: 'comp_at_least', level: 1, name: { sv: 'Minst en', en: 'At least one' }, desc: { sv: 'Sannolikhet via komplement', en: 'Probability via complement' } },
           { key: 'comp_lie', level: 1, name: { sv: 'Hitta felet: Komplement', en: 'Find error: Complement' }, desc: { sv: 'Analysera påståenden', en: 'Analyze statements' } },
 
           // LEVEL 2: Grupper & Tärningar (Groups & Dice)
           { key: 'dice_single', level: 2, name: { sv: 'Tärning: Enstaka tal', en: 'Dice: Single number' }, desc: { sv: 'Ex: Få en 5:a', en: 'Ex: Rolling a 5' } },
-          {
-            key: "dice_parity",
-            level: 2,
-            name: { sv: "Tärningskast: Egenskaper", en: "Die Toss: Properties" },
-            desc: { sv: "Sannolikhet för jämna, udda eller specifika tärningsmönster", en: "Probability of rolling even, odd, or specific die patterns" },
-            tags: ["word_problem_ready"],
-            contextType: "prob_dice_parity",
-            extractorPattern: /slå\s*ett\s*(?<label>jämnt|udda)\s*tal/i
+          { 
+            key: 'dice_parity', 
+            level: 2, 
+            name: { sv: 'Tärning: Jämnt/Udda', en: 'Dice: Even/Odd' }, 
+            desc: { sv: 'Sannolikhet för paritet', en: 'Probability of parity' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'prob_dice_parity', 
+            extractorPattern: /^parity\s*;\s*(?<label>[^;]+)\s*;\s*(?<match>\d+)\s*;\s*(?<total>\d+)/ 
           },
           { key: 'dice_range', level: 2, name: { sv: 'Tärning: Intervall', en: 'Dice: Range' }, desc: { sv: 'Större/Mindre än n', en: 'Greater/Smaller than n' } },
-          {
-            key: "group_ratio",
-            level: 2,
-            name: { sv: "Förhållande i grupp", en: "Ratios in Groups" },
-            desc: { sv: "Beräkna sannolikhet utifrån ett givet proportionellt förhållande", en: "Calculate probability based on a given proportional ratio" },
-            tags: ["word_problem_ready"],
-            contextType: "prob_group_ratio",
-            extractorPattern: /mellan\s*(?<label1>[^ och]+)\s*och\s*(?<label2>[^ ]+)\s*föremål\s*(?<r1>\d+):(?<r2>\d+)/i
+          { 
+            key: 'group_ratio', 
+            level: 2, 
+            name: { sv: 'Förhållanden', en: 'Ratios' }, 
+            desc: { sv: 'Andelar från förhållanden', en: 'Fractions from ratios' }, 
+            tags: ['word_problem_ready'], 
+            contextType: 'prob_group_ratio', 
+            extractorPattern: /^(?<r1>\d+)\s*;\s*(?<r2>\d+)\s*;\s*(?<total>\d+)/ 
           },
           { key: 'group_ternary', level: 2, name: { sv: 'Tre grupper', en: 'Three groups' }, desc: { sv: 'Hitta restens chans', en: 'Find rest\'s chance' } },
 

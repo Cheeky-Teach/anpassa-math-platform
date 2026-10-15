@@ -165,9 +165,12 @@ export class ProbabilityGen {
                     description: lang === 'sv' 
                         ? `Chansen att vinna i ett lotteri är ${pWin}%. Vad är sannolikheten att man INTE vinner?` 
                         : `The chance of winning a lottery is ${pWin}%. What is the probability of NOT winning?`,
+                    latex: `100\\% - ${pWin}\\% = ${pLose}\\%`,
+                    interceptorToken: `${pWin} ; ${pLose}`, // 🟢 Injected
                     answerType: 'numeric', suffix: '%'
                 },
-                token: this.toBase64(pLose.toString()), variationKey: v, clues: [
+                token: this.toBase64(pLose.toString()), variationKey: v, 
+                clues: [
                     { 
                         text: lang === 'sv' ? "Hela chansen för allt som kan hända i lotteriet är alltid 100% totalt." : "The full chance for everything that can happen in the lottery is always 100% in total.", 
                         latex: `100\\%` 
@@ -237,10 +240,13 @@ export class ProbabilityGen {
         return {
             renderData: {
                 description: lang === 'sv' ? `Vad är sannolikheten att du ${isNot ? 'INTE' : ''} drar en ${colorLabels[target].toLowerCase()} kula?` : `What is the probability that you ${isNot ? 'NOT' : ''} pick a ${colorLabels[target].toLowerCase()} marble?`,
+                latex: `\\frac{${favorable}}{${total}}`,
+                interceptorToken: `${favorable} / ${total}`, // 🟢 Injected
                 answerType: 'fraction',
                 geometry: { type: 'probability_marbles', items: { red: counts[0], blue: counts[1], green: counts[2] } }
             },
-            token: this.toBase64(ans), variationKey: v, clues: [
+            token: this.toBase64(ans), variationKey: v, 
+            clues: [
                 { 
                     text: lang === 'sv' ? "Vi bygger ett enkelt chans-bråk: Delarna vi söker ska stå överst, och alla kulor i påsen sammanlagt ska stå underst." : "We construct a simple chance fraction: The parts we are looking for belong on top, and all the marbles in the bag combined belong at the bottom.", 
                     latex: `\\text{Chans} = \\frac{\\text{Delarna du söker}}{\\text{Alla sammanlagt}}` 
@@ -311,6 +317,8 @@ export class ProbabilityGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `Vad är sannolikheten att slå ett ${label} tal med en vanlig tärning?` : `What is the probability of rolling an ${label} number with a standard die?`,
+                    latex: `\\frac{3}{6}`,
+                    interceptorToken: `parity ; ${label} ; 3 ; 6`, // 🟢 Injected
                     answerType: 'fraction'
                 },
                 token: this.toBase64(ans), variationKey: v, clues: [
@@ -387,6 +395,8 @@ export class ProbabilityGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? `I en grupp är förhållandet mellan ${labels[0]} och ${labels[1]} föremål ${r1}:${r2}. Vad är sannolikheten att dra ett ${labels[0]} föremål?` : `In a group, the ratio between ${labels[0]} and ${labels[1]} items is ${r1}:${r2}. What is the probability of picking a ${labels[0]} item?`,
+                    latex: `\\frac{${r1}}{${total}}`,
+                    interceptorToken: `${r1} ; ${r2} ; ${total}`, // 🟢 Injected
                     answerType: 'fraction'
                 },
                 token: this.toBase64(ans), variationKey: v, clues: [

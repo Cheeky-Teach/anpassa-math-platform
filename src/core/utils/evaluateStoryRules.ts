@@ -24,6 +24,18 @@ export function parseNumericParams(rawParams: Record<string, string | number>): 
         }
     }
 
+    // Auto-calculate currentSum from knownList if knownList exists
+    if (rawParams.knownList && typeof rawParams.knownList === 'string') {
+        const numbers = rawParams.knownList
+            .split(/[,\s]+/)
+            .map(s => parseFloat(s.trim().replace(',', '.')))
+            .filter(n => !isNaN(n));
+        
+        if (numbers.length > 0) {
+            parsed.currentSum = numbers.reduce((a, b) => a + b, 0);
+        }
+    }
+
     // Compound Fraction Helper 1: n1 / d1
     if (parsed.n1 !== undefined && parsed.d1 !== undefined && parsed.d1 !== 0) {
         parsed.n1_over_d1 = parsed.n1 / parsed.d1;
@@ -32,6 +44,11 @@ export function parseNumericParams(rawParams: Record<string, string | number>): 
     // Compound Fraction Helper 2: n2 / d2
     if (parsed.n2 !== undefined && parsed.d2 !== undefined && parsed.d2 !== 0) {
         parsed.n2_over_d2 = parsed.n2 / parsed.d2;
+    }
+
+    // Compound Fraction Division Quotient: (n1/d1) / (n2/d2)
+    if (parsed.n1_over_d1 !== undefined && parsed.n2_over_d2 !== undefined && parsed.n2_over_d2 !== 0) {
+        parsed.result = parsed.n1_over_d1 / parsed.n2_over_d2;
     }
 
     // Compound Powers of Ten Helper: num / power
@@ -85,18 +102,25 @@ export function evaluateStoryRules(
         }
     }
 
+    // In evaluateStoryRules:
+    const targetVal = 
+        params.result ?? 
+        params.ans ?? 
+        params.val ?? 
+        params.pWin ?? 
+        params.c ?? 
+        params.n1_over_d1;
+
     // 4. Minimum Result Constraint
     if (rules.minResult !== undefined) {
-        const res = params.result !== undefined ? params.result : params.n1_over_d1;
-        if (res !== undefined && res < rules.minResult) {
+        if (targetVal !== undefined && targetVal < rules.minResult) {
             return { isValid: false, failedRule: `minResult:${rules.minResult}` };
         }
     }
 
     // 5. Maximum Result Constraint
     if (rules.maxResult !== undefined) {
-        const res = params.result !== undefined ? params.result : params.n1_over_d1;
-        if (res !== undefined && res > rules.maxResult) {
+        if (targetVal !== undefined && targetVal > rules.maxResult) {
             return { isValid: false, failedRule: `maxResult:${rules.maxResult}` };
         }
     }

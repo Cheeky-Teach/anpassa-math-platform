@@ -52,7 +52,7 @@ class LegacyFractionsGen {
 }
 
 // --- UNIFIED TOPIC MAP ---
-const TopicMap: Record<string, any> = {
+export const TopicMap: Record<string, any> = {
   'basic_arithmetic': BasicArithmeticGen,
   'arithmetic': BasicArithmeticGen,
   'place_value': PlaceValueGen,
