@@ -425,7 +425,7 @@ export class FractionArithGen {
 
         const clues = [
             {
-                text: lang === 'sv' ? `Att multiplicera bråk är jätte-enkelt! Vi behöver inte ändra några nämnare. Vi multiplicerar bara rakt över: uppe med uppe och nere med nere.` : `Multiplying fractions is super simple! We don't need to change any denominators. We just multiply straight across: top times top, bottom times bottom.`,
+                text: lang === 'sv' ? `Att multiplicera bråk är enkelt! Vi behöver inte ändra några nämnare. Vi multiplicerar bara rakt över: uppe med uppe och nere med nere.` : `Multiplying fractions is simple! We don't need to change any denominators. We just multiply straight across: top times top, bottom times bottom.`,
                 latex: `\\frac{${n1}}{${d1}} \\cdot \\frac{${n2}}{${d2}}`
             },
             {

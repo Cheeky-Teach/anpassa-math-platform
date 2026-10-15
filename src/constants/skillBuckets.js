@@ -1782,3 +1782,82 @@ export const SKILL_BUCKETS = {
     }
   }
 };
+
+// =========================================================================
+// 🎯 WORD PROBLEM CAPABILITY HELPERS (Single Source of Truth)
+// =========================================================================
+
+/**
+ * Checks if a specific variation key supports word problem transformations.
+ */
+export function isVariationWordProblemReady(variationKey) {
+  if (!variationKey) return false;
+  for (const catKey in SKILL_BUCKETS) {
+    const cat = SKILL_BUCKETS[catKey];
+    if (cat?.topics) {
+      for (const topicKey in cat.topics) {
+        const topic = cat.topics[topicKey];
+        if (Array.isArray(topic.variations)) {
+          const match = topic.variations.find(v => v && v.key === variationKey);
+          if (match) {
+            return Boolean(match.tags?.includes('word_problem_ready'));
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Checks if a topic has ANY word problems on a specific level (or across all levels if level is omitted).
+ */
+export function isLevelWordProblemReady(topicId, level) {
+  if (!topicId) return false;
+  for (const catKey in SKILL_BUCKETS) {
+    const cat = SKILL_BUCKETS[catKey];
+    if (cat?.topics && cat.topics[topicId]) {
+      const topic = cat.topics[topicId];
+      if (Array.isArray(topic.variations)) {
+        return topic.variations.some(v => {
+          if (!v?.tags?.includes('word_problem_ready')) return false;
+          if (level !== undefined && level !== null) {
+            return Number(v.level) === Number(level);
+          }
+          return true;
+        });
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Checks if a topic supports word problems at all.
+ */
+export function isTopicWordProblemReady(topicId) {
+  return isLevelWordProblemReady(topicId);
+}
+
+/**
+ * Returns all variations ready for word problems for a given topic (and optional level).
+ */
+export function getWordProblemVariations(topicId, level) {
+  if (!topicId) return [];
+  for (const catKey in SKILL_BUCKETS) {
+    const cat = SKILL_BUCKETS[catKey];
+    if (cat?.topics && cat.topics[topicId]) {
+      const topic = cat.topics[topicId];
+      if (Array.isArray(topic.variations)) {
+        return topic.variations.filter(v => {
+          if (!v?.tags?.includes('word_problem_ready')) return false;
+          if (level !== undefined && level !== null) {
+            return Number(v.level) === Number(level);
+          }
+          return true;
+        });
+      }
+    }
+  }
+  return [];
+}

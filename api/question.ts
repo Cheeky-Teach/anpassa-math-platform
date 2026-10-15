@@ -46,8 +46,8 @@ class LegacyFractionsGen {
         return new FractionArithGen().generate(level - 5, lang, options);
     }
     public generateByVariation(key: string, lang: string): any {
-         try { return new FractionBasicsGen().generateByVariation(key, lang); } 
-         catch { return new FractionArithGen().generateByVariation(key, lang); }
+        try { return new FractionBasicsGen().generateByVariation(key, lang); } 
+        catch { return new FractionArithGen().generateByVariation(key, lang); }
     }
 }
 
@@ -98,6 +98,26 @@ export const TopicMap: Record<string, any> = {
   'unit_conversion': UnitConversionGen
 };
 
+/**
+ * Fast taxonomy helper to locate a variation's full metadata config
+ */
+function findVariationConfig(variationKey: string): any {
+    if (!variationKey) return null;
+    for (const catKey in SKILL_BUCKETS) {
+        const cat = (SKILL_BUCKETS as any)[catKey];
+        if (cat && typeof cat === 'object' && cat.topics) {
+            for (const topicKey in cat.topics) {
+                const topicObj = cat.topics[topicKey];
+                if (topicObj && Array.isArray(topicObj.variations)) {
+                    const matched = topicObj.variations.find((v: any) => v && v.key === String(variationKey));
+                    if (matched) return matched;
+                }
+            }
+        }
+    }
+    return null;
+}
+
 export default function handler(req: VercelRequest, res: VercelResponse) {
     // 1. Standard Security Headers
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -110,7 +130,6 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         return;
     }
 
-    // SECURITY: Strict Method Enforcement
     if (req.method !== 'GET' && req.method !== 'POST') {
         return res.status(405).json({ error: "Method Not Allowed" });
     }
@@ -118,15 +137,16 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     const body = req.body || {};
     const query = (req as any).query || {}; 
 
-    // 1. Extract Parameters
+    // Parameters
     const rawTopic = query.topic || body.topic || query.category || body.category;
     const level = query.level || body.level;
     const variation = query.variation || body.variation; 
-    const lang = query.lang || body.lang || 'sv';
+    const lang = String(query.lang || body.lang || 'sv');
 
-    // Extract adaptive filtering parameters
+    // Adaptive filtering parameters
     const exclude = query.exclude || body.exclude || "";
     const hideConcept = (query.hideConcept === 'true' || body.hideConcept === true);
+    const activateWordProblem = (query.wordProblem === 'true' || body.wordProblem === true);
 
     if (!rawTopic) {
         return res.status(400).json({ error: "Missing 'topic' parameter" });
@@ -144,10 +164,13 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         const generator = new GeneratorClass();
-        let questionData;
-        const activateWordProblem = (query.wordProblem === 'true' || body.wordProblem === true);
+        const safeLevel = Number(level) || 1;
+        const options = {
+            exclude: String(exclude).split(',').filter(Boolean),
+            hideConcept: hideConcept
+        };
 
-        // 1. 🟢 UNIVERSAL CAPABILITY DETECTION: Check if the topic has ANY word problems
+        // Check if the topic has ANY word problems enabled
         let topicSupportsWordProblems = false;
         const category = Object.values(SKILL_BUCKETS).find((cat: any) => cat.topics && cat.topics[String(rawTopic)]);
         if (category) {
@@ -157,68 +180,51 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
             }
         }
 
-        // 2. 🟢 SMART ROULETTE LOOP: Prevent "flickering" by forcing the generator to find a story if requested
-        let activeVariation;
-        let foundVariationConfig: any = null;
-        let attempts = 0;
+        let questionData: any = null;
 
-        do {
-            foundVariationConfig = null;
+        // 🟢 STEP 3.1: IN-MEMORY SYNCHRONOUS RETRY LOOP
+        if (activateWordProblem) {
+            const MAX_ATTEMPTS = 5;
 
-            if (variation && typeof generator.generateByVariation === 'function') {
-                questionData = generator.generateByVariation(String(variation), String(lang));
-            } else {
-                const safeLevel = Number(level) || 1;
-                const options = {
-                    exclude: String(exclude).split(',').filter(Boolean),
-                    hideConcept: hideConcept
-                };
-                questionData = typeof generator.generate === 'function' 
-                    ? generator.generate(safeLevel, String(lang), options)
-                    : generator.generate(1, String(lang), options);
-            }
+            for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                let candidate: any = null;
 
-            activeVariation = variation || questionData?.variationKey;
+                if (variation && typeof generator.generateByVariation === 'function') {
+                    candidate = generator.generateByVariation(String(variation), lang);
+                } else if (typeof generator.generate === 'function') {
+                    candidate = generator.generate(safeLevel, lang, options);
+                }
 
-            // Deep search through SKILL_BUCKETS taxonomy to find the target metadata parameters
-            if (activeVariation) {
-                for (const catKey in SKILL_BUCKETS) {
-                    const cat = (SKILL_BUCKETS as any)[catKey];
-                    if (cat && typeof cat === 'object' && cat.topics) {
-                        for (const topicKey in cat.topics) {
-                            const topicObj = cat.topics[topicKey];
-                            if (topicObj && topicObj.variations && Array.isArray(topicObj.variations)) {
-                                const matchedVariant = topicObj.variations.find((v: any) => v && v.key === String(activeVariation));
-                                if (matchedVariant) {
-                                    foundVariationConfig = matchedVariant;
-                                    break;
-                                }
-                            }
-                        }
+                if (!candidate) continue;
+
+                const activeKey = variation || candidate.variationKey;
+                const config = findVariationConfig(activeKey);
+
+                if (config && config.tags?.includes('word_problem_ready')) {
+                    const transformed = WordProblemInterceptor.process(candidate, config, lang);
+                    if (transformed?.metadata?.isWordProblemApplied === true) {
+                        questionData = transformed;
+                        break; // ✅ Successful transformation with story rules satisfied
                     }
-                    if (foundVariationConfig) break;
                 }
             }
 
-            // Check if this specific random question supports word problems
-            const isEligible = foundVariationConfig?.tags?.includes('word_problem_ready');
-            
-            // If user wants a word problem but we rolled a standard math concept, spin again!
-            if (activateWordProblem && !isEligible && !variation) {
-                attempts++;
-                continue; 
-            } else {
-                break; // Valid variation found, or word problems are off
+            // Fallback: If 5 attempts could not satisfy story rules, log and generate pure math cleanly
+            if (!questionData) {
+                console.warn(`[WordProblem fallback to pure math for ${rawTopic} level ${safeLevel}]`);
             }
-
-        } while (attempts < 10);
-        
-        // 3. TEXT TRANSFORMATION PASS
-        if (activateWordProblem && foundVariationConfig) {
-            questionData = WordProblemInterceptor.process(questionData, foundVariationConfig, String(lang));
         }
-        
-        // 4. 🟢 FIXED: METADATA PASSTHROUGH (Payload Scrubbing)
+
+        // Standard generation (if word problems are disabled OR if the retry loop fell back)
+        if (!questionData) {
+            if (variation && typeof generator.generateByVariation === 'function') {
+                questionData = generator.generateByVariation(String(variation), lang);
+            } else if (typeof generator.generate === 'function') {
+                questionData = generator.generate(safeLevel, lang, options);
+            }
+        }
+
+        // Payload Scrubbing & Client Contract
         const scrubbedQuestion = {
             renderData: {
                 ...questionData.renderData,
@@ -229,7 +235,6 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
             level: questionData.level || level,
             metadata: {
                 ...(questionData.metadata || {}),
-                // Combines manual generator overrides with the universal topic unlock!
                 levelSupportsWordProblems: topicSupportsWordProblems || questionData.metadata?.levelSupportsWordProblems || false
             }
         };

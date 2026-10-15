@@ -7,11 +7,12 @@ import {
   MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical, Brain, Calculator, Target, 
   Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown, Edit2
 } from 'lucide-react';
-import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
+import { SKILL_BUCKETS, isTopicWordProblemReady } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer.jsx';
 import { supabase } from '../../lib/supabaseClient'; 
 import PresentationView from '../views/PresentationView.jsx';
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
+
 
 // CRITICAL: Imports Universal Theme and Preferences Toggle
 import '../../styles/theme.css'; 
@@ -262,6 +263,15 @@ export default function QuestionStudio({
     setDraggedIdx(null);
     setDraggedItemIndex(null);
   };
+
+  // 🟢 STEP 4.2 GUARD: Disable and reset Word Problems if the selected topic does not support them
+  const topicSupportsWordProblems = isTopicWordProblemReady(selectedTopicId);
+
+  useEffect(() => {
+    if (!topicSupportsWordProblems && useWordProblems) {
+      setUseWordProblems(false);
+    }
+  }, [selectedTopicId, topicSupportsWordProblems, useWordProblems]);
 
   useEffect(() => {
     const stillVisible = visibleVariations.some(v => v.key === activePreviewKey);
@@ -1331,13 +1341,15 @@ export default function QuestionStudio({
                 </button>
             </div>
 
-            <div className="flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-strong)] shadow-inner">
+            <div className={`flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border shadow-inner transition-opacity ${topicSupportsWordProblems ? 'border-[var(--border-strong)]' : 'border-[var(--border-main)] opacity-50'}`}>
                 <span className="text-[11px] font-black uppercase text-[var(--text-main)] ml-1.5 tracking-tight">
                     {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
                 </span>
                 <button 
+                    disabled={!topicSupportsWordProblems}
                     onClick={() => setUseWordProblems(!useWordProblems)} 
-                    className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${useWordProblems ? 'bg-[var(--theme-emerald-solid)]' : 'bg-[var(--border-strong)]'}`}
+                    className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${!topicSupportsWordProblems ? 'cursor-not-allowed bg-[var(--border-main)]' : useWordProblems ? 'cursor-pointer bg-[var(--theme-emerald-solid)]' : 'cursor-pointer bg-[var(--border-strong)]'}`}
+                    title={!topicSupportsWordProblems ? (lang === 'sv' ? "Inga textuppgifter finns för detta område" : "No word problems available for this topic") : ""}
                 >
                     <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${useWordProblems ? 'translate-x-4' : 'translate-x-0'}`} />
                 </button>

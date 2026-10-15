@@ -11,8 +11,9 @@ import { FractionInput, ScientificInput, ExponentInput } from '../ui/InputCompon
 import { ChevronLeft, Trophy, Zap, Clock, Info, CheckCircle2, XCircle, HelpCircle, MinusCircle, ChevronRight, BarChart3, ChevronDown, Lock } from 'lucide-react';
 import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 import PreferencesToggle from '../ui/PreferencesToggle';
+import { isLevelWordProblemReady } from '../../constants/skillBuckets.js';
 
-// 🟢 CRITICAL: Import the universal theme
+//  CRITICAL: Import the universal theme
 import '../../styles/theme.css'; 
 
 const PracticeView = ({ 
@@ -96,11 +97,14 @@ const PracticeView = ({
         }
     }, [uiState.level]);
 
+    //  SYNCHRONOUS SOURCE OF TRUTH: Instant check, 0ms latency, eliminates race conditions
+    const isCurrentLevelWordProblemReady = isLevelWordProblemReady(uiState.topic, uiState.level);
+
     useEffect(() => {
-        if (!question?.metadata?.levelSupportsWordProblems) {
+        if (!isCurrentLevelWordProblemReady && useWordProblems) {
             setUseWordProblems(false);
         }
-    }, [question?.variationKey, question?.metadata?.levelSupportsWordProblems]);
+    }, [isCurrentLevelWordProblemReady, useWordProblems]);
 
     const descriptionText = typeof question?.renderData?.description === 'object' ? question.renderData.description[lang] : question?.renderData?.description;
 
@@ -117,13 +121,13 @@ const PracticeView = ({
     };
 
     return (
-        // 🟢 1. Added !pt-4 to override any hidden padding inside layout-wrapper
+        //  1. Added !pt-4 to override any hidden padding inside layout-wrapper
         <div className={`theme-${theme.color} layout-wrapper font-sans relative z-10 animate-in fade-in pb-10 !pt-4`}>
             
             <LevelUpModal 
                 visible={levelUpAvailable} 
                 lang={lang} 
-                supportsWordProblems={question?.metadata?.levelSupportsWordProblems && !useWordProblems}
+                supportsWordProblems={isCurrentLevelWordProblemReady && !useWordProblems}
                 onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); setUseWordProblems(false);}} 
                 onStay={() => { setLevelUpAvailable(false); actions.retry(true); }} 
                 onWordProblems={() => { setUseWordProblems(true); setLevelUpAvailable(false); }} 
@@ -144,7 +148,7 @@ const PracticeView = ({
                 </div>
             )}
 
-            {/* 🟢 2. Reduced top padding to pt-0 to bring content flush with the header */}
+            {/*  2. Reduced top padding to pt-0 to bring content flush with the header */}
             <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 pt-0">
                 <div className="layout-twocol">
                     <div className="layout-main">
@@ -206,7 +210,7 @@ const PracticeView = ({
                         )}
 
                         {/* MAIN PRACTICE CARD */}
-                        {/* 🟢 REPLACED PADDING/ROUNDING STRINGS WITH .card CLASS */}
+                        {/*  REPLACED PADDING/ROUNDING STRINGS WITH .card CLASS */}
                         <main className={`card p-0 ${shake ? 'animate-shake' : ''} flex flex-col`}>
                             {loading ? (
                                 <div className="py-32 text-center flex flex-col items-center gap-4">
@@ -270,7 +274,7 @@ const PracticeView = ({
                                                             const isIncorrect = feedback === 'incorrect' && isSelected;
                                                             
                                                             return (
-                                                                // 🟢 REPLACED WITH .btn-3d
+                                                                //  REPLACED WITH .btn-3d
                                                                 <button 
                                                                     key={idx} 
                                                                     onClick={() => handleChoiceClick(choiceValue)} 
@@ -291,7 +295,7 @@ const PracticeView = ({
                                                 ) : (
                                                     <form onSubmit={(e) => { e.preventDefault(); if (feedback !== 'correct') handleSubmit(e, input); else actions.retry(true); }} className="space-y-4 flex flex-col h-full justify-end">
                                                         <div className="relative group">
-                                                            {/* 🟢 Custom Input Wrappers */}
+                                                            {/*  Custom Input Wrappers */}
                                                             {question?.renderData?.answerType === 'mixed_fraction' ? (
                                                                 <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner">
                                                                     <FractionInput value={input} onChange={setInput} allowMixed={true} autoFocus={true} />
@@ -329,7 +333,7 @@ const PracticeView = ({
                                                             {feedback === 'incorrect' && <div className="absolute -right-3 -top-3 w-8 h-8 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-[var(--bg-card)]"><XCircle size={16}/></div>}
                                                         </div>
 
-                                                        {/* 🟢 REPLACED WITH .btn-3d and specific background injects for Primary Button */}
+                                                        {/*  REPLACED WITH .btn-3d and specific background injects for Primary Button */}
                                                         <button 
                                                             type="submit" 
                                                             className={`btn-3d w-full justify-center text-lg uppercase tracking-wider
@@ -394,17 +398,17 @@ const PracticeView = ({
         
                         {/* WORD PROBLEM COACHING BANNER */}
                         <div className={`card p-4 relative overflow-hidden transition-all duration-300 ${
-                            !question?.metadata?.levelSupportsWordProblems 
+                            !isCurrentLevelWordProblemReady 
                                 ? 'bg-[var(--bg-surface)] opacity-80' 
                                 : 'bg-[var(--bg-card)]'
                         }`}>
                             <div className={`absolute top-0 left-0 w-1 h-full transition-colors ${
-                                !question?.metadata?.levelSupportsWordProblems 
+                                !isCurrentLevelWordProblemReady 
                                     ? 'bg-[var(--border-strong)]' 
                                     : useWordProblems ? 'bg-emerald-500' : 'bg-[var(--brand-solid)]'
                             }`}></div>
 
-                            {!question?.metadata?.levelSupportsWordProblems ? (
+                            {!isCurrentLevelWordProblemReady ? (
                                 <button disabled className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] border border-[var(--border-strong)] bg-[var(--bg-surface)] text-[var(--text-muted)] cursor-not-allowed">
                                     <Lock size={14} />
                                     {lang === 'sv' ? `Text-uppgifter ej tillgängliga` : `Word problems not available`}
@@ -429,7 +433,7 @@ const PracticeView = ({
                                 <div className="w-7 h-7 rounded-lg bg-[var(--brand-bg)] flex items-center justify-center text-[var(--brand-text)]"><Zap size={14}/></div>
                                 <h3 className="text-[11px] font-black uppercase tracking-widest text-[var(--text-muted)] italic">{cluesLabel}</h3>
                             </div>
-                            {/* 🟢 Added text-[var(--text-main)] and [&_*]:text-[var(--text-main)] to force child elements */}
+                            {/*  Added text-[var(--text-main)] and [&_*]:text-[var(--text-main)] to force child elements */}
                             <div className="scale-95 origin-top-left w-[105%] text-[var(--text-main)] [&_*]:text-[var(--text-main)]">
                                 <CluePanel revealedClues={revealedClues} question={question} ui={ui} isSolutionRevealed={isSolutionRevealed} lang={lang} />
                             </div>

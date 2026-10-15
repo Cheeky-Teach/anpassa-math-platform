@@ -10,6 +10,7 @@ import { decodeConfig, encodeConfig, BUNDLE_PRESETS } from '../../core/utils/lab
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
 import { useMyCoach } from '../../hooks/useMyCoach';
 import MyCoachModal from '../modals/MyCoachModal';
+import { isLevelWordProblemReady } from '../../constants/skillBuckets.js';
 
 // --- SHARED UI COMPONENTS ---
 import MathText from '../ui/MathText';
@@ -84,6 +85,19 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
     const [isMobile, setIsMobile] = useState(false);
 
+    //   SYNCHRONOUS CAPABILITY GUARD: Checks if ANY selected topic & level supports word problems
+    const hasWordProblemSupport = Object.entries(selection).some(([topicId, conf]) => {
+        if (!conf?.enabled) return false;
+        const levels = conf.levels && conf.levels.length > 0 ? conf.levels : [1];
+        return levels.some(lvl => isLevelWordProblemReady(topicId, lvl));
+    });
+
+    useEffect(() => {
+        if (!hasWordProblemSupport && useWordProblems) {
+            setUseWordProblems(false);
+        }
+    }, [hasWordProblemSupport, useWordProblems]);
+
     useEffect(() => {
         const checkMobile = () => { setIsMobile(window.innerWidth < 768); };
         checkMobile();
@@ -92,7 +106,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     }, []);
 
     const copyTestLink = () => {
-        const updatedMeta = { ...meta, wordProblem: useWordProblems, allowCoach: allowCoach };
+        const updatedMeta = { ...meta, wordProblem: hasWordProblemSupport && useWordProblems, allowCoach: allowCoach };
         const testCode = encodeConfig({ meta: updatedMeta, selection });
         const baseUrl = window.location.origin + "/lab";
         const fullUrl = `${baseUrl}?config=${testCode}`;
@@ -208,7 +222,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             });
             const result = await res.json();
             
-            // 🟢 SYNC WIRED: Track question accuracy & text inputs
+            //   SYNC WIRED: Track question accuracy & text inputs
             syncProgress('test_question_answered', {
                 app_mode: 'test_lab',
                 topic: currentQ.topicId || currentQ.topic || 'unknown',
@@ -229,7 +243,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 const limit = Number(meta.limit);
 
                 if (limit > 0 && nextIndex === limit) { 
-                    // 🟢 SYNC WIRED: Track final completion
+                    //   SYNC WIRED: Track final completion
                     const finalCorrect = Object.values(responses).filter(r => r.isCorrect).length + (result.correct ? 1 : 0);
                     syncProgress('test_session_completed', {
                         app_mode: 'test_lab',
@@ -394,9 +408,27 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                 </button>
                             </div>
 
-                            <div className="flex flex-col items-center bg-[var(--brand-bg)] px-4 py-3 rounded-[var(--radius-btn)] border border-[var(--brand-border)]">
-                                <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--brand-text)] opacity-60 mb-0.5">{t.testCode}</span>
-                                <span className="text-xl font-black tracking-[0.2em] text-[var(--brand-text)] uppercase">{currentTestCode}</span>
+                            {/* 🟢 FIXED: Contained, copy-ready test code badge */}
+                            <div className="flex flex-col bg-[var(--brand-bg)] p-3 rounded-[var(--radius-btn)] border border-[var(--brand-border)]">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-[var(--brand-text)] opacity-70">
+                                        {t.testCode}
+                                    </span>
+                                    <button 
+                                        type="button" 
+                                        onClick={copyTestLink} 
+                                        className="text-[12px] font-black uppercase tracking-wider text-[var(--brand-text)] hover:underline flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <LayoutGrid size={11} /> {t.copyLink}
+                                    </button>
+                                </div>
+                                <div 
+                                    onClick={copyTestLink}
+                                    title={lang === 'sv' ? "Klicka för att kopiera länk" : "Click to copy link"}
+                                    className="font-mono text-xs font-black tracking-wider text-[var(--brand-text)] bg-[var(--bg-card)] px-2.5 py-1.5 rounded border border-[var(--brand-border)] break-all select-all max-h-16 overflow-y-auto custom-scrollbar cursor-pointer hover:border-[var(--brand-solid)] transition-colors"
+                                >
+                                    {currentTestCode}
+                                </div>
                             </div>
 
                             <button onClick={onBack} className="w-full flex items-center justify-center gap-2 py-3 bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] border border-[var(--theme-rose-border)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-sm active:scale-95 cursor-pointer">
@@ -449,22 +481,28 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                 </span>
                             </button>
 
-                            {/* Word Problem Toggle Button */}
+                            {/* 🟢 HARDENED WORD PROBLEM BUTTON */}
                             <button
                                 type="button"
+                                disabled={!hasWordProblemSupport}
                                 onClick={() => setUseWordProblems(!useWordProblems)}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer shadow-sm ${
-                                    useWordProblems 
-                                        ? 'bg-[var(--theme-emerald-bg)] border-[var(--theme-emerald-border)] text-[var(--theme-emerald-text)]' 
-                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--theme-emerald-border)] hover:text-[var(--theme-emerald-text)]'
+                                title={!hasWordProblemSupport ? (lang === 'sv' ? "Inga valda områden har textuppgifter" : "No selected topics have word problems") : ""}
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 shadow-sm ${
+                                    !hasWordProblemSupport
+                                        ? 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-muted)] opacity-50 cursor-not-allowed'
+                                        : useWordProblems 
+                                            ? 'bg-[var(--theme-emerald-bg)] border-[var(--theme-emerald-border)] text-[var(--theme-emerald-text)] cursor-pointer' 
+                                            : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--theme-emerald-border)] hover:text-[var(--theme-emerald-text)] cursor-pointer'
                                 }`}
                             >
                                 <div className="flex items-center gap-2">
-                                    <HelpCircle size={14} fill={useWordProblems ? "currentColor" : "none"} className={useWordProblems ? "text-[var(--theme-emerald-bg)]" : ""}/>
+                                    <HelpCircle size={14} fill={useWordProblems && hasWordProblemSupport ? "currentColor" : "none"} className={useWordProblems && hasWordProblemSupport ? "text-[var(--theme-emerald-bg)]" : ""}/>
                                     <span>{lang === 'sv' ? 'Problemlösning' : 'Word Problems'}</span>
                                 </div>
                                 <span className="text-[9px] opacity-80 uppercase">
-                                    {useWordProblems ? (lang === 'sv' ? 'Aktiv' : 'On') : (lang === 'sv' ? 'Av' : 'Off')}
+                                    {!hasWordProblemSupport 
+                                        ? (lang === 'sv' ? 'Ej tillgänglig' : 'N/A') 
+                                        : useWordProblems ? (lang === 'sv' ? 'Aktiv' : 'On') : (lang === 'sv' ? 'Av' : 'Off')}
                                 </span>
                             </button>
 
@@ -487,32 +525,30 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                 </span>
                             </button>
 
-                            {/* Question Limit Toggle */}
-                            <div className="flex items-center justify-between bg-[var(--bg-surface)] border-2 border-[var(--border-strong)] rounded-[var(--radius-btn)] px-3 py-2 shadow-sm">
-                                <div className="flex items-center gap-2">
-                                    <ListChecks size={16} className="text-[var(--text-muted)]"/>
-                                    <span className="text-xs font-black uppercase tracking-wider text-[var(--text-main)]">
-                                        {lang === 'sv' ? 'Längd:' : 'Length:'}
-                                    </span>
+                            {/* 🟢 FIXED: Dropdown menu with infinity option that never clips */}
+                                <div className="flex items-center justify-between bg-[var(--bg-surface)] border-2 border-[var(--border-strong)] rounded-[var(--radius-btn)] px-3 py-2.5 shadow-sm">
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <ListChecks size={16} className="text-[var(--text-muted)]"/>
+                                        <span className="text-xs font-black uppercase tracking-wider text-[var(--text-main)]">
+                                            {lang === 'sv' ? 'Antal:' : 'Length:'}
+                                        </span>
+                                    </div>
+                                    
+                                    <select
+                                        value={meta.limit}
+                                        onChange={(e) => setMeta(p => ({ ...p, limit: Number(e.target.value) }))}
+                                        className="bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] font-black text-xs rounded-[var(--radius-btn)] px-3 py-1.5 outline-none focus:border-[var(--brand-solid)] cursor-pointer shadow-inner"
+                                    >
+                                        <option value={5}>5 {lang === 'sv' ? 'frågor' : 'questions'}</option>
+                                        <option value={10}>10 {lang === 'sv' ? 'frågor' : 'questions'}</option>
+                                        <option value={15}>15 {lang === 'sv' ? 'frågor' : 'questions'}</option>
+                                        <option value={20}>20 {lang === 'sv' ? 'frågor' : 'questions'}</option>
+                                        <option value={30}>30 {lang === 'sv' ? 'frågor' : 'questions'}</option>
+                                        <option value={40}>40 {lang === 'sv' ? 'frågor' : 'questions'}</option>
+                                        <option value={50}>50 {lang === 'sv' ? 'frågor' : 'questions'}</option>
+                                        <option value={0}>∞ ({lang === 'sv' ? 'Obegränsat pass' : 'Infinite'})</option>
+                                    </select>
                                 </div>
-                                
-                                {/* 🟢 UI FIX: Clear preset toggles instead of a blank input box */}
-                                <div className="flex items-center gap-1 bg-[var(--bg-card)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-main)] shadow-inner">
-                                    {[5, 10, 15, 20, 30, 40, 50, 0].map(val => (
-                                        <button 
-                                            key={val}
-                                            onClick={() => setMeta(p => ({ ...p, limit: val }))}
-                                            className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${
-                                                meta.limit === val 
-                                                    ? 'bg-[var(--brand-solid)] text-white shadow-sm' 
-                                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]'
-                                            }`}
-                                        >
-                                            {val === 0 ? '∞' : val}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
 
                             {/* Action Buttons: Copy Link & Reset */}
                             <div className="grid grid-cols-2 gap-2 pt-2">
@@ -591,9 +627,12 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                                {/* 🟢 FIXED: Topic Card with upfront level descriptions and checkbox toggles */}
                                 {activeCategoryData.topics.map(topic => {
                                     const isEnabled = selection[topic.id]?.enabled;
-                                    const topicLevels = LEVEL_DESCRIPTIONS[topic.id] ? Object.keys(LEVEL_DESCRIPTIONS[topic.id]).map(Number) : [1];
+                                    const topicLevels = LEVEL_DESCRIPTIONS[topic.id] 
+                                        ? Object.keys(LEVEL_DESCRIPTIONS[topic.id]).map(Number).sort((a, b) => a - b) 
+                                        : [1];
                                     const selectedLevels = selection[topic.id]?.levels || [];
 
                                     const toggleLevel = (lvl) => {
@@ -606,65 +645,105 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                             
                                             return {
                                                 ...p,
-                                                [topic.id]: { ...p[topic.id], levels: newLevels, enabled: newLevels.length > 0 }
+                                                [topic.id]: { 
+                                                    ...p[topic.id], 
+                                                    levels: newLevels, 
+                                                    enabled: newLevels.length > 0 
+                                                }
                                             };
                                         });
                                     };
 
+                                    const toggleEntireTopic = () => {
+                                        setMeta(p => ({ ...p, isNationalTest: false, bundleId: null }));
+                                        setSelection(p => ({ 
+                                            ...p, 
+                                            [topic.id]: { 
+                                                enabled: !isEnabled, 
+                                                levels: !isEnabled ? topicLevels : [] 
+                                            } 
+                                        }));
+                                    };
+
                                     return (
-                                        <div key={topic.id} className={`card-interactive flex flex-col justify-between ${isEnabled ? 'border-[var(--brand-solid)] shadow-md bg-[var(--bg-card)]' : 'border-[var(--border-main)] bg-[var(--bg-surface)] opacity-75 hover:opacity-100'}`}>
+                                        <div 
+                                            key={topic.id} 
+                                            className={`card p-4 flex flex-col justify-between transition-all border-2 ${
+                                                isEnabled 
+                                                    ? 'border-[var(--brand-solid)] shadow-md bg-[var(--bg-card)]' 
+                                                    : 'border-[var(--border-main)] bg-[var(--bg-surface)] opacity-85 hover:opacity-100'
+                                            }`}
+                                        >
                                             <div>
-                                                <div className="flex items-start justify-between mb-3">
-                                                    <h4 className="font-bold text-xs text-[var(--text-main)] leading-tight pr-2">{topic.label[lang]}</h4>
+                                                {/* Header: Topic Title & "Select All" Checkbox */}
+                                                <div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--border-subtle)]">
+                                                    <div>
+                                                        <h4 className="font-black text-sm text-[var(--text-main)] leading-tight">
+                                                            {topic.label[lang]}
+                                                        </h4>
+                                                        <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                                                            {selectedLevels.length} / {topicLevels.length} {lang === 'sv' ? 'valda nivåer' : 'levels active'}
+                                                        </span>
+                                                    </div>
+
                                                     <button 
-                                                        onClick={() => {
-                                                            setMeta(p => ({ ...p, isNationalTest: false, bundleId: null }));
-                                                            setSelection(p => ({ 
-                                                                ...p, [topic.id]: { enabled: !isEnabled, levels: !isEnabled ? topicLevels : [] } 
-                                                            }));
-                                                        }}
-                                                        className={`w-7 h-7 rounded-[var(--radius-btn)] flex items-center justify-center shrink-0 transition-all cursor-pointer ${isEnabled ? 'bg-[var(--brand-solid)] text-white shadow-sm border border-transparent' : 'bg-[var(--bg-card)] text-transparent border border-[var(--border-strong)]'}`}
+                                                        type="button"
+                                                        onClick={toggleEntireTopic}
+                                                        title={isEnabled ? (lang === 'sv' ? "Avmarkera alla nivåer" : "Deselect all") : (lang === 'sv' ? "Välj alla nivåer" : "Select all")}
+                                                        className={`px-2.5 py-1 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer border ${
+                                                            isEnabled 
+                                                                ? 'bg-[var(--brand-solid)] text-white border-transparent shadow-xs' 
+                                                                : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-strong)] hover:border-[var(--brand-solid)]'
+                                                        }`}
                                                     >
-                                                        <Check size={14} strokeWidth={3}/>
+                                                        <Check size={12} strokeWidth={3} className={isEnabled ? "opacity-100" : "opacity-0"} />
+                                                        <span>{lang === 'sv' ? 'Alla' : 'All'}</span>
                                                     </button>
                                                 </div>
 
-                                                {/* LEVEL TOGGLE GRID */}
-                                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                                {/* Level Rows: Checkbox + Level Number + Description */}
+                                                <div className="flex flex-col gap-1.5 max-h-60 overflow-y-auto custom-scrollbar pr-1">
                                                     {topicLevels.map(lvl => {
-                                                        const isActive = selectedLevels.includes(lvl);
+                                                        const isLvlSelected = selectedLevels.includes(lvl);
+                                                        const desc = LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || "";
+
                                                         return (
-                                                            <button
+                                                            <div
                                                                 key={lvl}
                                                                 onClick={() => toggleLevel(lvl)}
-                                                                className={`w-8 h-8 rounded-[var(--radius-btn)] text-[10px] font-black transition-all border flex items-center justify-center cursor-pointer
-                                                                    ${isActive 
-                                                                        ? 'bg-[var(--brand-solid)] border-[var(--brand-solid)] text-white shadow-xs' 
-                                                                        : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-muted)] hover:border-[var(--brand-text)] hover:text-[var(--brand-text)]'
-                                                                    }`}
+                                                                className={`flex items-start gap-2.5 p-2 rounded-[var(--radius-btn)] border transition-all cursor-pointer select-none ${
+                                                                    isLvlSelected
+                                                                        ? 'bg-[var(--brand-bg)] border-[var(--brand-border)] text-[var(--text-main)] shadow-xs'
+                                                                        : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-main)]'
+                                                                }`}
                                                             >
-                                                                {lvl}
-                                                            </button>
+                                                                {/* Styled Checkbox Box */}
+                                                                <div className={`w-4 h-4 rounded mt-0.5 shrink-0 flex items-center justify-center border transition-all ${
+                                                                    isLvlSelected 
+                                                                        ? 'bg-[var(--brand-solid)] border-[var(--brand-solid)] text-white' 
+                                                                        : 'border-[var(--border-strong)] bg-[var(--bg-surface)]'
+                                                                }`}>
+                                                                    {isLvlSelected && <Check size={11} strokeWidth={3} />}
+                                                                </div>
+
+                                                                {/* Level Badge & Descriptive Text */}
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                                                        <span className={`text-[10px] font-black uppercase tracking-tight ${
+                                                                            isLvlSelected ? 'text-[var(--brand-text)]' : 'text-[var(--text-muted)]'
+                                                                        }`}>
+                                                                            {t.level} {lvl}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="text-[11px] font-semibold leading-snug line-clamp-2">
+                                                                        {desc}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
                                                         );
                                                     })}
                                                 </div>
                                             </div>
-
-                                            {/* DYNAMIC DESCRIPTION BOX */}
-                                            {selectedLevels.length > 0 && (
-                                                <div className="mt-3 p-2.5 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border border-[var(--border-main)] max-h-24 overflow-y-auto custom-scrollbar">
-                                                    <div className="space-y-1">
-                                                        {selectedLevels.map(lvl => (
-                                                            <div key={lvl} className="flex gap-1.5 text-[8px] leading-tight items-start">
-                                                                <span className="font-black text-[var(--brand-text)]">N{lvl}</span>
-                                                                <span className="text-[var(--text-muted)] font-medium truncate">
-                                                                    {LEVEL_DESCRIPTIONS[topic.id][lvl][lang]}
-                                                                </span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     );
                                 })}
@@ -728,7 +807,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             <div className="layout-wrapper font-sans flex flex-col overflow-hidden">
                 {/*  Swapped from header-compact to a relative block so it stacks perfectly under App.jsx */}
                 <header className="relative z-30 w-full bg-[var(--bg-surface)] border-b border-[var(--border-main)] px-4 py-2 transition-colors duration-500 no-print">
-                    <div className="max-w-6xl w-full mx-auto flex items-center justify-between gap-2">
+                    <div className="w-full flex items-center justify-between gap-2 px-2 sm:px-4">
                         
                         <div className="flex items-center gap-1">
                             <button onClick={() => setInternalMode('SETUP')} className="btn-ghost mr-2 text-[9px] font-black uppercase tracking-tight py-2 border border-[var(--border-subtle)]">
@@ -763,10 +842,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     />
                 )}
 
-                <main className="flex-1 max-w-6xl w-full mx-auto p-3 lg:p-6 overflow-hidden flex flex-col relative">
-                    
-                    {/* Flush Card Container */}
-                    <div className="card p-0 flex-1 overflow-y-auto lg:overflow-hidden flex flex-col transition-all duration-300">
+                    <main className="flex-1 w-full max-w-none p-3 lg:p-6 overflow-hidden flex flex-col relative">
+                        <div className="card p-0 flex-1 overflow-y-auto lg:overflow-hidden flex flex-col transition-all duration-300 w-full">
                         
                         {/* MOBILE PROGRESS BAR */}
                         <div className="sm:hidden h-1 bg-[var(--bg-surface)] flex shrink-0">
@@ -800,13 +877,16 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             {/* TEXT & INPUT SECTION */}
                             <div className="flex flex-col order-1 lg:h-full lg:overflow-hidden border-b lg:border-b-0 border-[var(--border-subtle)]">
                                 <div className="p-6 lg:p-12 flex-1 flex flex-col justify-center space-y-6 overflow-y-auto">
-                                    <div className="text-xl lg:text-3xl font-bold text-[var(--text-main)] leading-relaxed text-center lg:text-left">
+                                    <div className="text-lg lg:text-2xl font-bold text-[var(--text-main)] leading-relaxed text-center lg:text-left max-w-4xl">
                                         <MathDisplay content={q?.resolvedData?.renderData?.description} />
                                     </div>
                                     {q?.resolvedData?.renderData?.latex && !q?.resolvedData?.renderData?.isWordProblemApplied && !q?.resolvedData?.renderData?.geometry && (
-                                        <div className="mt-6 text-3xl lg:text-5xl font-serif border-t border-[var(--border-subtle)] pt-6 animate-in fade-in duration-300 flex justify-center lg:justify-start">
-                                            <div className="whiteboard-protect px-8 py-6 rounded-[var(--radius-btn)] border border-slate-200 shadow-sm inline-block">
-                                                <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
+                                        <div className="mt-4 border-t border-[var(--border-subtle)] pt-4 animate-in fade-in duration-300 flex justify-center lg:justify-start w-full">
+                                            <div className="whiteboard-protect px-6 py-4 rounded-[var(--radius-btn)] border border-slate-200 shadow-sm w-full max-w-full text-center lg:text-left overflow-x-auto no-scrollbar">
+                                                <MathDisplay 
+                                                    content={`$$${q.resolvedData.renderData.latex}$$`} 
+                                                    className="text-xl sm:text-2xl lg:text-3xl font-serif leading-relaxed text-slate-900 tracking-normal inline-block max-w-full"
+                                                />
                                             </div>
                                         </div>
                                     )}
