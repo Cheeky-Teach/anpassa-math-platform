@@ -12,6 +12,7 @@ import QuestionSummoner from './QuestionSummoner';
 import { supabase } from '../../lib/supabaseClient'; 
 import { useMyCoach } from '../../hooks/useMyCoach';
 import MyCoachModal from '../modals/MyCoachModal';
+import PreferencesToggle from '../ui/PreferencesToggle';
 
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 
@@ -528,9 +529,33 @@ export default function PresentationView({
                         placeholder={lang === 'sv' ? "Namnge presentationen..." : "Name presentation..."}
                         className="bg-white text-slate-900 px-4 py-1.5 rounded-xl text-base font-bold outline-none border-2 border-transparent focus:border-indigo-400 transition-all w-80 sm:w-96 shadow-sm placeholder-slate-400"
                     />
+                    <button 
+                            onClick={exportToCSV}
+                            className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-emerald-600 transition-all cursor-pointer flex items-center gap-1.5"
+                            title={lang === 'sv' ? "Exportera Wordpad text till Excel (CSV)" : "Export Wordpad text to Excel (CSV)"}
+                        >
+                            <Download size={14} />
+                            <span className="text-[12px] font-black uppercase tracking-wider hidden md:inline">{lang === 'sv' ? "Export" : "Export"}</span>
+                        </button>
+                        
+                        <div className="w-px h-4 bg-slate-600 mx-1" />
+                        
+                        <button 
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-blue-600 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                            <Save size={14} />
+                            <span className="text-[12px] font-black uppercase tracking-wider hidden md:inline">
+                                {isSaving ? (lang === 'sv' ? "Sparar..." : "Saving...") : (lang === 'sv' ? "Spara" : "Save")}
+                            </span>
+                        </button>
+                    
                 </div>
                 
+                
                 <div className="flex items-center gap-4">
+                    <PreferencesToggle />
                     <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/60 gap-1 shadow-inner">
                         <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
                             <List size={14} /> <span className="text-[12px]">{lang === 'sv' ? "List" : "List"}</span>
@@ -555,7 +580,10 @@ export default function PresentationView({
                         </button>
                     </div>
 
-                    <button
+                    
+                    
+                    <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/60 gap-1 shadow-inner">
+                        <button
                         onClick={() => {
                             if (window.confirm(lang === 'sv' ? "Rensa alla valda uppgifter?" : "Clear all selected questions?")) {
                                 setActiveIds([]);
@@ -565,30 +593,6 @@ export default function PresentationView({
                     >
                         {lang === 'sv' ? "Nollställ" : "Reset Canvas"}
                     </button>
-                    
-                    <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/60 gap-1 shadow-inner">
-                        <button 
-                            onClick={exportToCSV}
-                            className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-emerald-600 transition-all cursor-pointer flex items-center gap-1.5"
-                            title={lang === 'sv' ? "Exportera Wordpad text till Excel (CSV)" : "Export Wordpad text to Excel (CSV)"}
-                        >
-                            <Download size={14} />
-                            <span className="text-[12px] font-black uppercase tracking-wider hidden md:inline">{lang === 'sv' ? "Export" : "Export"}</span>
-                        </button>
-                        
-                        <div className="w-px h-4 bg-slate-600 mx-1" />
-                        
-                        <button 
-                            onClick={handleSave}
-                            disabled={isSaving}
-                            className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-blue-600 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                        >
-                            <Save size={14} />
-                            <span className="text-[12px] font-black uppercase tracking-wider hidden md:inline">
-                                {isSaving ? (lang === 'sv' ? "Sparar..." : "Saving...") : (lang === 'sv' ? "Spara" : "Save")}
-                            </span>
-                        </button>
-
                         {/*  NEW: Branded Red 'Go Live' Button */}
                         <div className="w-px h-4 bg-slate-600 mx-1" />
                         <button 
@@ -872,7 +876,7 @@ export default function PresentationView({
                 </div>
 
                 {/* COLUMN 2: WORKSPACE CANVAS INTERACTION SHELF */}
-                <main className="relative overflow-hidden h-full w-full flex flex-col bg-slate-900/5 transition-colors duration-300">
+                <main className="relative overflow-hidden h-full w-full flex flex-col items-center justify-center bg-slate-900/5 transition-colors duration-300">
                     
                     {/* Floating Navigation Header (Overlays the Canvas Layer) */}
                     <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
@@ -909,14 +913,13 @@ export default function PresentationView({
                     </div>
 
                     {/*  NEW: The Responsive 16:9 Presentation Boundary Wrapper */}
-                    <div className="flex-1 w-full h-full flex items-center justify-center p-4 sm:p-12 overflow-hidden">
-                        
+                    <div className="relative w-full h-full max-w-[1600px] max-h-[900px] flex items-center justify-center">
                         <div 
-                            className={`relative w-full h-full flex flex-col items-center shadow-2xl rounded-xl border border-slate-300 transition-colors duration-300 overflow-hidden ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
+                            className={`relative w-full flex flex-col items-center shadow-2xl rounded-2xl border border-slate-300 transition-colors duration-300 overflow-hidden ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
                             style={{
                                 aspectRatio: '16/9',
+                                height: '100%',
                                 maxHeight: '100%',
-                                maxWidth: '100%',
                                 ...(bgType === 'grid' ? {
                                     backgroundImage: 'linear-gradient(#e2e8f0 2px, transparent 2px), linear-gradient(90deg, #e2e8f0 2px, transparent 2px)',
                                     backgroundSize: '40px 40px',

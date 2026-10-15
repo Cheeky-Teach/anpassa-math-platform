@@ -103,7 +103,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             } else if (activeTool === 'realClock') {
                 newEl.width = 280; newEl.height = 280; newEl.clockType = 'analog'; 
             } else if (activeTool === 'volume_cue') {
-                newEl.width = 280; newEl.height = 140; newEl.volumeLevel = 'quiet'; 
+                newEl.width = 150; newEl.height = 120; newEl.volumeLevel = 'quiet'; 
             }
 
             setElements(prev => [...prev, newEl]);
@@ -1454,23 +1454,41 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             const isEditing = editingId === el.id;
             
             const applyStyle = (cmd, val = null) => {
+                const selection = window.getSelection();
+                if (!selection.rangeCount) return;
+
                 if (cmd === 'fontSize') {
-                    document.execCommand('styleWithCSS', false, true);
-                    document.execCommand('fontSize', false, "7");
-                    const fontElements = document.getElementsByTagName("font");
-                    for (let i = 0; i < fontElements.length; i++) {
-                        if (fontElements[i].size === "7") {
-                            fontElements[i].removeAttribute("size");
-                            fontElements[i].style.fontSize = val + "px";
-                            //   FIX: Set line height to normal so it scales down perfectly when reducing text size
-                            fontElements[i].style.lineHeight = "normal";
-                        }
+                    // 🟢 FIXED: Use a styled <span> wrapper instead of deprecated document.execCommand('fontSize')
+                    const range = selection.getRangeAt(0);
+                    if (range.collapsed) return; // Nothing selected
+
+                    const span = document.createElement('span');
+                    span.style.fontSize = `${val}px`;
+                    span.style.lineHeight = 'normal';
+                    
+                    try {
+                        span.appendChild(range.extractContents());
+                        range.insertNode(span);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    } catch (err) {
+                        console.error("Font size apply error:", err);
+                    }
+                } else if (cmd === 'foreColor') {
+                    const range = selection.getRangeAt(0);
+                    if (!range.collapsed) {
+                        const span = document.createElement('span');
+                        span.style.color = val;
+                        span.appendChild(range.extractContents());
+                        range.insertNode(span);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
                     }
                 } else {
                     document.execCommand(cmd, false, val);
                 }
 
-                //   NEW: Instantly sync the text to the state after formatting (e.g. clicking Bullet Points)
+                // Instantly sync the text to state
                 const node = document.getElementById(`rich-text-${el.id}`);
                 if (node) {
                     const html = node.innerHTML;
@@ -1688,27 +1706,54 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             );
         }
 
-        // 🟢 NEW: Volume Cue / Work Mode Visual Box
+        // Volume Cue / Work Mode Visual Box
         if (el.type === 'volume_cue') {
             const levels = {
-                quiet: { emoji: '🤫', sv: 'Tyst Arbete', en: 'Quiet Work', color: 'bg-rose-50 text-rose-700 border-rose-300 shadow-rose-900/10' },
-                whisper: { emoji: '💬', sv: 'Viskröst (Par)', en: 'Whisper (Pair)', color: 'bg-amber-50 text-amber-700 border-amber-300 shadow-amber-900/10' },
-                discuss: { emoji: '🗣️', sv: 'Diskutera (Grupp)', en: 'Discuss (Group)', color: 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-emerald-900/10' }
+                quiet: { 
+                    emoji: '🤫', 
+                    sv: 'Tyst Arbete', 
+                    en: 'Quiet Work', 
+                    textColor: 'text-rose-700',
+                    pillBg: 'bg-white text-rose-700 border-rose-200'
+                },
+                whisper: { 
+                    emoji: '💬', 
+                    sv: 'Viskröst (Par)', 
+                    en: 'Whisper (Pair)', 
+                    textColor: 'text-amber-700',
+                    pillBg: 'bg-white text-amber-700 border-amber-200'
+                },
+                discuss: { 
+                    emoji: '🗣️', 
+                    sv: 'Diskutera (Grupp)', 
+                    en: 'Discuss (Group)', 
+                    textColor: 'text-emerald-700',
+                    pillBg: 'bg-white text-emerald-700 border-emerald-200'
+                }
             };
             const config = levels[el.volumeLevel || 'quiet'];
+            
+            // Calculate scale relative to a tight compact base of 150px width
+            const scaleFactor = el.width / 150;
             
             return (
                 <React.Fragment key={el.id}>
                     <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        {/* 🟢 FIX: Invisible SVG rect behind the HTML ensures perfect clicking & dragging */}
+                        {/* Invisible SVG rect behind the HTML ensures perfect clicking & dragging */}
                         <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="transparent" />
                         
-                        {/* 🟢 FIX: pointer-events-none allows clicks to pass through the HTML down to the SVG rect! */}
-                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height} className="pointer-events-none">
-                            <div className={`w-full h-full rounded-[2rem] border-[3px] flex flex-col items-center justify-center shadow-lg transition-colors duration-500 ${config.color}`}>
-                                <div className="text-5xl drop-shadow-md mb-2">{config.emoji}</div>
-                                <div className="font-black uppercase tracking-widest text-center text-[14px] leading-tight px-2">
-                                    {lang === 'sv' ? config.sv : config.en}
+                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height} className="pointer-events-none overflow-visible">
+                            <div className="w-full h-full flex flex-col items-center justify-center p-1 select-none">
+                                {/* Emoji with zero padding */}
+                                <div style={{ fontSize: `${Math.max(32, 52 * scaleFactor)}px` }} className="drop-shadow-sm leading-none inline-block mb-2">
+                                    {config.emoji}
+                                </div>
+                                
+                                {/* Clean white pill background behind the text */}
+                                <div className={`px-3 py-1 rounded-full shadow-sm border ${config.pillBg} whitespace-nowrap`}>
+                                    <div style={{ fontSize: `${Math.max(9, 12 * scaleFactor)}px` }} className="font-black uppercase tracking-widest text-center leading-tight">
+                                        {lang === 'sv' ? config.sv : config.en}
+                                    </div>
                                 </div>
                             </div>
                         </foreignObject>
