@@ -4,7 +4,7 @@ import { register } from 'tsconfig-paths';
 import path from 'path';
 
 // 1. Register Path Aliases (@core/*) from tsconfig
-import tsConfig from './tsconfig.json' assert { type: "json" };
+import tsConfig from './tsconfig.json' with { type: "json" };
 
 const baseUrl = path.resolve(process.cwd(), tsConfig.compilerOptions.baseUrl || '.');
 const cleanup = register({
