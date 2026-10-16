@@ -882,7 +882,7 @@ export const SKILL_BUCKETS = {
             tags: ['word_problem_ready'], 
             contextType: 'exp_ten_positive', 
             // Matches both bare exponent "3", semicolon pair "3 ; 1000", or LaTeX "10^{3}"
-            extractorPattern: /^(?:10\^\{?(?<exp>\d+)\}?|(?<exp>\d+)(?:\s*;\s*(?<ans>\d+))?)$/
+            extractorPattern: /^(?:10\^\{?)?(?<exp>\d+)(?:\}?|\s*;\s*(?<ans>\d+))?$/
           },
           { 
             key: 'ten_negative_exponent', 
