@@ -423,7 +423,7 @@ const PracticeView = ({
                                     {lang === 'sv' ? 'Aktivera problemlösning' : 'Try Word Problems'}
                                 </button>
                             )}
-                        </div>
+                        </div> 
                         
                         {/* CLUE PANEL */}
                         <div className="card p-4 flex-1 min-h-[140px] relative overflow-hidden text-[var(--text-main)]">

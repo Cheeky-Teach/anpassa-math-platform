@@ -245,4 +245,4 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
         console.error(`API Generation Error [${rawTopic}]:`, error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
-}
+} 

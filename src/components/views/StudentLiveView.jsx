@@ -26,7 +26,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     const slides = session?.active_question_data?.slides || [];
     const globalZoom = session?.active_question_data?.settings?.globalZoom || 1.0;
     
-    // Logic & Navigation State
+    // Logic & Navigation State 
     const [localPacket, setLocalPacket] = useState([]); 
     const [currentIndex, setCurrentIndex] = useState(0); 
     const [activeSlideIndex, setActiveSlideIndex] = useState(session?.current_slide_index || 0); 

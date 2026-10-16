@@ -812,7 +812,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             <button onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} className="btn-ghost">
                                 <ChevronLeft size={28} />
                             </button>
-                        </div>
+                        </div> 
 
                         <div className="flex flex-col items-center">
                             <h1 className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">{t.title}</h1>
