@@ -12,6 +12,7 @@ import { ChevronLeft, Trophy, Zap, Clock, Info, CheckCircle2, XCircle, HelpCircl
 import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 import PreferencesToggle from '../ui/PreferencesToggle';
 import { isLevelWordProblemReady } from '../../constants/skillBuckets.js';
+import SmartMathInput from '../ui/SmartMathInput.jsx'
 
 //  CRITICAL: Import the universal theme
 import '../../styles/theme.css'; 
@@ -313,19 +314,17 @@ const PracticeView = ({
                                                                     <ScientificInput value={input} onChange={(val) => setInput(sanitizeMathInput(val))} autoFocus={true} />
                                                                 </div>
                                                             ) : (
-                                                                <input 
-                                                                    ref={inputRef} 
-                                                                    type="text" 
-                                                                    value={input} 
-                                                                    maxLength={100}
-                                                                    onChange={handleInputChange} 
-                                                                    autoComplete="off"
-                                                                    className={`w-full p-4 text-center text-2xl font-black border-[3px] rounded-[var(--radius-btn)] outline-none shadow-inner transition-all
-                                                                        ${feedback === 'incorrect' ? 'border-rose-500 bg-rose-50 text-rose-700' : 
-                                                                          feedback === 'correct' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' :
-                                                                          'border-[var(--border-main)] bg-[var(--bg-surface)] focus:border-[var(--brand-text)] focus:bg-[var(--bg-card)] text-[var(--text-main)]'}`} 
-                                                                    placeholder="?" 
-                                                                    disabled={feedback === 'correct'} 
+                                                                <SmartMathInput 
+                                                                    inputRef={inputRef}
+                                                                    value={input}
+                                                                    onChange={setInput}
+                                                                    inputType={question?.renderData?.answerType}
+                                                                    disabled={feedback === 'correct'}
+                                                                    autoFocus={true}
+                                                                    className={
+                                                                        feedback === 'incorrect' ? '!border-rose-500 !bg-rose-50 !text-rose-700' :
+                                                                        feedback === 'correct' ? '!border-emerald-500 !bg-emerald-50 !text-emerald-700' : ''
+                                                                    }
                                                                 />
                                                             )}
                                                             

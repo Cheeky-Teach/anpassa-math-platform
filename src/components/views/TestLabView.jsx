@@ -16,6 +16,7 @@ import { isLevelWordProblemReady } from '../../constants/skillBuckets.js';
 import MathText from '../ui/MathText';
 import VisualRenderer from '../visuals/VisualRenderer';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
+import SmartMathInput from '../ui/SmartMathInput.jsx';
 
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 
@@ -288,7 +289,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     const renderInput = () => {
         const item = packet[currentIndex];
         const rd = item?.resolvedData?.renderData;
-        
+
         if (rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options))) {
             return (
                 <div className="grid grid-cols-1 gap-3 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -296,7 +297,6 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         const choiceLabel = typeof opt === 'object' ? opt.label : opt;
                         const choiceValue = typeof opt === 'object' ? opt.value : opt;
                         return (
-                            //  Swapped to the Universal .btn-3d format
                             <button key={i} onClick={() => handleLabSubmit(choiceValue)} className="btn-3d w-full flex items-center gap-3">
                                 <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shadow-inner shrink-0 bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-main)]">
                                     {String.fromCharCode(65 + i)}
@@ -307,24 +307,20 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     })}
                 </div>
             );
-        }
+    }
 
-        const type = rd?.answerType || rd?.inputType || item?.resolvedData?.inputType || 'text';
-        switch (type) { 
-            case 'mixed_fraction': 
-                return <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full"><div className="transform origin-center"><FractionInput value={inputValue} onChange={setInputValue} allowMixed={true} autoFocus={!isMobile} /></div></div>;
-            case 'fraction': 
-                return <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full"><div className="transform origin-center"><FractionInput value={inputValue} onChange={setInputValue} allowMixed={false} autoFocus={!isMobile} /></div></div>;
-            case 'exponent': 
-            case 'structured_power': 
-                return <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full"><div className="transform origin-center"><ExponentInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} /></div></div>;
-            case 'scientific': 
-            case 'structured_scientific': 
-                return <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full"><div className="transform origin-center"><ScientificInput value={inputValue} onChange={setInputValue} autoFocus={!isMobile} /></div></div>;
-            default:
-                return <input type="text" autoFocus={!isMobile} className="w-full bg-[var(--bg-surface)] border-[3px] border-[var(--border-main)] rounded-[var(--radius-btn)] px-6 py-4 text-center font-bold text-2xl outline-none focus:border-[var(--brand-text)] focus:bg-[var(--bg-card)] text-[var(--text-main)] shadow-inner transition-all" placeholder="..." value={inputValue} maxLength={20} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLabSubmit()} />;
-        }
-    };
+    const type = rd?.answerType || rd?.inputType || item?.resolvedData?.inputType || 'text';
+
+    return (
+        <SmartMathInput 
+            value={inputValue}
+            onChange={setInputValue}
+            onSubmit={() => handleLabSubmit()}
+            inputType={type}
+            isMobile={isMobile}
+        />
+    );
+};
 
     useEffect(() => {
         if (configCode) {

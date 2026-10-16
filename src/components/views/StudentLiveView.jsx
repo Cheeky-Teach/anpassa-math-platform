@@ -9,6 +9,7 @@ import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputCompon
 import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 import PreferencesToggle from '../ui/PreferencesToggle';
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
+import SmartMathInput from '../ui/SmartMathInput.jsx'
 
 
 // Import the shared Presentation slide renderer!
@@ -232,20 +233,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         return () => { supabase.removeChannel(masterChannel); };
     }, [session?.id, onBack, studentAlias, lang, isPresentationMode, activeSlideIndex]);
 
-    // --- 2. INPUT SHIELDING ---
-    const sanitizeInput = (val, type) => {
-        let str = String(val).replace(/<[^>]*>?/gm, ''); 
-        
-        if (type === 'free_text') return str.substring(0, 1500); 
-
-        if (type === 'fraction' || type === 'mixed_fraction') return str.replace(/[^0-9\s/]/g, '');
-        if (type === 'scientific' || type === 'exponent' || type === 'structured_power' || type === 'structured_scientific') {
-            return str.replace(/[^a-zA-Z0-9+\-*/:.,><=^()\s;]/g, '');
-        }
-        
-        return str.replace(/[^0-9.,*+\-xy=/: ]/gi, '');
-    };
-
     // --- CONSISTENT SUBMISSION ---
     const handleSolve = async (manualValue = null, forcedLocalIdx = null) => {
         const targetIdx = forcedLocalIdx !== null ? forcedLocalIdx : currentIndex;
@@ -345,106 +332,45 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
     // --- 3. HARDENED VISUAL RENDERING ---
     const renderInput = (idx = currentIndex) => {
-        const item = localPacket[idx];
-        if (!item) return null;
+    const item = localPacket[idx];
+    if (!item) return null;
 
-        const rd = item.resolvedData?.renderData;
+    const rd = item.resolvedData?.renderData;
 
-        if (rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options))) {
-            return (
-                <div className="grid grid-cols-1 gap-3 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-auto">
-                    {(rd.options || []).map((opt, i) => {
-                        const choiceLabel = typeof opt === 'object' ? opt.label : opt;
-                        const choiceValue = typeof opt === 'object' ? opt.value : opt;
-                        return (
-                            <button
-                                key={i}
-                                onClick={() => handleSolve(choiceValue, idx)}
-                                className="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-700 hover:border-indigo-600 hover:bg-indigo-50 transition-all shadow-sm text-center active:scale-95"
-                            >
-                                <MathDisplay content={String(choiceLabel)} />
-                            </button>
-                        );
-                    })}
-                </div>
-            );
-        }
+    if (rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options))) {
+        return (
+            <div className="grid grid-cols-1 gap-3 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-auto">
+                {(rd.options || []).map((opt, i) => {
+                    const choiceLabel = typeof opt === 'object' ? opt.label : opt;
+                    const choiceValue = typeof opt === 'object' ? opt.value : opt;
+                    return (
+                        <button
+                            key={i}
+                            onClick={() => handleSolve(choiceValue, idx)}
+                            className="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-700 hover:border-indigo-600 hover:bg-indigo-50 transition-all shadow-sm text-center active:scale-95"
+                        >
+                            <MathDisplay content={String(choiceLabel)} />
+                        </button>
+                    );
+                })}
+            </div>
+        );
+    }
 
-        const inputType = item.answerType || rd?.answerType || rd?.inputType || item.resolvedData?.inputType || 'text';
-        const value = answers[idx] || '';
+    const inputType = item.answerType || rd?.answerType || rd?.inputType || item.resolvedData?.inputType || 'text';
+    const value = answers[idx] || '';
 
-        const handleWrappedChange = (val) => {
-            const clean = sanitizeInput(val, inputType);
-            setAnswers({ ...answers, [idx]: clean });
-        };
-
-        if (inputType === 'free_text') {
-            return (
-                <textarea
-                    autoFocus={!isMobile} 
-                    className="w-full h-40 bg-slate-100 border-none rounded-2xl px-6 py-4 font-medium text-lg outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400 shadow-inner resize-none pointer-events-auto text-slate-900"
-                    placeholder={lang === 'sv' ? "Förklara ditt svar här..." : "Explain your reasoning..."}
-                    value={value}
-                    maxLength={1500}
-                    onChange={(e) => handleWrappedChange(e.target.value)}
-                />
-            );
-        }
-
-        switch (inputType) {
-            case 'mixed_fraction': 
-                return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto text-slate-900">
-                        <div className="scale-110 transform origin-center">
-                            <FractionInput value={value} onChange={handleWrappedChange} allowMixed={true} autoFocus={!isMobile} />
-                        </div>
-                    </div>
-                );
-
-            case 'fraction': 
-                return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto text-slate-900">
-                        <div className="scale-110 transform origin-center">
-                            <FractionInput value={value} onChange={handleWrappedChange} allowMixed={false} autoFocus={!isMobile} />
-                        </div>
-                    </div>
-                );
-            
-            case 'exponent': 
-            case 'structured_power': 
-                return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto text-slate-900">
-                        <div className="scale-110 transform origin-center">
-                            <ExponentInput value={value} onChange={handleWrappedChange} autoFocus={!isMobile} />
-                        </div>
-                    </div>
-                );
-            
-            case 'scientific': 
-            case 'structured_scientific': 
-                return (
-                    <div className="flex justify-center py-6 bg-slate-100 rounded-2xl shadow-inner w-full pointer-events-auto text-slate-900">
-                        <div className="scale-110 transform origin-center">
-                            <ScientificInput value={value} onChange={handleWrappedChange} autoFocus={!isMobile} />
-                        </div>
-                    </div>
-                );
-
-            default:
-                return (
-                    <input 
-                        type="text" 
-                        autoFocus={!isMobile} 
-                        className="w-full bg-slate-100 border-none rounded-2xl px-6 py-4 text-center font-bold text-2xl outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400 shadow-inner pointer-events-auto text-slate-900"
-                        placeholder="Ditt svar..."
-                        value={value}
-                        maxLength={20}
-                        onChange={(e) => handleWrappedChange(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSolve(null, idx)}
-                    />
-                );
-        }
-    };
+    return (
+        <SmartMathInput 
+            value={value}
+            onChange={(val) => setAnswers({ ...answers, [idx]: val })}
+            onSubmit={() => handleSolve(null, idx)}
+            inputType={inputType}
+            disabled={isSubmitting || !!completed[idx]}
+            isMobile={isMobile}
+        />
+    );
+};
 
     if (localPacket.length === 0) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" size={32}/></div>;
 
