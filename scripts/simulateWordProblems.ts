@@ -1,4 +1,4 @@
-// scripts/simulateWordProblems.ts
+// npx tsx e:\anpassa-v2/scripts/simulatewordproblems.ts
 import { SKILL_BUCKETS } from '../src/constants/skillBuckets.js';
 import { TopicMap } from '../api/question.js';
 import { WordProblemInterceptor } from '../src/core/utils/WordProblemInterceptor.js';

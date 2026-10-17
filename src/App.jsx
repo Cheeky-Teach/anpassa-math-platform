@@ -17,6 +17,7 @@ import ProfileView from './components/views/ProfileView';
 import TimesTable from './components/views/TimesTable';
 import TestLabView from './components/views/TestLabView';
 import PresentationView from './components/views/PresentationView';
+import ManipulativeSandboxView from './components/views/ManipulativeSandboxView';
 
 // Modals
 import AboutModal from './components/modals/AboutModal';
@@ -114,6 +115,7 @@ function App() {
     // 🟢 GLOBAL PREFERENCES STATE (Defaults to Dark & Swedish)
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'sv');
     const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
+    const [sandboxLab, setSandboxLab] = useState('fractions');
 
     // Teacher buckets / groups
     const [studentBuckets, setStudentBuckets] = useState([]);
@@ -546,6 +548,7 @@ function App() {
         setActiveBucket(null); 
         setIsDetourActive(false); 
         setOriginalTask(null);
+        setSandboxLab('fractions');
     };
 
     const quitPractice = () => { 
@@ -993,11 +996,17 @@ function App() {
                                 onLabOpen={() => setView('practice_lab')}
                                 onProfileOpen={() => setView('profile')} 
                                 onTimesTableOpen={() => setView('times_table')}
+                                onFractionLabOpen={() => {
+                                    setSandboxLab('fractions');
+                                    setView('sandbox');
+                                }}
+                                
                                 onWhiteboardOpen={() => {
                                     setSavedPacket([]); 
                                     setSheetTitle(lang === 'sv' ? 'Presentationstavla' : 'Presentation Board');
                                     setView('presentation');
                                 }}
+
                                 onRelaunch={handleRelaunchSession} 
                                 onViewReport={handleViewArchiveReport} 
                                 onEdit={handleEditArchivedPacket}
@@ -1020,7 +1029,13 @@ function App() {
                         lang={lang} 
                         onClose={() => setView('dashboard')} 
                     />
-                ) : view === 'times_table' ? ( 
+                ) : view === 'sandbox' ? (
+                    <ManipulativeSandboxView 
+                        labType={sandboxLab}
+                        lang={lang}
+                        onBack={() => setView('dashboard')}
+                    />
+                ) : view === 'times_table' ? (
                     <TimesTable 
                         lang={lang} 
                         onBack={() => setView('dashboard')} 

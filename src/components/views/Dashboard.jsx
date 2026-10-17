@@ -5,7 +5,7 @@ import {
   Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, User, 
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet, MoreHorizontal,
   PlayCircle, CheckCircle2, AlertCircle, Grid3X3, Monitor, Beaker, Newspaper, X, 
-  ArrowUpRight, Layers
+  ArrowUpRight, Layers, PieChart
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
@@ -19,7 +19,7 @@ import MapGenerator from '../MapGenerator';
 const Dashboard = ({ 
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
     timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen,
-    onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, onLabOpen,
+    onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, onLabOpen, onFractionLabOpen,
     onTimesTableOpen, onRelaunch, onViewReport, onEdit, activeBucket, onBackToGateway,
     userRole = 'teacher'
 }) => {
@@ -308,6 +308,25 @@ const Dashboard = ({
                                     <span className="font-bold text-[10px] uppercase text-[var(--text-main)]">{t.stats_title}</span>
                                 </button>
                             </div>
+                        </div>
+
+                        <div className="theme-indigo mt-2">
+                            <button 
+                                onClick={onFractionLabOpen} 
+                                className="group flex items-center gap-3 p-3.5 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)] transition-all text-left w-full cursor-pointer"
+                            >
+                                <div className="w-8 h-8 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center text-[var(--brand-text)] shrink-0 shadow-sm">
+                                    <PieChart size={18} />
+                                </div>
+                                <div>
+                                    <span className="block font-bold text-xs uppercase text-[var(--text-main)] group-hover:text-white leading-tight">
+                                        {lang === 'sv' ? "Bråklabb" : "Fraction Lab"}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-[var(--brand-text)] group-hover:text-white/80 uppercase tracking-widest">
+                                        {lang === 'sv' ? "Digitala laborationer" : "Digital Manipulatives"}
+                                    </span>
+                                </div>
+                            </button>
                         </div>
                     </div>
 

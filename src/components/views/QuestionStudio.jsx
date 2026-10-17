@@ -12,6 +12,7 @@ import VisualRenderer from '../visuals/VisualRenderer.jsx';
 import { supabase } from '../../lib/supabaseClient'; 
 import PresentationView from '../views/PresentationView.jsx';
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
+import LiveLaunchModal from '../modals/LiveLaunchModal';
 
 
 // CRITICAL: Imports Universal Theme and Preferences Toggle
@@ -217,10 +218,12 @@ export default function QuestionStudio({
   const [showPresentation, setShowPresentation] = useState(false); 
 
   // Live Session Pre-Flight States
+  // Live Session Pre-Flight States
   const [showLiveModal, setShowLiveModal] = useState(false);
   const [liveSettings, setLiveSettings] = useState({ pacing: 'open', order: 'original', summary: true });
   const [enableScratchpad, setEnableScratchpad] = useState(true);
-
+  const [enableCanvas, setEnableCanvas] = useState(false); //  Default false to save bandwidth
+  const [responseStyle, setResponseStyle] = useState('flexible'); //  'flexible', 'scratchpad_only', 'canvas_only', 'answer_only'
   const [folders, setFolders] = useState([]);
   const [expandedFolders, setExpandedFolders] = useState([]);
 
@@ -264,7 +267,7 @@ export default function QuestionStudio({
     setDraggedItemIndex(null);
   };
 
-  // 🟢 STEP 4.2 GUARD: Disable and reset Word Problems if the selected topic does not support them
+  //  STEP 4.2 GUARD: Disable and reset Word Problems if the selected topic does not support them
   const topicSupportsWordProblems = isTopicWordProblemReady(selectedTopicId);
 
   useEffect(() => {
@@ -615,7 +618,17 @@ export default function QuestionStudio({
             status: 'active', 
             title: sheetTitle || "Live Session", 
             active_worksheet_id: activeSheetId, 
-            active_question_data: { packet: packet, mode: setupMode, settings: { ...liveSettings, scratchpad: enableScratchpad } }
+            active_question_data: { 
+                packet: packet, 
+                mode: setupMode, 
+                settings: { 
+                    ...liveSettings, 
+                    scratchpad: enableScratchpad,
+                    allowScratchpad: enableScratchpad,
+                    allowCanvas: enableCanvas,        // 🟢 Sent to StudentLiveView
+                    responseStyle: responseStyle     // 🟢 Sent to StudentLiveView
+                } 
+            }
         }]).select().single();
         if (error) throw error;
         onDoNowGenerate(null, null, { room: data, packet: packet }); 
@@ -695,7 +708,7 @@ export default function QuestionStudio({
       return matchesSearch && matchesTopic && matchesType;
   });
   
-  // 🟢 FIX: Include all registered curriculum topics from SKILL_BUCKETS so "mönster" (patterns) is always filterable
+  //  FIX: Include all registered curriculum topics from SKILL_BUCKETS so "mönster" (patterns) is always filterable
   const allCurriculumTopicIds = Object.values(SKILL_BUCKETS).flatMap(cat => Object.keys(cat.topics || {}));
   const availableTopics = [...new Set([
       ...allCurriculumTopicIds,
@@ -759,7 +772,7 @@ export default function QuestionStudio({
                             >
                                 <Plus size={14} /> {t.new_worksheet}
                             </button>
-                        </div>
+                        </div> 
                     </div>
 
                     {/* Navigation Menu */}
@@ -1031,7 +1044,7 @@ export default function QuestionStudio({
                 </div>
 
                 {/* MODALS */}
-                {/* 🟢 RENAME FOLDER MODAL */}
+                {/*  RENAME FOLDER MODAL */}
                 {editingFolder && (
                     <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
                         <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
@@ -1470,7 +1483,7 @@ export default function QuestionStudio({
                                               key={size}
                                               onClick={() => { 
                                                   setGlobalLatexSize(size); 
-                                                  // 🟢 FIX: Clear all local overrides so the entire sheet inherits the global size
+                                                  //  FIX: Clear all local overrides so the entire sheet inherits the global size
                                                   setPacket(prev => prev.map(item => ({ ...item, localLatexSize: null })));
                                                   setIsSaved(false); 
                                               }} 
@@ -1841,120 +1854,18 @@ export default function QuestionStudio({
       </div>
       
       {/* MODALS GO HERE AT THE VERY ROOT TO OVERLAY EVERYTHING */}
-      {showLiveModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-              <div className="bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[var(--radius-card)] shadow-2xl p-8 w-full max-w-md animate-in zoom-in-95 duration-200">
-                  <div className="flex justify-between items-center mb-6">
-                      <div>
-                          <h3 className="text-xl font-black text-[var(--text-main)] uppercase italic tracking-tight leading-none">{lang === 'sv' ? "Live-Inställningar" : "Live Settings"}</h3>
-                          <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mt-1">{packet.length} {lang === 'sv' ? "Uppgifter" : "Questions"}</p>
-                      </div>
-                      <button onClick={() => setShowLiveModal(false)} className="btn-ghost"><X size={20}/></button>
-                  </div>
-
-                  <div className="space-y-6">
-                      {/* PACING CONTROLS */}
-                      <div>
-                          <label className="text-[11px] font-black uppercase text-[var(--text-muted)] tracking-widest mb-3 block">{lang === 'sv' ? "Tempo & Navigering" : "Pacing & Navigation"}</label>
-                          <div className="flex flex-col gap-2">
-                              <button 
-                                  onClick={() => setLiveSettings({ ...liveSettings, pacing: 'open' })}
-                                  className={`theme-blue p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'open' ? 'border-[var(--brand-solid)] bg-[var(--brand-solid)] shadow-md' : 'border-[var(--border-main)] bg-[var(--bg-surface)] hover:border-[var(--brand-border)]'}`}
-                              >
-                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'open' ? 'text-white' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Öppet (Egen takt)" : "Open (Free Pacing)"}</div>
-                                  <div className={`text-[10px] font-bold leading-tight mt-0.5 ${liveSettings.pacing === 'open' ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>{lang === 'sv' ? "Elever kan bläddra fritt fram och tillbaka." : "Students navigate freely back and forth."}</div>
-                              </button>
-                              <button 
-                                  onClick={() => setLiveSettings({ ...liveSettings, pacing: 'progressive' })}
-                                  className={`theme-amber p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'progressive' ? 'border-[var(--brand-solid)] bg-[var(--brand-solid)] shadow-md' : 'border-[var(--border-main)] bg-[var(--bg-surface)] hover:border-[var(--brand-border)]'}`}
-                              >
-                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'progressive' ? 'text-white' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Låst (En i taget)" : "Progressive Lock"}</div>
-                                  <div className={`text-[10px] font-bold leading-tight mt-0.5 ${liveSettings.pacing === 'progressive' ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>{lang === 'sv' ? "Elever måste svara för att komma vidare. Kan ej gå tillbaka." : "Students must answer to advance. No going back."}</div>
-                              </button>
-                              <button 
-                                  onClick={() => setLiveSettings({ ...liveSettings, pacing: 'teacher', order: 'original' })}
-                                  className={`theme-purple p-3 rounded-[var(--radius-btn)] border-2 text-left transition-all ${liveSettings.pacing === 'teacher' ? 'border-[var(--brand-solid)] bg-[var(--brand-solid)] shadow-md' : 'border-[var(--border-main)] bg-[var(--bg-surface)] hover:border-[var(--brand-border)]'}`}
-                              >
-                                  <div className={`font-black text-sm uppercase tracking-tight ${liveSettings.pacing === 'teacher' ? 'text-white' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Lärarstyrd" : "Teacher-Led"}</div>
-                                  <div className={`text-[10px] font-bold leading-tight mt-0.5 ${liveSettings.pacing === 'teacher' ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>{lang === 'sv' ? "Du byter uppgift för hela klassen samtidigt." : "You control the active question for the whole class."}</div>
-                              </button>
-                          </div>
-                      </div>
-
-                      {/* ANTI-CHEAT (ORDER) */}
-                      <div>
-                          <label className="text-[11px] font-black uppercase text-[var(--text-muted)] tracking-widest mb-3 block">{lang === 'sv' ? "Uppgiftsordning" : "Question Order"}</label>
-                          <div className="flex bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] shadow-inner border border-[var(--border-main)]">
-                              <button 
-                                  onClick={() => setLiveSettings({ ...liveSettings, order: 'original' })}
-                                  className={`flex-1 py-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all ${liveSettings.order === 'original' ? 'bg-[var(--text-main)] text-[var(--bg-card)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                              >
-                                  {lang === 'sv' ? "Standard" : "Standard"}
-                              </button>
-                              <button 
-                                  disabled={liveSettings.pacing === 'teacher'}
-                                  onClick={() => setLiveSettings({ ...liveSettings, order: 'randomized' })}
-                                  className={`flex-1 py-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-30 ${liveSettings.order === 'randomized' ? 'bg-[var(--text-main)] text-[var(--bg-card)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                              >
-                                  {lang === 'sv' ? "Slumpad" : "Randomized"}
-                              </button>
-                          </div>
-                          
-                          <div className="mt-2.5 px-3 border-l-2 border-[var(--border-strong)]">
-                              <p className="text-[9.5px] font-bold text-[var(--text-muted)] leading-relaxed">
-                                  {liveSettings.order === 'original' 
-                                      ? (lang === 'sv' ? "Standard: Alla börjar på uppgift 1 och gör dem i angiven ordning." : "Standard: Everyone starts on question 1 and works in the given order.")
-                                      : (lang === 'sv' ? "Slumpad: Alla gör samma uppgifter men i helt slumpmässig ordning för att förhindra tjuvtittande från nyfikna grannar." : "Randomized: Everyone does the same questions but in completely random order to prevent screen peeking from nosy neighbors.")}
-                              </p>
-                          </div>
-
-                          {liveSettings.pacing === 'teacher' && <p className="text-[9px] font-bold text-[var(--theme-amber-text)] mt-3 text-center">{lang === 'sv' ? "Slumpad ordning är inaktiverad i lärarstyrt läge." : "Randomization is disabled during Teacher-Led pacing."}</p>}
-                      </div>
-
-                      {/* SUMMARY VIEW TOGGLE */}
-                      <div className={`theme-emerald flex items-center justify-between p-4 border rounded-[var(--radius-btn)] transition-colors duration-300 ${liveSettings.summary ? 'bg-[var(--brand-bg)] border-[var(--brand-border)]' : 'bg-[var(--bg-surface)] border-[var(--border-main)]'}`}>
-                          <div>
-                              <div className={`text-[11px] font-black uppercase tracking-widest transition-colors ${liveSettings.summary ? 'text-[var(--brand-solid)]' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Visa Resultatsöversikt" : "Show Final Summary"}</div>
-                              <div className={`text-[9px] font-bold transition-colors ${liveSettings.summary ? 'text-[var(--brand-text)]' : 'text-[var(--text-muted)]'}`}>{lang === 'sv' ? "Elever ser sina egna svar efteråt." : "Students review their answers at the end."}</div>
-                          </div>
-                          <button 
-                              onClick={() => setLiveSettings({ ...liveSettings, summary: !liveSettings.summary })} 
-                              className={`w-10 h-6 rounded-full transition-colors duration-300 relative p-1 shrink-0 shadow-inner ${liveSettings.summary ? 'bg-[var(--brand-solid)]' : 'bg-slate-800'}`}
-                          >
-                              <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${liveSettings.summary ? 'translate-x-4' : 'translate-x-0'}`} />
-                          </button>
-                      </div>
-
-                      {/* SCRATCHPAD TOGGLE */}
-                      <div className={`theme-emerald flex items-center justify-between p-4 border rounded-[var(--radius-btn)] transition-colors duration-300 ${enableScratchpad ? 'bg-[var(--brand-bg)] border-[var(--brand-border)]' : 'bg-[var(--bg-surface)] border-[var(--border-main)]'}`}>
-                          <div>
-                              <div className={`text-[11px] font-black uppercase tracking-widest transition-colors ${enableScratchpad ? 'text-[var(--brand-solid)]' : 'text-[var(--text-main)]'}`}>{lang === 'sv' ? "Aktivera Kladdpapper" : "Enable Scratchpad"}</div>
-                              <div className={`text-[9px] font-bold transition-colors ${enableScratchpad ? 'text-[var(--brand-text)]' : 'text-[var(--text-muted)]'}`}>{lang === 'sv' ? "Elever kan visa uträkningar steg-för-steg." : "Students can show work step-by-step."}</div>
-                          </div>
-                          <button 
-                              onClick={() => setEnableScratchpad(!enableScratchpad)} 
-                              className={`w-10 h-6 rounded-full transition-colors duration-300 relative p-1 shrink-0 shadow-inner ${enableScratchpad ? 'bg-[var(--brand-solid)]' : 'bg-slate-800'}`}
-                          >
-                              <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-sm ${enableScratchpad ? 'translate-x-4' : 'translate-x-0'}`} />
-                          </button>
-                      </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2 mt-6">
-                      <button onClick={confirmLaunchLive} className="w-full py-4 rounded-[var(--radius-btn)] shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 bg-[var(--text-main)] text-[var(--bg-card)] font-black uppercase tracking-widest">
-                          <Send size={18} /> {lang === 'sv' ? "Starta Session" : "Start Session"}
-                      </button>
-                      
-                      <button 
-                          onClick={() => setShowLiveModal(false)} 
-                          className="w-full py-3 rounded-[var(--radius-btn)] hover:bg-[var(--bg-surface)] transition-all flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] font-black uppercase tracking-widest text-[11px]"
-                      >
-                          {lang === 'sv' ? "Avbryt" : "Cancel"}
-                      </button>
-                  </div>
-              </div>
-          </div>
-      )}
+      <LiveLaunchModal
+          isOpen={showLiveModal}
+          onClose={() => setShowLiveModal(false)}
+          onConfirm={(settings) => {
+              setLiveSettings(settings);
+              confirmLaunchLive(settings);
+          }}
+          packetCount={packet.length}
+          hasDrawings={packet.some(p => p?.canvas_state?.length > 0)}
+          lang={lang}
+          initialSettings={liveSettings}
+      />
 
       {/* LAUNCHES STANDALONE PRESENTATION BUILDER/VIEWER */}
       {showPresentation && (

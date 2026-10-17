@@ -1,3 +1,4 @@
+// npx tsx e:\anpassa-v2/scripts/auditwordproblems.ts
 import { SKILL_BUCKETS } from '../src/constants/skillBuckets.js';
 import { GLOBAL_STORY_REGISTRY } from '../src/core/utils/stories/index.js';
 import { StoryScenario } from '../src/core/utils/wordProblemContract.js';

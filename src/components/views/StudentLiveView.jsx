@@ -1,61 +1,91 @@
+// src/components/views/StudentLiveView.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, CheckCircle2, ChevronLeft, ChevronRight, Loader2, LogOut, ListChecks, LayoutGrid, XCircle, ChevronDown } from 'lucide-react';
+import { 
+    Send, CheckCircle2, ChevronLeft, ChevronRight, Loader2, LogOut, 
+    ListChecks, LayoutGrid, XCircle, ChevronDown, PanelRightClose, PanelRightOpen, ZoomIn, ZoomOut, RotateCcw
+} from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import MathScratchpad from '../ui/MathScratchpad';
 
 // --- VISUAL & INPUT IMPORTS ---
 import VisualRenderer from '../visuals/VisualRenderer';
-import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 import PreferencesToggle from '../ui/PreferencesToggle';
-import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
-import SmartMathInput from '../ui/SmartMathInput.jsx'
+import { syncProgress } from '../../lib/progressSync';
+import SmartMathInput from '../ui/SmartMathInput.jsx';
+import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
 
-
-// Import the shared Presentation slide renderer!
+// --- SHARED PRESENTATION RENDERERS ---
 import SlideRenderer from '../shared/SlideRenderer';
 import MathDisplay from '../shared/MathDisplay';
 
 export default function StudentLiveView({ session, packet, lang = 'sv', studentAlias, onBack }) {
-    //  1. EXTRACT SETTINGS FROM SUPABASE
+    // 1. SETTINGS & FEATURE FLAGS
     const settings = session?.active_question_data?.settings || { pacing: 'open', order: 'original', summary: true };
-    const hasScratchpad = session?.active_question_data?.settings?.scratchpad !== false;
+    const allowScratchpad = settings.allowScratchpad ?? (settings.scratchpad !== false);
+    const allowCanvas = settings.allowCanvas === true;
+    const responseStyle = settings.responseStyle || 'flexible';
 
     // Presentation Mode Flags & Data
     const isPresentationMode = session?.active_question_data?.mode === 'presentation';
     const slides = session?.active_question_data?.slides || [];
     const globalZoom = session?.active_question_data?.settings?.globalZoom || 1.0;
     
-    // Logic & Navigation State 
+    // Navigation & Slide State
     const [localPacket, setLocalPacket] = useState([]); 
     const [currentIndex, setCurrentIndex] = useState(0); 
     const [activeSlideIndex, setActiveSlideIndex] = useState(session?.current_slide_index || 0); 
-
-    //  NEW: Smart Accordion State
     const [activeTaskId, setActiveTaskId] = useState(null);
 
+    // Current Slide Metadata
+    const currentSlide = slides[activeSlideIndex];
+    const slideDrawer = currentSlide?.activeDrawer || (currentSlide?.labType ? currentSlide.labType : null);
+    
+
+    // Responsive & Viewport Layout State
+    const [slideZoom, setSlideZoom] = useState(1);
+    const [isDockCollapsed, setIsDockCollapsed] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Student Answers & Canvas Elements
     const [answers, setAnswers] = useState({});
     const [completed, setCompleted] = useState({}); 
+    const [completedSlide, setCompletedSlide] = useState({});
+    const [selectedChoices, setSelectedChoices] = useState({});
+    const [scratchpad, setScratchpad] = useState({}); 
+    const [canvasElements, setCanvasElements] = useState({});
+    const [slideExplanations, setSlideExplanations] = useState({});
+
+    // Network & Session Status
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [roomActive, setRoomActive] = useState(true);
     const [showFinalReview, setShowFinalReview] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
 
-    const [scratchpad, setScratchpad] = useState({}); 
-
-    // Initialize Accordion Task ID when changing slides
+    // Sync accordion task selection on slide changes
     useEffect(() => {
         if (isPresentationMode && slides[activeSlideIndex]?.activeIds?.length > 0) {
             setActiveTaskId(slides[activeSlideIndex].activeIds[0]);
         }
     }, [activeSlideIndex, isPresentationMode, slides]);
 
-    // ---  2. INITIALIZATION & REHYDRATION ---
+    // Track mobile breakpoints
+    useEffect(() => {
+        const checkMobile = () => {
+            const mobile = window.innerWidth < 768;
+            setIsMobile(mobile);
+            if (mobile) setIsDockCollapsed(true);
+        };
+        checkMobile(); 
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // 2. INITIALIZATION & REHYDRATION
     useEffect(() => {
         const initializeSession = async () => {
-            let mappedPacket = packet.map((item, index) => ({ ...item, originalIndex: index }));
+            const safePacket = Array.isArray(packet) ? packet : [];
+            let mappedPacket = safePacket.map((item, index) => ({ ...item, originalIndex: index }));
             
-            // Anti-Cheat Shuffle (Disabled in Presentation Mode)
             if (settings.order === 'randomized' && settings.pacing !== 'teacher' && !isPresentationMode) {
                 for (let i = mappedPacket.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
@@ -64,7 +94,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             }
             setLocalPacket(mappedPacket);
 
-            // Fetch past answers (Rehydration)
             try {
                 const { data: pastResponses, error } = await supabase
                     .from('responses')
@@ -76,21 +105,35 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     const restoredAnswers = {};
                     const restoredCompleted = {};
                     const restoredScratchpad = {};
-                    
+                    const restoredCanvas = {};
+                    const restoredCompletedSlides = {};
+
                     pastResponses.forEach(res => {
+                        if (res.is_slide_submission) {
+                            restoredCompletedSlides[res.question_index] = true;
+                            if (res.canvas_state) {
+                                restoredCanvas[res.question_index] = res.canvas_state;
+                            }
+                            return;
+                        }
+
                         const localIdx = mappedPacket.findIndex(p => p.originalIndex === res.question_index);
                         if (localIdx !== -1) {
                             restoredAnswers[localIdx] = res.answer;
                             restoredCompleted[localIdx] = (mappedPacket[localIdx].answerType === 'free_text' || res.is_correct) ? 'correct' : 'wrong';
                             restoredScratchpad[localIdx] = res.work_steps || [''];
+                            if (allowCanvas && res.canvas_state) {
+                                restoredCanvas[localIdx] = res.canvas_state;
+                            }
                         }
                     });
-                    
+
+                    setCanvasElements(restoredCanvas);
                     setScratchpad(restoredScratchpad);
                     setAnswers(restoredAnswers);
                     setCompleted(restoredCompleted);
+                    setCompletedSlide(restoredCompletedSlides);
 
-                    //  SYNC WIRED
                     if (Object.keys(restoredCompleted).length > 0) {
                         syncProgress('student_session_rehydrated', {
                             app_mode: 'student_live',
@@ -116,14 +159,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         initializeSession();
     }, [packet, session.id, studentAlias, isPresentationMode]);
 
-    useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768); 
-        checkMobile(); 
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
-
-    // STATE TRACKERS FOR THE WEBSOCKET 
+    // WebSocket state trackers
     const completedRef = useRef(completed);
     const localPacketRef = useRef(localPacket);
 
@@ -132,7 +168,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         localPacketRef.current = localPacket;
     }, [completed, localPacket]);
 
-    // --- 1. MASTER REAL-TIME SYNC ---
+    // 3. MASTER REAL-TIME SYNC
     useEffect(() => {
         if (!session?.id) return;
         
@@ -142,14 +178,12 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             }, (payload) => {
                 const newData = payload.new;
 
-                // A. Kill Switch Check
                 if (newData.status === 'closed') {
                     setRoomActive(false);
                     setTimeout(onBack, 4000);
                     return;
                 }
 
-                // B. Blacklist Check
                 const kickedList = newData.kicked_students || [];
                 if (kickedList.includes(studentAlias)) {
                     alert(lang === 'sv' ? "Du har blivit borttagen från sessionen." : "You have been removed from the session.");
@@ -157,16 +191,11 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     return;
                 }
 
-                // C. Presentation Mode Sync
                 if (isPresentationMode) {
-                    let slideDidUpdate = false;
-                    
                     if (newData.current_slide_index !== null && newData.current_slide_index !== undefined) {
                         setActiveSlideIndex(parseInt(newData.current_slide_index, 10));
-                        slideDidUpdate = true;
                     }
 
-                    //  HOT-RELOAD: Check for regenerated questions in the packet
                     if (newData.active_question_data?.packet) {
                         const incomingPacket = newData.active_question_data.packet;
                         let hasChanges = false;
@@ -175,34 +204,29 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
                         incomingPacket.forEach((newItem, idx) => {
                             const oldItem = newLocalPacket[idx];
-                            // Detect updated items using regenVersion timestamp
                             if (oldItem && newItem.regenVersion && newItem.regenVersion !== oldItem.regenVersion) {
                                 hasChanges = true;
                                 changedIndices.push(idx);
-                                newLocalPacket[idx] = { ...newItem, originalIndex: idx }; // preserve sorting index
+                                newLocalPacket[idx] = { ...newItem, originalIndex: idx };
                             }
                         });
 
                         if (hasChanges) {
                             setLocalPacket(newLocalPacket);
-                            
-                            // Flush local states to unlock the new questions
                             setAnswers(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
                             setScratchpad(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
+                            setCanvasElements(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
                             setCompleted(prev => { const next = { ...prev }; changedIndices.forEach(i => delete next[i]); return next; });
 
-                            // Force accordion to open the first active ID on the slide
                             const currentSlideIds = newData.active_question_data.slides?.[newData.current_slide_index ?? activeSlideIndex]?.activeIds || [];
                             if (currentSlideIds.length > 0) {
                                 setActiveTaskId(currentSlideIds[0]);
                             }
                         }
                     }
-
-                    if (slideDidUpdate) return; // Skip worksheet pacing logic below
+                    return;
                 }
 
-                // D. Worksheet Teacher Pacing Sync
                 if (!isPresentationMode && settings.pacing === 'teacher' && newData.current_question_index !== null && newData.current_question_index !== undefined) {
                     const newTeacherIndex = parseInt(newData.current_question_index, 10);
                     
@@ -233,7 +257,34 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         return () => { supabase.removeChannel(masterChannel); };
     }, [session?.id, onBack, studentAlias, lang, isPresentationMode, activeSlideIndex]);
 
-    // --- CONSISTENT SUBMISSION ---
+    // 4. SUBMISSION HANDLERS
+    const handleSubmitSlide = async () => {
+        if (isSubmitting || completedSlide[activeSlideIndex]) return;
+        setIsSubmitting(true);
+
+        try {
+            const explanationText = slideExplanations[activeSlideIndex] || "";
+            const payload = {
+                room_id: session.id,
+                student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25),
+                question_index: activeSlideIndex,
+                answer: explanationText.trim() ? explanationText.trim() : "[CANVAS_SUBMISSION]",
+                canvas_state: canvasElements[activeSlideIndex] || slides[activeSlideIndex]?.elements || [],
+                is_correct: true
+                // 🔴 Removed: is_slide_submission (avoids PGRST204 error)
+            };
+
+            const { error } = await supabase.from('responses').insert([payload]);
+            if (error) throw error;
+
+            setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: true }));
+        } catch (err) {
+            console.error("Slide submission error:", err);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const handleSolve = async (manualValue = null, forcedLocalIdx = null) => {
         const targetIdx = forcedLocalIdx !== null ? forcedLocalIdx : currentIndex;
         const val = (manualValue !== null && manualValue !== undefined) ? manualValue : answers[targetIdx];
@@ -270,9 +321,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 return; 
             }
             
-            const currentSteps = (scratchpad[targetIdx] || []).filter(s => s.trim().length > 0);
+            const currentSteps = allowScratchpad 
+                ? (scratchpad[targetIdx] || []).filter(s => s.trim().length > 0)
+                : [];
 
-            //  SYNC WIRED: Track deep submission metrics
             syncProgress('student_answer_submitted', {
                 app_mode: 'student_live',
                 topic: currentItem.topicId || 'unknown',
@@ -281,42 +333,41 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 is_correct: isCorrect,
                 used_scratchpad: currentSteps.length > 0,
                 scratchpad_lines: currentSteps.length,
-                student_answer: String(val).substring(0, 100) // Truncate to prevent payload bloat
+                student_answer: String(val).substring(0, 100)
             });
 
-            //  Send regenVersion to server to protect against late submissions overwriting new questions
-            const { error } = await supabase.from('responses').insert([{
+            const payload = {
                 room_id: session.id,
                 student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
                 question_index: currentItem.originalIndex, 
                 answer: String(val).substring(0, 1500),
                 work_steps: currentSteps,
                 is_correct: isCorrect,
-                // Note: Ensure your Supabase table accepts version stamps if needed, otherwise ignore.
-            }]);
-            
+            };
+
+            if (allowCanvas) {
+                payload.canvas_state = canvasElements[targetIdx] || [];
+            }
+
+            const { error } = await supabase.from('responses').insert([payload]);
             if (error) throw error;
             
             setCompleted(prev => ({ ...prev, [targetIdx]: isCorrect ? 'correct' : 'wrong' }));
             
-            //  SMART ACCORDION AUTO-ADVANCE
             if (isPresentationMode) {
                 const currentSlideIds = slides[activeSlideIndex]?.activeIds || [];
                 const currentTaskPos = currentSlideIds.indexOf(currentItem.id);
                 
                 if (currentTaskPos !== -1 && currentTaskPos < currentSlideIds.length - 1) {
-                    // Try to find the next uncompleted question on the slide
                     const nextId = currentSlideIds.slice(currentTaskPos + 1).find(id => {
                         const localIndex = localPacket.findIndex(p => p.id === id);
                         return !completedRef.current[localIndex];
                     });
                     
                     if (nextId) setActiveTaskId(nextId);
-                    else setActiveTaskId(currentSlideIds[currentTaskPos + 1]); // Fallback to immediate next
+                    else setActiveTaskId(currentSlideIds[currentTaskPos + 1]);
                 }
-            } 
-            // Worksheet Auto-Advance
-            else if (settings.pacing !== 'teacher') {
+            } else if (settings.pacing !== 'teacher') {
                 if (targetIdx < localPacket.length - 1) {
                     setTimeout(() => setCurrentIndex(prev => prev + 1), 600);
                 } else if (targetIdx === localPacket.length - 1) {
@@ -330,51 +381,123 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         }
     };
 
-    // --- 3. HARDENED VISUAL RENDERING ---
-    const renderInput = (idx = currentIndex) => {
-    const item = localPacket[idx];
-    if (!item) return null;
+    // 5. COMPONENT WORK & INPUT RENDERERS
+    const renderWorkArea = (idx) => {
+        const isFreeText = localPacket[idx]?.answerType === 'free_text';
+        const isCompleted = !!completed[idx];
+        if (isCompleted) return null;
 
-    const rd = item.resolvedData?.renderData;
+        const showCanvas = !isPresentationMode && allowCanvas && responseStyle !== 'scratchpad_only';
+        const showScratchpad = allowScratchpad && !isFreeText && responseStyle !== 'canvas_only';
 
-    if (rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options))) {
+        if (!showCanvas && !showScratchpad) return null;
+
+        const initialCanvasElements = localPacket[idx]?.canvas_state || [];
+
         return (
-            <div className="grid grid-cols-1 gap-3 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-auto">
-                {(rd.options || []).map((opt, i) => {
-                    const choiceLabel = typeof opt === 'object' ? opt.label : opt;
-                    const choiceValue = typeof opt === 'object' ? opt.value : opt;
-                    return (
-                        <button
-                            key={i}
-                            onClick={() => handleSolve(choiceValue, idx)}
-                            className="w-full p-5 bg-white border-2 border-slate-100 rounded-2xl text-lg font-bold text-slate-700 hover:border-indigo-600 hover:bg-indigo-50 transition-all shadow-sm text-center active:scale-95"
-                        >
-                            <MathDisplay content={String(choiceLabel)} />
-                        </button>
-                    );
-                })}
+            <div className="space-y-4 mb-4">
+                {showCanvas && (
+                    <div className="w-full h-72 relative border-2 border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-white shadow-inner">
+                        <InteractiveCanvas
+                            lang={lang}
+                            elements={canvasElements[idx] || initialCanvasElements}
+                            setElements={(newEls) => setCanvasElements(prev => ({
+                                ...prev,
+                                [idx]: typeof newEls === 'function' ? newEls(prev[idx] || initialCanvasElements) : newEls
+                            }))}
+                            resolution={{ w: 1920, h: 1080 }}
+                            toolbarMode="student"
+                        />
+                    </div>
+                )}
+
+                {showScratchpad && (
+                    <MathScratchpad
+                        steps={scratchpad[idx] || ['']}
+                        onChange={(steps) => setScratchpad(prev => ({ ...prev, [idx]: steps }))}
+                        disabled={isSubmitting || isCompleted}
+                        lang={lang}
+                    />
+                )}
+            </div>
+        );
+    };
+
+    const renderInput = (idx = currentIndex) => {
+        const item = localPacket[idx];
+        if (!item) return null;
+
+        const rd = item.resolvedData?.renderData;
+
+        if (rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options))) {
+            const currentSelected = selectedChoices[idx];
+            const isCompleted = !!completed[idx];
+
+            return (
+                <div className="flex flex-col gap-3 w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-auto">
+                    <div className="grid grid-cols-1 gap-3 w-full">
+                        {(rd.options || []).map((opt, i) => {
+                            const choiceLabel = typeof opt === 'object' ? opt.label : opt;
+                            const choiceValue = typeof opt === 'object' ? opt.value : opt;
+                            const isSelected = currentSelected === choiceValue;
+
+                            return (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    disabled={isCompleted || isSubmitting}
+                                    onClick={() => {
+                                        if (isCompleted) return;
+                                        setSelectedChoices(prev => ({ ...prev, [idx]: choiceValue }));
+                                        setAnswers(prev => ({ ...prev, [idx]: choiceValue }));
+                                    }}
+                                    className={`w-full p-4 border-2 rounded-2xl text-base font-bold transition-all shadow-sm text-center cursor-pointer active:scale-95 ${
+                                        isSelected 
+                                            ? 'border-indigo-600 bg-indigo-50 text-indigo-950 ring-2 ring-indigo-400' 
+                                            : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-slate-50'
+                                    } ${isCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    <MathDisplay content={String(choiceLabel)} />
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        }
+
+        const inputType = item.answerType || rd?.answerType || rd?.inputType || item.resolvedData?.inputType || 'text';
+        const value = answers[idx] || '';
+
+        return (
+            <SmartMathInput 
+                value={value}
+                onChange={(val) => setAnswers({ ...answers, [idx]: val })}
+                onSubmit={() => handleSolve(null, idx)}
+                inputType={inputType}
+                disabled={isSubmitting || !!completed[idx]}
+                isMobile={isMobile}
+            />
+        );
+    };
+
+    // 6. INITIAL SCREEN GUARDS
+    const isReady = isPresentationMode 
+        ? (slides && slides.length > 0) 
+        : (localPacket && localPacket.length > 0);
+
+    if (!isReady) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
+                <Loader2 className="animate-spin text-indigo-600" size={36} />
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                    {lang === 'sv' ? "Laddar presentation..." : "Loading presentation..."}
+                </span>
             </div>
         );
     }
 
-    const inputType = item.answerType || rd?.answerType || rd?.inputType || item.resolvedData?.inputType || 'text';
-    const value = answers[idx] || '';
-
-    return (
-        <SmartMathInput 
-            value={value}
-            onChange={(val) => setAnswers({ ...answers, [idx]: val })}
-            onSubmit={() => handleSolve(null, idx)}
-            inputType={inputType}
-            disabled={isSubmitting || !!completed[idx]}
-            isMobile={isMobile}
-        />
-    );
-};
-
-    if (localPacket.length === 0) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" size={32}/></div>;
-
-    // --- 4. RENDER: FINAL REVIEW GRID ---
+    // 7. REVIEW GRID RENDER
     if (showFinalReview) {
         return (
             <div className="min-h-screen bg-slate-50 font-sans p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -391,7 +514,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                             (item.resolvedData.renderData.graph || 
                              item.resolvedData.renderData.geometry || 
                              item.resolvedData.renderData.pattern);
-                        
                         const isFreeText = item.answerType === 'free_text';
 
                         return (
@@ -417,7 +539,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                         <div className="text-sm font-bold leading-relaxed">
                                             <MathDisplay content={item.resolvedData?.renderData?.description || item.text} />
                                         </div>
-
                                         {item.resolvedData?.renderData?.latex && (
                                             <div className="py-2 bg-indigo-50/30 rounded-xl text-center font-serif text-base border border-indigo-100/40">
                                                 <MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} />
@@ -443,7 +564,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         );
     }
 
-    // --- 5. RENDER: SESSION COMPLETE SPLASH ---
+    // 8. WORKSHEET COMPLETED SCREEN
     const allDone = Object.keys(completed).length === packet.length;
     if (allDone && !isPresentationMode) { 
         return (
@@ -469,7 +590,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         );
     }
 
-    // --- 6. RENDER: KILL SWITCH ---
+    // 9. ROOM TERMINATION SCREEN
     if (!roomActive) {
         return (
             <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center animate-in fade-in duration-500">
@@ -483,9 +604,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
     }
 
     const handleExitRequest = () => {
-        const msg = lang === 'sv' ? "Är du säker på att du vill lämna sessionen? Du kan inte fortsätta där du var sist om du lämnar nu." : "Are you sure you want to leave the session? You cannot continue where you left off if you leave before finishing.";
+        const msg = lang === 'sv' 
+            ? "Är du säker på att du vill lämna sessionen? Du kan inte fortsätta där du var sist om du lämnar nu." 
+            : "Are you sure you want to leave the session? You cannot continue where you left off if you leave before finishing.";
         if (window.confirm(msg)) {
-            //  SYNC WIRED
             syncProgress('student_abandoned_session', { app_mode: 'student_live' });
             onBack();
         }
@@ -493,8 +615,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
     return (
         <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] font-sans flex flex-col overflow-hidden transition-colors duration-500">
-            <style>{`@media (max-width: 450px) { .xs-hide { display: none !important; } }`}</style>
-
             <header className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-4 py-3 sticky top-0 z-50 transition-colors duration-500 shadow-sm">
                 <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
                     <div className="flex flex-col flex-1">
@@ -514,7 +634,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     </div>
                 </div>
 
-                {/* Progress Bar (Only visible in Worksheet Mode) */}
                 {!isPresentationMode && (
                     <div className="hidden sm:flex max-w-xs mx-auto h-1 bg-[var(--bg-surface)] rounded-full gap-1 p-0 mt-3">
                         {localPacket.map((_, i) => (
@@ -524,32 +643,155 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 )}
             </header>
 
-            {/*  PRESENTATION MODE LAYOUT */}
+            {/* PRESENTATION MODE VIEWPORT */}
             {isPresentationMode ? (
-                <main className="flex-1 w-full h-full flex flex-col lg:flex-row relative bg-[var(--bg-canvas)] overflow-hidden">
+                <main className="flex-1 w-full h-[calc(100vh-64px)] flex flex-col lg:flex-row relative bg-slate-900 overflow-hidden">
                     
-                    {/* The 16:9 Slide Preview */}
-                    <div className="flex-[3] w-full h-full flex items-center justify-center p-4 sm:p-8">
-                        <div className="relative w-full aspect-video bg-[#f9fbf7] rounded-3xl shadow-xl overflow-hidden border border-slate-300">
-                            <SlideRenderer
-                                activeIds={slides[activeSlideIndex]?.activeIds || []}
-                                livePacket={localPacket}
-                                lang={lang}
-                                sizeClasses={{ desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px] mb-2' }}
-                                authorMode={false} // Readonly view!
-                                globalZoom={globalZoom}
-                            />
+                    {/* LEFT / MAIN STAGE: The Scalable 16:9 Slide Canvas */}
+                    <div className="flex-1 w-full h-full flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-hidden">
+                        
+                        {/* Floating Top Controls: Zoom & Sidebar Toggle */}
+                        <div className="absolute top-4 left-4 z-40 flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200 shadow-lg">
+                            <button 
+                                type="button"
+                                onClick={() => setSlideZoom(z => Math.max(0.7, z - 0.15))} 
+                                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+                                title="Zooma ut"
+                            >
+                                <ZoomOut size={15} />
+                            </button>
+                            <span className="text-[11px] font-black w-10 text-center text-slate-700">
+                                {Math.round(slideZoom * 100)}%
+                            </span>
+                            <button 
+                                type="button"
+                                onClick={() => setSlideZoom(z => Math.min(1.8, z + 0.15))} 
+                                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center cursor-pointer active:scale-95 transition-all"
+                                title="Zooma in"
+                            >
+                                <ZoomIn size={15} />
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => setSlideZoom(1)} 
+                                className="px-2 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-[10px] font-black uppercase text-slate-600 flex items-center justify-center cursor-pointer"
+                                title="Återställ zoom"
+                            >
+                                <RotateCcw size={13} />
+                            </button>
+
+                            {/* Collapse/Expand Accordion Toggle */}
+                            <div className="w-px h-5 bg-slate-200 mx-0.5" />
+                            <button
+                                type="button"
+                                onClick={() => setIsDockCollapsed(c => !c)}
+                                className="px-2.5 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                                title={isDockCollapsed ? "Visa uppgifter" : "Dölj uppgifter"}
+                            >
+                                {isDockCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
+                                <span className="text-[10px] font-black uppercase hidden sm:inline">
+                                    {isDockCollapsed ? "Svara" : "Fokus"}
+                                </span>
+                            </button>
+                        </div>
+
+                        {/* Scalable Slide Container with High-Contrast Stage Boundary */}
+                        <div 
+                            className="w-full h-full flex items-center justify-center transition-transform duration-150 ease-out"
+                            style={{ transform: `scale(${slideZoom})`, transformOrigin: 'center center' }}
+                        >
+                            <div className="relative w-full aspect-video max-w-[1600px] max-h-[900px] bg-[#f9fbf7] rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] overflow-hidden border-4 border-slate-700">
+                                {/* Base Slide Content */}
+                                <SlideRenderer
+                                    activeIds={slides[activeSlideIndex]?.activeIds || []}
+                                    livePacket={localPacket}
+                                    lang={lang}
+                                    sizeClasses={{
+                                        desc: 'text-m',
+                                        latex: 'text-xl',
+                                        clue: 'text-m',
+                                        headerText: 'text-l',
+                                        visualClass: 'scale-100 max-h-[180px] mb-2'
+                                    }}
+                                    authorMode={false}
+                                    globalZoom={globalZoom}
+                                />
+
+                                {/* Interactive Canvas with Slide-Specific Bins */}
+                                {/* 🟢 Interactive Canvas: Always enabled in presentation mode with drawing tools unlocked */}
+                                <InteractiveCanvas
+                                    key={`student_slide_canvas_${activeSlideIndex}`}
+                                    elements={canvasElements[activeSlideIndex] || currentSlide?.elements || []}
+                                    setElements={(newEls) => setCanvasElements(prev => ({
+                                        ...prev,
+                                        [activeSlideIndex]: typeof newEls === 'function' 
+                                            ? newEls(prev[activeSlideIndex] || currentSlide?.elements || []) 
+                                            : newEls
+                                    }))}
+                                    resolution={{ w: 1920, h: 1080 }}
+                                    toolbarMode="student"
+                                    allowedTools={[
+                                        'select', 'pen', 'highlighter', 'eraser', 'line', 'color_picker', 'clear_all',
+                                        ...(slideDrawer ? [`drawer_${slideDrawer}`] : ['drawer_algebra', 'drawer_shapes', 'drawer_fractions', 'drawer_data'])
+                                    ]}
+                                    readOnly={!!completedSlide[activeSlideIndex]}
+                                />
+
+                                {/* Floating Slide Submission Action */}
+                                <div className="absolute bottom-5 right-5 z-40">
+                                    <button
+                                        type="button"
+                                        onClick={handleSubmitSlide}
+                                        disabled={isSubmitting || completedSlide[activeSlideIndex]}
+                                        className={`px-5 py-2.5 rounded-2xl font-black uppercase text-xs tracking-wider shadow-2xl flex items-center gap-2 transition-all cursor-pointer ${
+                                            completedSlide[activeSlideIndex]
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-95'
+                                        }`}
+                                    >
+                                        {completedSlide[activeSlideIndex] ? (
+                                            <>
+                                                <CheckCircle2 size={16} />
+                                                <span>{lang === 'sv' ? "Inskickat" : "Submitted"}</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                                <span>{lang === 'sv' ? "Lämna in slide" : "Submit Slide"}</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/*  THE SMART ACCORDION DOCK */}
-                    <div className="w-full lg:w-[450px] bg-[var(--bg-card)] border-l border-[var(--border-main)] shadow-2xl flex flex-col z-20 h-auto lg:h-full shrink-0">
-                        <div className="px-6 py-4 border-b border-[var(--border-main)] bg-[var(--bg-surface)] flex items-center gap-2">
-                            <ListChecks size={16} className="text-indigo-500" />
-                            <span className="text-xs font-black uppercase tracking-widest text-[var(--text-main)]">{lang === 'sv' ? "Dina Svar" : "Your Answers"}</span>
+                    {/* RIGHT DOCK: Locked Light-Mode "Dina Svar" Container */}
+                    <div 
+                        className={`transition-all duration-300 ease-in-out !bg-white !text-slate-800 border-l border-slate-200 shadow-2xl flex flex-col z-20 shrink-0 ${
+                            isDockCollapsed ? 'w-0 overflow-hidden border-none opacity-0' : 'w-full lg:w-[420px] h-auto lg:h-full opacity-100'
+                        }`}
+                        style={{ backgroundColor: '#ffffff', color: '#1e293b' }}
+                    >
+                        {/* Dock Header */}
+                        <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <ListChecks size={16} className="text-indigo-600" />
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-800">
+                                    {lang === 'sv' ? "Dina Svar" : "Your Answers"}
+                                </span>
+                            </div>
+                            <button 
+                                onClick={() => setIsDockCollapsed(true)}
+                                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
+                                title="Dölj panel"
+                            >
+                                <PanelRightClose size={16} />
+                            </button>
                         </div>
                         
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
+                        {/* Scrollable Questions / Task List */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4 !bg-white">
                             {(slides[activeSlideIndex]?.activeIds || []).map((qId, displayIndex) => {
                                 const localIdx = localPacket.findIndex(p => p.id === qId);
                                 if (localIdx === -1) return null;
@@ -558,47 +800,39 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 const isFreeText = localPacket[localIdx].answerType === 'free_text';
                                 const isActive = activeTaskId === qId;
 
-                                // --- COLLAPSED STATE ---
                                 if (!isActive) {
                                     return (
                                         <div 
                                             key={qId} 
                                             onClick={() => setActiveTaskId(qId)}
-                                            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center group
-                                                ${isCompleted 
-                                                    ? 'border-emerald-100 bg-emerald-50/50' 
+                                            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex justify-between items-center group ${
+                                                isCompleted 
+                                                    ? 'border-emerald-200 bg-emerald-50/60' 
                                                     : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300'
-                                                }
-                                            `}
+                                            }`}
                                         >
-                                            <span className={`text-[11px] font-black uppercase tracking-widest ${isCompleted ? 'text-emerald-600' : 'text-slate-500 group-hover:text-slate-800'}`}>
+                                            <span className={`text-[11px] font-black uppercase tracking-widest ${isCompleted ? 'text-emerald-700' : 'text-slate-600 group-hover:text-slate-900'}`}>
                                                 {isFreeText ? "Diskussion" : `Svar ${displayIndex + 1}`}
                                             </span>
-                                            {isCompleted ? <CheckCircle2 size={18} className="text-emerald-500" /> : <ChevronDown size={18} className="text-slate-400 group-hover:text-slate-600" />}
+                                            {isCompleted ? <CheckCircle2 size={18} className="text-emerald-600" /> : <ChevronDown size={18} className="text-slate-400 group-hover:text-slate-600" />}
                                         </div>
                                     );
                                 }
 
-                                // --- EXPANDED STATE ---
                                 return (
-                                    <div key={qId} className={`p-5 rounded-2xl border-2 transition-all ${isCompleted ? 'border-emerald-100 bg-emerald-50/30 opacity-70' : 'border-indigo-400 bg-white shadow-md ring-4 ring-indigo-50'}`}>
-                                        <div className="flex justify-between items-center mb-4">
-                                            <span className="text-[10px] font-black uppercase text-indigo-500 tracking-widest">
+                                    <div key={qId} className={`p-5 rounded-2xl border-2 transition-all !bg-white text-slate-800 ${
+                                        isCompleted 
+                                            ? 'border-emerald-200 bg-emerald-50/30 opacity-70' 
+                                            : 'border-indigo-400 shadow-md ring-4 ring-indigo-50'
+                                    }`}>
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-black uppercase text-indigo-600 tracking-widest">
                                                 {isFreeText ? "Diskussion" : `Svar ${displayIndex + 1}`}
                                             </span>
-                                            {isCompleted && <CheckCircle2 size={16} className="text-emerald-500" />}
+                                            {isCompleted && <CheckCircle2 size={16} className="text-emerald-600" />}
                                         </div>
                                         
-                                        {!isFreeText && hasScratchpad && !isCompleted && (
-                                            <div className="mb-4">
-                                                <MathScratchpad
-                                                    steps={scratchpad[localIdx] || ['']}
-                                                    onChange={(steps) => setScratchpad(prev => ({ ...prev, [localIdx]: steps }))}
-                                                    disabled={isSubmitting || isCompleted}
-                                                    lang={lang}
-                                                />
-                                            </div>
-                                        )}
+                                        {renderWorkArea(localIdx)}
 
                                         <div className="mb-3">
                                             {renderInput(localIdx)}
@@ -607,7 +841,11 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                         <button 
                                             onClick={() => handleSolve(null, localIdx)} 
                                             disabled={isSubmitting || !answers[localIdx] || isCompleted} 
-                                            className={`w-full py-3 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isCompleted ? 'bg-emerald-500 text-white shadow-sm' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md disabled:opacity-30 active:scale-95'}`}
+                                            className={`w-full py-3 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                                                isCompleted 
+                                                    ? 'bg-emerald-600 text-white shadow-sm' 
+                                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md disabled:opacity-30 active:scale-95 cursor-pointer'
+                                            }`}
                                         >
                                             {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : (isCompleted ? <CheckCircle2 size={14} /> : <Send size={14} />)}
                                             {isCompleted ? (lang === 'sv' ? "Inskickat" : "Submitted") : (lang === 'sv' ? 'Skicka in' : 'Submit')}
@@ -616,24 +854,85 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 );
                             })}
 
+                            {/* Canvas-Only State: Light-Themed Prompt and Explanation Textarea */}
                             {(slides[activeSlideIndex]?.activeIds || []).length === 0 && (
-                                <div className="h-full flex flex-col items-center justify-center opacity-40 italic font-medium text-slate-500 p-8 text-center text-sm">
-                                    {lang === 'sv' ? "Denna slide saknar interaktiva uppgifter." : "This slide has no interactive questions."}
+                                <div className="space-y-4 animate-in fade-in">
+                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 mb-1">
+                                            {lang === 'sv' ? "Taveluppgift" : "Canvas Task"}
+                                        </h4>
+                                        <p className="text-[11px] font-medium text-slate-500 leading-relaxed">
+                                            {lang === 'sv' 
+                                                ? "Rita och använd verktygen på tavlan till vänster. Skriv gärna en förklaring nedan innan du lämnar in." 
+                                                : "Draw and manipulate tools on the canvas to the left. Add an optional explanation below before submitting."}
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold text-slate-600 block">
+                                            {lang === 'sv' ? "Din förklaring / resonemang (valfritt):" : "Your explanation / reasoning (optional):"}
+                                        </label>
+                                        <textarea
+                                            value={slideExplanations[activeSlideIndex] || ""}
+                                            onChange={(e) => setSlideExplanations(prev => ({
+                                                ...prev,
+                                                [activeSlideIndex]: e.target.value
+                                            }))}
+                                            disabled={isSubmitting || !!completedSlide[activeSlideIndex]}
+                                            rows={4}
+                                            maxLength={1000}
+                                            placeholder={lang === 'sv' ? "Beskriv hur du tänkte..." : "Explain how you solved it..."}
+                                            className="w-full p-3 bg-white border-2 border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-indigo-500 resize-none transition-colors"
+                                        />
+                                    </div>
                                 </div>
+                            )}
+                        </div>
+
+                        {/* Dock Footer: Locked Light-Themed Submit Area */}
+                        <div className="p-4 border-t border-slate-200 bg-slate-50 shrink-0 flex flex-col gap-2">
+                            <button
+                                type="button"
+                                onClick={handleSubmitSlide}
+                                disabled={isSubmitting || completedSlide[activeSlideIndex]}
+                                className={`w-full py-3.5 rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                                    completedSlide[activeSlideIndex]
+                                        ? 'bg-emerald-600 text-white cursor-default'
+                                        : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white'
+                                }`}
+                            >
+                                {completedSlide[activeSlideIndex] ? (
+                                    <>
+                                        <CheckCircle2 size={16} />
+                                        <span>{lang === 'sv' ? "Tavla Inskickad" : "Board Submitted"}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                        <span>{lang === 'sv' ? "Lämna in tavla" : "Submit Board"}</span>
+                                    </>
+                                )}
+                            </button>
+
+                            {completedSlide[activeSlideIndex] && (
+                                <button
+                                    type="button"
+                                    onClick={() => setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: false }))}
+                                    className="w-full py-1.5 text-center text-slate-500 hover:text-slate-800 text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+                                >
+                                    {lang === 'sv' ? "Ändra och skicka igen" : "Edit and resubmit"}
+                                </button>
                             )}
                         </div>
                     </div>
                 </main>
-
             ) : (
-                /*  STANDARD WORKSHEET LAYOUT */
+                /* WORKSHEET MODE LAYOUT */
                 <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 overflow-hidden flex flex-col">
                     <div className={`flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-y-auto lg:overflow-hidden transition-all duration-300 ${!!completed[currentIndex] ? 'opacity-40 scale-[0.98] pointer-events-none' : ''}`}>
                         
-                        {/* LEFT CARD: Question & Visual */}
-                        <div className="flex-[3] whiteboard-protect rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative min-h-[300px]">                        
-                            
-                            {/* Pacing Navigation (If enabled) */}
+                        {/* LEFT: Question and Visual */}
+                        <div className="flex-[3] whiteboard-protect rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative min-h-[300px]">
                             {settings.pacing === 'open' && (
                                 <div className="absolute top-4 left-4 right-4 flex justify-between z-50 pointer-events-none">
                                     <button onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))} disabled={currentIndex === 0} className="w-10 h-10 bg-white/90 rounded-full shadow-lg flex items-center justify-center pointer-events-auto hover:bg-indigo-50 transition-all disabled:opacity-0 text-slate-600"><ChevronLeft/></button>
@@ -674,8 +973,8 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
                                 {localPacket[currentIndex]?.resolvedData?.renderData && 
                                 (localPacket[currentIndex].resolvedData.renderData.graph || 
-                                localPacket[currentIndex].resolvedData.renderData.geometry || 
-                                localPacket[currentIndex].resolvedData.renderData.pattern) && (
+                                 localPacket[currentIndex].resolvedData.renderData.geometry || 
+                                 localPacket[currentIndex].resolvedData.renderData.pattern) && (
                                     <div className="flex-1 p-6 lg:p-10 flex items-center justify-center bg-slate-50/50 border-b lg:border-b-0 lg:border-l border-slate-100 order-1 lg:order-2 shrink-0 min-h-[250px]">
                                         <WordProblemVisualGuard
                                             isActive={!!localPacket[currentIndex]?.resolvedData?.renderData?.isWordProblemApplied}
@@ -695,24 +994,16 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                             </div>
                         </div>
 
-                        {/* RIGHT CARD: Input Area */}
+                        {/* RIGHT: Input Area */}
                         <div className="flex-[2] lg:max-w-[450px] whiteboard-protect rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden shrink-0">
                             <div className="px-6 py-4 lg:px-10 lg:py-5 border-b border-slate-100 flex items-center bg-slate-50 shrink-0">
                                 <span className="text-sm font-bold text-slate-500">{lang === 'sv' ? "Din lösning" : "Your solution"}</span>
                             </div>
                             
-                            <div className="flex-1 p-3 sm:p-4 lg:p-6 flex flex-col justify-between bg-white space-y-4">
+                            <div className="flex-1 p-4 lg:p-6 flex flex-col justify-between bg-white space-y-4">
                                 {!completed[currentIndex] ? (
                                     <div className="w-full space-y-4">
-                                        {hasScratchpad && localPacket[currentIndex]?.answerType !== 'free_text' && (
-                                            <MathScratchpad
-                                                steps={scratchpad[currentIndex] || ['']}
-                                                onChange={(steps) => setScratchpad(prev => ({ ...prev, [currentIndex]: steps }))}
-                                                disabled={isSubmitting || !!completed[currentIndex]}
-                                                lang={lang}
-                                            />
-                                        )}
-
+                                        {renderWorkArea(currentIndex)}
                                         <div>
                                             <label className="text-xs font-bold text-slate-500 block mb-1">
                                                 {lang === 'sv' ? 'Slutsvar:' : 'Final Answer:'}
@@ -723,7 +1014,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                         <button 
                                             onClick={() => handleSolve()} 
                                             disabled={isSubmitting || !answers[currentIndex]} 
-                                            className="w-full bg-indigo-600 text-white py-4 rounded-2xl text-sm font-bold active:scale-95 disabled:opacity-30 hover:bg-indigo-700 flex items-center justify-center gap-2 transition-all shadow-sm pointer-events-auto"
+                                            className="w-full bg-indigo-600 text-white py-4 rounded-2xl text-sm font-bold active:scale-95 disabled:opacity-30 hover:bg-indigo-700 flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
                                         >
                                             {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <><Send size={18} /> {lang === 'sv' ? 'Skicka svar' : 'Submit answer'}</>}
                                         </button>

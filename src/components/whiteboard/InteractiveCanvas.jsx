@@ -1,12 +1,12 @@
+// src/components/whiteboard/InteractiveCanvas.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import Toolbar from './Toolbar';
-import { Trash2, Play, RefreshCw, BarChart2, List, Hash,
-    AlignLeft, AlignCenter, AlignRight, ListOrdered, Palette, Dices,
-    ChevronLeft, ChevronRight, Copy, Layers, GripVertical
- } from 'lucide-react';
+import WhiteboardDrawer from './WhiteboardDrawer';
+import { Trash2, Copy, Move } from 'lucide-react';
 import 'mathlive';
+import { getToolDefinition } from './tools/registry';
+import AlgebraTileTool from './tools/manipulatives/AlgebraTileTool';
 
-//  MathDisplay helper added so the Smart Box can render LaTeX formulas!
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
     useEffect(() => {
@@ -24,9 +24,25 @@ const MathDisplay = ({ content, className = "" }) => {
     return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap text-inherit ${className}`} />;
 };
 
-// 🟢 NEW: Added resolution prop (defaults to standard 1080p 16:9)
-export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, elements = [], setElements, livePacket = [], clueProgress = {}, resolution = { w: 1920, h: 1080 } }) {
-    // --- 0. TRANSLATIONS ---
+export default function InteractiveCanvas({ 
+        lang = 'sv', 
+        bgType, 
+        onToggleBg, 
+        elements = [], 
+        setElements = () => {}, // 🟢 Guard: Default no-op prevents crashes in readOnly/student views
+        onCustomClear = null,
+        livePacket = [], 
+        clueProgress = {}, 
+        resolution = { w: 1920, h: 1080 },
+        toolbarMode = 'all', 
+        allowedTools = null, 
+        readOnly = false,
+        // Optional controlled props; falls back to internal state
+        activeDrawer: controlledActiveDrawer, 
+        onToggleDrawer: controlledOnToggleDrawer,
+        showDividingLine = false,
+        renderDrawer = true
+    }) {
     const t = {
         sv: {
             stepX: "Steg X:", stepY: "Steg Y:", quad1: "1:a Kvadr.", addRow: "+ Rad", remRow: "- Rad",
@@ -44,29 +60,32 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         }
     }[lang || 'sv'];
 
-    // --- 1. ISOLATED DRAWING STATES ---
-    //   REMOVED: local elements state is gone. The parent controls this now.
+    // 🟢 1. Self-contained Drawer State (Works in ALL views automatically)
+    const [internalDrawer, setInternalDrawer] = useState(null);
+    const activeDrawer = controlledActiveDrawer !== undefined ? controlledActiveDrawer : internalDrawer;
+    const handleToggleDrawer = controlledOnToggleDrawer || ((key) => {
+        setInternalDrawer(prev => prev === key ? null : key);
+    });
+
     const [activeTool, setActiveTool] = useState('select');
     const [color, setColor] = useState('#06b6d4');
     const [isDrawing, setIsDrawing] = useState(false);
-    
-    const [selectedId, setSelectedId] = useState(null);
+    const [selectedIds, setSelectedIds] = useState([]);
+    const [selectionBox, setSelectionBox] = useState(null);
     const [hoveredId, setHoveredId] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [interactionMode, setInteractionMode] = useState(null);
-    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+    const dragCoordRef = useRef({ x: 0, y: 0 });
+    const selectionBoxRef = useRef(null);
     const svgRef = useRef(null);
-
-    // Ref to hold the active drawing path for zero-latency rendering
     const activePathRef = useRef(null);
-
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    // --- 2. TIMERS & EFFECTS ---
+    // 1. Timers & Live Clock updates
     useEffect(() => {
         const interval = setInterval(() => {
             setCurrentTime(new Date()); 
-            
             setElements(prev => {
                 if (!prev.some(el => el.type === 'timer' && el.isRunning)) return prev;
                 return prev.map(el => {
@@ -81,67 +100,211 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         return () => clearInterval(interval);
     }, [setElements]);
 
+    // 2. Safe Auto-Spawn for registered interactive tools
     useEffect(() => {
-        // Exclude drawing tools and freeform shapes that the user drags to size
-        const manualDrawTools = ['select', 'pen', 'highlighter', 'line', 'rect', 'circle', 'triangle'];
+        if (['fractions', 'algebra_tiles', 'geometry'].includes(toolbarMode)) {
+            if (activeTool === 'richText') {
+                const newId = Date.now().toString();
+                const newEl = { 
+                    id: newId, 
+                    type: 'richText', 
+                    x: 600, 
+                    y: 300, 
+                    width: 400, 
+                    height: 120, 
+                    content: "<p></p>", 
+                    stroke: color, 
+                    rotation: 0, 
+                    opacity: 1 
+                };
+                setElements(prev => [...prev, newEl]);
+                setSelectedIds([newId]);
+                setEditingId(newId);
+                setActiveTool('select');
+            }
+            return;
+        }
+
+        const manualDrawTools = ['select', 'pen', 'highlighter', 'eraser', 'line', 'rect', 'circle', 'triangle'];
         if (manualDrawTools.includes(activeTool) || activeTool.startsWith('3d_')) return;
 
         const newId = Date.now().toString();
-        // Spawn centered or neatly offset on standard canvas (1920x1080)
-        let newEl = { 
-            id: newId, 
-            type: activeTool, 
-            x: 600, y: 300, 
-            stroke: color, 
-            rotation: 0, 
-            opacity: 1 
+        const registeredTool = getToolDefinition(activeTool);
+        if (registeredTool && typeof registeredTool.createDefault === 'function') {
+            const newEl = registeredTool.createDefault(newId, color, activeTool);
+            setElements(prev => [...prev, newEl]);
+            setSelectedIds([newId]);
+            setActiveTool('select');
+            return;
+        }
+
+        if (activeTool === 'richText') {
+            const newEl = { 
+                id: newId, 
+                type: 'richText', 
+                x: 600, 
+                y: 300, 
+                width: 500, 
+                height: 300, 
+                content: "<p></p>", 
+                stroke: color, 
+                rotation: 0, 
+                opacity: 1 
+            };
+            setElements(prev => [...prev, newEl]);
+            setSelectedIds([newId]);
+            setEditingId(newId);
+            setActiveTool('select');
+        }
+    }, [activeTool, color, setElements, toolbarMode]);
+
+    const isElementInBox = (el, box) => {
+        const minX = Math.min(box.startX, box.currentX);
+        const maxX = Math.max(box.startX, box.currentX);
+        const minY = Math.min(box.startY, box.currentY);
+        const maxY = Math.max(box.startY, box.currentY);
+
+        const elX = Number(el.x) || (el.points ? Math.min(...el.points.map(p => p.x)) : 0);
+        const elY = Number(el.y) || (el.points ? Math.min(...el.points.map(p => p.y)) : 0);
+        const elW = Number(el.width) || (el.isRotated ? el.height : 60);
+        const elH = Number(el.height) || (el.isRotated ? el.width : 60);
+
+        return (
+            elX + elW >= minX &&
+            elX <= maxX &&
+            elY + elH >= minY &&
+            elY <= maxY
+        );
+    };
+
+    // 3. Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            const activeTag = document.activeElement?.tagName;
+            if (
+                activeTag === 'INPUT' || 
+                activeTag === 'TEXTAREA' || 
+                document.activeElement?.isContentEditable ||
+                e.target.closest('[contenteditable="true"]') ||
+                e.target.closest('math-field')
+            ) {
+                return;
+            }
+
+            const isModifier = e.ctrlKey || e.metaKey;
+
+            // Delete / Backspace
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.length > 0) {
+                e.preventDefault();
+                setElements(prev => prev.filter(el => !selectedIds.includes(el.id) || el.isPermanent));
+                setSelectedIds([]);
+                return;
+            }
+
+            // Ctrl+D (Duplicate)
+            if (isModifier && e.key.toLowerCase() === 'd' && selectedIds.length > 0) {
+                e.preventDefault();
+                const offset = 25;
+                const newIds = [];
+                const duplicatedElements = [];
+
+                elements.forEach(el => {
+                    if (!selectedIds.includes(el.id) || el.isPermanent) return;
+                    const newId = `dup_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+                    newIds.push(newId);
+
+                    const cloned = {
+                        ...JSON.parse(JSON.stringify(el)),
+                        id: newId,
+                        x: (Number(el.x) || 0) + offset,
+                        y: (Number(el.y) || 0) + offset
+                    };
+
+                    if (cloned.type === 'line') {
+                        cloned.x1 = (cloned.x1 ?? cloned.x) + offset;
+                        cloned.y1 = (cloned.y1 ?? cloned.y) + offset;
+                        cloned.x2 = (cloned.x2 || 0) + offset;
+                        cloned.y2 = (cloned.y2 || 0) + offset;
+                    }
+
+                    if (cloned.type === 'path' && Array.isArray(cloned.points)) {
+                        cloned.points = cloned.points.map(p => ({ x: p.x + offset, y: p.y + offset }));
+                    }
+
+                    duplicatedElements.push(cloned);
+                });
+
+                if (duplicatedElements.length > 0) {
+                    setElements(prev => [...prev, ...duplicatedElements]);
+                    setSelectedIds(newIds);
+                }
+                return;
+            }
+
+            // Ctrl+C (Copy)
+            if (isModifier && e.key.toLowerCase() === 'c' && selectedIds.length > 0) {
+                const itemsToCopy = elements.filter(el => selectedIds.includes(el.id) && !el.isPermanent);
+                if (itemsToCopy.length > 0) {
+                    sessionStorage.setItem('canvasClipboard', JSON.stringify(itemsToCopy));
+                }
+                return;
+            }
+
+            // Ctrl+V (Paste)
+            if (isModifier && e.key.toLowerCase() === 'v') {
+                const raw = sessionStorage.getItem('canvasClipboard');
+                if (!raw) return;
+
+                try {
+                    const parsed = JSON.parse(raw);
+                    const items = Array.isArray(parsed) ? parsed : [parsed];
+                    const offset = 30;
+                    const newIds = [];
+
+                    const pastedElements = items.map(el => {
+                        const newId = `paste_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+                        newIds.push(newId);
+
+                        const clone = {
+                            ...el,
+                            id: newId,
+                            x: (Number(el.x) || 0) + offset,
+                            y: (Number(el.y) || 0) + offset
+                        };
+
+                        if (clone.type === 'line') {
+                            clone.x1 = (clone.x1 ?? clone.x) + offset;
+                            clone.y1 = (clone.y1 ?? clone.y) + offset;
+                            clone.x2 = (clone.x2 || 0) + offset;
+                            clone.y2 = (clone.y2 || 0) + offset;
+                        }
+
+                        if (clone.type === 'path' && Array.isArray(clone.points)) {
+                            clone.points = clone.points.map(p => ({ x: p.x + offset, y: p.y + offset }));
+                        }
+                        return clone;
+                    });
+
+                    sessionStorage.setItem('canvasClipboard', JSON.stringify(pastedElements));
+                    setElements(prev => [...prev, ...pastedElements]);
+                    setSelectedIds(newIds);
+                } catch (err) {
+                    console.error("Paste parse error:", err);
+                }
+            }
         };
 
-        if (activeTool === 'calculator') {
-            newEl.width = 280; newEl.height = 440; newEl.expression = ""; newEl.result = ""; newEl.ans = ""; newEl.calcMode = "LTR";
-        } else if (activeTool === 'timer') {
-            newEl.width = 360; newEl.height = 360; newEl.duration = 60; newEl.timeLeft = 60; newEl.isRunning = false;
-        } else if (activeTool === 'richText') {
-            newEl.width = 500; newEl.height = 300; newEl.content = "<p></p>";
-        } else if (activeTool === 'realClock') {
-            newEl.width = 280; newEl.height = 280; newEl.clockType = 'analog'; 
-        } else if (activeTool === 'volume_cue') {
-            newEl.width = 150; newEl.height = 120; newEl.volumeLevel = 'quiet'; 
-        } else if (activeTool === 'coord') {
-            newEl.width = 500; newEl.height = 500; newEl.stepX = "1"; newEl.stepY = "1"; newEl.gridSize = 40; 
-            newEl.isFirstQuadrant = false; newEl.showLabels = true; newEl.fontSize = 20; 
-            newEl.equations = ["y=x"]; // Default starting line
-        } else if (activeTool === 'ruler') {
-            newEl.width = 800; newEl.height = 100; newEl.min = "0"; newEl.max = "10"; newEl.stepValue = 1; newEl.unitType = 'whole'; newEl.denom = 4; newEl.showSubnotches = true;
-        } else if (activeTool === 'protractor') {
-            newEl.width = 400; newEl.height = 200;
-        } else if (activeTool === 'dice') {
-            newEl.width = 200; newEl.height = 200; newEl.sides = "6"; newEl.diceData = [{ value: 1, color: '#ffffff' }];
-        } else if (activeTool === 'math') {
-            newEl.width = 300; newEl.height = 80; newEl.label = ""; newEl.fontSize = 32;
-        } else if (activeTool === 'tchart') {
-            newEl.width = 750; newEl.height = 450; newEl.chartType = 'bar'; newEl.showGraph = true; newEl.xLabel = 'X'; newEl.yLabel = 'Y'; newEl.rows = [{ label: 'A', value: 10 }, { label: 'B', value: 20 }];
-        } else if (activeTool.startsWith('frac_') || activeTool === 'spinner') {
-            newEl.width = 240; newEl.height = 240; newEl.divisions = 4; newEl.sliceColors = {}; newEl.showLabel = false;
-        }
-
-        setElements(prev => [...prev, newEl]);
-        setSelectedId(newId);
-        
-        if (activeTool === 'richText') {
-            setEditingId(newId);
-        }
-        
-        setActiveTool('select'); 
-    }, [activeTool, color, setElements]);
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedIds, elements, setElements]);
 
     useEffect(() => {
         const handleGlobalDeselect = (e) => {
             if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]')) return;
             if (e.target.closest('[data-id]')) return;
             
-            if (activeTool === 'select') {
-                setSelectedId(null);
+            if (activeTool === 'select' && !selectionBoxRef.current) {
+                setSelectedIds([]);
                 setEditingId(null);
                 setInteractionMode(null);
                 setIsDrawing(false);
@@ -152,22 +315,89 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         return () => window.removeEventListener('pointerdown', handleGlobalDeselect);
     }, [activeTool]);
 
+    // 🟢 2. Unified Spawning Engine (Shared by all drawers across all views)
+    const handleSpawnFromDrawer = (type, payload = {}) => {
+        const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+        if (type === 'algebra_tile') {
+            const { kind, sign, side = 'VL' } = payload;
+            const sideTiles = elements.filter(el => {
+                if (el.type !== 'algebra_tile') return false;
+                return side === 'HL' ? el.x >= 960 : el.x < 960;
+            });
+            const col = sideTiles.length % 5;
+            const row = Math.floor(sideTiles.length / 5);
+            const targetBaseX = side === 'HL' ? 1150 : 380;
+            const spawnX = targetBaseX + col * 70;
+            const spawnY = 280 + row * 70;
+
+            const newTile = AlgebraTileTool.create(spawnX, spawnY, kind, sign);
+            setElements(prev => [...prev, newTile]);
+            return;
+        }
+
+        if (type.startsWith('3d_')) {
+            const shapeName = type.replace('3d_', '');
+            setElements(prev => [...prev, {
+                id,
+                type: 'shapes_3d',
+                shape3D: shapeName,
+                x: 650,
+                y: 300,
+                width: 220,
+                height: 220,
+                stroke: '#0284c7',
+                strokeWidth: 3,
+                fill: 'rgba(2, 132, 199, 0.08)',
+                showInternal: true,
+                rotation: 0,
+                opacity: 1
+            }]);
+            return;
+        }
+
+        const registered = getToolDefinition(type);
+        if (registered && typeof registered.createDefault === 'function') {
+            setElements(prev => [...prev, registered.createDefault(id, color, type)]);
+            return;
+        }
+
+        const isShape = ['rect', 'circle', 'triangle'].includes(type);
+        setElements(prev => [...prev, {
+            id,
+            type,
+            x: 600,
+            y: 300,
+            width: isShape ? 200 : 300,
+            height: isShape ? 200 : 250,
+            stroke: color,
+            strokeWidth: 3,
+            fill: isShape ? `${color}15` : 'none',
+            rotation: 0,
+            opacity: 1,
+            ...(type === 'triangle' ? { triangleType: 'right' } : {})
+        }]);
+    };
+
+    // 🟢 3. Timer guard: never call setElements if not provided or readOnly
     useEffect(() => {
-        if (!isDrawing) return; 
+        if (readOnly || typeof setElements !== 'function') return;
+        const interval = setInterval(() => {
+            setCurrentTime(new Date()); 
+            setElements(prev => {
+                if (!Array.isArray(prev) || !prev.some(el => el.type === 'timer' && el.isRunning)) return prev;
+                return prev.map(el => {
+                    if (el.type === 'timer' && el.isRunning && el.timeLeft > 0) {
+                        const nextTime = el.timeLeft - 1;
+                        return { ...el, timeLeft: nextTime, isRunning: nextTime > 0 };
+                    }
+                    return el;
+                });
+            });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [readOnly, setElements]);
 
-        const handleGlobalMove = (e) => { handlePointerMove(e); };
-        const handleGlobalUp = (e) => { handlePointerUp(e); };
-
-        window.addEventListener('pointermove', handleGlobalMove);
-        window.addEventListener('pointerup', handleGlobalUp);
-
-        return () => {
-            window.removeEventListener('pointermove', handleGlobalMove);
-            window.removeEventListener('pointerup', handleGlobalUp);
-        };
-    }, [isDrawing, interactionMode, selectedId, dragOffset, activeTool]); 
-
-    // --- 3. ENGINE HELPERS ---
     const getSmoothPathData = (points) => {
         if (!points || points.length === 0) return '';
         if (points.length === 1) return `M ${points[0].x} ${points[0].y} L ${points[0].x} ${points[0].y}`;
@@ -183,219 +413,168 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         return d;
     };
 
+    // Native SVG coordinate normalization
     const getCoordinates = (e, shouldSnap = true) => {
         const svg = svgRef.current;
         if (!svg) return { x: 0, y: 0 };
-        const CTM = svg.getScreenCTM();
-        let x = (e.clientX - CTM.e) / CTM.a;
-        let y = (e.clientY - CTM.f) / CTM.d;
-        if (shouldSnap && !['pen', 'highlighter', 'protractor', 'ruler', 'select'].includes(activeTool)) {
-            x = Math.round(x / 20) * 20; y = Math.round(y / 20) * 20;
+
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+
+        const screenCTM = svg.getScreenCTM();
+        if (!screenCTM) return { x: 0, y: 0 };
+
+        const svgP = pt.matrixTransform(screenCTM.inverse());
+        let x = svgP.x;
+        let y = svgP.y;
+
+        if (shouldSnap && !['pen', 'highlighter', 'eraser', 'protractor', 'ruler', 'select'].includes(activeTool)) {
+            x = Math.round(x / 20) * 20;
+            y = Math.round(y / 20) * 20;
         }
+
         return { x, y };
     };
 
     const deleteElement = (id) => {
         setElements(prev => prev.filter(el => el.id !== id));
-        setSelectedId(null);
+        setSelectedIds(prev => prev.filter(itemId => itemId !== id));
     };
 
-    // 🟢 NEW: Duplicate an element in place
     const duplicateElement = (id) => {
         setElements(prev => {
             const el = prev.find(e => e.id === id);
             if (!el) return prev;
-            const newEl = { ...el, id: Date.now().toString(), x: el.x + 30, y: el.y + 30 };
-            if (newEl.type === 'line') { newEl.x2 += 30; newEl.y2 += 30; }
-            if (newEl.type === 'path') { newEl.points = newEl.points.map(p => ({ x: p.x + 30, y: p.y + 30 })); }
-            setSelectedId(newEl.id);
+            const newId = Date.now().toString();
+            const newEl = { ...el, id: newId, x: (Number(el.x) || 0) + 25, y: (Number(el.y) || 0) + 25 };
+            if (newEl.type === 'line') { newEl.x2 += 25; newEl.y2 += 25; }
+            if (newEl.type === 'path' && newEl.points) { newEl.points = newEl.points.map(p => ({ x: p.x + 25, y: p.y + 25 })); }
+            setSelectedIds([newId]);
             return [...prev, newEl];
         });
     };
-
-    // 🟢 NEW: Global Copy / Paste Listener for transferring between slides
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            // Prevent interference while typing inside input fields or rich text blocks
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-            
-            // CTRL+C / CMD+C
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && selectedId) {
-                setElements(prev => {
-                    const elToCopy = prev.find(el => el.id === selectedId);
-                    if (elToCopy) {
-                        sessionStorage.setItem('canvasClipboard', JSON.stringify(elToCopy));
-                    }
-                    return prev;
-                });
-            }
-            
-            // CTRL+V / CMD+V
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-                const clip = sessionStorage.getItem('canvasClipboard');
-                if (clip) {
-                    try {
-                        const parsed = JSON.parse(clip);
-                        const newId = Date.now().toString();
-                        parsed.id = newId;
-                        parsed.x += 30; 
-                        parsed.y += 30;
-                        if (parsed.type === 'line') { parsed.x2 += 30; parsed.y2 += 30; }
-                        if (parsed.type === 'path') { parsed.points = parsed.points.map(p => ({ x: p.x + 30, y: p.y + 30 })); }
-                        setElements(prev => [...prev, parsed]);
-                        setSelectedId(newId);
-                    } catch(err) {}
-                }
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedId, setElements]);
-
-    const updateDivisions = (id, delta) => setElements(prev => prev.map(el => el.id === id ? { ...el, divisions: Math.max(1, (el.divisions || 1) + delta), sliceColors: {} } : el));
-    const spinSpinner = (id) => setElements(prev => prev.map(el => el.id === id ? { ...el, arrowRotation: (el.arrowRotation || 0) + 1440 + Math.random() * 360 } : el));
-    const toggleFill = (id, idx) => setElements(prev => prev.map(el => { if (el.id === id) { const colors = { ...(el.sliceColors || {}) }; if (colors[idx] === color) delete colors[idx]; else colors[idx] = color; return { ...el, sliceColors: colors }; } return el; }));
     
-    const rollDice = (id) => {
-        let iterations = 0;
-        const interval = setInterval(() => {
-            setElements(prev => prev.map(el => {
-                if (el.id !== id) return el;
-                const newDice = (el.diceData || [{ value: 1, color: '#ffffff' }]).map(d => ({ ...d, value: Math.floor(Math.random() * (parseInt(el.sides) || 6)) + 1 }));
-                return { ...el, diceData: newDice, isRolling: true };
-            }));
-            iterations++;
-            if (iterations > 12) {
-                clearInterval(interval);
-                setElements(prev => prev.map(el => el.id === id ? { ...el, isRolling: false } : el));
-            }
-        }, 60);
-    };
-
-    const LINE_COLORS = ['#3b82f6', '#f59e0b','#ec4899', '#ef4444', '#10b981',  '#8b5cf6', '#06b6d4'];
-
-    const getGraphLinesPoints = (el) => {
-        // Collect equations from array or legacy single equation property
-        let rawEquations = [];
-        if (Array.isArray(el.equations)) {
-            rawEquations = el.equations;
-        } else if (el.equation) {
-            rawEquations = [el.equation];
+    const isStrokeIntersecting = (point, element, eraserRadius = 20) => {
+        if (element.type === 'path' && element.points?.length) {
+            return element.points.some(p => {
+                const dx = point.x - p.x;
+                const dy = point.y - p.y;
+                return Math.sqrt(dx * dx + dy * dy) <= (eraserRadius + (element.strokeWidth || 4) / 2);
+            });
         }
 
-        if (rawEquations.length === 0) return [];
+        if (element.type === 'line' && !element.isPermanent) {
+            const { x1, y1, x2, y2 } = element;
+            const A = point.x - x1;
+            const B = point.y - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
 
-        const s = el.gridSize || 40;
-        const stepX = parseFloat(el.stepX) || 1, stepY = parseFloat(el.stepY) || 1;
-        const localOX = el.isFirstQuadrant ? 0 : el.width / 2;
-        const localOY = el.isFirstQuadrant ? el.height : el.height / 2;
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            let param = -1;
+            if (lenSq !== 0) param = dot / lenSq;
 
-        return rawEquations.map((rawEq, idx) => {
-            if (!rawEq) return null;
-            const cleanEq = rawEq.replace(/\s+/g, '').toLowerCase();
-            const match = cleanEq.match(/y=([-+]?\d*\.?\d*)x?([-+]?\d*\.?\d*)?/);
-            if (!match) return null;
+            let xx, yy;
+            if (param < 0) { xx = x1; yy = y1; }
+            else if (param > 1) { xx = x2; yy = y2; }
+            else { xx = x1 + param * C; yy = y1 + param * D; }
 
-            let m = match[1] === "" ? 1 : (match[1] === "-" ? -1 : parseFloat(match[1]));
-            if (isNaN(m)) m = 0; 
-            const c = parseFloat(match[2] || 0);
-
-            const logicXLeft = (-localOX / s) * stepX;
-            const logicXRight = ((el.width - localOX) / s) * stepX;
-            const logicYLeft = m * logicXLeft + c;
-            const logicYRight = m * logicXRight + c;
-
-            return {
-                id: idx,
-                color: LINE_COLORS[idx % LINE_COLORS.length],
-                x1: 0,
-                y1: localOY - (logicYLeft / stepY) * s,
-                x2: el.width,
-                y2: localOY - (logicYRight / stepY) * s
-            };
-        }).filter(Boolean);
-    };
-
-    const isPointInElement = (x, y, el) => {
-        if (el.type === 'path' && el.points?.length > 0) {
-            return el.points.some(p => Math.abs(x - p.x) < 20 && Math.abs(y - p.y) < 20);
-        }
-        
-        const r = el.width / 2;
-        const bounds = ['rect', 'coord', 'triangle', 'ruler', 'shapes_3d', 'tchart', 'math', 'dice', 'richText', 'calculator', 'dynamicClues', 'volume_cue'];
-
-        // 🟢 FIX: Added a generous 15px hit margin to all bounding boxes
-        if (bounds.some(b => el.type.includes(b))) {
-            return x >= el.x - 15 && x <= el.x + el.width + 15 && y >= el.y - 15 && y <= el.y + el.height + 15;
-        }
-        
-        if (el.type.includes('circle') || ['spinner', 'node', 'protractor', 'clock', 'timer', 'realClock'].includes(el.type)) {
-            return Math.sqrt((x - (el.x + r))**2 + (y - (el.y + r))**2) <= r + 15; 
-        }
-        
-        if (el.type === 'line') {
-            return Math.abs((el.y2-el.y)*x - (el.x2-el.x)*y + el.x2*el.y - el.y2*el.x) / Math.sqrt((el.y2-el.y)**2 + (el.x2-el.x)**2) < 25; 
+            const dx = point.x - xx;
+            const dy = point.y - yy;
+            return Math.sqrt(dx * dx + dy * dy) <= (eraserRadius + (element.strokeWidth || 4) / 2);
         }
         return false;
     };
 
-    // --- 4. POINTER HANDLERS ---
+    const isPointInElement = (x, y, el) => {
+        const padding = 16; // 🟢 Universal 16px hit margin
+
+        if (el.type === 'path' && el.points?.length > 0) {
+            return el.points.some(p => Math.abs(x - p.x) < (padding + 8) && Math.abs(y - p.y) < (padding + 8));
+        }
+
+        const w = Number(el.width) || 0;
+        const h = Number(el.height) || 0;
+        const r = w / 2;
+
+        // Bounding box tools (Rectangles, T-Chart, Coordinate Plane, 3D Shapes, Ruler, Algebra Tiles, etc.)
+        const bounds = ['rect', 'coord', 't_chart', 'tchart', 'triangle', 'ruler', 'shapes_3d', 'math', 'dice', 'richText', 'calculator', 'dynamicClues', 'volume_cue', 'algebra_tile', 'frac_rect'];
+        if (bounds.some(b => el.type.includes(b))) {
+            return (
+                x >= el.x - padding && 
+                x <= el.x + w + padding && 
+                y >= el.y - padding && 
+                y <= el.y + h + padding
+            );
+        }
+
+        // Circular tools (Circles, Fraction Circles, Spinners, Clock, Protractor, Dice)
+        if (el.type.includes('circle') || ['spinner', 'node', 'protractor', 'clock', 'timer', 'realClock'].includes(el.type)) {
+            return Math.sqrt((x - (el.x + r)) ** 2 + (y - (el.y + r)) ** 2) <= (r + padding); 
+        }
+
+        // Line tools
+        if (el.type === 'line') {
+            const x1 = el.x1 ?? el.x;
+            const y1 = el.y1 ?? el.y;
+            const dist = Math.abs((el.y2 - y1) * x - (el.x2 - x1) * y + el.x2 * y1 - el.y2 * x1) / 
+                         Math.sqrt((el.y2 - y1) ** 2 + (el.x2 - x1) ** 2);
+            return dist < (padding + 8); 
+        }
+
+        return false;
+    };
+
     const handlePointerDown = (e) => {
+        if (e.cancelable && activeTool !== 'select') e.preventDefault();
         if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]')) return;
-        if (e.target instanceof Element) e.target.setPointerCapture(e.pointerId);
+
+        if (svgRef.current && typeof svgRef.current.setPointerCapture === 'function') {
+            try { svgRef.current.setPointerCapture(e.pointerId); } catch (err) {}
+        }
         if (e.pointerType === 'pen' && activeTool === 'select') setActiveTool('pen');
 
         const { x, y } = getCoordinates(e, false);
-        
+        dragCoordRef.current = { x, y };
+
         const targetNode = e.target.closest('[data-id]');
         const hitId = targetNode ? targetNode.getAttribute('data-id') : null;
         let hit = hitId ? elements.find(el => el.id === hitId) : null;
-        
-        if (!hit) {
-            hit = [...elements].reverse().find(el => isPointInElement(x, y, el));
-        }
-
-        if (['timer', 'clock', 'ruler', 'coord', 'dice', 'math', 'richText', 'calculator', 'realClock'].includes(activeTool)) {
-            const newId = Date.now().toString();
-            let newEl = { 
-                id: newId, type: activeTool, x: x - 100, y: y - 100, 
-                width: activeTool === 'math' ? 300 : (activeTool === 'richText' ? 500 : (activeTool === 'calculator' || activeTool === 'realClock' ? 280 : 200)), 
-                height: activeTool === 'math' ? 80 : (activeTool === 'richText' ? 300 : (activeTool === 'calculator' ? 440 : (activeTool === 'realClock' ? 280 : 200))), 
-                stroke: color, rotation: 0, opacity: 1 
-            };
-            
-            if (activeTool === 'timer') { newEl.duration = 60; newEl.timeLeft = 60; newEl.isRunning = false; }
-            else if (activeTool === 'clock') { newEl.hourRotation = 300; newEl.minRotation = 0; }
-            else if (activeTool === 'ruler') { newEl.width = 800; newEl.height = 100; newEl.min = "0"; newEl.max = "10"; newEl.stepValue = 1; newEl.unitType = 'whole'; newEl.denom = 4; newEl.showSubnotches = true; }
-            else if (activeTool === 'coord') { newEl.stepX = "1"; newEl.stepY = "1"; newEl.gridSize = 40; newEl.isFirstQuadrant = false; newEl.showLabels = true; newEl.fontSize = 20; }
-            else if (activeTool === 'dice') { newEl.sides = "6"; newEl.diceData = [{ value: 1, color: '#ffffff' }]; }
-            else if (activeTool === 'math') { newEl.label = ""; newEl.fontSize = 32; }
-            else if (activeTool === 'richText') { newEl.content = "<p>Skriv här...</p>"; }
-            else if (activeTool === 'calculator') { newEl.expression = ""; newEl.result = ""; newEl.ans = ""; }
-            else if (activeTool === 'realClock') { newEl.clockType = 'analog'; } 
-
-            setElements([...elements, newEl]);
-            setSelectedId(newId);
-            setActiveTool('select');
-            setIsDrawing(false);
-            setInteractionMode(null);
-            return;
-        }
+        if (!hit) hit = [...elements].reverse().find(el => isPointInElement(x, y, el));
 
         if (activeTool === 'select') {
             if (hit) {
-                setSelectedId(hit.id); 
-                setInteractionMode('moving'); 
+                if (e.shiftKey) {
+                    setSelectedIds(prev => prev.includes(hit.id) ? prev.filter(id => id !== hit.id) : [...prev, hit.id]);
+                } else if (!selectedIds.includes(hit.id)) {
+                    setSelectedIds([hit.id]);
+                }
+                
+                setInteractionMode('moving');
                 setIsDrawing(true);
-                const startX = hit.x || (hit.points ? hit.points[0].x : 0);
-                const startY = hit.y || (hit.points ? hit.points[0].y : 0);
-                setDragOffset({ x: x - startX, y: y - startY });
             } else {
-                setSelectedId(null); 
-                setEditingId(null);
-                setInteractionMode(null);
-                setIsDrawing(false);
+                if (!e.shiftKey) setSelectedIds([]);
+                const initialBox = { startX: x, startY: y, currentX: x, currentY: y };
+                selectionBoxRef.current = initialBox;
+                setSelectionBox(initialBox);
+                setInteractionMode('box-selecting');
+                setIsDrawing(true);
             }
+            return;
+        }
+
+        if (activeTool === 'eraser') {
+            setIsDrawing(true);
+            setInteractionMode('erasing');
+            setElements(prev => prev.filter(el => !isStrokeIntersecting({ x, y }, el, 20)));
+            return;
+        }
+
+        const dragDrawTools = ['pen', 'highlighter', 'line', 'rect', 'circle', 'triangle', '3d_'];
+        if (!dragDrawTools.some(t => activeTool.startsWith(t))) {
+            setActiveTool('select');
             return;
         }
 
@@ -415,21 +594,69 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                 stroke: color
             };
             return;
-        } else if (activeTool === 'line') { newEl.x2 = snap.x; newEl.y2 = snap.y; }
-        else if (activeTool === 'triangle') { newEl.triangleType = 'right'; }
-        else if (activeTool === 'protractor') { newEl.width = 400; newEl.height = 200; }
-        else if (activeTool === 'tchart') { newEl.width = 750; newEl.height = 450; newEl.chartType = 'bar'; newEl.showGraph = true; newEl.xLabel = 'X'; newEl.yLabel = 'Y'; newEl.rows = [{ label: 'A', value: 10 }, { label: 'B', value: 20 }]; }
-        else if (activeTool.startsWith('3d_')) { newEl.type = 'shapes_3d'; newEl.shape3D = activeTool.replace('3d_', ''); newEl.showInternal = true; }
-        else if (activeTool.startsWith('frac_') || activeTool === 'spinner') { newEl.divisions = 4; newEl.sliceColors = {}; newEl.showLabel = false; }
+        } else if (activeTool === 'line') { 
+            newEl.x2 = snap.x; 
+            newEl.y2 = snap.y; 
+        } else if (activeTool === 'triangle') { 
+            newEl.triangleType = 'right'; 
+        } else if (activeTool.startsWith('3d_')) { 
+            newEl.type = 'shapes_3d'; 
+            newEl.shape3D = activeTool.replace('3d_', ''); 
+            newEl.showInternal = true;
+            newEl.stroke = color;
+            newEl.strokeWidth = 3;
+            newEl.fill = 'none';
+        }
         
-        setElements([...elements, newEl]); 
-        setSelectedId(newId);
+        setElements(prev => [...prev, newEl]); 
+        setSelectedIds([newId]);
     };
 
     const handlePointerMove = (e) => {
         if (!isDrawing) return;
-        const { x, y } = getCoordinates(e, !['pen', 'highlighter', 'select'].includes(activeTool));
         const raw = getCoordinates(e, false);
+
+        if (interactionMode === 'erasing' && activeTool === 'eraser') {
+            setElements(prev => prev.filter(el => !isStrokeIntersecting(raw, el, 20)));
+            return;
+        }
+
+        if (interactionMode === 'box-selecting' && selectionBoxRef.current) {
+            const updatedBox = { ...selectionBoxRef.current, currentX: raw.x, currentY: raw.y };
+            selectionBoxRef.current = updatedBox;
+            setSelectionBox(updatedBox);
+            return;
+        }
+
+        if (interactionMode === 'moving' && selectedIds.length > 0) {
+            const dx = raw.x - dragCoordRef.current.x;
+            const dy = raw.y - dragCoordRef.current.y;
+            dragCoordRef.current = { x: raw.x, y: raw.y };
+
+            setElements(prev => prev.map(el => {
+                if (!selectedIds.includes(el.id) || el.isPermanent) return el;
+
+                const nextEl = {
+                    ...el,
+                    x: (Number(el.x) || 0) + dx,
+                    y: (Number(el.y) || 0) + dy
+                };
+
+                if (el.type === 'line') {
+                    nextEl.x1 = (nextEl.x1 ?? nextEl.x) + dx;
+                    nextEl.y1 = (nextEl.y1 ?? nextEl.y) + dy;
+                    nextEl.x2 = (nextEl.x2 || 0) + dx;
+                    nextEl.y2 = (nextEl.y2 || 0) + dy;
+                }
+
+                if (el.type === 'path' && Array.isArray(el.points)) {
+                    nextEl.points = el.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
+                }
+
+                return nextEl;
+            }));
+            return;
+        }
 
         if (interactionMode === 'drawing' && (activeTool === 'pen' || activeTool === 'highlighter')) {
             if (activePathRef.current) {
@@ -445,37 +672,19 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
 
         setElements(prev => {
             const updated = [...prev];
-            const el = updated.find(item => item.id === selectedId);
+            const el = updated.find(item => selectedIds.includes(item.id));
             if (!el) return prev;
 
-            if (interactionMode === 'rotating-hour' || interactionMode === 'rotating-min') {
-                const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
-                const angle = Math.atan2(raw.y - cy, raw.x - cx) * (180 / Math.PI) + 90;
-                if (interactionMode === 'rotating-hour') el.hourRotation = angle; else el.minRotation = angle;
-            } else if (interactionMode === 'rotating') {
+            if (interactionMode === 'rotating') {
                 const cx = el.x + el.width / 2, cy = el.y + el.height / 2;
                 el.rotation = Math.atan2(raw.y - cy, raw.x - cx) * (180 / Math.PI) + 90;
-            } else if (interactionMode === 'move-start') {
-                el.x = raw.x; el.y = raw.y;
-            } else if (interactionMode === 'move-end') {
-                el.x2 = raw.x; el.y2 = raw.y;
-            } else if (interactionMode === 'moving') {
-                const dx = raw.x - (el.x + dragOffset.x), dy = raw.y - (el.y + dragOffset.y);
-                if (el.type === 'path') el.points = el.points.map(p => ({ x: p.x + dx, y: p.y + dy }));
-                if (el.type === 'line') { el.x2 += dx; el.y2 += dy; }
-                el.x = raw.x - dragOffset.x; el.y = raw.y - dragOffset.y;
-            } else if (interactionMode === 'scaling') {
-                const newGridSize = Math.max(20, Math.min(100, Math.max(raw.x - el.x, (el.y + el.height) - raw.y) / 10));
-                el.gridSize = newGridSize;
             } else if (interactionMode === 'resizing') {
-                    el.width = Math.max(50, raw.x - el.x);
-                    el.height = (el.shape3D === 'cube') ? el.width : (el.type === 'calculator' ? el.width * (440/280) : Math.max(50, raw.y - el.y));
+                el.width = Math.max(50, raw.x - el.x);
+                el.height = (el.shape3D === 'cube') ? el.width : Math.max(50, raw.y - el.y);
             } else if (interactionMode === 'drawing') {
+                const { x, y } = getCoordinates(e, true);
                 if (el.type === 'line') { el.x2 = x; el.y2 = y; }
-                else if (['node', 'spinner'].includes(el.type)) {
-                    const r = Math.sqrt((x - el.startX) ** 2 + (y - el.startY) ** 2);
-                    el.width = r * 2; el.height = r * 2; el.x = el.startX - r; el.y = el.startY - r;
-                } else {
+                else {
                     el.x = Math.min(x, el.startX); el.y = Math.min(y, el.startY);
                     el.width = Math.abs(x - el.startX); el.height = Math.abs(y - el.startY);
                     if (el.shape3D === 'cube') el.height = el.width;
@@ -485,10 +694,44 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         });
     };
 
-    const handlePointerUp = (e) => { 
-        if (e && e.target instanceof Element) try { e.target.releasePointerCapture(e.pointerId); } catch(err) {}
-        if (!isDrawing) return; 
-        setIsDrawing(false); setInteractionMode(null); 
+    const handlePointerUp = (e) => {
+        if (svgRef.current && e?.pointerId && typeof svgRef.current.releasePointerCapture === 'function') {
+            try { svgRef.current.releasePointerCapture(e.pointerId); } catch (err) {}
+        }
+        if (!isDrawing) return;
+
+        if (interactionMode === 'box-selecting' && selectionBoxRef.current) {
+            const box = selectionBoxRef.current;
+            const minW = Math.abs(box.currentX - box.startX);
+            const minH = Math.abs(box.currentY - box.startY);
+
+            if (minW > 4 || minH > 4) {
+                const found = elements.filter(el => !el.isPermanent && isElementInBox(el, box));
+                setSelectedIds(found.map(el => el.id));
+            }
+            selectionBoxRef.current = null;
+            setSelectionBox(null);
+        }
+
+        if (interactionMode === 'moving' && selectedIds.length > 0) {
+            setElements(prev => {
+                let workingSet = [...prev];
+                selectedIds.forEach(id => {
+                    const target = workingSet.find(item => item.id === id);
+                    if (target?.type === 'algebra_tile') {
+                        const toolDef = getToolDefinition(target.type);
+                        if (toolDef && typeof toolDef.snapToNearest === 'function') {
+                            const snapped = toolDef.snapToNearest(target, workingSet, 35);
+                            workingSet = workingSet.map(item => item.id === id ? { ...item, ...snapped } : item);
+                        }
+                    }
+                });
+                return workingSet;
+            });
+        }
+
+        setIsDrawing(false); 
+        setInteractionMode(null);
 
         if ((activeTool === 'pen' || activeTool === 'highlighter') && activePathRef.current) {
             const finalPath = activePathRef.current; 
@@ -496,234 +739,200 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                 setElements(prev => [...prev, finalPath]); 
             }
             activePathRef.current = null; 
-        } else {
-            setElements(current => current.filter(el => {
-                if (el.type === 'path') return el.points.length > 2;
-                if (el.type === 'line') return Math.abs(el.x - el.x2) > 5 || Math.abs(el.y - el.y2) > 5;
-                if (['timer', 'clock', 'ruler', 'coord', 'richText', 'calculator'].includes(el.type)) return true;
-                return el.width > 5 || el.height > 5;
-            }));
         }
 
-        const discrete = ['rect', 'circle', 'triangle', 'coord', 'shapes_3d', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'richText', 'calculator'];
+        const discrete = ['rect', 'circle', 'triangle', 'line'];
         if (discrete.includes(activeTool) || activeTool.startsWith('3d_')) setActiveTool('select');
     };
 
-    // --- 5. RENDERERS ---
+    useEffect(() => {
+        if (!isDrawing) return;
+
+        const onMove = (e) => handlePointerMove(e);
+        const onUp = (e) => handlePointerUp(e);
+
+        window.addEventListener('pointermove', onMove, { passive: false });
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
+
+        return () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', onUp);
+        };
+    }, [isDrawing, interactionMode, selectedIds, activeTool]);
+
     const renderHandles = (el, radius = 0) => {
         const isC = ['circle', 'frac_circle', 'spinner', 'node', 'clock', 'timer', 'realClock'].includes(el.type);
         const isP = el.type === 'protractor';
-        const botY = isP ? el.y + radius : (isC ? el.y + radius*2 : el.y + el.height);
-        const cx = (isC || isP) ? el.x + radius : el.x + el.width/2;
-        const rigX = (isC || isP) ? el.x + radius*2 : el.x + el.width;
-        const hasOptions = ['ruler', 'shapes_3d', 'triangle', 'tchart', 'frac_rect', 'frac_circle', 'spinner', 'coord', 'math', 'dice', 'dynamicClues', 'volume_cue'].includes(el.type);
+        const objHeight = isP ? radius : (isC ? radius * 2 : (Number(el.height) || 200));
+        const objWidth = isC || isP ? radius * 2 : (Number(el.width) || 200);
+        
+        const padding = 16; // 🟢 Global forgiving margin outside the visual edge
+        const botY = el.y + objHeight + 14; 
+        const cx = (isC || isP) ? el.x + radius : el.x + objWidth / 2;
+        const rigX = (isC || isP) ? el.x + radius * 2 : el.x + objWidth;
 
-        // 🟢 FIX: Smart counter-rotation logic ensures menus stay horizontal!
-        const isRotatedByParent = ['line', 'coord', 'timer', 'dynamicClues', 'volume_cue', 'rect', 'circle', 'triangle', 'frac_rect', 'frac_circle', 'spinner'].includes(el.type);
-        const unrotateMenu = (el.rotation && isRotatedByParent) ? `rotate(${-el.rotation}, ${cx}, ${botY+8})` : '';
-        const unrotateTrash = (el.rotation && isRotatedByParent) ? `rotate(${-el.rotation}, ${el.x - 22.5}, ${el.y - 22.5})` : '';
+        const Tool = getToolDefinition(el.type);
+        const hasCustomContextMenu = Tool && typeof Tool.renderContextMenu === 'function';
 
         return (
             <g className="ui-ignore pointer-events-auto">
-                <rect x={el.x-5} y={el.y-5} width={(isC || isP ? radius*2 : el.width)+10} height={(isP ? radius : (isC ? radius*2 : el.height))+10} fill="none" stroke="#3b82f6" strokeDasharray="5" opacity="0.4" />
+                {/* 🟢 1. UNIVERSAL HIT BUFFER: Catches drags up to 16px outside the object */}
+                {isC ? (
+                    <circle
+                        cx={cx}
+                        cy={el.y + radius}
+                        r={radius + padding}
+                        fill="transparent"
+                        stroke="none"
+                        className="cursor-move"
+                        onPointerDown={(e) => {
+                            e.stopPropagation();
+                            setSelectedIds([el.id]);
+                            setInteractionMode('moving');
+                            setIsDrawing(true);
+                            const { x, y } = getCoordinates(e, false);
+                            dragCoordRef.current = { x, y };
+                        }}
+                    />
+                ) : (
+                    <rect
+                        x={el.x - padding}
+                        y={el.y - padding}
+                        width={objWidth + padding * 2}
+                        height={objHeight + padding * 2}
+                        fill="transparent"
+                        stroke="none"
+                        className="cursor-move"
+                        onPointerDown={(e) => {
+                            e.stopPropagation();
+                            setSelectedIds([el.id]);
+                            setInteractionMode('moving');
+                            setIsDrawing(true);
+                            const { x, y } = getCoordinates(e, false);
+                            dragCoordRef.current = { x, y };
+                        }}
+                    />
+                )}
+
+                {/* 2. Visual selection dashed box */}
+                <rect 
+                    x={el.x - 4} 
+                    y={el.y - 4} 
+                    width={objWidth + 8} 
+                    height={objHeight + 8} 
+                    fill="none" 
+                    stroke="#3b82f6" 
+                    strokeWidth="1.5" 
+                    strokeDasharray="5 4" 
+                    opacity="0.6" 
+                    className="pointer-events-none"
+                />
                 
-                <foreignObject x={el.x - 45} y={el.y - 45} width={95} height={45} transform={unrotateTrash}>
-                    <div className="flex gap-1 pointer-events-auto">
-                        <button onClick={() => duplicateElement(el.id)} className="text-slate-500 bg-white border-2 border-slate-200 rounded-xl shadow-lg w-10 h-10 flex items-center justify-center hover:bg-slate-50 hover:text-indigo-600 cursor-pointer pointer-events-auto" title={lang === 'sv' ? 'Kopiera' : 'Copy'}>
-                            <Copy size={16}/>
-                        </button>
-                        <button onClick={() => deleteElement(el.id)} className="text-rose-500 bg-white border-2 border-rose-500 rounded-xl shadow-lg w-10 h-10 flex items-center justify-center hover:bg-rose-50 cursor-pointer pointer-events-auto" title={lang === 'sv' ? 'Ta bort' : 'Delete'}>
-                            <Trash2 size={20}/>
-                        </button>
+                {/* 3. Bottom Context Menu & Action Pill */}
+                <foreignObject x={el.x} y={botY} width={650} height={56} className="overflow-visible pointer-events-auto">
+                    <div className="flex flex-wrap gap-2 pointer-events-auto items-center">
+                        {/* Move / Duplicate / Delete Controls */}
+                        <div className="flex gap-1.5 items-center bg-white/95 backdrop-blur-md p-1 rounded-2xl border-2 border-slate-200 shadow-xl">
+                            <button 
+                                onPointerDown={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedIds([el.id]);
+                                    setInteractionMode('moving');
+                                    setIsDrawing(true);
+                                    const { x, y } = getCoordinates(e, false);
+                                    dragCoordRef.current = { x, y };
+                                }}
+                                className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-move pointer-events-auto transition-colors" 
+                                title={lang === 'sv' ? 'Flytta' : 'Move'}
+                            >
+                                <Move size={15} />
+                            </button>
+                            <button 
+                                onClick={() => duplicateElement(el.id)} 
+                                className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto" 
+                                title={lang === 'sv' ? 'Kopiera' : 'Copy'}
+                            >
+                                <Copy size={15}/>
+                            </button>
+                            <button 
+                                onClick={() => deleteElement(el.id)} 
+                                className="!bg-white !text-rose-500 border border-rose-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-rose-50 cursor-pointer pointer-events-auto" 
+                                title={lang === 'sv' ? 'Ta bort' : 'Delete'}
+                            >
+                                <Trash2 size={16}/>
+                            </button>
+                        </div>
+
+                        {/* Tool-specific Context Options */}
+                        {hasCustomContextMenu && (
+                            <div 
+                                onPointerDown={(e) => e.stopPropagation()} 
+                                className="flex items-center gap-3 !bg-white !text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-slate-200/90 shadow-xl pointer-events-auto text-sm font-bold font-sans"
+                                style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
+                            >
+                                {Tool.renderContextMenu({
+                                    el,
+                                    setElements,
+                                    lang,
+                                    t,
+                                    onUpdate: (updated) => setElements(prev => prev.map(item => item.id === el.id ? updated : item))
+                                })}
+                            </div>
+                        )}
                     </div>
                 </foreignObject>
-                <circle cx={cx} cy={el.y-55} r={12} fill="white" stroke="#3b82f6" strokeWidth="2" className="cursor-alias" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating'); setIsDrawing(true);}} />
-                <rect x={rigX-5} y={botY-5} width={20} height={20} fill="white" stroke="#3b82f6" strokeWidth={2} className="cursor-nwse-resize" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('resizing'); setIsDrawing(true);}} />
-                {(el.type === 'coord' || el.type === 'tchart') && (
-                    <circle cx={rigX + 25} cy={botY - 10} r={10} fill="#eab308" stroke="#854d0e" strokeWidth="2" className="cursor-zoom-in" onPointerDown={(e) => { e.stopPropagation(); setInteractionMode('scaling'); setIsDrawing(true); }} />
-                )}
-                {hasOptions && (
-                    <foreignObject x={el.x} y={botY+8} width={600} height={100} transform={unrotateMenu} className="ui-ignore pointer-events-auto overflow-visible">
-                        <div className="flex flex-wrap gap-3 bg-white rounded-xl shadow-xl border border-emerald-500 p-2.5 pointer-events-auto text-[11px] font-black uppercase items-center w-max" onPointerDown={e => e.stopPropagation()}>
-                            {el.type === 'coord' && (
-                                <div className="flex flex-col gap-2 p-1">
-                                    <div className="flex items-center gap-3">
-                                        <span>{t.stepX}</span>
-                                        <input type="text" className="w-10 border-b text-center outline-none" value={el.stepX} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepX:e.target.value}:o))} />
-                                        <span>{t.stepY}</span>
-                                        <input type="text" className="w-10 border-b text-center outline-none" value={el.stepY} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepY:e.target.value}:o))} />
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, isFirstQuadrant:!o.isFirstQuadrant}:o))} className={`px-2 py-1 rounded-md transition-colors ${el.isFirstQuadrant?'bg-emerald-500 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.quad1}</button>
-                                        <button 
-                                            onClick={() => setElements(p => p.map(o => {
-                                                if (o.id !== el.id) return o;
-                                                const list = Array.isArray(o.equations) ? o.equations : (o.equation ? [o.equation] : []);
-                                                return { ...o, equations: [...list, "y=x"] };
-                                            }))} 
-                                            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-md text-[10px] font-black uppercase transition-all"
-                                        >
-                                            + {lang === 'sv' ? 'Linje' : 'Line'}
-                                        </button>
-                                    </div>
 
-                                    {/* Multiple Equations List */}
-                                    <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
-                                        {(Array.isArray(el.equations) ? el.equations : (el.equation ? [el.equation] : [])).map((eqStr, eqIdx) => {
-                                            const lineColor = LINE_COLORS[eqIdx % LINE_COLORS.length];
-                                            return (
-                                                <div key={eqIdx} className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 shadow-sm">
-                                                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: lineColor }} />
-                                                    <span className="text-[10px] text-slate-500 font-black lowercase">y =</span>
-                                                    <input 
-                                                        type="text" 
-                                                        placeholder="2x + 1" 
-                                                        className="w-16 border-b border-slate-300 outline-none text-center font-bold text-xs bg-transparent" 
-                                                        value={eqStr.replace(/^y=/i, '')} 
-                                                        onChange={(e) => {
-                                                            const val = e.target.value;
-                                                            setElements(p => p.map(o => {
-                                                                if (o.id !== el.id) return o;
-                                                                const list = [...(Array.isArray(o.equations) ? o.equations : [o.equation || ''])];
-                                                                list[eqIdx] = val ? (val.startsWith('y=') ? val : `y=${val}`) : "";
-                                                                return { ...o, equations: list };
-                                                            }));
-                                                        }} 
-                                                    />
-                                                    <button 
-                                                        onClick={() => setElements(p => p.map(o => {
-                                                            if (o.id !== el.id) return o;
-                                                            const list = (Array.isArray(o.equations) ? o.equations : [o.equation || '']).filter((_, i) => i !== eqIdx);
-                                                            return { ...o, equations: list };
-                                                        }))}
-                                                        className="text-slate-400 hover:text-rose-500 p-0.5 ml-0.5"
-                                                        title={lang === 'sv' ? "Ta bort linje" : "Remove line"}
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                            {el.type === 'tchart' && (
-                                <div className="flex gap-1.5">
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: [...o.rows, {label:'?', value:'0'}]}:o))} className="px-2.5 py-1.5 bg-emerald-500 text-white rounded-md text-[10px] font-black uppercase shadow-sm">{t.addRow}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, rows: o.rows.length > 1 ? o.rows.slice(0, -1) : o.rows}:o))} className="px-2.5 py-1.5 bg-rose-100 text-rose-600 rounded-md text-[10px] font-black uppercase">{t.remRow}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, chartType: o.chartType==='bar'?'line':'bar'}:o))} className="px-2.5 py-1.5 bg-slate-100 rounded-md hover:bg-slate-200 transition-colors">{el.chartType==='bar'?<BarChart2 size={14}/>:<List size={14}/>}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showGraph:!o.showGraph}:o))} className={`px-3 py-1.5 rounded-md text-[10px] font-black transition-colors ${el.showGraph ? 'bg-emerald-600 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.graph}</button>
-                                </div>
-                            )}
-                            {el.type === 'ruler' && (
-                                <div className="flex flex-wrap gap-3 items-center">
-                                    {t.min}<input type="text" className="w-10 border-b text-center outline-none" value={el.min} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, min:e.target.value}:o))} />
-                                    {t.max}<input type="text" className="w-10 border-b text-center outline-none" value={el.max} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, max:e.target.value}:o))} />
-                                    {t.calc}<input type="text" placeholder={t.eg} className="w-16 border-b border-emerald-500 text-center outline-none font-bold text-emerald-700" value={el.equation} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, equation:e.target.value}:o))} />
-                                    
-                                    <select className="bg-slate-100 rounded-md p-1 text-[10px] font-bold outline-none cursor-pointer" value={el.unitType} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, unitType:e.target.value}:o))}>
-                                        <option value="whole">{t.whole}</option>
-                                        <option value="decimal">{t.decimal}</option>
-                                        <option value="fraction">{t.fraction}</option>
-                                    </select>
-
-                                    {el.unitType === 'fraction' ? (
-                                        <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
-                                            <span className="text-[9px] font-black uppercase text-slate-400">{lang === 'sv' ? 'Nämnare:' : 'Denom:'}</span>
-                                            <input type="number" min="1" className="w-10 border-b text-center outline-none font-bold text-indigo-600" value={el.denom || 4} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, denom: parseInt(e.target.value) || 1}:o))} />
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
-                                            <span className="text-[9px] font-black uppercase text-slate-400">{lang === 'sv' ? 'Steg:' : 'Step:'}</span>
-                                            <input type="number" step="any" className="w-12 border-b text-center outline-none font-bold text-indigo-600" value={el.stepValue || 1} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, stepValue: parseFloat(e.target.value) || 1}:o))} />
-                                        </div>
-                                    )}
-
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showSubnotches: !o.showSubnotches}:o))} className={`p-1.5 rounded-md transition-colors ${el.showSubnotches ? 'bg-emerald-500 text-white' : 'bg-slate-100 hover:bg-slate-200'}`}><Hash size={14}/></button>
-
-                                    {/* 🟢 NEW: Orientation Toggle (Swaps width/height automatically) */}
-                                    <div className="w-px h-6 bg-slate-300 mx-1" />
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, orientation: o.orientation === 'vertical' ? 'horizontal' : 'vertical', width: o.height || 100, height: o.width || 800}:o))} className={`px-3 py-1.5 rounded-md transition-colors bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[10px] font-black uppercase`}>
-                                        {el.orientation === 'vertical' ? t.vertical : t.horizontal}
-                                    </button>
-                                </div>
-                            )}
-                            {el.type === 'dice' && (
-                                <div className="flex items-center gap-2.5">
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, diceData: (o.diceData||[]).slice(0,-1)}:o))} className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors rounded-md font-black text-sm">-</button>
-                                    <span className="text-[10px] font-black">{(el.diceData||[]).length} {t.dice}</span>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, diceData: [...(o.diceData||[]), {value:1, color:'#ffffff'}]}:o))} className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors rounded-md font-black text-sm">+</button>
-                                    <select className="bg-slate-50 border rounded-md p-1 outline-none text-[10px] cursor-pointer" value={el.sides||"6"} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, sides:e.target.value}:o))}>{[4,6,8,10,12,20].map(s=><option key={s} value={s}>{s} {t.sides}</option>)}</select>
-                                    <button onClick={()=>rollDice(el.id)} className="bg-emerald-500 hover:bg-emerald-600 transition-colors text-white rounded-lg px-3 py-1.5 font-black text-[10px]">{t.rollAll}</button>
-                                </div>
-                            )}
-                            {el.type === 'dynamicClues' && (
-                                <>
-                                    <div className="flex items-center gap-1">
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, fontSize: Math.max(12, (o.fontSize||24)-2)}:o))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded font-black text-[10px]">A-</button>
-                                        <span className="text-[10px] font-black w-6 text-center">{el.fontSize||24}px</span>
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, fontSize: Math.min(72, (o.fontSize||24)+2)}:o))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded font-black text-[10px]">A+</button>
-                                    </div>
-
-                                    {/* 🟢 NEW: Toggle for List vs Paging */}
-                                    <div className="flex items-center gap-1">
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, clueLayout: 'list'}:o))} className={`px-2 py-1 rounded text-[10px] font-black transition-colors ${el.clueLayout !== 'paging' ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`} title="List View"><List size={12}/></button>
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, clueLayout: 'paging'}:o))} className={`px-2 py-1 rounded text-[10px] font-black transition-colors ${el.clueLayout === 'paging' ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`} title="Paging View"><Layers size={12}/></button>
-                                    </div>
-                                    
-                                    <div className="w-px h-4 bg-slate-300 mx-1" />
-                                    <div className="flex items-center gap-1">
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showText: o.showText===false}:o))} className={`px-2 py-1 rounded text-[10px] font-black transition-colors ${el.showText!==false ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>TEXT</button>
-                                        <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showLatex: o.showLatex===false}:o))} className={`px-2 py-1 rounded text-[10px] font-black transition-colors ${el.showLatex!==false ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>LATEX</button>
-                                    </div>
-                                </>
-                            )}
-                            {el.type === 'volume_cue' && (
-                                <div className="flex gap-2">
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, volumeLevel:'quiet'}:o))} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-colors ${el.volumeLevel==='quiet'?'bg-rose-500 text-white shadow-sm':'bg-slate-100 hover:bg-slate-200 text-slate-500'}`}>🤫 {lang==='sv'?'Tyst':'Quiet'}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, volumeLevel:'whisper'}:o))} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-colors ${el.volumeLevel==='whisper'?'bg-amber-500 text-white shadow-sm':'bg-slate-100 hover:bg-slate-200 text-slate-500'}`}>💬 {lang==='sv'?'Viska':'Whisper'}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, volumeLevel:'discuss'}:o))} className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase transition-colors ${el.volumeLevel==='discuss'?'bg-emerald-500 text-white shadow-sm':'bg-slate-100 hover:bg-slate-200 text-slate-500'}`}>🗣️ {lang==='sv'?'Grupp':'Group'}</button>
-                                </div>
-                            )}
-                            {el.type === 'math' && (
-                                <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500">
-                                    {t.size} <input type="text" className="w-12 border-b-2 border-emerald-500 text-center outline-none" value={el.fontSize} onChange={e=>setElements(p=>p.map(o=>o.id===el.id?{...o, fontSize: e.target.value}:o))} />
-                                </div>
-                            )}
-                            {el.type === 'triangle' && (
-                                <>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'right'}:o))} className={`px-2.5 py-1.5 rounded-md text-[10px] transition-colors ${el.triangleType==='right'?'bg-emerald-500 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.right}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'isosceles'}:o))} className={`px-2.5 py-1.5 rounded-md text-[10px] transition-colors ${el.triangleType==='isosceles'?'bg-emerald-500 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.isosceles}</button>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, triangleType:'scalene'}:o))} className={`px-2.5 py-1.5 rounded-md text-[10px] transition-colors ${el.triangleType==='scalene'?'bg-emerald-500 text-white':'bg-slate-100 hover:bg-slate-200'}`}>{t.scalene}</button>
-                                </>
-                            )}
-                            {el.type === 'shapes_3d' && (
-                                <>
-                                    <span className="text-emerald-600 font-black">{el.shape3D}</span>
-                                    <button onClick={()=>setElements(p=>p.map(o=>o.id===el.id?{...o, showInternal:!o.showInternal}:o))} className={`p-1.5 rounded-md border transition-colors ${el.showInternal?'bg-emerald-500 text-white':'bg-slate-50 hover:bg-slate-100'}`}><Hash size={14}/></button>
-                                </>
-                            )}
-                            {(el.divisions || el.type === 'spinner') && (
-                                <>
-                                    <button onClick={()=>updateDivisions(el.id, -1)} className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors rounded-md font-black text-sm">-</button>
-                                    <span className="px-1">{el.divisions} {t.parts}</span>
-                                    <button onClick={()=>updateDivisions(el.id, 1)} className="w-6 h-6 flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-colors rounded-md font-black text-sm">+</button>
-                                    <button onClick={()=>setElements(prev=>prev.map(i=>i.id===el.id?{...i, showLabel:!i.showLabel}:i))} className={`p-1.5 rounded-lg ml-1 border-2 transition-all ${el.showLabel ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-100 border-slate-200 hover:bg-slate-200'}`}><Hash size={14}/></button>
-                                    {el.type==='spinner' && (<button onClick={()=>spinSpinner(el.id)} className="bg-emerald-500 text-white rounded-lg p-1.5 ml-1 hover:bg-emerald-600 active:scale-90 transition-transform"><Play size={14} fill="white"/></button>)}
-                                </>
-                            )}
-                        </div>
-                    </foreignObject>
-                )}
+                {/* 4. Top Adjustment Handles */}
+                <circle cx={cx} cy={el.y - 25} r={12} fill="white" stroke="#3b82f6" strokeWidth="2" className="cursor-alias" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating'); setIsDrawing(true);}} />
+                <rect x={rigX - 5} y={el.y - 12} width={20} height={20} rx={4} fill="white" stroke="#3b82f6" strokeWidth={2} className="cursor-nwse-resize" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('resizing'); setIsDrawing(true);}} />
             </g>
         );
     };
 
     const renderElement = (el) => {
-        const isSelected = selectedId === el.id;
+        const isSelected = selectedIds.includes(el.id);
         const showUI = isSelected || hoveredId === el.id;
-        const transform = `rotate(${el.rotation || 0}, ${el.x + el.width/2}, ${el.y + el.height/2})`;
-        const r = el.width / 2;
-        const cx = el.x + r;
-        const cy = el.y + r;
+        const transform = `rotate(${el.rotation || 0}, ${el.x + (el.width || 0)/2}, ${el.y + (el.height || 0)/2})`;
+        
+        const Tool = getToolDefinition(el.type);
+        if (Tool && typeof Tool.render === 'function') {
+            const options = {
+                el,
+                lang,
+                t,
+                color,
+                currentTime,
+                livePacket,
+                MathDisplay,
+                transform,
+                isSelected,
+                showUI,
+                renderHandles,
+                setElements,
+                setSelectedId: (id) => setSelectedIds(id ? [id] : []),
+                setInteractionMode,
+                setIsDrawing,
+                getCoordinates,
+                setDragOffset: (pos) => { dragCoordRef.current = pos; },
+                onUpdate: (updated) => setElements(prev => prev.map(item => item.id === el.id ? updated : item))
+            };
+
+            let renderedContent = null;
+            try {
+                renderedContent = Tool.render(el, options);
+            } catch (e) {
+                renderedContent = Tool.render(options);
+            }
+
+            return (
+                <g key={el.id} data-id={el.id} className="pointer-events-auto">
+                    {renderedContent}
+                    {showUI && el.type !== 'algebra_tile' && renderHandles(el)}
+                </g>
+            );
+        }
 
         // Path (Pen/Highlighter)
         if (el.type === 'path') {
@@ -735,825 +944,24 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
         if (el.type === 'line') {
             return (
                 <g key={el.id} data-id={el.id} className="pointer-events-auto cursor-move">
-                    <line x1={el.x} y1={el.y} x2={el.x2} y2={el.y2} stroke={el.stroke} strokeWidth={el.strokeWidth || 4} strokeLinecap="round" />
-                    {isSelected && (
+                    <line 
+                        x1={el.x1 ?? el.x} 
+                        y1={el.y1 ?? el.y} 
+                        x2={el.x2} 
+                        y2={el.y2} 
+                        stroke={el.stroke || '#94a3b8'} 
+                        strokeWidth={el.strokeWidth || 4} 
+                        strokeDasharray={el.strokeDasharray || undefined}
+                        strokeLinecap="round" 
+                    />
+                    {isSelected && !el.isPermanent && (
                         <g className="ui-ignore">
-                            <circle cx={el.x} cy={el.y} r={10} fill="white" stroke="#3b82f6" strokeWidth={2} className="cursor-crosshair pointer-events-auto" onPointerDown={(e) => { e.stopPropagation(); setInteractionMode('move-start'); setIsDrawing(true); }} />
+                            <circle cx={el.x1 ?? el.x} cy={el.y1 ?? el.y} r={10} fill="white" stroke="#3b82f6" strokeWidth={2} className="cursor-crosshair pointer-events-auto" onPointerDown={(e) => { e.stopPropagation(); setInteractionMode('move-start'); setIsDrawing(true); }} />
                             <circle cx={el.x2} cy={el.y2} r={10} fill="white" stroke="#3b82f6" strokeWidth={2} className="cursor-crosshair pointer-events-auto" onPointerDown={(e) => { e.stopPropagation(); setInteractionMode('move-end'); setIsDrawing(true); }} />
                         </g>
                     )}
-                    {showUI && renderHandles(el)}
+                    {showUI && !el.isPermanent && renderHandles(el)}
                 </g>
-            );
-        }
-
-        // Coordinate Plane
-        if (el.type === 'coord') {
-            const s = el.gridSize || 40, stepX = parseFloat(el.stepX) || 1, stepY = parseFloat(el.stepY) || 1;
-            const localOX = el.isFirstQuadrant ? 0 : el.width / 2, localOY = el.isFirstQuadrant ? el.height : el.height / 2;
-            const lns = [], lbs = [], graphLines = getGraphLinesPoints(el);
-            for (let i = -20; i <= 20; i++) {
-                const lp = i * s;
-                if (localOX + lp >= 0 && localOX + lp <= el.width) {
-                    lns.push(<line key={`v-${i}`} x1={localOX + lp} y1={0} x2={localOX + lp} y2={el.height} stroke="#cbd5e1" strokeWidth="1" />);
-                    if (el.showLabels && i !== 0) lbs.push(<text key={`tx-${i}`} x={localOX + lp} y={localOY + 25} textAnchor="middle" fontSize={el.fontSize} fontWeight="900" fill="black">{(i * stepX).toLocaleString()}</text>);
-                }
-                if (localOY - lp >= 0 && localOY - lp <= el.height) {
-                    lns.push(<line key={`h-${i}`} x1={0} y1={localOY - lp} x2={el.width} y2={localOY - lp} stroke="#cbd5e1" strokeWidth="1" />);
-                    if (el.showLabels && i !== 0) lbs.push(<text key={`ty-${i}`} x={localOX - 10} y={localOY - lp + 5} textAnchor="end" fontSize={el.fontSize} fontWeight="900" fill="black">{(i * stepY).toLocaleString()}</text>);
-                }
-            }
-            return (
-                <g key={el.id} data-id={el.id} transform={`translate(${el.x}, ${el.y}) ${transform.replace(/translate\([^)]+\)/, '')}`} className="pointer-events-auto cursor-move">
-                    <rect x={0} y={0} width={el.width} height={el.height} fill="white" fillOpacity="0.9" stroke="black" strokeWidth="1" />
-                    <svg width={el.width} height={el.height} style={{ overflow: 'hidden' }}>
-                        {lns}
-                        {graphLines.map(gl => (
-                            <line 
-                                key={gl.id} 
-                                x1={gl.x1} 
-                                y1={gl.y1} 
-                                x2={gl.x2} 
-                                y2={gl.y2} 
-                                stroke={gl.color} 
-                                strokeWidth="4" 
-                                strokeLinecap="round"
-                            />
-                        ))}
-                    </svg>
-                    <line x1={0} y1={localOY} x2={el.width} y2={localOY} stroke="black" strokeWidth="3" />
-                    <line x1={localOX} y1={0} x2={localOX} y2={el.height} stroke="black" strokeWidth="3" />
-                    {lbs}<text x={localOX - 10} y={localOY + 25} fontSize={el.fontSize} fontWeight="900" fill="black">0</text>
-                    <g transform={`translate(${-el.x}, ${-el.y})`}>{showUI && renderHandles(el)}</g>
-                </g>
-            );
-        }
-
-        // T-Chart
-        if (el.type === 'tchart') {
-            const scaleFactor = (el.gridSize || 40) / 40, tableW = el.width * 0.4, graphW = el.width * 0.55, graphH = (el.height - 130) * scaleFactor; 
-            const dataValues = el.rows.map(r => parseFloat(r.value) || 0);
-            const rawMax = Math.max(...dataValues, 5);
-            const stepSize = ((max) => { const rS = max/5, mag = Math.pow(10, Math.floor(Math.log10(rS))), res = rS/mag; return (res < 1.5 ? 1 : res < 3.5 ? 2 : res < 7.5 ? 5 : 10) * mag; })(rawMax);
-            const niceMax = Math.ceil(rawMax / stepSize) * stepSize;
-            const barColors = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
-            const yTicks = [];
-            for (let j = 0; j <= niceMax/stepSize; j++) {
-                const py = -(j * stepSize / niceMax) * graphH;
-                yTicks.push(<g key={j}><line x1="-5" y1={py} x2="0" y2={py} stroke="black" strokeWidth="1" /><text x="-10" y={py} textAnchor="end" alignmentBaseline="middle" fontSize="14" fontWeight="bold" fill="black">{j * stepSize}</text></g>);
-            }
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.95" stroke="black" strokeWidth="3" rx="8" />
-                        <g transform={`translate(${el.x + 10}, ${el.y + 10})`}>
-                            <line x1={tableW/2} y1="0" x2={tableW/2} y2={el.height - 20} stroke="black" strokeWidth="4" />
-                            <line x1="0" y1="50" x2={tableW} y2="50" stroke="black" strokeWidth="4" />
-                            <foreignObject x={0} y={0} width={tableW} height={50} className="ui-ignore pointer-events-auto">
-                                <div className="flex w-full h-full" onPointerDown={e => e.stopPropagation()}>
-                                    <input className="w-1/2 text-center font-black bg-transparent outline-none text-xl border-none" value={el.xLabel} onChange={e => setElements(p => p.map(o => o.id === el.id ? {...o, xLabel: e.target.value} : o))} />
-                                    <input className="w-1/2 text-center font-black bg-transparent outline-none text-xl border-none" value={el.yLabel} onChange={e => setElements(p => p.map(o => o.id === el.id ? {...o, yLabel: e.target.value} : o))} />
-                                </div>
-                            </foreignObject>
-                            {el.rows.map((row, i) => (
-                                <foreignObject key={i} x={0} y={65 + i*40} width={tableW} height={40} className="ui-ignore pointer-events-auto">
-                                    <div className="flex w-full h-full border-b border-slate-100 hover:bg-slate-50" onPointerDown={e => e.stopPropagation()}>
-                                        <input className="w-1/2 text-center text-m font-bold bg-transparent outline-none text-black border-none" value={row.label} onChange={e => { const newRows = [...el.rows]; newRows[i].label = e.target.value; setElements(p => p.map(o => o.id === el.id ? {...o, rows: newRows} : o)); }} />
-                                        <input className="w-1/2 text-center text-m font-black bg-transparent outline-none text-blue-600 border-none" value={row.value} onChange={e => { const newRows = [...el.rows]; newRows[i].value = e.target.value; setElements(p => p.map(o => o.id === el.id ? {...o, rows: newRows} : o)); }} />
-                                    </div>
-                                </foreignObject>
-                            ))}
-                        </g>
-                        {el.showGraph && (
-                            <g transform={`translate(${el.x + tableW + 40}, ${el.y + el.height - 90})`}>
-                                <line x1="0" y1="0" x2={graphW} y2="0" stroke="black" strokeWidth="2" />
-                                <line x1="0" y1="0" x2="0" y2={-graphH} stroke="black" strokeWidth="2" />
-                                {yTicks}
-                                {el.rows.map((row, i) => {
-                                    const numVal = parseFloat(row.value) || 0, barWidth = (graphW / el.rows.length) * 0.7, barH = (numVal / niceMax) * graphH, px = i * (graphW / el.rows.length) + (graphW / el.rows.length) / 2;
-                                    return (
-                                        <g key={i}>
-                                            {el.chartType === 'bar' ? <rect x={px - barWidth/2} y={-barH} width={barWidth} height={barH} fill={barColors[i % barColors.length]} fillOpacity="0.7" stroke="black" strokeWidth="1" /> : (i < el.rows.length - 1 && <line x1={px} y1={-(numVal/niceMax)*graphH} x2={(i+1)*(graphW/el.rows.length)+graphW/el.rows.length/2} y2={-(parseFloat(el.rows[i+1].value || 0)/niceMax)*graphH} stroke={el.stroke} strokeWidth="4" />)}
-                                            <g transform={`translate(${px}, 10) rotate(-45)`}><text x="0" y="0" textAnchor="end" alignmentBaseline="middle" fontSize="18" fontWeight="900" fill="black">{row.label}</text></g>
-                                        </g>
-                                    );
-                                })}
-                            </g>
-                        )}
-                    </g>
-                    {showUI && renderHandles(el)}
-                </React.Fragment>
-            );
-        }
-
-        // Clock
-        if (el.type === 'clock') {
-            const ticks = [];
-            for (let i = 0; i < 60; i++) {
-                const angle = i * 6 * (Math.PI / 180), isHour = i % 5 === 0, tickLen = isHour ? 15 : 7;
-                ticks.push(<line key={`t-${i}`} x1={cx + (r - tickLen) * Math.sin(angle)} y1={cy - (r - tickLen) * Math.cos(angle)} x2={cx + r * Math.sin(angle)} y2={cy - r * Math.cos(angle)} stroke="black" strokeWidth={isHour ? 3 : 1} />);
-                if (isHour) ticks.push(<text key={`n-${i}`} x={cx + (r - 40) * Math.sin(angle)} y={cy - (r - 40) * Math.cos(angle) + 8} textAnchor="middle" fontSize="22" fontWeight="bold" fill="black">{i === 0 ? 12 : i / 5}</text>);
-            }
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        <circle cx={cx} cy={cy} r={r} fill="white" stroke="black" strokeWidth="6" />
-                        {ticks}
-                        <g transform={`rotate(${el.hourRotation}, ${cx}, ${cy})`}><line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.55} stroke="black" strokeWidth="10" strokeLinecap="round" /><path d={`M ${cx - 10} ${cy - r * 0.55} L ${cx} ${cy - r * 0.65} L ${cx + 10} ${cy - r * 0.55} Z`} fill="black" className="cursor-pointer ui-ignore pointer-events-auto" onPointerDown={(e) => { e.stopPropagation(); setInteractionMode('rotating-hour'); setIsDrawing(true); }} /></g>
-                        <g transform={`rotate(${el.minRotation}, ${cx}, ${cy})`}><line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.8} stroke="#475569" strokeWidth="6" strokeLinecap="round" /><path d={`M ${cx - 8} ${cy - r * 0.8} L ${cx} ${cy - r * 0.9} L ${cx + 8} ${cy - r * 0.8} Z`} fill="#475569" className="cursor-pointer ui-ignore pointer-events-auto" onPointerDown={(e) => { e.stopPropagation(); setInteractionMode('rotating-min'); setIsDrawing(true); }} /></g>
-                        <circle cx={cx} cy={cy} r="6" fill="black" />
-                    </g>
-                    {showUI && renderHandles(el, r)}
-                </React.Fragment>
-            );
-        }
-
-        // Timer
-        if (el.type === 'timer') {
-            const isDone = el.timeLeft === 0;
-            const timeStr = `${Math.floor(el.timeLeft / 60)}:${(el.timeLeft % 60).toString().padStart(2, '0')}`;
-            const prog = (el.timeLeft / el.duration) * 360;
-            
-            //   FIX: Handle full (360°) and zero states cleanly so the SVG arc doesn't collapse into a straight line
-            const isFull = prog >= 360;
-            const endAngle = (prog * Math.PI) / 180;
-            const endX = cx + r * Math.sin(endAngle);
-            const endY = cy - r * Math.cos(endAngle);
-            
-            const pathData = prog <= 0 
-                ? "" 
-                : isFull 
-                    ? `M ${cx} ${cy-r} A ${r} ${r} 0 1 1 ${cx - 0.01} ${cy-r}` 
-                    : `M ${cx} ${cy-r} A ${r} ${r} 0 ${prog > 180 ? 1 : 0} 1 ${endX} ${endY}`;
-            
-            return (
-                <g key={el.id} transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                    {/* Background & Progress Ring */}
-                    <circle cx={cx} cy={cy} r={r} fill={isDone ? "#fee2e2" : "#e0f2fe"} stroke={isDone ? "#ef4444" : "#3b82f6"} strokeWidth="4" />
-                    <path 
-                        d={pathData} 
-                        fill="none" 
-                        stroke={isDone ? "#ef4444" : "#10b981"} 
-                        strokeWidth={Math.max(4, r * 0.08)} // Scales stroke width slightly with size
-                        strokeLinecap="round" 
-                    />
-                    
-                    {/*   PERFECTLY CENTERED TEXT */}
-                    <text 
-                        x={cx} 
-                        y={cy} 
-                        textAnchor="middle" 
-                        dominantBaseline="central" 
-                        dy="0.05em"
-                        fontSize={r / 2} 
-                        fontWeight="900" 
-                        fill={isDone ? "#ef4444" : "#1e293b"}
-                    >
-                        {timeStr}
-                    </text>
-
-                    {/*   NEW: COMPACT CONTROLS ROW UNDERNEATH THE TIMER */}
-                    {/*   NEW: COMPACT CONTROLS ROW UNDERNEATH THE TIMER */}
-                    {showUI && (
-                        <foreignObject x={cx - 150} y={el.y + el.height + 10} width={300} height={60} transform={el.rotation ? `rotate(${-el.rotation}, ${cx}, ${el.y + el.height + 10})` : ''} className="ui-ignore pointer-events-auto overflow-visible">
-                            <div className="flex items-center justify-center gap-2 w-full h-full" onPointerDown={e => e.stopPropagation()}>
-                                {/* Start / Pause */}
-                                <button 
-                                    onPointerDown={(e) => { 
-                                        e.stopPropagation(); 
-                                        setElements(p => p.map(o => o.id === el.id ? { ...o, isRunning: !o.isRunning } : o)); 
-                                    }} 
-                                    className={`w-10 h-10 flex items-center justify-center rounded-xl shadow-sm text-white transition-all active:scale-95 cursor-pointer ${el.isRunning ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-500 hover:bg-emerald-600'}`}
-                                    title={el.isRunning ? "Pausa" : "Starta"}
-                                >
-                                    <Play size={18} fill="currentColor" className={el.isRunning ? "hidden" : "block"} />
-                                    {/* Simple pause bars icon using CSS since we didn't import Pause from lucide */}
-                                    {el.isRunning && (
-                                        <div className="flex gap-1">
-                                            <div className="w-1 h-3.5 bg-white rounded-sm"></div>
-                                            <div className="w-1 h-3.5 bg-white rounded-sm"></div>
-                                        </div>
-                                    )}
-                                </button>
-                                
-                                {/* Reset */}
-                                <button 
-                                    onPointerDown={(e) => { 
-                                        e.stopPropagation(); 
-                                        setElements(p => p.map(o => o.id === el.id ? { ...o, timeLeft: el.duration, isRunning: false } : o)); 
-                                    }} 
-                                    className="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 rounded-xl shadow-sm text-slate-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer"
-                                    title="Återställ"
-                                >
-                                    <RefreshCw size={18} />
-                                </button>
-
-                                <div className="w-px h-6 bg-slate-300 mx-1"></div>
-                                
-                                {/* Subtract 1 Min */}
-                                <button 
-                                    onPointerDown={(e) => { 
-                                        e.stopPropagation(); 
-                                        setElements(p => p.map(o => o.id === el.id ? { ...o, duration: Math.max(0, o.duration - 60), timeLeft: Math.max(0, o.timeLeft - 60) } : o)); 
-                                    }} 
-                                    className="px-3 h-10 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-black text-slate-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer"
-                                >
-                                    -1m
-                                </button>
-                                
-                                {/* Add 1 Min */}
-                                <button 
-                                    onPointerDown={(e) => { 
-                                        e.stopPropagation(); 
-                                        setElements(p => p.map(o => o.id === el.id ? { ...o, duration: o.duration + 60, timeLeft: o.timeLeft + 60 } : o)); 
-                                    }} 
-                                    className="px-3 h-10 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-black text-slate-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer"
-                                >
-                                    +1m
-                                </button>
-                            </div>
-                        </foreignObject>
-                    )}
-                    {showUI && renderHandles(el, r)}
-                </g>
-            );
-        }
-
-        // Live Real Clock
-        if (el.type === 'realClock') {
-            const isAnalog = el.clockType !== 'digital';
-            const h = currentTime.getHours();
-            const m = currentTime.getMinutes();
-            const s = currentTime.getSeconds();
-
-            // Calculate precise analog rotations
-            const secRot = s * 6;
-            const minRot = m * 6 + s * 0.1;
-            const hrRot = (h % 12) * 30 + m * 0.5;
-
-            // Locale formatted time string
-            const timeString = currentTime.toLocaleTimeString(lang === 'sv' ? 'sv-SE' : 'en-US', { 
-                hour: '2-digit', minute: '2-digit', second: '2-digit' 
-            });
-
-            // 🎨 Flat Colorful Design Palette
-            const faceColor = "#ffffff";
-            const rimColor = "#0b0b0c"; // Black
-            const hrHandColor = "#1e293b"; // Dark slate
-            const minHandColor = "#8b5cf6"; // Violet
-            const secHandColor = "#f43f5e"; // Rose accent
-            const tickColor = "#cbd5e1";
-            const fontFam = "'Nunito', 'Quicksand', 'Varela Round', sans-serif";
-
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        {isAnalog ? (
-                            <>
-                                {/* Flat colorful rim and face */}
-                                <circle cx={cx} cy={cy} r={r} fill={faceColor} stroke={rimColor} strokeWidth={r * 0.08} />
-                                
-                                {/*   FIXED: Only draw small dots for minutes/seconds, leaving the hours blank */}
-                                {Array.from({length: 60}).map((_, i) => {
-                                    const isHour = i % 5 === 0;
-                                    if (isHour) return null; // Skip drawing a dot for the hour markers
-                                    const angle = i * 6 * (Math.PI / 180);
-                                    const dist = r * 0.82;
-                                    const dotR = r * 0.015;
-                                    return <circle key={i} cx={cx + dist*Math.sin(angle)} cy={cy - dist*Math.cos(angle)} r={dotR} fill={tickColor} />;
-                                })}
-                                
-                                {/* Hour Numbers (Rounded Font) */}
-                                {Array.from({length: 12}).map((_, i) => {
-                                    const hr = i === 0 ? 12 : i;
-                                    const angle = i * 30 * (Math.PI / 180);
-                                    const dist = r * 0.78;
-                                    return (
-                                        <text 
-                                            key={`n-${i}`} 
-                                            x={cx + dist*Math.sin(angle)} 
-                                            y={cy - dist*Math.cos(angle)} 
-                                            textAnchor="middle" 
-                                            dominantBaseline="central" 
-                                            dy="0.05em" 
-                                            fontSize={r * 0.19} 
-                                            fontWeight="900" 
-                                            fill={hrHandColor} 
-                                            fontFamily={fontFam}
-                                        >
-                                            {hr}
-                                        </text>
-                                    );
-                                })}
-                                
-                                {/* Hands (Thick, flat, rounded caps) */}
-                                <g transform={`rotate(${hrRot}, ${cx}, ${cy})`}>
-                                    <line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.45} stroke={hrHandColor} strokeWidth={r * 0.08} strokeLinecap="round" />
-                                </g>
-                                <g transform={`rotate(${minRot}, ${cx}, ${cy})`}>
-                                    <line x1={cx} y1={cy} x2={cx} y2={cy - r * 0.65} stroke={minHandColor} strokeWidth={r * 0.06} strokeLinecap="round" />
-                                </g>
-                                <g transform={`rotate(${secRot}, ${cx}, ${cy})`}>
-                                    <line x1={cx} y1={cy + r * 0.15} x2={cx} y2={cy - r * 0.75} stroke={secHandColor} strokeWidth={r * 0.02} strokeLinecap="round" />
-                                    {/* Center dot attached to second hand */}
-                                    <circle cx={cx} cy={cy} r={r * 0.05} fill={secHandColor} />
-                                </g>
-                            </>
-                        ) : (
-                            <>
-                                {/* DIGITAL BOX */}
-                                <rect 
-                                    x={cx - r * 1.05} // Pushed further left to maintain exact center
-                                    y={cy - r * 0.35} 
-                                    width={r * 2.1}   // Increased width for left/right padding
-                                    height={r * 0.7} 
-                                    fill={faceColor} 
-                                    rx={r * 0.15} 
-                                    stroke={rimColor} 
-                                    strokeWidth={r * 0.06} 
-                                />
-                                <text 
-                                    x={cx} 
-                                    y={cy} 
-                                    textAnchor="middle" 
-                                    dominantBaseline="central" 
-                                    dy="0.05em"
-                                    fontSize={r * 0.35} 
-                                    fontWeight="900" 
-                                    fill={hrHandColor} 
-                                    fontFamily={fontFam} 
-                                    style={{ letterSpacing: '0.02em' }}
-                                >
-                                    {timeString}
-                                </text>
-                                
-                            </>
-                        )}
-                    </g>
-                    {/* UI Mode Toggle Button */}
-                    {showUI && (
-                        <foreignObject x={cx - 60} y={el.y + el.height + 10} width={120} height={50} className="ui-ignore pointer-events-auto">
-                            <div className="flex justify-center" onPointerDown={e => e.stopPropagation()}>
-                                <button 
-                                    onClick={() => setElements(p => p.map(o => o.id === el.id ? {...o, clockType: isAnalog ? 'digital' : 'analog'} : o))}
-                                    className="px-4 py-2 bg-indigo-500 text-white rounded-xl shadow-sm font-black text-[10px] uppercase tracking-wider hover:bg-indigo-600 transition-colors cursor-pointer"
-                                >
-                                    {isAnalog ? "Digital" : "Analog"}
-                                </button>
-                            </div>
-                        </foreignObject>
-                    )}
-                    {showUI && renderHandles(el, r)}
-                </React.Fragment>
-            );
-        }
-
-        // Protractor
-        if (el.type === 'protractor') {
-            const ticks = [];
-            for (let i = 0; i <= 180; i += 1) {
-                const a = (i * Math.PI) / 180, l = i % 10 === 0 ? 25 : 12;
-                ticks.push(<line key={i} x1={cx + (r-l)*Math.cos(-a)} y1={cy + (r-l)*Math.sin(-a)} x2={cx + r*Math.cos(-a)} y2={cy + r*Math.sin(-a)} stroke="black" strokeWidth={i % 10 === 0 ? 3 : 1} />);
-                if (i % 10 === 0) ticks.push(<text key={`t-${i}`} x={cx+(r-45)*Math.cos(-a)} y={cy+(r-45)*Math.sin(-a)} textAnchor="middle" fontSize="16" fontWeight="900" fill="black">{i}</text>);
-            }
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        <path d={`M ${el.x} ${cy} A ${r} ${r} 0 0 1 ${el.x+el.width} ${cy} Z`} fill="white" fillOpacity="0.5" stroke="black" strokeWidth="2" />
-                        {ticks}<circle cx={cx} cy={cy} r="5" fill="black" />
-                    </g>
-                    {showUI && renderHandles(el, r)}
-                </React.Fragment>
-            );
-        }
-
-        // Ruler (Number Line)
-        if (el.type === 'ruler') {
-            const isVertical = el.orientation === 'vertical';
-            const ticks = [];
-            const rng = parseFloat(el.max) - parseFloat(el.min);
-            const pxU = rng > 0 ? (isVertical ? el.height / rng : el.width / rng) : 0;
-            
-            let step = 1;
-            if (el.unitType === 'fraction') step = 1 / (el.denom || 4);
-            else step = el.stepValue || (el.unitType === 'decimal' ? 0.1 : 1);
-            
-            if (step <= 0 || isNaN(step)) step = 1;
-            if (rng / step > 300) step = rng / 300; 
-
-            if (rng > 0) {
-                for (let i = 0; i <= rng + 0.0001; i += step) {
-                    const val = parseFloat(el.min) + i;
-                    
-                    if (isVertical) {
-                        // 🟢 Vertical Drawing Logic (Bottom to Top)
-                        const yp = el.y + el.height - (i * pxU);
-                        ticks.push(<line key={`m-${i}`} x1={el.x + 30} y1={yp} x2={el.x + 70} y2={yp} stroke="black" strokeWidth="4" />);
-
-                        if (el.unitType === 'fraction') {
-                            const den = el.denom || 4;
-                            const num = Math.round(val * den);
-                            if (num % den === 0) {
-                                ticks.push(<text key={`l-${i}`} x={el.x + 20} y={yp} textAnchor="end" dominantBaseline="central" fontSize="24" fontWeight="900" fill="black">{num / den}</text>);
-                            } else {
-                                ticks.push(
-                                    <g key={`l-${i}`} transform={`translate(${el.x + 10}, ${yp})`}>
-                                        <text x="-5" y="-12" textAnchor="middle" dominantBaseline="central" fontSize="18" fontWeight="900" fill="black">{num}</text>
-                                        <line x1="-15" y1="-2" x2="5" y2="-2" stroke="black" strokeWidth="2.5" />
-                                        <text x="-5" y="10" textAnchor="middle" dominantBaseline="central" fontSize="18" fontWeight="900" fill="black">{den}</text>
-                                    </g>
-                                );
-                            }
-                        } else if (el.unitType === 'decimal') {
-                            const decLabel = parseFloat(val.toFixed(4)).toString();
-                            ticks.push(<text key={`l-${i}`} x={el.x + 20} y={yp} textAnchor="end" dominantBaseline="central" fontSize="24" fontWeight="900" fill="black">{decLabel}</text>);
-                        } else {
-                            ticks.push(<text key={`l-${i}`} x={el.x + 20} y={yp} textAnchor="end" dominantBaseline="central" fontSize="24" fontWeight="900" fill="black">{Math.round(val)}</text>);
-                        }
-                    } else {
-                        // 🟢 Horizontal Drawing Logic (Left to Right)
-                        const xp = el.x + i * pxU;
-                        ticks.push(<line key={`m-${i}`} x1={xp} y1={el.y + 30} x2={xp} y2={el.y + 70} stroke="black" strokeWidth="4" />);
-
-                        if (el.unitType === 'fraction') {
-                            const den = el.denom || 4;
-                            const num = Math.round(val * den);
-                            if (num % den === 0) {
-                                ticks.push(<text key={`l-${i}`} x={xp} y={el.y + 105} textAnchor="middle" fontSize="24" fontWeight="900" fill="black">{num / den}</text>);
-                            } else {
-                                ticks.push(
-                                    <g key={`l-${i}`} transform={`translate(${xp}, ${el.y + 95})`}>
-                                        <text x="0" y="-12" textAnchor="middle" fontSize="18" fontWeight="900" fill="black">{num}</text>
-                                        <line x1="-12" y1="-4" x2="12" y2="-4" stroke="black" strokeWidth="2.5" />
-                                        <text x="0" y="14" textAnchor="middle" fontSize="18" fontWeight="900" fill="black">{den}</text>
-                                    </g>
-                                );
-                            }
-                        } else if (el.unitType === 'decimal') {
-                            const decLabel = parseFloat(val.toFixed(4)).toString();
-                            ticks.push(<text key={`l-${i}`} x={xp} y={el.y + 105} textAnchor="middle" fontSize="24" fontWeight="900" fill="black">{decLabel}</text>);
-                        } else {
-                            ticks.push(<text key={`l-${i}`} x={xp} y={el.y + 105} textAnchor="middle" fontSize="24" fontWeight="900" fill="black">{Math.round(val)}</text>);
-                        }
-                    }
-                }
-
-                if (el.showSubnotches) {
-                    const subStepSize = el.unitType === 'fraction' ? step / 2 : step / 10;
-                    for (let i = 0; i <= rng + 0.0001; i += subStepSize) {
-                        const rMod = i % step;
-                        if (rMod > 0.001 && Math.abs(rMod - step) > 0.001) {
-                            if (isVertical) {
-                                const yp = el.y + el.height - (i * pxU);
-                                ticks.push(<line key={`s-${i}`} x1={el.x + 40} y1={yp} x2={el.x + 60} y2={yp} stroke="black" strokeWidth="2" opacity="0.5" />);
-                            } else {
-                                const xp = el.x + i * pxU;
-                                ticks.push(<line key={`s-${i}`} x1={xp} y1={el.y + 40} x2={xp} y2={el.y + 60} stroke="black" strokeWidth="2" opacity="0.5" />);
-                            }
-                        }
-                    }
-                }
-            }
-
-            const hops = [];
-            const match = el.equation?.match(/(\d+(?:\.\d+)?)\s*([+-])\s*(\d+(?:\.\d+)?)/);
-            if (match && rng > 0) {
-                const startVal = parseFloat(match[1]), op = match[2], count = parseFloat(match[3]), dir = op === '+' ? 1 : -1;
-                const intCount = Math.max(1, Math.floor(count));
-                
-                if (isVertical) {
-                    // Vertical Hops logic
-                    const startY = el.y + el.height - ((startVal - parseFloat(el.min)) * pxU);
-                    const yDir = dir === 1 ? -1 : 1; 
-                    const totalHeight = count * pxU;
-                    const singleHopPx = totalHeight / intCount;
-                    
-                    for (let j = 0; j < intCount; j++) {
-                        const y1 = startY + (j * yDir * singleHopPx);
-                        const y2 = y1 + (yDir * singleHopPx);
-                        const midY = (y1 + y2) / 2;
-                        hops.push(<path key={j} d={`M ${el.x + 50} ${y1} Q ${el.x + 100} ${midY} ${el.x + 50} ${y2}`} fill="none" stroke={el.stroke} strokeWidth="3" strokeDasharray="6,4" />);
-                        if (j === intCount - 1) hops.push(<path key="arrow" d={`M ${el.x+40} ${y2-5*yDir} L ${el.x+50} ${y2} L ${el.x+60} ${y2-5*yDir}`} fill="none" stroke={el.stroke} strokeWidth="3" />);
-                    }
-                    const labelY = startY + (totalHeight / 2) * yDir;
-                    hops.push(<g key="lbl"><rect x={el.x + 85} y={labelY - 17} width="50" height="35" fill="white" rx="4" /><text x={el.x + 110} y={labelY} textAnchor="middle" dominantBaseline="central" fontSize="22" fontWeight="black" fill={el.stroke}>{op}{count}</text></g>);
-                } else {
-                    // Horizontal Hops logic
-                    const totalWidth = count * pxU;
-                    const startX = el.x + (startVal - parseFloat(el.min)) * pxU;
-                    const singleHopPx = totalWidth / intCount;
-                    
-                    for (let j = 0; j < intCount; j++) {
-                        const x1 = startX + (j * dir * singleHopPx), x2 = x1 + (dir * singleHopPx), midX = (x1 + x2) / 2;
-                        hops.push(<path key={j} d={`M ${x1} ${el.y + 30} Q ${midX} ${el.y - 40} ${x2} ${el.y + 30}`} fill="none" stroke={el.stroke} strokeWidth="3" strokeDasharray="6,4" />);
-                        if (j === intCount - 1) hops.push(<path key="arrow" d={`M ${x2-5*dir} ${el.y+20} L ${x2} ${el.y+30} L ${x2-5*dir} ${el.y+40}`} fill="none" stroke={el.stroke} strokeWidth="3" />);
-                    }
-                    const labelX = startX + (totalWidth / 2) * dir;
-                    hops.push(<g key="lbl"><rect x={labelX - 25} y={el.y - 75} width="50" height="35" fill="white" rx="4" /><text x={labelX} y={el.y - 50} textAnchor="middle" fontSize="22" fontWeight="black" fill={el.stroke}>{op}{count}</text></g>);
-                }
-            }
-            
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        <rect x={el.x} y={el.y} width={el.width} height={el.height || 100} fill="transparent" />
-                        {isVertical ? (
-                            <line x1={el.x+50} y1={el.y} x2={el.x+50} y2={el.y+el.height} stroke="black" strokeWidth="5" />
-                        ) : (
-                            <line x1={el.x} y1={el.y+50} x2={el.x+el.width} y2={el.y+50} stroke="black" strokeWidth="5" />
-                        )}
-                        {ticks}{hops}
-                    </g>
-                    {showUI && renderHandles(el)}
-                </React.Fragment>
-            );
-        }
-
-        // 3D Shapes
-        if (el.type === 'shapes_3d') {
-            const w = el.width, h = el.height, d = w * 0.4;
-            let faces = [], lines = [];
-            const common = { fill: el.stroke, fillOpacity: 0.15, stroke: el.stroke, strokeWidth: 2 }, dotted = { stroke: el.stroke, strokeWidth: 2, strokeDasharray: "6", fill: "none" };
-            if (el.shape3D === 'cube' || el.shape3D === 'prism') {
-                faces.push(<path key="f1" d={`M ${el.x} ${el.y+d} L ${el.x+w} ${el.y+d} L ${el.x+w} ${el.y+d+h} L ${el.x} ${el.y+d+h} Z`} {...common} />);
-                faces.push(<path key="f2" d={`M ${el.x} ${el.y+d} L ${el.x+d} ${el.y} L ${el.x+w+d} ${el.y} L ${el.x+w} ${el.y+d} Z`} {...common} />);
-                faces.push(<path key="f3" d={`M ${el.x+w} ${el.y+d} L ${el.x+w+d} ${el.y} L ${el.x+w+d} ${el.y+h} L ${el.x+w} ${el.y+d+h} Z`} {...common} />);
-                if (el.showInternal) lines.push(<path key="h1" d={`M ${el.x} ${el.y+d+h} L ${el.x+d} ${el.y+h} L ${el.x+d} ${el.y} M ${el.x+d} ${el.y+h} L ${el.x+w+d} ${el.y+h}`} {...dotted} />);
-            } else if (el.shape3D === 'triprism') {
-                const bX = el.x + d, bY = el.y;
-                if (el.showInternal) faces.push(<path key="back" d={`M ${bX} ${bY+h} L ${bX+w-d} ${bY+h} L ${bX+(w-d)/2} ${bY+d} Z`} {...common} strokeDasharray="4"/>);
-                faces.push(<path key="front" d={`M ${el.x} ${el.y+h} L ${el.x+w-d} ${el.y+h} L ${el.x+(w-d)/2} ${el.y+d} Z`} {...common}/>);
-                lines.push(<line key="c1" x1={el.x} y1={el.y+h} x2={bX} y2={bY+h} {...common}/>, <line key="c2" x1={el.x+w-d} y1={el.y+h} x2={bX+w-d} y2={bY+h} {...common}/>, <line key="c3" x1={el.x+(w-d)/2} y1={el.y+d} x2={bX+(w-d)/2} y2={bY+d} {...common}/>);
-                if (el.showInternal) lines.push(<line key="h" x1={el.x+(w-d)/2} y1={el.y+d} x2={el.x+(w-d)/2} y2={el.y+h} {...dotted} />);
-            } else if (el.shape3D === 'pyramid') {
-                faces.push(<path key="b" d={`M ${el.x} ${el.y+h} L ${el.x+w-d} ${el.y+h} L ${el.x+w} ${el.y+h-d} L ${el.x+d} ${el.y+h-d} Z`} {...common} />, <path key="s1" d={`M ${el.x} ${el.y+h} L ${el.x+w/2} ${el.y} L ${el.x+w-d} ${el.y+h} Z`} {...common} />, <path key="s2" d={`M ${el.x+w-d} ${el.y+h} L ${el.x+w/2} ${el.y} L ${el.x+w} ${el.y+h-d} Z`} {...common} />);
-                if (el.showInternal) lines.push(<line key="h" x1={el.x+w/2} y1={el.y} x2={el.x+w/2} y2={el.y+h-d/2} {...dotted} />);
-            } else if (el.shape3D === 'house') {
-                const baseH = h * 0.6;
-                faces.push(<path key="h1" d={`M ${el.x} ${el.y+h} L ${el.x+w} ${el.y+h} L ${el.x+w} ${el.y+h-baseH} L ${el.x} ${el.y+h-baseH} Z`} {...common} />);
-                faces.push(<path key="h2" d={`M ${el.x+w} ${el.y+h} L ${el.x+w+d} ${el.y+h-d} L ${el.x+w+d} ${el.y+h-baseH-d} L ${el.x+w} ${el.y+h-baseH} Z`} {...common} />);
-                faces.push(<path key="hr" d={`M ${el.x} ${el.y+h-baseH} L ${el.x+w/2} ${el.y} L ${el.x+w} ${el.y+h-baseH} Z`} {...common} fillOpacity={0.4} />);
-                faces.push(<path key="hr2" d={`M ${el.x+w/2} ${el.y} L ${el.x+w/2+d} ${el.y-d} L ${el.x+w+d} ${el.y+h-baseH-d} L ${el.x+w} ${el.y+h-baseH} Z`} {...common} fillOpacity={0.4} />);
-                if (el.showInternal) lines.push(<line key="h" x1={el.x+w/2} y1={el.y} x2={el.x+w/2} y2={el.y+h} {...dotted} />);
-            } else if (el.shape3D === 'cylinder' || el.shape3D === 'silo' || el.shape3D === 'tube') {
-                faces.push(<ellipse key="e1" cx={el.x+w/2} cy={el.y+h} rx={w/2} ry={d/2} {...common} />);
-                faces.push(<rect key="r1" x={el.x} y={el.y+d/2} width={w} height={h-d/2} {...common} stroke="none" />);
-                faces.push(<ellipse key="e2" cx={el.x+w/2} cy={el.y+d/2} rx={w/2} ry={d/2} {...common} fillOpacity={0.3} />);
-                lines.push(<line key="l1" x1={el.x} y1={el.y+d/2} x2={el.x} y2={el.y+h} stroke={el.stroke} strokeWidth="2" />, <line key="l2" x1={el.x+w} y1={el.y+d/2} x2={el.x+w} y2={el.y+h} stroke={el.stroke} strokeWidth="2" />);
-                if (el.shape3D === 'silo') faces.push(<path key="dome" d={`M ${el.x} ${el.y+d/2} A ${w/2} ${w/2} 0 0 1 ${el.x+w} ${el.y+d/2}`} {...common} fillOpacity={0.4} />);
-                if (el.shape3D === 'tube') faces.push(<ellipse key="inner1" cx={el.x+w/2} cy={el.y+d/2} rx={w/4} ry={d/4} {...common} fill="white" fillOpacity="1" />, <ellipse key="inner2" cx={el.x+w/2} cy={el.y+h} rx={w/4} ry={d/4} {...common} fill="none" strokeDasharray="3"/>);
-                if (el.showInternal && el.shape3D !== 'tube') lines.push(<line key="h" x1={el.x+w/2} y1={el.y+d/2} x2={el.x+w/2} y2={el.y+h} {...dotted} />);
-            } else if (el.shape3D === 'cone' || el.shape3D === 'icecream') {
-                const isIce = el.shape3D === 'icecream'; const apexY = isIce ? el.y+h : el.y; const baseY = isIce ? el.y+d/2 : el.y+h;
-                faces.push(<ellipse key="base" cx={el.x+w/2} cy={baseY} rx={w/2} ry={d/2} {...common} />, <path key="side" d={`M ${el.x} ${baseY} L ${el.x+w/2} ${apexY} L ${el.x+w} ${baseY} Z`} {...common} />);
-                if (isIce) faces.push(<path key="scoop" d={`M ${el.x} ${baseY} A ${w/2} ${w/2} 0 0 1 ${el.x+w} ${baseY}`} {...common} fillOpacity={0.4} />);
-                if (el.showInternal) lines.push(<line key="h" x1={el.x+w/2} y1={apexY} x2={el.x+w/2} y2={baseY} {...dotted} />);
-            } else if (el.shape3D === 'sphere' || el.shape3D === 'hemi') {
-                if (el.shape3D === 'hemi') faces.push(<ellipse key="b" cx={el.x+w/2} cy={el.y+w/2} rx={w/2} ry={w/6} {...common} />, <path key="d" d={`M ${el.x} ${el.y+w/2} A ${w/2} ${w/2} 0 0 1 ${el.x+w} ${el.y+w/2}`} {...common} fillOpacity={0.3} transform={`rotate(180, ${el.x+w/2}, ${el.y+w/2})`}/>);
-                else faces.push(<circle key="s1" cx={el.x+w/2} cy={el.y+w/2} r={w/2} {...common} fillOpacity={0.2} />, <ellipse key="eq" cx={el.x+w/2} cy={el.y+w/2} rx={w/2} ry={w/6} {...common} fill="none" strokeDasharray="4" />);
-                if (el.showInternal) lines.push(<line key="r" x1={el.x+w/2} y1={el.y+w/2} x2={el.x+w} y2={el.y+w/2} {...dotted} />);
-            }
-            
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        {faces}{lines}
-                    </g>
-                    {showUI && renderHandles(el, r)}
-                </React.Fragment>
-            );
-        }
-
-        // Dice
-        if (el.type === 'dice') {
-            const dice = el.diceData || [];
-            const cols = Math.ceil(Math.sqrt(dice.length));
-            const cellSize = el.width / cols;
-            const rows = Math.ceil(dice.length / cols);
-            const actualGridHeight = rows * cellSize; 
-
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move" onDoubleClick={() => rollDice(el.id)}>
-                        {dice.map((d, i) => {
-                            const dx = el.x + (i % cols) * cellSize;
-                            const dy = el.y + Math.floor(i / cols) * cellSize;
-                            const dSize = cellSize * 0.85;
-                            return (
-                                <g key={i}>
-                                    <rect x={dx + cellSize * 0.075} y={dy + cellSize * 0.075} width={dSize} height={dSize} fill="white" stroke="black" strokeWidth="3" rx={dSize * 0.2} className={el.isRolling ? "animate-pulse" : ""} />
-                                    <text x={dx + cellSize/2} y={dy + cellSize/2 + (dSize*0.15)} textAnchor="middle" fontSize={dSize * 0.5} fontWeight="900" fill="black" className="select-none pointer-events-none">{d.value}</text>
-                                </g>
-                            );
-                        })}
-                    </g>
-                    
-                    <foreignObject x={el.x} y={el.y + actualGridHeight + 10} width={el.width} height={60} className="ui-ignore pointer-events-auto overflow-visible">
-                        <div className="flex justify-center w-full h-full" onPointerDown={e => e.stopPropagation()}>
-                            <button 
-                                onClick={() => rollDice(el.id)} 
-                                className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white font-black uppercase text-[12px] tracking-widest rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 w-max"
-                            >
-                                <Dices size={16} /> {lang === 'sv' ? "Slå" : "Roll"}
-                            </button>
-                        </div>
-                    </foreignObject>
-
-                    {showUI && renderHandles(el, el.width/2)}
-                </React.Fragment>
-            );
-        }
-        // Interactive Calculator
-        if (el.type === 'calculator') {
-            const currentMode = el.calcMode || 'LTR';
-        
-            const calcButtons = [
-                '(', ')', '^', '√',
-                'AC', 'DEL', '%', '÷',
-                '7', '8', '9', '×',
-                '4', '5', '6', '-',
-                '1', '2', '3', '+',
-                '0', '.', 'π', '='
-            ];
-        
-            const handleCalcClick = (btn) => {
-                setElements(prev => prev.map(o => {
-                    if (o.id !== el.id) return o;
-                    let expr = o.expression || "";
-                    let res = o.result || "";
-                    let ans = o.ans || "";
-        
-                    if (btn === 'AC') { 
-                        expr = ""; res = ""; 
-                    } else if (btn === 'DEL') { 
-                        expr = expr.slice(0, -1); res = ""; 
-                    } else if (btn === '=') {
-                        try {
-                            let parsed = expr
-                                .replace(/×/g, '*')
-                                .replace(/÷/g, '/')
-                                .replace(/π/g, Math.PI.toString())
-                                .replace(/(\d+(\.\d+)?)%/g, (_, num) => (parseFloat(num)/100).toString());
-        
-                            let evaluated;
-                            
-                            if (currentMode === 'PEMDAS') {
-                                // STANDARD JS MATH EVALUATION
-                                let pemdasStr = parsed
-                                    .replace(/\^/g, '**')
-                                    .replace(/√\(([^)]+)\)/g, 'Math.sqrt($1)')
-                                    .replace(/√(\d+(\.\d+)?)/g, 'Math.sqrt($1)');
-                                evaluated = new Function(`return ${pemdasStr}`)();
-                            } else {
-                                // CUSTOM LEFT-TO-RIGHT (LTR) EVALUATION ENGINE
-                                const solveLTR = (equation) => {
-                                    let str = equation;
-                                    // 1. Solve roots with parens
-                                    while (str.includes('√(')) {
-                                        str = str.replace(/√\(([^()]+)\)/g, (_, inner) => Math.sqrt(solveLTR(inner)).toString());
-                                    }
-                                    // 2. Solve parens recursively
-                                    while (str.includes('(')) {
-                                        str = str.replace(/\(([^()]+)\)/g, (_, inner) => solveLTR(inner).toString());
-                                    }
-                                    // 3. Solve raw roots
-                                    str = str.replace(/√(\d+(?:\.\d+)?)/g, (_, num) => Math.sqrt(parseFloat(num)).toString());
-                                    
-                                    // 4. Tokenize: Separate ALL operators from numbers
-                                    let tokens = str.match(/\d+(?:\.\d+)?|[+\-*/^]/g);
-                                    if (!tokens) return parseFloat(str) || 0;
-                                    
-                                    let result = 0;
-                                    let startIndex = 0;
-                            
-                                    // Handle leading negative sign (e.g., "-5 + 3")
-                                    if (tokens[0] === '-') {
-                                        result = -parseFloat(tokens[1] || 0);
-                                        startIndex = 2;
-                                    } else {
-                                        result = parseFloat(tokens[0] || 0);
-                                        startIndex = 1;
-                                    }
-                                    
-                                    for (let i = startIndex; i < tokens.length; i += 2) {
-                                        let op = tokens[i];
-                                        
-                                        // Handle negative numbers written after an operator (e.g., "5 * -3")
-                                        let nextNumOffset = 1;
-                                        let isNegative = false;
-                                        if (tokens[i+1] === '-') {
-                                            isNegative = true;
-                                            nextNumOffset = 2;
-                                        }
-                                        
-                                        let nextNum = parseFloat(tokens[i + nextNumOffset] || 0);
-                                        if (isNegative) nextNum = -nextNum;
-                            
-                                        if (op === '+') result += nextNum;
-                                        else if (op === '-') result -= nextNum;
-                                        else if (op === '*') result *= nextNum;
-                                        else if (op === '/') result /= nextNum;
-                                        else if (op === '^') result = Math.pow(result, nextNum);
-                                        
-                                        if (isNegative) i++; // Skip the extra minus sign token in the loop
-                                    }
-                                    return result;
-                                };
-                                evaluated = solveLTR(parsed);
-                            }
-                            
-                            // Safe Rounding for floating point errors
-                            const final = Math.round(evaluated * 10000000) / 10000000;
-                            res = final.toString();
-                            ans = final.toString();
-                        } catch (e) {
-                            res = "Error";
-                        }
-                    } else {
-                        if (res !== "" && res !== "Error" && !['+', '-', '×', '÷', '^', '%'].includes(btn)) {
-                            expr = btn; 
-                        } else if (res !== "" && res !== "Error") {
-                            expr = res + btn; 
-                        } else {
-                            expr += btn;
-                        }
-                        res = "";
-                    }
-                    return { ...o, expression: expr, result: res, ans: ans };
-                }));
-            };
-        
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="#1e293b" rx={24 * (el.width / 280)} stroke="#334155" strokeWidth="6" className="shadow-2xl" />
-                        
-                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height}>
-                            <div 
-                                style={{ width: '280px', height: '440px', transform: `scale(${el.width / 280})`, transformOrigin: 'top left' }} 
-                                className="flex flex-col p-5 pointer-events-auto"
-                            >
-                                {/* 🟢 NEW: Hardware Header with Mode Toggle */}
-                                <div className="flex justify-between items-center mb-2 px-1 ui-ignore" onPointerDown={e => e.stopPropagation()}>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Anpassa</span>
-                                    <button 
-                                        onClick={() => setElements(prev => prev.map(o => o.id === el.id ? { ...o, calcMode: currentMode === 'LTR' ? 'PEMDAS' : 'LTR' } : o))}
-                                        className={`text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-inner transition-colors cursor-pointer
-                                            ${currentMode === 'LTR' ? 'bg-amber-500/20 text-amber-400' : 'bg-indigo-500/20 text-indigo-400'}`}
-                                        title={lang === 'sv' ? "Ändra beräkningsordning" : "Toggle Calculation Order"}
-                                    >
-                                        {currentMode === 'LTR' ? 'L->R MODE' : 'PEMDAS MODE'}
-                                    </button>
-                                </div>
-        
-                                <div className="bg-white rounded-xl h-32 mb-5 p-4 flex flex-col justify-between items-end border-4 border-slate-200 shadow-inner font-mono overflow-hidden shrink-0">
-                                    <div className="text-slate-500 font-bold text-3xl tracking-widest w-full text-right overflow-hidden break-all">
-                                        {el.expression}
-                                    </div>
-                                    <div className="text-slate-900 text-5xl font-black truncate w-full text-right mt-1">
-                                        {el.result}
-                                    </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-4 gap-2.5 flex-1 ui-ignore" onPointerDown={e => e.stopPropagation()}>
-                                    {calcButtons.map(btn => {
-                                        let bg = "bg-slate-200 hover:bg-slate-300 text-slate-800 border-b-4 border-slate-300 active:border-b-0 active:translate-y-1";
-                                        if (btn === 'AC' || btn === 'DEL') bg = "bg-rose-500 hover:bg-rose-600 text-white border-b-4 border-rose-700 active:border-b-0 active:translate-y-1";
-                                        if (btn === '=') bg = "bg-indigo-500 hover:bg-indigo-600 text-white border-b-4 border-indigo-700 active:border-b-0 active:translate-y-1";
-                                        if (['÷', '×', '-', '+'].includes(btn)) bg = "bg-amber-400 hover:bg-amber-500 text-slate-900 border-b-4 border-amber-600 active:border-b-0 active:translate-y-1";
-                                        
-                                        return (
-                                            <button 
-                                                key={btn} onClick={() => handleCalcClick(btn)}
-                                                className={`${bg} rounded-xl font-black text-lg shadow-sm flex items-center justify-center transition-all cursor-pointer`}
-                                            >
-                                                {btn}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </foreignObject>
-                    </g>
-                    {showUI && renderHandles(el)}
-                </React.Fragment>
-            );
-        }
-        // MathLive
-        if (el.type === 'math') {
-            const isEditing = editingId === el.id;
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} onDoubleClick={() => setEditingId(el.id)} className="pointer-events-auto cursor-move">
-                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.9" stroke={isSelected ? "#3b82f6" : "transparent"} strokeWidth="2" rx="8" />
-                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height} className="ui-ignore" style={{ pointerEvents: isEditing ? 'auto' : 'none' }}>
-                            <math-field style={{ width: '100%', height: '100%', background: 'transparent', fontSize: `${el.fontSize}px`, border: 'none', color: 'black' }} onInput={e => setElements(prev => prev.map(n => n.id === el.id ? {...n, label: e.target.value} : n))} ref={(elDom) => { if (elDom && elDom.value !== el.label) elDom.value = el.label; }}>
-                                {el.label}
-                            </math-field>
-                        </foreignObject>
-                    </g>
-                    {showUI && renderHandles(el, r)}
-                </React.Fragment>
             );
         }
 
@@ -1566,9 +974,8 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                 if (!selection.rangeCount) return;
 
                 if (cmd === 'fontSize') {
-                    // 🟢 FIXED: Use a styled <span> wrapper instead of deprecated document.execCommand('fontSize')
                     const range = selection.getRangeAt(0);
-                    if (range.collapsed) return; // Nothing selected
+                    if (range.collapsed) return;
 
                     const span = document.createElement('span');
                     span.style.fontSize = `${val}px`;
@@ -1579,9 +986,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                         range.insertNode(span);
                         selection.removeAllRanges();
                         selection.addRange(range);
-                    } catch (err) {
-                        console.error("Font size apply error:", err);
-                    }
+                    } catch (err) {}
                 } else if (cmd === 'foreColor') {
                     const range = selection.getRangeAt(0);
                     if (!range.collapsed) {
@@ -1596,7 +1001,6 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                     document.execCommand(cmd, false, val);
                 }
 
-                // Instantly sync the text to state
                 const node = document.getElementById(`rich-text-${el.id}`);
                 if (node) {
                     const html = node.innerHTML;
@@ -1612,7 +1016,7 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                     <g transform={transform} data-id={el.id} className="pointer-events-auto">
                         <rect 
                             x={el.x} y={el.y} width={el.width} height={el.height} 
-                            fill="white" fillOpacity={isEditing ? 1 : 1} 
+                            fill="white" fillOpacity={isEditing ? 1 : 0.95} 
                             stroke={isSelected ? "#3b82f6" : "#e2e8f0"} strokeWidth={isSelected ? 3 : 1} rx="8"
                             style={{ cursor: isEditing ? 'text' : 'move' }}
                             onDoubleClick={(e) => { e.stopPropagation(); setEditingId(el.id); }}
@@ -1622,24 +1026,21 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                             style={{ pointerEvents: isEditing ? 'auto' : 'none' }}
                         >
                             <div 
-                                id={`rich-text-${el.id}`} //   NEW: Added ID so the toolbar can find and save it
+                                id={`rich-text-${el.id}`}
                                 contentEditable={isEditing} suppressContentEditableWarning
-                                className="w-full h-full p-4 outline-none font-sans text-slate-800 overflow-hidden [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2"
+                                className="w-full h-full p-4 outline-none font-sans text-slate-800 overflow-hidden"
                                 style={{ 
                                     whiteSpace: 'pre-wrap', 
                                     wordBreak: 'break-word', 
-                                    listStylePosition: 'inside',
-                                    fontSize: '32px',
+                                    fontSize: '28px',
                                     lineHeight: '1.25'
                                 }}
-                                //   NEW: Uncontrolled Ref loading prevents React from randomly wiping the DOM
                                 ref={(node) => {
                                     if (node && node.getAttribute('data-init') !== 'true') {
                                         node.innerHTML = el.content || '';
                                         node.setAttribute('data-init', 'true');
                                     }
                                 }}
-                                //   NEW: Saves text constantly as you type
                                 onInput={(e) => {
                                     const html = e.currentTarget.innerHTML;
                                     const scrollH = e.currentTarget.scrollHeight;
@@ -1656,55 +1057,28 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                         </foreignObject>
 
                         {isEditing && (
-                            <foreignObject x={el.x} y={el.y - 55} width={Math.max(el.width, 650)} height={55} className="ui-ignore pointer-events-auto overflow-visible">
+                            <foreignObject x={el.x} y={el.y - 55} width={Math.max(el.width, 500)} height={55} className="ui-ignore pointer-events-auto overflow-visible">
                                 <div 
                                     className="flex items-center gap-2 bg-slate-900 p-2 rounded-xl shadow-2xl border border-slate-700 w-max"
                                     onPointerDown={e => { 
                                         e.stopPropagation(); 
-                                        if (e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
-                                            e.preventDefault(); 
-                                        }
+                                        if (e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') e.preventDefault(); 
                                     }} 
                                 >
-                                    <button onClick={() => applyStyle('bold')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded font-bold">B</button>
-                                    <button onClick={() => applyStyle('italic')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded italic font-serif">I</button>
-                                    <button onClick={() => applyStyle('underline')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded underline">U</button>
-                                    
+                                    <button onClick={() => applyStyle('bold')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded font-bold cursor-pointer">B</button>
+                                    <button onClick={() => applyStyle('italic')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded italic font-serif cursor-pointer">I</button>
+                                    <button onClick={() => applyStyle('underline')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded underline cursor-pointer">U</button>
                                     <div className="w-px h-6 bg-slate-700 mx-1" />
-                                    
                                     <select 
                                         onChange={(e) => applyStyle('fontSize', e.target.value)} 
                                         className="bg-slate-800 text-white text-[12px] h-8 rounded px-2 outline-none border border-slate-700 cursor-pointer"
-                                        defaultValue="32"
+                                        defaultValue="28"
                                     >
-                                        {[12, 14, 16, 18, 20, 24, 32, 48, 64, 90, 114].map(sz => (
+                                        {[14, 18, 24, 28, 36, 48, 64].map(sz => (
                                             <option key={sz} value={sz}>{sz}px</option>
                                         ))}
                                     </select>
-
-                                    <div className="w-px h-6 bg-slate-700 mx-1" />
-
-                                    <button onClick={() => applyStyle('insertUnorderedList')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center" title="Punktlista"><List size={16}/></button>
-                                    <button onClick={() => applyStyle('insertOrderedList')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center" title="Numrerad lista"><ListOrdered size={16}/></button>
-                                    
-                                    <div className="w-px h-6 bg-slate-700 mx-1" />
-                                    
-                                    <button onClick={() => applyStyle('justifyLeft')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center" title="Vänsterjustera"><AlignLeft size={16}/></button>
-                                    <button onClick={() => applyStyle('justifyCenter')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center" title="Centrera"><AlignCenter size={16}/></button>
-                                    <button onClick={() => applyStyle('justifyRight')} className="w-8 h-8 text-white hover:bg-slate-700 rounded flex items-center justify-center" title="Högerjustera"><AlignRight size={16}/></button>
-
-                                    <div className="w-px h-6 bg-slate-700 mx-1" />
-                                    
-                                    <div className="relative flex items-center justify-center w-8 h-8 hover:bg-slate-700 rounded overflow-hidden" title="Byt färg">
-                                        <Palette size={16} className="text-white absolute pointer-events-none" />
-                                        <input
-                                            type="color"
-                                            className="absolute inset-[-10px] w-[50px] h-[50px] cursor-pointer opacity-0 z-10"
-                                            onChange={(e) => applyStyle('foreColor', e.target.value)}
-                                        />
-                                    </div>
-
-                                    <button onClick={() => setEditingId(null)} className="ml-2 px-4 py-1.5 bg-emerald-500 text-white text-[11px] font-black uppercase tracking-wider rounded-lg hover:bg-emerald-600 active:scale-95 transition-all">
+                                    <button onClick={() => setEditingId(null)} className="ml-2 px-3 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider rounded-lg hover:bg-emerald-600 active:scale-95 transition-all cursor-pointer">
                                         Klar
                                     </button>
                                 </div>
@@ -1716,258 +1090,41 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
             );
         }
 
-        // 🟢 NEW: The Dynamic "Smart Box" for Clues
-        if (el.type === 'dynamicClues') {
-            const q = livePacket.find(p => p.id === el.questionId);
-            const clues = q?.clues || q?.resolvedData?.clues || [];
-            const progress = el.progress || 0; 
-            
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="white" fillOpacity="0.95" stroke={isSelected ? "#3b82f6" : "#e2e8f0"} strokeWidth={isSelected ? 3 : 2} rx="14" />
-                        
-                        {/* 🟢 FIX 1: Removed 'ui-ignore' so the SVG canvas can actually detect your mouse clicks! */}
-                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height}>
-                            <div className="w-full h-full flex flex-col pointer-events-auto">
-                                
-                                {/* 🟢 FIX 2: Drag Handle - Letting the click pass through means you can instantly drag the box! */}
-                                <div className="w-full h-8 flex items-center justify-center shrink-0 opacity-40 hover:opacity-100 transition-opacity cursor-move" style={{ touchAction: 'none' }}>
-                                    <div className="w-12 h-1.5 bg-slate-400 rounded-full pointer-events-none" />
-                                </div>
-
-                                <div 
-                                    className="flex-1 px-4 pb-4 overflow-y-auto custom-scrollbar cursor-text"
-                                    onPointerDown={(e) => {
-                                        // 🟢 FIX 3: We stop the canvas from dragging so you can scroll the text, 
-                                        // but we force the menu to open by selecting the box directly!
-                                        e.stopPropagation();
-                                        setSelectedId(el.id);
-                                    }} 
-                                >
-                                    {clues.length === 0 ? (
-                                        <div className="text-slate-400 italic font-bold text-center mt-4 text-sm">
-                                            {lang === 'sv' ? "Inga steg tillgängliga" : "No steps available"}
-                                        </div>
-                                    ) : progress === 0 ? (
-                                        <div className="text-slate-400 italic font-bold text-center mt-10 text-sm">
-                                            {lang === 'sv' ? "Använd pilarna nedan för att visa stegen." : "Use the arrows below to reveal steps."}
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2.5">
-                                                    {/* 🟢 NEW: Dynamic Array Generation based on layout mode */}
-                                                    {(el.clueLayout === 'paging' ? (progress > 0 ? [clues[progress - 1]] : []) : clues.slice(0, progress)).map((clue, arrayIdx) => {
-                                                        const idx = el.clueLayout === 'paging' ? progress - 1 : arrayIdx;
-                                                        const text = typeof clue === 'object' ? clue[lang] || clue.text : clue;
-                                                        const latex = typeof clue === 'object' ? clue.latex : null;
-                                                        const fSize = el.fontSize || 24;
-                                                        
-                                                        return (
-                                                            <div key={idx} className="pb-3 mb-3 border-b border-slate-100 last:border-0 last:mb-0 last:pb-0 animate-in fade-in slide-in-from-top-2">
-                                                                <div className="font-black text-indigo-500 uppercase tracking-widest mb-1 opacity-70" style={{ fontSize: `${Math.max(10, fSize * 0.5)}px` }}>
-                                                                    {lang === 'sv' ? 'Steg' : 'Step'} {idx + 1}
-                                                                </div>
-                                                                {el.showText !== false && text && (
-                                                                    <div className="font-bold text-slate-700 leading-relaxed" style={{ fontSize: `${fSize}px` }}>
-                                                                        <MathDisplay content={text} />
-                                                                    </div>
-                                                                )}
-                                                                {el.showLatex !== false && latex && (
-                                                                    <div className="mt-2 text-center text-indigo-600 font-serif bg-indigo-50/50 py-2 rounded-lg border border-indigo-100" style={{ fontSize: `${fSize * 1.2}px` }}>
-                                                                        <MathDisplay content={`$$${latex}$$`} />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                    )}
-                                </div>
-
-                                <div 
-                                    className="h-10 bg-slate-50 border-t border-slate-200 flex items-center justify-between px-3 shrink-0 rounded-b-[14px]"
-                                    onPointerDown={(e) => {
-                                        // 🟢 FIX 4: Clicking the footer also selects the box without dragging
-                                        e.stopPropagation();
-                                        setSelectedId(el.id);
-                                    }} 
-                                >
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); setElements(p=>p.map(o=>o.id===el.id?{...o, progress: Math.max(0, progress-1)}:o)); }} 
-                                        className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors cursor-pointer"
-                                    >
-                                        <ChevronLeft size={18}/>
-                                    </button>
-                                    <span className="text-[11px] font-black text-slate-500 tracking-widest select-none">{progress} / {clues.length}</span>
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); setElements(p=>p.map(o=>o.id===el.id?{...o, progress: Math.min(clues.length, progress+1)}:o)); }} 
-                                        className="p-1.5 hover:bg-slate-200 rounded-md text-slate-500 transition-colors cursor-pointer"
-                                    >
-                                        <ChevronRight size={18}/>
-                                    </button>
-                                </div>
-                            </div>
-                        </foreignObject>
-                    </g>
-                    {showUI && renderHandles(el)}
-                </React.Fragment>
-            );
-        }
-
-        // Volume Cue / Work Mode Visual Box
-        if (el.type === 'volume_cue') {
-            const levels = {
-                quiet: { 
-                    emoji: '🤫', 
-                    sv: 'Tyst Arbete', 
-                    en: 'Quiet Work', 
-                    textColor: 'text-rose-700',
-                    pillBg: 'bg-white text-rose-700 border-rose-200'
-                },
-                whisper: { 
-                    emoji: '💬', 
-                    sv: 'Viskröst (Par)', 
-                    en: 'Whisper (Pair)', 
-                    textColor: 'text-amber-700',
-                    pillBg: 'bg-white text-amber-700 border-amber-200'
-                },
-                discuss: { 
-                    emoji: '🗣️', 
-                    sv: 'Diskutera (Grupp)', 
-                    en: 'Discuss (Group)', 
-                    textColor: 'text-emerald-700',
-                    pillBg: 'bg-white text-emerald-700 border-emerald-200'
-                }
-            };
-            const config = levels[el.volumeLevel || 'quiet'];
-            
-            // Calculate scale relative to a tight compact base of 150px width
-            const scaleFactor = el.width / 150;
-            
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                        {/* Invisible SVG rect behind the HTML ensures perfect clicking & dragging */}
-                        <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="transparent" />
-                        
-                        <foreignObject x={el.x} y={el.y} width={el.width} height={el.height} className="pointer-events-none overflow-visible">
-                            <div className="w-full h-full flex flex-col items-center justify-center p-1 select-none">
-                                {/* Emoji with zero padding */}
-                                <div style={{ fontSize: `${Math.max(32, 52 * scaleFactor)}px` }} className="drop-shadow-sm leading-none inline-block mb-2">
-                                    {config.emoji}
-                                </div>
-                                
-                                {/* Clean white pill background behind the text */}
-                                <div className={`px-3 py-1 rounded-full shadow-sm border ${config.pillBg} whitespace-nowrap`}>
-                                    <div style={{ fontSize: `${Math.max(9, 12 * scaleFactor)}px` }} className="font-black uppercase tracking-widest text-center leading-tight">
-                                        {lang === 'sv' ? config.sv : config.en}
-                                    </div>
-                                </div>
-                            </div>
-                        </foreignObject>
-                    </g>
-                    {showUI && renderHandles(el)}
-                </React.Fragment>
-            );
-        }
-
-        // Standard Shapes (Rect, Circle, Triangle, Fractions, Spinner)
-        // Standard Shapes (Rect, Circle, Triangle, Fractions, Spinner)
-        const fills = [], borderL = [];
-        const isFractionOrSpinner = el.type.includes('frac_') || el.type === 'spinner';
-
-        if (['rect', 'frac_rect', 'circle', 'frac_circle', 'spinner', 'triangle'].includes(el.type)) {
-            if (el.divisions) {
-                for (let i = 0; i < el.divisions; i++) {
-                    const secCol = el.sliceColors?.[i] || 'transparent';
-                    if (el.type.includes('rect')) {
-                        const sw = el.width / el.divisions;
-                        fills.push(
-                            <rect 
-                                key={i} 
-                                x={el.x + (i * sw)} 
-                                y={el.y} 
-                                width={sw} 
-                                height={el.height} 
-                                fill={secCol} 
-                                className="cursor-pointer" 
-                                onPointerDown={(e) => { 
-                                    e.stopPropagation(); 
-                                    toggleFill(el.id, i); 
-                                }} 
-                            />
-                        );
-                        if (i > 0) borderL.push(<line key={i} x1={el.x + (i * sw)} y1={el.y} x2={el.x + (i * sw)} y2={el.y + el.height} stroke="black" strokeWidth="2" />);
-                    } else if (el.type.includes('circle') || el.type === 'spinner') {
-                        const a = 360/el.divisions, sA = i*a, eA = (i+1)*a;
-                        const x1 = cx + r*Math.cos(Math.PI*sA/180), y1 = cy + r*Math.sin(Math.PI*sA/180);
-                        const x2 = cx + r*Math.cos(Math.PI*eA/180), y2 = cy + r*Math.sin(Math.PI*eA/180);
-                        fills.push(
-                            <path 
-                                key={i} 
-                                d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${a > 180 ? 1 : 0} 1 ${x2} ${y2} Z`} 
-                                fill={el.type === 'spinner' && secCol === 'transparent' ? 'white' : secCol} 
-                                className="cursor-pointer" 
-                                onPointerDown={(e) => { 
-                                    e.stopPropagation(); 
-                                    toggleFill(el.id, i); 
-                                }} 
-                            />
-                        );
-                        borderL.push(<line key={`l-${i}`} x1={cx} y1={cy} x2={x1} y2={y1} stroke="black" strokeWidth="2" />);
-                    }
-                }
-            }
-
-            // Outer outline / base shape element
-            const baseShape = el.type === 'triangle' ? (() => {
-                const pts = el.triangleType === 'right' 
-                    ? `${el.x},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height}` 
-                    : el.triangleType === 'isosceles' 
-                        ? `${el.x+el.width/2},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height}` 
-                        : `${el.x+el.width/4},${el.y} ${el.x},${el.y+el.height} ${el.x+el.width},${el.y+el.height}`;
-                return <polygon points={pts} fill="transparent" stroke="black" strokeWidth={el.strokeWidth} />;
-            })() : el.type.includes('rect') ? (
-                <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="transparent" stroke="black" strokeWidth={el.strokeWidth} />
-            ) : (
-                <circle cx={cx} cy={cy} r={r} fill="transparent" stroke="black" strokeWidth={el.strokeWidth} />
-            );
-
-            return (
-                <g key={el.id} data-id={el.id} transform={transform} className="pointer-events-auto cursor-move">
-                    {/* 🟢 FIX: Render baseShape BEHIND fills for fraction/spinner shapes so slice click handlers receive events */}
-                    {isFractionOrSpinner && baseShape}
-                    {fills}
-                    {!isFractionOrSpinner && baseShape}
-                    {borderL}
-
-                    {el.type === 'spinner' && (
-                        <g style={{ transform: `rotate(${el.arrowRotation || 0}deg)`, transition: 'transform 3s cubic-bezier(0.1, 0, 0.1, 1)', transformOrigin: `${cx}px ${cy}px` }}>
-                            <line x1={cx} y1={cy} x2={cx} y2={cy-r+15} stroke="black" strokeWidth="8" strokeLinecap="round" />
-                            <path d={`M ${cx-10} ${cy-r+25} L ${cx} ${cy-r+5} L ${cx+10} ${cy-r+25} Z`} fill="black" />
-                        </g>
-                    )}
-                    {el.showLabel && <text x={el.type.includes('rect') ? el.x + el.width/2 : cx} y={el.type.includes('rect') ? el.y - 25 : cy - r - 25} textAnchor="middle" className="text-3xl font-black fill-black select-none pointer-events-none">{Object.keys(el.sliceColors || {}).length}/{el.divisions}</text>}
-                    {showUI && renderHandles(el, r)}
-                </g>
-            );
-        }
-
         return null;
     };
 
     return (
-        <>
+        <div className="relative w-full h-full overflow-hidden">
             <svg 
                 ref={svgRef}
                 viewBox={`0 0 ${resolution.w} ${resolution.h}`}
                 preserveAspectRatio="xMidYMid meet"
-                className={`absolute inset-0 w-full h-full z-30 ${activeTool === 'select' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair'}`}
-                onPointerDown={handlePointerDown}
+                style={{ touchAction: 'none' }}
+                className={`absolute inset-0 w-full h-full z-30 pointer-events-auto ${
+                    readOnly ? 'cursor-default' :
+                    activeTool === 'eraser' ? 'cursor-cell' :
+                    activeTool === 'select' ? 'cursor-default' : 'cursor-crosshair'
+                }`}
+                onPointerDown={readOnly ? undefined : handlePointerDown}
             >
-                {elements.map(renderElement)}
+                {Array.isArray(elements) && elements.map(renderElement)}
 
-                {isDrawing && (activeTool === 'pen' || activeTool === 'highlighter') && activePathRef.current && (
+                {selectionBox && (
+                    <rect
+                        x={Math.min(selectionBox.startX, selectionBox.currentX)}
+                        y={Math.min(selectionBox.startY, selectionBox.currentY)}
+                        width={Math.abs(selectionBox.currentX - selectionBox.startX)}
+                        height={Math.abs(selectionBox.currentY - selectionBox.startY)}
+                        fill="#6366f1"
+                        fillOpacity="0.18"
+                        stroke="#4f46e5"
+                        strokeWidth="2"
+                        strokeDasharray="6 4"
+                        className="pointer-events-none"
+                    />
+                )}
+
+                {isDrawing && activePathRef.current && (
                     <path 
                         id="active-drawing-path"
                         stroke={activePathRef.current.stroke} 
@@ -1979,19 +1136,37 @@ export default function InteractiveCanvas({ lang = 'sv', bgType, onToggleBg, ele
                     />
                 )}
             </svg>
+            
+            {/* Unified Toolbar */}
+            {toolbarMode !== 'none' && !readOnly && (
+                <Toolbar 
+                    lang={lang} 
+                    activeTool={activeTool} 
+                    setActiveTool={setActiveTool} 
+                    color={color} 
+                    setColor={setColor} 
+                    onClear={() => onCustomClear ? onCustomClear() : setElements([])} 
+                    canUndo={false} 
+                    canRedo={false} 
+                    bgType={bgType} 
+                    onToggleBg={onToggleBg} 
+                    mode={toolbarMode}
+                    allowedTools={allowedTools}
+                    activeDrawer={activeDrawer}
+                    onToggleDrawer={handleToggleDrawer}
+                />
+            )}
 
-            <Toolbar 
-                lang={lang} 
-                activeTool={activeTool} 
-                setActiveTool={setActiveTool} 
-                color={color} 
-                setColor={setColor} 
-                onClear={() => setElements([])} 
-                canUndo={false} 
-                canRedo={false}
-                bgType={bgType}
-                onToggleBg={onToggleBg}
-            />
-        </>
+            {/* 🟢 Render drawer ONLY if not suppressed by a parent view */}
+            {!readOnly && renderDrawer && (
+                <WhiteboardDrawer
+                    activeDrawer={activeDrawer}
+                    onClose={() => handleToggleDrawer(null)}
+                    onSpawn={handleSpawnFromDrawer}
+                    lang={lang}
+                    showDividingLine={showDividingLine}
+                />
+            )}
+        </div>
     );
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Printer, ChevronLeft, Loader2 } from 'lucide-react';
 import VisualRenderer from '../visuals/VisualRenderer';
 import MathDisplay from '../shared/MathDisplay';
-
+import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
 
 // --- LANDSCAPE PRINT STYLES ---
 const printStyles = `
@@ -12,8 +12,8 @@ const printStyles = `
             min-height: 210mm;
             padding: 15mm;
             margin: 20px auto;
-            background: white !important; /* Force white background */
-            color: black !important; /* Force black text */
+            background: white !important;
+            color: black !important;
             box-shadow: 0 0 20px rgba(0,0,0,0.15);
             transform-origin: top center;
         }
@@ -36,7 +36,6 @@ const printStyles = `
         tr { page-break-inside: avoid !important; break-inside: avoid !important; }
         th, td { border: 1px solid #94a3b8 !important; word-wrap: break-word !important; color: black !important; }
 
-        /* Stops grid from slicing items across pages */
         .print-grid-2 { display: flex !important; flex-wrap: wrap !important; gap: 2.5rem 2rem !important; }
         .print-col-2 { width: calc(50% - 1rem) !important; flex-shrink: 0 !important; }
         
@@ -47,6 +46,7 @@ const printStyles = `
 
 export default function LandscapeReport({ session, packet, responses, lang = 'sv', onClose }) {
     const [printSteps, setPrintSteps] = useState(false);
+    const [printCanvas, setPrintCanvas] = useState(false);
     
     const students = useMemo(() => {
         return [...new Set(responses.map(r => r.student_alias))].sort();
@@ -149,10 +149,9 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
         }, 400); 
 
         return () => clearTimeout(timer);
-    }, [packet, students, responses, printSteps]);
+    }, [packet, students, responses, printSteps, printCanvas]);
 
     return (
-        // 🟢 FORCED LIGHT THEME: Using `bg-slate-100` and `text-slate-900` rather than dynamic variables
         <div className="fixed inset-0 z-[150] bg-slate-100 text-slate-900 overflow-y-auto no-scrollbar print-modal-container font-sans">
             <style>{printStyles}</style>
             
@@ -172,20 +171,35 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
 
             <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center z-50 no-print shadow-sm text-slate-900">
                 <div className="flex items-center gap-4">
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400"><ChevronLeft size={24}/></button>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 cursor-pointer"><ChevronLeft size={24}/></button>
                     <h3 className="font-black uppercase italic tracking-tighter">{lang === 'sv' ? "Förhandsgranskning" : "Print Preview"}</h3>
                 </div>
                 <div className="flex gap-4 items-center">
+                    {/* Scratchpad Steps Toggle */}
                     <div className="flex items-center gap-2 mr-2 no-print border-r border-slate-200 pr-4">
                         <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{lang === 'sv' ? 'Uträkningar' : 'Work Steps'}</span>
-                        <button onClick={() => setPrintSteps(!printSteps)} className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${printSteps ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                        <button onClick={() => setPrintSteps(!printSteps)} className={`w-8 h-4 rounded-full transition-all relative p-0.5 cursor-pointer ${printSteps ? 'bg-indigo-600' : 'bg-slate-300'}`}>
                             <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-all ${printSteps ? 'translate-x-4' : 'translate-x-0'}`} />
                         </button>
                     </div>
-                    <button onClick={() => window.print()} disabled={isMeasuring} className="bg-indigo-600 text-white px-8 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-50">
+
+                    {/* Canvas Drawings Toggle */}
+                    <div className="flex items-center gap-2 mr-2 no-print border-r border-slate-200 pr-4">
+                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                            {lang === 'sv' ? 'Rityta' : 'Canvas'}
+                        </span>
+                        <button 
+                            onClick={() => setPrintCanvas(!printCanvas)} 
+                            className={`w-8 h-4 rounded-full transition-all relative p-0.5 cursor-pointer ${printCanvas ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                        >
+                            <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-all ${printCanvas ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </button>
+                    </div>
+
+                    <button onClick={() => window.print()} disabled={isMeasuring} className="bg-indigo-600 text-white px-8 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-50 cursor-pointer">
                         <Printer size={16}/> {lang === 'sv' ? "Skriv ut" : "Print"}
                     </button>
-                    <button onClick={onClose} className="bg-slate-900 text-white px-8 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">
+                    <button onClick={onClose} className="bg-slate-900 text-white px-8 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg cursor-pointer">
                         {lang === 'sv' ? "Stäng" : "Close"}
                     </button>
                 </div>
@@ -229,7 +243,6 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                 <td className="p-1.5 text-center text-[9px] font-black border-r border-slate-300 bg-slate-50 text-slate-900">{score}/{packet.length}</td>
                                                 {studentResps.map((r, idx) => (
                                                     <td key={idx} className="p-0 text-center border-r border-slate-300">
-                                                        {/* 🟢 HARDCODED TEXT COLORS FOR THE MATRIX SYMBOLS */}
                                                         <div className={`w-full h-7 flex items-center justify-center text-xs font-black ${r ? (r.is_correct ? 'text-black' : 'text-slate-800') : 'text-slate-400'}`}>
                                                             {r ? (r.is_correct ? '✓' : '✕') : '-'}
                                                         </div>
@@ -258,7 +271,6 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                             <div className="flex items-start gap-2 mb-3">
                                                 <span className="font-black text-slate-800">{originalIndex + 1}.</span>
                                                 <div className="font-bold text-slate-700 leading-tight w-full">
-                                                    
                                                     <MathDisplay content={rd?.description} />
                                                     
                                                     {hasVisual && (
@@ -308,7 +320,6 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                     <div key={idx} className="flex gap-2 text-[9px] leading-tight mb-2">
                                                         <span className="font-black text-slate-500 shrink-0">{idx + 1}.</span>
                                                         <div className="flex-1">
-                                                            
                                                             <div className="text-slate-600 italic mb-0.5 truncate opacity-80 font-medium">
                                                                 <MathDisplay content={typeof item.question === 'string' ? item.question : 'Uppgift'} />
                                                             </div>
@@ -317,6 +328,20 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                                                 Svar: {item.resp?.answer || '-'} 
                                                                 {item.resp && (item.resp.is_correct ? ' ✓' : ' ✕')}
                                                             </div>
+
+                                                            {/* 🟢 STUDENT CANVAS WORK (Guarded by printCanvas) */}
+                                                            {printCanvas && item.resp?.canvas_state && Array.isArray(item.resp.canvas_state) && item.resp.canvas_state.length > 0 && (
+                                                                <div className="mt-2 w-full h-[120px] relative bg-white border border-slate-300 rounded-lg overflow-hidden shadow-xs pointer-events-none">
+                                                                    <InteractiveCanvas
+                                                                        elements={item.resp.canvas_state}
+                                                                        readOnly={true}
+                                                                        toolbarMode="none"
+                                                                        resolution={{ w: 1920, h: 1080 }}
+                                                                    />
+                                                                </div>
+                                                            )}
+
+                                                            {/* Math Scratchpad Work Steps (Guarded by printSteps) */}
                                                             {printSteps && item.resp?.work_steps && item.resp.work_steps.length > 0 && (
                                                                 <div className="mt-1.5 p-2 bg-white rounded-lg text-[9px] font-mono text-slate-800 border border-slate-300 shadow-sm">
                                                                     <span className="text-[8px] font-sans font-black text-slate-500 uppercase block mb-1">
@@ -378,7 +403,7 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                     <span className="font-black text-slate-900 text-[10px]"><MathDisplay content={getCorrectAnswer(q)} /></span>
                                 </div>
                             </div>
-                        )
+                        );
                     })}
                 </div>
 
@@ -400,6 +425,19 @@ export default function LandscapeReport({ session, packet, responses, lang = 'sv
                                             <div className="flex-1">
                                                 <div className="text-slate-600 italic mb-0.5"><MathDisplay content={typeof item.question === 'string' ? item.question : 'Uppgift'} /></div>
                                                 <div className="font-black text-[10px] text-slate-900">Svar: {item.resp?.answer || '-'}</div>
+
+                                                {/* 🟢 SANDBOX CANVAS (Guarded by printCanvas for accurate page break measurement) */}
+                                                {printCanvas && item.resp?.canvas_state && Array.isArray(item.resp.canvas_state) && item.resp.canvas_state.length > 0 && (
+                                                    <div className="mt-2 w-full h-[120px] relative bg-white border border-slate-300 rounded-lg overflow-hidden pointer-events-none">
+                                                        <InteractiveCanvas
+                                                            elements={item.resp.canvas_state}
+                                                            readOnly={true}
+                                                            toolbarMode="none"
+                                                            resolution={{ w: 1920, h: 1080 }}
+                                                        />
+                                                    </div>
+                                                )}
+
                                                 {printSteps && item.resp?.work_steps && item.resp.work_steps.length > 0 && (
                                                     <div className="mt-1.5 p-2 border border-slate-300 rounded-lg text-[10px] text-slate-800 bg-white">
                                                         <span className="block mb-1 text-[8px] font-sans font-black text-slate-500 uppercase">

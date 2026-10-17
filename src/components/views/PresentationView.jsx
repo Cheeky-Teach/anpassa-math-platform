@@ -13,6 +13,11 @@ import { supabase } from '../../lib/supabaseClient';
 import { useMyCoach } from '../../hooks/useMyCoach';
 import MyCoachModal from '../modals/MyCoachModal';
 import PreferencesToggle from '../ui/PreferencesToggle';
+import LiveLaunchModal from '../modals/LiveLaunchModal';
+import WhiteboardDrawer from '../whiteboard/WhiteboardDrawer';
+import AlgebraTileTool from '../whiteboard/tools/manipulatives/AlgebraTileTool';
+import FractionShapesTool from '../whiteboard/tools/geometry/FractionShapesTool';
+import CoordinatePlaneTool from '../whiteboard/tools/analysis/CoordinatePlaneTool';
 
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 
@@ -32,6 +37,86 @@ export default function PresentationView({
     const [slides, setSlides] = useState(initialSlides || [{ id: `slide_${Date.now()}`, elements: [], scrollX: 0, scrollY: 0, title: 'Slide 1', activeIds: [] }]);
     const [activeSlideIndex, setActiveSlideIndex] = useState(0);
     const [editingSlideIndex, setEditingSlideIndex] = useState(null);
+
+    // Active Drawer state for side bins: 'algebra' | 'shapes' | 'fractions' | 'data' | null
+    const [activeDrawer, setActiveDrawer] = useState(null);
+
+    const handleToggleDrawer = (drawerKey) => {
+        setActiveDrawer(prev => (prev === drawerKey ? null : drawerKey));
+    };
+
+    const handleUniversalSpawn = (type, payload = {}) => {
+        const id = Date.now().toString();
+
+        if (type === 'algebra_tile') {
+            const { kind, sign, side } = payload;
+            const currentSlideElements = slides[activeSlideIndex]?.elements || [];
+            const sideTiles = currentSlideElements.filter(el => {
+                if (el.type !== 'algebra_tile') return false;
+                return side === 'HL' ? el.x >= 960 : el.x < 960;
+            });
+
+            const col = sideTiles.length % 5;
+            const row = Math.floor(sideTiles.length / 5);
+            const targetBaseX = side === 'HL' ? 1150 : 380;
+            const spawnX = targetBaseX + col * 70;
+            const spawnY = 280 + row * 70;
+
+            const newTile = AlgebraTileTool.create(spawnX, spawnY, kind, sign);
+            updateCurrentSlideElements(prev => [...prev, newTile]);
+            return;
+        }
+
+        // 🟢 FIX FOR 3D SHAPES (Silo, Cone, Cube, Prism, etc.)
+        if (type.startsWith('3d_')) {
+            const shapeName = type.replace('3d_', '');
+            updateCurrentSlideElements(prev => [...prev, {
+                id,
+                type: 'shapes_3d',
+                shape3D: shapeName,
+                x: 600,
+                y: 300,
+                width: 220,
+                height: 220,
+                stroke: '#0284c7', // Crisp cyan/blue outline
+                strokeWidth: 3,
+                fill: 'rgba(2, 132, 199, 0.08)', // Light translucent fill
+                showInternal: true,
+                rotation: 0,
+                opacity: 1
+            }]);
+            return;
+        }
+
+        if (['frac_rect', 'frac_circle', 'spinner'].includes(type)) {
+            const newEl = FractionShapesTool.createDefault(id, '#06b6d4', type);
+            updateCurrentSlideElements(prev => [...prev, newEl]);
+            return;
+        }
+
+        if (type === 'coord') {
+            const newEl = CoordinatePlaneTool.createDefault(id, '#06b6d4');
+            updateCurrentSlideElements(prev => [...prev, newEl]);
+            return;
+        }
+
+        // 🟢 2D Shapes & Generic Tools
+        const isShape = ['rect', 'circle', 'triangle'].includes(type);
+        updateCurrentSlideElements(prev => [...prev, {
+            id,
+            type,
+            x: 600,
+            y: 300,
+            width: isShape ? 200 : 300,
+            height: isShape ? 200 : 250,
+            stroke: '#06b6d4',
+            strokeWidth: 3,
+            fill: isShape ? 'rgba(6, 182, 212, 0.08)' : 'none',
+            rotation: 0,
+            opacity: 1,
+            ...(type === 'triangle' ? { triangleType: 'right' } : {})
+        }]);
+    };
 
     // 🟢 NEW: Slide Reordering & Duplication State
     const [draggedSlideIndex, setDraggedSlideIndex] = useState(null);
@@ -109,6 +194,8 @@ export default function PresentationView({
 
     const [isLeftCollapsed, setIsLeftCollapsed] = useState(false); 
     const [isRightCollapsed, setIsRightCollapsed] = useState(true);
+
+    const [showLiveModal, setShowLiveModal] = useState(false);
     
     //  ALL 3 settings now pull from the saved database object!
     const [globalZoom, setGlobalZoom] = useState(initialSettings?.globalZoom || 1.6);
@@ -269,36 +356,43 @@ export default function PresentationView({
     };
 
     //    WIRED via progressSync
-    const handleGoLive = async () => {
-        if (!window.confirm(lang === 'sv' ? "Starta live-lektion med denna presentation?" : "Start live lesson with this presentation?")) return;
-        
+    const handleGoLive = () => {
+        setShowLiveModal(true);
+    };
+
+    const confirmLaunchLive = async (configuredSettings) => {
+        setShowLiveModal(false);
+
         syncBatchProgress('presentation_live_started', livePacket, {
-            app_mode: 'teacher_live'
+            app_mode: 'teacher_live',
+            ...configuredSettings
         });
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Not authenticated");
 
-            // Generate a random 6-character room code
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-            // Structure the live payload
             const sessionPayload = {
-                mode: 'presentation', 
+                mode: 'presentation',
                 slides: slides,
                 packet: livePacket,
-                settings: { bgType, viewMode, globalZoom } // Save the global zoom state
+                settings: {
+                    bgType,
+                    viewMode,
+                    globalZoom,
+                    ...configuredSettings // 👈 Contains allowCanvas, allowScratchpad, responseStyle
+                }
             };
 
-            // Upsert the teacher's active room
             const { data: roomData, error } = await supabase
                 .from('rooms')
-                .insert([{ 
-                    teacher_id: user.id, 
+                .insert([{
+                    teacher_id: user.id,
                     class_code: code,
                     status: 'active',
-                    current_slide_index: 0, 
+                    current_slide_index: activeSlideIndex || 0,
                     active_question_data: sessionPayload,
                     title: localTitle || (lang === 'sv' ? "Live Presentation" : "Live Presentation")
                 }])
@@ -307,13 +401,9 @@ export default function PresentationView({
 
             if (error) throw error;
 
-            // Trigger QuestionStudio to mount TeacherLiveView without double-routing!
             if (onLaunchLive) {
                 onLaunchLive(roomData);
-            } else {
-                console.warn("Missing onLaunchLive prop");
             }
-            
         } catch (err) {
             console.error("Failed to start live session:", err);
             alert(lang === 'sv' ? "Kunde inte starta live-lektionen." : "Failed to start live session.");
@@ -876,7 +966,7 @@ export default function PresentationView({
                 </div>
 
                 {/* COLUMN 2: WORKSPACE CANVAS INTERACTION SHELF */}
-                <main className="relative overflow-hidden h-full w-full flex flex-col items-center justify-center bg-slate-900/5 transition-colors duration-300">
+                <main className="relative overflow-hidden h-full w-full flex flex-col items-center justify-center bg-slate-900 transition-colors duration-300 p-6">
                     
                     {/* Floating Navigation Header (Overlays the Canvas Layer) */}
                     <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40 pointer-events-none select-none">
@@ -888,16 +978,18 @@ export default function PresentationView({
                             <ChevronLeft size={28} />
                         </button>
 
-                        <div className="bg-slate-900/90 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest backdrop-blur-sm shadow border border-white/10 pointer-events-auto flex items-center gap-2 transition-all">
+                        {/* 🟢 2. High-contrast Badge: Shows active slide number and 16:9 aspect ratio */}
+                        <div className="bg-slate-800/90 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest backdrop-blur-md shadow-lg border border-slate-700 pointer-events-auto flex items-center gap-2.5 transition-all">
                             {sidebarTab === 'slides' ? (
                                 <>
-                                    <Presentation size={14} className="text-emerald-400"/>
+                                    <Presentation size={15} className="text-emerald-400"/>
                                     <span className="truncate max-w-[150px]">{slides[activeSlideIndex]?.title}</span>
                                     <span className="text-white/50 px-1 border-l border-white/20">{activeSlideIndex + 1} / {slides.length}</span>
+                                    <span className="text-emerald-400 text-[10px] bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">16:9</span>
                                 </>
                             ) : (
                                 <>
-                                    <FileQuestion size={14} className="text-purple-400"/>
+                                    <FileQuestion size={15} className="text-purple-400"/>
                                     {activeIds.length > 0 ? (lang === 'sv' ? `Uppgift ${presentationIndex + 1} av ${livePacket.length}` : `Question ${presentationIndex + 1} of ${livePacket.length}`) : (lang === 'sv' ? 'Ingen uppgift vald' : 'No Question Selected')}
                                 </>
                             )}
@@ -912,10 +1004,10 @@ export default function PresentationView({
                         </button>
                     </div>
 
-                    {/*  NEW: The Responsive 16:9 Presentation Boundary Wrapper */}
+                    {/* 🟢 3. The 16:9 Slide Canvas Wrapper with Deep Shadow and 4px Boundary Stroke */}
                     <div className="relative w-full h-full max-w-[1600px] max-h-[900px] flex items-center justify-center">
                         <div 
-                            className={`relative w-full flex flex-col items-center shadow-2xl rounded-2xl border border-slate-300 transition-colors duration-300 overflow-hidden ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
+                            className={`relative w-full flex flex-col items-center shadow-[0_25px_70px_rgba(0,0,0,0.6)] rounded-3xl border-4 border-slate-700/80 transition-colors duration-300 overflow-hidden ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
                             style={{
                                 aspectRatio: '16/9',
                                 height: '100%',
@@ -927,7 +1019,6 @@ export default function PresentationView({
                                 } : {})
                             }}
                         >
-                            
                             {/* Slide Content Layers */}
                             {viewMode === 'sheet' ? (
                                 <div className="absolute inset-0 overflow-y-auto custom-scrollbar pt-16 pb-32 flex flex-col justify-start items-center z-10 pointer-events-auto">
@@ -944,7 +1035,6 @@ export default function PresentationView({
                                             {livePacket.map((item, idx) => {
                                                 const isFocused = activeIds.includes(item.id);
                                                 const hasAnyFocus = activeIds.length > 0;
-                                                
                                                 const displayStory = item.showText !== false;
                                                 const rd = item.resolvedData?.renderData;
                                                 const displayLatex = item.showLatex !== false && !rd?.geometry;
@@ -992,22 +1082,17 @@ export default function PresentationView({
 
                                                             <div className={`text-xs flex flex-col h-full justify-between items-${item.align || 'center'} text-${item.align === 'start' ? 'left' : item.align === 'end' ? 'right' : 'center'}`}>
                                                                 <div>
-                                                                    <div className="font-black mb-1 text-slate-400 text-[10px] tracking-widest">
-                                                                        {idx + 1}.
-                                                                    </div>
-                                                                    
+                                                                    <div className="font-black mb-1 text-slate-400 text-[10px] tracking-widest">{idx + 1}.</div>
                                                                     {displayStory && item.instructionMode === 'inline' && (
                                                                         <div className={`font-bold text-slate-800 mb-2 leading-tight border-b border-slate-100 pb-2 ${sizeClasses.desc}`}>
                                                                             <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                                         </div>
                                                                     )}
-                                                                    
                                                                     {displayLatex && rd?.latex && (
                                                                         <div className={`py-3 text-center font-serif text-slate-900 ${sizeClasses.latex}`}>
                                                                             <MathDisplay content={`$$${rd.latex}$$`} />
                                                                         </div>
                                                                     )}
-                                                                    
                                                                     {rd?.options && rd.options.length > 0 && (
                                                                         <div className="mt-2 grid grid-cols-2 gap-1.5 w-full">
                                                                             {rd.options.map((opt, oIdx) => (
@@ -1018,7 +1103,6 @@ export default function PresentationView({
                                                                             ))}
                                                                         </div>
                                                                     )}
-                                                                    
                                                                     {displayVisual && rd && (
                                                                         <div 
                                                                             onClick={(e) => { e.stopPropagation(); setSpotlightVisual(rd); }}
@@ -1069,9 +1153,22 @@ export default function PresentationView({
                                 livePacket={livePacket}
                                 clueProgress={clueProgress}
                                 resolution={{ w: 1920, h: 1080 }}
+                                activeDrawer={activeDrawer}
+                                onToggleDrawer={handleToggleDrawer}
+                                renderDrawer={false}
+                                
                             />
                         </div>
                     </div>
+
+                    {/* Whiteboard Side Drawer */}
+                    <WhiteboardDrawer
+                        activeDrawer={activeDrawer}
+                        onClose={() => setActiveDrawer(null)}
+                        onSpawn={handleUniversalSpawn}
+                        lang={lang}
+                        showDividingLine={true}
+                    />
                 </main>
 
                 {/* COLUMN 3: SOLUTIONS & COMPACT ANSWER KEY DRAWER PANEL */}
@@ -1369,6 +1466,23 @@ export default function PresentationView({
                     </div>
                 </div>
             )}
+            
+            {/* LIVE SESSION PRE-FLIGHT MODAL */}
+            <LiveLaunchModal
+                isOpen={showLiveModal}
+                onClose={() => setShowLiveModal(false)}
+                onConfirm={confirmLaunchLive}
+                packetCount={livePacket.length}
+                hasDrawings={slides.some(s => (s.elements || []).length > 0)}
+                lang={lang}
+                initialSettings={{
+                    pacing: 'open',
+                    order: 'original',
+                    summary: true,
+                    allowScratchpad: true,
+                    allowCanvas: slides.some(s => (s.elements || []).length > 0)
+                }}
+            />
         </div>
     );
 }

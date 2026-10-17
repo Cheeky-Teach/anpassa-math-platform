@@ -48,6 +48,10 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const globalZoom = session?.active_question_data?.settings?.globalZoom || 1.0;
     const [activeSlideIndex, setActiveSlideIndex] = useState(session?.current_slide_index || 0);
     const [freeTextReviewResp, setFreeTextReviewResp] = useState(null);
+    const [canvasSpotlight, setCanvasSpotlight] = useState(null);
+
+    // Presentation Drawer Tab: 'matrix' vs 'work'
+    const [drawerTab, setDrawerTab] = useState('work');
 
     //  Local state holding slide elements so drawings persist between slide turns
     const [liveSlides, setLiveSlides] = useState(
@@ -86,6 +90,60 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
             await supabase.from('rooms').update({ current_slide_index: newIdx }).eq('id', session.id);
         } catch (err) {
             console.error("Failed to sync slide index:", err);
+        }
+    };
+
+
+    // 🟢 NEW: Handles resetting slides with ONLY manipulatives (no questions)
+    const handleNewSlideRound = async () => {
+        const confirmMsg = lang === 'sv'
+            ? "Detta startar en ny runda och rensar alla elevers inskickade tavlor för denna slide. Fortsätt?"
+            : "This starts a new round and resets all student canvas submissions for this slide. Continue?";
+
+        if (!window.confirm(confirmMsg)) return;
+
+        setIsRegenerating(true);
+        try {
+            const nextTimestamp = Date.now();
+
+            // 1. Stamp promptVersion on the current slide in liveSlides
+            const updatedSlides = liveSlides.map((s, idx) => 
+                idx === activeSlideIndex 
+                    ? { ...s, promptVersion: nextTimestamp } 
+                    : s
+            );
+
+            // 2. Broadcast updated slides to the room so students unlock immediately
+            const { error: roomError } = await supabase
+                .from('rooms')
+                .update({
+                    active_question_data: {
+                        ...session.active_question_data,
+                        slides: updatedSlides
+                    }
+                })
+                .eq('id', session.id);
+
+            if (roomError) throw roomError;
+
+            // 3. Delete previous submissions for this slide index
+            const { error: deleteError } = await supabase
+                .from('responses')
+                .delete()
+                .eq('room_id', session.id)
+                .eq('question_index', activeSlideIndex);
+
+            if (deleteError) throw deleteError;
+
+            // 4. Update local state
+            setLiveSlides(updatedSlides);
+            setResponses(prev => prev.filter(r => r.question_index !== activeSlideIndex));
+            setStarredStudents([]);
+        } catch (err) {
+            console.error("Failed to start new slide round:", err);
+            alert(lang === 'sv' ? "Kunde inte starta ny runda." : "Failed to reset round.");
+        } finally {
+            setIsRegenerating(false);
         }
     };
 
@@ -375,12 +433,16 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         return base;
     }, [responses, sortMode, randomizedStudents]);
     
-    const questionStats = livePacket.map((_, qIdx) => {
+    const questionStats = (livePacket || []).map((q, qIdx) => {
         const questionResponses = responses.filter(r => r.question_index === qIdx);
         const total = students.length || 0;
         const correct = questionResponses.filter(r => r.is_correct).length;
         const wrong = questionResponses.filter(r => !r.is_correct).length;
-        return { correctPct: total > 0 ? (correct / total) * 100 : 0, wrongPct: total > 0 ? (wrong / total) * 100 : 0, remaining: total - questionResponses.length };
+        return { 
+            correctPct: total > 0 ? (correct / total) * 100 : 0, 
+            wrongPct: total > 0 ? (wrong / total) * 100 : 0, 
+            remaining: Math.max(0, total - questionResponses.length) 
+        };
     });
 
     const getStatusColor = (isCorrect, answered, answerText, answerType) => {
@@ -391,12 +453,25 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
         return isCorrect ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.2)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.2)]';
     };
 
-    const activePacketIndices = isPresentationMode && slides[activeSlideIndex]
-        ? livePacket.reduce((acc, q, idx) => {
-            if (slides[activeSlideIndex].activeIds.includes(q.id)) acc.push(idx);
+    // 🟢 Support slides with or without questions:
+    const activePacketIndices = React.useMemo(() => {
+        if (!isPresentationMode || !slides[activeSlideIndex]) {
+            return livePacket.map((_, idx) => idx);
+        }
+        
+        const pinnedIds = slides[activeSlideIndex].activeIds || [];
+        const matched = livePacket.reduce((acc, q, idx) => {
+            if (pinnedIds.includes(q.id)) acc.push(idx);
             return acc;
-        }, [])
-        : livePacket.map((_, idx) => idx);
+        }, []);
+
+        // If the slide has no question cards, treat the active slide itself as the single column index
+        if (matched.length === 0) {
+            return [activeSlideIndex];
+        }
+
+        return matched;
+    }, [isPresentationMode, slides, activeSlideIndex, livePacket]);
 
     const updateCurrentSlideElements = (action) => {
         setLiveSlides(prevSlides => {
@@ -416,12 +491,20 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
             <thead className="sticky top-0 z-10 shadow-sm">
                 <tr className="bg-[var(--bg-surface)] border-b border-[var(--border-main)]">
                     <th className="p-3 w-48 bg-[var(--bg-surface-hover)] border-r border-[var(--border-main)]">
-                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{lang === 'sv' ? "Klassens resultat" : "Class results"}</span>
+                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                            {lang === 'sv' ? "Klassens resultat" : "Class results"}
+                        </span>
                     </th>
                     <th className="p-3 w-20 border-r border-[var(--border-main)] bg-[var(--bg-surface-hover)]"></th>
                     {activePacketIndices.map((qIdx) => {
-                        const stats = questionStats[qIdx];
-                        const isFreeText = livePacket[qIdx].answerType === 'free_text';
+                        const targetItem = livePacket[qIdx];
+                        const isFreeText = targetItem?.answerType === 'free_text' || (!targetItem && isPresentationMode);
+                        const stats = questionStats[qIdx] || { correctPct: 0, wrongPct: 0, remaining: 0 };
+                        const qResponses = responses.filter(r => 
+                            r.question_index === qIdx || 
+                            (r.is_slide_submission && r.question_index === activeSlideIndex)
+                        );
+
                         return (
                             <th key={`stat-${qIdx}`} className="p-1.5 border-r border-[var(--border-main)] align-bottom">
                                 <div className="w-full h-12 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg overflow-hidden flex flex-col-reverse relative group cursor-help">
@@ -434,7 +517,14 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                             </div>
                                         </>
                                     ) : (
-                                        <div style={{ height: `${(responses.filter(r => r.question_index === qIdx).length / Math.max(1, students.length)) * 100}%` }} className="bg-blue-500 transition-all duration-500 opacity-50" />
+                                        <div 
+                                            style={{ 
+                                                height: `${students.length > 0 
+                                                    ? Math.min(100, (qResponses.length / students.length) * 100) 
+                                                    : 0}%` 
+                                            }} 
+                                            className="bg-indigo-500 transition-all duration-500 opacity-60" 
+                                        />
                                     )}
                                 </div>
                             </th>
@@ -442,66 +532,103 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     })}
                 </tr>
                 <tr className="bg-[var(--bg-surface-hover)] border-b border-[var(--border-main)] text-[var(--text-main)]">
-                    <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-[var(--border-main)]">{lang === 'sv' ? "Elev" : "Student"}</th>
-                    <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-[var(--border-main)]">{lang === 'sv' ? "Klar" : "Done"}</th>
-                    {activePacketIndices.map((qIdx) => (
-                        <th key={`head-${qIdx}`} className="p-0 border-r border-[var(--border-main)] transition-colors hover:bg-[var(--theme-indigo-bg)] group/col">
-                            <button 
-                                onClick={() => setZoomIndex(qIdx)} 
-                                title={lang === 'sv' ? "Granska uppgift" : "Inspect question"}
-                                className="w-full h-full py-2 flex flex-col items-center justify-center gap-1 cursor-zoom-in"
-                            >
-                                <div className="flex items-center gap-1">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-center text-[var(--text-muted)] group-hover/col:text-[var(--theme-indigo-text)] transition-colors">
-                                        Q{qIdx + 1}
-                                    </span>
-                                    <Maximize2 size={10} className="text-[var(--theme-indigo-text)] opacity-0 group-hover/col:opacity-100 transition-opacity" />
-                                </div>
-                                {showActualAnswers && (
-                                    <span className="theme-orange text-[8px] text-[var(--brand-solid)] font-black bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded truncate max-w-[50px] tracking-normal shadow-sm group-hover/col:border-[var(--brand-solid)]" title={getCorrectAnswer(livePacket[qIdx])}>
-                                        {getCorrectAnswer(livePacket[qIdx])}
-                                    </span>
-                                )}
-                            </button>
-                        </th>
-                    ))}
+                    <th className="p-3 w-48 text-[9px] font-black uppercase tracking-widest border-r border-[var(--border-main)]">
+                        {lang === 'sv' ? "Elev" : "Student"}
+                    </th>
+                    <th className="p-3 w-20 text-[9px] font-black uppercase tracking-widest text-center border-r border-[var(--border-main)]">
+                        {lang === 'sv' ? "Klar" : "Done"}
+                    </th>
+                    {activePacketIndices.map((qIdx) => {
+                        const targetItem = livePacket[qIdx];
+                        const isCanvasSlideOnly = !targetItem && isPresentationMode;
+
+                        return (
+                            <th key={`head-${qIdx}`} className="p-0 border-r border-[var(--border-main)] transition-colors hover:bg-[var(--theme-indigo-bg)] group/col">
+                                <button 
+                                    onClick={() => {
+                                        if (targetItem) setZoomIndex(qIdx);
+                                    }} 
+                                    title={isCanvasSlideOnly ? (lang === 'sv' ? "Taveluppgift" : "Canvas Task") : (lang === 'sv' ? "Granska uppgift" : "Inspect question")}
+                                    className={`w-full h-full py-2 flex flex-col items-center justify-center gap-1 ${targetItem ? 'cursor-zoom-in' : 'cursor-default'}`}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-center text-[var(--text-muted)] group-hover/col:text-[var(--theme-indigo-text)] transition-colors">
+                                            {isCanvasSlideOnly ? (lang === 'sv' ? `Slide ${activeSlideIndex + 1}` : `Slide ${activeSlideIndex + 1}`) : `Q${qIdx + 1}`}
+                                        </span>
+                                        {targetItem && <Maximize2 size={10} className="text-[var(--theme-indigo-text)] opacity-0 group-hover/col:opacity-100 transition-opacity" />}
+                                    </div>
+                                    {showActualAnswers && targetItem && (
+                                        <span className="theme-orange text-[8px] text-[var(--brand-solid)] font-black bg-[var(--brand-bg)] border border-[var(--brand-border)] px-1.5 py-0.5 rounded truncate max-w-[50px] tracking-normal shadow-sm group-hover/col:border-[var(--brand-solid)]" title={getCorrectAnswer(targetItem)}>
+                                            {getCorrectAnswer(targetItem)}
+                                        </span>
+                                    )}
+                                </button>
+                            </th>
+                        );
+                    })}
                 </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)]">
                 {students.map((student, sIdx) => {
                     const studentResps = responses.filter(r => r.student_alias === student);
-                    const progress = Math.round((studentResps.length / livePacket.length) * 100);
+                    const totalTasks = Math.max(1, livePacket.length || 1);
+                    const progress = Math.round((studentResps.length / totalTasks) * 100);
+
                     return (
                         <tr key={student} className="hover:bg-[var(--bg-surface)] transition-colors group/row">
                             <td className="p-2 border-r border-[var(--border-subtle)] font-bold text-[var(--text-main)] text-xs truncate flex items-center justify-between">
                                 <span>{isAnonymous ? `Elev ${sIdx + 1}` : student}</span>
-                                <button onClick={() => handleKickStudent(student)} className="opacity-0 group-hover/row:opacity-100 p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all"><UserX size={14} /></button>
+                                <button onClick={() => handleKickStudent(student)} className="opacity-0 group-hover/row:opacity-100 p-1 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all">
+                                    <UserX size={14} />
+                                </button>
                             </td>
                             <td className="p-2 border-r border-[var(--border-subtle)] text-center">
-                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${progress === 100 ? 'bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)]' : 'bg-[var(--bg-surface-hover)] text-[var(--text-muted)]'}`}>
-                                    {progress}%
+                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${progress >= 100 ? 'bg-[var(--theme-emerald-bg)] text-[var(--theme-emerald-text)]' : 'bg-[var(--bg-surface-hover)] text-[var(--text-muted)]'}`}>
+                                    {Math.min(100, progress)}%
                                 </span>
                             </td>
                             {activePacketIndices.map((qIdx) => {
-                                const resp = responses.find(r => r.student_alias === student && r.question_index === qIdx);
-                                const isFreeText = livePacket[qIdx].answerType === 'free_text';
+                                const targetItem = livePacket[qIdx];
+                                
+                                // Safe lookup checking both standard question index and slide submissions
+                                const resp = responses.find(r => 
+                                    r.student_alias === student && 
+                                    (r.question_index === qIdx || (r.is_slide_submission && r.question_index === activeSlideIndex))
+                                );
+
+                                const isFreeText = targetItem?.answerType === 'free_text';
+                                const hasCanvasData = resp?.canvas_state && Array.isArray(resp.canvas_state) && resp.canvas_state.length > 0;
+                                const isSlideCanvasOnly = resp?.answer === '[CANVAS_SUBMISSION]' || resp?.is_slide_submission || hasCanvasData;
+
                                 return (
                                     <td 
                                         key={`cell-${sIdx}-${qIdx}`} 
                                         className="p-1 border-r border-[var(--border-subtle)]"
                                         onClick={() => {
                                             if (!resp) return;
-                                            if (isFreeText) setFreeTextReviewResp(resp);
-                                            else handleManualOverride(resp.id, resp.is_correct);
+                                            if (hasCanvasData) {
+                                                setCanvasSpotlight(resp);
+                                            } else if (isFreeText) {
+                                                setFreeTextReviewResp(resp);
+                                            } else {
+                                                handleManualOverride(resp.id, resp.is_correct);
+                                            }
                                         }} 
                                     >
                                         <div 
-                                            title={resp ? (isFreeText ? "Klicka för att läsa svar" : `Svar: ${resp.answer} (Klicka för att ändra rättning)`) : 'Inget svar'}
-                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer hover:scale-95 active:scale-90 ${getStatusColor(resp?.is_correct, !!resp, resp?.answer, livePacket[qIdx].answerType)}`}
+                                            title={resp ? (hasCanvasData ? "Klicka för att se tavla" : isFreeText ? "Klicka för att läsa svar" : `Svar: ${resp.answer}`) : 'Inget svar'}
+                                            className={`w-full h-8 rounded-md transition-all duration-300 flex items-center justify-center overflow-hidden cursor-pointer hover:scale-95 active:scale-90 ${
+                                                getStatusColor(
+                                                    resp?.is_correct, 
+                                                    !!resp, 
+                                                    resp?.answer, 
+                                                    isSlideCanvasOnly ? 'free_text' : (targetItem?.answerType || 'standard')
+                                                )
+                                            }`}
                                         >
                                             {showActualAnswers && resp && (
                                                 <span className="text-[9px] font-black text-white px-1 truncate flex items-center justify-center">
-                                                    {isFreeText ? <MessageSquare size={10} /> : (resp.answer === '[TIMEOUT]' ? 'TID' : resp.answer)}
+                                                    {isSlideCanvasOnly ? 'TAVLA' : isFreeText ? <MessageSquare size={10} /> : (resp.answer === '[TIMEOUT]' ? 'TID' : resp.answer)}
                                                 </span>
                                             )}
                                         </div>
@@ -528,6 +655,191 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
             return [...prev, studentAlias];
         });
     };
+
+    const renderStudentWorkCard = (r, i, isCompact = false) => {
+        const hasCanvas = r.canvas_state && Array.isArray(r.canvas_state) && r.canvas_state.length > 0;
+        const hasScratchpad = r.work_steps && r.work_steps.length > 0;
+        
+        // 🟢 Guard with optional chaining: livePacket[r.question_index]?.answerType
+        const isFreeText = livePacket[r.question_index]?.answerType === 'free_text';
+        const isSlideCanvasOnly = r.answer === '[CANVAS_SUBMISSION]' || r.is_slide_submission || hasCanvas;
+
+    return (
+        <div key={r.id || i} className={`bg-[var(--bg-card)] p-3.5 rounded-2xl border shadow-sm flex flex-col relative group/card transition-all ${
+            starredStudents.includes(r.student_alias) 
+                ? 'border-amber-400 ring-2 ring-amber-100/50' 
+                : 'border-[var(--border-main)]'
+        }`}>
+            {/* Star Toggle */}
+            <button 
+                onClick={(e) => { e.stopPropagation(); toggleStar(r.student_alias); }}
+                className={`absolute -top-2.5 -right-2.5 p-1.5 bg-white dark:bg-slate-800 rounded-full border shadow-sm hover:scale-110 transition-all z-20 ${
+                    starredStudents.includes(r.student_alias) 
+                        ? 'border-amber-300 opacity-100' 
+                        : 'border-slate-200 dark:border-slate-700 opacity-0 group-hover/card:opacity-100'
+                }`}
+            >
+                <Star size={14} className={starredStudents.includes(r.student_alias) ? 'fill-amber-400 text-amber-500' : 'text-slate-300'} />
+            </button>
+
+            {/* Header: Student Alias & Status */}
+            <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-[var(--border-main)]">
+                <span className="font-bold text-xs text-[var(--text-main)] truncate max-w-[140px]">
+                    {isAnonymous ? `Elev ${i + 1}` : r.student_alias}
+                </span>
+                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                    isSlideCanvasOnly
+                        ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                        : isFreeText 
+                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300' 
+                            : r.is_correct 
+                                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300' 
+                                : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300'
+                }`}>
+                    {isSlideCanvasOnly 
+                        ? (lang === 'sv' ? "Tavla" : "Canvas") 
+                        : (isFreeText ? (lang === 'sv' ? "Text" : "Text") : r.answer)
+                    }
+                </span>
+            </div>
+
+            {/* In TeacherLiveView.jsx -> renderStudentWorkCard */}
+            {hasCanvas && (
+                <div 
+                    onClick={() => setCanvasSpotlight(r)} 
+                    className="w-full aspect-video relative bg-[#f9fbf7] border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden mb-2 cursor-zoom-in group/canvas shadow-inner"
+                >
+                    {/* Layer 1: Original Slide Backdrop (LaTeX, Prompt, Diagram) */}
+                    <div className="absolute inset-0 pointer-events-none opacity-80">
+                        <SlideRenderer
+                            activeIds={liveSlides[activeSlideIndex]?.activeIds || []}
+                            livePacket={livePacket}
+                            lang={lang}
+                            authorMode={false}
+                            globalZoom={globalZoom}
+                            sizeClasses={{ 
+                                desc: 'text-[11px]', 
+                                latex: 'text-xs', 
+                                clue: 'text-[10px]', 
+                                headerText: 'text-xs', 
+                                visualClass: 'scale-75 max-h-[90px]' 
+                            }}
+                        />
+                    </div>
+
+                    {/* Layer 2: Student Vector Canvas (Strokes, Labels, Moved Objects) */}
+                    <div className="absolute inset-0 pointer-events-none">
+                        <InteractiveCanvas
+                            elements={r.canvas_state}
+                            readOnly={true}
+                            toolbarMode="none"
+                            resolution={{ w: 1920, h: 1080 }}
+                        />
+                    </div>
+
+                    {/* Hover zoom indicator */}
+                    <div className="absolute inset-0 bg-slate-900/10 group-hover/canvas:bg-transparent transition-colors flex items-end justify-end p-2 pointer-events-none">
+                        <span className="p-1.5 bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 rounded-lg shadow-sm">
+                            <Maximize2 size={12} />
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            {/* 🟢 FULLSCREEN CANVAS INSPECTION SPOTLIGHT */}
+            {canvasSpotlight && (
+                <div 
+                    onClick={() => setCanvasSpotlight(null)} 
+                    className="fixed inset-0 z-[500] bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center p-6 animate-in fade-in duration-200"
+                >
+                    <div 
+                        onClick={(e) => e.stopPropagation()} 
+                        className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]"
+                    >
+                        {/* Modal Bar */}
+                        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-black uppercase text-slate-800 dark:text-white">
+                                    {isAnonymous ? "Elevlösning" : canvasSpotlight.student_alias}
+                                </span>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                    canvasSpotlight.is_correct ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                                }`}>
+                                    {canvasSpotlight.answer}
+                                </span>
+                            </div>
+                            <button 
+                                onClick={() => setCanvasSpotlight(null)} 
+                                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        {/* Modal Body Container */}
+                        <div className="p-6 flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-950/40 min-h-0">
+                            
+                            {/* 🟢 PASTE YOUR CODE BLOCK HERE (Replaces the old canvas div) */}
+                            <div className="w-full aspect-video max-h-[70vh] bg-[#f9fbf7] rounded-2xl shadow-lg border border-slate-300 dark:border-slate-700 overflow-hidden relative">
+                                {/* Base Slide Content */}
+                                <div className="absolute inset-0 pointer-events-none">
+                                    <SlideRenderer
+                                        activeIds={liveSlides[activeSlideIndex]?.activeIds || []}
+                                        livePacket={livePacket}
+                                        lang={lang}
+                                        authorMode={false}
+                                        globalZoom={globalZoom}
+                                        sizeClasses={{ 
+                                            desc: 'text-m', 
+                                            latex: 'text-xl', 
+                                            clue: 'text-m', 
+                                            headerText: 'text-l', 
+                                            visualClass: 'scale-100 max-h-[180px] mb-2' 
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Student Canvas Overlay */}
+                                <div className="absolute inset-0 pointer-events-none">
+                                    <InteractiveCanvas
+                                        elements={canvasSpotlight.canvas_state}
+                                        readOnly={true}
+                                        toolbarMode="none"
+                                        resolution={{ w: 1920, h: 1080 }}
+                                    />
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Free text answer body */}
+            {isFreeText && (
+                <div className="p-2.5 bg-[var(--bg-surface)] rounded-xl text-xs font-medium text-[var(--text-main)] max-h-36 overflow-y-auto custom-scrollbar mb-2 leading-relaxed">
+                    {r.answer}
+                </div>
+            )}
+
+            {/* Math scratchpad steps */}
+            {hasScratchpad && (
+                <div className="space-y-1 overflow-x-auto custom-scrollbar py-1 text-xs">
+                    {r.work_steps.map((line, lineIdx) => (
+                        <div key={lineIdx} className="bg-[var(--bg-surface)] px-2 py-1 rounded text-[var(--text-main)] font-serif">
+                            <MathDisplay content={`$\\displaystyle ${line}$`} />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {!hasCanvas && !hasScratchpad && !isFreeText && (
+                <div className="text-[10px] text-[var(--text-muted)] italic py-2 text-center">
+                    {lang === 'sv' ? "Bara slutsvar inskickat" : "Only final answer submitted"}
+                </div>
+            )}
+        </div>
+    );
+};
 
     return (
         <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans transition-colors duration-500">
@@ -718,8 +1030,8 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                         {liveSlides[activeSlideIndex]?.title || `Slide ${activeSlideIndex + 1}`} <span className="opacity-50">({activeSlideIndex + 1} / {liveSlides.length})</span>
                                     </div>
                                     
-                                    {/* 🟢 REGENERATE BUTTON */}
-                                    {(liveSlides[activeSlideIndex]?.activeIds || []).length > 0 && (
+                                    {/* 🟢 CONDITIONAL REGEN / NEW ROUND BUTTON */}
+                                    {(liveSlides[activeSlideIndex]?.activeIds || []).length > 0 ? (
                                         <button
                                             onClick={handleRegenerateSlide}
                                             disabled={isRegenerating}
@@ -728,6 +1040,16 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                         >
                                             <RefreshCw size={12} className={isRegenerating ? "animate-spin" : ""} />
                                             <span className="hidden sm:inline">{lang === 'sv' ? "Slumpa Ny" : "Regen"}</span>
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleNewSlideRound}
+                                            disabled={isRegenerating}
+                                            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white border border-amber-600 rounded-md text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all shadow-sm disabled:opacity-50 active:scale-95 cursor-pointer"
+                                            title={lang === 'sv' ? "Starta ny runda och låt elever svara igen" : "Start new round / reset student answers"}
+                                        >
+                                            <RefreshCw size={12} className={isRegenerating ? "animate-spin" : ""} />
+                                            <span className="hidden sm:inline">{lang === 'sv' ? "Ny Omgång" : "New Round"}</span>
                                         </button>
                                     )}
                                 </div>
@@ -765,53 +1087,150 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             </div>
                         </div>
 
-                        {/* 🟢 THE FOCUSED MATRIX (Right Side - Collapsible) */}
-                        <div className={`bg-[var(--bg-card)] rounded-3xl shadow-xl border border-[var(--border-main)] overflow-hidden flex flex-col h-full transition-all duration-500 ease-in-out shrink-0
-                            ${isMatrixCollapsed ? 'w-full lg:w-[64px] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] cursor-pointer' : 'w-full lg:w-7/12 xl:w-1/2'}
-                        `}>
+                        {/* 🟢 THE DUAL DRAWER: Matrix or Direct Student Work */}
+                        <div className={`bg-[var(--bg-card)] rounded-3xl shadow-xl border border-[var(--border-main)] overflow-hidden flex flex-col h-full transition-all duration-500 ease-in-out shrink-0 ${
+                            isMatrixCollapsed ? 'w-full lg:w-[64px] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] cursor-pointer' : 'w-full lg:w-7/12 xl:w-1/2'
+                        }`}>
                             {isMatrixCollapsed ? (
-                                // Collapsed State UI
                                 <div 
                                     className="w-full h-full flex flex-col items-center justify-start py-6 text-[var(--text-muted)] hover:text-[var(--primary-color)] transition-colors cursor-pointer"
                                     onClick={() => setIsMatrixCollapsed(false)}
                                     title={lang === 'sv' ? "Visa Elevsvar" : "Show Student Answers"}
                                 >
                                     <PanelRightOpen size={20} className="shrink-0 mb-8" />
-                                    
-                                    {/* 🟢 FIXED: Replaced CSS -rotate-90 with native writingMode so bounds don't overlap */}
                                     <div 
                                         className="flex items-center gap-3 opacity-60"
                                         style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                                     >
                                         <span className="text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">
-                                            {lang === 'sv' ? "Elever" : "Students"} ({students.length})
+                                            {lang === 'sv' ? "Elevsvar" : "Student Work"} ({students.length})
                                         </span>
                                         <Users size={14} className="rotate-90" />
                                     </div>
                                 </div>
                             ) : (
-                                // Expanded State UI
                                 <>
-                                    <div className="p-3 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-surface)] shrink-0">
-                                        <div className="flex items-center gap-2">
+                                    {/* Drawer Header & Mode Tabs */}
+                                    <div className="p-3 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-surface)] shrink-0 gap-2">
+                                        <div className="flex items-center gap-1.5">
                                             <button 
                                                 onClick={() => setIsMatrixCollapsed(true)}
-                                                className="p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-card)] hover:text-[var(--primary-color)] rounded-md transition-colors"
+                                                className="p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-card)] hover:text-[var(--primary-color)] rounded-md transition-colors cursor-pointer"
                                                 title={lang === 'sv' ? "Dölj" : "Hide"}
                                             >
                                                 <PanelRightClose size={16} />
                                             </button>
-                                            <BarChart3 className="text-[var(--primary-color)]" size={16} />
-                                            <h2 className="text-xs font-black uppercase italic tracking-tighter text-[var(--text-main)] leading-none">
-                                                {lang === 'sv' ? "Aktiva Elever" : "Active Students"}
-                                            </h2>
+                                            
+                                            {/* Tab Buttons */}
+                                            <div className="flex bg-[var(--bg-card)] p-0.5 rounded-lg border border-[var(--border-main)] shadow-inner">
+                                                <button
+                                                    onClick={() => setDrawerTab('work')}
+                                                    className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                                        drawerTab === 'work' 
+                                                            ? 'bg-indigo-600 text-white shadow-sm' 
+                                                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                                    }`}
+                                                >
+                                                    {lang === 'sv' ? "Elevlösningar" : "Student Work"}
+                                                </button>
+                                                <button
+                                                    onClick={() => setDrawerTab('matrix')}
+                                                    className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                                        drawerTab === 'matrix' 
+                                                            ? 'bg-indigo-600 text-white shadow-sm' 
+                                                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                                    }`}
+                                                >
+                                                    {lang === 'sv' ? "Klassmatris" : "Matrix"}
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest bg-[var(--bg-card)] px-2 py-1 rounded-md">
-                                            {students.length} {lang === 'sv' ? "Anslutna" : "Connected"}
+
+                                        {/* 🟢 RIGHT ACTIONS: Compare Button & Connected Student Pill */}
+                                        <div className="flex items-center gap-2">
+                                            {/* Compare Pill: Only shows when 1 or more students are starred */}
+                                            {starredStudents.length > 0 && (
+                                                <button
+                                                    onClick={() => {
+                                                        // Set zoomIndex to the active slide question if not already in zoomed view
+                                                        const activeSlideIds = liveSlides[activeSlideIndex]?.activeIds || [];
+                                                        const targetQId = activeSlideIds[0];
+                                                        const packetIdx = livePacket.findIndex(p => p.id === targetQId);
+                                                        if (packetIdx !== -1) setZoomIndex(packetIdx);
+                                                        setShowWorkGrid(true);
+                                                        setIsComparing(true);
+                                                    }}
+                                                    className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-amber-950 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer animate-in fade-in"
+                                                    title={lang === 'sv' ? "Öppna jämförelsevy" : "Open comparison view"}
+                                                >
+                                                    <Star size={12} className="fill-amber-950" />
+                                                    <span>{lang === 'sv' ? `Jämför (${starredStudents.length})` : `Compare (${starredStudents.length})`}</span>
+                                                </button>
+                                            )}
+
+                                            <div className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest bg-[var(--bg-card)] px-2.5 py-1 rounded-md border border-[var(--border-main)]">
+                                                {students.length} {lang === 'sv' ? "Elever" : "Students"}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="overflow-x-auto overflow-y-auto custom-scrollbar flex-1">
-                                        {renderMatrixTable()}
+
+                                    {/* Drawer Body */}
+                                    <div className="overflow-x-auto overflow-y-auto custom-scrollbar flex-1 p-3">
+                                        {drawerTab === 'matrix' ? (
+                                            renderMatrixTable()
+                                        ) : (
+                                            /* Direct Student Work Cards for Active Slide Questions */
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                                {(() => {
+                                                    const currentSlideQIndices = activePacketIndices;
+                                                    const slideResponses = responses.filter(r => 
+                                                        currentSlideQIndices.includes(r.question_index) || 
+                                                        (r.is_slide_submission && r.question_index === activeSlideIndex)
+                                                    );
+                                                    
+                                                    if (slideResponses.length === 0) {
+                                                        return (
+                                                            <div className="col-span-full py-16 text-center text-slate-400 font-bold uppercase tracking-widest text-xs italic">
+                                                                {lang === 'sv' ? "Inga elevsvar inskickade på denna slide än." : "No student work submitted for this slide yet."}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return slideResponses.map((r, i) => renderStudentWorkCard(r, i));
+                                                })()}
+                                            </div>
+                                        )}
+                                        {/* Floating Drawer Action Dock */}
+                                        {starredStudents.length > 0 && drawerTab === 'work' && (
+                                            <div className="sticky bottom-2 left-0 right-0 mt-3 p-2 bg-slate-900/90 text-white backdrop-blur-md rounded-2xl flex items-center justify-between shadow-xl border border-white/10 z-30 animate-in slide-in-from-bottom-2">
+                                                <div className="flex items-center gap-2 pl-2">
+                                                    <Star size={14} className="fill-amber-400 text-amber-400" />
+                                                    <span className="text-[11px] font-bold">
+                                                        {starredStudents.length} {lang === 'sv' ? "valda svar" : "selected"}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <button
+                                                        onClick={() => setStarredStudents([])}
+                                                        className="px-2.5 py-1 text-[10px] text-slate-300 hover:text-white transition-colors uppercase font-bold"
+                                                    >
+                                                        {lang === 'sv' ? "Rensa" : "Clear"}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            const activeSlideIds = liveSlides[activeSlideIndex]?.activeIds || [];
+                                                            const targetQId = activeSlideIds[0];
+                                                            const packetIdx = livePacket.findIndex(p => p.id === targetQId);
+                                                            if (packetIdx !== -1) setZoomIndex(packetIdx);
+                                                            setShowWorkGrid(true);
+                                                            setIsComparing(true);
+                                                        }}
+                                                        className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-[10px] uppercase tracking-wider rounded-xl shadow-md transition-transform active:scale-95"
+                                                    >
+                                                        {lang === 'sv' ? "Jämför nu" : "Compare now"}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </>
                             )}
@@ -901,17 +1320,42 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 <div className="w-px h-6 bg-[var(--border-strong)] mx-1 hidden sm:block" />
 
                                 <button 
-                                    onClick={() => { setZoomIndex(prev => Math.max(0, prev - 1)); setStarredStudents([]); setIsComparing(false); }}
-                                    disabled={zoomIndex === 0}
+                                    onClick={() => { 
+                                        if (isPresentationMode) {
+                                            handleSlideChange(Math.max(0, activeSlideIndex - 1));
+                                        } else {
+                                            setZoomIndex(prev => Math.max(0, prev - 1));
+                                        }
+                                        setStarredStudents([]); 
+                                        setIsComparing(false); 
+                                    }}
+                                    disabled={isPresentationMode ? activeSlideIndex === 0 : zoomIndex === 0}
                                     className="p-2 hover:bg-[var(--bg-surface)] rounded-full disabled:opacity-10 transition-all text-[var(--text-muted)]"
-                                ><ChevronLeft size={24}/></button>
+                                >
+                                    <ChevronLeft size={24}/>
+                                </button>
                                 <button 
-                                    onClick={() => { setZoomIndex(prev => Math.min(livePacket.length - 1, prev + 1)); setStarredStudents([]); setIsComparing(false); }}
-                                    disabled={zoomIndex === livePacket.length - 1}
+                                    onClick={() => { 
+                                        if (isPresentationMode) {
+                                            handleSlideChange(Math.min(liveSlides.length - 1, activeSlideIndex + 1));
+                                        } else {
+                                            setZoomIndex(prev => Math.min(livePacket.length - 1, prev + 1));
+                                        }
+                                        setStarredStudents([]); 
+                                        setIsComparing(false); 
+                                    }}
+                                    disabled={isPresentationMode ? activeSlideIndex === liveSlides.length - 1 : zoomIndex === livePacket.length - 1}
                                     className="p-2 hover:bg-[var(--bg-surface)] rounded-full disabled:opacity-10 transition-all text-[var(--text-muted)]"
-                                ><ChevronRight size={24}/></button>
+                                >
+                                    <ChevronRight size={24}/>
+                                </button>
                                 <div className="w-px h-6 bg-[var(--border-strong)] mx-1" />
-                                <button onClick={() => { setZoomIndex(null); setShowWorkGrid(false); setStarredStudents([]); setIsComparing(false); }} className="p-2 hover:bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] rounded-full transition-all"><X size={24}/></button>
+                                <button onClick={() => { setZoomIndex(null); setShowWorkGrid(false); setStarredStudents([]); 
+                                    setIsComparing(false); 
+                                    }} 
+                                    className="p-2 hover:bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] rounded-full transition-all">
+                                        <X size={24}/>
+                                </button>
                             </div>
                         </div>
 
