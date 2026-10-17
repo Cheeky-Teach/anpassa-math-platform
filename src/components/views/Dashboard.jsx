@@ -320,10 +320,10 @@ const Dashboard = ({
                                 </div>
                                 <div>
                                     <span className="block font-bold text-xs uppercase text-[var(--text-main)] group-hover:text-white leading-tight">
-                                        {lang === 'sv' ? "Bråklabb" : "Fraction Lab"}
+                                        {lang === 'sv' ? "Digitala laborationer" : "Digitala Manipulatives"}
                                     </span>
                                     <span className="text-[9px] font-bold text-[var(--brand-text)] group-hover:text-white/80 uppercase tracking-widest">
-                                        {lang === 'sv' ? "Digitala laborationer" : "Digital Manipulatives"}
+                                        {lang === 'sv' ? "Bråk, Algebra, Geometri" : "Fraction, Algebra, Geometry"}
                                     </span>
                                 </div>
                             </button>

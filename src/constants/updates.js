@@ -2,6 +2,35 @@
 
 export const APP_UPDATES = [
   {
+    id: 'v023',
+    date: '2026-10-17',
+    version: '0.2.3',
+    title: { 
+      sv: "Interaktiva laborativa verktyg & fria svar i Live-lektioner",
+      en: "Interactive Manipulatives & Free-Form Work in Live Lessons"
+    },
+    highlights: {
+      sv: "Håll live-genomgångar där elever kan visa hur de tänker med laborativa verktyg, ritverktyg eller egna textförklaringar!",
+      en: "Host live lessons where students show their thinking using interactive manipulatives, drawing tools, or text explanations!"
+    },
+    changes: {
+      sv: [
+        "Fritt skapande i Live-lektioner: Skicka ut färdiga eller tomma presentationssidor till klassen. Du kan ställa frågor muntligt eller skriva direkt på tavlan och låta eleverna bygga och rita sina svar.",
+        "Laborativa verktyg för elever: Elever har nu tillgång till verktygslådorna för algebrabrickor, bråkdelar, 2D/3D-figurer och koordinatsystem direkt på sina egna enheter under lektionen.",
+        "Skicka in tavla & textförklaring: Elever kan lämna in hela sin interaktiva tavla tillsammans med en skriven motivering så att du ser hela tankegången, inte bara ett slutsvar.",
+        "Ny omgång med ett klick: Läraren kan när som helst starta en 'Ny omgång' på samma presentationssida. Tidigare elevsvar nollställs direkt så att klassen kan ta sig an nästa utmaning på samma underlag.",
+        "Granska hela klassens tavlor: Öppna elevsvarsvyn i lärarpanelen för att se allas inskickade tavlor och klicka på valfri elev för att förstora och lyfta fram intressanta lösningar inför klassen."
+      ],
+      en: [
+        "Open-Ended Live Presentations: Push ready-made or blank slides to the class. Ask questions out loud or write on the board, and let students build and draw their responses in real time.",
+        "Student Manipulative Bins: Students now have direct access to tool bins for algebra tiles, fraction models, 2D/3D shapes, and coordinate systems right on their own screens.",
+        "Submit Boards with Explanations: Students can submit their entire manipulative board along with an optional written reasoning box so you can see their full problem-solving process.",
+        "One-Click New Round: Teachers can start a 'New Round' on any slide anytime. This instantly resets student boards so the class can tackle a new prompt without leaving the slide.",
+        "Inspect Student Work Live: Open the student work drawer in the teacher view to see everyone's boards side-by-side, or click any submission to spotlight and discuss it with the class."
+      ]
+    }
+  },
+  {
     id: 'v022',
     date: '2026-10-11',
     version: '0.2.2',
