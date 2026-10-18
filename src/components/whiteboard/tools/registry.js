@@ -16,6 +16,7 @@ import { RulerTool } from './geometry/RulerTool';
 import { ProtractorTool } from './geometry/ProtractorTool';
 import { Shapes3DTool } from './geometry/Shapes3DTool';
 import { AlgebraTileTool } from './manipulatives/AlgebraTileTool';
+import { RichTextTool } from './widgets/RichTextTool';
 
 export const TOOL_REGISTRY = {
     // Widgets
@@ -25,6 +26,8 @@ export const TOOL_REGISTRY = {
     calculator: CalculatorTool,
     dynamicClues: DynamicCluesTool,
     clock: PracticeClockTool,
+    richText: RichTextTool,
+    math: RichTextTool,
 
     // Analysis
     dice: DiceTool,

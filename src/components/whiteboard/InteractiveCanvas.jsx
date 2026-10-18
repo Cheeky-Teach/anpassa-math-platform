@@ -100,28 +100,72 @@ export default function InteractiveCanvas({
     }, [readOnly, setElements]);
 
     // 2. Safe Auto-Spawn for Stamp / Interactive Tools
+    // 2. Safe Auto-Spawn for Widget & Stamp Tools
     useEffect(() => {
-        // Tools that must REMAIN active for drawing, typing, or state toggling:
-        const persistentTools = [
+        // Tools that must remain active strictly for drawing or typing modes:
+        const drawingTools = [
             'select', 'pen', 'highlighter', 'eraser', 'line', 
-            'rect', 'circle', 'triangle', 'richText', 
-            'timer', 'realClock', 'volume_cue', 'math', 'calculator'
+            'rect', 'circle', 'triangle'
         ];
 
-        if (persistentTools.includes(activeTool) || activeTool.startsWith('3d_')) {
+        if (drawingTools.includes(activeTool) || activeTool.startsWith('3d_')) {
             return;
         }
 
-        // Only auto-spawn and reset to select for drawer manipulatives/stamps
-        const newId = Date.now().toString();
-        const registeredTool = getToolDefinition(activeTool);
-        if (registeredTool && typeof registeredTool.createDefault === 'function') {
-            const newEl = registeredTool.createDefault(newId, color, activeTool);
-            setElements(prev => [...prev, newEl]);
-            setSelectedIds([newId]);
-            setActiveTool('select');
+        // Instantly spawn widgets/tools upon selection, then reset tool to 'select'
+        if (activeTool && activeTool !== 'select') {
+            const newId = `el_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+            if (activeTool === 'timer') {
+                setElements(prev => [...prev, {
+                    id: newId, type: 'timer', x: 600, y: 250, width: 220, height: 140,
+                    timeLeft: 300, initialTime: 300, isRunning: false, stroke: color, rotation: 0, opacity: 1
+                }]);
+                setSelectedIds([newId]);
+                setActiveTool('select');
+                return;
+            }
+
+            if (activeTool === 'realClock') {
+                setElements(prev => [...prev, {
+                    id: newId, type: 'realClock', x: 650, y: 250, width: 200, height: 200,
+                    stroke: color, rotation: 0, opacity: 1, clockType: 'analog'
+                }]);
+                setSelectedIds([newId]);
+                setActiveTool('select');
+                return;
+            }
+
+            if (activeTool === 'richText' || activeTool === 'math') {
+                setElements(prev => [...prev, {
+                    id: newId, type: 'richText', x: 550, y: 250, width: 400, height: 120,
+                    content: activeTool === 'math' ? '$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$' : (lang === 'sv' ? 'Skriv din text här...' : 'Type your text here...'),
+                    stroke: color, rotation: 0, opacity: 1
+                }]);
+                setSelectedIds([newId]);
+                setActiveTool('select');
+                return;
+            }
+
+            if (activeTool === 'calculator') {
+                setElements(prev => [...prev, {
+                    id: newId, type: 'calculator', x: 600, y: 180, width: 280, height: 480,
+                    expression: "", result: "", ans: "", calcMode: "LTR", stroke: color, rotation: 0, opacity: 1
+                }]);
+                setSelectedIds([newId]);
+                setActiveTool('select');
+                return;
+            }
+
+            const registeredTool = getToolDefinition(activeTool);
+            if (registeredTool && typeof registeredTool.createDefault === 'function') {
+                const newEl = registeredTool.createDefault(newId, color, activeTool);
+                setElements(prev => [...prev, newEl]);
+                setSelectedIds([newId]);
+                setActiveTool('select');
+            }
         }
-    }, [activeTool, color, setElements]);
+    }, [activeTool, color, setElements, lang]);
 
     const isElementInBox = (el, box) => {
         const minX = Math.min(box.startX, box.currentX);
@@ -259,11 +303,19 @@ export default function InteractiveCanvas({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedIds, elements, setElements]);
 
-    useEffect(() => {
+        useEffect(() => {
         const handleGlobalDeselect = (e) => {
-            if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]')) return;
-            if (e.target.closest('[data-id]')) return;
+            const isInput = e.target.tagName?.toLowerCase() === 'input' || e.target.tagName?.toLowerCase() === 'textarea';
+            if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]') || isInput) return;
             
+            const targetNode = e.target.closest('[data-id]');
+            if (targetNode) return;
+
+            const hitElement = [...elements].reverse().find(el => isPointInElement(e.clientX, e.clientY, el));
+            if (hitElement && editingId === hitElement.id) {
+                return;
+            }
+
             if (activeTool === 'select' && !selectionBoxRef.current) {
                 setSelectedIds([]);
                 setEditingId(null);
@@ -274,7 +326,8 @@ export default function InteractiveCanvas({
 
         window.addEventListener('pointerdown', handleGlobalDeselect);
         return () => window.removeEventListener('pointerdown', handleGlobalDeselect);
-    }, [activeTool]);
+    }, [activeTool, elements, editingId]);
+
 
     // 4. Fixed Drawer Tool Handler (Switches mode for tools, spawns objects for manipulatives)
     const handleSpawnFromDrawer = (type, payload = {}) => {
@@ -287,6 +340,60 @@ export default function InteractiveCanvas({
         }
 
         const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+        // 🟢 1. Timer Tool Spawn
+        if (type === 'timer') {
+            setElements(prev => [...prev, {
+                id,
+                type: 'timer',
+                x: 600,
+                y: 250,
+                width: 220,
+                height: 140,
+                timeLeft: 300, // 5 minutes default
+                initialTime: 300,
+                isRunning: false,
+                stroke: color,
+                rotation: 0,
+                opacity: 1
+            }]);
+            setSelectedIds([id]);
+            return;
+        }
+
+        // 🟢 2. Real-Time Clock Tool Spawn
+        if (type === 'realClock') {
+            setElements(prev => [...prev, {
+                id,
+                type: 'realClock',
+                x: 650,
+                y: 250,
+                width: 200,
+                height: 200,
+                stroke: color,
+                rotation: 0,
+                opacity: 1
+            }]);
+            setSelectedIds([id]);
+            return;
+        }
+
+        // 🟢 3. Rich Text / LaTeX / Math Tool Spawn
+        if (type === 'richText' || type === 'math') {
+            setElements(prev => [...prev, {
+                id,
+                type: 'richText',
+                x: 550,
+                y: 250,
+                width: 400,
+                height: 120,
+                content: type === 'math' ? '$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$' : (lang === 'sv' ? 'Skriv din text här...' : 'Type your text here...'),
+                stroke: color,
+                rotation: 0,
+                opacity: 1
+            }]);
+            setSelectedIds([id]);
+            return;
+        }
 
         if (type === 'calculator') {
             const newEl = {
@@ -496,7 +603,9 @@ export default function InteractiveCanvas({
 
     const handlePointerDown = (e) => {
         if (e.cancelable && activeTool !== 'select') e.preventDefault();
-        if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]')) return;
+        
+        const isInput = e.target.tagName?.toLowerCase() === 'input' || e.target.tagName?.toLowerCase() === 'textarea';
+        if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]') || isInput) return;
 
         if (svgRef.current && typeof svgRef.current.setPointerCapture === 'function') {
             try { svgRef.current.setPointerCapture(e.pointerId); } catch (err) {}
@@ -513,6 +622,13 @@ export default function InteractiveCanvas({
 
         if (activeTool === 'select') {
             if (hit) {
+                if (hit.type === 'richText' && editingId === hit.id) {
+                    return;
+                }
+                if (hit.type === 'richText') {
+                    setSelectedIds([hit.id]);
+                    return;
+                }
                 if (e.shiftKey) {
                     setSelectedIds(prev => prev.includes(hit.id) ? prev.filter(id => id !== hit.id) : [...prev, hit.id]);
                 } else if (!selectedIds.includes(hit.id)) {
@@ -742,43 +858,6 @@ export default function InteractiveCanvas({
 
         return (
             <g className="ui-ignore pointer-events-auto">
-                {/* 1. Universal Hit Buffer */}
-                {isC ? (
-                    <circle
-                        cx={cx}
-                        cy={el.y + radius}
-                        r={radius + padding}
-                        fill="transparent"
-                        stroke="none"
-                        className="cursor-move"
-                        onPointerDown={(e) => {
-                            e.stopPropagation();
-                            setSelectedIds([el.id]);
-                            setInteractionMode('moving');
-                            setIsDrawing(true);
-                            const { x, y } = getCoordinates(e, false);
-                            dragCoordRef.current = { x, y };
-                        }}
-                    />
-                ) : (
-                    <rect
-                        x={el.x - padding}
-                        y={el.y - padding}
-                        width={objWidth + padding * 2}
-                        height={objHeight + padding * 2}
-                        fill="transparent"
-                        stroke="none"
-                        className="cursor-move"
-                        onPointerDown={(e) => {
-                            e.stopPropagation();
-                            setSelectedIds([el.id]);
-                            setInteractionMode('moving');
-                            setIsDrawing(true);
-                            const { x, y } = getCoordinates(e, false);
-                            dragCoordRef.current = { x, y };
-                        }}
-                    />
-                )}
 
                 {/* 2. Visual Selection Outline */}
                 <rect 
@@ -841,6 +920,7 @@ export default function InteractiveCanvas({
                                 setElements,
                                 lang,
                                 t,
+                                setEditingId,
                                 onUpdate: (updated) => setElements(prev => prev.map(item => item.id === el.id ? updated : item))
                             })}
                         </div>
@@ -849,7 +929,18 @@ export default function InteractiveCanvas({
 
                 {/* 5. Adjustment Handles */}
                 <circle cx={cx} cy={el.y - 14} r={8} fill="white" stroke="#3b82f6" strokeWidth="2" className="cursor-alias" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating'); setIsDrawing(true);}} />
-                <rect x={rigX - 5} y={el.y - 12} width={18} height={18} rx={4} fill="white" stroke="#3b82f6" strokeWidth={2} className="cursor-nwse-resize" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('resizing'); setIsDrawing(true);}} />
+                <rect 
+                    x={rigX - 9} 
+                    y={el.y + objHeight - 9} 
+                    width={18} 
+                    height={18} 
+                    rx={4} 
+                    fill="white" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2} 
+                    className="cursor-nwse-resize" 
+                    onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('resizing'); setIsDrawing(true);}} 
+                />
             </g>
         );
     };
@@ -878,6 +969,8 @@ export default function InteractiveCanvas({
                 setInteractionMode,
                 setIsDrawing,
                 getCoordinates,
+                editingId,              
+                setEditingId,
                 setDragOffset: (pos) => { dragCoordRef.current = pos; },
                 onUpdate: (updated) => setElements(prev => prev.map(item => item.id === el.id ? updated : item))
             };
@@ -892,7 +985,6 @@ export default function InteractiveCanvas({
             return (
                 <g key={el.id} data-id={el.id} className="pointer-events-auto">
                     {renderedContent}
-                    {showUI && el.type !== 'algebra_tile' && renderHandles(el)}
                 </g>
             );
         }
@@ -923,130 +1015,6 @@ export default function InteractiveCanvas({
                     )}
                     {showUI && !el.isPermanent && renderHandles(el)}
                 </g>
-            );
-        }
-
-        if (el.type === 'richText') {
-            const isEditing = editingId === el.id;
-            
-            const applyStyle = (cmd, val = null) => {
-                const selection = window.getSelection();
-                if (!selection.rangeCount) return;
-
-                if (cmd === 'fontSize') {
-                    const range = selection.getRangeAt(0);
-                    if (range.collapsed) return;
-
-                    const span = document.createElement('span');
-                    span.style.fontSize = `${val}px`;
-                    span.style.lineHeight = 'normal';
-                    
-                    try {
-                        span.appendChild(range.extractContents());
-                        range.insertNode(span);
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    } catch (err) {}
-                } else if (cmd === 'foreColor') {
-                    const range = selection.getRangeAt(0);
-                    if (!range.collapsed) {
-                        const span = document.createElement('span');
-                        span.style.color = val;
-                        span.appendChild(range.extractContents());
-                        range.insertNode(span);
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
-                } else {
-                    document.execCommand(cmd, false, val);
-                }
-
-                const node = document.getElementById(`rich-text-${el.id}`);
-                if (node) {
-                    const html = node.innerHTML;
-                    const scrollH = node.scrollHeight;
-                    setElements(prev => prev.map(item => 
-                        item.id === el.id ? { ...item, height: Math.max(item.height || 0, scrollH), content: html } : item
-                    ));
-                }
-            };
-
-            return (
-                <React.Fragment key={el.id}>
-                    <g transform={transform} data-id={el.id} className="pointer-events-auto">
-                        <rect 
-                            x={el.x} y={el.y} width={el.width} height={el.height} 
-                            fill="white" fillOpacity={isEditing ? 1 : 0.95} 
-                            stroke={isSelected ? "#3b82f6" : "#e2e8f0"} strokeWidth={isSelected ? 3 : 1} rx="8"
-                            style={{ cursor: isEditing ? 'text' : 'move' }}
-                            onDoubleClick={(e) => { e.stopPropagation(); setEditingId(el.id); }}
-                        />
-                        <foreignObject 
-                            x={el.x} y={el.y} width={el.width} height={el.height}
-                            style={{ pointerEvents: isEditing ? 'auto' : 'none' }}
-                        >
-                            <div 
-                                id={`rich-text-${el.id}`}
-                                contentEditable={isEditing} suppressContentEditableWarning
-                                className="w-full h-full p-4 outline-none font-sans text-slate-800 overflow-hidden"
-                                style={{ 
-                                    whiteSpace: 'pre-wrap', 
-                                    wordBreak: 'break-word', 
-                                    fontSize: '28px',
-                                    lineHeight: '1.25'
-                                }}
-                                ref={(node) => {
-                                    if (node && node.getAttribute('data-init') !== 'true') {
-                                        node.innerHTML = el.content || '';
-                                        node.setAttribute('data-init', 'true');
-                                    }
-                                }}
-                                onInput={(e) => {
-                                    const html = e.currentTarget.innerHTML;
-                                    const scrollH = e.currentTarget.scrollHeight;
-                                    setElements(prev => prev.map(item => 
-                                        item.id === el.id ? { ...item, height: Math.max(item.height || 0, scrollH), content: html } : item
-                                    ));
-                                }}
-                                onBlur={(e) => {
-                                    const html = e.currentTarget.innerHTML;
-                                    setElements(prev => prev.map(item => item.id === el.id ? { ...item, content: html } : item));
-                                }}
-                                onPointerDown={(e) => e.stopPropagation()}
-                            />
-                        </foreignObject>
-
-                        {isEditing && (
-                            <foreignObject x={el.x} y={el.y - 55} width={Math.max(el.width, 500)} height={55} className="ui-ignore pointer-events-auto overflow-visible">
-                                <div 
-                                    className="flex items-center gap-2 bg-slate-900 p-2 rounded-xl shadow-2xl border border-slate-700 w-max"
-                                    onPointerDown={e => { 
-                                        e.stopPropagation(); 
-                                        if (e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') e.preventDefault(); 
-                                    }} 
-                                >
-                                    <button onClick={() => applyStyle('bold')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded font-bold cursor-pointer">B</button>
-                                    <button onClick={() => applyStyle('italic')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded italic font-serif cursor-pointer">I</button>
-                                    <button onClick={() => applyStyle('underline')} className="w-8 h-8 flex items-center justify-center text-white hover:bg-slate-700 rounded underline cursor-pointer">U</button>
-                                    <div className="w-px h-6 bg-slate-700 mx-1" />
-                                    <select 
-                                        onChange={(e) => applyStyle('fontSize', e.target.value)} 
-                                        className="bg-slate-800 text-white text-[12px] h-8 rounded px-2 outline-none border border-slate-700 cursor-pointer"
-                                        defaultValue="28"
-                                    >
-                                        {[14, 18, 24, 28, 36, 48, 64].map(sz => (
-                                            <option key={sz} value={sz}>{sz}px</option>
-                                        ))}
-                                    </select>
-                                    <button onClick={() => setEditingId(null)} className="ml-2 px-3 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider rounded-lg hover:bg-emerald-600 active:scale-95 transition-all cursor-pointer">
-                                        Klar
-                                    </button>
-                                </div>
-                            </foreignObject>
-                        )}
-                    </g>
-                    {showUI && !isEditing && renderHandles(el)}
-                </React.Fragment>
             );
         }
 

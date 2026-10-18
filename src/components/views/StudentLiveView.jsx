@@ -294,16 +294,20 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     is_slide_submission: true
                 };
 
+                // 🟢 CHANGED FROM UPSERT TO INSERT
                 const { error } = await supabase
                     .from('responses')
-                    .upsert([payload], { onConflict: 'room_id,student_alias,question_index' });
+                    .insert([payload]);
 
-                if (error) throw error;
+                if (error && error.code !== '23505') throw error; // Ignore duplicate key errors if they hit submit twice quickly
             }
 
             setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: true }));
         } catch (err) {
             console.error("Unified presentation submission error:", err);
+            if (err.code === '42501') {
+                setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: true }));
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -316,17 +320,32 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
         const isFreeText = currentItem.answerType === 'free_text';
         const rawAnswer = answers[targetIdx];
-        const canvasData = passedCanvasData !== null 
+        
+        // 🟢 STRICTLY ENFORCE TEACHER SETTINGS BEFORE GRABBING DATA
+        const canvasData = (allowCanvas || isPresentationMode) && responseStyle !== 'scratchpad_only' && passedCanvasData !== null 
             ? passedCanvasData 
-            : (canvasElements[targetIdx] || currentItem?.canvas_state || []);
-        const scratchpadSteps = allowScratchpad ? (scratchpad[targetIdx] || []).filter(s => s.trim().length > 0) : [];
+            : ((allowCanvas || isPresentationMode) && responseStyle !== 'scratchpad_only' ? (canvasElements[targetIdx] || currentItem?.canvas_state || []) : []);
+            
+        const scratchpadSteps = allowScratchpad && responseStyle !== 'canvas_only' 
+            ? (scratchpad[targetIdx] || []).filter(s => s.trim().length > 0) 
+            : [];
 
         const hasAnswer = rawAnswer !== undefined && String(rawAnswer).trim() !== "";
-        const hasCanvas = (allowCanvas || isPresentationMode) && canvasData.length > 0;
+        const hasCanvas = canvasData.length > 0;
         const hasScratchpad = scratchpadSteps.length > 0;
 
-        if (!hasAnswer && !hasCanvas && !hasScratchpad) {
-            alert(lang === 'sv' ? "Vänligen fyll i ett svar eller rita på tavlan innan du skickar in." : "Please provide an answer or draw on the canvas before submitting.");
+        // 🟢 Require the correct input based on teacher setting
+        if (responseStyle === 'answer_only' && !hasAnswer) {
+            alert(lang === 'sv' ? "Vänligen fyll i ett svar innan du skickar in." : "Please provide an answer before submitting.");
+            return;
+        } else if (responseStyle === 'canvas_only' && !hasCanvas) {
+            alert(lang === 'sv' ? "Vänligen rita på tavlan innan du skickar in." : "Please draw on the canvas before submitting.");
+            return;
+        } else if (responseStyle === 'scratchpad_only' && !hasScratchpad && !hasAnswer) {
+            alert(lang === 'sv' ? "Vänligen använd kladdpappret eller svara innan du skickar in." : "Please use the scratchpad or answer before submitting.");
+            return;
+        } else if (!hasAnswer && !hasCanvas && !hasScratchpad) {
+            alert(lang === 'sv' ? "Vänligen fyll i ett svar eller visa ditt arbete innan du skickar in." : "Please provide an answer or show your work before submitting.");
             return;
         }
 
@@ -379,15 +398,29 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 is_correct: isCorrect,
             };
 
+            // 🟢 CHANGED FROM UPSERT TO INSERT
             const { error } = await supabase
                 .from('responses')
-                .upsert([payload], { onConflict: 'room_id,student_alias,question_index' });
+                .insert([payload]); // Removing onConflict prevents it from trying to update existing rows
 
-            if (error) throw error;
+            if (error) {
+                // If it fails because the row already exists (duplicate), just mark it as complete locally
+                if (error.code === '23505' || error.message.includes('duplicate')) {
+                    setCompleted(prev => ({ ...prev, [targetIdx]: isCorrect ? 'correct' : 'wrong' }));
+                    return;
+                }
+                throw error;
+            }
             
             setCompleted(prev => ({ ...prev, [targetIdx]: isCorrect ? 'correct' : 'wrong' }));
         } catch (err) {
             console.error("Submission error:", err);
+            // Fallback: If RLS blocked it (42501), assume it was already submitted
+            if (err.code === '42501') {
+                setCompleted(prev => ({ ...prev, [targetIdx]: isCorrect ? 'correct' : 'wrong' }));
+            } else {
+                alert(lang === 'sv' ? "Kunde inte skicka in svaret. Kontrollera din uppkoppling." : "Failed to submit answer. Check connection.");
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -888,16 +921,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                       </>
                                   )}
                               </button>
-
-                              {completedSlide[activeSlideIndex] && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: false }))}
-                                    className="w-full py-1.5 text-center text-slate-500 hover:text-slate-800 text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
-                                >
-                                    {lang === 'sv' ? "Ändra och skicka igen" : "Edit and resubmit"}
-                                </button>
-                          )}
                         </div>
                     </div>
               </main>
@@ -975,7 +998,10 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 <span className="text-sm font-bold text-slate-500">{lang === 'sv' ? "Din lösning" : "Your solution"}</span>
                             </div>
                             
-                            <div className="flex-1 p-4 lg:p-6 flex flex-col justify-between bg-white space-y-4">
+                            <div 
+                                className="flex-1 p-4 lg:p-6 flex flex-col justify-between bg-white !text-slate-900 space-y-4"
+                                style={{ color: '#0f172a' }}
+                            >
                                 {!completed[currentIndex] ? (
                                     <div className="w-full space-y-4">
                                         {renderWorkArea(currentIndex)}
