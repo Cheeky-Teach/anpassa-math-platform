@@ -10,6 +10,9 @@ const CALC_BUTTONS = [
     '0', '.', 'π', '='
 ];
 
+const CALC_W = 280;
+const CALC_H = 480;
+
 export const CalculatorTool = {
     type: 'calculator',
     hasOptions: false,
@@ -18,9 +21,9 @@ export const CalculatorTool = {
         id,
         type: 'calculator',
         x: 600,
-        y: 300,
-        width: 280,
-        height: 440,
+        y: 180,
+        width: CALC_W,
+        height: CALC_H,
         expression: "",
         result: "",
         ans: "",
@@ -30,8 +33,10 @@ export const CalculatorTool = {
         opacity: 1
     }),
 
-    render: ({ el, lang, transform, showUI, renderHandles, setElements }) => {
+    render: ({ el, lang, transform, setElements }) => {
         const currentMode = el.calcMode || 'LTR';
+        const w = Number(el.width) || CALC_W;
+        const h = Number(el.height) || CALC_H;
 
         const handleCalcClick = (btn) => {
             setElements(prev => prev.map(o => {
@@ -130,59 +135,73 @@ export const CalculatorTool = {
         };
 
         return (
-            <React.Fragment key={el.id}>
-                <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
-                    <rect x={el.x} y={el.y} width={el.width} height={el.height} fill="#1e293b" rx={24 * (el.width / 280)} stroke="#334155" strokeWidth="6" className="shadow-2xl" />
-                    
-                    <foreignObject x={el.x} y={el.y} width={el.width} height={el.height}>
-                        <div 
-                            style={{ width: '280px', height: '440px', transform: `scale(${el.width / 280})`, transformOrigin: 'top left' }} 
-                            className="flex flex-col p-5 pointer-events-auto"
-                        >
-                            <div className="flex justify-between items-center mb-2 px-1 ui-ignore" onPointerDown={e => e.stopPropagation()}>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Anpassa</span>
-                                <button 
-                                    onClick={() => setElements(prev => prev.map(o => o.id === el.id ? { ...o, calcMode: currentMode === 'LTR' ? 'PEMDAS' : 'LTR' } : o))}
-                                    className={`text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-inner transition-colors cursor-pointer
-                                        ${currentMode === 'LTR' ? 'bg-amber-500/20 text-amber-400' : 'bg-indigo-500/20 text-indigo-400'}`}
-                                    title={lang === 'sv' ? "Ändra beräkningsordning" : "Toggle Calculation Order"}
-                                >
-                                    {currentMode === 'LTR' ? 'L->R MODE' : 'PEMDAS MODE'}
-                                </button>
+            <g transform={transform} data-id={el.id} className="pointer-events-auto cursor-move">
+                {/* Background Body Box */}
+                <rect 
+                    x={el.x} 
+                    y={el.y} 
+                    width={w} 
+                    height={h} 
+                    fill="#1e293b" 
+                    rx="20" 
+                    stroke="#334155" 
+                    strokeWidth="4" 
+                    className="shadow-2xl" 
+                />
+                
+                <foreignObject x={el.x} y={el.y} width={w} height={h}>
+                    <div 
+                        style={{ 
+                            width: `${w}px`, 
+                            height: `${h}px` 
+                        }} 
+                        className="flex flex-col p-3.5 pointer-events-auto select-none box-border"
+                    >
+                        {/* Mode Bar */}
+                        <div className="flex justify-between items-center mb-1 px-1 ui-ignore shrink-0" onPointerDown={e => e.stopPropagation()}>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Anpassa</span>
+                            <button 
+                                onClick={() => setElements(prev => prev.map(o => o.id === el.id ? { ...o, calcMode: currentMode === 'LTR' ? 'PEMDAS' : 'LTR' } : o))}
+                                className={`text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-inner transition-colors cursor-pointer
+                                    ${currentMode === 'LTR' ? 'bg-amber-500/20 text-amber-400' : 'bg-indigo-500/20 text-indigo-400'}`}
+                                title={lang === 'sv' ? "Ändra beräkningsordning" : "Toggle Calculation Order"}
+                            >
+                                {currentMode === 'LTR' ? 'L->R MODE' : 'PEMDAS MODE'}
+                            </button>
+                        </div>
+
+                        {/* Screen Display */}
+                        <div className="bg-white rounded-xl h-24 mb-3 p-3 flex flex-col justify-between items-end border-2 border-slate-200 shadow-inner font-mono overflow-hidden shrink-0">
+                            <div className="text-slate-500 font-bold text-sm tracking-wider w-full text-right overflow-hidden break-all">
+                                {el.expression || "0"}
                             </div>
-
-                            <div className="bg-white rounded-xl h-32 mb-5 p-4 flex flex-col justify-between items-end border-4 border-slate-200 shadow-inner font-mono overflow-hidden shrink-0">
-                                <div className="text-slate-500 font-bold text-3xl tracking-widest w-full text-right overflow-hidden break-all">
-                                    {el.expression}
-                                </div>
-                                <div className="text-slate-900 text-5xl font-black truncate w-full text-right mt-1">
-                                    {el.result}
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-4 gap-2.5 flex-1 ui-ignore" onPointerDown={e => e.stopPropagation()}>
-                                {CALC_BUTTONS.map(btn => {
-                                    let bg = "bg-slate-200 hover:bg-slate-300 text-slate-800 border-b-4 border-slate-300 active:border-b-0 active:translate-y-1";
-                                    if (btn === 'AC' || btn === 'DEL') bg = "bg-rose-500 hover:bg-rose-600 text-white border-b-4 border-rose-700 active:border-b-0 active:translate-y-1";
-                                    if (btn === '=') bg = "bg-indigo-500 hover:bg-indigo-600 text-white border-b-4 border-indigo-700 active:border-b-0 active:translate-y-1";
-                                    if (['÷', '×', '-', '+'].includes(btn)) bg = "bg-amber-400 hover:bg-amber-500 text-slate-900 border-b-4 border-amber-600 active:border-b-0 active:translate-y-1";
-
-                                    return (
-                                        <button 
-                                            key={btn} 
-                                            onClick={() => handleCalcClick(btn)}
-                                            className={`${bg} rounded-xl font-black text-lg shadow-sm flex items-center justify-center transition-all cursor-pointer`}
-                                        >
-                                            {btn}
-                                        </button>
-                                    );
-                                })}
+                            <div className="text-slate-900 text-3xl font-black truncate w-full text-right">
+                                {el.result || (el.expression ? "" : "0")}
                             </div>
                         </div>
-                    </foreignObject>
-                </g>
-                {showUI && renderHandles(el)}
-            </React.Fragment>
+
+                        {/* Button Grid (24 Buttons, 4 Columns x 6 Rows) */}
+                        <div className="grid grid-cols-4 gap-2 flex-1 ui-ignore" onPointerDown={e => e.stopPropagation()}>
+                            {CALC_BUTTONS.map(btn => {
+                                let bg = "bg-slate-200 hover:bg-slate-300 text-slate-800 border-b-2 border-slate-300 active:border-b-0 active:translate-y-0.5";
+                                if (btn === 'AC' || btn === 'DEL') bg = "bg-rose-500 hover:bg-rose-600 text-white border-b-2 border-rose-700 active:border-b-0 active:translate-y-0.5";
+                                if (btn === '=') bg = "bg-indigo-500 hover:bg-indigo-600 text-white border-b-2 border-indigo-700 active:border-b-0 active:translate-y-0.5";
+                                if (['÷', '×', '-', '+'].includes(btn)) bg = "bg-amber-400 hover:bg-amber-500 text-slate-900 border-b-2 border-amber-600 active:border-b-0 active:translate-y-0.5";
+
+                                return (
+                                    <button 
+                                        key={btn} 
+                                        onClick={() => handleCalcClick(btn)}
+                                        className={`${bg} rounded-xl font-black text-base shadow-xs flex items-center justify-center transition-all cursor-pointer`}
+                                    >
+                                        {btn}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </foreignObject>
+            </g>
         );
     }
 };

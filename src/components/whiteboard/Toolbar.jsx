@@ -1,3 +1,4 @@
+// src/components/whiteboard/Toolbar.jsx
 import React, { useState, useEffect } from 'react';
 import { 
     PenTool, Highlighter, Minus, Palette, Trash2, 
@@ -11,7 +12,6 @@ const Toolbar = ({
     onClear, onUndo, onRedo, canUndo, canRedo, bgType, onToggleBg,
     mode = 'all', onToggleDrawer, activeDrawer, allowedTools = null 
 }) => {
-    // 1. Guard against 'none' mode (used in student previews and reports)
     if (mode === 'none') return null;
 
     const [showColors, setShowColors] = useState(false);
@@ -61,7 +61,6 @@ const Toolbar = ({
 
         if (mode === 'student') {
             const baseStudent = ['select', 'pen', 'highlighter', 'eraser', 'line', 'color_picker', 'clear_all'];
-            // Allow drawer bins if the slide requires them
             return [...baseStudent, 'drawer_algebra', 'drawer_shapes', 'drawer_fractions', 'drawer_data'].includes(toolId);
         }
 
@@ -78,16 +77,25 @@ const Toolbar = ({
         
         const isActive = activeTool === id;
         
+        const handleClick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (onClick) {
+                onClick(e);
+            } else {
+                setActiveTool(id);
+                setShowColors(false);
+                if (onToggleDrawer) onToggleDrawer(null);
+            }
+        };
+
         return (
             <button
                 type="button"
-                onClick={onClick || (() => { 
-                    setActiveTool(id); 
-                    setShowColors(false); 
-                    if (onToggleDrawer) onToggleDrawer(null);
-                })}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={handleClick}
                 disabled={disabled} 
-                className={`group relative w-9 h-9 rounded-xl transition-all flex items-center justify-center border shrink-0
+                className={`group relative w-9 h-9 rounded-xl transition-all flex items-center justify-center border shrink-0 ui-ignore pointer-events-auto
                     ${isActive ? `${theme.active} text-white shadow-md scale-110 border-transparent` : `bg-white text-slate-500 border-slate-100 ${theme.hover}`} 
                     ${disabled ? 'opacity-30 cursor-not-allowed' : 'active:scale-95 cursor-pointer'}`}
             >
@@ -112,14 +120,13 @@ const Toolbar = ({
                 type="button"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
-                e.stopPropagation();
-                if (onToggleDrawer) {
-                    onToggleDrawer(isOpen ? null : drawerKey);
-                } else {
-                    console.warn("[1. Toolbar] onToggleDrawer prop is missing or undefined!");
-                }
-            }}
-                className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-black transition-all cursor-pointer shrink-0 ${
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (onToggleDrawer) {
+                        onToggleDrawer(isOpen ? null : drawerKey);
+                    }
+                }}
+                className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-black transition-all cursor-pointer shrink-0 ui-ignore pointer-events-auto ${
                     isOpen 
                         ? `${activeBg} text-white shadow-md scale-105 border-transparent` 
                         : `bg-white text-slate-700 border-slate-200 ${hoverBorder}`
@@ -139,12 +146,15 @@ const Toolbar = ({
 
     return (
         <div 
-            className={`absolute bottom-0 left-0 right-0 h-auto min-h-[64px] py-2 bg-white/95 backdrop-blur-md border-t border-slate-200 flex items-center px-2 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50 select-none transition-transform duration-300 ease-in-out
+            onPointerDown={(e) => e.stopPropagation()}
+            className={`ui-ignore pointer-events-auto absolute bottom-0 left-0 right-0 h-auto min-h-[64px] py-2 bg-white/95 backdrop-blur-md border-t border-slate-200 flex items-center px-2 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50 select-none transition-transform duration-300 ease-in-out
                 ${isCollapsed ? 'translate-y-full' : 'translate-y-0'}`}
         >
             <button 
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="absolute -top-8 left-1/2 -translate-x-1/2 w-16 h-8 bg-white/95 backdrop-blur-md border-t border-x border-slate-200 rounded-t-xl flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors shadow-sm cursor-pointer"
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); setIsCollapsed(!isCollapsed); }}
+                className="absolute -top-8 left-1/2 -translate-x-1/2 w-16 h-8 bg-white/95 backdrop-blur-md border-t border-x border-slate-200 rounded-t-xl flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors shadow-sm cursor-pointer ui-ignore"
                 title={isCollapsed ? (lang === 'sv' ? "Visa verktyg" : "Show toolbar") : (lang === 'sv' ? "Dölj verktyg" : "Hide toolbar")}
             >
                 {isCollapsed ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -152,9 +162,19 @@ const Toolbar = ({
 
             {/* Color Palette Menu */}
             {showColors && !isCollapsed && (
-                <div className="absolute bottom-full mb-3 right-8 p-4 bg-white rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.2)] border-2 border-slate-100 w-[240px] grid grid-cols-5 gap-3 z-[1000] animate-in slide-in-from-bottom-4">
+                <div 
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="ui-ignore absolute bottom-full mb-3 right-8 p-4 bg-white rounded-3xl shadow-[0_20px_80px_rgba(0,0,0,0.2)] border-2 border-slate-100 w-[240px] grid grid-cols-5 gap-3 z-[1000] animate-in slide-in-from-bottom-4"
+                >
                     {colors.map(c => (
-                        <button key={c} onClick={() => { setColor(c); setShowColors(false); }} className={`w-8 h-8 rounded-full border-4 ${color === c ? 'border-blue-500 scale-125 shadow-lg' : 'border-transparent hover:scale-110 cursor-pointer'}`} style={{ backgroundColor: c }} />
+                        <button 
+                            key={c} 
+                            type="button"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => { e.stopPropagation(); setColor(c); setShowColors(false); }} 
+                            className={`w-8 h-8 rounded-full border-4 ${color === c ? 'border-blue-500 scale-125 shadow-lg' : 'border-transparent hover:scale-110 cursor-pointer'}`} 
+                            style={{ backgroundColor: c }} 
+                        />
                     ))}
                 </div>
             )}
@@ -188,7 +208,7 @@ const Toolbar = ({
                 {showDrawers && (
                     <>
                         <Divider />
-                        {/* 🟢 Clean Deck Bins */}
+                        {/* Drawer Bins */}
                         <div className="flex items-center gap-1.5">
                             {isToolVisible('drawer_algebra') && (
                                 <DrawerButton 

@@ -5,7 +5,7 @@ import {
   Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, X, Globe, Building2, Lock, Copy, Check, Filter,
   MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical, Brain, Calculator, Target, 
-  Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown, Edit2
+  Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown, Edit2, HelpCircle
 } from 'lucide-react';
 import { SKILL_BUCKETS, isTopicWordProblemReady } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer.jsx';
@@ -13,6 +13,7 @@ import { supabase } from '../../lib/supabaseClient';
 import PresentationView from '../views/PresentationView.jsx';
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 import LiveLaunchModal from '../modals/LiveLaunchModal';
+import StudioTutorialModal from '../modals/StudioTutorialModal.jsx';
 
 
 // CRITICAL: Imports Universal Theme and Preferences Toggle
@@ -239,6 +240,15 @@ export default function QuestionStudio({
 
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const [showTutorial, setShowTutorial] = useState(() => {
+    return !localStorage.getItem('has_seen_studio_guide');
+    });
+
+    const handleCloseTutorial = () => {
+        localStorage.setItem('has_seen_studio_guide', 'true');
+        setShowTutorial(false);
+    };
 
   const handleDragStartUnified = (e, index) => {
     setDraggedIdx(index);
@@ -817,7 +827,18 @@ export default function QuestionStudio({
                         </div>
 
                         <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setShowTutorial(true)}
+                                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-[var(--radius-btn)] transition-all cursor-pointer flex items-center gap-1"
+                                title={lang === 'sv' ? "Snabbguide & Hjälp" : "Quick Guide & Help"}
+                            >
+                                <HelpCircle size={16} />
+                                <span className="text-[10px] font-black uppercase hidden xl:inline">
+                                    {lang === 'sv' ? "Guide" : "Help"}
+                                </span>
+                            </button>
                             <PreferencesToggle />
+                            
                             
                             {libraryTab === 'private' && !isTrashView && (
                                 <button 
@@ -1206,6 +1227,11 @@ export default function QuestionStudio({
                         }}
                     />
                 )}
+                <StudioTutorialModal
+                    isOpen={showTutorial}
+                    onClose={handleCloseTutorial}
+                    lang={lang}
+                />
 
             </div>
         );
@@ -1259,7 +1285,17 @@ export default function QuestionStudio({
             </div>
 
             <div className="flex items-center gap-2 pl-4 max-w-[45%] justify-end">
-                
+                <button
+                    type="button"
+                    onClick={() => setShowTutorial(true)}
+                    className="px-3 py-1.5 bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-solid)] rounded-[var(--radius-btn)] transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs"
+                    title={lang === 'sv' ? "Snabbguide & Hjälp" : "Quick Guide & Help"}
+                >
+                    <HelpCircle size={15} className="text-amber-500" />
+                    <span className="text-[10px] font-black uppercase">
+                        {lang === 'sv' ? "Guide" : "Help"}
+                    </span>
+                </button>
                 <PreferencesToggle />
 
                 <button 
@@ -1887,6 +1923,12 @@ export default function QuestionStudio({
               }}
           />
       )}
+
+      <StudioTutorialModal
+            isOpen={showTutorial}
+            onClose={handleCloseTutorial}
+            lang={lang}
+        />
     </div>
   );
 }

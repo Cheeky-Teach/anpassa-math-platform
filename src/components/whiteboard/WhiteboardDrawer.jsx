@@ -77,13 +77,27 @@ export default function WhiteboardDrawer({
 
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 pt-2 border-t border-slate-100">3D Figurer</span>
                         <div className="grid grid-cols-3 gap-2">
-                            {['cube', 'prism', 'cylinder', 'sphere', 'cone', 'pyramid'].map(sh => (
+                            {[
+                                { id: 'cube', label: 'Kub' },
+                                { id: 'prism', label: 'Prisma' },
+                                { id: 'triprism', label: 'Triang. Prisma' },
+                                { id: 'pyramid', label: 'Pyramid' },
+                                { id: 'house', label: 'Hus' },
+                                { id: 'cylinder', label: 'Cylinder' },
+                                { id: 'silo', label: 'Silo' },
+                                { id: 'tube', label: 'Rör (Tube)' },
+                                { id: 'cone', label: 'Kon' },
+                                { id: 'icecream', label: 'Glasskon' },
+                                { id: 'sphere', label: 'Klot' },
+                                { id: 'hemi', label: 'Halvklot' }
+                            ].map(sh => (
                                 <button 
-                                    key={sh} 
-                                    onClick={() => onSpawn(`3d_${sh}`)} 
-                                    className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-[11px] font-bold capitalize text-slate-700 cursor-pointer text-center"
+                                    key={sh.id} 
+                                    onClick={() => onSpawn(`3d_${sh.id}`)} 
+                                    className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-[10px] font-bold text-slate-700 cursor-pointer text-center truncate"
+                                    title={sh.label}
                                 >
-                                    {sh}
+                                    {sh.label}
                                 </button>
                             ))}
                         </div>

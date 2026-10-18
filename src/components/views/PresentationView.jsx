@@ -18,6 +18,9 @@ import WhiteboardDrawer from '../whiteboard/WhiteboardDrawer';
 import AlgebraTileTool from '../whiteboard/tools/manipulatives/AlgebraTileTool';
 import FractionShapesTool from '../whiteboard/tools/geometry/FractionShapesTool';
 import CoordinatePlaneTool from '../whiteboard/tools/analysis/CoordinatePlaneTool';
+import { HelpCircle } from 'lucide-react';
+import PresentationTutorialModal from '../modals/PresentationTutorialModal';
+import { getToolDefinition } from '../whiteboard/tools/registry';
 
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 
@@ -41,6 +44,16 @@ export default function PresentationView({
     // Active Drawer state for side bins: 'algebra' | 'shapes' | 'fractions' | 'data' | null
     const [activeDrawer, setActiveDrawer] = useState(null);
 
+    const storageKey = `has_seen_presentation_guide`;
+    const [showTutorial, setShowTutorial] = useState(() => {
+        return !localStorage.getItem(storageKey);
+    });
+
+    const handleCloseTutorial = () => {
+        localStorage.setItem(storageKey, 'true');
+        setShowTutorial(false);
+    };
+
     const handleToggleDrawer = (drawerKey) => {
         setActiveDrawer(prev => (prev === drawerKey ? null : drawerKey));
     };
@@ -48,6 +61,27 @@ export default function PresentationView({
     const handleUniversalSpawn = (type, payload = {}) => {
         const id = Date.now().toString();
 
+        // 1. Calculator: Exact vertical dimensions & state
+        if (type === 'calculator') {
+            updateCurrentSlideElements(prev => [...prev, {
+                id,
+                type: 'calculator',
+                x: 600,
+                y: 180,
+                width: 280,
+                height: 480,
+                expression: "",
+                result: "",
+                ans: "",
+                calcMode: "LTR",
+                stroke: '#06b6d4',
+                rotation: 0,
+                opacity: 1
+            }]);
+            return;
+        }
+
+        // 2. Algebra Tiles
         if (type === 'algebra_tile') {
             const { kind, sign, side } = payload;
             const currentSlideElements = slides[activeSlideIndex]?.elements || [];
@@ -67,7 +101,7 @@ export default function PresentationView({
             return;
         }
 
-        // 🟢 FIX FOR 3D SHAPES (Silo, Cone, Cube, Prism, etc.)
+        // 3. 3D Shapes
         if (type.startsWith('3d_')) {
             const shapeName = type.replace('3d_', '');
             updateCurrentSlideElements(prev => [...prev, {
@@ -78,9 +112,9 @@ export default function PresentationView({
                 y: 300,
                 width: 220,
                 height: 220,
-                stroke: '#0284c7', // Crisp cyan/blue outline
+                stroke: '#0284c7',
                 strokeWidth: 3,
-                fill: 'rgba(2, 132, 199, 0.08)', // Light translucent fill
+                fill: 'rgba(2, 132, 199, 0.08)',
                 showInternal: true,
                 rotation: 0,
                 opacity: 1
@@ -100,7 +134,14 @@ export default function PresentationView({
             return;
         }
 
-        // 🟢 2D Shapes & Generic Tools
+        // 4. Any other registered widget with a createDefault factory
+        const registered = getToolDefinition(type);
+        if (registered && typeof registered.createDefault === 'function') {
+            updateCurrentSlideElements(prev => [...prev, registered.createDefault(id, '#06b6d4', type)]);
+            return;
+        }
+
+        // 5. Basic 2D Shapes Fallback
         const isShape = ['rect', 'circle', 'triangle'].includes(type);
         updateCurrentSlideElements(prev => [...prev, {
             id,
@@ -645,6 +686,16 @@ export default function PresentationView({
                 
                 
                 <div className="flex items-center gap-4">
+                    {/* 🟢 GUIDE / HELP BUTTON */}
+                    <button
+                        type="button"
+                        onClick={() => setShowTutorial(true)}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        title={lang === 'sv' ? "Snabbguide & Hjälp" : "Quick Guide & Help"}
+                    >
+                        <HelpCircle size={15} className="text-amber-400" />
+                        <span className="hidden md:inline">{lang === 'sv' ? "Guide" : "Help"}</span>
+                    </button>
                     <PreferencesToggle />
                     <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700/60 gap-1 shadow-inner">
                         <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
@@ -1482,6 +1533,12 @@ export default function PresentationView({
                     allowScratchpad: true,
                     allowCanvas: slides.some(s => (s.elements || []).length > 0)
                 }}
+            />
+            {/* 🟢 PRESENTATION GUIDE MODAL */}
+            <PresentationTutorialModal
+                isOpen={showTutorial}
+                onClose={handleCloseTutorial}
+                lang={lang}
             />
         </div>
     );

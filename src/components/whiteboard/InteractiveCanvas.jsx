@@ -29,7 +29,7 @@ export default function InteractiveCanvas({
         bgType, 
         onToggleBg, 
         elements = [], 
-        setElements = () => {}, // 🟢 Guard: Default no-op prevents crashes in readOnly/student views
+        setElements = () => {},
         onCustomClear = null,
         livePacket = [], 
         clueProgress = {}, 
@@ -37,7 +37,6 @@ export default function InteractiveCanvas({
         toolbarMode = 'all', 
         allowedTools = null, 
         readOnly = false,
-        // Optional controlled props; falls back to internal state
         activeDrawer: controlledActiveDrawer, 
         onToggleDrawer: controlledOnToggleDrawer,
         showDividingLine = false,
@@ -60,7 +59,6 @@ export default function InteractiveCanvas({
         }
     }[lang || 'sv'];
 
-    // 🟢 1. Self-contained Drawer State (Works in ALL views automatically)
     const [internalDrawer, setInternalDrawer] = useState(null);
     const activeDrawer = controlledActiveDrawer !== undefined ? controlledActiveDrawer : internalDrawer;
     const handleToggleDrawer = controlledOnToggleDrawer || ((key) => {
@@ -82,12 +80,13 @@ export default function InteractiveCanvas({
     const activePathRef = useRef(null);
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    // 1. Timers & Live Clock updates
+    // 1. Single Master Timer & Clock Interval
     useEffect(() => {
+        if (readOnly || typeof setElements !== 'function') return;
         const interval = setInterval(() => {
             setCurrentTime(new Date()); 
             setElements(prev => {
-                if (!prev.some(el => el.type === 'timer' && el.isRunning)) return prev;
+                if (!Array.isArray(prev) || !prev.some(el => el.type === 'timer' && el.isRunning)) return prev;
                 return prev.map(el => {
                     if (el.type === 'timer' && el.isRunning && el.timeLeft > 0) {
                         const nextTime = el.timeLeft - 1;
@@ -98,36 +97,22 @@ export default function InteractiveCanvas({
             });
         }, 1000);
         return () => clearInterval(interval);
-    }, [setElements]);
+    }, [readOnly, setElements]);
 
-    // 2. Safe Auto-Spawn for registered interactive tools
+    // 2. Safe Auto-Spawn for Stamp / Interactive Tools
     useEffect(() => {
-        if (['fractions', 'algebra_tiles', 'geometry'].includes(toolbarMode)) {
-            if (activeTool === 'richText') {
-                const newId = Date.now().toString();
-                const newEl = { 
-                    id: newId, 
-                    type: 'richText', 
-                    x: 600, 
-                    y: 300, 
-                    width: 400, 
-                    height: 120, 
-                    content: "<p></p>", 
-                    stroke: color, 
-                    rotation: 0, 
-                    opacity: 1 
-                };
-                setElements(prev => [...prev, newEl]);
-                setSelectedIds([newId]);
-                setEditingId(newId);
-                setActiveTool('select');
-            }
+        // Tools that must REMAIN active for drawing, typing, or state toggling:
+        const persistentTools = [
+            'select', 'pen', 'highlighter', 'eraser', 'line', 
+            'rect', 'circle', 'triangle', 'richText', 
+            'timer', 'realClock', 'volume_cue', 'math', 'calculator'
+        ];
+
+        if (persistentTools.includes(activeTool) || activeTool.startsWith('3d_')) {
             return;
         }
 
-        const manualDrawTools = ['select', 'pen', 'highlighter', 'eraser', 'line', 'rect', 'circle', 'triangle'];
-        if (manualDrawTools.includes(activeTool) || activeTool.startsWith('3d_')) return;
-
+        // Only auto-spawn and reset to select for drawer manipulatives/stamps
         const newId = Date.now().toString();
         const registeredTool = getToolDefinition(activeTool);
         if (registeredTool && typeof registeredTool.createDefault === 'function') {
@@ -135,28 +120,8 @@ export default function InteractiveCanvas({
             setElements(prev => [...prev, newEl]);
             setSelectedIds([newId]);
             setActiveTool('select');
-            return;
         }
-
-        if (activeTool === 'richText') {
-            const newEl = { 
-                id: newId, 
-                type: 'richText', 
-                x: 600, 
-                y: 300, 
-                width: 500, 
-                height: 300, 
-                content: "<p></p>", 
-                stroke: color, 
-                rotation: 0, 
-                opacity: 1 
-            };
-            setElements(prev => [...prev, newEl]);
-            setSelectedIds([newId]);
-            setEditingId(newId);
-            setActiveTool('select');
-        }
-    }, [activeTool, color, setElements, toolbarMode]);
+    }, [activeTool, color, setElements]);
 
     const isElementInBox = (el, box) => {
         const minX = Math.min(box.startX, box.currentX);
@@ -193,7 +158,6 @@ export default function InteractiveCanvas({
 
             const isModifier = e.ctrlKey || e.metaKey;
 
-            // Delete / Backspace
             if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.length > 0) {
                 e.preventDefault();
                 setElements(prev => prev.filter(el => !selectedIds.includes(el.id) || el.isPermanent));
@@ -201,7 +165,6 @@ export default function InteractiveCanvas({
                 return;
             }
 
-            // Ctrl+D (Duplicate)
             if (isModifier && e.key.toLowerCase() === 'd' && selectedIds.length > 0) {
                 e.preventDefault();
                 const offset = 25;
@@ -241,7 +204,6 @@ export default function InteractiveCanvas({
                 return;
             }
 
-            // Ctrl+C (Copy)
             if (isModifier && e.key.toLowerCase() === 'c' && selectedIds.length > 0) {
                 const itemsToCopy = elements.filter(el => selectedIds.includes(el.id) && !el.isPermanent);
                 if (itemsToCopy.length > 0) {
@@ -250,7 +212,6 @@ export default function InteractiveCanvas({
                 return;
             }
 
-            // Ctrl+V (Paste)
             if (isModifier && e.key.toLowerCase() === 'v') {
                 const raw = sessionStorage.getItem('canvasClipboard');
                 if (!raw) return;
@@ -315,9 +276,38 @@ export default function InteractiveCanvas({
         return () => window.removeEventListener('pointerdown', handleGlobalDeselect);
     }, [activeTool]);
 
-    // 🟢 2. Unified Spawning Engine (Shared by all drawers across all views)
+    // 4. Fixed Drawer Tool Handler (Switches mode for tools, spawns objects for manipulatives)
     const handleSpawnFromDrawer = (type, payload = {}) => {
+        // If it is a drawing/writing tool or mode, ACTIVATE IT in state and close the drawer
+        const toolModes = ['pen', 'highlighter', 'eraser', 'line', 'select', 'richText', 'workMode'];
+        if (toolModes.includes(type)) {
+            setActiveTool(type);
+            handleToggleDrawer(null);
+            return;
+        }
+
         const id = `el_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+        if (type === 'calculator') {
+            const newEl = {
+                id,
+                type: 'calculator',
+                x: 600,
+                y: 180,
+                width: 280,
+                height: 480,
+                expression: "",
+                result: "",
+                ans: "",
+                calcMode: "LTR",
+                stroke: color,
+                rotation: 0,
+                opacity: 1
+            };
+            setElements(prev => [...prev, newEl]);
+            setSelectedIds([id]);
+            return;
+        }
 
         if (type === 'algebra_tile') {
             const { kind, sign, side = 'VL' } = payload;
@@ -357,10 +347,10 @@ export default function InteractiveCanvas({
         }
 
         const registered = getToolDefinition(type);
-        if (registered && typeof registered.createDefault === 'function') {
-            setElements(prev => [...prev, registered.createDefault(id, color, type)]);
-            return;
-        }
+            if (registered && typeof registered.createDefault === 'function') {
+                setElements(prev => [...prev, registered.createDefault(id, color, type)]);
+                return;
+            }
 
         const isShape = ['rect', 'circle', 'triangle'].includes(type);
         setElements(prev => [...prev, {
@@ -379,25 +369,6 @@ export default function InteractiveCanvas({
         }]);
     };
 
-    // 🟢 3. Timer guard: never call setElements if not provided or readOnly
-    useEffect(() => {
-        if (readOnly || typeof setElements !== 'function') return;
-        const interval = setInterval(() => {
-            setCurrentTime(new Date()); 
-            setElements(prev => {
-                if (!Array.isArray(prev) || !prev.some(el => el.type === 'timer' && el.isRunning)) return prev;
-                return prev.map(el => {
-                    if (el.type === 'timer' && el.isRunning && el.timeLeft > 0) {
-                        const nextTime = el.timeLeft - 1;
-                        return { ...el, timeLeft: nextTime, isRunning: nextTime > 0 };
-                    }
-                    return el;
-                });
-            });
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [readOnly, setElements]);
-
     const getSmoothPathData = (points) => {
         if (!points || points.length === 0) return '';
         if (points.length === 1) return `M ${points[0].x} ${points[0].y} L ${points[0].x} ${points[0].y}`;
@@ -413,7 +384,6 @@ export default function InteractiveCanvas({
         return d;
     };
 
-    // Native SVG coordinate normalization
     const getCoordinates = (e, shouldSnap = true) => {
         const svg = svgRef.current;
         if (!svg) return { x: 0, y: 0 };
@@ -489,7 +459,7 @@ export default function InteractiveCanvas({
     };
 
     const isPointInElement = (x, y, el) => {
-        const padding = 16; // 🟢 Universal 16px hit margin
+        const padding = 16;
 
         if (el.type === 'path' && el.points?.length > 0) {
             return el.points.some(p => Math.abs(x - p.x) < (padding + 8) && Math.abs(y - p.y) < (padding + 8));
@@ -499,7 +469,6 @@ export default function InteractiveCanvas({
         const h = Number(el.height) || 0;
         const r = w / 2;
 
-        // Bounding box tools (Rectangles, T-Chart, Coordinate Plane, 3D Shapes, Ruler, Algebra Tiles, etc.)
         const bounds = ['rect', 'coord', 't_chart', 'tchart', 'triangle', 'ruler', 'shapes_3d', 'math', 'dice', 'richText', 'calculator', 'dynamicClues', 'volume_cue', 'algebra_tile', 'frac_rect'];
         if (bounds.some(b => el.type.includes(b))) {
             return (
@@ -510,12 +479,10 @@ export default function InteractiveCanvas({
             );
         }
 
-        // Circular tools (Circles, Fraction Circles, Spinners, Clock, Protractor, Dice)
         if (el.type.includes('circle') || ['spinner', 'node', 'protractor', 'clock', 'timer', 'realClock'].includes(el.type)) {
             return Math.sqrt((x - (el.x + r)) ** 2 + (y - (el.y + r)) ** 2) <= (r + padding); 
         }
 
-        // Line tools
         if (el.type === 'line') {
             const x1 = el.x1 ?? el.x;
             const y1 = el.y1 ?? el.y;
@@ -574,7 +541,6 @@ export default function InteractiveCanvas({
 
         const dragDrawTools = ['pen', 'highlighter', 'line', 'rect', 'circle', 'triangle', '3d_'];
         if (!dragDrawTools.some(t => activeTool.startsWith(t))) {
-            setActiveTool('select');
             return;
         }
 
@@ -740,9 +706,6 @@ export default function InteractiveCanvas({
             }
             activePathRef.current = null; 
         }
-
-        const discrete = ['rect', 'circle', 'triangle', 'line'];
-        if (discrete.includes(activeTool) || activeTool.startsWith('3d_')) setActiveTool('select');
     };
 
     useEffect(() => {
@@ -768,8 +731,9 @@ export default function InteractiveCanvas({
         const objHeight = isP ? radius : (isC ? radius * 2 : (Number(el.height) || 200));
         const objWidth = isC || isP ? radius * 2 : (Number(el.width) || 200);
         
-        const padding = 16; // 🟢 Global forgiving margin outside the visual edge
-        const botY = el.y + objHeight + 14; 
+        const padding = 16;
+        const topY = el.y - 56;                // Above top-left corner
+        const botY = el.y + objHeight + 14;     // Below bottom boundary
         const cx = (isC || isP) ? el.x + radius : el.x + objWidth / 2;
         const rigX = (isC || isP) ? el.x + radius * 2 : el.x + objWidth;
 
@@ -778,7 +742,7 @@ export default function InteractiveCanvas({
 
         return (
             <g className="ui-ignore pointer-events-auto">
-                {/* 🟢 1. UNIVERSAL HIT BUFFER: Catches drags up to 16px outside the object */}
+                {/* 1. Universal Hit Buffer */}
                 {isC ? (
                     <circle
                         cx={cx}
@@ -816,7 +780,7 @@ export default function InteractiveCanvas({
                     />
                 )}
 
-                {/* 2. Visual selection dashed box */}
+                {/* 2. Visual Selection Outline */}
                 <rect 
                     x={el.x - 4} 
                     y={el.y - 4} 
@@ -830,63 +794,62 @@ export default function InteractiveCanvas({
                     className="pointer-events-none"
                 />
                 
-                {/* 3. Bottom Context Menu & Action Pill */}
-                <foreignObject x={el.x} y={botY} width={650} height={56} className="overflow-visible pointer-events-auto">
-                    <div className="flex flex-wrap gap-2 pointer-events-auto items-center">
-                        {/* Move / Duplicate / Delete Controls */}
-                        <div className="flex gap-1.5 items-center bg-white/95 backdrop-blur-md p-1 rounded-2xl border-2 border-slate-200 shadow-xl">
-                            <button 
-                                onPointerDown={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedIds([el.id]);
-                                    setInteractionMode('moving');
-                                    setIsDrawing(true);
-                                    const { x, y } = getCoordinates(e, false);
-                                    dragCoordRef.current = { x, y };
-                                }}
-                                className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-move pointer-events-auto transition-colors" 
-                                title={lang === 'sv' ? 'Flytta' : 'Move'}
-                            >
-                                <Move size={15} />
-                            </button>
-                            <button 
-                                onClick={() => duplicateElement(el.id)} 
-                                className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto" 
-                                title={lang === 'sv' ? 'Kopiera' : 'Copy'}
-                            >
-                                <Copy size={15}/>
-                            </button>
-                            <button 
-                                onClick={() => deleteElement(el.id)} 
-                                className="!bg-white !text-rose-500 border border-rose-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-rose-50 cursor-pointer pointer-events-auto" 
-                                title={lang === 'sv' ? 'Ta bort' : 'Delete'}
-                            >
-                                <Trash2 size={16}/>
-                            </button>
-                        </div>
-
-                        {/* Tool-specific Context Options */}
-                        {hasCustomContextMenu && (
-                            <div 
-                                onPointerDown={(e) => e.stopPropagation()} 
-                                className="flex items-center gap-3 !bg-white !text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-slate-200/90 shadow-xl pointer-events-auto text-sm font-bold font-sans"
-                                style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
-                            >
-                                {Tool.renderContextMenu({
-                                    el,
-                                    setElements,
-                                    lang,
-                                    t,
-                                    onUpdate: (updated) => setElements(prev => prev.map(item => item.id === el.id ? updated : item))
-                                })}
-                            </div>
-                        )}
+                {/* 3. Top-Left System Actions (Move, Copy, Delete) */}
+                <foreignObject x={el.x} y={topY} width={180} height={50} className="overflow-visible pointer-events-auto">
+                    <div className="flex gap-1.5 items-center bg-white/95 backdrop-blur-md p-1 rounded-2xl border-2 border-slate-200 shadow-xl w-max">
+                        <button 
+                            onPointerDown={(e) => {
+                                e.stopPropagation();
+                                setSelectedIds([el.id]);
+                                setInteractionMode('moving');
+                                setIsDrawing(true);
+                                const { x, y } = getCoordinates(e, false);
+                                dragCoordRef.current = { x, y };
+                            }}
+                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-move pointer-events-auto transition-colors" 
+                            title={lang === 'sv' ? 'Flytta' : 'Move'}
+                        >
+                            <Move size={15} />
+                        </button>
+                        <button 
+                            onClick={() => duplicateElement(el.id)} 
+                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto" 
+                            title={lang === 'sv' ? 'Kopiera' : 'Copy'}
+                        >
+                            <Copy size={15}/>
+                        </button>
+                        <button 
+                            onClick={() => deleteElement(el.id)} 
+                            className="!bg-white !text-rose-500 border border-rose-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-rose-50 cursor-pointer pointer-events-auto" 
+                            title={lang === 'sv' ? 'Ta bort' : 'Delete'}
+                        >
+                            <Trash2 size={16}/>
+                        </button>
                     </div>
                 </foreignObject>
 
-                {/* 4. Top Adjustment Handles */}
-                <circle cx={cx} cy={el.y - 25} r={12} fill="white" stroke="#3b82f6" strokeWidth="2" className="cursor-alias" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating'); setIsDrawing(true);}} />
-                <rect x={rigX - 5} y={el.y - 12} width={20} height={20} rx={4} fill="white" stroke="#3b82f6" strokeWidth={2} className="cursor-nwse-resize" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('resizing'); setIsDrawing(true);}} />
+                {/* 4. Bottom Context Menu (Spawns BELOW the element boundaries) */}
+                {hasCustomContextMenu && (
+                    <foreignObject x={el.x} y={botY} width={650} height={56} className="overflow-visible pointer-events-auto">
+                        <div 
+                            onPointerDown={(e) => e.stopPropagation()} 
+                            className="flex items-center gap-3 !bg-white !text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-slate-200/90 shadow-xl pointer-events-auto text-sm font-bold font-sans w-max"
+                            style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
+                        >
+                            {Tool.renderContextMenu({
+                                el,
+                                setElements,
+                                lang,
+                                t,
+                                onUpdate: (updated) => setElements(prev => prev.map(item => item.id === el.id ? updated : item))
+                            })}
+                        </div>
+                    </foreignObject>
+                )}
+
+                {/* 5. Adjustment Handles */}
+                <circle cx={cx} cy={el.y - 14} r={8} fill="white" stroke="#3b82f6" strokeWidth="2" className="cursor-alias" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating'); setIsDrawing(true);}} />
+                <rect x={rigX - 5} y={el.y - 12} width={18} height={18} rx={4} fill="white" stroke="#3b82f6" strokeWidth={2} className="cursor-nwse-resize" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('resizing'); setIsDrawing(true);}} />
             </g>
         );
     };
@@ -934,13 +897,11 @@ export default function InteractiveCanvas({
             );
         }
 
-        // Path (Pen/Highlighter)
         if (el.type === 'path') {
             const d = getSmoothPathData(el.points);
             return <path key={el.id} data-id={el.id} d={d} stroke={el.stroke} strokeWidth={el.strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={el.opacity} className="pointer-events-auto cursor-move" />;
         }
 
-        // Line
         if (el.type === 'line') {
             return (
                 <g key={el.id} data-id={el.id} className="pointer-events-auto cursor-move">
@@ -965,7 +926,6 @@ export default function InteractiveCanvas({
             );
         }
 
-        // Rich Text (Wordpad Tool)
         if (el.type === 'richText') {
             const isEditing = editingId === el.id;
             
@@ -1100,7 +1060,7 @@ export default function InteractiveCanvas({
                 viewBox={`0 0 ${resolution.w} ${resolution.h}`}
                 preserveAspectRatio="xMidYMid meet"
                 style={{ touchAction: 'none' }}
-                className={`absolute inset-0 w-full h-full z-30 pointer-events-auto ${
+                className={`absolute inset-0 w-full h-full z-10 pointer-events-auto ${
                     readOnly ? 'cursor-default' :
                     activeTool === 'eraser' ? 'cursor-cell' :
                     activeTool === 'select' ? 'cursor-default' : 'cursor-crosshair'
@@ -1137,7 +1097,7 @@ export default function InteractiveCanvas({
                 )}
             </svg>
             
-            {/* Unified Toolbar */}
+            {/* Unified Toolbar (Direct child of canvas container) */}
             {toolbarMode !== 'none' && !readOnly && (
                 <Toolbar 
                     lang={lang} 
@@ -1157,7 +1117,7 @@ export default function InteractiveCanvas({
                 />
             )}
 
-            {/* 🟢 Render drawer ONLY if not suppressed by a parent view */}
+            {/* Whiteboard Drawer */}
             {!readOnly && renderDrawer && (
                 <WhiteboardDrawer
                     activeDrawer={activeDrawer}

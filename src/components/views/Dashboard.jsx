@@ -5,7 +5,7 @@ import {
   Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, User, 
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet, MoreHorizontal,
   PlayCircle, CheckCircle2, AlertCircle, Grid3X3, Monitor, Beaker, Newspaper, X, 
-  ArrowUpRight, Layers, PieChart
+  ArrowUpRight, Layers, PieChart, HelpCircle
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
@@ -13,12 +13,13 @@ import { APP_UPDATES } from '@/constants/updates';
 import TeacherHubManager from './TeacherHubManager';
 import { CONTENT_MAP } from '../../constants/content_map';
 import MathDisplay from '../shared/MathDisplay';
+import DashboardTutorialModal from '../modals/DashboardTutorialModal';
 
 import MapGenerator from '../MapGenerator';
 
 const Dashboard = ({ 
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
-    timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen,
+    timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen, 
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, onLabOpen, onFractionLabOpen,
     onTimesTableOpen, onRelaunch, onViewReport, onEdit, activeBucket, onBackToGateway,
     userRole = 'teacher'
@@ -69,6 +70,16 @@ const Dashboard = ({
 
     const t = TEXT[lang] || TEXT.sv;
     const latestUpdate = APP_UPDATES[0];
+
+    const storageKey = `has_seen_dashboard_guide_${userRole}`;
+    const [showDashboardTutorial, setShowDashboardTutorial] = useState(() => {
+        return !localStorage.getItem(storageKey);
+    });
+
+    const handleCloseDashboardTutorial = () => {
+        localStorage.setItem(storageKey, 'true');
+        setShowDashboardTutorial(false);
+    };
 
     useEffect(() => {
         fetchActiveSession();
@@ -214,28 +225,6 @@ const Dashboard = ({
                     )}
                     </div>
 
-                    {/* --- NEWS / UPDATES MICRO-CARD --- */}
-                    {['teacher', 'super_admin'].includes(userRole) && (
-                        <div className="theme-orange">
-                            <button 
-                                onClick={() => setShowUpdateLog(true)}
-                                className="w-full flex items-center justify-between p-4 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] transition-all group"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center text-[var(--brand-text)] shadow-sm group-hover:scale-110 transition-transform">
-                                        <Sparkles size={16} fill="currentColor" />
-                                    </div>
-                                    <div className="text-left">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[9px] font-black uppercase text-[var(--brand-text)] opacity-80 tracking-widest">{t.news_title}</span>
-                                        </div>
-                                        <h4 className="text-xs font-bold text-[var(--text-main)] truncate max-w-[140px]">{latestUpdate.title[lang]}</h4>
-                                    </div>
-                                </div>
-                                <ArrowUpRight size={14} className="text-[var(--brand-text)]" />
-                            </button>
-                        </div>
-                    )}
 
                     {/* --- TOOLS SECTION --- */}
                     <div className="flex flex-col gap-3">
@@ -259,6 +248,27 @@ const Dashboard = ({
                             </div>
                         )}
 
+                        <div className="theme-indigo mt-2">
+                            <button 
+                                onClick={onFractionLabOpen} 
+                                className="group flex items-center gap-3 p-3.5 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)] transition-all text-left w-full cursor-pointer"
+                            >
+                                
+                                <div className="w-8 h-8 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center text-[var(--brand-text)] shrink-0 shadow-sm">
+                                    <PieChart size={18} />
+                                </div>
+                                <div>
+                            <span className="block font-bold text-xs uppercase text-[var(--text-main)] group-hover:text-white leading-tight">
+                                {lang === 'sv' ? "Digitala laborationer" : "Digitala Manipulatives"}
+                            </span>
+                            <span className="text-[9px] font-bold text-[var(--brand-text)] group-hover:text-white/80 uppercase tracking-widest">
+                                {lang === 'sv' ? "Bråk, Algebra, Geometri" : "Fraction, Algebra, Geometry"}
+                            </span>
+                        </div>
+                
+                            </button>
+                        </div>
+
                         {/* Test Lab */}
                         <div className="theme-indigo">
                             <button onClick={onLabOpen} className="group flex items-center gap-4 p-4 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)] transition-all text-left w-full">
@@ -273,6 +283,7 @@ const Dashboard = ({
                                 </div>
                             </button>
                         </div>
+                        
 
                         {/* Timer Inline Tool */}
                         <div className="theme-emerald">
@@ -308,25 +319,6 @@ const Dashboard = ({
                                     <span className="font-bold text-[10px] uppercase text-[var(--text-main)]">{t.stats_title}</span>
                                 </button>
                             </div>
-                        </div>
-
-                        <div className="theme-indigo mt-2">
-                            <button 
-                                onClick={onFractionLabOpen} 
-                                className="group flex items-center gap-3 p-3.5 bg-[var(--brand-bg)] border border-[var(--brand-border)] rounded-[var(--radius-card)] hover:border-[var(--brand-solid)] hover:bg-[var(--brand-solid)] transition-all text-left w-full cursor-pointer"
-                            >
-                                <div className="w-8 h-8 bg-[var(--bg-card)] rounded-[var(--radius-btn)] flex items-center justify-center text-[var(--brand-text)] shrink-0 shadow-sm">
-                                    <PieChart size={18} />
-                                </div>
-                                <div>
-                                    <span className="block font-bold text-xs uppercase text-[var(--text-main)] group-hover:text-white leading-tight">
-                                        {lang === 'sv' ? "Digitala laborationer" : "Digitala Manipulatives"}
-                                    </span>
-                                    <span className="text-[9px] font-bold text-[var(--brand-text)] group-hover:text-white/80 uppercase tracking-widest">
-                                        {lang === 'sv' ? "Bråk, Algebra, Geometri" : "Fraction, Algebra, Geometry"}
-                                    </span>
-                                </div>
-                            </button>
                         </div>
                     </div>
 
@@ -366,7 +358,7 @@ const Dashboard = ({
                     {/* --- CONTENT TABS & MAP NAV --- */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div className="flex gap-2 w-fit">
-                                                       
+                                              
                             {/* Existing Tabs */}
                             <button 
                                 onClick={() => setActiveTab('curriculum')} 
@@ -394,15 +386,26 @@ const Dashboard = ({
                                 </button>
                             )}
                         </div>
-
-                        <button 
-                            onClick={onContentOpen} 
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-[var(--radius-btn)] bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-solid)] font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm group"
-                        >
-                            <Map size={14} className="group-hover:scale-110 transition-transform" /> 
-                            {t.content_map}
-                            <ChevronRight size={14} className="opacity-40" />
-                        </button>
+                        {['teacher', 'super_admin'].includes(userRole) && (
+                                <div className="theme-orange">
+                                    <button 
+                                        onClick={() => setShowUpdateLog(true)} 
+                                        className="flex items-center gap-2 px-3.5 py-2.5 rounded-[var(--radius-btn)] bg-[var(--brand-bg)] border border-[var(--brand-border)] hover:border-[var(--brand-solid)] text-[var(--brand-text)] transition-all shadow-xs group cursor-pointer"
+                                        title={t.view_all}
+                                    >
+                                        <div className="flex items-center gap-1.5 font-black text-[10px] uppercase tracking-wider">
+                                            <Sparkles size={13} className="text-amber-500 fill-amber-500 group-hover:rotate-12 transition-transform" />
+                                            <span className="hidden md:inline text-[var(--text-muted)] font-bold">{t.news_title}:</span>
+                                            <span className="truncate max-w-[150px] lg:max-w-[200px] text-[var(--text-main)] font-black">
+                                                {latestUpdate.title[lang]}
+                                            </span>
+                                        </div>
+                                        <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--brand-border)] text-[9px] font-black tracking-normal">
+                                            v{latestUpdate.version}
+                                        </span>
+                                    </button>
+                                </div>
+                            )}   
                     </div>
 
                     {/* --- TAB CONTENT --- */}
@@ -535,7 +538,27 @@ const Dashboard = ({
                                                 </div>
                                             );
                                         })}
+                                        {/* 🟢 GUIDE / HELP BUTTON */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowDashboardTutorial(true)}
+                                            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-[var(--radius-btn)] bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-solid)] font-bold text-[10px] uppercase tracking-widest transition-all shadow-xs cursor-pointer shrink-0"
+                                            title={lang === 'sv' ? "Snabbguide & Hjälp" : "Quick Guide & Help"}
+                                        >
+                                            <HelpCircle size={14} className="text-amber-500" />
+                                            <span className="hidden sm:inline">{lang === 'sv' ? "Guide" : "Help"}</span>
+                                        </button>
+                                        <button 
+                                            onClick={onContentOpen} 
+                                            className="ml-auto shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-[var(--radius-btn)] bg-[var(--bg-surface)] border border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-solid)] font-bold text-[10px] uppercase tracking-widest transition-all shadow-sm group cursor-pointer"
+                                        >
+                                            <Map size={14} className="group-hover:scale-110 transition-transform" /> 
+                                            {t.content_map}
+                                            <ChevronRight size={14} className="opacity-40" />
+                                        </button>
                                     </div>
+
+                                    
 
                                     {/* ACTIVE CATEGORY TOPICS GRID */}
                                     <div className={`theme-${themeColorString} card p-6 sm:p-8 border-2 border-[var(--brand-border)]`}>
@@ -686,6 +709,12 @@ const Dashboard = ({
                     </div>
                 )}
             </div>
+            <DashboardTutorialModal
+                isOpen={showDashboardTutorial}
+                onClose={handleCloseDashboardTutorial}
+                lang={lang}
+                userRole={userRole}
+            />
         </div>
     );
 };
