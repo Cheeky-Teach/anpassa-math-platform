@@ -2,7 +2,7 @@
 
 import { GLOBAL_STORY_REGISTRY } from './stories/index.js';
 import { StoryScenario } from './wordProblemContract.js';
-import { evaluateStoryRules } from './evaluateStoryRules.js';
+import { evaluateStoryRules } from './evaluateStoryRules';
 
 export interface VariationConfig {
     key: string;

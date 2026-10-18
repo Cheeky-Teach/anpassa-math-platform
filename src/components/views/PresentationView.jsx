@@ -22,6 +22,7 @@ import { HelpCircle } from 'lucide-react';
 import PresentationTutorialModal from '../modals/PresentationTutorialModal';
 import { getToolDefinition } from '../whiteboard/tools/registry';
 
+
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 
 
@@ -40,6 +41,10 @@ export default function PresentationView({
     const [slides, setSlides] = useState(initialSlides || [{ id: `slide_${Date.now()}`, elements: [], scrollX: 0, scrollY: 0, title: 'Slide 1', activeIds: [] }]);
     const [activeSlideIndex, setActiveSlideIndex] = useState(0);
     const [editingSlideIndex, setEditingSlideIndex] = useState(null);
+
+    // --- NEW: Naming & Save Choice Modal States ---
+    const [showNamingModal, setShowNamingModal] = useState(false);
+    const [tempTitleInput, setTempTitleInput] = useState('');
 
     // Active Drawer state for side bins: 'algebra' | 'shapes' | 'fractions' | 'data' | null
     const [activeDrawer, setActiveDrawer] = useState(null);
@@ -397,58 +402,19 @@ export default function PresentationView({
     };
 
     //    WIRED via progressSync
+    // Triggered when clicking "Go Live"
     const handleGoLive = () => {
-        setShowLiveModal(true);
-    };
-
-    const confirmLaunchLive = async (configuredSettings) => {
-        setShowLiveModal(false);
-
-        syncBatchProgress('presentation_live_started', livePacket, {
-            app_mode: 'teacher_live',
-            ...configuredSettings
-        });
-
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("Not authenticated");
-
-            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-
-            const sessionPayload = {
-                mode: 'presentation',
-                slides: slides,
-                packet: livePacket,
-                settings: {
-                    bgType,
-                    viewMode,
-                    globalZoom,
-                    ...configuredSettings // 👈 Contains allowCanvas, allowScratchpad, responseStyle
-                }
-            };
-
-            const { data: roomData, error } = await supabase
-                .from('rooms')
-                .insert([{
-                    teacher_id: user.id,
-                    class_code: code,
-                    status: 'active',
-                    current_slide_index: activeSlideIndex || 0,
-                    active_question_data: sessionPayload,
-                    title: localTitle || (lang === 'sv' ? "Live Presentation" : "Live Presentation")
-                }])
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            if (onLaunchLive) {
-                onLaunchLive(roomData);
-            }
-        } catch (err) {
-            console.error("Failed to start live session:", err);
-            alert(lang === 'sv' ? "Kunde inte starta live-lektionen." : "Failed to start live session.");
+        const trimmedTitle = localTitle.trim();
+        
+        // If the presentation hasn't been saved yet, open our custom naming/choice modal
+        if (!boardId || !trimmedTitle || trimmedTitle === "Min Presentation" || trimmedTitle === "My Presentation") {
+            setTempTitleInput(trimmedTitle && trimmedTitle !== "Min Presentation" && trimmedTitle !== "My Presentation" ? trimmedTitle : "");
+            setShowNamingModal(true);
+            return;
         }
+
+        // If already saved, proceed directly to the live settings pre-flight modal
+        setShowLiveModal(true);
     };
     
     //    WIRED via progressSync
@@ -544,6 +510,99 @@ export default function PresentationView({
             alert(lang === 'sv' ? "Kunde inte spara presentationen." : "Failed to save presentation.");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleSaveAndLaunch = async () => {
+        const finalTitle = tempTitleInput.trim() || (lang === 'sv' ? "Namnlös Presentation" : "Untitled Presentation");
+        setLocalTitle(finalTitle);
+        setShowNamingModal(false);
+
+        setIsSaving(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("Not authenticated");
+
+            const payload = {
+                title: finalTitle,
+                type: 'board', 
+                user_id: user.id,
+                packet: { slides, livePacket, settings: { bgType, viewMode, globalZoom } }
+            };
+
+            const { data: savedSheet, error } = await supabase
+                .from('saved_sheets')
+                .insert([payload])
+                .select()
+                .single();
+
+            if (error) throw error;
+            setBoardId(savedSheet.id);
+            setShowLiveModal(true); // Open pre-flight modal
+        } catch (err) {
+            console.error("Save failed during Go Live:", err);
+            alert(lang === 'sv' ? "Kunde inte spara presentationen." : "Failed to save presentation.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Choice 2: Launch Live WITHOUT Saving to Archive
+    const handleLaunchWithoutSaving = () => {
+        const finalTitle = tempTitleInput.trim() || (lang === 'sv' ? "Tillfällig Presentation" : "Temporary Presentation");
+        setLocalTitle(finalTitle);
+        setShowNamingModal(false);
+        setShowLiveModal(true); // Open pre-flight modal directly (boardId remains null)
+    };
+
+    const confirmLaunchLive = async (configuredSettings) => {
+        setShowLiveModal(false);
+
+        syncBatchProgress('presentation_live_started', livePacket, {
+            app_mode: 'teacher_live',
+            ...configuredSettings
+        });
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("Not authenticated");
+
+            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+            const sessionPayload = {
+                mode: 'presentation',
+                packet: livePacket, // Flat root packet for student view compatibility
+                slides: slides,
+                settings: {
+                    bgType,
+                    viewMode,
+                    globalZoom,
+                    ...configuredSettings 
+                }
+            };
+
+            const { data: roomData, error } = await supabase
+                .from('rooms')
+                .insert([{
+                    teacher_id: user.id,
+                    class_code: code,
+                    status: 'active',
+                    current_slide_index: activeSlideIndex || 0,
+                    active_question_data: sessionPayload,
+                    active_worksheet_id: boardId || null, // Will be null if launched without saving, but room works seamlessly via sessionPayload packet
+                    title: localTitle || (lang === 'sv' ? "Live Presentation" : "Live Presentation")
+                }])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            if (onLaunchLive) {
+                onLaunchLive(roomData);
+            }
+        } catch (err) {
+            console.error("Failed to start live session:", err);
+            alert(lang === 'sv' ? "Kunde inte starta live-lektionen." : "Failed to start live session.");
         }
     };
 
@@ -1540,6 +1599,59 @@ export default function PresentationView({
                 onClose={handleCloseTutorial}
                 lang={lang}
             />
+            {/* 🟢 NAMING & SAVE CHOICE MODAL */}
+            {showNamingModal && (
+                <div className="fixed inset-0 z-[500] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+                        <h3 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-wider">
+                            {lang === 'sv' ? "Namnge din presentation" : "Name Your Presentation"}
+                        </h3>
+                        <p className="text-xs font-bold text-slate-400 mb-6 leading-relaxed">
+                            {lang === 'sv' 
+                                ? "Välj hur du vill fortsätta med denna session innan den startar live." 
+                                : "Choose how you'd like to proceed with this session before going live."}
+                        </p>
+                        
+                        <input 
+                            autoFocus
+                            type="text"
+                            value={tempTitleInput}
+                            onChange={(e) => setTempTitleInput(e.target.value)}
+                            maxLength={100}
+                            placeholder={lang === 'sv' ? "T.ex. Genomgång Ekvationer v. 12" : "E.g. Equations Review"}
+                            className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 outline-none mb-6 font-bold text-slate-800"
+                            onKeyDown={(e) => { if (e.key === 'Enter' && tempTitleInput.trim()) handleSaveAndLaunch(); }}
+                        />
+
+                        <div className="flex flex-col gap-2.5">
+                            <button 
+                                onClick={handleSaveAndLaunch}
+                                disabled={!tempTitleInput.trim() || isSaving}
+                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-widest rounded-xl transition-all shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Save size={14} />
+                                {lang === 'sv' ? "Spara i arkivet & Gå Live" : "Save to Archive & Go Live"}
+                            </button>
+                            
+                            <button 
+                                onClick={handleLaunchWithoutSaving}
+                                disabled={!tempTitleInput.trim()}
+                                className="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-black uppercase text-xs tracking-widest rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Monitor size={14} />
+                                {lang === 'sv' ? "Gå Live utan att spara" : "Go Live Without Saving"}
+                            </button>
+
+                            <button 
+                                onClick={() => setShowNamingModal(false)}
+                                className="w-full py-2 text-slate-400 hover:text-slate-600 font-bold uppercase text-[11px] tracking-wider transition-colors mt-2 cursor-pointer"
+                            >
+                                {lang === 'sv' ? "Avbryt" : "Cancel"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

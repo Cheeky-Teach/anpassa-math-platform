@@ -1,31 +1,32 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // IMPORTS
-import { LinearEquationGen } from '../src/core/generators/LinearEquationGen.js';
-import { LinearGraphGenerator } from '../src/core/generators/LinearGraphGenerator.js';
-import { ExpressionSimplificationGen } from '../src/core/generators/ExpressionSimplificationGen.js';
-import { PatternsGen } from '../src/core/generators/PatternsGen.js';
-import { BasicArithmeticGen } from '../src/core/generators/BasicArithmeticGen.js';
-import { NegativeNumbersGen } from '../src/core/generators/NegativeNumbersGen.js';
-import { FractionBasicsGen } from '../src/core/generators/FractionBasicsGen.js';
-import { FractionArithGen } from '../src/core/generators/FractionArithGen.js';
-import { PercentGen } from '../src/core/generators/PercentGen.js';
-import { ChangeFactorGen } from '../src/core/generators/ChangeFactorGen.js';
-import { ExponentsGen } from '../src/core/generators/ExponentsGen.js';
-import { TenPowersGen } from '../src/core/generators/TenPowersGen.js';
-import { GeometryGenerator } from '../src/core/generators/GeometryGenerator.js';
-import { AnglesGen } from '../src/core/generators/AnglesGen.js';
-import { PythagorasGen } from '../src/core/generators/PythagorasGen.js';
-import { ScaleGen } from '../src/core/generators/ScaleGen.js';
-import { SimilarityGen } from '../src/core/generators/SimilarityGen.js';
-import { VolumeGen } from '../src/core/generators/VolumeGen.js';
-import { StatisticsGen } from '../src/core/generators/StatisticsGen.js';
-import { ProbabilityGen } from '../src/core/generators/ProbabilityGen.js';
-import { OrderOperationsGen } from '../src/core/generators/OrderOperationsGen.js';
-import { UnitConversionGen } from '../src/core/generators/UnitConversionGen.js';
-import { AlgebraicGeometryGenerator } from '../src/core/generators/AlgebraicGeometryGenerator.js';
-import { PlaceValueGen } from '../src/core/generators/PlaceValueGen.js';
-import { WordProblemInterceptor } from '../src/core/utils/WordProblemInterceptor.js';
+import { BasicArithmeticGen } from './lib/core/generators/BasicArithmeticGen.js';
+import { NegativeNumbersGen } from './lib/core/generators/NegativeNumbersGen.js';
+import { TenPowersGen } from './lib/core/generators/TenPowersGen.js';
+import { ExponentsGen } from './lib/core/generators/ExponentsGen.js';
+import { PercentGen } from './lib/core/generators/PercentGen.js';
+import { ExpressionSimplificationGen } from './lib/core/generators/ExpressionSimplificationGen.js';
+import { LinearEquationGen } from './lib/core/generators/LinearEquationGen.js';
+import { LinearEquationProblemGen } from './lib/core/generators/LinearEquationProblemGen.js';
+import { LinearGraphGenerator } from './lib/core/generators/LinearGraphGenerator.js';
+import { GeometryGenerator } from './lib/core/generators/GeometryGenerator.js';
+import { ScaleGen } from './lib/core/generators/ScaleGen.js';
+import { VolumeGen } from './lib/core/generators/VolumeGen.js';
+import { SimilarityGen } from './lib/core/generators/SimilarityGen.js';
+import { PythagorasGen } from './lib/core/generators/PythagorasGen.js';
+import { ProbabilityGen } from './lib/core/generators/ProbabilityGen.js';
+import { StatisticsGen } from './lib/core/generators/StatisticsGen.js';
+import { FractionBasicsGen } from './lib/core/generators/FractionBasicsGen.js';
+import { FractionArithGen } from './lib/core/generators/FractionArithGen.js';
+import { ChangeFactorGen } from './lib/core/generators/ChangeFactorGen.js';
+import { AnglesGen } from './lib/core/generators/AnglesGen.js';
+import { PatternsGen } from './lib/core/generators/PatternsGen.js';
+import { OrderOperationsGen } from './lib/core/generators/OrderOperationsGen.js';
+import { UnitConversionGen } from './lib/core/generators/UnitConversionGen.js';
+import { AlgebraicGeometryGenerator } from './lib/core/generators/AlgebraicGeometryGenerator.js';
+import { PlaceValueGen } from './lib/core/generators/PlaceValueGen.js';
+import { WordProblemInterceptor } from './lib/core/utils/WordProblemInterceptor.js';
 import { SKILL_BUCKETS } from '../src/constants/skillBuckets.js';
 
 // COMPLETE TOPIC MAP (Aligned with skillBuckets.js)

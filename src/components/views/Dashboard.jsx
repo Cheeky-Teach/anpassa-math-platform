@@ -15,8 +15,6 @@ import { CONTENT_MAP } from '../../constants/content_map';
 import MathDisplay from '../shared/MathDisplay';
 import DashboardTutorialModal from '../modals/DashboardTutorialModal';
 
-import MapGenerator from '../MapGenerator';
-
 const Dashboard = ({ 
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
     timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen, 

@@ -609,41 +609,43 @@ export default function QuestionStudio({
   };
 
   // progressSync
-  const confirmLaunchLive = async () => {
-    setShowLiveModal(false);
-    
-    syncBatchProgress('live_session_started', packet, {
-        app_mode: 'teacher_live',
-        pacing: liveSettings.pacing,
-        order: liveSettings.order,
-        scratchpad: enableScratchpad
-    });
+    const confirmLaunchLive = async (settingsToUse) => {
+        setShowLiveModal(false);
+        
+        const finalSettings = settingsToUse || liveSettings;
+        
+        syncBatchProgress('live_session_started', packet, {
+            app_mode: 'teacher_live',
+            pacing: finalSettings.pacing,
+            order: finalSettings.order,
+            scratchpad: enableScratchpad
+        });
 
-    const { data: { user } } = await supabase.auth.getUser();
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    try {
-        const { data, error } = await supabase.from('rooms').insert([{ 
-            teacher_id: user.id, 
-            class_code: code, 
-            status: 'active', 
-            title: sheetTitle || "Live Session", 
-            active_worksheet_id: activeSheetId, 
-            active_question_data: { 
-                packet: packet, 
-                mode: setupMode, 
-                settings: { 
-                    ...liveSettings, 
-                    scratchpad: enableScratchpad,
-                    allowScratchpad: enableScratchpad,
-                    allowCanvas: enableCanvas,        // 🟢 Sent to StudentLiveView
-                    responseStyle: responseStyle     // 🟢 Sent to StudentLiveView
-                } 
-            }
-        }]).select().single();
-        if (error) throw error;
-        onDoNowGenerate(null, null, { room: data, packet: packet }); 
-    } catch (err) { alert("Systemfel: " + err.message); }
-  };
+        const { data: { user } } = await supabase.auth.getUser();
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        try {
+            const { data, error } = await supabase.from('rooms').insert([{ 
+                teacher_id: user.id, 
+                class_code: code, 
+                status: 'active', 
+                title: sheetTitle || "Live Session", 
+                active_worksheet_id: activeSheetId, 
+                active_question_data: { 
+                    packet: packet, 
+                    mode: setupMode, 
+                    settings: { 
+                        ...finalSettings, 
+                        scratchpad: enableScratchpad,
+                        allowScratchpad: enableScratchpad,
+                        allowCanvas: enableCanvas,        
+                        responseStyle: responseStyle     
+                    } 
+                }
+            }]).select().single();
+            if (error) throw error;
+            onDoNowGenerate(null, null, { room: data, packet: packet }); 
+        } catch (err) { alert("Systemfel: " + err.message); }
+    };
 
   const triggerPreview = async (variationKey) => {
     setIsPreviewLoading(true); setActivePreviewKey(variationKey);
@@ -1265,14 +1267,14 @@ export default function QuestionStudio({
                 </div>
 
                 <div className="flex items-center gap-0.5 bg-white/10 p-1 rounded-[var(--radius-btn)] border border-white/5 shadow-inner">
-                    <button onClick={() => setChosenVisibility('private')} className={`p-1 rounded-[var(--radius-btn)] transition-all ${chosenVisibility === 'private' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white'}`}><Lock size={10}/></button>
-                    <button onClick={() => setChosenVisibility('school')} className={`p-1 rounded-[var(--radius-btn)] transition-all ${chosenVisibility === 'school' ? 'bg-white text-slate-900 shadow-sm' : 'text-white/50 hover:text-white'}`}><Building2 size={10}/></button>
+                    <button onClick={() => setChosenVisibility('private')} className={`p-1 rounded-[var(--radius-btn)] transition-all ${chosenVisibility === 'private' ? 'bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)] shadow-sm' : 'text-white/50 hover:text-white'}`}><Lock size={10}/></button>
+                    <button onClick={() => setChosenVisibility('school')} className={`p-1 rounded-[var(--radius-btn)] transition-all ${chosenVisibility === 'school' ? 'bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-strong)] shadow-sm' : 'text-white/50 hover:text-white'}`}><Building2 size={10}/></button>
                 </div>
 
                 <button 
                     onClick={handleSave} 
                     disabled={packet.length === 0} 
-                    className="px-3 py-1.5 bg-white border border-white/20 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-slate-100 text-slate-900 transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+                    className="px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 hover:bg-[var(--bg-surface)] text-[var(--text-main)] transition-all disabled:opacity-50 cursor-pointer shadow-sm"
                 >
                     <Save size={13}/> {t.save_btn}
                 </button>
@@ -1513,25 +1515,24 @@ export default function QuestionStudio({
                       {setupMode === 'worksheet' && (
                           <>
                               <div className="flex flex-col gap-1 items-center">
-                                  <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5 shadow-sm">
-                                      {['sm', 'md', 'lg', 'xl'].map((size) => (
-                                          <button 
-                                              key={size}
-                                              onClick={() => { 
-                                                  setGlobalLatexSize(size); 
-                                                  //  FIX: Clear all local overrides so the entire sheet inherits the global size
-                                                  setPacket(prev => prev.map(item => ({ ...item, localLatexSize: null })));
-                                                  setIsSaved(false); 
-                                              }} 
-                                              className={`px-3 py-1 rounded-[var(--radius-btn)] font-serif font-black transition-all ${size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : size === 'lg' ? 'text-base' : 'text-lg'} ${globalLatexSize === size ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-                                              title={`Textstorlek: ${size}`}
-                                          >
-                                              A
-                                          </button>
-                                      ))}
-                                  </div>
-                                  <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Textstorlek</span>
-                              </div>
+                                <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] p-0.5 shadow-sm">
+                                    {['sm', 'md', 'lg', 'xl'].map((size) => (
+                                        <button 
+                                            key={size}
+                                            onClick={() => { 
+                                                setGlobalLatexSize(size); 
+                                                setPacket(prev => prev.map(item => ({ ...item, localLatexSize: null })));
+                                                setIsSaved(false); 
+                                            }} 
+                                            className={`px-3 py-1 rounded-[var(--radius-btn)] font-serif font-black transition-all ${size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : size === 'lg' ? 'text-base' : 'text-lg'} ${globalLatexSize === size ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border-strong)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                            title={`Textstorlek: ${size}`}
+                                        >
+                                            A
+                                        </button>
+                                    ))}
+                                </div>
+                                <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Textstorlek</span>
+                            </div>
 
                               <div className="w-px h-8 bg-[var(--border-main)]"></div>
 
@@ -1556,16 +1557,22 @@ export default function QuestionStudio({
                               <div className="w-px h-8 bg-[var(--border-main)]"></div>
 
                               <div className="flex flex-col gap-1 items-center">
-                                  <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5 shadow-sm">
-                                      <button onClick={() => { setLayoutStyle('open'); setIsSaved(false); }} className={`px-2 py-1 rounded-[var(--radius-btn)] text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'open' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`}>
-                                          Öppen
-                                      </button>
-                                      <button onClick={() => { setLayoutStyle('framed'); setIsSaved(false); }} className={`px-2 py-1 rounded-[var(--radius-btn)] text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'framed' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm border border-[var(--border-main)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)]'}`}>
-                                          Inramad
-                                      </button>
-                                  </div>
-                                  <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Design</span>
-                              </div>
+                                <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-[var(--radius-btn)] p-0.5 shadow-sm">
+                                    <button 
+                                        onClick={() => { setLayoutStyle('open'); setIsSaved(false); }} 
+                                        className={`px-2 py-1 rounded-[var(--radius-btn)] text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'open' ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border-strong)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                    >
+                                        Öppen
+                                    </button>
+                                    <button 
+                                        onClick={() => { setLayoutStyle('framed'); setIsSaved(false); }} 
+                                        className={`px-2 py-1 rounded-[var(--radius-btn)] text-[9px] font-black uppercase tracking-wider transition-all ${layoutStyle === 'framed' ? 'bg-[var(--bg-card)] text-[var(--text-main)] shadow-sm border border-[var(--border-strong)]' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                                    >
+                                        Inramad
+                                    </button>
+                                </div>
+                                <span className="text-[8px] font-black uppercase text-[var(--text-muted)] tracking-widest">Design</span>
+                            </div>
                           </>
                       )}
                   </div>

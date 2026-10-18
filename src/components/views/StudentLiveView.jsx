@@ -257,21 +257,32 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         return () => { supabase.removeChannel(masterChannel); };
     }, [session?.id, onBack, studentAlias, lang, isPresentationMode, activeSlideIndex]);
 
-    // 4. SUBMISSION HANDLERS
-    const handleSubmitSlide = async () => {
+    const handleUnifiedPresentationSubmit = async () => {
         if (isSubmitting || completedSlide[activeSlideIndex]) return;
         setIsSubmitting(true);
 
         try {
             const explanationText = slideExplanations[activeSlideIndex] || "";
+            const currentSlideIds = slides[activeSlideIndex]?.activeIds || [];
+            
+            // If the slide has attached questions, let's submit them along with the canvas state
+            if (currentSlideIds.length > 0) {
+                for (const qId of currentSlideIds) {
+                    const localIdx = localPacket.findIndex(p => p.id === qId);
+                    if (localIdx !== -1 && !completed[localIdx]) {
+                        await handleUnifiedSubmit(localIdx);
+                    }
+                }
+            }
+
+            // Also submit the overall slide/canvas response
             const payload = {
                 room_id: session.id,
                 student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25),
                 question_index: activeSlideIndex,
-                answer: explanationText.trim() ? explanationText.trim() : "[CANVAS_SUBMISSION]",
+                answer: explanationText.trim() ? explanationText.trim() : "[SLIDE_CANVAS_SUBMISSION]",
                 canvas_state: canvasElements[activeSlideIndex] || slides[activeSlideIndex]?.elements || [],
                 is_correct: true
-                // 🔴 Removed: is_slide_submission (avoids PGRST204 error)
             };
 
             const { error } = await supabase.from('responses').insert([payload]);
@@ -279,23 +290,42 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
             setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: true }));
         } catch (err) {
-            console.error("Slide submission error:", err);
+            console.error("Unified presentation submission error:", err);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleSolve = async (manualValue = null, forcedLocalIdx = null) => {
+    const handleUnifiedSubmit = async (forcedLocalIdx = null) => {
         const targetIdx = forcedLocalIdx !== null ? forcedLocalIdx : currentIndex;
-        const val = (manualValue !== null && manualValue !== undefined) ? manualValue : answers[targetIdx];
-        
-        if (val === undefined || val === "" || isSubmitting || !roomActive) return;
+        const currentItem = localPacket[targetIdx];
+        if (!currentItem || isSubmitting || !roomActive || completed[targetIdx]) return;
 
-        let currentItem = localPacket[targetIdx]; 
         const isFreeText = currentItem.answerType === 'free_text';
+        const rawAnswer = answers[targetIdx];
+        const canvasData = canvasElements[targetIdx] || currentItem?.canvas_state || [];
+        const scratchpadSteps = allowScratchpad ? (scratchpad[targetIdx] || []).filter(s => s.trim().length > 0) : [];
 
+        // 1. Determine if the student has provided *anything* substantial to submit
+        const hasAnswer = rawAnswer !== undefined && String(rawAnswer).trim() !== "";
+        const hasCanvas = allowCanvas && canvasData.length > 0;
+        const hasScratchpad = scratchpadSteps.length > 0;
+
+        // If nothing at all has been filled out, do nothing
+        if (!hasAnswer && !hasCanvas && !hasScratchpad) {
+            alert(lang === 'sv' ? "Vänligen fyll i ett svar eller rita på tavlan innan du skickar in." : "Please provide an answer or draw on the canvas before submitting.");
+            return;
+        }
+
+        // 2. Evaluate correctness (if it's a scored question and an answer was given)
         let isCorrect = true; 
-        if (!isFreeText) {
+        let finalAnswerToSave = rawAnswer;
+
+        if (isFreeText) {
+            // Free text / discussions are marked correct by default once submitted
+            finalAnswerToSave = rawAnswer || "[DISKUSSIONSUPPGIFT]";
+            isCorrect = true;
+        } else if (hasAnswer) {
             const normalize = (str) => String(str).toLowerCase().replace(/\s+/g, '').replace(',', '.').replace(/^[a-z]=/, '').replace(/^svar:/, '').replace(/·/g, '*');
             let correctAnswer = currentItem.resolvedData?.answer;
             if (!correctAnswer && currentItem.resolvedData?.token) {
@@ -308,7 +338,11 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     correctAnswer = atob(currentItem.resolvedData.token);
                 }
             }
-            isCorrect = normalize(val) === normalize(correctAnswer);
+            isCorrect = normalize(rawAnswer) === normalize(correctAnswer);
+        } else {
+            // Canvas-only or scratchpad-only submission with no final numeric answer box filled out
+            finalAnswerToSave = "[ENDAST_ARBETE / CANVAS]";
+            isCorrect = true; // Teacher will manually review canvas work
         }
 
         setIsSubmitting(true);
@@ -320,10 +354,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 setTimeout(onBack, 3000);
                 return; 
             }
-            
-            const currentSteps = allowScratchpad 
-                ? (scratchpad[targetIdx] || []).filter(s => s.trim().length > 0)
-                : [];
 
             syncProgress('student_answer_submitted', {
                 app_mode: 'student_live',
@@ -331,22 +361,23 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 level: currentItem.resolvedData?.level || currentItem.metadata?.difficulty || 1,
                 answer_type: currentItem.answerType || 'unknown',
                 is_correct: isCorrect,
-                used_scratchpad: currentSteps.length > 0,
-                scratchpad_lines: currentSteps.length,
-                student_answer: String(val).substring(0, 100)
+                used_scratchpad: hasScratchpad,
+                used_canvas: hasCanvas,
+                student_answer: String(finalAnswerToSave).substring(0, 100)
             });
 
+            // 3. Build the comprehensive payload respecting all available edge cases
             const payload = {
                 room_id: session.id,
                 student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
                 question_index: currentItem.originalIndex, 
-                answer: String(val).substring(0, 1500),
-                work_steps: currentSteps,
+                answer: String(finalAnswerToSave).substring(0, 1500),
+                work_steps: scratchpadSteps,
                 is_correct: isCorrect,
             };
 
             if (allowCanvas) {
-                payload.canvas_state = canvasElements[targetIdx] || [];
+                payload.canvas_state = canvasData;
             }
 
             const { error } = await supabase.from('responses').insert([payload]);
@@ -354,6 +385,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             
             setCompleted(prev => ({ ...prev, [targetIdx]: isCorrect ? 'correct' : 'wrong' }));
             
+            // Advance pacing state
             if (isPresentationMode) {
                 const currentSlideIds = slides[activeSlideIndex]?.activeIds || [];
                 const currentTaskPos = currentSlideIds.indexOf(currentItem.id);
@@ -450,6 +482,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                         if (isCompleted) return;
                                         setSelectedChoices(prev => ({ ...prev, [idx]: choiceValue }));
                                         setAnswers(prev => ({ ...prev, [idx]: choiceValue }));
+                                        // No auto-submit here; student clicks the single unified button below
                                     }}
                                     className={`w-full p-4 border-2 rounded-2xl text-base font-bold transition-all shadow-sm text-center cursor-pointer active:scale-95 ${
                                         isSelected 
@@ -473,7 +506,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             <SmartMathInput 
                 value={value}
                 onChange={(val) => setAnswers({ ...answers, [idx]: val })}
-                onSubmit={() => handleSolve(null, idx)}
+                onSubmit={() => handleUnifiedSubmit(null, idx)} // 👈 Pressing Enter now triggers the unified submit!
                 inputType={inputType}
                 disabled={isSubmitting || !!completed[idx]}
                 isMobile={isMobile}
@@ -718,7 +751,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                 />
 
                                 {/* Interactive Canvas with Slide-Specific Bins */}
-                                {/* 🟢 Interactive Canvas: Always enabled in presentation mode with drawing tools unlocked */}
                                 <InteractiveCanvas
                                     key={`student_slide_canvas_${activeSlideIndex}`}
                                     elements={canvasElements[activeSlideIndex] || currentSlide?.elements || []}
@@ -736,32 +768,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                     ]}
                                     readOnly={!!completedSlide[activeSlideIndex]}
                                 />
-
-                                {/* Floating Slide Submission Action */}
-                                <div className="absolute bottom-5 right-5 z-40">
-                                    <button
-                                        type="button"
-                                        onClick={handleSubmitSlide}
-                                        disabled={isSubmitting || completedSlide[activeSlideIndex]}
-                                        className={`px-5 py-2.5 rounded-2xl font-black uppercase text-xs tracking-wider shadow-2xl flex items-center gap-2 transition-all cursor-pointer ${
-                                            completedSlide[activeSlideIndex]
-                                                ? 'bg-emerald-600 text-white'
-                                                : 'bg-indigo-600 hover:bg-indigo-700 text-white active:scale-95'
-                                        }`}
-                                    >
-                                        {completedSlide[activeSlideIndex] ? (
-                                            <>
-                                                <CheckCircle2 size={16} />
-                                                <span>{lang === 'sv' ? "Inskickat" : "Submitted"}</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                                                <span>{lang === 'sv' ? "Lämna in slide" : "Submit Slide"}</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -838,18 +844,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                             {renderInput(localIdx)}
                                         </div>
 
-                                        <button 
-                                            onClick={() => handleSolve(null, localIdx)} 
-                                            disabled={isSubmitting || !answers[localIdx] || isCompleted} 
-                                            className={`w-full py-3 rounded-xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                                                isCompleted 
-                                                    ? 'bg-emerald-600 text-white shadow-sm' 
-                                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md disabled:opacity-30 active:scale-95 cursor-pointer'
-                                            }`}
-                                        >
-                                            {isSubmitting ? <Loader2 className="animate-spin" size={14} /> : (isCompleted ? <CheckCircle2 size={14} /> : <Send size={14} />)}
-                                            {isCompleted ? (lang === 'sv' ? "Inskickat" : "Submitted") : (lang === 'sv' ? 'Skicka in' : 'Submit')}
-                                        </button>
+                                        {/* Note: The card-level submit button for individual questions inside the accordion list was removed here so there is only one global submit button at the bottom of the dock */}
                                     </div>
                                 );
                             })}
@@ -889,43 +884,43 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                             )}
                         </div>
 
-                        {/* Dock Footer: Locked Light-Themed Submit Area */}
+                        {/* Dock Footer: Unified Submit Area */}
                         <div className="p-4 border-t border-slate-200 bg-slate-50 shrink-0 flex flex-col gap-2">
                             <button
                                 type="button"
-                                onClick={handleSubmitSlide}
+                                onClick={handleUnifiedPresentationSubmit}
                                 disabled={isSubmitting || completedSlide[activeSlideIndex]}
                                 className={`w-full py-3.5 rounded-2xl font-black uppercase text-xs tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                                    completedSlide[activeSlideIndex]
+                                      completedSlide[activeSlideIndex]
                                         ? 'bg-emerald-600 text-white cursor-default'
                                         : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white'
-                                }`}
-                            >
-                                {completedSlide[activeSlideIndex] ? (
-                                    <>
-                                        <CheckCircle2 size={16} />
-                                        <span>{lang === 'sv' ? "Tavla Inskickad" : "Board Submitted"}</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                                        <span>{lang === 'sv' ? "Lämna in tavla" : "Submit Board"}</span>
-                                    </>
-                                )}
-                            </button>
+                                  }`}
+                              >
+                                  {completedSlide[activeSlideIndex] ? (
+                                      <>
+                                          <CheckCircle2 size={16} />
+                                          <span>{lang === 'sv' ? "Inskickat" : "Submitted"}</span>
+                                      </>
+                                  ) : (
+                                      <>
+                                          {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                          <span>{lang === 'sv' ? "Skicka in svar & tavla" : "Submit answers & board"}</span>
+                                      </>
+                                  )}
+                              </button>
 
-                            {completedSlide[activeSlideIndex] && (
-                                <button
+                              {completedSlide[activeSlideIndex] && (
+                                  <button
                                     type="button"
                                     onClick={() => setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: false }))}
                                     className="w-full py-1.5 text-center text-slate-500 hover:text-slate-800 text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
                                 >
                                     {lang === 'sv' ? "Ändra och skicka igen" : "Edit and resubmit"}
                                 </button>
-                            )}
+                          )}
                         </div>
                     </div>
-                </main>
+              </main>
             ) : (
                 /* WORKSHEET MODE LAYOUT */
                 <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 overflow-hidden flex flex-col">
@@ -1011,12 +1006,13 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                             {renderInput()}
                                         </div>
 
+                                        {/* 🟢 UNIFIED SUBMIT BUTTON: Sends Answer, Scratchpad, & Canvas Data Simultaneously */}
                                         <button 
-                                            onClick={() => handleSolve()} 
+                                            onClick={() => handleUnifiedSubmit()} 
                                             disabled={isSubmitting || !answers[currentIndex]} 
                                             className="w-full bg-indigo-600 text-white py-4 rounded-2xl text-sm font-bold active:scale-95 disabled:opacity-30 hover:bg-indigo-700 flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
                                         >
-                                            {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <><Send size={18} /> {lang === 'sv' ? 'Skicka svar' : 'Submit answer'}</>}
+                                            {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <><Send size={18} /> {lang === 'sv' ? 'Skicka in svar & arbete' : 'Submit answer & work'}</>}
                                         </button>
                                     </div>
                                 ) : (

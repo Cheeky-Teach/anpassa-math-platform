@@ -22,6 +22,6 @@
       "@core/*": ["src/core/*"]
     }
   },
-  "include": ["src", "api", "scripts"],
+  "include": ["src", "api", "scripts", "archive/scripts/MapGenerator.jsx"],
   "references": []
 }
