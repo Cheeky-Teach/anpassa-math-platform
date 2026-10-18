@@ -186,12 +186,22 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                                             isWordProblem={isWordProblem} 
                                         />
                                     </div>
-                                    <div className="text-lg text-slate-800 font-bold text-center px-4 leading-relaxed mb-6">
+                                    
+                                    <div className="text-lg text-slate-800 font-bold text-center px-4 leading-relaxed mb-2">
                                         <MathDisplay content={previewData.renderData.description} />
                                     </div>
+
+                                    {/* 🟢 RESTORED: Prominent LaTeX Math Preview Box */}
+                                    {previewData.renderData.latex && !isWordProblem && (
+                                        <div className="text-4xl text-indigo-600 bg-indigo-50/50 p-8 rounded-[2.5rem] border-2 border-indigo-100 shadow-inner text-center font-serif my-4 w-full max-w-md overflow-x-auto">
+                                            {/* Wrap in display math delimiters for MathLive/KaTeX to parse it large and centered */}
+                                            <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
+                                        </div>
+                                    )}
+
                                     {/* Render Multiple Choice Options in Preview */}
                                     {previewData.renderData.options && previewData.renderData.options.length > 0 && (
-                                        <div className="mt-6 grid grid-cols-2 gap-3 w-full max-w-md px-4 shrink-0">
+                                        <div className="mt-4 grid grid-cols-2 gap-3 w-full max-w-md px-4 shrink-0">
                                             {previewData.renderData.options.map((opt, oIdx) => {
                                                 const choiceLabel = typeof opt === 'object' ? opt.label : opt;
                                                 return (

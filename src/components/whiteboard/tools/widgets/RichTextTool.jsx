@@ -24,41 +24,33 @@ export const RichTextTool = {
         type: 'richText',
         x: 550,
         y: 250,
-        width: 400,
-        height: 120,
-        content: type === 'math' ? '$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$' : 'Skriv din text här...',
+        width: 600,
+        height: 500,
+        content: type === 'math' ? '' : 'Skriv din text här...',
         stroke: color,
-        showPalette: false, // 🟢 Track palette state here instead of a hook
+        showPalette: false,
+        showFontSize: false,
+        currentFontSize: 60, // 🟢 Set default font size to 60
         rotation: 0,
         opacity: 1
     }),
 
     renderContextMenu: ({ el, onUpdate, setElements }) => {
-        const applyStyle = (cmd, val = null) => {
+        
+        const applyStyle = (cmd, val = null, extraStateUpdates = {}) => {
             const selection = window.getSelection();
             if (!selection.rangeCount) return;
 
             if (cmd === 'fontSize') {
-                const range = selection.getRangeAt(0);
-                if (range.collapsed) return;
-                const span = document.createElement('span');
-                span.style.fontSize = `${val}px`;
-                span.style.lineHeight = 'normal';
-                try {
-                    span.appendChild(range.extractContents());
-                    range.insertNode(span);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                } catch (err) {}
-            } else if (cmd === 'foreColor') {
-                const range = selection.getRangeAt(0);
-                if (!range.collapsed) {
-                    const span = document.createElement('span');
-                    span.style.color = val;
-                    span.appendChild(range.extractContents());
-                    range.insertNode(span);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
+                document.execCommand('fontSize', false, '7');
+                const container = document.getElementById(`rich-text-${el.id}`);
+                if (container) {
+                    const fonts = container.querySelectorAll('font[size="7"]');
+                    fonts.forEach(f => {
+                        f.removeAttribute('size');
+                        f.style.fontSize = `${val}px`;
+                        f.style.lineHeight = 'normal';
+                    });
                 }
             } else {
                 document.execCommand(cmd, false, val);
@@ -68,25 +60,18 @@ export const RichTextTool = {
             if (node) {
                 const html = node.innerHTML;
                 const scrollH = node.scrollHeight;
-                onUpdate({ ...el, height: Math.max(el.height || 0, scrollH), content: html });
+                onUpdate({ 
+                    ...el, 
+                    height: Math.max(el.height || 0, scrollH), 
+                    content: html,
+                    ...extraStateUpdates 
+                });
             }
         };
 
         const preventFocusLoss = (e) => {
             e.preventDefault();
             e.stopPropagation();
-        };
-
-        const togglePalette = () => {
-            if (setElements) {
-                setElements(prev => prev.map(item => item.id === el.id ? { ...item, showPalette: !item.showPalette } : item));
-            }
-        };
-
-        const closePalette = () => {
-            if (setElements) {
-                setElements(prev => prev.map(item => item.id === el.id ? { ...item, showPalette: false } : item));
-            }
         };
 
         return (
@@ -116,26 +101,23 @@ export const RichTextTool = {
                                 setElements(prev => prev.map(item => item.id === el.id ? { ...item, showFontSize: !item.showFontSize, showPalette: false } : item));
                             }
                         }} 
-                        className="bg-white border border-slate-300 text-slate-800 text-xs h-8 rounded-lg px-2 cursor-pointer font-bold hover:bg-slate-50 flex items-center justify-center"
+                        className="bg-white border border-slate-300 text-slate-800 text-xs h-8 rounded-lg px-2 cursor-pointer font-bold hover:bg-slate-50 flex items-center justify-center min-w-[50px]"
                         title="Font Size"
                     >
-                        Size
+                        {/* 🟢 Dynamically render current font size */}
+                        {el.currentFontSize || 60}px
                     </button>
 
                     {/* Pop-up Font Size Menu */}
                     {el.showFontSize && (
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 py-1.5 bg-white rounded-xl shadow-lg border border-slate-200 flex flex-col w-[60px] z-[100] max-h-[160px] overflow-y-auto custom-scrollbar">
-                            {[14, 18, 24, 28, 36, 48, 64, 80, 96, 120].map(sz => (
+                            {/* Added 60 to the list array */}
+                            {[14, 18, 24, 28, 36, 48, 60, 64, 80, 96, 120].map(sz => (
                                 <button 
                                     key={sz}
                                     type="button"
                                     onMouseDown={preventFocusLoss}
-                                    onClick={() => {
-                                        applyStyle('fontSize', sz);
-                                        if (setElements) {
-                                            setElements(prev => prev.map(item => item.id === el.id ? { ...item, showFontSize: false } : item));
-                                        }
-                                    }}
+                                    onClick={() => applyStyle('fontSize', sz, { showFontSize: false, currentFontSize: sz })} // 🟢 Save size to state
                                     className="px-2 py-1.5 text-center text-xs font-bold hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer transition-colors"
                                 >
                                     {sz}
@@ -171,10 +153,7 @@ export const RichTextTool = {
                                     key={c}
                                     type="button"
                                     onMouseDown={preventFocusLoss}
-                                    onClick={() => {
-                                        applyStyle('foreColor', c);
-                                        closePalette();
-                                    }}
+                                    onClick={() => applyStyle('foreColor', c, { showPalette: false })}
                                     className="w-5 h-5 rounded-full hover:scale-125 transition-transform cursor-pointer shadow-inner border border-black/10"
                                     style={{ backgroundColor: c }}
                                     title={c}
@@ -254,7 +233,7 @@ export const RichTextTool = {
                             wordBreak: 'break-word', 
                             overflowWrap: 'break-word', 
                             lineHeight: '1.25', 
-                            fontSize: '28px', 
+                            fontSize: `${el.currentFontSize || 60}px`, // 🟢 Bind base CSS font size
                             userSelect: isEditing ? 'text' : 'none' 
                         }}
                         ref={(node) => {

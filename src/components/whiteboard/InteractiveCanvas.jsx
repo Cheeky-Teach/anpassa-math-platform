@@ -136,16 +136,6 @@ export default function InteractiveCanvas({
                 return;
             }
 
-            if (activeTool === 'richText' || activeTool === 'math') {
-                setElements(prev => [...prev, {
-                    id: newId, type: 'richText', x: 550, y: 250, width: 400, height: 120,
-                    content: activeTool === 'math' ? '$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$' : (lang === 'sv' ? 'Skriv din text här...' : 'Type your text here...'),
-                    stroke: color, rotation: 0, opacity: 1
-                }]);
-                setSelectedIds([newId]);
-                setActiveTool('select');
-                return;
-            }
 
             if (activeTool === 'calculator') {
                 setElements(prev => [...prev, {
@@ -369,24 +359,6 @@ export default function InteractiveCanvas({
                 y: 250,
                 width: 200,
                 height: 200,
-                stroke: color,
-                rotation: 0,
-                opacity: 1
-            }]);
-            setSelectedIds([id]);
-            return;
-        }
-
-        // 🟢 3. Rich Text / LaTeX / Math Tool Spawn
-        if (type === 'richText' || type === 'math') {
-            setElements(prev => [...prev, {
-                id,
-                type: 'richText',
-                x: 550,
-                y: 250,
-                width: 400,
-                height: 120,
-                content: type === 'math' ? '$$x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$' : (lang === 'sv' ? 'Skriv din text här...' : 'Type your text here...'),
                 stroke: color,
                 rotation: 0,
                 opacity: 1
