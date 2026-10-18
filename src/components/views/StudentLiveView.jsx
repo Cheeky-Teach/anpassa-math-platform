@@ -264,29 +264,42 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         try {
             const explanationText = slideExplanations[activeSlideIndex] || "";
             const currentSlideIds = slides[activeSlideIndex]?.activeIds || [];
-            
-            // If the slide has attached questions, let's submit them along with the canvas state
+            const canvasData = canvasElements[activeSlideIndex] || slides[activeSlideIndex]?.elements || [];
+
+            syncProgress('student_slide_submitted', {
+                app_mode: 'student_live',
+                slide_index: activeSlideIndex,
+                task_count: currentSlideIds.length,
+                has_canvas: canvasData.length > 0,
+                has_explanation: explanationText.trim().length > 0
+            });
+
             if (currentSlideIds.length > 0) {
+                // Attach the slide canvas to each question submission
                 for (const qId of currentSlideIds) {
                     const localIdx = localPacket.findIndex(p => p.id === qId);
                     if (localIdx !== -1 && !completed[localIdx]) {
-                        await handleUnifiedSubmit(localIdx);
+                        await handleUnifiedSubmit(localIdx, canvasData);
                     }
                 }
+            } else {
+                // Pure manipulative slide (no questions attached): save a slide response row
+                const payload = {
+                    room_id: session.id,
+                    student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25),
+                    question_index: activeSlideIndex,
+                    answer: explanationText.trim() ? explanationText.trim() : "[SLIDE_CANVAS_SUBMISSION]",
+                    canvas_state: canvasData,
+                    is_correct: true,
+                    is_slide_submission: true
+                };
+
+                const { error } = await supabase
+                    .from('responses')
+                    .upsert([payload], { onConflict: 'room_id,student_alias,question_index' });
+
+                if (error) throw error;
             }
-
-            // Also submit the overall slide/canvas response
-            const payload = {
-                room_id: session.id,
-                student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25),
-                question_index: activeSlideIndex,
-                answer: explanationText.trim() ? explanationText.trim() : "[SLIDE_CANVAS_SUBMISSION]",
-                canvas_state: canvasElements[activeSlideIndex] || slides[activeSlideIndex]?.elements || [],
-                is_correct: true
-            };
-
-            const { error } = await supabase.from('responses').insert([payload]);
-            if (error) throw error;
 
             setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: true }));
         } catch (err) {
@@ -296,33 +309,31 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         }
     };
 
-    const handleUnifiedSubmit = async (forcedLocalIdx = null) => {
+    const handleUnifiedSubmit = async (forcedLocalIdx = null, passedCanvasData = null) => {
         const targetIdx = forcedLocalIdx !== null ? forcedLocalIdx : currentIndex;
         const currentItem = localPacket[targetIdx];
         if (!currentItem || isSubmitting || !roomActive || completed[targetIdx]) return;
 
         const isFreeText = currentItem.answerType === 'free_text';
         const rawAnswer = answers[targetIdx];
-        const canvasData = canvasElements[targetIdx] || currentItem?.canvas_state || [];
+        const canvasData = passedCanvasData !== null 
+            ? passedCanvasData 
+            : (canvasElements[targetIdx] || currentItem?.canvas_state || []);
         const scratchpadSteps = allowScratchpad ? (scratchpad[targetIdx] || []).filter(s => s.trim().length > 0) : [];
 
-        // 1. Determine if the student has provided *anything* substantial to submit
         const hasAnswer = rawAnswer !== undefined && String(rawAnswer).trim() !== "";
-        const hasCanvas = allowCanvas && canvasData.length > 0;
+        const hasCanvas = (allowCanvas || isPresentationMode) && canvasData.length > 0;
         const hasScratchpad = scratchpadSteps.length > 0;
 
-        // If nothing at all has been filled out, do nothing
         if (!hasAnswer && !hasCanvas && !hasScratchpad) {
             alert(lang === 'sv' ? "Vänligen fyll i ett svar eller rita på tavlan innan du skickar in." : "Please provide an answer or draw on the canvas before submitting.");
             return;
         }
 
-        // 2. Evaluate correctness (if it's a scored question and an answer was given)
         let isCorrect = true; 
         let finalAnswerToSave = rawAnswer;
 
         if (isFreeText) {
-            // Free text / discussions are marked correct by default once submitted
             finalAnswerToSave = rawAnswer || "[DISKUSSIONSUPPGIFT]";
             isCorrect = true;
         } else if (hasAnswer) {
@@ -334,27 +345,19 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                     const bytes = new Uint8Array(binaryString.length);
                     for (let i = 0; i < binaryString.length; i++) { bytes[i] = binaryString.charCodeAt(i); }
                     correctAnswer = new TextDecoder().decode(bytes); 
-                } catch (e) {
+                } catch {
                     correctAnswer = atob(currentItem.resolvedData.token);
                 }
             }
             isCorrect = normalize(rawAnswer) === normalize(correctAnswer);
         } else {
-            // Canvas-only or scratchpad-only submission with no final numeric answer box filled out
             finalAnswerToSave = "[ENDAST_ARBETE / CANVAS]";
-            isCorrect = true; // Teacher will manually review canvas work
+            isCorrect = true;
         }
 
         setIsSubmitting(true);
 
         try {
-            const { data: roomCheck } = await supabase.from('rooms').select('status').eq('id', session.id).single();
-            if (roomCheck?.status !== 'active') {
-                setRoomActive(false); 
-                setTimeout(onBack, 3000);
-                return; 
-            }
-
             syncProgress('student_answer_submitted', {
                 app_mode: 'student_live',
                 topic: currentItem.topicId || 'unknown',
@@ -366,46 +369,23 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 student_answer: String(finalAnswerToSave).substring(0, 100)
             });
 
-            // 3. Build the comprehensive payload respecting all available edge cases
             const payload = {
                 room_id: session.id,
                 student_alias: (studentAlias || "Anonym").replace(/<[^>]*>?/gm, '').substring(0, 25), 
                 question_index: currentItem.originalIndex, 
                 answer: String(finalAnswerToSave).substring(0, 1500),
                 work_steps: scratchpadSteps,
+                canvas_state: canvasData,
                 is_correct: isCorrect,
             };
 
-            if (allowCanvas) {
-                payload.canvas_state = canvasData;
-            }
+            const { error } = await supabase
+                .from('responses')
+                .upsert([payload], { onConflict: 'room_id,student_alias,question_index' });
 
-            const { error } = await supabase.from('responses').insert([payload]);
             if (error) throw error;
             
             setCompleted(prev => ({ ...prev, [targetIdx]: isCorrect ? 'correct' : 'wrong' }));
-            
-            // Advance pacing state
-            if (isPresentationMode) {
-                const currentSlideIds = slides[activeSlideIndex]?.activeIds || [];
-                const currentTaskPos = currentSlideIds.indexOf(currentItem.id);
-                
-                if (currentTaskPos !== -1 && currentTaskPos < currentSlideIds.length - 1) {
-                    const nextId = currentSlideIds.slice(currentTaskPos + 1).find(id => {
-                        const localIndex = localPacket.findIndex(p => p.id === id);
-                        return !completedRef.current[localIndex];
-                    });
-                    
-                    if (nextId) setActiveTaskId(nextId);
-                    else setActiveTaskId(currentSlideIds[currentTaskPos + 1]);
-                }
-            } else if (settings.pacing !== 'teacher') {
-                if (targetIdx < localPacket.length - 1) {
-                    setTimeout(() => setCurrentIndex(prev => prev + 1), 600);
-                } else if (targetIdx === localPacket.length - 1) {
-                    setTimeout(() => setCompleted(prev => ({ ...prev })), 600);
-                }
-            }
         } catch (err) {
             console.error("Submission error:", err);
         } finally {

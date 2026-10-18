@@ -13,6 +13,7 @@ import WordProblemVisualGuard from '../ui/WordProblemVisualGuard';
 import PreferencesToggle from '../ui/PreferencesToggle';
 import { isLevelWordProblemReady } from '../../constants/skillBuckets.js';
 import SmartMathInput from '../ui/SmartMathInput.jsx'
+import { syncProgress } from '../../lib/progressSync';
 
 //  CRITICAL: Import the universal theme
 import '../../styles/theme.css'; 
@@ -121,6 +122,59 @@ const PracticeView = ({
         return ui.btnCheck || "Svara";
     };
 
+    // 🟢 TELEMETRY WRAPPERS FOR USER INTENT ACTIONS
+    const onHintClick = () => {
+        syncProgress('practice_hint_requested', {
+            app_mode: 'practice',
+            topic: uiState.topic,
+            level: uiState.level,
+            clues_revealed: (revealedClues?.length || 0) + 1,
+            total_clues: question?.clues?.length || 0
+        });
+        handleHint();
+    };
+
+    const onCoachClick = () => {
+        syncProgress('practice_coach_opened', {
+            app_mode: 'practice',
+            topic: uiState.topic,
+            level: uiState.level,
+            has_visual: !!question?.renderData?.graph || !!question?.renderData?.geometry
+        });
+        openCoach();
+    };
+
+    const onSkipClick = () => {
+        syncProgress('practice_question_skipped', {
+            app_mode: 'practice',
+            topic: uiState.topic,
+            level: uiState.level,
+            used_clues: (revealedClues?.length || 0) > 0
+        });
+        handleSkip();
+    };
+
+    const onLevelSelect = (targetLevel) => {
+        syncProgress('practice_level_changed', {
+            app_mode: 'practice',
+            topic: uiState.topic,
+            from_level: uiState.level,
+            to_level: targetLevel,
+            change_type: targetLevel > uiState.level ? 'level_up' : 'level_down'
+        });
+        handleChangeLevel(targetLevel - uiState.level);
+    };
+
+    const onToggleWordProblems = (enabled) => {
+        syncProgress('practice_word_problems_toggled', {
+            app_mode: 'practice',
+            topic: uiState.topic,
+            level: uiState.level,
+            enabled: enabled
+        });
+        setUseWordProblems(enabled);
+    };
+
     return (
         //  1. Added !pt-4 to override any hidden padding inside layout-wrapper
         <div className={`theme-${theme.color} layout-wrapper font-sans relative z-10 animate-in fade-in pb-10 !pt-4`}>
@@ -129,9 +183,9 @@ const PracticeView = ({
                 visible={levelUpAvailable} 
                 lang={lang} 
                 supportsWordProblems={isCurrentLevelWordProblemReady && !useWordProblems}
-                onNext={() => { handleChangeLevel(1); setLevelUpAvailable(false); setUseWordProblems(false);}} 
+                onNext={() => { onLevelSelect(uiState.level + 1); setLevelUpAvailable(false); setUseWordProblems(false); }} 
                 onStay={() => { setLevelUpAvailable(false); actions.retry(true); }} 
-                onWordProblems={() => { setUseWordProblems(true); setLevelUpAvailable(false); }} 
+                onWordProblems={() => { onToggleWordProblems(true); setLevelUpAvailable(false); }} 
             />
 
             {/* MASTERY TOAST OVERLAY */}
@@ -192,7 +246,7 @@ const PracticeView = ({
                                         return (
                                             <button
                                                 key={lvl}
-                                                onClick={() => !isActive && handleChangeLevel(lNum - uiState.level)}
+                                                onClick={() => !isActive && onLevelSelect(lNum)}
                                                 className={`snap-center shrink-0 min-w-[120px] p-2 rounded-[var(--radius-btn)] border transition-all flex flex-col items-center gap-0.5
                                                     ${isActive 
                                                         ? `active-pill bg-[var(--brand-solid)] border-transparent text-white shadow-md scale-105` 
@@ -349,7 +403,7 @@ const PracticeView = ({
                                             {/* SECONDARY ACTIONS (Right Side) */}
                                             <div className="w-full md:w-40 flex flex-row md:flex-col gap-3 justify-center shrink-0 mt-2 md:mt-0">
                                                 <button 
-                                                    onClick={handleHint} 
+                                                    onClick={onHintClick} 
                                                     disabled={!question?.clues || revealedClues.length >= question?.clues.length} 
                                                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] bg-[var(--bg-card)] text-amber-500 border border-amber-200 disabled:opacity-30 hover:bg-amber-50 transition-all shadow-sm cursor-pointer"
                                                 >
@@ -357,7 +411,7 @@ const PracticeView = ({
                                                 </button>
 
                                                 <button
-                                                    onClick={openCoach}
+                                                    onClick={onCoachClick}
                                                     className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-[var(--radius-btn)] font-black text-[11px] uppercase tracking-widest transition-all active:scale-[0.98] cursor-pointer shadow-md border-b-[3px] border-purple-800 active:translate-y-1 active:border-b-0"
                                                     title={lang === 'sv' ? "Starta tavel-repris och få hjälp" : "Start interactive step guide"}
                                                 >
@@ -366,10 +420,10 @@ const PracticeView = ({
                                                 </button>
 
                                                 <button 
-                                                    onClick={handleSkip} 
+                                                    onClick={onSkipClick} 
                                                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] bg-[var(--bg-card)] text-indigo-400 border border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 transition-all shadow-sm cursor-pointer"
                                                 >
-                                                    <span className="hidden sm:inline-block">Hoppa över</span> <ChevronRight size={16} />
+                                                    <span className="hidden sm:inline-block">{lang === 'sv' ? "Hoppa över!" : "Skip!"}</span> <ChevronRight size={16} />
                                                 </button>
                                             </div>
                                         </div>
@@ -413,12 +467,12 @@ const PracticeView = ({
                                     {lang === 'sv' ? `Text-uppgifter ej tillgängliga` : `Word problems not available`}
                                 </button>
                             ) : useWordProblems ? (
-                                <button onClick={() => setUseWordProblems(false)} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] transition-all active:scale-95 border-2 bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer">
+                                <button onClick={() => onToggleWordProblems(false)} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] transition-all active:scale-95 border-2 bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-600/20 cursor-pointer">
                                     <CheckCircle2 size={14} />
                                     {lang === 'sv' ? 'Problemlösning: På' : 'Word Problems: Active'}
                                 </button>
                             ) : (
-                                <button onClick={() => setUseWordProblems(true)} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] transition-all active:scale-95 border-2 bg-[var(--bg-card)] text-[var(--brand-text)] border-[var(--brand-border)] hover:bg-[var(--brand-bg)] cursor-pointer">
+                                <button onClick={() => onToggleWordProblems(true)} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-[var(--radius-btn)] transition-all active:scale-95 border-2 bg-[var(--bg-card)] text-[var(--brand-text)] border-[var(--brand-border)] hover:bg-[var(--brand-bg)] cursor-pointer">
                                     <HelpCircle size={14} />
                                     {lang === 'sv' ? 'Aktivera problemlösning' : 'Try Word Problems'}
                                 </button>

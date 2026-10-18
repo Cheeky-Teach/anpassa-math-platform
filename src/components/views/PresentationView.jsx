@@ -395,6 +395,13 @@ export default function PresentationView({
 
 
     const pushDynamicCluesToCanvas = (qId) => {
+        syncProgress('whiteboard_clue_pushed', {
+            app_mode: 'presentation_builder',
+            tool_used: 'dynamic_box',
+            has_latex: true,
+            has_text: true
+        });
+
         updateCurrentSlideElements(prev => [...prev, {
             id: Date.now().toString(), type: 'dynamicClues', x: 50, y: 150, width: 450, height: 400,
             questionId: qId, stroke: '#1e293b', rotation: 0, opacity: 1
@@ -519,6 +526,11 @@ export default function PresentationView({
         setShowNamingModal(false);
 
         setIsSaving(true);
+        syncBatchProgress('presentation_saved', livePacket, {
+            app_mode: 'presentation_builder',
+            save_type: 'save_and_launch'
+        });
+
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Not authenticated");

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CONTENT_MAP } from '../../constants/content_map';
+import { CONTENT_MAP } from '../../constants/content_map.generated';
 import { X, BookOpen, Layers, Search, Check, Plus } from 'lucide-react';
 import MathDisplay from '../shared/MathDisplay';
 import MathText from '../ui/MathText';
@@ -213,7 +213,13 @@ const ContentModal = ({
                                                                     
                                                                     {/* Math Example */}
                                                                     <div className="flex-1 p-2 font-serif font-bold text-slate-500 italic flex items-center overflow-x-auto no-scrollbar">
-                                                                        <MathDisplay content={lvl.ex} className="inline-block" />
+                                                                        {lvl.ex && (
+                                                                            lvl.ex.includes('\\') || lvl.ex.includes('$') || lvl.ex.includes('=') ? (
+                                                                                <MathDisplay content={lvl.ex.includes('$') ? lvl.ex : `$$${lvl.ex}$$`} className="inline-block" />
+                                                                            ) : (
+                                                                                <span className="font-sans not-italic text-[10px] text-slate-600">{lvl.ex}</span>
+                                                                            )
+                                                                        )}
                                                                     </div>
 
                                                                     {/* Selection Mode Interactive Indicator */}

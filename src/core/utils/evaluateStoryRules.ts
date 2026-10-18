@@ -1,4 +1,4 @@
-import { StoryRules, StoryValidationResult } from './wordProblemContract';
+import { StoryRules, StoryValidationResult } from '../../../api/lib/core/utils/wordProblemContract';
 
 /**
  * Normalizes raw string parameters into clean floats and calculates compound helpers.

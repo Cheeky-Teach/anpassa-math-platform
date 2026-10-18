@@ -9,7 +9,8 @@
     "dev:server": "tsx watch dev-server.ts",
     "test:pipeline": "node scripts/test-pipeline.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:map": "node scripts/generateContentMap.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",

@@ -11,7 +11,7 @@ import {
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
 import { APP_UPDATES } from '@/constants/updates';
 import TeacherHubManager from './TeacherHubManager';
-import { CONTENT_MAP } from '../../constants/content_map';
+import { CONTENT_MAP } from '../../constants/content_map.generated';
 import MathDisplay from '../shared/MathDisplay';
 import DashboardTutorialModal from '../modals/DashboardTutorialModal';
 

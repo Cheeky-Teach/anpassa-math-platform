@@ -77,6 +77,18 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     
     const [showActualAnswers, setShowActualAnswers] = useState(false);
 
+    const openQuestionZoom = (qIdx) => {
+        const target = livePacket[qIdx];
+        syncProgress('live_question_zoomed', {
+            app_mode: 'teacher_live',
+            question_index: qIdx,
+            topic: target?.topicId || 'unknown',
+            level: target?.resolvedData?.level || target?.metadata?.difficulty || 1,
+            answer_type: target?.answerType || 'unknown'
+        });
+        setZoomIndex(qIdx);
+    };
+
     // Sync slide changes to the database
     const handleSlideChange = async (newIdx) => {
         setActiveSlideIndex(newIdx);
@@ -104,6 +116,10 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
 
         setIsRegenerating(true);
         try {
+            syncProgress('live_new_slide_round', {
+                app_mode: 'teacher_live',
+                slide_index: activeSlideIndex
+            });
             const nextTimestamp = Date.now();
 
             // 1. Stamp promptVersion on the current slide in liveSlides
@@ -272,7 +288,10 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const handleKickStudent = (alias) => {
         const confirmMsg = lang === 'sv' ? `Vill du verkligen ta bort ${alias} från sessionen? All data raderas.` : `Are you sure you want to kick ${alias}? All data for this student will be deleted.`;
         if (window.confirm(confirmMsg)) {
-            syncProgress('live_student_kicked', { app_mode: 'teacher_live' });
+            syncProgress('live_student_kicked', { 
+                app_mode: 'teacher_live',
+                remaining_students: students.length - 1
+            });
             
             onKick(alias);
             setResponses(prev => prev.filter(r => r.student_alias !== alias));
@@ -546,7 +565,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                             <th key={`head-${qIdx}`} className="p-0 border-r border-[var(--border-main)] transition-colors hover:bg-[var(--theme-indigo-bg)] group/col">
                                 <button 
                                     onClick={() => {
-                                        if (targetItem) setZoomIndex(qIdx);
+                                        if (targetItem) openQuestionZoom(qIdx);
                                     }} 
                                     title={isCanvasSlideOnly ? (lang === 'sv' ? "Taveluppgift" : "Canvas Task") : (lang === 'sv' ? "Granska uppgift" : "Inspect question")}
                                     className={`w-full h-full py-2 flex flex-col items-center justify-center gap-1 ${targetItem ? 'cursor-zoom-in' : 'cursor-default'}`}
@@ -1152,11 +1171,16 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                             {starredStudents.length > 0 && (
                                                 <button
                                                     onClick={() => {
-                                                        // Set zoomIndex to the active slide question if not already in zoomed view
                                                         const activeSlideIds = liveSlides[activeSlideIndex]?.activeIds || [];
                                                         const targetQId = activeSlideIds[0];
                                                         const packetIdx = livePacket.findIndex(p => p.id === targetQId);
-                                                        if (packetIdx !== -1) setZoomIndex(packetIdx);
+                                                        if (packetIdx !== -1) {
+                                                            openQuestionZoom(packetIdx);
+                                                        }
+                                                        syncProgress('live_comparison_opened', {
+                                                            app_mode: 'teacher_live',
+                                                            compared_count: starredStudents.length
+                                                        });
                                                         setShowWorkGrid(true);
                                                         setIsComparing(true);
                                                     }}
@@ -1278,11 +1302,20 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 {/* 🟢 STARRED COMPARE BUTTON */}
                                 {starredStudents.length > 0 && (
                                     <button
-                                        onClick={() => setIsComparing(!isComparing)}
+                                        onClick={() => {
+                                            const nextState = !isComparing;
+                                            if (nextState) {
+                                                syncProgress('live_comparison_opened', {
+                                                    app_mode: 'teacher_live',
+                                                    compared_count: starredStudents.length
+                                                });
+                                            }
+                                            setIsComparing(nextState);
+                                        }}
                                         className={`px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-md flex items-center gap-2 mr-2 hover:scale-105 active:scale-95 ${
                                             isComparing 
-                                            ? 'bg-amber-500 text-amber-950 border border-amber-600' 
-                                            : 'bg-amber-100 text-amber-700 border border-amber-300 hover:bg-amber-200'
+                                                ? 'bg-amber-500 text-amber-950 border border-amber-600' 
+                                                : 'bg-amber-100 text-amber-700 border border-amber-300 hover:bg-amber-200'
                                         }`}
                                     >
                                         <Star size={14} className={isComparing ? 'fill-amber-950' : 'fill-amber-500'} />
@@ -1324,7 +1357,8 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                         if (isPresentationMode) {
                                             handleSlideChange(Math.max(0, activeSlideIndex - 1));
                                         } else {
-                                            setZoomIndex(prev => Math.max(0, prev - 1));
+                                            const nextIdx = Math.max(0, (zoomIndex ?? 0) - 1);
+                                            openQuestionZoom(nextIdx);
                                         }
                                         setStarredStudents([]); 
                                         setIsComparing(false); 
@@ -1339,7 +1373,8 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                         if (isPresentationMode) {
                                             handleSlideChange(Math.min(liveSlides.length - 1, activeSlideIndex + 1));
                                         } else {
-                                            setZoomIndex(prev => Math.min(livePacket.length - 1, prev + 1));
+                                            const nextIdx = Math.min(livePacket.length - 1, (zoomIndex ?? 0) + 1);
+                                            openQuestionZoom(nextIdx);
                                         }
                                         setStarredStudents([]); 
                                         setIsComparing(false); 
@@ -1349,6 +1384,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 >
                                     <ChevronRight size={24}/>
                                 </button>
+
                                 <div className="w-px h-6 bg-[var(--border-strong)] mx-1" />
                                 <button onClick={() => { setZoomIndex(null); setShowWorkGrid(false); setStarredStudents([]); 
                                     setIsComparing(false); 

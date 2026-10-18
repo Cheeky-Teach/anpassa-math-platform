@@ -429,6 +429,15 @@ export default function QuestionStudio({
 
           if (res.error) throw res.error;
           
+          syncBatchProgress('studio_sheet_saved', packet, {
+              app_mode: 'question_studio',
+              sheet_type: setupMode || 'worksheet',
+              visibility: chosenVisibility,
+              include_answer_key: includeAnswerKey,
+              answer_style: answerKeyStyle,
+              layout_style: layoutStyle
+          });
+          
           setActiveSheetId(res.data.id); 
           setIsSaved(true);
           fetchLibrary(); // Refresh the sidebar library automatically
@@ -577,7 +586,7 @@ export default function QuestionStudio({
       if (!isSaved && !window.confirm(t.unsaved_warning)) return; 
       
       syncBatchProgress('donow_generated', packet, { 
-          app_mode: 'test_lab',
+          app_mode: 'question_studio',
           include_answer_key: includeAnswerKey 
       });
 
@@ -590,7 +599,7 @@ export default function QuestionStudio({
       if (!isSaved && !window.confirm(t.unsaved_warning)) return; 
       
       syncBatchProgress('worksheet_printed', packet, { 
-          app_mode: 'test_lab',
+          app_mode: 'question_studio',
           include_answer_key: includeAnswerKey,
           answer_style: answerKeyStyle,
           layout_style: layoutStyle,
@@ -678,6 +687,11 @@ export default function QuestionStudio({
         if (packet.length === 0 || isRegeneratingAll) return;
         setIsRegeneratingAll(true);
         try {
+            syncBatchProgress(setupMode === 'donow' ? 'donow_grid_shuffled' : 'worksheet_grid_shuffled', packet, {
+                app_mode: 'question_studio',
+                shuffle_mode: mode // 'numbers' | 'stories' | 'both'
+            });
+
             const updatedPacket = await Promise.all(packet.map(async (item) => {
                 if (!item.topicId || !item.variationKey) return item;
                 const isItemWP = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;

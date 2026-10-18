@@ -1,27 +1,30 @@
 // src/utils/progressSync.js
+import { supabase } from '../lib/supabaseClient';
+
+// Internal destination table name kept as a constant
+const SYNC_TARGET = 'telemetry_events';
 
 /**
- * Base progress sender. Fails silently.
- * Adblocker safe: Avoids words like 'track', 'telemetry', or 'analytics'.
+ * Base state/progress logger. Fails silently.
+ * Adblocker safe: Avoids terms like track, telemetry, metrics, or analytics in identifiers.
  */
-export const syncProgress = (actionName, payload = {}) => {
+export const syncProgress = async (actionName, payload = {}) => {
     try {
-        const { app_mode = 'system', ...metrics } = payload;
-        
-        fetch('/api/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        const { app_mode = 'system', ...data } = payload;
+        const device = typeof window !== 'undefined' && window.innerWidth < 768 ? 'mobile' : 'desktop';
+
+        await supabase.from(SYNC_TARGET).insert([
+            {
                 app_mode: app_mode,
-                device_type: window.innerWidth < 768 ? 'mobile' : 'desktop',
-                progress: {
+                device_type: device,
+                metrics: {
                     event: actionName,
                     timestamp: new Date().toISOString(),
-                    ...metrics
+                    ...data
                 }
-            })
-        }).catch(() => {}); 
-    } catch (err) {
+            }
+        ]);
+    } catch {
         // Total silent fail
     }
 };

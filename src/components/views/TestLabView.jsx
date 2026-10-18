@@ -12,11 +12,14 @@ import { useMyCoach } from '../../hooks/useMyCoach';
 import MyCoachModal from '../modals/MyCoachModal';
 import { isLevelWordProblemReady } from '../../constants/skillBuckets.js';
 
+import { CONTENT_MAP } from '../../constants/content_map.generated';
+
 // --- SHARED UI COMPONENTS ---
 import MathText from '../ui/MathText';
 import VisualRenderer from '../visuals/VisualRenderer';
 import { FractionInput, ExponentInput, ScientificInput } from '../ui/InputComponents';
 import SmartMathInput from '../ui/SmartMathInput.jsx';
+import TestLabTutorialModal from '../modals/TestLabTutorialModal.jsx';
 
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 
@@ -137,7 +140,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
     };
 
     const startNewSession = () => {
-        //  SYNC WIRED: Track session configurations
+        //   SYNC WIRED: Track session configurations
         syncProgress('test_session_started', {
             app_mode: 'test_lab',
             test_mode: meta.mode,
@@ -157,7 +160,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         setTimeout(() => { setInternalMode('ACTIVE'); }, 50);
     };
 
-    //  SYNC WIRED: Intercept the back button to track abandonment
+    //   SYNC WIRED: Intercept the back button to track abandonment
     const handleQuit = () => {
         if (internalMode === 'ACTIVE' && packet.length > 0) {
             syncProgress('test_session_abandoned', {
@@ -176,7 +179,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             // Safely use ?.enabled in case the selection object is malformed
             const enabledTopics = Object.keys(selection).filter(id => selection[id]?.enabled);
             
-            //  CRITICAL FIX: Prevent crash if the link contains outdated/invalid topics
+            //   CRITICAL FIX: Prevent crash if the link contains outdated/invalid topics
             if (enabledTopics.length === 0) {
                 alert(lang === 'sv' ? "Denna testlänk är föråldrad eller ogiltig. Vänligen skapa ett nytt test." : "This test link is outdated or invalid. Please create a new test.");
                 setInternalMode('SETUP');
@@ -397,7 +400,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                 </div>
                                 <button 
                                     onClick={() => setShowGuideModal(true)}
-                                    className="p-2 text-[var(--brand-text)] hover:bg-[var(--brand-bg)] rounded-[var(--radius-btn)] transition-all border border-[var(--border-main)] flex items-center gap-1 text-[10px] font-black uppercase"
+                                    className="p-2 text-[var(--brand-text)] hover:bg-[var(--brand-bg)] rounded-[var(--radius-btn)] transition-all border border-[var(--border-main)] flex items-center gap-1 text-[10px] font-black uppercase cursor-pointer"
                                     title={t.guideBtn}
                                 >
                                     <HelpCircle size={16} />
@@ -573,11 +576,11 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     </aside>
 
 
-                    {/* ➡️ RIGHT COLUMN: MAIN TOPIC SELECTION AREA */}
-                    <main className="layout-main">
+                    {/* ➡️ RIGHT COLUMN: MAIN TOPIC SELECTION AREA (Multi-Column Grid Style) */}
+                    <main className="layout-main flex flex-col gap-6">
                         
                         {/* Horizontal Category Tabs */}
-                        <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2 mb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+                        <div className="flex gap-2.5 overflow-x-auto custom-scrollbar pb-2">
                             {Object.entries(CATEGORIES).map(([catKey, category]) => {
                                 const isActive = activeCategory === catKey;
                                 const count = category.topics.filter(t => selection[t.id]?.enabled).length;
@@ -586,16 +589,16 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                     <button 
                                         key={catKey}
                                         onClick={() => setActiveCategory(catKey)}
-                                        className={`flex items-center gap-2 px-5 py-3 rounded-[var(--radius-btn)] font-bold uppercase text-[11px] tracking-widest whitespace-nowrap transition-all shadow-sm border cursor-pointer ${
+                                        className={`flex items-center gap-2.5 px-6 py-3.5 rounded-[var(--radius-btn)] font-black uppercase text-xs tracking-widest whitespace-nowrap transition-all shadow-sm border-2 cursor-pointer ${
                                             isActive 
-                                                ? 'bg-[var(--brand-solid)] text-white border-transparent shadow-md' 
+                                                ? 'bg-[var(--brand-solid)] text-white border-[var(--brand-solid)] shadow-md scale-105' 
                                                 : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-muted)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-text)]'
                                         }`}
                                     >
-                                        <Award size={14} />
+                                        <Award size={16} />
                                         {category.label[lang]}
                                         {count > 0 && (
-                                            <span className="ml-1 px-1.5 py-0.5 bg-[var(--bg-card)] text-[var(--brand-text)] rounded-full text-[9px]">
+                                            <span className="ml-1.5 px-2 py-0.5 bg-white text-slate-900 rounded-full text-[10px] font-black">
                                                 {count}
                                             </span>
                                         )}
@@ -604,26 +607,26 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                             })}
                         </div>
 
-                        {/* Active Category Topics Grid */}
-                        <div className="card flex-1">
-                            <div className="mb-6 flex items-center justify-between">
+                        {/* Active Category Overview Container */}
+                        <div className="card flex-1 p-6 sm:p-8 bg-white shadow-xl rounded-[2rem] border-2 border-slate-200">
+                            <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-[var(--radius-btn)] flex items-center justify-center bg-[var(--brand-solid)] text-white shadow-md">
-                                        <Award size={20} />
+                                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[var(--brand-solid)] text-white shadow-md">
+                                        <Award size={24} />
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-[var(--text-main)] tracking-tight leading-none mb-1">
+                                        <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase italic leading-none mb-1">
                                             {activeCategoryData.label[lang]}
                                         </h3>
-                                        <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest leading-none">
+                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                                             {activeCategoryData.topics.length} {lang === 'sv' ? 'tillgängliga delmoment' : 'available topics'}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                                {/* 🟢 FIXED: Topic Card with upfront level descriptions and checkbox toggles */}
+                            {/* 🟢 MULTI-COLUMN RESPONSIVE GRID (2 to 3 columns if space allows) */}
+                            <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6 items-start">
                                 {activeCategoryData.topics.map(topic => {
                                     const isEnabled = selection[topic.id]?.enabled;
                                     const topicLevels = LEVEL_DESCRIPTIONS[topic.id] 
@@ -661,116 +664,98 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                         }));
                                     };
 
+                                    // Pull pre-generated CONTENT_MAP examples
+                                    const mapCategory = CONTENT_MAP.find(c => c.topics.some(t => t.id === topic.id));
+                                    const mapTopic = mapCategory?.topics.find(t => t.id === topic.id);
+
                                     return (
-                                        <div 
-                                            key={topic.id} 
-                                            className={`card p-4 flex flex-col justify-between transition-all border-2 ${
-                                                isEnabled 
-                                                    ? 'border-[var(--brand-solid)] shadow-md bg-[var(--bg-card)]' 
-                                                    : 'border-[var(--border-main)] bg-[var(--bg-surface)] opacity-85 hover:opacity-100'
-                                            }`}
-                                        >
-                                            <div>
-                                                {/* Header: Topic Title & "Select All" Checkbox */}
-                                                <div className="flex items-center justify-between pb-3 mb-3 border-b border-[var(--border-subtle)]">
-                                                    <div>
-                                                        <h4 className="font-black text-sm text-[var(--text-main)] leading-tight">
-                                                            {topic.label[lang]}
-                                                        </h4>
-                                                        <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                                                            {selectedLevels.length} / {topicLevels.length} {lang === 'sv' ? 'valda nivåer' : 'levels active'}
-                                                        </span>
-                                                    </div>
+                                        <div key={topic.id} className="bg-slate-50/80 rounded-2xl border-2 border-slate-200 overflow-hidden shadow-xs flex flex-col h-full">
+                                            {/* Topic Header Row */}
+                                            <div className="bg-white px-5 py-3.5 border-b border-slate-200 flex items-center justify-between gap-3 shrink-0">
+                                                <h4 className="font-black text-sm sm:text-base text-slate-900 uppercase tracking-tight italic truncate">
+                                                    {topic.label[lang]}
+                                                </h4>
+                                                <button 
+                                                    type="button"
+                                                    onClick={toggleEntireTopic}
+                                                    className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer border shrink-0 ${
+                                                        isEnabled 
+                                                            ? 'bg-[var(--brand-solid)] text-white border-transparent shadow-xs' 
+                                                            : 'bg-white text-slate-700 border-slate-300 hover:border-slate-900'
+                                                    }`}
+                                                >
+                                                    <Check size={14} strokeWidth={3} className={isEnabled ? "opacity-100" : "opacity-0"} />
+                                                    <span>{lang === 'sv' ? 'Välj alla' : 'All'}</span>
+                                                </button>
+                                            </div>
 
-                                                    <button 
-                                                        type="button"
-                                                        onClick={toggleEntireTopic}
-                                                        title={isEnabled ? (lang === 'sv' ? "Avmarkera alla nivåer" : "Deselect all") : (lang === 'sv' ? "Välj alla nivåer" : "Select all")}
-                                                        className={`px-2.5 py-1 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer border ${
-                                                            isEnabled 
-                                                                ? 'bg-[var(--brand-solid)] text-white border-transparent shadow-xs' 
-                                                                : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-strong)] hover:border-[var(--brand-solid)]'
-                                                        }`}
-                                                    >
-                                                        <Check size={12} strokeWidth={3} className={isEnabled ? "opacity-100" : "opacity-0"} />
-                                                        <span>{lang === 'sv' ? 'Alla' : 'All'}</span>
-                                                    </button>
-                                                </div>
+                                            {/* Level Rows Matrix (Larger font scale) */}
+                                            <div className="divide-y divide-slate-200 flex-1">
+                                                {topicLevels.map(lvl => {
+                                                    const isLvlSelected = selectedLevels.includes(lvl);
+                                                    const desc = LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || "";
+                                                    const mapLevelData = mapTopic?.levels.find(l => l.lvl === lvl);
+                                                    const mathExample = mapLevelData?.ex || "";
 
-                                                {/* Level Rows: Checkbox + Level Number + Description */}
-                                                <div className="flex flex-col gap-1.5 max-h-60 overflow-y-auto custom-scrollbar pr-1">
-                                                    {topicLevels.map(lvl => {
-                                                        const isLvlSelected = selectedLevels.includes(lvl);
-                                                        const desc = LEVEL_DESCRIPTIONS[topic.id]?.[lvl]?.[lang] || "";
+                                                    return (
+                                                        <div
+                                                            key={lvl}
+                                                            onClick={() => toggleLevel(lvl)}
+                                                            className={`flex items-stretch text-xs sm:text-sm transition-all cursor-pointer select-none ${
+                                                                isLvlSelected ? 'bg-emerald-50/90 font-bold' : 'bg-white hover:bg-slate-100/90 text-slate-800'
+                                                            }`}
+                                                        >
+                                                            {/* Larger Level Number Badge */}
+                                                            <div className={`w-12 shrink-0 flex items-center justify-center font-black text-sm border-r border-slate-200 ${
+                                                                isLvlSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'
+                                                            }`}>
+                                                                {lvl}
+                                                            </div>
 
-                                                        return (
-                                                            <div
-                                                                key={lvl}
-                                                                onClick={() => toggleLevel(lvl)}
-                                                                className={`flex items-start gap-2.5 p-2 rounded-[var(--radius-btn)] border transition-all cursor-pointer select-none ${
-                                                                    isLvlSelected
-                                                                        ? 'bg-[var(--brand-bg)] border-[var(--brand-border)] text-[var(--text-main)] shadow-xs'
-                                                                        : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-main)]'
-                                                                }`}
-                                                            >
-                                                                {/* Styled Checkbox Box */}
-                                                                <div className={`w-4 h-4 rounded mt-0.5 shrink-0 flex items-center justify-center border transition-all ${
-                                                                    isLvlSelected 
-                                                                        ? 'bg-[var(--brand-solid)] border-[var(--brand-solid)] text-white' 
-                                                                        : 'border-[var(--border-strong)] bg-[var(--bg-surface)]'
-                                                                }`}>
-                                                                    {isLvlSelected && <Check size={11} strokeWidth={3} />}
-                                                                </div>
-
-                                                                {/* Level Badge & Descriptive Text */}
-                                                                <div className="min-w-0 flex-1">
-                                                                    <div className="flex items-center gap-1.5 mb-0.5">
-                                                                        <span className={`text-[10px] font-black uppercase tracking-tight ${
-                                                                            isLvlSelected ? 'text-[var(--brand-text)]' : 'text-[var(--text-muted)]'
-                                                                        }`}>
-                                                                            {t.level} {lvl}
-                                                                        </span>
+                                                            {/* Larger Description & Formula Container */}
+                                                            <div className="flex-1 p-3.5 border-r border-slate-200 flex flex-col justify-center gap-1 min-w-0">
+                                                                <span className="font-extrabold text-slate-900 text-xs sm:text-sm leading-snug">
+                                                                    {desc}
+                                                                </span>
+                                                                {mathExample && (
+                                                                    <div className="font-serif italic text-xs sm:text-sm text-indigo-700 overflow-x-auto no-scrollbar">
+                                                                        <MathDisplay 
+                                                                            content={mathExample.includes('\\') || mathExample.includes('=') || mathExample.includes('$') ? (mathExample.includes('$') ? mathExample : `$$${mathExample}$$`) : mathExample} 
+                                                                            className="inline-block" 
+                                                                        />
                                                                     </div>
-                                                                    <p className="text-[11px] font-semibold leading-snug line-clamp-2">
-                                                                        {desc}
-                                                                    </p>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Larger Checkbox Action Indicator */}
+                                                            <div className="w-14 shrink-0 flex items-center justify-center border-l border-slate-200">
+                                                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all ${
+                                                                    isLvlSelected 
+                                                                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs' 
+                                                                        : 'border-slate-300 bg-white'
+                                                                }`}>
+                                                                    {isLvlSelected && <Check size={16} strokeWidth={3} />}
                                                                 </div>
                                                             </div>
-                                                        );
-                                                    })}
-                                                </div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     );
                                 })}
                             </div>
                         </div>
-
                     </main>
                 </div>
 
                 {/* --- GUIDE MODAL OVERLAY --- */}
-                {showGuideModal && (
-                    <div className="modal-overlay">
-                        <div className="card-flat w-full max-w-xl max-h-[85vh] animate-in zoom-in-95">
-                            <div className="card-header-flat">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2.5 bg-[var(--brand-bg)] text-[var(--brand-text)] rounded-[var(--radius-btn)] border border-[var(--brand-border)]"><HelpCircle size={20}/></div>
-                                    <h2 className="text-lg font-black uppercase tracking-tight italic text-[var(--text-main)]">{t.guideTitle}</h2>
-                                </div>
-                                <button onClick={() => setShowGuideModal(false)} className="btn-ghost"><X size={18} /></button>
-                            </div>
-                            
-                            <div className="card-body-flat overflow-y-auto space-y-4 custom-scrollbar text-xs font-medium text-[var(--text-main)] leading-relaxed">
-                                <p>1. {lang === 'sv' ? "Snabbval" : "Presets"}: {t.guidePreset}</p>
-                                <p>2. {lang === 'sv' ? "Frågeantal" : "Quantity"}: {t.guideCustom}</p>
-                                <p>3. {lang === 'sv' ? "Lägen" : "Modes"}: {t.guideModes}</p>
-                                <p>4. {lang === 'sv' ? "Dela" : "Sharing"}: {t.guideReview}</p>
-                                <p>5. {lang === 'sv' ? "Elever" : "Students"}: {t.guideControls}</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <TestLabTutorialModal 
+                    isOpen={showGuideModal}
+                    onClose={() => setShowGuideModal(false)}
+                    lang={lang}
+                    userRole={profile?.role || 'teacher'}
+                />
             </div>
         );
     }
@@ -800,16 +785,16 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         }
         
         return (
-            <div className="layout-wrapper font-sans flex flex-col overflow-hidden">
+            <div className="layout-wrapper font-sans flex flex-col overflow-hidden relative">
                 {/*  Swapped from header-compact to a relative block so it stacks perfectly under App.jsx */}
                 <header className="relative z-30 w-full bg-[var(--bg-surface)] border-b border-[var(--border-main)] px-4 py-2 transition-colors duration-500 no-print">
                     <div className="w-full flex items-center justify-between gap-2 px-2 sm:px-4">
                         
                         <div className="flex items-center gap-1">
-                            <button onClick={() => setInternalMode('SETUP')} className="btn-ghost mr-2 text-[9px] font-black uppercase tracking-tight py-2 border border-[var(--border-subtle)]">
+                            <button onClick={() => setInternalMode('SETUP')} className="btn-ghost mr-2 text-[9px] font-black uppercase tracking-tight py-2 border border-[var(--border-subtle)] cursor-pointer">
                                 <Settings2 size={12} /> {t.backToLab}
                             </button>
-                            <button onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} className="btn-ghost">
+                            <button onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} className="btn-ghost cursor-pointer">
                                 <ChevronLeft size={28} />
                             </button>
                         </div> 
@@ -822,10 +807,10 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         </div>
 
                         <div className="flex items-center gap-1">
-                            <button onClick={() => setCurrentIndex(p => Math.min(packet.length - 1, p + 1))} className="btn-ghost">
+                            <button onClick={() => setCurrentIndex(p => Math.min(packet.length - 1, p + 1))} className="btn-ghost cursor-pointer">
                                 <ChevronRight size={28} />
                             </button>
-                            <button onClick={onBack} className="btn-ghost ml-2 px-3 py-2 text-[9px] font-black uppercase tracking-tight hover:!text-[var(--theme-rose-text)] hover:!bg-[var(--theme-rose-bg)] border border-[var(--border-subtle)]">
+                            <button onClick={handleQuit} className="btn-ghost ml-2 px-3 py-2 text-[9px] font-black uppercase tracking-tight hover:!text-[var(--theme-rose-text)] hover:!bg-[var(--theme-rose-bg)] border border-[var(--border-subtle)] cursor-pointer">
                                 {t.toDashboard}
                             </button>
                         </div>
@@ -951,24 +936,38 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
                         {/* MILESTONE REVIEW MODAL */}
                         {showMilestone && (
-                            <div className="modal-overlay rounded-[var(--radius-card)] lg:rounded-[3.5rem]">
-                                <div className="card-flat w-full max-w-5xl max-h-[90vh] rounded-[var(--radius-card)] lg:rounded-[3.5rem]">
+                            <div className="fixed inset-0 z-[200] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in">
+                                <div className="bg-[var(--bg-card)] border border-[var(--border-main)] w-full max-w-5xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95">
                                     
-                                    <div className="card-header-flat bg-[var(--bg-surface)] border-b border-[var(--border-main)] p-8 lg:p-10">
+                                    <div className="bg-[var(--bg-surface)] border-b border-[var(--border-main)] p-6 sm:p-8 flex justify-between items-center shrink-0">
                                         <div>
-                                            <h2 className="text-3xl lg:text-4xl font-black text-[var(--text-main)] italic tracking-tight uppercase mb-2">
+                                            <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-main)] italic tracking-tight uppercase mb-1">
                                                 {t.milestoneTitle}
                                             </h2>
-                                            <p className="text-[var(--text-muted)] font-medium text-xs lg:text-sm">
+                                            <p className="text-[var(--text-muted)] font-medium text-xs sm:text-sm">
                                                 {lang === 'sv' ? 'Granska dina senaste svar innan du går vidare.' : 'Review your recent answers before continuing.'}
                                             </p>
                                         </div>
-                                        <button onClick={() => setInternalMode('SUMMARY')} className="btn-brand bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] hover:!bg-rose-500 hover:!text-white border border-[var(--theme-rose-border)] px-6 py-3 text-[10px]">
+                                        <button 
+                                            onClick={() => {
+                                                const totalAnswered = Object.keys(responses).length;
+                                                const totalCorrect = Object.values(responses).filter(r => r.isCorrect).length;
+                                                syncProgress('test_session_completed', {
+                                                    app_mode: 'test_lab',
+                                                    total_questions: totalAnswered,
+                                                    final_accuracy: totalAnswered > 0 ? parseFloat((totalCorrect / totalAnswered).toFixed(2)) : 0,
+                                                    test_mode: meta.mode,
+                                                    early_finish: true
+                                                });
+                                                setInternalMode('SUMMARY');
+                                            }} 
+                                            className="btn-brand bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] hover:!bg-rose-500 hover:!text-white border border-[var(--theme-rose-border)] px-5 py-2.5 text-[10px]"
+                                        >
                                             {t.finish}
                                         </button>
                                     </div>
 
-                                    <div className="card-body-flat overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-[var(--bg-canvas)] custom-scrollbar">
+                                    <div className="flex-1 overflow-y-auto p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-[var(--bg-canvas)] custom-scrollbar">
                                         {Object.keys(responses).filter(idx => idx >= currentIndex - 14 && idx <= currentIndex).map(idx => {
                                             const qItem = packet[idx];
                                             const res = responses[idx];
@@ -977,23 +976,23 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                             const clues = qItem?.clues || qItem?.resolvedData?.clues || [];
 
                                             return (
-                                                <div key={idx} className={`card p-6 border-4 flex flex-col justify-between transition-all ${res.isCorrect ? 'border-emerald-500 shadow-lg' : 'border-rose-400 shadow-md'}`}>
+                                                <div key={idx} className={`card p-5 border-4 flex flex-col justify-between transition-all ${res.isCorrect ? 'border-emerald-500 shadow-sm' : 'border-rose-400 shadow-sm'}`}>
                                                     <div>
-                                                        <div className="flex justify-between items-center mb-4">
+                                                        <div className="flex justify-between items-center mb-3">
                                                             <span className="text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest">{lang === 'sv' ? "Uppgift" : "Question"} {parseInt(idx) + 1}</span>
-                                                            {res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-400" size={20} />}
+                                                            {res.isCorrect ? <CheckCircle2 className="text-emerald-500" size={18} /> : <XCircle className="text-rose-400" size={18} />}
                                                         </div>
 
                                                         {hasVisual && (
-                                                            <div className="w-full flex justify-center whiteboard-protect p-4 rounded-[var(--radius-btn)] mb-4 border border-slate-200 shadow-sm overflow-hidden">
-                                                                <div className="flex justify-center scale-90 origin-top mt-2">
+                                                            <div className="w-full h-28 flex items-center justify-center whiteboard-protect rounded-[var(--radius-btn)] mb-3 border border-slate-200 shadow-sm overflow-hidden">
+                                                                <div className="flex justify-center scale-75 origin-center">
                                                                     <VisualRenderer data={q?.resolvedData?.renderData || q?.renderData} isWordProblem={q?.selectedStoryIndex !== null && q?.selectedStoryIndex !== undefined} />
                                                                 </div>
                                                             </div>
                                                         )}
 
-                                                        <div className="space-y-3 text-[var(--text-main)] mb-6">
-                                                            <div className="text-center font-bold text-[12px] leading-snug px-2">
+                                                        <div className="space-y-2 text-[var(--text-main)] mb-4">
+                                                            <div className="text-center font-bold text-[12px] leading-snug px-1">
                                                                 <MathDisplay content={typeof rd?.description === 'object' ? rd.description[lang] : rd?.description} />
                                                             </div>
                                                             {rd?.latex && (
@@ -1005,28 +1004,33 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                                     </div>
 
                                                     <div className="space-y-2 mt-auto">
-                                                        <div className={`p-3 rounded-[var(--radius-btn)] text-center shadow-inner ${res.isCorrect ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                                                        <div className={`p-2.5 rounded-[var(--radius-btn)] text-center shadow-inner transition-colors duration-500 ${res.isCorrect ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
                                                             <span className="text-[8px] font-black uppercase block mb-0.5 opacity-70">{lang === 'sv' ? "Ditt Svar" : "Your Answer"}</span>
                                                             <span className="font-black text-xs">{res.answer || '-'}</span>
                                                         </div>
 
                                                         {clues.length > 0 && (
                                                             <div className="space-y-2">
-                                                                <button onClick={() => setVisibleClues(prev => ({ ...prev, [idx]: !prev[idx] }))} className={`btn-brand w-full py-2.5 text-[9px] bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)] ${visibleClues[idx] ? '!bg-amber-500 !text-white' : ''}`}>
+                                                                <button onClick={() => toggleSummaryClue(idx)} className={`btn-brand w-full py-2 text-[9px] bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border border-[var(--theme-amber-border)] ${visibleClues[idx] ? '!bg-amber-500 !text-white' : ''}`}>
                                                                     <Zap size={12} fill={visibleClues[idx] ? "currentColor" : "none"} />
                                                                     {visibleClues[idx] ? (lang === 'sv' ? "Dölj lösning" : "Hide Solution") : (lang === 'sv' ? "Visa lösning" : "Show Solution")}
                                                                 </button>
                                                                 {visibleClues[idx] && (
-                                                                    <div className="p-4 bg-[var(--theme-amber-bg)] rounded-[var(--radius-btn)] border border-[var(--theme-amber-border)] animate-in slide-in-from-top-2 duration-200">
-                                                                        <div className="space-y-4">
+                                                                    <div className="p-3 bg-[var(--theme-amber-bg)] rounded-[var(--radius-btn)] border border-[var(--theme-amber-border)] animate-in slide-in-from-top-2 duration-200">
+                                                                        <div className="flex items-center gap-2 mb-2 opacity-50">
+                                                                            <Info size={10} />
+                                                                            <span className="uppercase tracking-tighter text-[8px] font-black text-[var(--theme-amber-text)]">{lang === 'sv' ? "Steg-för-steg lösning" : "Step-by-step solution"}</span>
+                                                                        </div>
+                                                                        <div className="space-y-2">
                                                                             {clues.map((step, sIdx) => {
                                                                                 const stepText = typeof step === 'object' && step !== null ? step[lang] || step.text || Object.values(step)[0] : step;
                                                                                 const stepLatex = typeof step === 'object' && step !== null ? step.latex || step.math : null;
                                                                                 return (
                                                                                     <div key={sIdx} className="flex gap-2 items-start border-l-2 border-amber-300 pl-2">
+                                                                                        <span className="text-[8px] font-black text-amber-500 bg-[var(--bg-card)] w-4 h-4 rounded-full flex items-center justify-center border border-amber-200 shrink-0 mt-0.5">{sIdx + 1}</span>
                                                                                         <div className="flex-1 space-y-1">
-                                                                                            <div className="text-[10px] font-bold text-amber-900 leading-tight"><MathDisplay content={stepText} /></div>
-                                                                                            {stepLatex && <div className="py-1 px-2 bg-white/60 rounded border border-amber-200/50 inline-block"><MathDisplay content={`$$${stepLatex}$$`} className="text-[var(--text-main)] scale-[0.8] origin-left" /></div>}
+                                                                                            <div className="text-[9px] font-bold text-amber-900 leading-tight"><MathDisplay content={stepText} /></div>
+                                                                                            {stepLatex && <div className="py-1 px-2 bg-[var(--bg-card)]/60 rounded border border-amber-200/50 inline-block"><MathDisplay content={`$$${stepLatex}$$`} className="text-[var(--text-main)] scale-[0.8] origin-left" /></div>}
                                                                                         </div>
                                                                                     </div>
                                                                                 );
@@ -1042,9 +1046,9 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                         })}
                                     </div>
 
-                                    <div className="p-8 bg-[var(--bg-card)] border-t border-[var(--border-main)] flex justify-center">
-                                        <button disabled={cooldown > 0} onClick={() => { setShowMilestone(false); setCurrentIndex(currentIndex + 1); setInputValue(''); setRevealMilestoneAnswers(false); }} className="btn-brand px-16 py-5 rounded-[2rem] tracking-[0.2em] shadow-xl text-[14px]">
-                                            {cooldown > 0 ? `${t.cooldown} (${cooldown}s)` : t.continueBtn} <ChevronRight size={20}/>
+                                    <div className="p-6 bg-[var(--bg-card)] border-t border-[var(--border-main)] flex justify-center shrink-0">
+                                        <button disabled={cooldown > 0} onClick={() => { setShowMilestone(false); setCurrentIndex(currentIndex + 1); setInputValue(''); setRevealMilestoneAnswers(false); }} className="btn-brand px-12 py-4 rounded-[1.5rem] tracking-[0.15em] shadow-xl text-xs cursor-pointer">
+                                            {cooldown > 0 ? `${t.cooldown} (${cooldown}s)` : t.continueBtn} <ChevronRight size={16}/>
                                         </button>
                                     </div>
                                 </div>
@@ -1078,10 +1082,10 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
                     {/* Compact Footer Navigation */}
                     <div className="p-6 sm:p-8 bg-[var(--bg-surface)] border-t border-[var(--border-main)] flex flex-col sm:flex-row justify-center gap-4">
-                        <button onClick={() => { setPacket([]); setResponses({}); setCurrentIndex(0); setInternalMode('SETUP'); }} className="btn-brand bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)] px-8 py-4 rounded-[var(--radius-card)]">
+                        <button onClick={() => { setPacket([]); setResponses({}); setCurrentIndex(0); setInternalMode('SETUP'); }} className="btn-brand bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)] px-8 py-4 rounded-[var(--radius-card)] cursor-pointer">
                             <Settings2 size={16} /> {t.backToLab}
                         </button>
-                        <button onClick={onBack} className="btn-brand px-8 py-4 rounded-[var(--radius-card)]">
+                        <button onClick={onBack} className="btn-brand px-8 py-4 rounded-[var(--radius-card)] cursor-pointer">
                             {t.toDashboard} <LogOut size={16} />
                         </button>
                     </div>
@@ -1126,7 +1130,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                         </div>
 
                                         <div className="space-y-2 mt-auto">
-                                            <div className={`p-2.5 rounded-[var(--radius-btn)] text-center shadow-inner transition-colors duration-500 ${res.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                                            <div className={`p-2.5 rounded-[var(--radius-btn)] text-center shadow-inner transition-colors duration-500 ${res.isCorrect ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
                                                 <span className="text-[8px] font-black text-white/50 uppercase block mb-0.5">{lang === 'sv' ? "Rätt Svar" : "Correct Answer"}</span>
                                                 <span className="font-black text-white text-xs">{atob(qItem.resolvedData.token)}</span>
                                             </div>
@@ -1151,8 +1155,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                                                         <div key={sIdx} className="flex gap-2 items-start border-l-2 border-amber-300 pl-2">
                                                                             <span className="text-[8px] font-black text-amber-500 bg-[var(--bg-card)] w-4 h-4 rounded-full flex items-center justify-center border border-amber-200 shrink-0 mt-0.5">{sIdx + 1}</span>
                                                                             <div className="flex-1 space-y-1">
-                                                                                <div className="text-[9px] font-bold text-amber-900 leading-relaxed"><MathDisplay content={stepText} /></div>
-                                                                                {stepLatex && <div className="py-1.5 px-2 bg-[var(--bg-card)]/60 rounded border border-amber-200/50 inline-block min-w-[60%]"><MathDisplay content={`$$${stepLatex}$$`} className="text-[var(--text-main)] scale-90 origin-left" /></div>}
+                                                                                <div className="text-[9px] font-bold text-amber-900 leading-tight"><MathDisplay content={stepText} /></div>
+                                                                                {stepLatex && <div className="py-1.5 px-2 bg-[var(--bg-card)]/60 rounded border border-amber-200/50 inline-block min-w-[60%]}"><MathDisplay content={`$$${stepLatex}$$`} className="text-[var(--text-main)] scale-90 origin-left" /></div>}
                                                                             </div>
                                                                         </div>
                                                                     );
