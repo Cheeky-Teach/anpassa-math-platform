@@ -971,12 +971,22 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                     }`}>
                         {connStatus === 'SUBSCRIBED' ? 'Live' : connStatus}
                     </div>
+                    {/* 🟢 NEW: Capacity Management Button */}
+                                
                     
                     <PreferencesToggle />
 
                     <button onClick={syncData} disabled={isSyncing} className="p-1.5 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-md text-[var(--text-muted)] hover:text-indigo-600 transition-all shadow-sm">
                         <RefreshCw size={12} className={isSyncing ? 'animate-spin' : ''} />
                     </button>
+                    <button 
+                                    onClick={() => setShowCapacityModal(true)} 
+                                    title={lang === 'sv' ? "Hantera Platser" : "Manage Slots"} 
+                                    className="theme-amber p-2 sm:px-3 sm:py-1.5 rounded-lg border transition-all shadow-sm bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border-[var(--theme-amber-border)] hover:bg-amber-500 hover:text-white flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <Users size={14} className="shrink-0" />
+                                    <span className="text-[9px] font-black uppercase hidden sm:inline">{lang === 'sv' ? "Platser" : "Slots"}</span>
+                                </button>
                     
                     <div className="relative">
                         <button 
@@ -1362,15 +1372,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                     {hideCorrectness ? <EyeOff size={14} /> : <Eye size={14} />}
                                 </button>
 
-                                {/* 🟢 NEW: Capacity Management Button */}
-                                <button 
-                                    onClick={() => setShowCapacityModal(true)} 
-                                    title={lang === 'sv' ? "Hantera Platser" : "Manage Slots"} 
-                                    className="theme-amber p-2 sm:px-3 sm:py-1.5 rounded-lg border transition-all shadow-sm bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border-[var(--theme-amber-border)] hover:bg-amber-500 hover:text-white flex items-center gap-1.5 cursor-pointer"
-                                >
-                                    <Users size={14} className="shrink-0" />
-                                    <span className="text-[9px] font-black uppercase hidden sm:inline">{lang === 'sv' ? "Platser" : "Slots"}</span>
-                                </button>
+                
 
                                 <div className="w-px h-6 bg-[var(--border-strong)] mx-1 hidden sm:block" />
 
