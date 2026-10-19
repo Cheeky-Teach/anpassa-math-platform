@@ -1133,7 +1133,15 @@ function App() {
                         </GhostRadioGatekeeper>
                     </DesktopZoomWrapper>
                 ) : view === 'teacher_live' && activeRoom ? (
-                    <TeacherLiveView session={activeRoom} packet={savedPacket} lang={lang} onEnd={handleEndSession} onKick={handleKick} onCreateReport={(res) => { setReportData(res); setView('live_report'); }} />
+                    <TeacherLiveView 
+                        session={activeRoom} 
+                        packet={savedPacket} 
+                        lang={lang} 
+                        onEnd={handleEndSession} 
+                        onKick={handleKick} 
+                        onCreateReport={(res) => { setReportData(res); setView('live_report'); }} 
+                        teacherClassCode={profile?.class_code}
+                    />
                 ) : view === 'live_report' && activeRoom && reportData ? (
                     <LandscapeReport 
                         session={activeRoom} 

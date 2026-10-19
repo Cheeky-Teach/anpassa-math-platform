@@ -21,7 +21,7 @@ import SlideRenderer from '../shared/SlideRenderer';
 import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
 import MathDisplay from '../shared/MathDisplay';
 
-export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, onCreateReport }) {
+export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, onCreateReport, teacherClassCode }) {
     // 🟢 NEW: Mutable Live Packet State
     const [livePacket, setLivePacket] = useState(packet);
     const [isRegenerating, setIsRegenerating] = useState(false);
@@ -948,7 +948,7 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
             <CapacityModal 
                 visible={showCapacityModal}
                 onClose={() => setShowCapacityModal(false)}
-                classCode={session?.class_code}
+                classCode={teacherClassCode || session?.class_code}
                 lang={lang}
             />
 
