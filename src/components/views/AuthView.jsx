@@ -7,6 +7,15 @@ import {
     ShieldCheck, Star
 } from 'lucide-react';
 
+const getOrAssignStudentId = () => {
+    let guestId = localStorage.getItem('guest_student_id');
+    if (!guestId) {
+        guestId = crypto.randomUUID();
+        localStorage.setItem('guest_student_id', guestId);
+    }
+    return guestId;
+};
+
 export default function AuthView({ lang, studentMode, onSuccess, onBack, initialCode }) {
     // --- 1. SHARED STATE ---
     const [loading, setLoading] = useState(false);
@@ -27,7 +36,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
 
     // --- 3. STUDENT STATE ---
     const [code, setCode] = useState(initialCode || '');
-    const nameInputRef = useRef(null); // 🟢 ADDED: Ref for auto-focusing the name input
+    const nameInputRef = useRef(null); //  ADDED: Ref for auto-focusing the name input
 
     // --- 4. MANUAL AUTH STATE ---
     const [email, setEmail] = useState('');
@@ -134,7 +143,6 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         return () => subscription.unsubscribe();
     }, []);
 
-    // 🟢 ADDED: Extracted core join logic
     const executeStudentJoin = async (targetCode) => {
         setLoading(true);
         setMessage(null);
@@ -147,6 +155,23 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                 potentialMatches.push(`${rawNoHyphens.slice(0, 3)}-${rawNoHyphens.slice(3)}`);
             }
 
+            // 1. Get their persistent browser ID
+            const studentId = getOrAssignStudentId();
+
+            // 2. NEW GATEKEEPER CHECK: Run the capacity RPC
+            // We just use the first match attempt since the RPC expects a single string
+            const attemptCode = potentialMatches.length > 2 ? potentialMatches[2] : cleanInput; 
+            
+            const { data: gatekeeperResult, error: gatekeeperError } = await supabase.rpc('attempt_student_login', {
+                p_teacher_code: attemptCode,
+                p_student_id: studentId
+            });
+
+            if (gatekeeperError || !gatekeeperResult?.success) {
+                throw new Error(gatekeeperResult?.message || t.error_code);
+            }
+
+            // 3. Proceed with existing routing if they passed the gatekeeper
             if (studentMode === 'live') {
                 const { data: room, error } = await supabase
                     .from('rooms')
@@ -158,17 +183,16 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                 if (error || !room) throw new Error(t.error_code);
                 if (!fullName.trim()) throw new Error(t.name_placeholder);
 
-                onSuccess({ role: 'live', room, student_name: fullName.trim() });
+                onSuccess({ role: 'live', room, student_name: fullName.trim(), student_id: studentId });
 
             } else {
-                // ✅ SECURE RPC QUERY
                 const { data: teachers, error } = await supabase
                     .rpc('get_active_class', { search_codes: potentialMatches });
 
                 const teacher = teachers && teachers.length > 0 ? teachers[0] : null;
 
                 if (error || !teacher) throw new Error(t.error_code);
-                onSuccess({ role: 'student', class: teacher });
+                onSuccess({ role: 'student', class: teacher, student_id: studentId });
             }
         } catch (err) {
             setMessage({ type: 'error', text: err.message });
@@ -177,7 +201,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         }
     };
 
-    // 🟢 ADDED: Auto-execute or Auto-focus effect
+    //  ADDED: Auto-execute or Auto-focus effect
     useEffect(() => {
         if (studentMode === 'practice' && initialCode) {
             // For practice, we have everything we need. Join instantly!
@@ -190,7 +214,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         }
     }, [initialCode, studentMode]); // Run once on mount when props are available
 
-    // 🟢 UPDATED: Wrapper for the form submit
+    //  UPDATED: Wrapper for the form submit
     const handleStudentJoin = async (e) => {
         e.preventDefault();
         await executeStudentJoin(code);
@@ -268,7 +292,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
                 
-                // 🟢 NEW: Fetch profile and check expiration before letting them in
+                //  NEW: Fetch profile and check expiration before letting them in
                 const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).maybeSingle();
                 
                 const isExpired = profile?.subscription_status === 'expired' || 
@@ -512,7 +536,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                                 <div className="relative">
                                     <User className="absolute left-5 top-5 text-emerald-200" size={18} />
                                     <input 
-                                        ref={nameInputRef} // 🟢 ADDED THIS REF
+                                        ref={nameInputRef} //  ADDED THIS REF
                                         type="text" 
                                         placeholder={t.name_placeholder} 
                                         value={fullName} 
@@ -536,7 +560,7 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
                     </form>
                 ) : (
                     <div className="space-y-6">
-                        {/* 🟢 NEW: The Invite Code sits at the top for Signups */}
+                        {/*  NEW: The Invite Code sits at the top for Signups */}
                         {authMode === 'signup' && (
                             <div className="relative animate-in fade-in slide-in-from-top-2 duration-400">
                                 <ShieldCheck className="absolute left-5 top-5 text-emerald-200" size={18} />

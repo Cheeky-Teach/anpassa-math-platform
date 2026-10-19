@@ -6,13 +6,14 @@ import {
     ChevronLeft, ChevronRight, CheckCircle2, XCircle, Type,
     LayoutGrid, ArrowDownAZ, ListOrdered, Shuffle, ChevronDown,
     MessageSquare, Monitor, PanelRightClose, PanelRightOpen, Star,
-    Maximize2
+    Maximize2, Zap
 } from 'lucide-react';
 import { UI_TEXT } from '../../constants/localization';
 import VisualRenderer from '../visuals/VisualRenderer';
 import LandscapeReport from '../reports/LandscapeReport';
 import PreferencesToggle from '../ui/PreferencesToggle';
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
+import CapacityModal from '../modals/CapacityModal';
 
 
 // Import the shared renderer
@@ -36,6 +37,9 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
     const [zoomIndex, setZoomIndex] = useState(null);
     const [showWorkGrid, setShowWorkGrid] = useState(false);
     const [isPushing, setIsPushing] = useState(false);
+
+    // Student capacity modal
+    const [showCapacityModal, setShowCapacityModal] = useState(false);
     
     // Sorting
     const [sortMode, setSortMode] = useState('az'); 
@@ -940,6 +944,14 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                 />
             )}
 
+            {/* 🟢 NEW: Capacity Modal */}
+            <CapacityModal 
+                visible={showCapacityModal}
+                onClose={() => setShowCapacityModal(false)}
+                classCode={session?.class_code}
+                lang={lang}
+            />
+
             {/* 🟢 Slimmed-down Header for max screen space */}
             <header className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-4 py-1 sticky top-0 z-40 shadow-sm flex items-center justify-between gap-4 no-print transition-colors duration-500">
                 <div className="flex items-center gap-3">
@@ -1348,6 +1360,16 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 
                                 <button onClick={() => setHideCorrectness(!hideCorrectness)} title={lang === 'sv' ? "Resultat" : "Results"} className={`theme-purple p-2 rounded-lg border transition-all shadow-sm ${hideCorrectness ? 'bg-[var(--brand-solid)] text-white border-[var(--brand-solid)]' : 'bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border-main)] hover:border-[var(--brand-solid)] hover:text-[var(--brand-solid)]'}`}>
                                     {hideCorrectness ? <EyeOff size={14} /> : <Eye size={14} />}
+                                </button>
+
+                                {/* 🟢 NEW: Capacity Management Button */}
+                                <button 
+                                    onClick={() => setShowCapacityModal(true)} 
+                                    title={lang === 'sv' ? "Hantera Platser" : "Manage Slots"} 
+                                    className="theme-amber p-2 sm:px-3 sm:py-1.5 rounded-lg border transition-all shadow-sm bg-[var(--theme-amber-bg)] text-[var(--theme-amber-text)] border-[var(--theme-amber-border)] hover:bg-amber-500 hover:text-white flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <Users size={14} className="shrink-0" />
+                                    <span className="text-[9px] font-black uppercase hidden sm:inline">{lang === 'sv' ? "Platser" : "Slots"}</span>
                                 </button>
 
                                 <div className="w-px h-6 bg-[var(--border-strong)] mx-1 hidden sm:block" />

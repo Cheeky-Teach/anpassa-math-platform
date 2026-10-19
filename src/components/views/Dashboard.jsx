@@ -14,6 +14,7 @@ import TeacherHubManager from './TeacherHubManager';
 import { CONTENT_MAP } from '../../constants/content_map.generated';
 import MathDisplay from '../shared/MathDisplay';
 import DashboardTutorialModal from '../modals/DashboardTutorialModal';
+import CapacityModal from '../modals/CapacityModal';
 
 const Dashboard = ({ 
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
@@ -28,6 +29,7 @@ const Dashboard = ({
     const [isLoadingArchive, setIsLoadingArchive] = useState(false);
     const [activeSession, setActiveSession] = useState(null);
     const [showUpdateLog, setShowUpdateLog] = useState(false);
+    const [showCapacityModal, setShowCapacityModal] = useState(false);
 
     const TEXT = {
         sv: {
@@ -203,13 +205,23 @@ const Dashboard = ({
                             })()}
 
                             {/* Class Code */}
-                            <div className="flex flex-col items-center bg-[var(--brand-bg)] px-4 py-3 rounded-[var(--radius-btn)] border border-[var(--brand-border)]">
+                            <div className="flex flex-col items-center bg-[var(--brand-bg)] px-4 py-3 rounded-[var(--radius-btn)] border border-[var(--brand-border)] relative overflow-hidden">
                                 <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--brand-text)] opacity-80 mb-0.5">
                                     {['teacher', 'super_admin'].includes(userRole) ? t.class_code_label : t.connected_code_label}
                                 </span>
                                 <span className="text-xl font-black tracking-[0.2em] text-[var(--brand-text)] uppercase">
                                     {profile?.class_code || "---"}
                                 </span>
+                                
+                                {/* 🟢 NEW: Capacity Management Button */}
+                                {['teacher', 'super_admin'].includes(userRole) && profile?.class_code && (
+                                    <button 
+                                        onClick={() => setShowCapacityModal(true)}
+                                        className="theme-amber mt-3 flex items-center gap-1.5 px-4 py-1.5 bg-[var(--theme-amber-bg)] border border-[var(--theme-amber-border)] rounded-md text-[9px] font-black uppercase tracking-widest text-[var(--theme-amber-text)] hover:bg-amber-500 hover:text-white transition-all shadow-sm active:scale-95 cursor-pointer"
+                                    >
+                                        <Users size={12} /> {lang === 'sv' ? "Hantera Platser" : "Manage Slots"}
+                                    </button>
+                                )}
                             </div>
 
                             {/* Profile/Settings Button */}
@@ -712,6 +724,13 @@ const Dashboard = ({
                 onClose={handleCloseDashboardTutorial}
                 lang={lang}
                 userRole={userRole}
+            />
+            {/* NEW: Capacity Modal */}
+            <CapacityModal 
+                visible={showCapacityModal}
+                onClose={() => setShowCapacityModal(false)}
+                classCode={profile?.class_code}
+                lang={lang}
             />
         </div>
     );

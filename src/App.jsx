@@ -50,6 +50,7 @@ const safeTrack = (eventName, data) => {
     }, 100);
 };
 import PreferencesToggle from './components/ui/PreferencesToggle';
+import SessionManager from './components/SessionManager';
 
 //user counter/gatekeeper and student gateway
 import StudentGateway from './components/views/StudentGateway';
@@ -112,7 +113,7 @@ function App() {
 
     const [showExpired, setShowExpired] = useState(false);
 
-    // 🟢 GLOBAL PREFERENCES STATE (Defaults to Dark & Swedish)
+    //  GLOBAL PREFERENCES STATE (Defaults to Dark & Swedish)
     const [lang, setLang] = useState(() => localStorage.getItem('app_lang') || 'sv');
     const [theme, setTheme] = useState(() => localStorage.getItem('app_theme') || 'dark');
     const [sandboxLab, setSandboxLab] = useState('fractions');
@@ -443,7 +444,7 @@ function App() {
             setSession(s);
 
             if (s) {
-                // 🟢 FIXED: Use the Ref to check if it's the same user, bypassing the stale closure!
+                //  FIXED: Use the Ref to check if it's the same user, bypassing the stale closure!
                 const isSameUser = currentUserRef.current === s.user.id;
                 currentUserRef.current = s.user.id; 
                 
@@ -478,7 +479,7 @@ function App() {
             const isExpired = data?.subscription_status === 'expired' || 
                              (data?.subscription_end_date && new Date(data.subscription_end_date) < new Date());
 
-            // 🟢 TRAP EXPIRED USERS
+            //  TRAP EXPIRED USERS
             if (isExpired && data?.role === 'teacher') {
                 setShowExpired(true);
                 return;
@@ -780,7 +781,7 @@ function App() {
         return () => clearInterval(interval);
     }, [timerSettings.isActive, timerSettings.remaining, view, isFocused]);
 
-    // --- 🟢 DEEP LINK AUTO-FETCHER ---
+    // ---  DEEP LINK AUTO-FETCHER ---
     // If the user lands directly on a practice URL (or is routed here after auth), automatically load the question.
     useEffect(() => {
         if (view === 'practice' && topic && level && !question && !loading) {
@@ -791,7 +792,7 @@ function App() {
     // --- VIEW ORCHESTRATION ---
     if (loadingProfile) return <div className="h-screen flex items-center justify-center bg-[#f9fbf7]"><div className="animate-spin h-10 w-10 border-4 border-emerald-600 border-t-transparent rounded-full" /></div>;
 
-    // --- 🟢 EXPIRED GATEWAY UI ---
+    // ---  EXPIRED GATEWAY UI ---
     if (showExpired) {
         return (
             <div className="min-h-screen bg-[#f9fbf7] flex flex-col items-center justify-center p-6 font-sans text-center">
@@ -842,7 +843,7 @@ function App() {
                         setActiveClass(data.class);
                         setProfile({ role: 'student', subscription_status: 'active' }); 
                         
-                        // 🟢 ROUTING PRIORITY: Lab Config -> Deep Link -> Dashboard
+                        //  ROUTING PRIORITY: Lab Config -> Deep Link -> Dashboard
                         if (pendingLabConfig) {
                             setView('practice_lab');
                         } else if (topic && level) {
@@ -867,7 +868,7 @@ function App() {
     let activeCategoryLabel = '';
     let activeTopicLabel = '';
     let activeThemeColor = 'emerald'; 
-
+    
     if (view === 'practice' && topic) {
         if (isDetourActive) {
             activeCategoryLabel = lang === 'sv' ? 'Uppvärmning' : 'Warm-up';
@@ -887,11 +888,27 @@ function App() {
         }
     }
 
+    // --- EVALUATE ACTIVE STUDENT SESSION ---
+    // If they are a standard student, track using activeClass code. 
+    // If they are a live-room student, track using activeRoom code.
+    const activeStudentCode = (profile?.role === 'student' && activeClass?.class_code) 
+        ? activeClass.class_code 
+        : (view === 'live_session' && studentAlias && activeRoom?.class_code) 
+            ? activeRoom.class_code 
+            : null;
+        
+
     return (
-        // 🟢 WRAP IN CONTEXT PROVIDER
+        //  WRAP IN CONTEXT PROVIDER
         <PreferencesContext.Provider value={{ theme, toggleTheme, lang, toggleLang }}>
-            {/* 🟢 ADDED .layout-app TO APPLY THEME BG */}
+            {/*  ADDED .layout-app TO APPLY THEME BG */}
             <div className="layout-app min-h-screen flex flex-col font-sans transition-colors duration-500">
+                
+                {/*  PHASE 4: GLOBAL SESSION MANAGER */}
+                {activeStudentCode && (
+                    <SessionManager teacherCode={activeStudentCode} lang={lang} />
+                )}
+
                 <AboutModal visible={aboutOpen} onClose={() => setAboutOpen(false)} ui={ui} />
                 <LgrModal visible={lgrOpen} onClose={() => setLgrOpen(false)} ui={ui} />
                 <ContentModal visible={contentOpen} onClose={() => setContentOpen(false)} /> 
@@ -907,7 +924,7 @@ function App() {
                 />            
                 {(view === 'dashboard' || view === 'practice' || view === 'times_table' || view === 'practice_lab') && (
                 <header className="sticky top-0 z-50 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
-                    {/* 🟢 Reduced y-axis padding to py-1 to slim down the global header */}
+                    {/*  Reduced y-axis padding to py-1 to slim down the global header */}
                     <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 py-1 flex flex-row items-center justify-between relative">
                         {/* 1. LEFT SIDE: Logo or Back Button */}
                         <div className="flex-1 flex justify-start">
