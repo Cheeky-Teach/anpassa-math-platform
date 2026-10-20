@@ -68,6 +68,12 @@ export default function SheetLibraryModal({
         setExpandedFolders(prev => prev.includes(folderId) ? prev.filter(id => id !== folderId) : [...prev, folderId]);
     };
 
+    const handleMoveToFolder = async (folderId) => {
+        if (!showMoveModal) return;
+        await moveSheet(showMoveModal.id, folderId);
+        setShowMoveModal(null);
+    };
+
     const getTopicLabel = (topicId) => {
         if (!topicId || topicId === 'all') return lang === 'sv' ? "Alla ämnen" : "All topics";
         for (const catKey in SKILL_BUCKETS) {
@@ -471,6 +477,61 @@ export default function SheetLibraryModal({
                     </div>
                 </div>
             )}
+            {/* 🟢 MOVE TO FOLDER MODAL */}
+            {showMoveModal && (
+                <div className="fixed inset-0 z-[400] flex items-center justify-center bg-slate-900/60 p-4 animate-in fade-in">
+                    <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-slate-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-sm font-black uppercase tracking-wider text-slate-800">
+                                {lang === 'sv' ? "Flytta till mapp" : "Move to Folder"}
+                            </h4>
+                            <button onClick={() => setShowMoveModal(null)} className="p-1 text-slate-400 hover:text-slate-700 rounded-lg">
+                                <X size={16} />
+                            </button>
+                        </div>
+                        
+                        <p className="text-xs text-slate-500 font-bold mb-4 truncate">
+                            {showMoveModal.title}
+                        </p>
+
+                        <div className="space-y-1.5 max-h-60 overflow-y-auto custom-scrollbar mb-4">
+                            {/* Option to move to Root (No Folder) */}
+                            <button
+                                type="button"
+                                onClick={() => handleMoveToFolder(null)}
+                                className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-2 cursor-pointer border border-slate-200"
+                            >
+                                <FileText size={14} className="text-slate-400" />
+                                <span>{lang === 'sv' ? "Huvudmapp (Ingen mapp)" : "Root (No Folder)"}</span>
+                            </button>
+
+                            {/* List of user folders */}
+                            {folders.map(folder => (
+                                <button
+                                    key={folder.id}
+                                    type="button"
+                                    onClick={() => handleMoveToFolder(folder.id)}
+                                    className="w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-indigo-700 bg-indigo-50/50 hover:bg-indigo-100 transition-colors flex items-center gap-2 cursor-pointer border border-indigo-100"
+                                >
+                                    <Layers size={14} className="text-indigo-600" />
+                                    <span className="truncate">{folder.name}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="flex justify-end">
+                            <button 
+                                type="button"
+                                onClick={() => setShowMoveModal(null)} 
+                                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer"
+                            >
+                                {lang === 'sv' ? "Avbryt" : "Cancel"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
 
             {/* 🟢 STUDIO TUTORIAL MODAL EMBEDDED DIRECTLY IN LIBRARY */}
             <StudioTutorialModal

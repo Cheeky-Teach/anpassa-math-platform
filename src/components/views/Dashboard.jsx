@@ -182,6 +182,43 @@ const Dashboard = ({
         }
     }, [activeTab]);
 
+    // 🟢 Secure fetch handler for student presentations via RPC
+    const handleOpenInstruction = async (step) => {
+        if (step.slideData && (step.slideData.latex || step.slideData.title)) {
+            setActiveInstructionModal(step);
+            return;
+        }
+
+        if (step.sheetId) {
+            try {
+                const teacherCode = profile?.class_code || profile?.connected_code;
+                const { data: packet, error } = await supabase.rpc('get_student_presentation', {
+                    p_sheet_id: step.sheetId,
+                    p_teacher_code: teacherCode
+                });
+
+                if (error) throw error;
+
+                if (packet && packet.slides) {
+                    const slides = packet.slides;
+                    const slideIdx = step.slideIndex || 0;
+                    const targetSlide = slides[slideIdx] || slides[0] || {};
+
+                    setActiveInstructionModal({
+                        ...step,
+                        slideData: targetSlide,
+                        allSlides: slides
+                    });
+                    return;
+                }
+            } catch (err) {
+                console.error("Failed to load presentation via RPC:", err.message);
+            }
+        }
+
+        setActiveInstructionModal(step);
+    };
+    
     const fetchActiveSession = async () => {
         if (!['teacher', 'super_admin'].includes(userRole) || !profile?.id) return;
         try {
