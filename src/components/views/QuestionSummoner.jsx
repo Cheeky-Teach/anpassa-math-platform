@@ -71,26 +71,28 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
         }
     };
 
-    // 🟢 NEW: Pushes the current preview to the queue and instantly rolls fresh numbers
-    const handleAddToQueue = () => {
+    // 🟢 UPDATED: Accepts destination layout ('canvas' vs 'instruction_template')
+    const handleAddToQueue = (layoutTarget = 'canvas') => {
         if (!previewData) return;
         
+        const qId = crypto.randomUUID();
         const newItem = {
-            id: crypto.randomUUID(),
+            id: qId,
             topicId: selectedTopicId,
             variationKey: selectedVariation.key,
             name: selectedVariation.name[lang],
-            columnSpan: 6, // Take full width on board
+            columnSpan: 6,
             resolvedData: previewData,
             instructionMode: isWordProblem ? 'inline' : 'header',
             showLatex: !isWordProblem,
             showVisual: !isWordProblem,
             showText: true,
-            selectedStoryIndex: isWordProblem ? 0 : null
+            selectedStoryIndex: isWordProblem ? 0 : null,
+            targetLayout: layoutTarget // 🟢 Stamped so PresentationView knows how to mount it
         };
         
         setQueue(prev => [...prev, newItem]);
-        fetchPreview(); // Auto-roll new numbers so the user can quickly queue variants
+        fetchPreview();
     };
 
     const removeFromQueue = (id) => {
@@ -238,40 +240,48 @@ export default function QuestionSummoner({ lang = 'sv', onClose, onSummon }) {
                         )}
 
                         {/* Control Panel Footer */}
-                        <div className="p-6 border-t border-slate-200 bg-white space-y-4 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] shrink-0">
+                        <div className="p-6 border-t border-slate-200 bg-white space-y-3 shadow-[0_-10px_20px_rgba(0,0,0,0.02)] shrink-0">
                             <div className="flex gap-2">
                                 <button 
                                     onClick={fetchPreview}
-                                    className="flex-1 py-3 bg-slate-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
+                                    className="flex-1 py-2.5 bg-slate-50 border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
                                 >
-                                    <RefreshCcw size={16} /> {lang === 'sv' ? "Slumpa Siffror" : "Shuffle Numbers"}
+                                    <RefreshCcw size={14} /> {lang === 'sv' ? "Slumpa Siffror" : "Shuffle Numbers"}
                                 </button>
                                 <button 
                                     onClick={() => setIsWordProblem(!isWordProblem)}
-                                    className={`flex-1 py-3 border rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 ${isWordProblem ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-amber-300'}`}
+                                    className={`flex-1 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 ${isWordProblem ? 'bg-amber-100 border-amber-300 text-amber-700' : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-amber-300'}`}
                                 >
-                                    <Type size={16} /> {isWordProblem ? (lang === 'sv' ? "Ta bort text" : "Remove Story") : (lang === 'sv' ? "Gör till text" : "Make Story")}
+                                    <Type size={14} /> {isWordProblem ? (lang === 'sv' ? "Ta bort text" : "Remove Story") : (lang === 'sv' ? "Gör till text" : "Make Story")}
                                 </button>
                             </div>
                             
-                            {/* 🟢 NEW: Queue & Summon Buttons */}
-                            <div className="flex gap-2">
+                            {/* 🟢 DUAL ACTION: Add as Canvas vs Add as Instruction Slide */}
+                            <div className="grid grid-cols-2 gap-2">
                                 <button 
-                                    onClick={handleAddToQueue}
+                                    onClick={() => handleAddToQueue('canvas')}
                                     disabled={isLoading || !previewData}
-                                    className="flex-1 py-4 bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+                                    className="py-3 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 border border-slate-200"
                                 >
-                                    <Plus size={18} /> {lang === 'sv' ? "Lägg i kö" : "Queue"}
+                                    <Plus size={14} /> {lang === 'sv' ? "Vanlig Tavla" : "Canvas"}
                                 </button>
 
                                 <button 
-                                    onClick={handleFinalSummon}
-                                    disabled={queue.length === 0}
-                                    className="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                                    onClick={() => handleAddToQueue('instruction_template')}
+                                    disabled={isLoading || !previewData}
+                                    className="py-3 bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
                                 >
-                                    <Zap size={18} /> {lang === 'sv' ? `Skapa (${queue.length})` : `Summon (${queue.length})`}
+                                    <BookOpen size={14} /> {lang === 'sv' ? "Genomgång" : "Instruction"}
                                 </button>
                             </div>
+
+                            <button 
+                                onClick={handleFinalSummon}
+                                disabled={queue.length === 0}
+                                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                <Zap size={16} /> {lang === 'sv' ? `Skapa ${queue.length} st slides` : `Create ${queue.length} slides`}
+                            </button>
                         </div>
                     </div>
                 </div>

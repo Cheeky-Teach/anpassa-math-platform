@@ -148,53 +148,116 @@ export default function AuthView({ lang, studentMode, onSuccess, onBack, initial
         setMessage(null);
 
         try {
-            const cleanInput = targetCode.trim().toUpperCase();
-            const rawNoHyphens = cleanInput.replace(/-/g, '');
-            const potentialMatches = [cleanInput, rawNoHyphens];
-            if (rawNoHyphens.length === 6) {
-                potentialMatches.push(`${rawNoHyphens.slice(0, 3)}-${rawNoHyphens.slice(3)}`);
+            const cleanInput = (targetCode || '').trim().toUpperCase();
+            if (!cleanInput) {
+                throw new Error(t.code_placeholder);
             }
 
-            // 1. Get their persistent browser ID
+            // Strip all dashes, spaces, and punctuation
+            const rawNoHyphens = cleanInput.replace(/[^A-Z0-9]/g, '');
+
+            // Build a smart list of potential formats
+            const potentialMatches = new Set([cleanInput, rawNoHyphens]);
+
+            // Add standard 3-3 hyphenation if 6 chars
+            if (rawNoHyphens.length === 6) {
+                potentialMatches.add(`${rawNoHyphens.slice(0, 3)}-${rawNoHyphens.slice(3)}`);
+            }
+            // Add standard 3-4 hyphenation if 7 chars (e.g. FRI-STAN)
+            if (rawNoHyphens.length === 7) {
+                potentialMatches.add(`${rawNoHyphens.slice(0, 3)}-${rawNoHyphens.slice(3)}`);
+                potentialMatches.add(`${rawNoHyphens.slice(0, 4)}-${rawNoHyphens.slice(4)}`);
+            }
+
+            const searchCodes = Array.from(potentialMatches);
             const studentId = getOrAssignStudentId();
 
-            // 2. NEW GATEKEEPER CHECK: Run the capacity RPC
-            // We just use the first match attempt since the RPC expects a single string
-            const attemptCode = potentialMatches.length > 2 ? potentialMatches[2] : cleanInput; 
-            
-            const { data: gatekeeperResult, error: gatekeeperError } = await supabase.rpc('attempt_student_login', {
-                p_teacher_code: attemptCode,
-                p_student_id: studentId
-            });
+            console.log("🔍 [Student Join Attempt]:", { cleanInput, rawNoHyphens, searchCodes, studentMode });
 
-            if (gatekeeperError || !gatekeeperResult?.success) {
-                throw new Error(gatekeeperResult?.message || t.error_code);
-            }
-
-            // 3. Proceed with existing routing if they passed the gatekeeper
+            // =========================================================
+            // 🟢 1. LIVE MODE (Active classroom room)
+            // =========================================================
             if (studentMode === 'live') {
-                const { data: room, error } = await supabase
+                if (!fullName.trim()) {
+                    throw new Error(t.name_placeholder);
+                }
+
+                const { data: room, error: roomError } = await supabase
                     .from('rooms')
                     .select('*')
-                    .in('class_code', potentialMatches)
+                    .in('class_code', searchCodes)
                     .eq('status', 'active')
                     .maybeSingle();
 
-                if (error || !room) throw new Error(t.error_code);
-                if (!fullName.trim()) throw new Error(t.name_placeholder);
+                if (roomError || !room) {
+                    console.warn("No active room found for codes:", searchCodes, roomError);
+                    throw new Error(t.error_code);
+                }
 
                 onSuccess({ role: 'live', room, student_name: fullName.trim(), student_id: studentId });
 
+            // =========================================================
+            // 🟢 2. PRACTICE MODE (Egen träning / Student Gateway)
+            // =========================================================
             } else {
-                const { data: teachers, error } = await supabase
-                    .rpc('get_active_class', { search_codes: potentialMatches });
+                let teacher = null;
 
-                const teacher = teachers && teachers.length > 0 ? teachers[0] : null;
+                // Attempt 1: Call get_active_class RPC with all candidate codes
+                try {
+                    const { data: rpcTeachers, error: rpcErr } = await supabase
+                        .rpc('get_active_class', { search_codes: searchCodes });
 
-                if (error || !teacher) throw new Error(t.error_code);
+                    if (!rpcErr && rpcTeachers && rpcTeachers.length > 0) {
+                        teacher = rpcTeachers[0];
+                    }
+                } catch (e) {
+                    console.warn("RPC attempt failed:", e);
+                }
+
+                // Attempt 2: Flexible RPC call matching raw unhyphenated string
+                if (!teacher) {
+                    try {
+                        const { data: directProfiles, error: directErr } = await supabase
+                            .from('profiles')
+                            .select('id, full_name, class_code, school_name, subscription_status')
+                            .or(`class_code.in.(${searchCodes.map(c => `"${c}"`).join(',')})`)
+                            .maybeSingle();
+
+                        if (!directErr && directProfiles) {
+                            teacher = directProfiles;
+                        }
+                    } catch (e) {
+                        console.warn("Direct lookup failed:", e);
+                    }
+                }
+
+                if (!teacher) {
+                    console.error("❌ Teacher not found for codes:", searchCodes);
+                    throw new Error(t.error_code);
+                }
+
+                console.log("🚀 Teacher found successfully:", teacher);
+
+                // Run Gatekeeper capacity check (non-blocking if RPC fails)
+                try {
+                    const { data: gatekeeperResult, error: gatekeeperError } = await supabase.rpc('attempt_student_login', {
+                        p_teacher_code: teacher.class_code,
+                        p_student_id: studentId
+                    });
+
+                    if (!gatekeeperError && gatekeeperResult && gatekeeperResult.success === false) {
+                        throw new Error(gatekeeperResult.message || t.error_code);
+                    }
+                } catch (gateErr) {
+                    if (gateErr.message && gateErr.message !== t.error_code) {
+                        throw gateErr;
+                    }
+                }
+
                 onSuccess({ role: 'student', class: teacher, student_id: studentId });
             }
         } catch (err) {
+            console.error("Login process caught error:", err.message);
             setMessage({ type: 'error', text: err.message });
         } finally {
             setLoading(false);

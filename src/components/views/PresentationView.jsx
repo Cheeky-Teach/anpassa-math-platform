@@ -21,6 +21,7 @@ import CoordinatePlaneTool from '../whiteboard/tools/analysis/CoordinatePlaneToo
 import { HelpCircle } from 'lucide-react';
 import PresentationTutorialModal from '../modals/PresentationTutorialModal';
 import { getToolDefinition } from '../whiteboard/tools/registry';
+import SheetLibraryModal from '../modals/SheetLibraryModal';
 
 
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
@@ -31,6 +32,7 @@ import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 import MathDisplay from '../shared/MathDisplay';
 import { compileAnchoredStory } from '../../core/utils/storyCompiler';
 import SlideRenderer from '../shared/SlideRenderer';
+import SlideViewerCore from '../shared/SlideViewerCore';
 
 export default function PresentationView({ 
     packet, sheetTitle, lang = 'sv', onClose, initialSlides, boardId: initialBoardId, onLaunchLive,
@@ -48,6 +50,9 @@ export default function PresentationView({
 
     // Active Drawer state for side bins: 'algebra' | 'shapes' | 'fractions' | 'data' | null
     const [activeDrawer, setActiveDrawer] = useState(null);
+
+    // Library
+    const [showLibraryModal, setShowLibraryModal] = useState(false);
 
     const storageKey = `has_seen_presentation_guide`;
     const [showTutorial, setShowTutorial] = useState(() => {
@@ -325,6 +330,10 @@ export default function PresentationView({
 
     const handleRenameSlide = (index, newName) => {
         setSlides(prev => prev.map((s, i) => i === index ? { ...s, title: newName.trim() || `Slide ${i + 1}` } : s));
+    };
+
+    const handleToggleSlideLayout = (index, layoutType) => {
+        setSlides(prev => prev.map((s, i) => i === index ? { ...s, layout: layoutType } : s));
     };
 
     const handleDeleteSlide = (e, index) => {
@@ -732,6 +741,13 @@ export default function PresentationView({
                         className="bg-white text-slate-900 px-4 py-1.5 rounded-xl text-base font-bold outline-none border-2 border-transparent focus:border-indigo-400 transition-all w-80 sm:w-96 shadow-sm placeholder-slate-400"
                     />
                     <button 
+                        type="button" 
+                        onClick={() => setShowLibraryModal(true)} 
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-black uppercase tracking-wider"
+                    >
+                        {lang === 'sv' ? "Öppna Presentation" : "Open Presentation"}
+                    </button>
+                    <button 
                             onClick={exportToCSV}
                             className="p-1.5 rounded-lg text-slate-100 hover:text-white hover:bg-emerald-600 transition-all cursor-pointer flex items-center gap-1.5"
                             title={lang === 'sv' ? "Exportera Wordpad text till Excel (CSV)" : "Export Wordpad text to Excel (CSV)"}
@@ -1108,6 +1124,31 @@ export default function PresentationView({
                                     <span className="truncate max-w-[150px]">{slides[activeSlideIndex]?.title}</span>
                                     <span className="text-white/50 px-1 border-l border-white/20">{activeSlideIndex + 1} / {slides.length}</span>
                                     <span className="text-emerald-400 text-[10px] bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">16:9</span>
+                                    {/* 🟢 Slide Layout Toggle Pill */}
+                                    <div className="flex bg-slate-900/80 p-0.5 rounded-lg border border-slate-700 ml-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggleSlideLayout(activeSlideIndex, 'canvas')}
+                                            className={`px-2 py-0.5 rounded text-[10px] font-black transition-all cursor-pointer ${
+                                                slides[activeSlideIndex]?.layout !== 'instruction_template'
+                                                    ? 'bg-emerald-500 text-white'
+                                                    : 'text-slate-400 hover:text-white'
+                                            }`}
+                                        >
+                                            Canvas
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleToggleSlideLayout(activeSlideIndex, 'instruction_template')}
+                                            className={`px-2 py-0.5 rounded text-[10px] font-black transition-all cursor-pointer ${
+                                                slides[activeSlideIndex]?.layout === 'instruction_template'
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : 'text-slate-400 hover:text-white'
+                                            }`}
+                                        >
+                                            {lang === 'sv' ? "Instruktion" : "Instruction"}
+                                        </button>
+                                    </div>
                                 </>
                             ) : (
                                 <>
@@ -1126,23 +1167,18 @@ export default function PresentationView({
                         </button>
                     </div>
 
-                    {/* 🟢 3. The 16:9 Slide Canvas Wrapper with Deep Shadow and 4px Boundary Stroke */}
+                    {/* 🟢 3. The 16:9 Slide Canvas Wrapper */}
                     <div className="relative w-full h-full max-w-[1600px] max-h-[900px] flex items-center justify-center">
-                        <div 
-                            className={`relative w-full flex flex-col items-center shadow-[0_25px_70px_rgba(0,0,0,0.6)] rounded-3xl border-4 border-slate-700/80 transition-colors duration-300 overflow-hidden ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
-                            style={{
-                                aspectRatio: '16/9',
-                                height: '100%',
-                                maxHeight: '100%',
-                                ...(bgType === 'grid' ? {
-                                    backgroundImage: 'linear-gradient(#e2e8f0 2px, transparent 2px), linear-gradient(90deg, #e2e8f0 2px, transparent 2px)',
-                                    backgroundSize: '40px 40px',
-                                    backgroundPosition: '-1px -1px'
-                                } : {})
-                            }}
-                        >
-                            {/* Slide Content Layers */}
-                            {viewMode === 'sheet' ? (
+                        {viewMode === 'sheet' ? (
+                            /* Sheet Mode Container */
+                            <div 
+                                className={`relative w-full flex flex-col items-center shadow-[0_25px_70px_rgba(0,0,0,0.6)] rounded-3xl border-4 border-slate-700/80 transition-colors duration-300 overflow-hidden ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}
+                                style={{
+                                    aspectRatio: '16/9',
+                                    height: '100%',
+                                    maxHeight: '100%'
+                                }}
+                            >
                                 <div className="absolute inset-0 overflow-y-auto custom-scrollbar pt-16 pb-32 flex flex-col justify-start items-center z-10 pointer-events-auto">
                                     <div className="bg-white shadow-2xl w-[210mm] h-auto min-h-[297mm] p-[15mm] pb-[40mm] flex flex-col rounded-sm border border-slate-300 animate-in fade-in zoom-in-95 duration-300 select-none mb-8 mt-2 relative z-20">
                                         <header className="border-b-2 border-black pb-2 mb-6 flex items-end justify-between">
@@ -1245,42 +1281,39 @@ export default function PresentationView({
                                         </div>
                                     </div>
                                 </div>
-                            ) : (
-                                /* Slide Renderer */
-                                <SlideRenderer
-                                    activeIds={activeIds}
-                                    livePacket={livePacket}
-                                    setLivePacket={setLivePacket}
-                                    lang={lang}
-                                    sizeClasses={sizeClasses}
-                                    clueViewMode={clueViewMode}
-                                    currentFocusedQuestion={currentFocusedQuestion}
-                                    coachProps={coachProps}
-                                    onSpotlight={setSpotlightVisual}
-                                    onRegenerate={handleRegenerateQuestion}
-                                    setIsSaving={setIsSaving}
-                                    authorMode={true}
-                                    globalZoom={globalZoom}
-                                />
-                            )}
-
-                            {/* Whiteboard Layer */}
-                            <InteractiveCanvas 
-                                key={slides[activeSlideIndex]?.id} 
-                                elements={slides[activeSlideIndex]?.elements || []}
-                                setElements={updateCurrentSlideElements}
-                                lang={lang} 
-                                bgType={bgType} 
-                                onToggleBg={() => setBgType(prev => prev === 'blank' ? 'grid' : 'blank')} 
+                            </div>
+                        ) : (
+                            /* 🟢 Slide Presentation Mode: SlideViewerCore renders its own 16:9 shell directly */
+                            <SlideViewerCore
+                                slide={{
+                                    ...slides[activeSlideIndex],
+                                    activeIds: sidebarTab === 'slides' ? (slides[activeSlideIndex]?.activeIds || []) : activeIds
+                                }}
                                 livePacket={livePacket}
-                                clueProgress={clueProgress}
-                                resolution={{ w: 1920, h: 1080 }}
-                                activeDrawer={activeDrawer}
-                                onToggleDrawer={handleToggleDrawer}
-                                renderDrawer={false}
-                                
+                                lang={lang}
+                                bgType={bgType}
+                                globalZoom={globalZoom}
+                                authorMode={true}
+                                slideRendererProps={{
+                                    setLivePacket: setLivePacket,
+                                    clueViewMode: clueViewMode,
+                                    currentFocusedQuestion: currentFocusedQuestion,
+                                    coachProps: coachProps,
+                                    onSpotlight: setSpotlightVisual,
+                                    onRegenerate: handleRegenerateQuestion,
+                                    setIsSaving: setIsSaving
+                                }}
+                                interactiveCanvasProps={{
+                                    key: slides[activeSlideIndex]?.id,
+                                    setElements: updateCurrentSlideElements,
+                                    onToggleBg: () => setBgType(prev => prev === 'blank' ? 'grid' : 'blank'),
+                                    clueProgress: clueProgress,
+                                    activeDrawer: activeDrawer,
+                                    onToggleDrawer: handleToggleDrawer,
+                                    renderDrawer: false
+                                }}
                             />
-                        </div>
+                        )}
                     </div>
 
                     {/* Whiteboard Side Drawer */}
@@ -1524,27 +1557,28 @@ export default function PresentationView({
                     lang={lang} 
                     onClose={() => setIsSummonerOpen(false)} 
                     onSummon={(newItems) => {
-                        // Safety check: ensure array isn't empty
                         if (!newItems || newItems.length === 0) return;
 
-                        //  1. Spread the entire array of queued items into the live packet
+                        // 1. Add questions to livePacket
                         const updatedPacket = [...livePacket, ...newItems];
                         setLivePacket(updatedPacket);
                         
-                        //  2. Auto-focus the FIRST question from the newly queued batch
-                        setActiveIds([newItems[0].id]);
+                        // 2. 🟢 AUTO-CREATE SLIDES matching each item's requested layout:
+                        const generatedSlides = newItems.map((item, i) => ({
+                            id: `slide_${Date.now()}_${i}`,
+                            title: item.targetLayout === 'instruction_template' 
+                                ? `${lang === 'sv' ? 'Genomgång' : 'Instruction'} ${slides.length + i + 1}` 
+                                : `Slide ${slides.length + i + 1}`,
+                            layout: item.targetLayout || 'canvas',
+                            boundQuestionId: item.id,
+                            activeIds: [item.id],
+                            elements: []
+                        }));
+
+                        setSlides(prev => [...prev, ...generatedSlides]);
+                        setActiveSlideIndex(slides.length); // Navigate directly to the first newly added slide
                         
-                        //  3. Initialize the clue progress at 0 for EVERY new item
-                        const updatedProgress = { ...clueProgress };
-                        newItems.forEach(item => {
-                            updatedProgress[item.id] = 0;
-                        });
-                        setClueProgress(updatedProgress);
-                        
-                        //  4. Move the presentation view to the start of the new batch
-                        setPresentationIndex(livePacket.length);
-                        
-                        setSidebarTab('questions');
+                        setSidebarTab('slides');
                         setIsSummonerOpen(false);
                     }} 
                 />
@@ -1664,6 +1698,19 @@ export default function PresentationView({
                     </div>
                 </div>
             )}
+            <SheetLibraryModal
+                isOpen={showLibraryModal}
+                onClose={() => setShowLibraryModal(false)}
+                filterType="board"
+                lang={lang}
+                onSelectSheet={(sheet) => {
+                    if (sheet.packet?.slides) setSlides(sheet.packet.slides);
+                    if (sheet.packet?.livePacket) setLivePacket(sheet.packet.livePacket);
+                    if (sheet.title) setLocalTitle(sheet.title);
+                    if (sheet.id) setBoardId(sheet.id);
+                    setShowLibraryModal(false);
+                }}
+            />
         </div>
     );
 }

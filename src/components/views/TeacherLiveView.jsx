@@ -20,6 +20,7 @@ import CapacityModal from '../modals/CapacityModal';
 import SlideRenderer from '../shared/SlideRenderer';
 import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
 import MathDisplay from '../shared/MathDisplay';
+import SlideViewerCore from '../shared/SlideViewerCore';
 
 export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, onCreateReport, teacherClassCode }) {
     // 🟢 NEW: Mutable Live Packet State
@@ -1102,28 +1103,19 @@ export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, 
                                 ><ChevronRight size={16}/></button>
                             </div>
 
-                            <div className={`relative w-full aspect-video rounded-3xl shadow-xl overflow-hidden border-4 border-slate-200/50 flex-1 min-h-0 ${bgType === 'grid' ? 'bg-white' : 'bg-[#f9fbf7]'}`}>
-                                {/* Slide Content Layer */}
-                                <SlideRenderer
-                                    activeIds={liveSlides[activeSlideIndex]?.activeIds || []}
+                            <div className="relative w-full aspect-video flex-1 min-h-0">
+                                <SlideViewerCore
+                                    slide={liveSlides[activeSlideIndex]}
                                     livePacket={livePacket}
-                                    lang={lang}
-                                    sizeClasses={{ desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px] mb-2' }}
-                                    clueViewMode="answers" 
-                                    authorMode={false} 
-                                    globalZoom={globalZoom}
-                                />
-
-                                {/* Active Whiteboard Layer with Pen/Eraser/Shape Tools */}
-                                <InteractiveCanvas
-                                    key={liveSlides[activeSlideIndex]?.id || activeSlideIndex}
-                                    elements={liveSlides[activeSlideIndex]?.elements || []}
-                                    setElements={updateCurrentSlideElements}
                                     lang={lang}
                                     bgType={bgType}
-                                    onToggleBg={() => setBgType(prev => prev === 'blank' ? 'grid' : 'blank')}
-                                    livePacket={livePacket}
-                                    resolution={{ w: 1920, h: 1080 }}
+                                    globalZoom={globalZoom}
+                                    authorMode={false}
+                                    interactiveCanvasProps={{
+                                        key: liveSlides[activeSlideIndex]?.id || activeSlideIndex,
+                                        setElements: updateCurrentSlideElements,
+                                        onToggleBg: () => setBgType(prev => prev === 'blank' ? 'grid' : 'blank')
+                                    }}
                                 />
                             </div>
                         </div>

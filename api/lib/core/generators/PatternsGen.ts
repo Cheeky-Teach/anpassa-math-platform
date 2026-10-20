@@ -233,7 +233,7 @@ export class PatternsGen {
             clues: [
                 { 
                     text: lang === 'sv' ? "Ta först reda på hur mycket mönstret växer för varje steg." : "First, figure out how much the pattern grows for each step.", 
-                    latex: `\\text{Hoppstorlek} = ${s+d} - ${s} = \\mathbf{${d}}` 
+                    latex: `\\text{Differens} = ${s+d} - ${s} = \\mathbf{${d}}` 
                 },
                 { 
                     text: lang === 'sv' ? `För att nå fram till tal nummer ${targetN} från början, måste vi ta exakt ${targetN - 1} stycken kliv framåt.` : `To get all the way to number ${targetN} from the start, we must take exactly ${targetN - 1} steps forward.`, 

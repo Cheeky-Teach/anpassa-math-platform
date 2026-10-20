@@ -18,6 +18,7 @@ import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
 // --- SHARED PRESENTATION RENDERERS ---
 import SlideRenderer from '../shared/SlideRenderer';
 import MathDisplay from '../shared/MathDisplay';
+import SlideViewerCore from '../shared/SlideViewerCore';
 
 export default function StudentLiveView({ session, packet, lang = 'sv', studentAlias, onBack }) {
     // 1. SETTINGS & FEATURE FLAGS
@@ -398,21 +399,35 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 is_correct: isCorrect,
             };
 
-            // 🟢 CHANGED FROM UPSERT TO INSERT
+            // 🟢 INSERT response to database
             const { error } = await supabase
                 .from('responses')
-                .insert([payload]); // Removing onConflict prevents it from trying to update existing rows
+                .insert([payload]);
 
-            if (error) {
-                // If it fails because the row already exists (duplicate), just mark it as complete locally
-                if (error.code === '23505' || error.message.includes('duplicate')) {
-                    setCompleted(prev => ({ ...prev, [targetIdx]: isCorrect ? 'correct' : 'wrong' }));
-                    return;
-                }
+            if (error && error.code !== '23505' && !error.message?.includes('duplicate')) {
                 throw error;
             }
             
-            setCompleted(prev => ({ ...prev, [targetIdx]: isCorrect ? 'correct' : 'wrong' }));
+            const completionStatus = isCorrect ? 'correct' : 'wrong';
+            setCompleted(prev => ({ ...prev, [targetIdx]: completionStatus }));
+
+            // 🟢 AUTO-ADVANCE in Open Pacing Worksheet Mode
+            if (!isPresentationMode && settings.pacing === 'open') {
+                const nextUnansweredIdx = localPacket.findIndex((_, idx) => idx !== targetIdx && !completed[idx]);
+
+                setTimeout(() => {
+                    if (nextUnansweredIdx !== -1) {
+                        // Advance to next unanswered question
+                        setCurrentIndex(nextUnansweredIdx);
+                    } else if (targetIdx < localPacket.length - 1) {
+                        // Fallback sequential progression
+                        setCurrentIndex(targetIdx + 1);
+                    } else if (settings.summary) {
+                        // If all are finished and summary is enabled, open results
+                        setShowFinalReview(true);
+                    }
+                }, 600); // 600ms grace period to let the checkmark register visually
+            }
         } catch (err) {
             console.error("Submission error:", err);
             // Fallback: If RLS blocked it (42501), assume it was already submitted
@@ -661,29 +676,77 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
 
     return (
         <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] font-sans flex flex-col overflow-hidden transition-colors duration-500">
-            <header className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-4 py-3 sticky top-0 z-50 transition-colors duration-500 shadow-sm">
-                <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-                    <div className="flex flex-col flex-1">
+            <header className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-4 py-2.5 sticky top-0 z-50 transition-colors duration-500 shadow-sm">
+                <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+                    {/* Left: Session Title & Student Alias */}
+                    <div className="flex flex-col flex-1 min-w-0">
                         <h1 className="text-sm font-black text-[var(--text-main)] uppercase tracking-widest leading-none truncate mb-1">
                             {session.title}
                         </h1>
                         <p className="text-[10px] font-bold text-[var(--text-muted)] flex items-center gap-1">
-                            <span>{studentAlias}</span>
+                            <span className="truncate max-w-[120px]">{studentAlias}</span>
                             <span className="opacity-50">•</span>
                             <span className="uppercase">{session.class_code}</span>
                         </p>
                     </div>
 
+                    {/* 🟢 CENTER: Paging Control Pod (Always clickable, never dimmed) */}
+                    {!isPresentationMode && settings.pacing === 'open' && (
+                        <div className="flex items-center bg-[var(--bg-surface)] p-1 rounded-2xl border border-[var(--border-main)] shadow-xs gap-1.5 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
+                                disabled={currentIndex === 0}
+                                className="w-8 h-8 rounded-xl flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] disabled:opacity-20 disabled:hover:bg-transparent transition-all cursor-pointer"
+                                title={lang === 'sv' ? "Föregående fråga" : "Previous question"}
+                            >
+                                <ChevronLeft size={18} strokeWidth={2.5} />
+                            </button>
+
+                            <span className="text-[11px] font-black uppercase tracking-wider text-[var(--text-main)] px-2 min-w-[70px] text-center select-none">
+                                {currentIndex + 1} / {localPacket.length}
+                            </span>
+
+                            <button
+                                type="button"
+                                onClick={() => setCurrentIndex(prev => Math.min(localPacket.length - 1, prev + 1))}
+                                disabled={currentIndex === localPacket.length - 1}
+                                className="w-8 h-8 rounded-xl flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] disabled:opacity-20 disabled:hover:bg-transparent transition-all cursor-pointer"
+                                title={lang === 'sv' ? "Nästa fråga" : "Next question"}
+                            >
+                                <ChevronRight size={18} strokeWidth={2.5} />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Right: Preferences & Exit */}
                     <div className="flex items-center gap-2 shrink-0">
                         <PreferencesToggle />
-                        <button onClick={handleExitRequest} className="p-2 hover:bg-[var(--theme-rose-bg)] rounded-xl text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] transition-colors"><LogOut size={18} /></button>
+                        <button 
+                            type="button"
+                            onClick={handleExitRequest} 
+                            className="p-2 hover:bg-[var(--theme-rose-bg)] rounded-xl text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] transition-colors cursor-pointer"
+                            title={lang === 'sv' ? "Lämna lektion" : "Exit session"}
+                        >
+                            <LogOut size={18} />
+                        </button>
                     </div>
                 </div>
 
+                {/* Progress Mini Dots */}
                 {!isPresentationMode && (
-                    <div className="hidden sm:flex max-w-xs mx-auto h-1 bg-[var(--bg-surface)] rounded-full gap-1 p-0 mt-3">
+                    <div className="hidden sm:flex max-w-xs mx-auto h-1 bg-[var(--bg-surface)] rounded-full gap-1 p-0 mt-2">
                         {localPacket.map((_, i) => (
-                            <div key={i} className={`flex-1 rounded-full transition-all duration-700 ${i === currentIndex ? 'bg-[var(--brand-solid)] ring-2 ring-[var(--brand-solid)]/20' : !!completed[i] ? 'bg-[var(--border-strong)]' : 'bg-transparent'}`} />
+                            <div 
+                                key={i} 
+                                className={`flex-1 rounded-full transition-all duration-500 ${
+                                    i === currentIndex 
+                                        ? 'bg-[var(--brand-solid)] ring-2 ring-[var(--brand-solid)]/20' 
+                                        : !!completed[i] 
+                                            ? 'bg-[var(--theme-emerald-text)]' 
+                                            : 'bg-transparent'
+                                }`} 
+                            />
                         ))}
                     </div>
                 )}
@@ -746,42 +809,31 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                             className="w-full h-full flex items-center justify-center transition-transform duration-150 ease-out"
                             style={{ transform: `scale(${slideZoom})`, transformOrigin: 'center center' }}
                         >
-                            <div className="relative w-full aspect-video max-w-[1600px] max-h-[900px] bg-[#f9fbf7] rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] overflow-hidden border-4 border-slate-700">
-                                {/* Base Slide Content */}
-                                <SlideRenderer
-                                    activeIds={slides[activeSlideIndex]?.activeIds || []}
-                                    livePacket={localPacket}
-                                    lang={lang}
-                                    sizeClasses={{
-                                        desc: 'text-m',
-                                        latex: 'text-xl',
-                                        clue: 'text-m',
-                                        headerText: 'text-l',
-                                        visualClass: 'scale-100 max-h-[180px] mb-2'
-                                    }}
-                                    authorMode={false}
-                                    globalZoom={globalZoom}
-                                />
-
-                                {/* Interactive Canvas with Slide-Specific Bins */}
-                                <InteractiveCanvas
-                                    key={`student_slide_canvas_${activeSlideIndex}`}
-                                    elements={canvasElements[activeSlideIndex] || currentSlide?.elements || []}
-                                    setElements={(newEls) => setCanvasElements(prev => ({
+                            <SlideViewerCore
+                                slide={{
+                                    ...currentSlide,
+                                    elements: canvasElements[activeSlideIndex] || currentSlide?.elements || []
+                                }}
+                                livePacket={localPacket}
+                                lang={lang}
+                                globalZoom={globalZoom}
+                                authorMode={false}
+                                interactiveCanvasProps={{
+                                    key: `student_slide_canvas_${activeSlideIndex}`,
+                                    setElements: (newEls) => setCanvasElements(prev => ({
                                         ...prev,
                                         [activeSlideIndex]: typeof newEls === 'function' 
                                             ? newEls(prev[activeSlideIndex] || currentSlide?.elements || []) 
                                             : newEls
-                                    }))}
-                                    resolution={{ w: 1920, h: 1080 }}
-                                    toolbarMode="student"
-                                    allowedTools={[
+                                    })),
+                                    toolbarMode: "student",
+                                    allowedTools: [
                                         'select', 'pen', 'highlighter', 'eraser', 'line', 'color_picker', 'clear_all',
                                         ...(slideDrawer ? [`drawer_${slideDrawer}`] : ['drawer_algebra', 'drawer_shapes', 'drawer_fractions', 'drawer_data'])
-                                    ]}
-                                    readOnly={!!completedSlide[activeSlideIndex]}
-                                />
-                            </div>
+                                    ],
+                                    readOnly: !!completedSlide[activeSlideIndex]
+                                }}
+                            />
                         </div>
                     </div>
 
@@ -931,13 +983,6 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         
                         {/* LEFT: Question and Visual */}
                         <div className="flex-[3] whiteboard-protect rounded-[2rem] lg:rounded-[3rem] shadow-2xl flex flex-col overflow-hidden relative min-h-[300px]">
-                            {settings.pacing === 'open' && (
-                                <div className="absolute top-4 left-4 right-4 flex justify-between z-50 pointer-events-none">
-                                    <button onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))} disabled={currentIndex === 0} className="w-10 h-10 bg-white/90 rounded-full shadow-lg flex items-center justify-center pointer-events-auto hover:bg-indigo-50 transition-all disabled:opacity-0 text-slate-600"><ChevronLeft/></button>
-                                    <button onClick={() => setCurrentIndex(prev => Math.min(localPacket.length - 1, prev + 1))} disabled={currentIndex === localPacket.length - 1} className="w-10 h-10 bg-white/90 rounded-full shadow-lg flex items-center justify-center pointer-events-auto hover:bg-indigo-50 transition-all disabled:opacity-0 text-slate-600"><ChevronRight/></button>
-                                </div>
-                            )}
-
                             <div className="px-6 py-4 lg:px-10 lg:py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                                 <span className="text-sm font-bold text-slate-500">
                                     {lang === 'sv' ? "Uppgift" : "Question"} {currentIndex + 1} av {packet.length}

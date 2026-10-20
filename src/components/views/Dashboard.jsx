@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { 
   ChevronLeft, ChevronDown, ChevronUp, ChevronRight, Zap, Play, Clock, Book, Map, Info, 
   Award, BarChart3, PenTool, Calendar, Sparkles, Users, Settings, User, 
   History, Target, LayoutGrid, RotateCcw, FileSpreadsheet, MoreHorizontal,
   PlayCircle, CheckCircle2, AlertCircle, Grid3X3, Monitor, Beaker, Newspaper, X, 
-  ArrowUpRight, Layers, PieChart, HelpCircle
+  ArrowUpRight, Layers, PieChart, HelpCircle, Check
 } from 'lucide-react';
 
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '@/constants/localization';
@@ -15,6 +15,94 @@ import { CONTENT_MAP } from '../../constants/content_map.generated';
 import MathDisplay from '../shared/MathDisplay';
 import DashboardTutorialModal from '../modals/DashboardTutorialModal';
 import CapacityModal from '../modals/CapacityModal';
+import { BookOpen } from 'lucide-react';
+
+// Helper to look up topic name safely
+const getTopicName = (topicId, lang = 'sv') => {
+    if (!topicId) return "";
+    for (const catKey in CATEGORIES) {
+        const found = CATEGORIES[catKey]?.topics?.find(t => t.id === topicId);
+        if (found) return found.label[lang] || found.label.sv || topicId;
+    }
+    return topicId.replace(/_/g, ' ');
+};
+
+// Helper for dynamic localized "Del / Part" title
+const getPartDisplayTitle = (part, partIndex, lang = 'sv') => {
+    if (part.customTitle && part.customTitle.trim()) {
+        return part.customTitle;
+    }
+    const prefix = lang === 'sv' ? 'Del' : 'Part';
+    const topicLabel = getTopicName(part.topicId, lang);
+    return topicLabel ? `${prefix} ${partIndex + 1}: ${topicLabel}` : `${prefix} ${partIndex + 1}`;
+};
+
+// Helper to retrieve level description and math example
+const getLevelMetadata = (topicId, level, lang = 'sv') => {
+    if (!topicId || level === undefined || level === null) {
+        return { description: "", mathExample: "" };
+    }
+    const descriptionsObj = typeof LEVEL_DESCRIPTIONS !== 'undefined' ? LEVEL_DESCRIPTIONS : {};
+    const topicDesc = descriptionsObj[topicId]?.[level];
+    const description = typeof topicDesc === 'object' 
+        ? (topicDesc[lang] || topicDesc.sv || "") 
+        : (topicDesc || "");
+
+    let mathExample = "";
+    if (typeof CONTENT_MAP !== 'undefined' && Array.isArray(CONTENT_MAP)) {
+        for (const cat of CONTENT_MAP) {
+            const foundTopic = cat.topics?.find(t => t.id === topicId);
+            if (foundTopic) {
+                const foundLevel = foundTopic.levels?.find(l => l.lvl === level);
+                if (foundLevel?.ex) {
+                    mathExample = foundLevel.ex;
+                    break;
+                }
+            }
+        }
+    }
+    return { description, mathExample };
+};
+
+// Normalizer: Handles both legacy flat arrays and structured parts
+const normalizePartsPayload = (rawPayload = [], lang = 'sv') => {
+    if (!Array.isArray(rawPayload) || rawPayload.length === 0) return [];
+
+    if (rawPayload[0]?.type === 'part' || rawPayload[0]?.type === 'section') {
+        return rawPayload.map((part, pIdx) => ({
+            ...part,
+            type: 'part',
+            id: part.id || `part_${pIdx}_${Date.now()}`,
+            steps: Array.isArray(part.steps) ? part.steps : []
+        }));
+    }
+
+    // Auto-group legacy flat payloads
+    const grouped = {};
+    const parts = [];
+
+    rawPayload.forEach((item, idx) => {
+        const topic = item.topic || item.topicId || 'generic';
+        if (!grouped[topic]) {
+            const newPart = {
+                id: `part_${topic}_${Date.now()}_${idx}`,
+                type: 'part',
+                topicId: topic,
+                customTitle: null,
+                steps: []
+            };
+            grouped[topic] = newPart;
+            parts.push(newPart);
+        }
+        grouped[topic].steps.push({
+            id: item.id || `step_${idx}_${Date.now()}`,
+            type: item.type || (item.sheetId ? 'instruction' : 'practice'),
+            ...item
+        });
+    });
+
+    return parts;
+};
 
 const Dashboard = ({ 
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
@@ -30,6 +118,7 @@ const Dashboard = ({
     const [activeSession, setActiveSession] = useState(null);
     const [showUpdateLog, setShowUpdateLog] = useState(false);
     const [showCapacityModal, setShowCapacityModal] = useState(false);
+    const [activeInstructionModal, setActiveInstructionModal] = useState(null);
 
     const TEXT = {
         sv: {
@@ -80,6 +169,11 @@ const Dashboard = ({
         localStorage.setItem(storageKey, 'true');
         setShowDashboardTutorial(false);
     };
+    
+    const curatedParts = useMemo(() => {
+        if (!activeBucket || activeBucket === 'FREE_PLAY') return [];
+        return normalizePartsPayload(activeBucket.payload, lang);
+    }, [activeBucket, lang]);
 
     useEffect(() => {
         fetchActiveSession();
@@ -426,101 +520,150 @@ const Dashboard = ({
                     ) : activeTab === 'curriculum' ? (
                         <div className="flex flex-col animate-in slide-in-from-right-4 duration-500">
                             
-                            {/* --- NEW: CURATED BUCKET VIEW --- */}
+                            {/* --- CURATED BUCKET ROADMAP: DEL 1, DEL 2, ETC. --- */}
                             {userRole === 'student' && activeBucket && activeBucket !== 'FREE_PLAY' ? (
                                 <div className="space-y-6">
+                                    {/* Unit Header */}
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-card)] p-6 rounded-[var(--radius-card)] border border-[var(--border-main)] shadow-sm">
                                         <div>
                                             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--brand-text)]">
-                                                {lang === 'sv' ? "Aktiv Grupp" : "Active Group"}
+                                                {lang === 'sv' ? "Aktiv Enhet" : "Active Unit"}
                                             </span>
                                             <h2 className="text-2xl font-black uppercase italic text-[var(--text-main)] tracking-tight">
                                                 {activeBucket.name}
                                             </h2>
+                                            <p className="text-xs text-[var(--text-muted)] font-bold mt-1">
+                                                {curatedParts.length} {lang === 'sv' ? "delar i planeringen" : "parts in sequence"}
+                                            </p>
                                         </div>
                                         <button 
                                             onClick={onBackToGateway}
-                                            className="w-full sm:w-auto px-4 py-3 sm:py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-[var(--border-strong)]"
+                                            className="w-full sm:w-auto px-4 py-2.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] rounded-xl text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2 border border-[var(--border-strong)] cursor-pointer"
                                         >
-                                            <ChevronLeft size={16}/> {lang === 'sv' ? "Byt Grupp" : "Change Group"}
+                                            <ChevronLeft size={16}/> {lang === 'sv' ? "Byt Enhet" : "Change Unit"}
                                         </button>
                                     </div>
 
-                                    {/* GROUPED TOPIC CARDS */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        {Object.entries(groupedCuratedPayload).map(([topicId, levels]) => {
-                                            // Get category and localized topic name
-                                            const catKey = Object.keys(CATEGORIES).find(key => CATEGORIES[key]?.topics?.some(t => t.id === topicId));
-                                            const topicData = CATEGORIES[catKey]?.topics?.find(t => t.id === topicId);
-                                            const topicName = topicData?.label[lang] || topicId;
-                                            const topicTheme = CATEGORIES[catKey]?.color || 'indigo';
-
-                                            // Find the topic in CONTENT_MAP to extract the rich math examples
-                                            let contentMapTopic = null;
-                                            for (const cat of CONTENT_MAP) {
-                                                const found = cat.topics.find(t => t.id === topicId);
-                                                if (found) {
-                                                    contentMapTopic = found;
-                                                    break;
-                                                }
-                                            }
-
-                                            return (
-                                                <div key={topicId} className={`theme-${topicTheme} bg-[var(--bg-card)] rounded-2xl border border-[var(--border-main)] shadow-sm overflow-hidden flex flex-col`}>
-                                                    {/* Topic Header */}
-                                                    <div className="bg-[var(--bg-surface)] px-5 py-3 border-b border-[var(--border-main)] flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-[var(--brand-bg)] text-[var(--brand-text)] flex items-center justify-center border border-[var(--brand-border)]">
-                                                            <Layers size={16} />
-                                                        </div>
-                                                        <h3 className="font-black text-sm text-[var(--text-main)] uppercase tracking-widest">{topicName}</h3>
+                                    {/* Parts Sequence */}
+                                    <div className="space-y-6">
+                                        {curatedParts.map((part, pIdx) => (
+                                            <div 
+                                                key={part.id || pIdx} 
+                                                className="bg-[var(--bg-card)] rounded-[var(--radius-card)] border border-[var(--border-main)] overflow-hidden shadow-sm"
+                                            >
+                                                {/* Part Header Strip */}
+                                                <div className="bg-[var(--bg-surface)] px-5 py-3.5 border-b border-[var(--border-main)] flex items-center justify-between">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <span className="w-6 h-6 rounded-lg bg-[var(--brand-solid)] text-white text-[11px] font-black flex items-center justify-center shrink-0 shadow-xs">
+                                                            {pIdx + 1}
+                                                        </span>
+                                                        <h3 className="font-black text-sm uppercase tracking-wider text-[var(--text-main)]">
+                                                            {getPartDisplayTitle(part, pIdx, lang)}
+                                                        </h3>
                                                     </div>
+                                                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                                                        {part.steps?.length || 0} {lang === 'sv' ? "steg" : "steps"}
+                                                    </span>
+                                                </div>
 
-                                                    {/* Condensed Level Rows */}
-                                                    <div className="flex flex-col divide-y divide-[var(--border-subtle)]">
-                                                        {levels.map(lvl => {
-                                                            const levelDesc = LEVEL_DESCRIPTIONS[topicId]?.[lvl]?.[lang] || "";
-                                                            const isSelected = selectedTopic === topicId && selectedLevel === lvl;
-                                                            
-                                                            // Pull the explicit math example for this specific level
-                                                            const levelData = contentMapTopic?.levels?.find(l => l.lvl === lvl);
-                                                            const mathExample = levelData?.ex || "";
+                                                {/* Step Cards List */}
+                                                <div className="p-4 space-y-2.5">
+                                                    {(part.steps || []).map((step, sIdx) => {
+                                                        const isInstruction = step.type === 'instruction' || !!step.sheetId;
 
+                                                        if (isInstruction) {
                                                             return (
                                                                 <div 
-                                                                    key={lvl}
-                                                                    onClick={() => onSelect(topicId, lvl)}
-                                                                    className={`group flex items-stretch cursor-pointer transition-all ${
-                                                                        isSelected ? 'bg-[var(--brand-bg)]' : 'bg-[var(--bg-card)] hover:bg-[var(--bg-surface-hover)]'
-                                                                    }`}
+                                                                    key={step.id || sIdx}
+                                                                    onClick={() => setActiveInstructionModal(step)}
+                                                                    className="group p-3.5 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800/60 bg-gradient-to-r from-indigo-50/80 via-[var(--bg-card)] to-indigo-50/40 hover:to-indigo-100/60 transition-all flex items-center justify-between gap-3 cursor-pointer shadow-xs active:scale-[0.99]"
                                                                 >
-                                                                    {/* Level Badge */}
-                                                                    <div className={`w-10 shrink-0 flex items-center justify-center font-black text-xs transition-colors ${isSelected ? 'bg-[var(--brand-solid)] text-white' : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-r border-[var(--border-subtle)]'}`}>
-                                                                        {lvl}
+                                                                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                                                        <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
+                                                                            <BookOpen size={16} />
+                                                                        </div>
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0">
+                                                                                    {lang === 'sv' ? "Genomgång" : "Walkthrough"}
+                                                                                </span>
+                                                                                <span className="font-black text-xs text-[var(--text-main)] truncate">
+                                                                                    {step.sheetTitle}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
-                                                                    
-                                                                    {/* Description & Math Example */}
-                                                                    <div className="flex-1 p-3 flex flex-col justify-center min-w-0">
-                                                                        <p className={`text-[11px] font-bold leading-tight mb-1 truncate transition-colors ${isSelected ? 'text-[var(--brand-text)]' : 'text-[var(--text-main)]'}`}>
-                                                                            {levelDesc}
-                                                                        </p>
+
+                                                                    <button 
+                                                                        type="button"
+                                                                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm shrink-0"
+                                                                    >
+                                                                        <Play size={11} fill="currentColor" />
+                                                                        <span>{lang === 'sv' ? "Titta" : "Watch"}</span>
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        // Practice Level Step
+                                                        const isSelected = selectedTopic === step.topic && selectedLevel === step.level;
+                                                        const { description, mathExample } = getLevelMetadata(step.topic, step.level, lang);
+
+                                                        return (
+                                                            <div 
+                                                                key={step.id || sIdx}
+                                                                onClick={() => onSelect(step.topic, step.level)}
+                                                                className={`group p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 cursor-pointer active:scale-[0.99] ${
+                                                                    isSelected 
+                                                                        ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20' 
+                                                                        : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:border-[var(--brand-solid)]'
+                                                                }`}
+                                                            >
+                                                                <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-colors ${
+                                                                        isSelected 
+                                                                            ? 'bg-emerald-600 text-white shadow-sm' 
+                                                                            : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
+                                                                    }`}>
+                                                                        {step.level}
+                                                                    </div>
+
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0">
+                                                                                {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
+                                                                            </span>
+                                                                            <span className="font-bold text-xs text-[var(--text-main)] truncate">
+                                                                                {description || getTopicName(step.topic, lang)}
+                                                                            </span>
+                                                                        </div>
+
                                                                         {mathExample && (
-                                                                            <div className="font-serif italic text-[11px] text-[var(--text-muted)] flex items-center overflow-x-auto no-scrollbar">
-                                                                                <MathDisplay content={mathExample} className="inline-block" />
+                                                                            <div className="mt-1 text-xs text-[var(--brand-solid)] font-serif italic truncate flex items-center gap-1.5 opacity-90 overflow-x-auto no-scrollbar">
+                                                                                <span className="text-[8px] font-sans font-bold uppercase tracking-wider text-[var(--text-muted)] not-italic">
+                                                                                    Ex:
+                                                                                </span>
+                                                                                <MathDisplay content={mathExample} />
                                                                             </div>
                                                                         )}
                                                                     </div>
-                                                                    
-                                                                    {/* Selection Radio Circle */}
-                                                                    <div className="w-12 shrink-0 flex items-center justify-center border-l border-[var(--border-subtle)]">
-                                                                        <div className={`w-4 h-4 rounded-full border-2 transition-all ${isSelected ? 'border-[var(--brand-solid)] bg-[var(--brand-solid)] shadow-sm' : 'border-[var(--border-strong)] group-hover:border-[var(--brand-solid)] group-hover:bg-[var(--bg-surface)]'}`}></div>
+                                                                </div>
+
+                                                                <div className="shrink-0 flex items-center">
+                                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                                                        isSelected 
+                                                                            ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs' 
+                                                                            : 'border-[var(--border-strong)] group-hover:border-[var(--brand-solid)]'
+                                                                    }`}>
+                                                                        {isSelected && <Check size={11} strokeWidth={3} />}
                                                                     </div>
                                                                 </div>
-                                                            );
-                                                        })}
-                                                    </div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
-                                            );
-                                        })}
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ) : (
@@ -732,6 +875,76 @@ const Dashboard = ({
                 classCode={profile?.class_code}
                 lang={lang}
             />
+            {/* --- INSTRUCTION SLIDE VIEWER MODAL --- */}
+            {activeInstructionModal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 sm:p-6 animate-in fade-in duration-300">
+                    <div className="bg-[var(--bg-card)] rounded-[2.5rem] border border-[var(--border-main)] shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                        {/* Modal Header */}
+                        <div className="px-6 py-4 border-b border-[var(--border-main)] bg-[var(--bg-surface)] flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                    <BookOpen size={18} />
+                                </div>
+                                <div className="min-w-0">
+                                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600 block">
+                                        {lang === 'sv' ? "Genomgång" : "Instruction Walkthrough"}
+                                    </span>
+                                    <h3 className="text-base font-black text-[var(--text-main)] truncate">
+                                        {activeInstructionModal.sheetTitle}
+                                    </h3>
+                                </div>
+                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setActiveInstructionModal(null)}
+                                className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] rounded-xl transition-colors cursor-pointer"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Modal Slide Body */}
+                        <div className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center justify-center bg-[var(--bg-card)]">
+                            {activeInstructionModal.slideData ? (
+                                <div className="w-full max-w-2xl space-y-6">
+                                    {activeInstructionModal.slideData.title && (
+                                        <h2 className="text-xl sm:text-2xl font-black text-[var(--text-main)] text-center">
+                                            <MathDisplay content={activeInstructionModal.slideData.title} />
+                                        </h2>
+                                    )}
+
+                                    {activeInstructionModal.slideData.latex && (
+                                        <div className="w-full bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-800/40 rounded-2xl p-6 flex justify-center text-2xl sm:text-3xl font-serif text-indigo-600">
+                                            <MathDisplay content={`$$${activeInstructionModal.slideData.latex}$$`} />
+                                        </div>
+                                    )}
+
+                                    {activeInstructionModal.slideData.notes && (
+                                        <p className="text-sm font-medium text-[var(--text-muted)] text-center leading-relaxed">
+                                            {activeInstructionModal.slideData.notes}
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 text-slate-400 font-bold text-sm">
+                                    {lang === 'sv' ? "Ingen förhandsvisning tillgänglig." : "No slide preview available."}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer Action */}
+                        <div className="p-4 border-t border-[var(--border-main)] bg-[var(--bg-surface)] flex justify-end shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setActiveInstructionModal(null)}
+                                className="px-6 py-3 bg-[var(--brand-solid)] text-white rounded-xl font-black text-xs uppercase tracking-wider hover:opacity-90 transition-all shadow-md cursor-pointer"
+                            >
+                                {lang === 'sv' ? "Klar! Gå till övning ➡" : "Done! Go to practice ➡"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
