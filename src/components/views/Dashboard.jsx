@@ -16,6 +16,7 @@ import MathDisplay from '../shared/MathDisplay';
 import DashboardTutorialModal from '../modals/DashboardTutorialModal';
 import CapacityModal from '../modals/CapacityModal';
 import { BookOpen } from 'lucide-react';
+import InstructionSlideModal from '../modals/InstructionSlideModal';
 
 // Helper to look up topic name safely
 const getTopicName = (topicId, lang = 'sv') => {
@@ -73,7 +74,10 @@ const normalizePartsPayload = (rawPayload = [], lang = 'sv') => {
             ...part,
             type: 'part',
             id: part.id || `part_${pIdx}_${Date.now()}`,
-            steps: Array.isArray(part.steps) ? part.steps : []
+            steps: Array.isArray(part.steps) ? part.steps.map((s, sIdx) => ({
+                ...s,
+                id: s.id || (s.type === 'test' ? `step_test_${sIdx}_${Date.now()}` : (s.sheetId ? `step_inst_${s.sheetId}` : `step_prac_${s.topic || part.topicId}_${s.level || sIdx}`))
+            })) : []
         }));
     }
 
@@ -95,9 +99,9 @@ const normalizePartsPayload = (rawPayload = [], lang = 'sv') => {
             parts.push(newPart);
         }
         grouped[topic].steps.push({
-            id: item.id || `step_${idx}_${Date.now()}`,
+            ...item,
+            id: item.id || (item.sheetId ? `step_inst_${item.sheetId}` : `step_prac_${topic}_${item.level}`),
             type: item.type || (item.sheetId ? 'instruction' : 'practice'),
-            ...item
         });
     });
 
@@ -106,7 +110,7 @@ const normalizePartsPayload = (rawPayload = [], lang = 'sv') => {
 
 const Dashboard = ({ 
     profile, lang = 'sv', selectedTopic, selectedLevel, onSelect, onStart, 
-    timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen, 
+    timerSettings, toggleTimer, resetTimer, ui, onLgrOpen, onContentOpen, onStartCheckpoint,
     onAboutOpen, onStatsOpen, onStudioOpen, onProfileOpen, onLabOpen, onFractionLabOpen,
     onTimesTableOpen, onRelaunch, onViewReport, onEdit, activeBucket, onBackToGateway,
     userRole = 'teacher'
@@ -119,6 +123,7 @@ const Dashboard = ({
     const [showUpdateLog, setShowUpdateLog] = useState(false);
     const [showCapacityModal, setShowCapacityModal] = useState(false);
     const [activeInstructionModal, setActiveInstructionModal] = useState(null);
+    
 
     const TEXT = {
         sv: {
@@ -165,15 +170,76 @@ const Dashboard = ({
         return !localStorage.getItem(storageKey);
     });
 
-    const handleCloseDashboardTutorial = () => {
-        localStorage.setItem(storageKey, 'true');
-        setShowDashboardTutorial(false);
+    //  Keyed completion storage for the active unit
+    const storageKeyProgress = useMemo(() => {
+        const studentId = profile?.id || 'guest_student';
+        const bucketId = activeBucket?.id || 'default_bucket';
+        return `progress_${studentId}_${bucketId}`;
+    }, [profile?.id, activeBucket?.id]);
+
+    const [completedStepIds, setCompletedStepIds] = useState(() => {
+        try {
+            const raw = localStorage.getItem(storageKeyProgress);
+            return raw ? JSON.parse(raw) : [];
+        } catch {
+            return [];
+        }
+    });
+
+    // Sync state changes back to storage
+    const markStepComplete = (stepId) => {
+        if (!stepId) return;
+        setCompletedStepIds(prev => {
+            if (prev.includes(stepId)) return prev;
+            const updated = [...prev, stepId];
+            try {
+                localStorage.setItem(storageKeyProgress, JSON.stringify(updated));
+            } catch (err) {
+                console.error("Failed to save progress:", err);
+            }
+            return updated;
+        });
     };
-    
+
+    // Flatten all steps across parts to calculate progression metrics
+    // 1. First, declare curatedParts
     const curatedParts = useMemo(() => {
         if (!activeBucket || activeBucket === 'FREE_PLAY') return [];
         return normalizePartsPayload(activeBucket.payload, lang);
     }, [activeBucket, lang]);
+
+    // 2. Now allUnitSteps can safely access curatedParts!
+    const allUnitSteps = useMemo(() => {
+        return curatedParts.flatMap(part => part.steps || []);
+    }, [curatedParts]);
+
+    const completedCount = useMemo(() => {
+        return allUnitSteps.filter(s => completedStepIds.includes(s.id)).length;
+    }, [allUnitSteps, completedStepIds]);
+
+    const progressPercentage = allUnitSteps.length > 0 
+        ? Math.round((completedCount / allUnitSteps.length) * 100) 
+    : 0;
+
+    // Find the immediate next unfinished step in sequence
+    const nextUnfinishedStep = useMemo(() => {
+        return allUnitSteps.find(step => !completedStepIds.includes(step.id)) || null;
+    }, [allUnitSteps, completedStepIds]);
+
+
+    // Helper to find the next logical step after the current one
+    const getNextStep = (currentStepId) => {
+        const currentIndex = allUnitSteps.findIndex(s => s.id === currentStepId);
+        if (currentIndex !== -1 && currentIndex + 1 < allUnitSteps.length) {
+            return allUnitSteps[currentIndex + 1];
+        }
+        return null;
+    };
+
+    const handleCloseDashboardTutorial = () => {
+        localStorage.setItem(storageKey, 'true');
+        setShowDashboardTutorial(false);
+    };
 
     useEffect(() => {
         fetchActiveSession();
@@ -182,41 +248,49 @@ const Dashboard = ({
         }
     }, [activeTab]);
 
-    // 🟢 Secure fetch handler for student presentations via RPC
-    const handleOpenInstruction = async (step) => {
-        if (step.slideData && (step.slideData.latex || step.slideData.title)) {
-            setActiveInstructionModal(step);
-            return;
-        }
+    // 🟢 Auto-align active selection with next unfinished milestone
+    useEffect(() => {
+        if (userRole !== 'student' || !activeBucket || activeBucket === 'FREE_PLAY') return;
+        if (!nextUnfinishedStep) return;
 
-        if (step.sheetId) {
-            try {
-                const teacherCode = profile?.class_code || profile?.connected_code;
-                const { data: packet, error } = await supabase.rpc('get_student_presentation', {
-                    p_sheet_id: step.sheetId,
-                    p_teacher_code: teacherCode
-                });
-
-                if (error) throw error;
-
-                if (packet && packet.slides) {
-                    const slides = packet.slides;
-                    const slideIdx = step.slideIndex || 0;
-                    const targetSlide = slides[slideIdx] || slides[0] || {};
-
-                    setActiveInstructionModal({
-                        ...step,
-                        slideData: targetSlide,
-                        allSlides: slides
-                    });
-                    return;
-                }
-            } catch (err) {
-                console.error("Failed to load presentation via RPC:", err.message);
+        if (nextUnfinishedStep.type === 'practice') {
+            if (selectedTopic !== nextUnfinishedStep.topic || selectedLevel !== nextUnfinishedStep.level) {
+                onSelect(nextUnfinishedStep.topic, nextUnfinishedStep.level);
             }
         }
+    }, [activeBucket, userRole, nextUnfinishedStep, selectedTopic, selectedLevel, onSelect]);
 
-        setActiveInstructionModal(step);
+    const handleOpenInstruction = async (step) => {
+    if (step.sheetId) {
+        try {
+            const teacherCode = profile?.connected_code || profile?.class_code || activeBucket?.class_code || activeBucket?.teacher_code || null;
+
+            const { data: sheetPacket, error } = await supabase.rpc('get_student_presentation', {
+                p_sheet_id: step.sheetId,
+                p_teacher_code: teacherCode
+            });
+
+            if (error) throw error;
+
+            if (sheetPacket) {
+                const slides = sheetPacket.slides || (step.slideData ? [step.slideData] : []);
+                const livePacket = sheetPacket.livePacket || sheetPacket.items || [];
+
+                setActiveInstructionModal({
+                    ...step,
+                    slides,
+                    livePacket,
+                    slideIndex: step.slideIndex || 0
+                });
+                return;
+            }
+        } catch (err) {
+            console.error("Failed to load presentation via RPC:", err.message);
+        }
+    }
+
+    // Fallback
+    setActiveInstructionModal(step);
     };
     
     const fetchActiveSession = async () => {
@@ -344,7 +418,7 @@ const Dashboard = ({
                                     {profile?.class_code || "---"}
                                 </span>
                                 
-                                {/* 🟢 NEW: Capacity Management Button */}
+                                {/*  NEW: Capacity Management Button */}
                                 {['teacher', 'super_admin'].includes(userRole) && profile?.class_code && (
                                     <button 
                                         onClick={() => setShowCapacityModal(true)}
@@ -562,16 +636,62 @@ const Dashboard = ({
                                 <div className="space-y-6">
                                     {/* Unit Header */}
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--bg-card)] p-6 rounded-[var(--radius-card)] border border-[var(--border-main)] shadow-sm">
-                                        <div>
+                                        {/*  100% Unit Completion Banner */}
+                                        {progressPercentage === 100 && (
+                                            <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 rounded-[var(--radius-card)] p-6 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in-95 duration-500">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center shrink-0 shadow-inner">
+                                                        <Award size={32} className="text-amber-300 drop-shadow-md" />
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-100 block">
+                                                            {lang === 'sv' ? "Grattis! Enheten Slutförd" : "Congratulations! Unit Complete"}
+                                                        </span>
+                                                        <h3 className="text-xl sm:text-2xl font-black uppercase tracking-tight italic leading-tight">
+                                                            {lang === 'sv' ? "Alla moment är avklarade! 🏆" : "All parts completed! 🏆"}
+                                                        </h3>
+                                                        <p className="text-xs font-semibold text-emerald-100/90 mt-1">
+                                                            {lang === 'sv' 
+                                                                ? `Du har gått igenom alla ${allUnitSteps.length} moment i ${activeBucket.name}.` 
+                                                                : `You have mastered all ${allUnitSteps.length} steps in ${activeBucket.name}.`}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={onBackToGateway}
+                                                    className="w-full sm:w-auto px-6 py-3 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+                                                >
+                                                    {lang === 'sv' ? "Välj ny enhet ➡" : "Choose New Unit ➡"}
+                                                </button>
+                                            </div>
+                                        )}
+                                        <div className="flex-1 max-w-xl">
                                             <span className="text-[10px] font-black uppercase tracking-widest text-[var(--brand-text)]">
                                                 {lang === 'sv' ? "Aktiv Enhet" : "Active Unit"}
                                             </span>
                                             <h2 className="text-2xl font-black uppercase italic text-[var(--text-main)] tracking-tight">
                                                 {activeBucket.name}
                                             </h2>
-                                            <p className="text-xs text-[var(--text-muted)] font-bold mt-1">
-                                                {curatedParts.length} {lang === 'sv' ? "delar i planeringen" : "parts in sequence"}
-                                            </p>
+                                            
+                                            {/* Progress Readout */}
+                                            <div className="mt-3 space-y-1.5">
+                                                <div className="flex items-center justify-between text-[11px] font-bold text-[var(--text-muted)]">
+                                                    <span>
+                                                        {lang === 'sv' 
+                                                            ? `${completedCount} av ${allUnitSteps.length} steg klara` 
+                                                            : `${completedCount} of ${allUnitSteps.length} steps completed`}
+                                                    </span>
+                                                    <span className="font-black text-[var(--text-main)]">{progressPercentage}%</span>
+                                                </div>
+                                                {/* Progress Bar Track */}
+                                                <div className="w-full h-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-[var(--brand-solid)] transition-all duration-500 ease-out rounded-full"
+                                                        style={{ width: `${progressPercentage}%` }}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                         <button 
                                             onClick={onBackToGateway}
@@ -591,14 +711,14 @@ const Dashboard = ({
                                                 {/* Part Header Strip */}
                                                 <div className="bg-[var(--bg-surface)] px-5 py-3.5 border-b border-[var(--border-main)] flex items-center justify-between">
                                                     <div className="flex items-center gap-2.5">
-                                                        <span className="w-6 h-6 rounded-lg bg-[var(--brand-solid)] text-white text-[11px] font-black flex items-center justify-center shrink-0 shadow-xs">
+                                                        <span className="w-7 h-7 rounded-lg bg-[var(--brand-solid)] text-white text-xs font-black flex items-center justify-center shrink-0 shadow-xs">
                                                             {pIdx + 1}
                                                         </span>
                                                         <h3 className="font-black text-sm uppercase tracking-wider text-[var(--text-main)]">
                                                             {getPartDisplayTitle(part, pIdx, lang)}
                                                         </h3>
                                                     </div>
-                                                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                                                    <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                                                         {part.steps?.length || 0} {lang === 'sv' ? "steg" : "steps"}
                                                     </span>
                                                 </div>
@@ -606,38 +726,114 @@ const Dashboard = ({
                                                 {/* Step Cards List */}
                                                 <div className="p-4 space-y-2.5">
                                                     {(part.steps || []).map((step, sIdx) => {
+                                                        const isCompleted = completedStepIds.includes(step.id);
                                                         const isInstruction = step.type === 'instruction' || !!step.sheetId;
+                                                        const isTest = step.type === 'test';
 
                                                         if (isInstruction) {
                                                             return (
                                                                 <div 
                                                                     key={step.id || sIdx}
-                                                                    onClick={() => setActiveInstructionModal(step)}
-                                                                    className="group p-3.5 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800/60 bg-gradient-to-r from-indigo-50/80 via-[var(--bg-card)] to-indigo-50/40 hover:to-indigo-100/60 transition-all flex items-center justify-between gap-3 cursor-pointer shadow-xs active:scale-[0.99]"
+                                                                    onClick={() => handleOpenInstruction(step)}
+                                                                    className="group p-3.5 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800/60 bg-gradient-to-r from-indigo-50/80 via-[var(--bg-card)] to-indigo-50/40 dark:from-indigo-950/20 dark:via-[var(--bg-card)] dark:to-indigo-950/10 hover:to-indigo-100/60 transition-all flex items-center justify-between gap-3 cursor-pointer shadow-xs active:scale-[0.99]"
                                                                 >
                                                                     <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                                                        {/* 1. Step Indicator */}
                                                                         <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
                                                                             <BookOpen size={16} />
                                                                         </div>
+                                                                        {/* 2. Step Title & Category */}
                                                                         <div className="min-w-0 flex-1">
                                                                             <div className="flex items-center gap-2">
-                                                                                <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0">
-                                                                                    {lang === 'sv' ? "Genomgång" : "Walkthrough"}
-                                                                                </span>
-                                                                                <span className="font-black text-xs text-[var(--text-main)] truncate">
+                                                                                <span className="font-black text-sm text-[var(--text-main)] truncate">
                                                                                     {step.sheetTitle}
+                                                                                </span>
+                                                                                <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0">
+                                                                                    {lang === 'sv' ? "Genomgång" : "Walkthrough"}
                                                                                 </span>
                                                                             </div>
                                                                         </div>
                                                                     </div>
 
-                                                                    <button 
-                                                                        type="button"
-                                                                        className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm shrink-0"
-                                                                    >
-                                                                        <Play size={11} fill="currentColor" />
-                                                                        <span>{lang === 'sv' ? "Titta" : "Watch"}</span>
-                                                                    </button>
+                                                                    <div className="flex items-center gap-2 shrink-0">
+                                                                        {isCompleted && (
+                                                                            <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                                                                <Check size={14} strokeWidth={3} />
+                                                                            </span>
+                                                                        )}
+                                                                        <button 
+                                                                            type="button"
+                                                                            className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer ${
+                                                                                isCompleted 
+                                                                                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-600 hover:text-white' 
+                                                                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                                                            }`}
+                                                                        >
+                                                                            <Play size={12} fill="currentColor" />
+                                                                            <span>{isCompleted ? (lang === 'sv' ? "Repetera" : "Review") : (lang === 'sv' ? "Titta" : "Watch")}</span>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        // CHECKPOINT TEST STEP
+                                                        if (isTest) {
+                                                            return (
+                                                                <div 
+                                                                    key={step.id || sIdx}
+                                                                    className={`group p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 shadow-xs ${
+                                                                        isCompleted 
+                                                                            ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20' 
+                                                                            : 'border-amber-300 dark:border-amber-800/80 bg-gradient-to-r from-amber-50/80 via-[var(--bg-card)] to-amber-50/30 dark:from-amber-950/20 dark:via-[var(--bg-card)] dark:to-amber-950/10'
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                                                        {/* 1. Step Indicator */}
+                                                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-sm ${
+                                                                            isCompleted ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
+                                                                        }`}>
+                                                                            <Beaker size={16} />
+                                                                        </div>
+                                                                        {/* 2. Step Title & Badge */}
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="font-black text-sm text-[var(--text-main)] truncate">
+                                                                                    {step.title || (lang === 'sv' ? "Delprov" : "Checkpoint")}
+                                                                                </span>
+                                                                                <span className="bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0">
+                                                                                    {step.testMode === 'exam' ? (lang === 'sv' ? "Prov" : "Exam") : (lang === 'sv' ? "Delprov" : "Checkpoint")}
+                                                                                </span>
+                                                                            </div>
+                                                                            <span className="text-xs font-bold text-[var(--text-muted)] mt-1 block">
+                                                                                {step.questionCount || 10} {lang === 'sv' ? "blandade frågor" : "mixed questions"}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-2 shrink-0">
+                                                                        {isCompleted && (
+                                                                            <span className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                                                                <Check size={14} strokeWidth={3} />
+                                                                            </span>
+                                                                        )}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                if (onStartCheckpoint) {
+                                                                                    onStartCheckpoint(step.configCode, step.id);
+                                                                                }
+                                                                            }}
+                                                                            className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95 ${
+                                                                                isCompleted 
+                                                                                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-amber-500 hover:text-white'
+                                                                                    : 'bg-amber-500 hover:bg-amber-600 text-white'
+                                                                            }`}
+                                                                        >
+                                                                            <Play size={12} fill="currentColor" />
+                                                                            <span>{isCompleted ? (lang === 'sv' ? "Gör om" : "Retake") : (lang === 'sv' ? "Starta prov" : "Start test")}</span>
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             );
                                                         }
@@ -645,6 +841,7 @@ const Dashboard = ({
                                                         // Practice Level Step
                                                         const isSelected = selectedTopic === step.topic && selectedLevel === step.level;
                                                         const { description, mathExample } = getLevelMetadata(step.topic, step.level, lang);
+                                                        const isStepCompleted = completedStepIds.includes(step.id);
 
                                                         return (
                                                             <div 
@@ -657,27 +854,30 @@ const Dashboard = ({
                                                                 }`}
                                                             >
                                                                 <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                                                    {/* 1. Prioritized Step Counter (Shows step number, not level) */}
                                                                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-colors ${
                                                                         isSelected 
                                                                             ? 'bg-emerald-600 text-white shadow-sm' 
-                                                                            : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
+                                                                            : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-strong)]'
                                                                     }`}>
-                                                                        {step.level}
+                                                                        {sIdx + 1}
                                                                     </div>
 
+                                                                    {/* 2. Title & Math Example, with Level Badge Placed Second */}
                                                                     <div className="min-w-0 flex-1">
                                                                         <div className="flex items-center gap-2">
-                                                                            <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0">
-                                                                                {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
-                                                                            </span>
-                                                                            <span className="font-bold text-xs text-[var(--text-main)] truncate">
+                                                                            <span className="font-black text-sm text-[var(--text-main)] truncate">
                                                                                 {description || getTopicName(step.topic, lang)}
+                                                                            </span>
+                                                                            <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0 border border-emerald-200/50 dark:border-emerald-800/50">
+                                                                                {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
                                                                             </span>
                                                                         </div>
 
+                                                                        {/* 3. Dark Mode-Safe LaTeX Preview */}
                                                                         {mathExample && (
-                                                                            <div className="mt-1 text-xs text-[var(--brand-solid)] font-serif italic truncate flex items-center gap-1.5 opacity-90 overflow-x-auto no-scrollbar">
-                                                                                <span className="text-[8px] font-sans font-bold uppercase tracking-wider text-[var(--text-muted)] not-italic">
+                                                                            <div className="mt-1 text-xs text-indigo-600 dark:text-indigo-400 font-serif italic truncate flex items-center gap-2 opacity-95 overflow-x-auto no-scrollbar">
+                                                                                <span className="text-[10px] font-sans font-black uppercase tracking-wider text-[var(--text-muted)] not-italic bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
                                                                                     Ex:
                                                                                 </span>
                                                                                 <MathDisplay content={mathExample} />
@@ -686,13 +886,20 @@ const Dashboard = ({
                                                                     </div>
                                                                 </div>
 
+                                                                {/* Completed Status / Selection Indicator */}
                                                                 <div className="shrink-0 flex items-center">
-                                                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                                                        isSelected 
-                                                                            ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs' 
-                                                                            : 'border-[var(--border-strong)] group-hover:border-[var(--brand-solid)]'
+                                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                                                        isStepCompleted
+                                                                            ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs'
+                                                                            : isSelected 
+                                                                                ? 'border-[var(--brand-solid)] bg-[var(--brand-bg)] text-[var(--brand-solid)]'
+                                                                                : 'border-[var(--border-strong)] group-hover:border-[var(--brand-solid)]'
                                                                     }`}>
-                                                                        {isSelected && <Check size={11} strokeWidth={3} />}
+                                                                        {isStepCompleted ? (
+                                                                            <Check size={14} strokeWidth={3} />
+                                                                        ) : isSelected ? (
+                                                                            <div className="w-2.5 h-2.5 rounded-full bg-[var(--brand-solid)]" />
+                                                                        ) : null}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -728,7 +935,7 @@ const Dashboard = ({
                                                 </div>
                                             );
                                         })}
-                                        {/* 🟢 GUIDE / HELP BUTTON */}
+                                        {/*  GUIDE / HELP BUTTON */}
                                         <button
                                             type="button"
                                             onClick={() => setShowDashboardTutorial(true)}
@@ -853,14 +1060,66 @@ const Dashboard = ({
 
                 </main>
 
-                {/* --- START PRACTICE FLOATING ACTION BUTTON --- */}
+                {/* --- SMART FLOATING ACTION BUTTON --- */}
                 {activeTab === 'curriculum' && (
-                    <div className={`fixed bottom-8 right-8 flex justify-end pointer-events-none z-30 transition-all duration-500 ${selectedTopic ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-                        <div className="theme-emerald">
-                            <button onClick={onStart} className="btn-brand px-10 py-5 rounded-[2rem] font-bold text-xl pointer-events-auto flex items-center gap-4 hover:scale-105 active:scale-95 transition-all tracking-tight border-b-[6px] border-[var(--brand-border)] shadow-2xl">
-                                {t.start_btn} <Play fill="currentColor" size={24} />
-                            </button>
-                        </div>
+                    <div className={`fixed bottom-8 right-8 flex justify-end pointer-events-none z-30 transition-all duration-500 ${
+                        (selectedTopic || (activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep)) 
+                            ? 'translate-y-0 opacity-100' 
+                            : 'translate-y-20 opacity-0'
+                    }`}>
+                        {activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep ? (
+                            /* Curated Unit Context */
+                            nextUnfinishedStep.type === 'test' ? (
+                                <div className="theme-amber">
+                                    <button 
+                                        type="button"
+                                        onClick={() => {
+                                            if (onStartCheckpoint) {
+                                                onStartCheckpoint(nextUnfinishedStep.configCode, nextUnfinishedStep.id);
+                                            }
+                                        }} 
+                                        className="btn-brand px-8 py-4 rounded-[2rem] font-black text-base uppercase tracking-wider pointer-events-auto flex items-center gap-3 hover:scale-105 active:scale-95 transition-all border-b-[4px] border-amber-600 bg-amber-500 hover:bg-amber-600 text-white shadow-2xl cursor-pointer"
+                                    >
+                                        <span>{lang === 'sv' ? "Starta nästa delprov" : "Start next test"}</span>
+                                        <Beaker size={20} />
+                                    </button>
+                                </div>
+                            ) : nextUnfinishedStep.type === 'instruction' ? (
+                                <div className="theme-indigo">
+                                    <button 
+                                        type="button"
+                                        onClick={() => handleOpenInstruction(nextUnfinishedStep)} 
+                                        className="btn-brand px-8 py-4 rounded-[2rem] font-black text-base uppercase tracking-wider pointer-events-auto flex items-center gap-3 hover:scale-105 active:scale-95 transition-all border-b-[4px] border-indigo-700 bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xl cursor-pointer"
+                                    >
+                                        <span>{lang === 'sv' ? "Titta på genomgång" : "Watch walkthrough"}</span>
+                                        <BookOpen size={20} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="theme-emerald">
+                                    <button 
+                                        type="button"
+                                        onClick={onStart} 
+                                        className="btn-brand px-8 py-4 rounded-[2rem] font-black text-base uppercase tracking-wider pointer-events-auto flex items-center gap-3 hover:scale-105 active:scale-95 transition-all border-b-[4px] border-emerald-700 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xl cursor-pointer"
+                                    >
+                                        <span>{t.start_btn}</span>
+                                        <Play fill="currentColor" size={20} />
+                                    </button>
+                                </div>
+                            )
+                        ) : (
+                            /* Standard Free Play Context */
+                            <div className="theme-emerald">
+                                <button 
+                                    type="button"
+                                    onClick={onStart} 
+                                    className="btn-brand px-10 py-5 rounded-[2rem] font-bold text-xl pointer-events-auto flex items-center gap-4 hover:scale-105 active:scale-95 transition-all tracking-tight border-b-[6px] border-[var(--brand-border)] shadow-2xl cursor-pointer"
+                                >
+                                    <span>{t.start_btn}</span>
+                                    <Play fill="currentColor" size={24} />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -913,75 +1172,28 @@ const Dashboard = ({
                 lang={lang}
             />
             {/* --- INSTRUCTION SLIDE VIEWER MODAL --- */}
-            {activeInstructionModal && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 sm:p-6 animate-in fade-in duration-300">
-                    <div className="bg-[var(--bg-card)] rounded-[2.5rem] border border-[var(--border-main)] shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-                        {/* Modal Header */}
-                        <div className="px-6 py-4 border-b border-[var(--border-main)] bg-[var(--bg-surface)] flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                                    <BookOpen size={18} />
-                                </div>
-                                <div className="min-w-0">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600 block">
-                                        {lang === 'sv' ? "Genomgång" : "Instruction Walkthrough"}
-                                    </span>
-                                    <h3 className="text-base font-black text-[var(--text-main)] truncate">
-                                        {activeInstructionModal.sheetTitle}
-                                    </h3>
-                                </div>
-                            </div>
-                            <button 
-                                type="button"
-                                onClick={() => setActiveInstructionModal(null)}
-                                className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] rounded-xl transition-colors cursor-pointer"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
+            <InstructionSlideModal
+                isOpen={!!activeInstructionModal}
+                onClose={() => setActiveInstructionModal(null)}
+                sheetTitle={activeInstructionModal?.sheetTitle}
+                slides={activeInstructionModal?.slides || (activeInstructionModal?.slideData ? [activeInstructionModal.slideData] : [])}
+                livePacket={activeInstructionModal?.livePacket || []}
+                initialSlideIndex={activeInstructionModal?.slideIndex || 0}
+                lang={lang}
+                onCompleteAndAdvance={() => {
+                    const currentStepId = activeInstructionModal.id;
+                    markStepComplete(currentStepId);
 
-                        {/* Modal Slide Body */}
-                        <div className="flex-1 overflow-y-auto p-6 sm:p-8 flex flex-col items-center justify-center bg-[var(--bg-card)]">
-                            {activeInstructionModal.slideData ? (
-                                <div className="w-full max-w-2xl space-y-6">
-                                    {activeInstructionModal.slideData.title && (
-                                        <h2 className="text-xl sm:text-2xl font-black text-[var(--text-main)] text-center">
-                                            <MathDisplay content={activeInstructionModal.slideData.title} />
-                                        </h2>
-                                    )}
+                    const nextStep = getNextStep(currentStepId);
+                    setActiveInstructionModal(null);
 
-                                    {activeInstructionModal.slideData.latex && (
-                                        <div className="w-full bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-800/40 rounded-2xl p-6 flex justify-center text-2xl sm:text-3xl font-serif text-indigo-600">
-                                            <MathDisplay content={`$$${activeInstructionModal.slideData.latex}$$`} />
-                                        </div>
-                                    )}
-
-                                    {activeInstructionModal.slideData.notes && (
-                                        <p className="text-sm font-medium text-[var(--text-muted)] text-center leading-relaxed">
-                                            {activeInstructionModal.slideData.notes}
-                                        </p>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="text-center py-12 text-slate-400 font-bold text-sm">
-                                    {lang === 'sv' ? "Ingen förhandsvisning tillgänglig." : "No slide preview available."}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Modal Footer Action */}
-                        <div className="p-4 border-t border-[var(--border-main)] bg-[var(--bg-surface)] flex justify-end shrink-0">
-                            <button
-                                type="button"
-                                onClick={() => setActiveInstructionModal(null)}
-                                className="px-6 py-3 bg-[var(--brand-solid)] text-white rounded-xl font-black text-xs uppercase tracking-wider hover:opacity-90 transition-all shadow-md cursor-pointer"
-                            >
-                                {lang === 'sv' ? "Klar! Gå till övning ➡" : "Done! Go to practice ➡"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    if (nextStep && nextStep.type === 'practice') {
+                        onSelect(nextStep.topic, nextStep.level);
+                    } else if (nextStep && nextStep.type === 'instruction') {
+                        handleOpenInstruction(nextStep);
+                    }
+                }}
+            />
         </div>
     );
 };

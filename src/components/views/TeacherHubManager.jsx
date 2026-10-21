@@ -4,7 +4,7 @@ import {
     Calendar as CalendarIcon, FolderOpen, Layers, Loader2,
     ChevronDown, ChevronUp, Folder, X, Check, Edit2, 
     ChevronLeft, ChevronRight, BookOpen, Target, ArrowUp, ArrowDown,
-    Bookmark, SplitSquareVertical
+    Bookmark, SplitSquareVertical, Beaker
 } from 'lucide-react';
 import ContentModal from '../modals/ContentModal'; 
 import { supabase } from '../../lib/supabaseClient';
@@ -12,8 +12,9 @@ import SheetLibraryModal from '../modals/SheetLibraryModal';
 import { CONTENT_MAP } from '../../constants/content_map.generated';
 import MathDisplay from '../shared/MathDisplay';
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
+import CheckpointModal from '../modals/CheckpointModal';
 
-// 🟢 Helper to get localized topic names
+//  Helper to get localized topic names
 const getTopicName = (topicId, lang = 'sv') => {
     if (!topicId) return "";
     for (const catKey in CATEGORIES) {
@@ -52,7 +53,7 @@ const getLevelMetadata = (topicId, level, lang = 'sv') => {
     return { description, mathExample };
 };
 
-// 🟢 Normalizer: Converts any flat legacy payload into our structured "Del / Part" array
+//  Normalizer: Converts any flat legacy payload into our structured "Del / Part" array
 export const normalizePartsPayload = (rawPayload = [], lang = 'sv') => {
     if (!Array.isArray(rawPayload) || rawPayload.length === 0) return [];
 
@@ -83,7 +84,7 @@ export const normalizePartsPayload = (rawPayload = [], lang = 'sv') => {
                 id: `part_${topic}_${Date.now()}_${idx}`,
                 type: 'part',
                 topicId: topic,
-                customTitle: null, // 🟢 No hardcoded "Del" or "Part"
+                customTitle: null, //  No hardcoded "Del" or "Part"
                 steps: []
             };
             grouped[topic] = newPart;
@@ -111,6 +112,9 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
     const [isInstructionPickerOpen, setIsInstructionPickerOpen] = useState(false);
     const [targetPartContext, setTargetPartContext] = useState(null); // { bucketId, partId }
     const [expandedSequencerBucketId, setExpandedSequencerBucketId] = useState(null);
+
+    //  NEW: Checkpoint Modal State
+    const [isCheckpointModalOpen, setIsCheckpointModalOpen] = useState(false);
 
     // --- Inline Part Title Editing ---
     const [editingPartId, setEditingPartId] = useState(null);
@@ -219,7 +223,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         }
     };
 
-    // 🟢 Insert an instruction presentation into a specific "Del"
+    //  Insert an instruction presentation into a specific "Del"
     const handleAddInstructionSlideToPart = async (bucketId, partId, sheet) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
@@ -249,7 +253,23 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    // 🟢 Reorder steps strictly inside a "Del"
+    //  Insert a TestLab checkpoint step into a specific "Del"
+    const handleAddCheckpointToPart = async (bucketId, partId, checkpointData) => {
+        const bucket = buckets.find(b => b.id === bucketId);
+        if (!bucket) return;
+
+        const updatedParts = (bucket.payload || []).map(part => {
+            if (part.id !== partId) return part;
+            return {
+                ...part,
+                steps: [...part.steps, checkpointData]
+            };
+        });
+
+        await persistBucketPayload(bucketId, updatedParts);
+    };
+
+    //  Reorder steps strictly inside a "Del"
     const moveStepInsidePart = async (bucketId, partId, stepIndex, direction) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
@@ -269,7 +289,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    // 🟢 Remove a step from a "Del"
+    //  Remove a step from a "Del"
     const removeStepFromPart = async (bucketId, partId, stepIndex) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
@@ -285,7 +305,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    // 🟢 Add a new custom "Del" (Part) to the unit
+    //  Add a new custom "Del" (Part) to the unit
     const handleAddNewPart = async (bucketId) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
@@ -304,7 +324,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    // 🟢 Save custom title for a "Del"
+    //  Save custom title for a "Del"
     const savePartTitleEdit = async (bucketId, partId) => {
     const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
@@ -324,7 +344,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    // 🟢 Reorder whole "Del" sections
+    //  Reorder whole "Del" sections
     const movePartSection = async (bucketId, partIndex, direction) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
@@ -339,7 +359,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, newParts);
     };
 
-    // 🟢 Delete a whole "Del" section
+    //  Delete a whole "Del" section
     const deletePartSection = async (bucketId, partId) => {
         if (!window.confirm(lang === 'sv' ? "Vill du ta bort denna Del och alla dess steg?" : "Delete this Part and all its steps?")) return;
 
@@ -816,7 +836,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                         <div className="flex items-center gap-2 bg-[var(--bg-surface)] p-1.5 rounded-xl border border-[var(--border-main)] shrink-0 w-full xl:w-auto overflow-x-auto custom-scrollbar">
                                                             {!isExpired ? (
                                                                 <>
-                                                                    {/* 🟢 TOGGLE PLAN SEQUENCER ACCORDION */}
+                                                                    {/*  TOGGLE PLAN SEQUENCER ACCORDION */}
                                                                     <button 
                                                                         onClick={() => setExpandedSequencerBucketId(isSequencerOpen ? null : bucket.id)}
                                                                         className={`flex-1 xl:flex-none px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
@@ -851,7 +871,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                         </div>
                                                     </div>
 
-                                                    {/* 🟢 EXPANDABLE SEQUENCER DRAWER: "DEL"-BASED ROADMAP */}
+                                                    {/*  EXPANDABLE SEQUENCER DRAWER: "DEL"-BASED ROADMAP */}
                                                     {isSequencerOpen && (
                                                         <div className="mt-2 pt-4 border-t border-[var(--border-main)] space-y-4 animate-in fade-in duration-200">
                                                             
@@ -960,6 +980,19 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                                         <BookOpen size={11} />
                                                                                         <span>{lang === 'sv' ? "+ Infoga Genomgång" : "+ Insert Walkthrough"}</span>
                                                                                     </button>
+                                                                                    
+                                                                                    {/* Add Checkpoint Button */}
+                                                                                    <button 
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            setTargetPartContext({ bucketId: bucket.id, partId: part.id, part });
+                                                                                            setIsCheckpointModalOpen(true);
+                                                                                        }}
+                                                                                        className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-xs"
+                                                                                    >
+                                                                                        <Beaker size={11} />
+                                                                                        <span>{lang === 'sv' ? "+ Delprov" : "+ Checkpoint"}</span>
+                                                                                    </button>
 
                                                                                     <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-main)] rounded-lg overflow-hidden ml-1">
                                                                                         <button 
@@ -999,6 +1032,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                                 <div className="space-y-1.5">
                                                                                     {part.steps.map((step, sIdx) => {
                                                                                         const isInstruction = step.type === 'instruction' || !!step.sheetId;
+                                                                                        const isTest = step.type === 'test';
                                                                                         const { description, mathExample } = !isInstruction 
                                                                                             ? getLevelMetadata(step.topic || step.topicId, step.level, lang)
                                                                                             : { description: "", mathExample: "" };
@@ -1025,41 +1059,55 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                                                     {isInstruction ? (
                                                                                                         /* GENOMGÅNGSKORT */
                                                                                                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                                                                            <span className="bg-indigo-100 text-indigo-700 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0">
+                                                                                                            <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0">
                                                                                                                 {lang === 'sv' ? "Genomgång" : "Walkthrough"}
                                                                                                             </span>
                                                                                                             <BookOpen size={14} className="text-indigo-600 shrink-0" />
-                                                                                                            <span className="font-black text-xs text-slate-800 truncate">
+                                                                                                            <span className="font-black text-s text-slate-800 truncate">
                                                                                                                 {step.sheetTitle}
+                                                                                                            </span>
+                                                                                                        </div>
+                                                                                                    ) : isTest ? (
+                                                                                                        /*  CHECKPOINT TEST CARD */
+                                                                                                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                                                                                            <span className="bg-amber-200 text-amber-900 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0">
+                                                                                                                {step.testMode === 'exam' ? (lang === 'sv' ? "Prov" : "Exam") : (lang === 'sv' ? "Delprov" : "Checkpoint")}
+                                                                                                            </span>
+                                                                                                            <Beaker size={14} className="text-amber-600 shrink-0" />
+                                                                                                            <span className="font-black text-m text-[var(--text-main)] truncate">
+                                                                                                                {step.title}
+                                                                                                            </span>
+                                                                                                            <span className="text-[11px] font-black tracking-tight text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md border border-indigo-200/80 dark:border-indigo-800/60 shrink-0">
+                                                                                                                {step.questionCount} {lang === 'sv' ? "frågor" : "questions"}
                                                                                                             </span>
                                                                                                         </div>
                                                                                                     ) : (
                                                                                                         /* ÖVNINGSKORT MED MATTE-EXEMPEL & BESKRIVNING */
                                                                                                         <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap sm:flex-nowrap">
-                                                                                                            <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0 border border-emerald-200">
+                                                                                                            <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 border border-emerald-300 dark:border-emerald-800">
                                                                                                                 {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
                                                                                                             </span>
 
                                                                                                             <div className="flex flex-col min-w-0 flex-1">
                                                                                                                 <div className="flex items-center gap-2">
-                                                                                                                    <span className="font-black text-xs text-[var(--text-main)] truncate">
+                                                                                                                    <span className="font-black text-m text-[var(--text-main)] truncate">
                                                                                                                         {getTopicName(step.topic || step.topicId, lang)}
                                                                                                                     </span>
                                                                                                                     {description && (
                                                                                                                         <>
                                                                                                                             <span className="text-[var(--text-muted)] opacity-40 hidden md:inline">•</span>
-                                                                                                                            <span className="text-[11px] font-medium text-[var(--text-muted)] truncate hidden md:inline">
+                                                                                                                            <span className="text-s font-semibold text-[var(--text-muted)] truncate hidden md:inline">
                                                                                                                                 {description}
                                                                                                                             </span>
                                                                                                                         </>
                                                                                                                     )}
                                                                                                                 </div>
 
-                                                                                                                {/* Matte-exemplet som visar den faktiska uppgiftstypen */}
+                                                                                                                {/* 🟢 ENLARGED CONTRAST-SAFE MATH PREVIEW */}
                                                                                                                 {mathExample && (
-                                                                                                                    <div className="mt-0.5 text-xs text-[var(--brand-solid)] font-serif italic truncate flex items-center gap-1.5 opacity-90">
-                                                                                                                        <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-[var(--text-muted)] not-italic">
-                                                                                                                            Ex:
+                                                                                                                    <div className="mt-1 text-sm sm:text-base text-indigo-600 dark:text-indigo-400 font-serif italic truncate flex items-center gap-2">
+                                                                                                                        <span className="text-[9px] font-sans font-black uppercase tracking-widest text-[var(--text-muted)] not-italic bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
+                                                                                                                            Ex
                                                                                                                         </span>
                                                                                                                         <MathDisplay content={mathExample} />
                                                                                                                     </div>
@@ -1120,6 +1168,25 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                 )}
             </div>
 
+            {/*  CHECKPOINT MODAL */}
+            <CheckpointModal
+                isOpen={isCheckpointModalOpen}
+                onClose={() => {
+                    setIsCheckpointModalOpen(false);
+                    setTargetPartContext(null);
+                }}
+                targetPart={targetPartContext?.part}
+                bucket={buckets.find(b => b.id === targetPartContext?.bucketId)}
+                lang={lang}
+                onSaveCheckpoint={(checkpointData) => {
+                    if (targetPartContext) {
+                        handleAddCheckpointToPart(targetPartContext.bucketId, targetPartContext.partId, checkpointData);
+                    }
+                    setIsCheckpointModalOpen(false);
+                    setTargetPartContext(null);
+                }}
+            />
+
             {/* CONTENT MODAL (Practice Level Checklist) */}
             <ContentModal 
                 visible={isContentModalOpen} 
@@ -1130,7 +1197,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                 onToggleItem={handleToggleItem}
             />
 
-            {/* 🟢 INSTRUCTIONAL SLIDE PICKER (Drops slide into target Part) */}
+            {/*  INSTRUCTIONAL SLIDE PICKER (Drops slide into target Part) */}
             {isInstructionPickerOpen && (
                 <SheetLibraryModal
                     isOpen={isInstructionPickerOpen}
@@ -1148,7 +1215,8 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                         setIsInstructionPickerOpen(false);
                         setTargetPartContext(null);
                     }}
-                />
+            />
+            
             )}
         </div>
     );

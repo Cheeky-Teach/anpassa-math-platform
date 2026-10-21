@@ -24,7 +24,7 @@ const PracticeView = ({
     handleChangeLevel, revealedClues, uiState, actions, 
     levelUpAvailable, setLevelUpAvailable, isSolutionRevealed, 
     timerSettings, formatTime, toast, useWordProblems, setUseWordProblems,
-    activeBucket, isDetourActive
+    activeBucket, isDetourActive, onAdvanceUnitStep
 }) => {
     const inputRef = useRef(null);
     const scrollContainerRef = useRef(null);
@@ -179,14 +179,60 @@ const PracticeView = ({
         //  1. Added !pt-4 to override any hidden padding inside layout-wrapper
         <div className={`theme-${theme.color} layout-wrapper font-sans relative z-10 animate-in fade-in pb-10 !pt-4`}>
             
-            <LevelUpModal 
-                visible={levelUpAvailable} 
-                lang={lang} 
-                supportsWordProblems={isCurrentLevelWordProblemReady && !useWordProblems}
-                onNext={() => { onLevelSelect(uiState.level + 1); setLevelUpAvailable(false); setUseWordProblems(false); }} 
-                onStay={() => { setLevelUpAvailable(false); actions.retry(true); }} 
-                onWordProblems={() => { onToggleWordProblems(true); setLevelUpAvailable(false); }} 
-            />
+            {/* In a curated unit, show unit progression modal */}
+            {activeBucket && activeBucket !== 'FREE_PLAY' && levelUpAvailable ? (
+                <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in select-none">
+                    <div className="bg-[var(--bg-card)] border-2 border-emerald-500 rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl animate-in zoom-in-95">
+                        <div className="w-16 h-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                            <Trophy size={32} />
+                        </div>
+                        
+                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block mb-1">
+                            {activeBucket.name}
+                        </span>
+                        <h3 className="text-2xl font-black uppercase tracking-tight text-[var(--text-main)] mb-2">
+                            {lang === 'sv' ? "Moment klart!" : "Step Complete!"}
+                        </h3>
+                        <p className="text-xs font-bold text-[var(--text-muted)] mb-6 leading-relaxed">
+                            {lang === 'sv' 
+                                ? `Du har klarat Nivå ${uiState.level}. Bra jobbat! Dags för nästa steg i din planering.` 
+                                : `You have cleared Level ${uiState.level}. Great job! Time for the next step in your sequence.`}
+                        </p>
+
+                        <div className="flex flex-col gap-2.5">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setLevelUpAvailable(false);
+                                    if (onAdvanceUnitStep) onAdvanceUnitStep();
+                                }}
+                                className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <span>{lang === 'sv' ? "Tillbaka till planeringen ➡" : "Back to Roadmap ➡"}</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setLevelUpAvailable(false);
+                                    actions.retry(true);
+                                }}
+                                className="w-full py-2.5 bg-transparent text-[var(--text-muted)] hover:text-[var(--text-main)] font-black text-[10px] uppercase tracking-wider transition-colors cursor-pointer"
+                            >
+                                {lang === 'sv' ? "Fortsätt öva denna nivå" : "Keep practicing this level"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <LevelUpModal 
+                    visible={levelUpAvailable} 
+                    lang={lang} 
+                    supportsWordProblems={isCurrentLevelWordProblemReady && !useWordProblems}
+                    onNext={() => { onLevelSelect(uiState.level + 1); setLevelUpAvailable(false); setUseWordProblems(false); }} 
+                    onStay={() => { setLevelUpAvailable(false); actions.retry(true); }} 
+                    onWordProblems={() => { onToggleWordProblems(true); setLevelUpAvailable(false); }} 
+                />
+            )}
 
             {/* MASTERY TOAST OVERLAY */}
             {toast && (

@@ -4,13 +4,15 @@ import {
     ChevronDown, Settings2, Zap, ArrowRight, 
     RefreshCcw, Eye, Clock, Lock, Send, ListChecks, 
     LayoutGrid, XCircle, ChevronRight, LogOut,
-    CheckCircle2, Award, Info, HelpCircle, X
+    CheckCircle2, Award, Info, HelpCircle, X, Bookmark
 } from 'lucide-react';
 import { decodeConfig, encodeConfig, BUNDLE_PRESETS } from '../../core/utils/labCodeUtils';
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
 import { useMyCoach } from '../../hooks/useMyCoach';
 import MyCoachModal from '../modals/MyCoachModal';
 import { isLevelWordProblemReady } from '../../constants/skillBuckets.js';
+import SaveToUnitModal from '../modals/SaveToUnitModal';
+import { supabase } from '../../lib/supabaseClient';
 
 import { CONTENT_MAP } from '../../constants/content_map.generated';
 
@@ -64,7 +66,10 @@ const LAB_TEXT = {
     }
 };
 
-export default function TestLabView({ configCode, profile, lang = 'sv', onBack }) {
+export default function TestLabView({ 
+    configCode, profile, lang = 'sv', onBack, 
+    activeBucket = null, activeUnitStepId = null  
+}) {
     const t = LAB_TEXT[lang] || LAB_TEXT.sv;
 
     // --- STATE ---
@@ -89,6 +94,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
 
     const [isMobile, setIsMobile] = useState(false);
 
+    const isTeacherOrAdmin = profile?.role === 'teacher' || profile?.role === 'super_admin';
+
     //   SYNCHRONOUS CAPABILITY GUARD: Checks if ANY selected topic & level supports word problems
     const hasWordProblemSupport = Object.entries(selection).some(([topicId, conf]) => {
         if (!conf?.enabled) return false;
@@ -108,6 +115,24 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
+
+    //  ROBUST COMPLETION SYNC: Triggers whether finishing naturally OR via milestone pause
+    useEffect(() => {
+        if (internalMode === 'SUMMARY' && activeBucket && activeBucket !== 'FREE_PLAY' && activeUnitStepId) {
+            const studentId = profile?.id || 'guest_student';
+            const bucketId = activeBucket.id || 'default_bucket';
+            const storageKeyProgress = `progress_${studentId}_${bucketId}`;
+            try {
+                const raw = localStorage.getItem(storageKeyProgress);
+                const current = raw ? JSON.parse(raw) : [];
+                if (!current.includes(activeUnitStepId)) {
+                    localStorage.setItem(storageKeyProgress, JSON.stringify([...current, activeUnitStepId]));
+                }
+            } catch (err) {
+                console.error("Failed to sync test checkpoint progress:", err);
+            }
+        }
+    }, [internalMode, activeBucket, activeUnitStepId, profile?.id]);
 
     const copyTestLink = () => {
         const updatedMeta = { ...meta, wordProblem: hasWordProblemSupport && useWordProblems, allowCoach: allowCoach };
@@ -137,6 +162,60 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         });
         setSelection(newSelection);
         setMeta(p => ({ ...p, isNationalTest: true, bundleId: bundleId }));
+    };
+
+    const [showSaveToUnitModal, setShowSaveToUnitModal] = useState(false);
+
+    const handleSaveToUnit = async ({ unitId, partId, insertIndex, title }) => {
+        const updatedMeta = { ...meta, wordProblem: hasWordProblemSupport && useWordProblems, allowCoach: allowCoach };
+        const testCode = encodeConfig({ meta: updatedMeta, selection });
+
+        // 1. Fetch current target bucket payload
+        const { data: bucket, error: fetchError } = await supabase
+            .from('teacher_buckets')
+            .select('payload')
+            .eq('id', unitId)
+            .single();
+
+        if (fetchError) throw fetchError;
+
+        const currentParts = bucket?.payload || [];
+        const newStep = {
+            id: `step_test_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            type: 'test',
+            title: title || (lang === 'sv' ? "Delprov" : "Checkpoint Test"),
+            configCode: testCode,
+            questionCount: typeof meta.limit === 'number' ? meta.limit : 10,
+            testMode: meta.mode || 'practice',
+            selectedTopicCount: Object.keys(selection).filter(id => selection[id]?.enabled).length
+        };
+
+        const updatedParts = currentParts.map(part => {
+            if (part.id !== partId) return part;
+            const steps = [...(part.steps || [])];
+            
+            //  Precision insertion: Insert at exact requested position
+            if (typeof insertIndex === 'number' && insertIndex >= 0 && insertIndex <= steps.length) {
+                steps.splice(insertIndex, 0, newStep);
+            } else {
+                steps.push(newStep); // Fallback append
+            }
+
+            return {
+                ...part,
+                steps
+            };
+        });
+
+        // 2. Persist to Supabase
+        const { error: updateError } = await supabase
+            .from('teacher_buckets')
+            .update({ payload: updatedParts })
+            .eq('id', unitId);
+
+        if (updateError) throw updateError;
+
+        alert(lang === 'sv' ? "Delprovet har sparats på den valda platsen!" : "Checkpoint saved at selected position!");
     };
 
     const startNewSession = () => {
@@ -246,8 +325,8 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                 const nextIndex = currentIndex + 1;
                 const limit = Number(meta.limit);
 
-                if (limit > 0 && nextIndex === limit) { 
-                    //   SYNC WIRED: Track final completion
+                //  1. TERMINAL CHECK: Switch to summary when all questions are answered
+                if (limit > 0 && nextIndex >= limit) {
                     const finalCorrect = Object.values(responses).filter(r => r.isCorrect).length + (result.correct ? 1 : 0);
                     syncProgress('test_session_completed', {
                         app_mode: 'test_lab',
@@ -255,10 +334,11 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         final_accuracy: parseFloat((finalCorrect / limit).toFixed(2)),
                         test_mode: meta.mode
                     });
-                    
-                    setInternalMode('SUMMARY'); 
-                    return; 
+                    setInternalMode('SUMMARY');
+                    return;
                 }
+
+                // 2. Milestone check (halfway or every 15 questions)
                 const halfwayPoint = limit > 0 ? Math.floor(limit / 2) : 15;
                 const shouldPause = limit > 0 ? nextIndex === halfwayPoint : nextIndex % 15 === 0;
 
@@ -266,7 +346,9 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     setCooldown(2);
                     setShowMilestone(true);
                 } else {
-                    if (nextIndex === packet.length - 1 && (limit === 0 || packet.length < limit)) { fetchNextSprint(); }
+                    if (nextIndex === packet.length - 1 && (limit === 0 || packet.length < limit)) { 
+                        fetchNextSprint(); 
+                    }
                     setCurrentIndex(nextIndex);
                     setInputValue(''); 
                 }
@@ -381,78 +463,41 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
             <div className={`theme-${themeColor} layout-wrapper font-sans relative z-10 animate-in fade-in`}>
                 <div className="layout-twocol">
                     
-                    {/* LEFT COLUMN: COMMAND CENTER (CONFIG SIDEBAR) */}
+                    {/* LEFT COLUMN: 3-TIER COMMAND CENTER (HIGH CONTRAST & ACCESSIBLE) */}
                     <aside className="layout-sidebar">
                         
-                        {/* Status Card & Test Code */}
-                        <div className="card flex flex-col gap-5">
+                        {/* ZONE 1: FOUNDATION (Header, Preset & Selection Counter) */}
+                        <div className="card flex flex-col gap-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 bg-[var(--brand-solid)] rounded-2xl flex items-center justify-center text-white shadow-md shrink-0">
-                                        <Beaker size={24} />
+                                    <div className="w-11 h-11 bg-emerald-600 dark:bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-md shrink-0">
+                                        <Beaker size={22} />
                                     </div>
                                     <div>
-                                        <h1 className="text-lg font-bold text-[var(--text-main)] leading-none mb-1">{t.title}</h1>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                                            {lang === 'sv' ? 'Konfigurera pass' : 'Configure session'}
+                                        <h1 className="text-lg font-black uppercase tracking-tight text-[var(--text-main)] leading-none mb-1">{t.title}</h1>
+                                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--text-muted)]">
+                                            {lang === 'sv' ? 'Konfigurera test' : 'Configure test'}
                                         </p>
                                     </div>
                                 </div>
                                 <button 
                                     onClick={() => setShowGuideModal(true)}
-                                    className="p-2 text-[var(--brand-text)] hover:bg-[var(--brand-bg)] rounded-[var(--radius-btn)] transition-all border border-[var(--border-main)] flex items-center gap-1 text-[10px] font-black uppercase cursor-pointer"
+                                    className="theme-indigo p-2 bg-[var(--brand-bg)] text-[var(--brand-text)] hover:bg-[var(--brand-solid)] hover:text-white rounded-[var(--radius-btn)] transition-all border-2 border-[var(--brand-border)] flex items-center gap-1 text-[11px] font-black uppercase cursor-pointer shadow-xs active:scale-95"
                                     title={t.guideBtn}
                                 >
-                                    <HelpCircle size={16} />
+                                    <HelpCircle size={16} strokeWidth={2.5} />
                                 </button>
-                            </div>
-
-                            {/* 🟢 FIXED: Contained, copy-ready test code badge */}
-                            <div className="flex flex-col bg-[var(--brand-bg)] p-3 rounded-[var(--radius-btn)] border border-[var(--brand-border)]">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-[var(--brand-text)] opacity-70">
-                                        {t.testCode}
-                                    </span>
-                                    <button 
-                                        type="button" 
-                                        onClick={copyTestLink} 
-                                        className="text-[12px] font-black uppercase tracking-wider text-[var(--brand-text)] hover:underline flex items-center gap-1 cursor-pointer"
-                                    >
-                                        <LayoutGrid size={11} /> {t.copyLink}
-                                    </button>
-                                </div>
-                                <div 
-                                    onClick={copyTestLink}
-                                    title={lang === 'sv' ? "Klicka för att kopiera länk" : "Click to copy link"}
-                                    className="font-mono text-xs font-black tracking-wider text-[var(--brand-text)] bg-[var(--bg-card)] px-2.5 py-1.5 rounded border border-[var(--brand-border)] break-all select-all max-h-16 overflow-y-auto custom-scrollbar cursor-pointer hover:border-[var(--brand-solid)] transition-colors"
-                                >
-                                    {currentTestCode}
-                                </div>
-                            </div>
-
-                            <button onClick={onBack} className="w-full flex items-center justify-center gap-2 py-3 bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] border border-[var(--theme-rose-border)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-sm active:scale-95 cursor-pointer">
-                                <LogOut size={14} /> {t.toDashboard}
-                            </button>
-                        </div>
-
-                        {/* Configuration Controls Stack */}
-                        <div className="card flex flex-col gap-4">
-                            <div className="flex items-center gap-2 ml-1">
-                                <Settings2 size={14} className="text-[var(--text-muted)]" />
-                                <h2 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
-                                    {lang === 'sv' ? "Inställningar" : "Settings"}
-                                </h2>
                             </div>
 
                             {/* Preset Selector */}
                             <div>
-                                <span className="block text-[9px] font-black uppercase text-[var(--text-muted)] tracking-widest mb-1 ml-1">
+                                <span className="block text-[10px] font-black uppercase text-[var(--text-main)] tracking-wider mb-1.5 ml-0.5">
                                     {lang === 'sv' ? "Snabbval (Preset)" : "Presets"}
                                 </span>
                                 <select 
                                     value={meta.bundleId || ""}
                                     onChange={(e) => applyPresetSelection(e.target.value)}
-                                    className="w-full bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] px-3 py-2 font-bold text-xs text-[var(--text-main)] focus:border-[var(--brand-solid)] focus:bg-[var(--bg-card)] outline-none transition-all cursor-pointer"
+                                    className="w-full bg-[var(--bg-surface)] border-2 border-[var(--border-strong)] focus:border-indigo-500 rounded-[var(--radius-btn)] px-3.5 py-2.5 font-bold text-xs text-[var(--text-main)] outline-none transition-all cursor-pointer shadow-inner"
                                 >
                                     <option value="">{lang === 'sv' ? "-- Välj snabbval --" : "-- Choose a preset ---"}</option>
                                     {Object.entries(BUNDLE_PRESETS).map(([id, data]) => (
@@ -461,118 +506,176 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                 </select>
                             </div>
 
-                            {/* Mode Toggle Button */}
+                            {/* High-Contrast Counter Badge */}
+                            <div className="theme-indigo bg-[var(--brand-bg)] p-3 rounded-xl border-2 border-[var(--brand-border)] flex items-center justify-between">
+                                <span className="text-[11px] font-black text-[var(--brand-text)] uppercase tracking-wider">
+                                    {lang === 'sv' ? "Valda områden" : "Selected topics"}
+                                </span>
+                                <span className="text-xs font-black text-white bg-indigo-600 dark:bg-indigo-500 px-2.5 py-0.5 rounded-lg shadow-xs">
+                                    {totalSelectedCount}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* ZONE 2: CONTROLS & BEHAVIOR */}
+                        <div className="card flex flex-col gap-3.5">
+                            <div className="flex items-center gap-2 ml-1">
+                                <Settings2 size={15} className="text-[var(--text-muted)]" />
+                                <h2 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                                    {lang === 'sv' ? "Inställningar" : "Settings"}
+                                </h2>
+                            </div>
+
+                            {/* Mode Toggle (Emerald for Practice, Rose for Exam) */}
                             <button
                                 type="button"
                                 onClick={() => setMeta(p => ({ ...p, mode: p.mode === 'exam' ? 'practice' : 'exam' }))}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer shadow-sm ${
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 shadow-xs cursor-pointer active:scale-98 ${
                                     meta.mode === 'exam' 
-                                        ? 'bg-[var(--theme-rose-bg)] border-[var(--theme-rose-border)] text-[var(--theme-rose-text)]' 
-                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--theme-rose-border)] hover:text-[var(--theme-rose-text)]'
+                                        ? 'theme-rose bg-[var(--brand-bg)] border-[var(--brand-solid)] text-[var(--brand-text)] ring-2 ring-rose-400/20' 
+                                        : 'theme-emerald bg-[var(--brand-bg)] border-[var(--brand-solid)] text-[var(--brand-text)] ring-2 ring-emerald-400/20'
                                 }`}
                             >
-                                <div className="flex items-center gap-2">
-                                    {meta.mode === 'exam' ? <Lock size={14}/> : <Zap size={14}/>}
+                                <div className="flex items-center gap-2.5">
+                                    {meta.mode === 'exam' ? <Lock size={15} strokeWidth={2.5} /> : <Zap size={15} strokeWidth={2.5} />}
                                     <span>{meta.mode === 'exam' ? t.modeExam : t.modePractice}</span>
                                 </div>
-                                <span className="text-[9px] opacity-80 uppercase">
+                                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-[var(--bg-card)] border border-current">
                                     {meta.mode === 'exam' ? (lang === 'sv' ? 'Dolda svar' : 'Hidden') : (lang === 'sv' ? 'Direkt' : 'Instant')}
                                 </span>
                             </button>
 
-                            {/* 🟢 HARDENED WORD PROBLEM BUTTON */}
+                            {/* Question Count Dropdown */}
+                            <div className="flex items-center justify-between bg-[var(--bg-surface)] border-2 border-[var(--border-strong)] rounded-[var(--radius-btn)] px-3.5 py-2.5 shadow-xs">
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <ListChecks size={16} className="text-indigo-600 dark:text-indigo-400" strokeWidth={2.5} />
+                                    <span className="text-xs font-black uppercase tracking-wider text-[var(--text-main)]">
+                                        {lang === 'sv' ? 'Antal frågor:' : 'Length:'}
+                                    </span>
+                                </div>
+                                <select
+                                    value={meta.limit}
+                                    onChange={(e) => setMeta(p => ({ ...p, limit: Number(e.target.value) }))}
+                                    className="bg-[var(--bg-card)] border-2 border-[var(--border-strong)] text-[var(--text-main)] font-black text-xs rounded-lg px-3 py-1 outline-none focus:border-indigo-500 cursor-pointer shadow-inner"
+                                >
+                                    <option value={5}>5 st</option>
+                                    <option value={10}>10 st</option>
+                                    <option value={15}>15 st</option>
+                                    <option value={20}>20 st</option>
+                                    <option value={30}>30 st</option>
+                                    <option value={40}>40 st</option>
+                                    <option value={50}>50 st</option>
+                                    <option value={0}>∞ ({lang === 'sv' ? 'Obegränsat' : 'Infinite'})</option>
+                                </select>
+                            </div>
+
+                            {/* Word Problems (Theme Purple) */}
                             <button
                                 type="button"
                                 disabled={!hasWordProblemSupport}
                                 onClick={() => setUseWordProblems(!useWordProblems)}
-                                title={!hasWordProblemSupport ? (lang === 'sv' ? "Inga valda områden har textuppgifter" : "No selected topics have word problems") : ""}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 shadow-sm ${
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 shadow-xs ${
                                     !hasWordProblemSupport
-                                        ? 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-muted)] opacity-50 cursor-not-allowed'
+                                        ? 'opacity-40 cursor-not-allowed bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-muted)]'
                                         : useWordProblems 
-                                            ? 'bg-[var(--theme-emerald-bg)] border-[var(--theme-emerald-border)] text-[var(--theme-emerald-text)] cursor-pointer' 
-                                            : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--theme-emerald-border)] hover:text-[var(--theme-emerald-text)] cursor-pointer'
+                                            ? 'theme-purple bg-[var(--brand-bg)] border-[var(--brand-solid)] text-[var(--brand-text)] ring-2 ring-purple-400/20 cursor-pointer' 
+                                            : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-purple-400 cursor-pointer'
                                 }`}
                             >
-                                <div className="flex items-center gap-2">
-                                    <HelpCircle size={14} fill={useWordProblems && hasWordProblemSupport ? "currentColor" : "none"} className={useWordProblems && hasWordProblemSupport ? "text-[var(--theme-emerald-bg)]" : ""}/>
+                                <div className="flex items-center gap-2.5">
+                                    <HelpCircle size={15} strokeWidth={2.5} />
                                     <span>{lang === 'sv' ? 'Problemlösning' : 'Word Problems'}</span>
                                 </div>
-                                <span className="text-[9px] opacity-80 uppercase">
+                                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-[var(--bg-card)] border border-current">
                                     {!hasWordProblemSupport 
                                         ? (lang === 'sv' ? 'Ej tillgänglig' : 'N/A') 
                                         : useWordProblems ? (lang === 'sv' ? 'Aktiv' : 'On') : (lang === 'sv' ? 'Av' : 'Off')}
                                 </span>
                             </button>
 
-                            {/* AI Coach Toggle Button */}
+                            {/* Coach / Clues Toggle (Theme Cyan) */}
                             <button
                                 type="button"
                                 onClick={() => setAllowCoach(!allowCoach)}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 cursor-pointer shadow-sm ${
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-[var(--radius-btn)] text-xs font-black uppercase tracking-wider transition-all border-2 shadow-xs cursor-pointer ${
                                     allowCoach 
-                                        ? 'bg-[var(--theme-indigo-bg)] border-[var(--theme-indigo-border)] text-[var(--theme-indigo-text)]' 
-                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-[var(--theme-indigo-border)] hover:text-[var(--theme-indigo-text)]'
+                                        ? 'theme-cyan bg-[var(--brand-bg)] border-[var(--brand-solid)] text-[var(--brand-text)] ring-2 ring-cyan-400/20' 
+                                        : 'bg-[var(--bg-surface)] border-[var(--border-strong)] text-[var(--text-main)] hover:border-cyan-400'
                                 }`}
                             >
-                                <div className="flex items-center gap-2">
-                                    <Info size={14} fill={allowCoach ? "currentColor" : "none"} className={allowCoach ? "text-[var(--theme-indigo-bg)]" : ""}/>
+                                <div className="flex items-center gap-2.5">
+                                    <Info size={15} strokeWidth={2.5} />
                                     <span>{lang === 'sv' ? 'Ledtrådar / Coach' : 'Clues / Coach'}</span>
                                 </div>
-                                <span className="text-[9px] opacity-80 uppercase">
-                                    {allowCoach ? (lang === 'sv' ? 'Tillåten' : 'Allowed') : (lang === 'sv' ? 'Avstängd' : 'Disabled')}
+                                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-[var(--bg-card)] border border-current">
+                                    {allowCoach ? (lang === 'sv' ? 'Tillåten' : 'Allowed') : (lang === 'sv' ? 'Avstängd' : 'Off')}
+                                </span>
+                            </button>
+                        </div>
+
+                        {/* ZONE 3: ACTIONS & DESTINATIONS */}
+                        <div className="card flex flex-col gap-3 p-4 bg-[var(--bg-card)] border-2 border-[var(--border-strong)] shadow-lg">
+                            
+                            {/* Primary Start Action (Visible to Everyone) */}
+                            <button 
+                                type="button"
+                                onClick={startNewSession} 
+                                disabled={totalSelectedCount === 0} 
+                                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white rounded-[var(--radius-btn)] font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-700/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                                <Play size={16} fill="currentColor"/>
+                                <span>{t.startBtn}</span>
+                                <span className="text-[10px] font-black bg-white/20 text-white px-2 py-0.5 rounded-md">
+                                    {totalSelectedCount}
                                 </span>
                             </button>
 
-                            {/* 🟢 FIXED: Dropdown menu with infinity option that never clips */}
-                                <div className="flex items-center justify-between bg-[var(--bg-surface)] border-2 border-[var(--border-strong)] rounded-[var(--radius-btn)] px-3 py-2.5 shadow-sm">
-                                    <div className="flex items-center gap-2 shrink-0">
-                                        <ListChecks size={16} className="text-[var(--text-muted)]"/>
-                                        <span className="text-xs font-black uppercase tracking-wider text-[var(--text-main)]">
-                                            {lang === 'sv' ? 'Antal:' : 'Length:'}
-                                        </span>
-                                    </div>
-                                    
-                                    <select
-                                        value={meta.limit}
-                                        onChange={(e) => setMeta(p => ({ ...p, limit: Number(e.target.value) }))}
-                                        className="bg-[var(--bg-card)] border border-[var(--border-main)] text-[var(--text-main)] font-black text-xs rounded-[var(--radius-btn)] px-3 py-1.5 outline-none focus:border-[var(--brand-solid)] cursor-pointer shadow-inner"
+                            {/* 🔒 TEACHER & ADMIN ONLY: Dual Share / Curriculum Export Actions */}
+                            {isTeacherOrAdmin && (
+                                <div className="grid grid-cols-2 gap-2.5">
+                                    <button 
+                                        type="button" 
+                                        onClick={copyTestLink} 
+                                        disabled={totalSelectedCount === 0}
+                                        className="theme-indigo py-3 px-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider bg-[var(--brand-bg)] text-[var(--brand-text)] border-2 border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white hover:border-[var(--brand-solid)] transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-40 flex items-center justify-center gap-1.5"
                                     >
-                                        <option value={5}>5 {lang === 'sv' ? 'frågor' : 'questions'}</option>
-                                        <option value={10}>10 {lang === 'sv' ? 'frågor' : 'questions'}</option>
-                                        <option value={15}>15 {lang === 'sv' ? 'frågor' : 'questions'}</option>
-                                        <option value={20}>20 {lang === 'sv' ? 'frågor' : 'questions'}</option>
-                                        <option value={30}>30 {lang === 'sv' ? 'frågor' : 'questions'}</option>
-                                        <option value={40}>40 {lang === 'sv' ? 'frågor' : 'questions'}</option>
-                                        <option value={50}>50 {lang === 'sv' ? 'frågor' : 'questions'}</option>
-                                        <option value={0}>∞ ({lang === 'sv' ? 'Obegränsat pass' : 'Infinite'})</option>
-                                    </select>
-                                </div>
+                                        <LayoutGrid size={14} strokeWidth={2.5} /> 
+                                        <span>{t.copyLink}</span>
+                                    </button>
 
-                            {/* Action Buttons: Copy Link & Reset */}
-                            <div className="grid grid-cols-2 gap-2 pt-2">
-                                <button type="button" onClick={copyTestLink} className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider bg-[var(--theme-indigo-bg)] text-[var(--theme-indigo-text)] border border-[var(--theme-indigo-border)] hover:bg-indigo-500 hover:text-white transition-all cursor-pointer shadow-sm active:scale-95">
-                                    <LayoutGrid size={13}/> {t.copyLink}
+                                    <button 
+                                        type="button"
+                                        disabled={totalSelectedCount === 0}
+                                        onClick={() => setShowSaveToUnitModal(true)}
+                                        className="theme-amber py-3 px-2 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider bg-[var(--brand-bg)] text-[var(--brand-text)] border-2 border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white hover:border-[var(--brand-solid)] transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-40 flex items-center justify-center gap-1.5"
+                                    >
+                                        <Bookmark size={14} strokeWidth={2.5} /> 
+                                        <span>{lang === 'sv' ? "Spara i modul" : "Save to Unit"}</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Quiet Utility Row: Reset + Return (Visible to Everyone) */}
+                            <div className="grid grid-cols-2 gap-2 pt-2 border-t-2 border-[var(--border-subtle)]">
+                                <button 
+                                    type="button"
+                                    onClick={resetAllSelection} 
+                                    className="theme-orange py-2 px-3 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                                >
+                                    <RefreshCcw size={12} strokeWidth={2.5} /> 
+                                    <span>{lang === 'sv' ? "Rensa" : "Reset"}</span>
                                 </button>
-                                <button onClick={resetAllSelection} className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider bg-[var(--theme-rose-bg)] text-[var(--theme-rose-text)] border border-[var(--theme-rose-border)] hover:bg-rose-500 hover:text-white transition-all cursor-pointer shadow-sm active:scale-95">
-                                    <RefreshCcw size={13} /> {lang === 'sv' ? "Rensa" : "Reset"}
+
+                                <button 
+                                    type="button"
+                                    onClick={onBack} 
+                                    className="theme-rose py-2 px-3 rounded-lg text-[10px] font-black uppercase tracking-wider bg-[var(--brand-bg)] text-[var(--brand-text)] border border-[var(--brand-border)] hover:bg-[var(--brand-solid)] hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                                >
+                                    <LogOut size={12} strokeWidth={2.5} /> 
+                                    <span>{t.toDashboard}</span>
                                 </button>
                             </div>
                         </div>
-
-                        {/* Prominent Start Button (Now natively maps to Category Theme) */}
-                        <button 
-                            type="button"
-                            onClick={startNewSession} 
-                            disabled={totalSelectedCount === 0} 
-                            className="btn-brand py-4 shadow-xl active:scale-95 disabled:opacity-40"
-                        >
-                            <Play size={16} fill="currentColor"/>
-                            <span>{t.startBtn}</span>
-                            <span className="text-[10px] font-black bg-[var(--bg-card)] text-[var(--brand-text)] px-2 py-0.5 rounded-lg border border-[var(--brand-border)]">
-                                {totalSelectedCount}
-                            </span>
-                        </button>
                     </aside>
 
 
@@ -625,7 +728,7 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                                 </div>
                             </div>
 
-                            {/* 🟢 MULTI-COLUMN RESPONSIVE GRID (2 to 3 columns if space allows) */}
+                            {/*  MULTI-COLUMN RESPONSIVE GRID (2 to 3 columns if space allows) */}
                             <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6 items-start">
                                 {activeCategoryData.topics.map(topic => {
                                     const isEnabled = selection[topic.id]?.enabled;
@@ -756,6 +859,16 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                     lang={lang}
                     userRole={profile?.role || 'teacher'}
                 />
+                {isTeacherOrAdmin && (
+                    <SaveToUnitModal
+                        isOpen={showSaveToUnitModal}
+                        onClose={() => setShowSaveToUnitModal(false)}
+                        onConfirmSave={handleSaveToUnit}
+                        testTitle={meta.bundleId ? BUNDLE_PRESETS[meta.bundleId]?.title : (lang === 'sv' ? "Delprov: Testlabb" : "Test Lab Checkpoint")}
+                        teacherId={profile?.id}
+                        lang={lang}
+                    />
+                )}
             </div>
         );
     }
@@ -787,31 +900,79 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
         return (
             <div className="layout-wrapper font-sans flex flex-col overflow-hidden relative">
                 {/*  Swapped from header-compact to a relative block so it stacks perfectly under App.jsx */}
-                <header className="relative z-30 w-full bg-[var(--bg-surface)] border-b border-[var(--border-main)] px-4 py-2 transition-colors duration-500 no-print">
-                    <div className="w-full flex items-center justify-between gap-2 px-2 sm:px-4">
+                <header className="sticky top-0 z-30 w-full bg-[var(--bg-card)] border-b-2 border-[var(--border-main)] px-4 py-2.5 shadow-sm transition-colors duration-500 no-print">
+                    <div className="max-w-[1400px] mx-auto w-full flex items-center justify-between gap-3">
                         
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => setInternalMode('SETUP')} className="btn-ghost mr-2 text-[9px] font-black uppercase tracking-tight py-2 border border-[var(--border-subtle)] cursor-pointer">
-                                <Settings2 size={12} /> {t.backToLab}
-                            </button>
-                            <button onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} className="btn-ghost cursor-pointer">
-                                <ChevronLeft size={28} />
+                        {/* LEFT POD: Return to Lab Setup or Return to Unit Roadmap */}
+                        <div className="flex items-center gap-2">
+                            {activeBucket && activeBucket !== 'FREE_PLAY' ? (
+                                /*  HIGH CONTRAST AMBER: Unit Roadmap Return */
+                                <button 
+                                    type="button"
+                                    onClick={handleQuit} 
+                                    className="theme-amber px-3.5 py-2 bg-[var(--brand-bg)] hover:bg-[var(--brand-solid)] text-[var(--brand-text)] hover:text-white border-2 border-[var(--brand-border)] hover:border-[var(--brand-solid)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all shadow-xs active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <ChevronLeft size={15} strokeWidth={3} />
+                                    <span>{lang === 'sv' ? "Tillbaka till planeringen" : "Back to Roadmap"}</span>
+                                </button>
+                            ) : (
+                                /*  HIGH CONTRAST INDIGO: Return to TestLab Setup */
+                                <button 
+                                    type="button"
+                                    onClick={() => setInternalMode('SETUP')} 
+                                    className="theme-indigo px-3 py-2 bg-[var(--brand-bg)] hover:bg-[var(--brand-solid)] text-[var(--brand-text)] hover:text-white border-2 border-[var(--brand-border)] hover:border-[var(--brand-solid)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all shadow-xs active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <Settings2 size={14} strokeWidth={2.5} />
+                                    <span>{t.backToLab}</span>
+                                </button>
+                            )}
+
+                            {/* Previous Question Chevron */}
+                            <button 
+                                type="button"
+                                onClick={() => setCurrentIndex(p => Math.max(0, p - 1))} 
+                                disabled={currentIndex === 0}
+                                className="w-9 h-9 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] disabled:opacity-20 flex items-center justify-center transition-all cursor-pointer border border-[var(--border-strong)]"
+                                title={lang === 'sv' ? "Föregående fråga" : "Previous question"}
+                            >
+                                <ChevronLeft size={20} strokeWidth={2.5} />
                             </button>
                         </div> 
 
-                        <div className="flex flex-col items-center">
-                            <h1 className="text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">{t.title}</h1>
-                            <div className="bg-[var(--text-main)] text-[var(--bg-canvas)] px-3 py-1 rounded-[var(--radius-btn)] text-[10px] font-black uppercase italic tracking-widest">
+                        {/* CENTER POD: Test Title & Question Position Badge */}
+                        <div className="flex items-center gap-2 bg-[var(--bg-surface)] p-1.5 px-3 rounded-2xl border border-[var(--border-main)] shadow-inner">
+                            <Beaker size={14} className="text-amber-500 shrink-0" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] hidden sm:inline">
+                                {t.title}
+                            </span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--border-strong)] hidden sm:inline" />
+                            <div className="bg-[var(--text-main)] text-[var(--bg-canvas)] px-3 py-1 rounded-[var(--radius-btn)] text-[11px] font-black uppercase italic tracking-widest">
                                 {currentIndex + 1} / {meta.limit || "∞"}
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => setCurrentIndex(p => Math.min(packet.length - 1, p + 1))} className="btn-ghost cursor-pointer">
-                                <ChevronRight size={28} />
+                        {/* RIGHT POD: Next Question Chevron & Exit */}
+                        <div className="flex items-center gap-2">
+                            {/* Next Question Chevron */}
+                            <button 
+                                type="button"
+                                onClick={() => setCurrentIndex(p => Math.min(packet.length - 1, p + 1))} 
+                                disabled={currentIndex === packet.length - 1}
+                                className="w-9 h-9 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] text-[var(--text-main)] disabled:opacity-20 flex items-center justify-center transition-all cursor-pointer border border-[var(--border-strong)]"
+                                title={lang === 'sv' ? "Nästa fråga" : "Next question"}
+                            >
+                                <ChevronRight size={20} strokeWidth={2.5} />
                             </button>
-                            <button onClick={handleQuit} className="btn-ghost ml-2 px-3 py-2 text-[9px] font-black uppercase tracking-tight hover:!text-[var(--theme-rose-text)] hover:!bg-[var(--theme-rose-bg)] border border-[var(--border-subtle)] cursor-pointer">
-                                {t.toDashboard}
+
+                            {/*  HIGH CONTRAST ROSE: Leave / Exit Session Button */}
+                            <button 
+                                type="button"
+                                onClick={handleQuit} 
+                                className="theme-rose px-3.5 py-2 bg-[var(--brand-bg)] hover:bg-[var(--brand-solid)] text-[var(--brand-text)] hover:text-white border-2 border-[var(--brand-border)] hover:border-[var(--brand-solid)] rounded-[var(--radius-btn)] text-[10px] font-black uppercase tracking-wider transition-all shadow-xs active:scale-95 flex items-center gap-1.5 cursor-pointer ml-1"
+                                title={t.quit}
+                            >
+                                <LogOut size={13} strokeWidth={2.5} />
+                                <span>{t.toDashboard}</span>
                             </button>
                         </div>
                     </div>
@@ -1085,8 +1246,15 @@ export default function TestLabView({ configCode, profile, lang = 'sv', onBack }
                         <button onClick={() => { setPacket([]); setResponses({}); setCurrentIndex(0); setInternalMode('SETUP'); }} className="btn-brand bg-[var(--bg-card)] text-[var(--text-main)] border border-[var(--border-main)] px-8 py-4 rounded-[var(--radius-card)] cursor-pointer">
                             <Settings2 size={16} /> {t.backToLab}
                         </button>
-                        <button onClick={onBack} className="btn-brand px-8 py-4 rounded-[var(--radius-card)] cursor-pointer">
-                            {t.toDashboard} <LogOut size={16} />
+                        <button 
+                            onClick={onBack} 
+                            className="btn-brand px-8 py-4 rounded-[var(--radius-card)] cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase text-xs tracking-wider shadow-lg flex items-center gap-2"
+                        >
+                            <span>
+                                {activeBucket && activeBucket !== 'FREE_PLAY'
+                                    ? (lang === 'sv' ? "Fortsätt i planeringen ➡" : "Continue Roadmap ➡")
+                                    : t.toDashboard}
+                            </span>
                         </button>
                     </div>
 

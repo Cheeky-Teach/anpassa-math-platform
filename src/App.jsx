@@ -170,6 +170,8 @@ function App() {
     const [usedHelp, setUsedHelp] = useState(false);
     const [useWordProblems, setUseWordProblems] = useState(false);
 
+    const [activeUnitStepId, setActiveUnitStepId] = useState(null);
+
     // ---  DETOUR / PREREQUISITE STATE ---
     const [isDetourActive, setIsDetourActive] = useState(false);
     const [originalTask, setOriginalTask] = useState(null);
@@ -541,6 +543,12 @@ function App() {
         setView('landing'); 
     };
 
+    const handleStartUnitCheckpoint = (configCode, stepId) => {
+        setActiveUnitStepId(stepId);
+        setPendingLabConfig(configCode);
+        setView('practice_lab');
+    };
+
     const goHome = () => { 
         setStreak(0); 
         setView('dashboard'); 
@@ -550,6 +558,8 @@ function App() {
         setIsDetourActive(false); 
         setOriginalTask(null);
         setSandboxLab('fractions');
+        setActiveUnitStepId(null); // 🟢 Reset
+        setPendingLabConfig(null);  // 🟢 Reset
     };
 
     const quitPractice = () => { 
@@ -559,6 +569,26 @@ function App() {
         setTimerSettings(prev => ({ ...prev, isActive: false })); 
         setIsDetourActive(false); 
         setOriginalTask(null);
+        setActiveUnitStepId(null); // 🟢 Reset
+    };
+
+    // 🟢 Mark a step complete in the student's active unit progress store
+    const markUnitStepComplete = (stepIdentifier) => {
+        if (!activeBucket || activeBucket === 'FREE_PLAY') return;
+        const studentId = profile?.id || 'guest_student';
+        const bucketId = activeBucket?.id || 'default_bucket';
+        const storageKeyProgress = `progress_${studentId}_${bucketId}`;
+
+        try {
+            const raw = localStorage.getItem(storageKeyProgress);
+            const current = raw ? JSON.parse(raw) : [];
+            if (!current.includes(stepIdentifier)) {
+                const updated = [...current, stepIdentifier];
+                localStorage.setItem(storageKeyProgress, JSON.stringify(updated));
+            }
+        } catch (err) {
+            console.error("Failed to sync unit progression:", err);
+        }
     };
 
     // --- SUBMIT LOGIC W/ PROGRESSION ENGINE ---
@@ -606,13 +636,19 @@ function App() {
                         return;
                     }
 
-                    // Show the Choice Modal
+                    // Show the Choice Modal / Unit Progression
                     if (result.levelUp) {
                         setFeedback('correct');
+                        
+                        // 🟢 Record practice level step completion for active units
+                        if (activeBucket && activeBucket !== 'FREE_PLAY') {
+                            const stepId = `step_prac_${topic}_${level}`;
+                            markUnitStepComplete(stepId);
+                        }
+
                         setTimeout(() => setLevelUpAvailable(true), 1000);
                         return;
                     }
-
                     if ([15, 25, 50].includes(result.newStreak)) setShowStreakModal(true);
                     else setTimeout(() => fetchQuestion(topic, level, lang), 1500);
                 }
@@ -922,8 +958,8 @@ function App() {
                     streak={streak} 
                     ui={ui} 
                 />            
-                {(view === 'dashboard' || view === 'practice' || view === 'times_table' || view === 'practice_lab') && (
-                <header className="sticky top-0 z-50 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
+                {(view === 'dashboard' || view === 'practice' || view === 'times_table') && (
+                <header className="sticky top-0 z-30 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
                     {/*  Reduced y-axis padding to py-1 to slim down the global header */}
                     <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 py-1 flex flex-row items-center justify-between relative">
                         {/* 1. LEFT SIDE: Logo or Back Button */}
@@ -1007,7 +1043,8 @@ function App() {
                                 activeBucket={activeBucket} 
                                 onBackToGateway={() => setActiveBucket(null)} 
                                 onSelect={(t, l) => { setTopic(t); setLevel(l); }} 
-                                onStart={startPractice} 
+                                onStart={startPractice}
+                                onStartCheckpoint={handleStartUnitCheckpoint}
                                 ui={ui} 
                                 onStudioOpen={() => setView('question_studio')} 
                                 onLabOpen={() => setView('practice_lab')}
@@ -1073,6 +1110,7 @@ function App() {
                             setLevelUpAvailable={setLevelUpAvailable}
                             activeBucket={activeBucket}
                             isDetourActive={isDetourActive}
+                            onAdvanceUnitStep={quitPractice}
                         />
                         </DesktopZoomWrapper>
                 ) : view === 'question_studio' ? (
@@ -1106,15 +1144,18 @@ function App() {
                     <DoNowGrid questions={savedPacket} ui={ui} lang={lang} onBack={() => setView('question_studio')} onClose={() => setView('dashboard')} onRefreshAll={handleRefreshAllDoNow} onRefreshOne={handleRefreshOneDoNow} />
                 ) : view === 'practice_lab' ? (
                     <DesktopZoomWrapper>
-                    <TestLabView 
-                        configCode={pendingLabConfig} 
-                        profile={profile}
-                        lang={lang}
-                        onBack={() => {
-                            setPendingLabConfig(null);
-                            setView('dashboard');
-                        }}
-                    />
+                        <TestLabView 
+                            configCode={pendingLabConfig} 
+                            profile={profile}
+                            lang={lang}
+                            activeBucket={activeBucket} // Pass active bucket
+                            activeUnitStepId={activeUnitStepId} // Pass active step id
+                            onBack={() => {
+                                setPendingLabConfig(null);
+                                setActiveUnitStepId(null);
+                                setView('dashboard');
+                            }}
+                        />
                     </DesktopZoomWrapper>
                 ) : view === 'live_session' && activeRoom ? (
                     <DesktopZoomWrapper>
