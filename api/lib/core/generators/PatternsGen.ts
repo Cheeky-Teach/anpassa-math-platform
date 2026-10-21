@@ -38,7 +38,7 @@ export class PatternsGen {
      */
     public generateByVariation(key: string, lang: string = 'sv'): any {
         switch (key) {
-            case 'seq_lie':
+            //case 'seq_lie':
             case 'seq_type':
             case 'seq_diff':
             case 'seq_next':
@@ -95,7 +95,7 @@ export class PatternsGen {
                 sticks.push({ x1: xOffset, y1: 80, x2: xOffset + unitW, y2: 80 });
                 sticks.push({ x1: xOffset + unitW / 2, y1: 40, x2: xOffset + unitW, y2: 80 });
                 if (i === 0) sticks.push({ x1: xOffset, y1: 80, x2: xOffset + unitW / 2, y2: 40 });
-            }
+            } 
             else if (type === 'houses') {
                 if (i === 0) sticks.push({ x1: xOffset, y1: 50, x2: xOffset, y2: 90 });
                 sticks.push({ x1: xOffset, y1: 90, x2: xOffset + unitW, y2: 90 });
@@ -116,11 +116,14 @@ export class PatternsGen {
             { key: 'seq_diff', type: 'calculate' },
             { key: 'seq_next', type: 'calculate' }
         ];
+        
         const v = variationKey || this.getVariation(pool, options);
-
+        /* THIS DOESN'T WORK RIGHT NOW: FIX
         if (v === 'seq_lie') {
             const start = MathUtils.randomInt(2, 8), diff = MathUtils.randomInt(3, 6);
             const seq = [start, start + diff, start + diff * 2, start + diff * 3];
+            
+            // 🟢 CRITICAL: Keep original option wording so token matching succeeds on the backend
             const lie = lang === 'sv' ? `Mönstret hoppar med ${diff + 1} varje steg` : `The pattern jumps by ${diff + 1} each step`;
             const sTrue1 = lang === 'sv' ? `Mönstret hoppar med ${diff} varje steg` : `The pattern jumps by ${diff} each step`;
             const sTrue2 = lang === 'sv' ? `Första talet i raden är ${start}` : `The first number in line is ${start}`;
@@ -128,22 +131,31 @@ export class PatternsGen {
             return {
                 renderData: {
                     description: lang === 'sv' ? "Titta på talen. Vilket påstående stämmer INTE?" : "Look at the numbers. Which statement is NOT correct?",
-                    answerType: 'multiple_choice', options: MathUtils.shuffle([sTrue1, sTrue2, lie]),
+                    answerType: 'multiple_choice', 
+                    options: MathUtils.shuffle([sTrue1, sTrue2, lie]),
                     geometry: { type: 'pattern', subtype: 'sequence', sequence: [...seq, '...'] }
                 },
-                token: this.toBase64(lie), variationKey: v, type: 'concept',
+                token: this.toBase64(lie), 
+                variationKey: v, 
+                type: 'concept',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Vi kollar hur långt hoppet är i mönstret genom att ta det andra talet minus det första." : "Let's find out how large the jump is by taking the second number minus the first.", 
-                        latex: `${seq[1]} - ${seq[0]} = \\mathbf{${diff}}` 
+                        text: lang === 'sv' 
+                            ? "Beräkna differensen genom att subtrahera det första talet från det andra talet." 
+                            : "Calculate the difference by subtracting the first number from the second.", 
+                        latex: `\\text{Differens} = ${seq[1]} - ${seq[0]} = \\mathbf{${diff}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Kontrollera om nästa hopp också är lika stort: ${seq[2]} minus ${seq[1]} blir också ${diff}.` : `Check if the next jump is the same size: ${seq[2]} minus ${seq[1]} also equals ${diff}.`, 
+                        text: lang === 'sv' 
+                            ? `Kontrollera att differensen är konstant i nästa steg:` 
+                            : `Check if the difference is constant for the next step:`, 
                         latex: `${seq[2]} - ${seq[1]} = \\mathbf{${diff}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Eftersom mönstret hela tiden hoppar med ${diff}, så är påståendet "${lie}" helt felaktigt.` : `Since the pattern consistently jumps by ${diff}, the statement "${lie}" is completely wrong.`, 
-                        latex: `\\text{Verkligt hopp} = \\mathbf{${diff}}` 
+                        text: lang === 'sv' 
+                            ? `Mönstrets konstanta differens är ${diff}, vilket gör påståendet "${lie}" felaktigt.` 
+                            : `The constant difference is ${diff}, making the statement "${lie}" incorrect.`, 
+                        latex: `\\text{Verklig differens} = \\mathbf{${diff}}` 
                     },
                     { 
                         text: lang === 'sv' ? `Svar: ${lie}` : `Answer: ${lie}`, 
@@ -151,7 +163,8 @@ export class PatternsGen {
                     }
                 ]
             };
-        }
+        } 
+            */
 
         const d = MathUtils.randomInt(3, 8), s = MathUtils.randomInt(1, 15);
         const seq = [s, s + d, s + d * 2, s + d * 3];
@@ -159,23 +172,31 @@ export class PatternsGen {
         if (v === 'seq_diff') {
             return {
                 renderData: {
-                    description: lang === 'sv' ? "Hur stort är hoppet mellan talen i mönstret?" : "How large is the jump between the numbers in the pattern?",
+                    description: lang === 'sv' ? "Hur stor är differensen mellan talen i mönstret?" : "What is the difference between the numbers in the pattern?",
                     answerType: 'numeric',
                     geometry: { type: 'pattern', subtype: 'sequence', sequence: [...seq, '...'] }
                 },
-                token: this.toBase64(d.toString()), variationKey: v, type: 'calculate',
+                token: this.toBase64(d.toString()), 
+                variationKey: v, 
+                type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Välj de två första talen i raden för att mäta hur mycket mönstret växer." : "Pick the first two numbers in line to measure how much the pattern grows.", 
+                        text: lang === 'sv' 
+                            ? "Välj de två första talen i raden för att beräkna mönstrets differens." 
+                            : "Pick the first two numbers in line to calculate the difference of the pattern.", 
                         latex: `\\text{Mönster: } ${seq[0]}, \\; ${seq[1]}, \\; ${seq[2]}, \\; ${seq[3]}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Ta det andra talet (${seq[1]}) minus det första talet (${seq[0]}) för att räkna ut hoppet.` : `Take the second number (${seq[1]}) minus the first number (${seq[0]}) to calculate the jump.`, 
-                        latex: `\\text{Hopp} = ${seq[1]} - ${seq[0]}` 
+                        text: lang === 'sv' 
+                            ? `Subtrahera det första talet (${seq[0]}) från det andra talet (${seq[1]}):` 
+                            : `Subtract the first number (${seq[0]}) from the second number (${seq[1]}):`, 
+                        latex: `\\text{Differens} = ${seq[1]} - ${seq[0]}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Räkna ut subtraktionen för att hitta svaret." : "Calculate the subtraction to reach the final answer value.", 
-                        latex: `\\text{Hopp} = \\mathbf{${d}}` 
+                        text: lang === 'sv' 
+                            ? "Beräkna subtraktionen för att bestämma differensen." 
+                            : "Calculate the subtraction to reach the final difference.", 
+                        latex: `\\text{Differens} = \\mathbf{${d}}` 
                     },
                     { 
                         text: lang === 'sv' ? `Svar: ${d}` : `Answer: ${d}`, 
@@ -192,18 +213,26 @@ export class PatternsGen {
                 answerType: 'numeric',
                 geometry: { type: 'pattern', subtype: 'sequence', sequence: [...seq, '?'] }
             },
-            token: this.toBase64(next.toString()), variationKey: v, type: 'calculate',
+            token: this.toBase64(next.toString()), 
+            variationKey: v, 
+            type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? "Börja med att ta reda på hur mycket mönstret ökar för varje steg." : "Start by finding out how much the pattern increases for each step.", 
-                    latex: `\\text{Hopp} = ${seq[1]} - ${seq[0]} = \\mathbf{${d}}` 
+                    text: lang === 'sv' 
+                        ? "Bestäm först mönstrets differens genom att ta skillnaden mellan två tal intill varandra." 
+                        : "Start by finding the difference between two consecutive terms.", 
+                    latex: `\\text{Differens} = ${seq[1]} - ${seq[0]} = \\mathbf{${d}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `För att hitta nästa tal lägger vi helt enkelt till hoppet (${d}) till det sista kända talet (${seq[3]}).` : `To find the next number, simply add the jump size (${d}) to the last known number (${seq[3]}).`, 
+                    text: lang === 'sv' 
+                        ? `Addera differensen (${d}) till det sista kända talet (${seq[3]}):` 
+                        : `Add the difference (${d}) to the last known number (${seq[3]}):`, 
                     latex: `? = ${seq[3]} + \\mathbf{${d}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Räkna ut plusset för att få fram det saknade talet." : "Calculate the addition to find the missing number block total.", 
+                    text: lang === 'sv' 
+                        ? "Beräkna additionen för att bestämma nästa tal." 
+                        : "Calculate the addition to find the missing number.", 
                     latex: `? = \\mathbf{${next}}` 
                 },
                 { 
@@ -219,33 +248,52 @@ export class PatternsGen {
         const d = MathUtils.randomInt(4, 9), s = MathUtils.randomInt(2, 10);
         const targetN = MathUtils.randomChoice([10, 20, 50, 100]);
         const ans = s + (targetN - 1) * d;
+        const starttal_b = s - d; // b is figur 0
 
         const backgroundToken = `${s} ; ${d} ; ${targetN}`;
 
         return {
             renderData: {
-                description: lang === 'sv' ? `Vilket värde har tal nummer ${targetN} i mönstret: ${s}, ${s+d}, ${s+d*2}... ?` : `What is the value of number ${targetN} in the pattern: ${s}, ${s+d}, ${s+d*2}... ?`,
+                description: lang === 'sv' 
+                    ? `Vilket värde har tal nummer ${targetN} i mönstret: ${s}, ${s+d}, ${s+d*2}... ?` 
+                    : `What is the value of number ${targetN} in the pattern: ${s}, ${s+d}, ${s+d*2}... ?`,
                 interceptorToken: backgroundToken,
                 answerType: 'numeric',
                 geometry: { type: 'pattern', subtype: 'sequence', sequence: [s, s + d, s + d * 2, '...'] }
             },
-            token: this.toBase64(ans.toString()), variationKey: 'high_term', type: 'calculate',
+            token: this.toBase64(ans.toString()), 
+            variationKey: 'high_term', 
+            type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? "Ta först reda på hur mycket mönstret växer för varje steg." : "First, figure out how much the pattern grows for each step.", 
-                    latex: `\\text{Differens} = ${s+d} - ${s} = \\mathbf{${d}}` 
+                    text: lang === 'sv' 
+                        ? "Formeln för en aritmetisk talföljd är a · n + b, där a är differensen, n är figurnumret och b är starttalet (figur 0)." 
+                        : "The formula for an arithmetic sequence is a · n + b, where a is the common difference, n is the figure number, and b is the zeroth term.", 
+                    latex: `\\text{Formel: } a \\cdot n + b` 
                 },
                 { 
-                    text: lang === 'sv' ? `För att nå fram till tal nummer ${targetN} från början, måste vi ta exakt ${targetN - 1} stycken kliv framåt.` : `To get all the way to number ${targetN} from the start, we must take exactly ${targetN - 1} steps forward.`, 
-                    latex: `\\text{Antal kliv} = ${targetN} - 1 = \\mathbf{${targetN - 1}}` 
+                    text: lang === 'sv' 
+                        ? `Bestäm differensen (a) genom att subtrahera första talet från det andra:` 
+                        : `Determine the difference (a) by subtracting the first term from the second:`, 
+                    latex: `a = ${s+d} - ${s} = \\mathbf{${d}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Räkna ut det totala värdet av alla kliv: gångra antalet kliv (${targetN - 1}) med storleken (${d}).` : `Calculate the total value of all steps combined: multiply the number of steps (${targetN - 1}) by the step size (${d}).`, 
-                    latex: `\\text{Klivens värde} = ${targetN - 1} \\cdot \\mathbf{${d}} = \\mathbf{${(targetN - 1) * d}}` 
+                    text: lang === 'sv' 
+                        ? `Bestäm starttalet (b), alltså talet före det första (figur 0). Ta figur 1 (${s}) minus differensen (${d}):` 
+                        : `Determine the zeroth term (b). Take figure 1 (${s}) minus the difference (${d}):`, 
+                    latex: `b = ${s} - ${d} = \\mathbf{${starttal_b}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Plussa till sist ihop klivens värde med talet vi startade på (${s}) för att hitta slutsvar.` : `Finally, add the step value to our starting number (${s}) to find the final answer block score.`, 
-                    latex: `\\text{Resultat} = ${s} + \\mathbf{${(targetN - 1) * d}} = \\mathbf{${ans}}` 
+                    text: lang === 'sv' 
+                        ? `Sätt in figurnummer n = ${targetN} i formeln (${d} · n ${starttal_b >= 0 ? `+ ${starttal_b}` : `- ${Math.abs(starttal_b)}`}):` 
+                        : `Substitute figure number n = ${targetN} into the formula:`, 
+                    latex: `\\text{Värde} = ${d} \\cdot ${targetN} ${starttal_b >= 0 ? `+ ${starttal_b}` : `- ${Math.abs(starttal_b)}`}` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Multiplicera först: ${d} · ${targetN} = ${d * targetN}. Justera därefter med starttalet för att nå slutsvar:` 
+                        : `Multiply first: ${d} · ${targetN} = ${d * targetN}. Then adjust with the starting value:`, 
+                    latex: `\\text{Resultat} = ${d * targetN} ${starttal_b >= 0 ? `+ ${starttal_b}` : `- ${Math.abs(starttal_b)}`} = \\mathbf{${ans}}` 
                 },
                 { 
                     text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
@@ -272,24 +320,16 @@ export class PatternsGen {
         ];
         const config = MathUtils.randomChoice(shapeConfigs);
         
-        // REFACTOR: Randomize the starting number of shapes (1, 2, or 3)
         const startShapes = MathUtils.randomInt(1, 3);
-        
-        // Calculate the an + b formula parameters
-        // a = increase per figure (constant)
-        // b = startShapes calculation: V = a(n + startShapes - 1) + unitBase
-        // This simplifies to V = an + (a * (startShapes - 1) + unitBase)
         const a = config.diff;
         const b = (a * (startShapes - 1)) + config.unitBase;
 
-        // Generate visual data for Figures 1, 2, and 3
         const figs = [
             this.generateMatchstickData(config.type as any, startShapes),
             this.generateMatchstickData(config.type as any, startShapes + 1),
             this.generateMatchstickData(config.type as any, startShapes + 2)
         ];
 
-        // Actual stick counts for clues
         const counts = [a*1 + b, a*2 + b, a*3 + b];
 
         if (v === 'visual_calc') {
@@ -300,24 +340,34 @@ export class PatternsGen {
 
             return {
                 renderData: {
-                    description: lang === 'sv' ? `Mönstret följer formeln $V = ${a}n + ${b}$. Hur många stickor behövs till figur nummer ${target}?` : `The pattern follows the formula $V = ${a}n + ${b}$. How many sticks are needed for figure number ${target}?`,
+                    description: lang === 'sv' 
+                        ? `Mönstret följer formeln $V = ${a}n + ${b}$. Hur många stickor behövs till figur nummer ${target}?` 
+                        : `The pattern follows the formula $V = ${a}n + ${b}$. How many sticks are needed for figure number ${target}?`,
                     interceptorToken: backgroundToken,
                     answerType: 'numeric',
                     geometry: { type: 'pattern', subtype: 'matchsticks', figures: figs }
                 },
-                token: this.toBase64(ans.toString()), variationKey: v, type: 'calculate',
+                token: this.toBase64(ans.toString()), 
+                variationKey: v, 
+                type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? `Bokstaven n betyder figurnummer. Vi byter ut n mot siffran ${target} i vår mall.` : `The letter n stands for the figure number. We replace n with the number ${target} inside our template layout.`, 
-                        latex: `V = ${a} \\cdot n + ${b}` 
+                        text: lang === 'sv' 
+                            ? `Variabeln n anger figurnumret. Vi ersätter n med ${target} i formeln:` 
+                            : `The variable n represents the figure number. Replace n with ${target} in the formula:`, 
+                        latex: `V = ${a} \\cdot n + ${b} \\implies V = ${a} \\cdot \\mathbf{${target}} + ${b}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Gångra (multiplicera) talen först: ${a} gånger ${target} blir ${a * target}.` : `Multiply the front numbers first: ${a} times ${target} equals ${a * target}.`, 
-                        latex: `V = \\mathbf{${a} \\cdot ${target}} + ${b} \\rightarrow V = \\mathbf{${a * target}} + ${b}` 
+                        text: lang === 'sv' 
+                            ? `Multiplicera differensen (${a}) med figurnumret (${target}):` 
+                            : `Multiply the difference (${a}) by the figure number (${target}):`, 
+                        latex: `${a} \\cdot ${target} = \\mathbf{${a * target}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Plussa till sist ihop svaret med den fasta extrasiffran ${b}.` : `Finally, add the product result to the loose starting number component ${b}.`, 
-                        latex: `V = \\mathbf{${a * target} + ${b}} = \\mathbf{${ans}}` 
+                        text: lang === 'sv' 
+                            ? `Addera starttalet (${b}) till produkten för att få totalt antal stickor:` 
+                            : `Add the initial value (${b}) to the product to get the total number of sticks:`, 
+                        latex: `V = ${a * target} + ${b} = \\mathbf{${ans}}` 
                     },
                     { 
                         text: lang === 'sv' ? `Svar: ${ans}` : `Answer: ${ans}`, 
@@ -330,26 +380,38 @@ export class PatternsGen {
         const formula = `${a}n+${b}`;
         return {
             renderData: {
-                description: lang === 'sv' ? "Vilket uttryck på formen $an + b$ beskriver antalet stickor i mönstret?" : "Which expression of the form $an + b$ describes the number of sticks in the pattern?",
+                description: lang === 'sv' 
+                    ? "Vilket uttryck på formen $an + b$ beskriver antalet stickor i mönstret?" 
+                    : "Which expression of the form $an + b$ describes the number of sticks in the pattern?",
                 answerType: 'text',
                 geometry: { type: 'pattern', subtype: 'matchsticks', figures: figs }
             },
-            token: this.toBase64(formula), variationKey: 'find_formula', type: 'calculate',
+            token: this.toBase64(formula), 
+            variationKey: 'find_formula', 
+            type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? "Räkna hur många tändstickor det finns i de tre första figurerna i bilden." : "Count up how many matchsticks are built into the first three figures shown on screen.", 
+                    text: lang === 'sv' 
+                        ? "Räkna antalet stickor i de tre första figurerna för att identifiera talföljden:" 
+                        : "Count the number of matchsticks in the first three figures to write the sequence:", 
                     latex: `\\text{Figur 1} = ${counts[0]}, \\quad \\text{Figur 2} = ${counts[1]}, \\quad \\text{Figur 3} = ${counts[2]}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Kolla hur mycket mönstret växer för varje ny figur: det plussas på ${a} stickor varje gång. Detta blir talet 'a' framför n.` : `See how much the shape grows with each new step: it adds ${a} sticks every single time. This is our step value 'a' placed before n.`, 
+                    text: lang === 'sv' 
+                        ? `Bestäm differensen (a), alltså hur mycket som läggs till för varje ny figur:` 
+                        : `Determine the difference (a), which is how many sticks are added for each new figure:`, 
                     latex: `a = ${counts[1]} - ${counts[0]} = \\mathbf{${a}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Hitta extrasiffran 'b' genom att ta din första figur (${counts[0]}) minus växt-talet (${a}).` : `Find the loose starting value 'b' by taking your first figure count (${counts[0]}) minus the growth rate (${a}).`, 
+                    text: lang === 'sv' 
+                        ? `Bestäm starttalet (b), alltså värdet vid figur 0. Subtrahera differensen (${a}) från figur 1 (${counts[0]}):` 
+                        : `Determine the zeroth term (b) by subtracting the difference (${a}) from figure 1 (${counts[0]}):`, 
                     latex: `b = ${counts[0]} - ${a} = \\mathbf{${b}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Sätt ihop dina två delar i mallen an + b för att bygga det färdiga uttrycket.` : `Assemble your two discovered pieces into the an + b template map to complete the expression layer score.`, 
+                    text: lang === 'sv' 
+                        ? `Sätt in differensen a = ${a} och starttalet b = ${b} i formeln an + b:` 
+                        : `Substitute the difference a = ${a} and initial term b = ${b} into the formula an + b:`, 
                     latex: `\\text{Uttryck} = \\mathbf{${a}n + ${b}}` 
                 },
                 { 
@@ -374,19 +436,27 @@ export class PatternsGen {
                     answerType: 'numeric',
                     geometry: { type: 'frequency_table', headers: ['n', 'Värde'], rows }
                 },
-                token: this.toBase64(nextVal.toString()), variationKey: v, type: 'calculate',
+                token: this.toBase64(nextVal.toString()), 
+                variationKey: v, 
+                type: 'calculate',
                 clues: [
                     { 
-                        text: lang === 'sv' ? "Kolla på 'Värde'-spalten i tabellen för att se hur mycket siffrorna växer för varje steg nedåt." : "Look closely at the 'Value' column in the chart to spot how much the numbers grow with each step down.", 
-                        latex: `${rows[1][1]} - ${rows[0][1]} = \\mathbf{${a}}` 
+                        text: lang === 'sv' 
+                            ? "Beräkna differensen i värdekolumnen mellan två på varandra följande rader:" 
+                            : "Calculate the common difference in the value column between consecutive rows:", 
+                        latex: `\\text{Differens} = ${rows[1][1]} - ${rows[0][1]} = \\mathbf{${a}}` 
                     },
                     { 
-                        text: lang === 'sv' ? `Eftersom raderna hela tiden ökar med ${a}, lägger vi helt enkelt till ${a} till det sista kända talet (${rows[3][1]}).` : `Since the rows consistently increase by ${a}, simply add ${a} to the last known chart value (${rows[3][1]}).`, 
-                        latex: `? = ${rows[3][1]} + \\mathbf{${a}}` 
+                        text: lang === 'sv' 
+                            ? `Eftersom mönstret ökar med ${a} för varje steg i n, addera differensen till värdet för n = 4 (${rows[3][1]}):` 
+                            : `Since the sequence increases by ${a} for each step of n, add the difference to the value at n = 4 (${rows[3][1]}):`, 
+                        latex: `V(5) = ${rows[3][1]} + \\mathbf{${a}}` 
                     },
                     { 
-                        text: lang === 'sv' ? "Räkna ut plusset på raden för att fylla i den tomma luckan." : "Compute the addition step row to fill in the empty block slot correctly.", 
-                        latex: `? = \\mathbf{${nextVal}}` 
+                        text: lang === 'sv' 
+                            ? "Beräkna additionen för att finna det saknade värdet:" 
+                            : "Calculate the addition to find the missing value:", 
+                        latex: `V(5) = \\mathbf{${nextVal}}` 
                     },
                     { 
                         text: lang === 'sv' ? `Svar: ${nextVal}` : `Answer: ${nextVal}`, 
@@ -398,22 +468,38 @@ export class PatternsGen {
 
         return {
             renderData: {
-                description: lang === 'sv' ? "Bestäm uttrycket $an + b$ som beskriver mönstret i tabellen." : "Determine the expression $an + b$ that describes the pattern inside the chart.",
+                description: lang === 'sv' 
+                    ? "Bestäm uttrycket $an + b$ som beskriver mönstret i tabellen." 
+                    : "Determine the expression $an + b$ that describes the pattern inside the chart.",
                 answerType: 'text',
                 geometry: { type: 'frequency_table', headers: ['n', 'Värde'], rows }
             },
-            token: this.toBase64(`${a}n+${b}`), variationKey: 'table_formula', type: 'calculate',
+            token: this.toBase64(`${a}n+${b}`), 
+            variationKey: 'table_formula', 
+            type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? "Mallen an + b består av två delar. Siffran 'a' framför n är helt enkelt hur mycket tabellvärdet växer för varje rad." : "The an + b layout consists of two puzzle parts. The rate 'a' is simply how much the chart value grows with each row step.", 
+                    text: lang === 'sv' 
+                        ? "Formeln skrivs som an + b, där a är differensen och b är starttalet (värdet vid n = 0)." 
+                        : "The formula is written as an + b, where a is the difference and b is the zeroth term (value at n = 0).", 
+                    latex: `\\text{Allmän formel: } a \\cdot n + b` 
+                },
+                { 
+                    text: lang === 'sv' 
+                        ? `Bestäm differensen (a) genom att subtrahera värdet vid n = 1 från värdet vid n = 2:` 
+                        : `Determine the difference (a) by subtracting the value at n = 1 from the value at n = 2:`, 
                     latex: `a = ${rows[1][1]} - ${rows[0][1]} = \\mathbf{${a}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Siffran 'b' är extrasiffran. Vi hittar den genom att ta tabellens allra första värde (${rows[0][1]}) minus växt-talet (${a}).` : `The piece 'b' is the loose modifier. We find it by taking the chart's very first value (${rows[0][1]}) minus the growth rate (${a}).`, 
+                    text: lang === 'sv' 
+                        ? `Bestäm starttalet (b), alltså värdet vid n = 0, genom att ta värdet vid n = 1 (${rows[0][1]}) minus differensen (${a}):` 
+                        : `Determine the zeroth term (b) at n = 0 by taking the value at n = 1 (${rows[0][1]}) minus the difference (${a}):`, 
                     latex: `b = ${rows[0][1]} - ${a} = \\mathbf{${b}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Sätt ihop dina två funna pusselbitar till det färdiga uttrycket:` : `Assemble your two discovered structural blocks directly into the clean expression framework row:`, 
+                    text: lang === 'sv' 
+                        ? `Sätt ihop differensen a = ${a} och starttalet b = ${b} till det färdiga uttrycket:` 
+                        : `Combine the difference a = ${a} and initial term b = ${b} into the completed expression:`, 
                     latex: `\\text{Uttryck} = \\mathbf{${a}n + ${b}}` 
                 },
                 { 
@@ -434,30 +520,38 @@ export class PatternsGen {
 
         return {
             renderData: {
-                description: lang === 'sv' ? `I ett mönster med formeln $V = ${a}n + ${b}$, vilken figur (n) består av ${total} stycken delar?` : `In a pattern with the formula $V = ${a}n + ${b}$, which figure (n) consists of ${total} parts?`,
+                description: lang === 'sv' 
+                    ? `I ett mönster med formeln $V = ${a}n + ${b}$, vilket figurnummer (n) består av ${total} stycken delar?` 
+                    : `In a pattern with the formula $V = ${a}n + ${b}$, which figure (n) consists of ${total} parts?`,
                 interceptorToken: backgroundToken,
                 answerType: 'numeric'
             },
-            token: this.toBase64(n.toString()), variationKey: 'reverse_calc', type: 'calculate',
+            token: this.toBase64(n.toString()), 
+            variationKey: 'reverse_calc', 
+            type: 'calculate',
             clues: [
                 { 
-                    text: lang === 'sv' ? `Vi ska räkna baklänges! Vi vet att hela uttrycket ska ge summan ${total} totalt på tavlan.` : `We need to work backwards! We know that the whole expression must equal the balance total of ${total} on the board.`, 
+                    text: lang === 'sv' 
+                        ? `Ställ upp ekvationen där formeln sätts lika med det totala antalet (${total}):` 
+                        : `Set up the equation equating the formula to the total value (${total}):`, 
                     latex: `${a}n + ${b} = ${total}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Börja med att städa undan extrasiffran +${b} genom att dra bort (subtrahera) ${b} från totalsumman på båda sidor.` : `Begin by clearing away the loose modifier number +${b} by subtracting ${b} from the total on both sides.`, 
-                    latex: `${a}n + ${b} \\mathbf{- ${b}} = ${total} \\mathbf{- ${b}}` 
+                    text: lang === 'sv' 
+                        ? `Subtrahera starttalet ${b} från båda leden för att isolera termen med n:` 
+                        : `Subtract the constant ${b} from both sides to isolate the term with n:`, 
+                    latex: `${a}n = ${total} - ${b} \\implies ${a}n = \\mathbf{${total - b}}` 
                 },
                 { 
-                    text: lang === 'sv' ? `Förenkla raden: nu vet vi att ${a}n är lika med ${total - b}.` : `Simplify the row line: now we establish that ${a}n equals exactly ${total - b}.`, 
-                    latex: `${a}n = \\mathbf{${total - b}}` 
-                },
-                { 
-                    text: lang === 'sv' ? `Dela (dividera) resultatet med växt-talet ${a} för att frigöra och hitta figurnumret n.` : `Divide that result value by the growth step rate ${a} to isolate and reveal the hidden figure number n.`, 
+                    text: lang === 'sv' 
+                        ? `Dividera båda leden med differensen (${a}) för att lösa ut figurnumret n:` 
+                        : `Divide both sides by the difference (${a}) to solve for figure number n:`, 
                     latex: `n = \\frac{${total - b}}{\\mathbf{${a}}}` 
                 },
                 { 
-                    text: lang === 'sv' ? "Räkna ut delningen för att nå fram till den saknade figuren." : "Compute the final division fraction step to settle the target missing figure index.", 
+                    text: lang === 'sv' 
+                        ? "Utför divisionen för att beräkna figurnumret:" 
+                        : "Perform the division to calculate the figure number:", 
                     latex: `n = \\mathbf{${n}}` 
                 },
                 { 

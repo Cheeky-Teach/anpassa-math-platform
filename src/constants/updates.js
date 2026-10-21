@@ -2,6 +2,35 @@
 
 export const APP_UPDATES = [
   {
+    id: 'v024',
+    date: '2026-10-22',
+    version: '0.2.4',
+    title: { 
+      sv: "Skräddarsydda enheter med genomgångar och delprov",
+      en: "Custom Units with Built-In Walkthroughs & Checkpoint Tests"
+    },
+    highlights: {
+      sv: "Bygg kompletta läromoduler! Sätt ihop egna enheter som sömlöst kombinerar interaktiva genomgångar, övningsnivåer och skräddarsydda delprov.",
+      en: "Build complete learning units! Create custom modules that seamlessly combine interactive walkthroughs, practice levels, and tailored checkpoint tests."
+    },
+    changes: {
+      sv: [
+        "Genomgångar direkt i enheten: Du kan nu lägga till interaktiva presentationssidor som en naturlig del av kursplanen, så att eleverna guidas rätt innan de börjar öva.",
+        "Inbyggda delprov & prov: Konfigurera skräddarsydda övningsprov via Test Lab och baka in dem som viktiga milstolpar (delprov) direkt i enhetens studieväg.",
+        "En tydlig röd tråd för eleverna: Eleverna möts av en överskådlig färdplan på sin dashboard där de bockar av genomgångar, övningsnivåer och provsteg ett i taget med full koll på sin framtidsutveckling.",
+        "Full kontroll på ordningen: Som lärare placerar du ut prov och genomgångar exakt där de gör som mest nytta — i början, mitten eller slutet av varje delmoment.",
+        "Automatisk avprickning: När eleverna blir klara med ett delprov eller en genomgång uppdateras deras framsteg direkt i enheten så att de smidigt kan fortsätta till nästa steg."
+      ],
+      en: [
+        "Walkthroughs Inside Your Units: You can now add interactive presentation slides directly into your roadmap, guiding students properly before they start practicing.",
+        "Built-in Checkpoint Tests: Configure tailor-made practice tests using the Test Lab and embed them as milestone checkpoints right inside the student's study path.",
+        "A Clear Step-by-Step Roadmap: Students see an organized learning path on their dashboard, checking off walkthroughs, practice levels, and test milestones one by one.",
+        "Precise Ordering Control: Teachers can place tests and walkthroughs exactly where they fit best—at the beginning, middle, or end of any unit section.",
+        "Automatic Progress Tracking: When students finish a checkpoint test or a walkthrough, their progress updates automatically so they can seamlessly continue to the next step."
+      ]
+    }
+  },
+  {
     id: 'v023',
     date: '2026-10-17',
     version: '0.2.3',
