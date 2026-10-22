@@ -248,22 +248,29 @@ const Dashboard = ({
         }
     }, [activeTab]);
 
-    // 🟢 Auto-align active selection with next unfinished milestone ONLY when a new milestone is reached
+    // 🟢 Auto-align active selection with next unfinished milestone
     const [lastAutoAlignedStepId, setLastAutoAlignedStepId] = useState(null);
+    const [hasUserManuallySelected, setHasUserManuallySelected] = useState(false);
+
+    // Reset manual selection flag if the unit changes
+    useEffect(() => {
+        setHasUserManuallySelected(false);
+        setLastAutoAlignedStepId(null);
+    }, [activeBucket?.id]);
 
     useEffect(() => {
         if (userRole !== 'student' || !activeBucket || activeBucket === 'FREE_PLAY') return;
         if (!nextUnfinishedStep) return;
+        if (hasUserManuallySelected) return; // 🟢 Stop overriding if the user clicked something!
 
-        // Only auto-select if we haven't already auto-aligned to this specific step.
-        // This stops the dashboard from fighting against the student's manual clicks.
         if (lastAutoAlignedStepId !== nextUnfinishedStep.id) {
             if (nextUnfinishedStep.type === 'practice') {
-                onSelect(nextUnfinishedStep.topic, nextUnfinishedStep.level);
+                const safeTopic = nextUnfinishedStep.topic || nextUnfinishedStep.topicId;
+                onSelect(safeTopic, nextUnfinishedStep.level);
             }
             setLastAutoAlignedStepId(nextUnfinishedStep.id);
         }
-    }, [activeBucket, userRole, nextUnfinishedStep, lastAutoAlignedStepId, onSelect]);
+    }, [activeBucket, userRole, nextUnfinishedStep, lastAutoAlignedStepId, onSelect, hasUserManuallySelected]);
 
     const handleOpenInstruction = async (step) => {
     if (step.sheetId) {
@@ -844,14 +851,18 @@ const Dashboard = ({
                                                         }
 
                                                         // Practice Level Step
-                                                        const isSelected = selectedTopic === step.topic && selectedLevel === step.level;
-                                                        const { description, mathExample } = getLevelMetadata(step.topic, step.level, lang);
+                                                        const safeTopic = step.topic || step.topicId || part.topicId;
+                                                        const isSelected = selectedTopic === safeTopic && selectedLevel === step.level;
+                                                        const { description, mathExample } = getLevelMetadata(safeTopic, step.level, lang);
                                                         const isStepCompleted = completedStepIds.includes(step.id);
 
                                                         return (
                                                             <div 
                                                                 key={step.id || sIdx}
-                                                                onClick={() => onSelect(step.topic, step.level)}
+                                                                onClick={() => {
+                                                                    setHasUserManuallySelected(true); // 🟢 Register manual click
+                                                                    onSelect(safeTopic, step.level);
+                                                                }}
                                                                 className={`group p-3.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 cursor-pointer active:scale-[0.99] ${
                                                                     isSelected 
                                                                         ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20' 
@@ -859,7 +870,7 @@ const Dashboard = ({
                                                                 }`}
                                                             >
                                                                 <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                                                                    {/* 1. Prioritized Step Counter (Shows step number, not level) */}
+                                                                    {/* 1. Prioritized Step Counter */}
                                                                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 transition-colors ${
                                                                         isSelected 
                                                                             ? 'bg-emerald-600 text-white shadow-sm' 
@@ -868,18 +879,17 @@ const Dashboard = ({
                                                                         {sIdx + 1}
                                                                     </div>
 
-                                                                    {/* 2. Title & Math Example, with Level Badge Placed Second */}
+                                                                    {/* 2. Title & Math Example */}
                                                                     <div className="min-w-0 flex-1">
                                                                         <div className="flex items-center gap-2">
                                                                             <span className="font-black text-sm text-[var(--text-main)] truncate">
-                                                                                {description || getTopicName(step.topic, lang)}
+                                                                                {description || getTopicName(safeTopic, lang)}
                                                                             </span>
                                                                             <span className="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md shrink-0 border border-emerald-200/50 dark:border-emerald-800/50">
                                                                                 {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
                                                                             </span>
                                                                         </div>
 
-                                                                        {/* 3. Dark Mode-Safe LaTeX Preview */}
                                                                         {mathExample && (
                                                                             <div className="mt-1 text-xs text-indigo-600 dark:text-indigo-400 font-serif italic truncate flex items-center gap-2 opacity-95 overflow-x-auto no-scrollbar">
                                                                                 <span className="text-[10px] font-sans font-black uppercase tracking-wider text-[var(--text-muted)] not-italic bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
@@ -891,14 +901,14 @@ const Dashboard = ({
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Completed Status / Selection Indicator */}
+                                                                {/* 3. Completed Status / Selection Indicator */}
                                                                 <div className="shrink-0 flex items-center">
                                                                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                                                                         isStepCompleted
                                                                             ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs'
-                                                                            : isSelected 
-                                                                                ? 'border-[var(--brand-solid)] bg-[var(--brand-bg)] text-[var(--brand-solid)]'
-                                                                                : 'border-[var(--border-strong)] group-hover:border-[var(--brand-solid)]'
+                                                                        : isSelected 
+                                                                            ? 'border-[var(--brand-solid)] bg-[var(--brand-bg)] text-[var(--brand-solid)]'
+                                                                        : 'border-[var(--border-strong)] group-hover:border-[var(--brand-solid)]'
                                                                     }`}>
                                                                         {isStepCompleted ? (
                                                                             <Check size={14} strokeWidth={3} />
@@ -1072,7 +1082,7 @@ const Dashboard = ({
                             ? 'translate-y-0 opacity-100' 
                             : 'translate-y-20 opacity-0'
                     }`}>
-                        {activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep ? (
+                        {activeBucket && activeBucket !== 'FREE_PLAY' && nextUnfinishedStep && !hasUserManuallySelected ? (
                             /* Curated Unit Context */
                             nextUnfinishedStep.type === 'test' ? (
                                 <div className="theme-amber">
