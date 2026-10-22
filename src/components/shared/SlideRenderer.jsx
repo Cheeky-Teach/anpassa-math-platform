@@ -123,7 +123,6 @@ export default function SlideRenderer({
                                         <div 
                                             className={`flex flex-col w-full ${alignClass} pointer-events-auto mt-4`}
                                             style={{ 
-                                                // 🟢 NEW: Multiply local scale by globalZoom
                                                 transform: `scale(${(q.scale || 1.0) * globalZoom})`, 
                                                 transformOrigin: q.align === 'start' ? 'top left' : q.align === 'end' ? 'top right' : 'top center',
                                                 transition: 'transform 0.1s ease-out'
@@ -147,14 +146,20 @@ export default function SlideRenderer({
                                                 </div>
                                             )}
 
+                                            {/* 🟢 MULTIPLE CHOICE OPTIONS */}
                                             {rd?.options && rd.options.length > 0 && (
-                                                <div className="mt-6 grid grid-cols-2 gap-4 w-full max-w-md px-4 shrink-0 relative z-30">
-                                                    {rd.options.map((opt, oIdx) => (
-                                                        <div key={oIdx} className={`flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-slate-200 bg-white shadow-sm ${sizeClasses.desc}`}>
-                                                            <span className="font-black text-indigo-500">{['A','B','C','D','E','F'][oIdx]}</span>
-                                                            <MathDisplay content={opt} className="font-bold text-slate-700" />
-                                                        </div>
-                                                    ))}
+                                                <div className="mt-5 grid grid-cols-2 gap-3 w-full max-w-lg px-4 pointer-events-none relative z-30 shrink-0">
+                                                    {rd.options.map((opt, oIdx) => {
+                                                        const choiceLabel = typeof opt === 'object' ? opt.label : opt;
+                                                        return (
+                                                            <div key={oIdx} className="flex items-center gap-3 p-3.5 rounded-2xl border-2 border-slate-200/80 bg-white/95 shadow-sm">
+                                                                <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-black shrink-0">
+                                                                    {['A','B','C','D','E','F'][oIdx]}
+                                                                </div>
+                                                                <MathDisplay content={String(choiceLabel)} className={`font-bold text-slate-700 ${sizeClasses.desc}`} />
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
 

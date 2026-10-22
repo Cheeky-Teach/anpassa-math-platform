@@ -362,3 +362,49 @@ body {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }
+
+/* ========================================= */
+/* GLOBAL RESPONSIVE REM SCALING             */
+/* ========================================= */
+/* 
+  Tailwind uses REM for sizes (p-4 = 1rem, text-sm = 0.875rem).
+  By scaling the root font-size based on screen width/height, 
+  the entire app shrinks proportionally without breaking layout math.
+*/
+html {
+  font-size: 16px; /* Standard 1080p Desktop */
+}
+
+/* 1366x768 Laptops / Chromebooks */
+@media (max-width: 1400px), (max-height: 850px) {
+  html {
+    font-size: 14px; /* Shrinks entire app by ~12.5% */
+  }
+}
+
+/* Small Tablets / Vertically starved screens */
+@media (max-width: 1100px), (max-height: 700px) {
+  html {
+    font-size: 12px; /* Shrinks entire app by 25% */
+  }
+}
+
+/* Extreme constraint (e.g., landscape mobile) */
+@media (max-height: 600px) {
+  html {
+    font-size: 10px; /* Shrinks entire app by 37.5% */
+  }
+}
+
+/* ========================================= */
+/* MODAL VERTICAL CONSTRAINTS                */
+/* ========================================= */
+/* Apply this to modal wrappers so they never push off the bottom of the screen */
+.modal-safe-height {
+  max-height: 100dvh;
+  max-height: 100vh; /* Fallback */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-h: 0;
+}

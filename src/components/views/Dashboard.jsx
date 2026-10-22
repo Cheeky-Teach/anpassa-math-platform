@@ -248,17 +248,22 @@ const Dashboard = ({
         }
     }, [activeTab]);
 
-    // 🟢 Auto-align active selection with next unfinished milestone
+    // 🟢 Auto-align active selection with next unfinished milestone ONLY when a new milestone is reached
+    const [lastAutoAlignedStepId, setLastAutoAlignedStepId] = useState(null);
+
     useEffect(() => {
         if (userRole !== 'student' || !activeBucket || activeBucket === 'FREE_PLAY') return;
         if (!nextUnfinishedStep) return;
 
-        if (nextUnfinishedStep.type === 'practice') {
-            if (selectedTopic !== nextUnfinishedStep.topic || selectedLevel !== nextUnfinishedStep.level) {
+        // Only auto-select if we haven't already auto-aligned to this specific step.
+        // This stops the dashboard from fighting against the student's manual clicks.
+        if (lastAutoAlignedStepId !== nextUnfinishedStep.id) {
+            if (nextUnfinishedStep.type === 'practice') {
                 onSelect(nextUnfinishedStep.topic, nextUnfinishedStep.level);
             }
+            setLastAutoAlignedStepId(nextUnfinishedStep.id);
         }
-    }, [activeBucket, userRole, nextUnfinishedStep, selectedTopic, selectedLevel, onSelect]);
+    }, [activeBucket, userRole, nextUnfinishedStep, lastAutoAlignedStepId, onSelect]);
 
     const handleOpenInstruction = async (step) => {
     if (step.sheetId) {

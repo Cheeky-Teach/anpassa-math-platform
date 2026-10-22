@@ -63,41 +63,12 @@ import { checkDetourTrigger, checkDetourCompletion } from './core/rules/Progress
 
 export const PreferencesContext = createContext();
 
-// --- DESKTOP AUTO-SCALER WRAPPER ---
-// Automatically zooms out on laptops/desktops to compensate for browser UI bars, 
-// but leaves mobile phones alone so text remains readable.
-const DesktopZoomWrapper = ({ children, forceConstrain = false }) => {
-    const [zoomLevel, setZoomLevel] = useState(1);
-
-    useEffect(() => {
-        const calculateZoom = () => {
-            // Apply 95% zoom on screens wider than an iPad
-            if (window.innerWidth > 1024) {
-                setZoomLevel(0.95);
-            } else {
-                setZoomLevel(1);
-            }
-        };
-        
-        calculateZoom();
-        window.addEventListener('resize', calculateZoom);
-        return () => window.removeEventListener('resize', calculateZoom);
-    }, []);
-
-    // Automatically calculates the exact viewport height needed
-    // Example: 100 / 0.95 = 105.26vh (or 111.11vh if you used 0.90)
-    const compensatedHeight = `${(100 / zoomLevel).toFixed(2)}vh`;
-
+// --- RESPONSIVE FLEX WRAPPER ---
+// Relies on CSS REM scaling in theme.css for sizing, while using flexbox 
+// min-h-0 to ensure child elements can shrink safely without causing vertical overflow.
+const ResponsiveWrapper = ({ children, forceConstrain = false }) => {
     return (
-        <div 
-            style={{ 
-                zoom: zoomLevel, 
-                height: forceConstrain ? compensatedHeight : 'auto',
-                minHeight: !forceConstrain ? compensatedHeight : 'auto',
-                overflow: forceConstrain ? 'hidden' : 'visible'
-            }} 
-            className="w-full flex flex-col"
-        >
+        <div className={`w-full flex flex-col flex-1 ${forceConstrain ? 'overflow-hidden min-h-0 h-full' : ''}`}>
             {children}
         </div>
     );
@@ -959,7 +930,7 @@ function App() {
                     ui={ui} 
                 />            
                 {(view === 'dashboard' || view === 'practice' || view === 'times_table') && (
-                <header className="sticky top-0 z-30 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
+                <header className="sticky top-0 z-10 w-full border-b border-[var(--border-main)] header-glass transition-colors duration-500">
                     {/*  Reduced y-axis padding to py-1 to slim down the global header */}
                     <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-8 py-1 flex flex-row items-center justify-between relative">
                         {/* 1. LEFT SIDE: Logo or Back Button */}
@@ -1006,7 +977,7 @@ function App() {
 
             <div className="flex-1 flex flex-col relative overflow-x-hidden">
                 {view === 'dashboard' ? (
-                    <DesktopZoomWrapper>
+                    <ResponsiveWrapper>
                         {/* Show Gateway ONLY if student hasn't selected a bucket yet */}
                         {profile?.role === 'student' && !activeBucket ? (
                             <GhostRadioGatekeeper 
@@ -1073,7 +1044,7 @@ function App() {
                                 resetTimer={() => setTimerSettings({duration:0, remaining:0, isActive:false})} 
                             />
                         )}
-                    </DesktopZoomWrapper>
+                    </ResponsiveWrapper>
                 ) : view === 'profile' ? (
                     <ProfileView profile={profile} onBack={() => { fetchProfile(session.user.id); setView('dashboard'); }} lang={lang} />
                 ) : view === 'presentation' ? ( 
@@ -1095,7 +1066,7 @@ function App() {
                         onBack={() => setView('dashboard')} 
                     />
                 ) : view === 'practice' ? (
-                        <DesktopZoomWrapper>
+                        <ResponsiveWrapper>
                         <PracticeView
                             lang={lang} ui={ui} question={question} loading={loading} feedback={feedback} streak={streak} input={input} setInput={setInput} 
                             handleSubmit={handleSubmit} handleHint={handleHint} handleSolution={handleSolution} handleSkip={handleSkip}
@@ -1112,9 +1083,9 @@ function App() {
                             isDetourActive={isDetourActive}
                             onAdvanceUnitStep={quitPractice}
                         />
-                        </DesktopZoomWrapper>
+                        </ResponsiveWrapper>
                 ) : view === 'question_studio' ? (
-                    <DesktopZoomWrapper forceConstrain={true}>
+                    <ResponsiveWrapper forceConstrain={true}>
                     <QuestionStudio profile={profile} ui={ui} lang={lang} initialPacket={savedPacket} setInitialPacket={setSavedPacket} sheetTitle={sheetTitle} setSheetTitle={setSheetTitle} studioMode={studioMode} setStudioMode={setStudioMode} includeAnswerKey={includeAnswerKey} setIncludeAnswerKey={setIncludeAnswerKey} answerKeyStyle={answerKeyStyle} setAnswerKeyStyle={setAnswerKeyStyle} onClose={() => setView('dashboard')} 
                         onWorksheetGenerate={(p) => { 
                             setSavedPacket(p); 
@@ -1137,13 +1108,13 @@ function App() {
                                 saveFeatureState('donow_generation', { count: 1, size: pack.length });
                             } 
                         }} />
-                    </DesktopZoomWrapper>
+                    </ResponsiveWrapper>
                 ) : view === 'print' ? (
                     <PrintView packet={savedPacket} title={sheetTitle} lang={lang} onBack={() => setView('question_studio')} includeAnswerKey={includeAnswerKey} answerKeyStyle={answerKeyStyle} />
                 ) : view === 'do_now' ? (
                     <DoNowGrid questions={savedPacket} ui={ui} lang={lang} onBack={() => setView('question_studio')} onClose={() => setView('dashboard')} onRefreshAll={handleRefreshAllDoNow} onRefreshOne={handleRefreshOneDoNow} />
                 ) : view === 'practice_lab' ? (
-                    <DesktopZoomWrapper>
+                    <ResponsiveWrapper>
                         <TestLabView 
                             configCode={pendingLabConfig} 
                             profile={profile}
@@ -1156,9 +1127,9 @@ function App() {
                                 setView('dashboard');
                             }}
                         />
-                    </DesktopZoomWrapper>
+                    </ResponsiveWrapper>
                 ) : view === 'live_session' && activeRoom ? (
-                    <DesktopZoomWrapper>
+                    <ResponsiveWrapper>
                         <GhostRadioGatekeeper 
                             classCode={activeRoom.class_code} 
                             lang={lang}
@@ -1172,7 +1143,7 @@ function App() {
                                 onBack={handleStudentExitLive} 
                             />
                         </GhostRadioGatekeeper>
-                    </DesktopZoomWrapper>
+                    </ResponsiveWrapper>
                 ) : view === 'teacher_live' && activeRoom ? (
                     <TeacherLiveView 
                         session={activeRoom} 

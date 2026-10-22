@@ -210,8 +210,25 @@ export default function InstructionSlideCard({
                             <MathDisplay content={compileAnchoredStory(question, lang) || rd?.description || question.text} />
                         </div>
 
+                        {/* 🟢 NEW: MULTIPLE CHOICE OPTIONS IN THE QUESTION PROMPT */}
+                        {rd?.options && rd.options.length > 0 && (
+                            <div className="mt-3 grid grid-cols-2 gap-2 w-full">
+                                {rd.options.map((opt, oIdx) => {
+                                    const choiceLabel = typeof opt === 'object' ? opt.label : opt;
+                                    return (
+                                        <div key={oIdx} className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50/50 shadow-sm">
+                                            <div className="w-5 h-5 rounded-md bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-black shrink-0">
+                                                {['A','B','C','D','E','F'][oIdx]}
+                                            </div>
+                                            <MathDisplay content={String(choiceLabel)} className="font-bold text-slate-700 text-xs sm:text-sm" />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
                         {rd?.latex && !rd?.geometry && (
-                            <div className={`mt-2 ${hasVisual ? 'py-1.5 px-3 text-lg sm:text-xl' : 'py-2.5 px-4 text-xl sm:text-2xl'} bg-indigo-50/40 rounded-xl border border-indigo-100 text-center font-serif text-slate-900 shadow-xs transition-all`}>
+                            <div className={`mt-3 ${hasVisual ? 'py-1.5 px-3 text-lg sm:text-xl' : 'py-2.5 px-4 text-xl sm:text-2xl'} bg-indigo-50/40 rounded-xl border border-indigo-100 text-center font-serif text-slate-900 shadow-xs transition-all`}>
                                 <MathDisplay content={`$$${rd.latex}$$`} />
                             </div>
                         )}
@@ -306,7 +323,7 @@ export default function InstructionSlideCard({
                                         );
                                     })}
 
-                                {/* 🟢 NEW: End-of-Walkthrough Callout directly underneath the last clue */}
+                                {/* 🟢 End-of-Walkthrough Callout directly underneath the last clue */}
                                 {isAtLastStep && onRegenerate && (
                                     <div className="mt-4 p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300 flex flex-col items-center text-center gap-3">
                                         <div className="flex items-center gap-1.5 text-emerald-700 font-black text-xs uppercase tracking-wider">

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, BookOpen, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ChevronLeft, ChevronRight, BookOpen, Check, RefreshCw } from 'lucide-react';
 import SlideViewerCore from '../shared/SlideViewerCore';
 
 export default function InstructionSlideModal({
@@ -13,23 +13,89 @@ export default function InstructionSlideModal({
     lang = 'sv'
 }) {
     const [currentSlideIndex, setCurrentSlideIndex] = useState(initialSlideIndex);
+    
+    // 🟢 1. Local state for BOTH slides and the packet (the true source of math data)
+    const [localSlides, setLocalSlides] = useState([]);
+    const [localPacket, setLocalPacket] = useState([]);
+    const [isRegenerating, setIsRegenerating] = useState(false);
 
-    if (!isOpen || slides.length === 0) return null;
+    useEffect(() => {
+        if (slides.length > 0) setLocalSlides(slides);
+        if (livePacket.length > 0) setLocalPacket(livePacket);
+    }, [slides, livePacket]);
 
-    const currentSlide = slides[currentSlideIndex] || slides[0];
-    const isLastSlide = currentSlideIndex >= slides.length - 1;
+    if (!isOpen || localSlides.length === 0) return null;
+
+    const currentSlide = localSlides[currentSlideIndex] || localSlides[0];
+    const isLastSlide = currentSlideIndex >= localSlides.length - 1;
 
     const handlePrev = () => {
         if (currentSlideIndex > 0) setCurrentSlideIndex(prev => prev - 1);
     };
 
     const handleNext = () => {
-        if (currentSlideIndex < slides.length - 1) setCurrentSlideIndex(prev => prev + 1);
+        if (currentSlideIndex < localSlides.length - 1) setCurrentSlideIndex(prev => prev + 1);
+    };
+
+    // 🟢 2. The exact same regeneration logic used in TeacherLiveView (but local only)
+    const handleRegenerate = async (passedId, passedTopic, passedVariation) => {
+        if (isRegenerating) return;
+        setIsRegenerating(true);
+        
+        try {
+            // Determine which items to update. 
+            // If the button passed specific info, use it. Otherwise, find all active items on the slide.
+            let itemsToUpdate = [];
+
+            if (passedId && passedTopic && passedVariation) {
+                const idx = localPacket.findIndex(p => p.id === passedId);
+                if (idx !== -1) {
+                    itemsToUpdate.push({ item: localPacket[idx], index: idx, topicId: passedTopic, variationKey: passedVariation });
+                }
+            } else {
+                const activeIds = currentSlide?.activeIds || [];
+                itemsToUpdate = activeIds.map(id => {
+                    const idx = localPacket.findIndex(p => p.id === id);
+                    return { item: localPacket[idx], index: idx, topicId: localPacket[idx]?.topicId, variationKey: localPacket[idx]?.variationKey };
+                }).filter(obj => obj.item && obj.topicId && obj.variationKey);
+            }
+
+            if (itemsToUpdate.length === 0) return;
+
+            // Fetch new data concurrently just like TeacherLiveView
+            const updatedItems = await Promise.all(itemsToUpdate.map(async ({ item, topicId, variationKey }) => {
+                const isWordProblem = item.selectedStoryIndex !== null && item.selectedStoryIndex !== undefined;
+                const res = await fetch(`/api/question?topic=${topicId}&variation=${variationKey}&lang=${lang}&wordProblem=${isWordProblem}`);
+                
+                if (!res.ok) throw new Error("API request failed");
+                const data = await res.json();
+                
+                return {
+                    ...item,
+                    resolvedData: data,
+                    regenVersion: Date.now() // Force re-render
+                };
+            }));
+
+            // 🟢 Update the local packet (SlideViewerCore will instantly react to this)
+            setLocalPacket(prev => {
+                const next = [...prev];
+                itemsToUpdate.forEach((obj, i) => {
+                    next[obj.index] = updatedItems[i];
+                });
+                return next;
+            });
+
+        } catch (error) {
+            console.error("Error regenerating example:", error);
+        } finally {
+            setIsRegenerating(false);
+        }
     };
 
     return (
         <div className="fixed inset-0 z-[300] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200 select-none">
-            <div className="bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden">
+            <div className="bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden relative">
                 
                 {/* 1. Header Bar */}
                 <div className="px-6 py-3.5 bg-slate-900/95 border-b border-slate-800 flex items-center justify-between shrink-0">
@@ -49,9 +115,9 @@ export default function InstructionSlideModal({
 
                     <div className="flex items-center gap-3">
                         {/* Slide Counter Indicator */}
-                        {slides.length > 1 && (
+                        {localSlides.length > 1 && (
                             <div className="text-[11px] font-black text-slate-400 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
-                                {currentSlideIndex + 1} / {slides.length}
+                                {currentSlideIndex + 1} / {localSlides.length}
                             </div>
                         )}
                         <button
@@ -67,8 +133,8 @@ export default function InstructionSlideModal({
                 {/* 2. Main 16:9 Presentation Viewport */}
                 <div className="flex-1 bg-slate-950 p-4 sm:p-6 flex items-center justify-center relative overflow-hidden min-h-0">
                     
-                    {/* Navigation Arrows for multi-slide presentations */}
-                    {slides.length > 1 && (
+                    {/* Navigation Arrows */}
+                    {localSlides.length > 1 && (
                         <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between pointer-events-none z-30">
                             <button
                                 type="button"
@@ -81,7 +147,7 @@ export default function InstructionSlideModal({
                             <button
                                 type="button"
                                 onClick={handleNext}
-                                disabled={currentSlideIndex >= slides.length - 1}
+                                disabled={isLastSlide}
                                 className="w-11 h-11 rounded-xl bg-slate-900/90 text-white border border-slate-700 hover:bg-indigo-600 disabled:opacity-0 disabled:pointer-events-none pointer-events-auto flex items-center justify-center transition-all shadow-lg cursor-pointer"
                             >
                                 <ChevronRight size={24} />
@@ -93,17 +159,17 @@ export default function InstructionSlideModal({
                     <div className="w-full h-full max-w-[1400px] max-h-[787px] flex items-center justify-center">
                         <SlideViewerCore
                             slide={currentSlide}
-                            livePacket={livePacket}
+                            livePacket={localPacket} // 🟢 Pass local packet here!
                             lang={lang}
                             bgType="blank"
                             globalZoom={1.2}
-                            authorMode={false} // Student read-only view
+                            authorMode={false}
                             slideRendererProps={{
                                 clueViewMode: 'steps',
                                 currentFocusedQuestion: null,
                                 coachProps: {},
                                 onSpotlight: () => {},
-                                onRegenerate: () => {},
+                                onRegenerate: handleRegenerate, // 🟢 Inject real function
                                 setIsSaving: () => {}
                             }}
                             interactiveCanvasProps={{
@@ -118,10 +184,20 @@ export default function InstructionSlideModal({
                     </div>
                 </div>
 
+                {/* Loading indicator overlay during regen */}
+                {isRegenerating && (
+                    <div className="absolute inset-0 bg-slate-950/20 z-[350] flex flex-col items-center justify-center pointer-events-none">
+                        <div className="bg-slate-900 text-white px-4 py-2 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2">
+                            <RefreshCw size={16} className="animate-spin text-indigo-400" />
+                            <span className="text-xs font-black tracking-widest uppercase">{lang === 'sv' ? "Hämtar..." : "Loading..."}</span>
+                        </div>
+                    </div>
+                )}
+
                 {/* 3. Bottom Action Bar */}
                 <div className="px-6 py-3.5 bg-slate-900/95 border-t border-slate-800 flex items-center justify-between shrink-0">
                     <div>
-                        {slides.length > 1 && !isLastSlide && (
+                        {localSlides.length > 1 && !isLastSlide && (
                             <button
                                 type="button"
                                 onClick={handleNext}
