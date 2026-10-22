@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Loader2, RefreshCcw, Type, Calculator, Zap, Plus } from 'lucide-react';
+import { Search, X, Loader2, RefreshCcw, Type, Calculator, Zap, Plus, BookOpen } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer';
 
