@@ -88,9 +88,16 @@ export default function InteractiveCanvas({
             setElements(prev => {
                 if (!Array.isArray(prev) || !prev.some(el => el.type === 'timer' && el.isRunning)) return prev;
                 return prev.map(el => {
-                    if (el.type === 'timer' && el.isRunning && el.timeLeft > 0) {
-                        const nextTime = el.timeLeft - 1;
-                        return { ...el, timeLeft: nextTime, isRunning: nextTime > 0 };
+                    if (el.type === 'timer' && el.isRunning) {
+                        // Stopwatch mode: count upwards
+                        if (el.timerMode === 'stopwatch') {
+                            return { ...el, timeLeft: (el.timeLeft || 0) + 1 };
+                        }
+                        // Timer mode: count down to 0
+                        if (el.timeLeft > 0) {
+                            const nextTime = el.timeLeft - 1;
+                            return { ...el, timeLeft: nextTime, isRunning: nextTime > 0 };
+                        }
                     }
                     return el;
                 });
@@ -548,7 +555,11 @@ export default function InteractiveCanvas({
         const h = Number(el.height) || 0;
         const r = w / 2;
 
-        const bounds = ['rect', 'coord', 't_chart', 'tchart', 'triangle', 'ruler', 'shapes_3d', 'math', 'dice', 'richText', 'calculator', 'dynamicClues', 'volume_cue', 'algebra_tile', 'frac_rect'];
+        const bounds = [
+            'rect', 'coord', 't_chart', 'tchart', 'triangle', 
+            'ruler', 'shapes_3d', 'math', 'richText', 'calculator', 
+            'dynamicClues', 'volume_cue', 'polygon',
+            'algebra_tile', 'frac_rect', 'angle_arc'];
         if (bounds.some(b => el.type.includes(b))) {
             return (
                 x >= el.x - padding && 
@@ -577,8 +588,13 @@ export default function InteractiveCanvas({
         if (e.cancelable && activeTool !== 'select') e.preventDefault();
         
         const isInput = e.target.tagName?.toLowerCase() === 'input' || e.target.tagName?.toLowerCase() === 'textarea';
-        if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]') || isInput) return;
-
+        if (
+            e.target.closest('.ui-ignore') || 
+            e.target.closest('[contenteditable="true"]') || 
+            e.target.closest('.interactive-slice') || 
+            e.target.closest('.dice-die') ||
+            isInput) return;
+        
         if (svgRef.current && typeof svgRef.current.setPointerCapture === 'function') {
             try { svgRef.current.setPointerCapture(e.pointerId); } catch (err) {}
         }
@@ -586,6 +602,11 @@ export default function InteractiveCanvas({
 
         const { x, y } = getCoordinates(e, false);
         dragCoordRef.current = { x, y };
+
+        // 🟢 If clicking directly on a clickable slice or tool action, let the tool handle it
+        if (e.target.closest('.interactive-slice') || e.target.closest('.ui-ignore')) {
+            return;
+        }
 
         const targetNode = e.target.closest('[data-id]');
         const hitId = targetNode ? targetNode.getAttribute('data-id') : null;
@@ -754,6 +775,12 @@ export default function InteractiveCanvas({
         }
         if (!isDrawing) return;
 
+        // 🟢 Reset states unconditionally on mouse up
+        setIsDrawing(false); 
+        setInteractionMode(null);
+        selectionBoxRef.current = null;
+        setSelectionBox(null);
+
         if (interactionMode === 'box-selecting' && selectionBoxRef.current) {
             const box = selectionBoxRef.current;
             const minW = Math.abs(box.currentX - box.startX);
@@ -813,17 +840,20 @@ export default function InteractiveCanvas({
         };
     }, [isDrawing, interactionMode, selectedIds, activeTool]);
 
-    const renderHandles = (el, radius = 0) => {
+    const renderHandles = (el, radius = 0, options = {}) => {
+        const { canRotate = true } = typeof radius === 'object' ? radius : options;
+        const actualRadius = typeof radius === 'number' ? radius : 0;
+
         const isC = ['circle', 'frac_circle', 'spinner', 'node', 'clock', 'timer', 'realClock'].includes(el.type);
         const isP = el.type === 'protractor';
-        const objHeight = isP ? radius : (isC ? radius * 2 : (Number(el.height) || 200));
-        const objWidth = isC || isP ? radius * 2 : (Number(el.width) || 200);
+        const objHeight = isP ? actualRadius : (isC ? actualRadius * 2 : (Number(el.height) || 200));
+        const objWidth = isC || isP ? actualRadius * 2 : (Number(el.width) || 200);
         
         const padding = 16;
-        const topY = el.y - 56;                // Above top-left corner
-        const botY = el.y + objHeight + 14;     // Below bottom boundary
-        const cx = (isC || isP) ? el.x + radius : el.x + objWidth / 2;
-        const rigX = (isC || isP) ? el.x + radius * 2 : el.x + objWidth;
+        const topY = el.y - 56;
+        const botY = el.y + objHeight + 14;
+        const cx = (isC || isP) ? el.x + actualRadius : el.x + objWidth / 2;
+        const rigX = (isC || isP) ? el.x + actualRadius * 2 : el.x + objWidth;
 
         const Tool = getToolDefinition(el.type);
         const hasCustomContextMenu = Tool && typeof Tool.renderContextMenu === 'function';
@@ -842,7 +872,7 @@ export default function InteractiveCanvas({
                     strokeWidth="1.5" 
                     strokeDasharray="5 4" 
                     opacity="0.6" 
-                    className="pointer-events-none"
+                    className="pointer-events-none" 
                 />
                 
                 {/* 3. Top-Left System Actions (Move, Copy, Delete) */}
@@ -879,12 +909,12 @@ export default function InteractiveCanvas({
                     </div>
                 </foreignObject>
 
-                {/* 4. Bottom Context Menu (Spawns BELOW the element boundaries) */}
+                {/* 4. Bottom Context Menu */}
                 {hasCustomContextMenu && (
-                    <foreignObject x={el.x} y={botY} width={650} height={56} className="overflow-visible pointer-events-auto">
+                    <foreignObject x={el.x} y={botY + 6} width={800} height={70} className="overflow-visible pointer-events-auto">
                         <div 
                             onPointerDown={(e) => e.stopPropagation()} 
-                            className="flex items-center gap-3 !bg-white !text-slate-900 px-3.5 py-1.5 rounded-2xl border-2 border-slate-200/90 shadow-xl pointer-events-auto text-sm font-bold font-sans w-max"
+                            className="flex items-center gap-3.5 !bg-white !text-slate-900 px-4 py-2 rounded-2xl border-2 border-slate-200/90 shadow-2xl pointer-events-auto text-sm font-bold font-sans w-max select-none"
                             style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
                         >
                             {Tool.renderContextMenu({
@@ -900,7 +930,12 @@ export default function InteractiveCanvas({
                 )}
 
                 {/* 5. Adjustment Handles */}
-                <circle cx={cx} cy={el.y - 14} r={8} fill="white" stroke="#3b82f6" strokeWidth="2" className="cursor-alias" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating'); setIsDrawing(true);}} />
+                {/* 🟢 Rotation handle renders only if canRotate is true */}
+                {canRotate && el.type !== 'volume_cue' && (
+                    <circle cx={cx} cy={el.y - 14} r={8} fill="white" stroke="#3b82f6" strokeWidth="2" className="cursor-alias" onPointerDown={(e)=>{e.stopPropagation(); setInteractionMode('rotating'); setIsDrawing(true);}} />
+                )}
+                
+                {/* 🟢 Resize Handle (Bottom-Right) remains active */}
                 <rect 
                     x={rigX - 9} 
                     y={el.y + objHeight - 9} 
@@ -940,6 +975,7 @@ export default function InteractiveCanvas({
                 setSelectedId: (id) => setSelectedIds(id ? [id] : []),
                 setInteractionMode,
                 setIsDrawing,
+                isDrawing,
                 getCoordinates,
                 editingId,              
                 setEditingId,
@@ -957,6 +993,39 @@ export default function InteractiveCanvas({
             return (
                 <g key={el.id} data-id={el.id} className="pointer-events-auto">
                     {renderedContent}
+                </g>
+            );
+        }
+
+        // 🟢 Dedicated Angle Geometry Stamped Object
+        if (el.type === 'angle_arc') {
+            const rad = el.radius || 50;
+            const aRad = ((el.angle || 45) * Math.PI) / 180;
+            const arcEndX = el.x + rad * Math.cos(-aRad);
+            const arcEndY = el.y + rad * Math.sin(-aRad);
+            const midAngle = -aRad / 2;
+            const labelDist = rad + 24;
+            const labelX = el.x + labelDist * Math.cos(midAngle);
+            const labelY = el.y + labelDist * Math.sin(midAngle);
+
+            return (
+                <g key={el.id} data-id={el.id} className="pointer-events-auto cursor-move">
+                    {/* Base Ray */}
+                    <line x1={el.x} y1={el.y} x2={el.x + el.rayLength} y2={el.y} stroke={el.stroke || '#0f172a'} strokeWidth={3.5} strokeLinecap="round" />
+                    {/* Angled Ray */}
+                    <line x1={el.x} y1={el.y} x2={el.x + el.rayLength * Math.cos(-aRad)} y2={el.y + el.rayLength * Math.sin(-aRad)} stroke={el.stroke || '#0f172a'} strokeWidth={3.5} strokeLinecap="round" />
+                    {/* Vertex Dot */}
+                    <circle cx={el.x} cy={el.y} r={4.5} fill={el.stroke || '#0f172a'} />
+                    {/* Angle Arc Indicator */}
+                    <path d={`M ${el.x + rad} ${el.y} A ${rad} ${rad} 0 0 0 ${arcEndX} ${arcEndY}`} fill="none" stroke={el.arcColor || '#3b82f6'} strokeWidth={2.5} />
+                    {/* Angle Label Pill */}
+                    <g transform={`translate(${labelX}, ${labelY})`}>
+                        <rect x={-20} y={-14} width={40} height={28} rx={10} fill="#ffffff" stroke="#cbd5e1" strokeWidth={1.5} filter="drop-shadow(0 2px 6px rgba(0,0,0,0.08))" />
+                        <text x={0} y={1} textAnchor="middle" dominantBaseline="central" fontSize={el.label === 'x' ? 16 : 13} fontWeight="900" fill={el.label === 'x' ? '#6366f1' : '#0f172a'} fontStyle={el.label === 'x' ? 'italic' : 'normal'} fontFamily="system-ui, sans-serif">
+                            {el.label}
+                        </text>
+                    </g>
+                    {showUI && !el.isPermanent && renderHandles(el)}
                 </g>
             );
         }

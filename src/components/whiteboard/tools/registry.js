@@ -43,6 +43,7 @@ export const TOOL_REGISTRY = {
     rect: BasicShapesTool,
     circle: BasicShapesTool,
     triangle: BasicShapesTool,
+    polygon: BasicShapesTool,
 
     // Fraction Shapes & Spinners
     frac_rect: FractionShapesTool,
