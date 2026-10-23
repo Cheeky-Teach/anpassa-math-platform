@@ -10,7 +10,10 @@
     "test:pipeline": "node scripts/test-pipeline.mjs",
     "build": "vite build",
     "preview": "vite preview",
-    "generate:map": "node scripts/generateContentMap.js"
+    "generate:map": "node scripts/generateContentMap.js",
+    "test:matrix": "node --test scripts/liveRoomMatrix.test.js",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
@@ -26,6 +29,8 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.64",
@@ -36,11 +41,13 @@
     "concurrently": "^8.2.2",
     "cors": "^2.8.5",
     "express": "^4.18.3",
+    "jsdom": "^27.0.1",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3",
-    "vite": "^5.1.6"
+    "vite": "^5.1.6",
+    "vitest": "^3.2.7"
   }
 }
