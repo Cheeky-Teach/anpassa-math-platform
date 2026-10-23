@@ -110,6 +110,21 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
         { id: 3, name: 'Sara J.', progress: 30, status: 'error' }
     ]);
 
+    const liveInputRef = useRef(null);
+
+    // 🟢 GUARANTEE VIEWPORT IS AT TOP ON MOUNT
+    useEffect(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        // Overwrite any lower component focus after initial paint
+        const timer = setTimeout(() => {
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            if (liveInputRef.current) {
+                liveInputRef.current.focus({ preventScroll: true });
+            }
+        }, 50);
+        return () => clearTimeout(timer);
+    }, []);
+
     // Animations
     useEffect(() => {
         const interval = setInterval(() => setRoadmapStep(prev => (prev + 1) % 4), 2000);
@@ -137,10 +152,11 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
         return () => clearInterval(interval);
     }, []);
 
+    // 🟢 Fixed math calculation syntax:
     const handleDemoRegenerate = async () => {
         const r = Math.floor(Math.random() * 6) + 3;
         const h = Math.floor(Math.random() * 10) + 5;
-        const v = Math.round(Math.PI * (r * r) * h);
+        const v = Math.round(Math.PI * Math.pow(r, 2) * h);
         
         setDemoQuestion(prev => ({
             ...prev,
@@ -336,7 +352,15 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
                             </div>
                         </div>
                         <form onSubmit={(e) => { e.preventDefault(); onStudentJoin('live', liveCode); }} className="flex w-full sm:w-auto gap-2 shrink-0">
-                            <input type="text" maxLength={6} value={liveCode} onChange={(e) => setLiveCode(e.target.value.toUpperCase())} placeholder="KOD" className="w-full sm:w-32 px-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-center font-black text-lg tracking-[0.2em] outline-none focus:border-emerald-500 focus:bg-white transition-all" />
+                            <input 
+                                ref={liveInputRef}
+                                type="text" 
+                                maxLength={6} 
+                                value={liveCode} 
+                                onChange={(e) => setLiveCode(e.target.value.toUpperCase())} 
+                                placeholder="KOD" 
+                                className="w-full sm:w-32 px-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl text-center font-black text-lg tracking-[0.2em] outline-none focus:border-emerald-500 focus:bg-white transition-all" 
+                            />
                             <button type="submit" className="px-6 py-4 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-500 shadow-md active:scale-95 transition-all whitespace-nowrap shrink-0">
                                 {t.btn_live}
                             </button>
@@ -366,7 +390,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             </header>
 
             {/* =========================================================================
-                SECTION 1: CUSTOM CURRICULUM ENGINE (Roadmap Showcase)
+                SECTION 1: CUSTOM CURRICULUM ENGINE
                 ========================================================================= */}
             <section className="py-20 sm:py-28 bg-white relative overflow-hidden border-t border-slate-100">
                 <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -609,7 +633,7 @@ export default function LandingView({ onTeacherLogin, onStudentJoin, lang: initi
             </section>
 
             {/* =========================================================================
-                SECTION 6: TEST LAB (DIFFERENTIATION - PRACTICE TESTS)
+                SECTION 6: TEST LAB
                 ========================================================================= */}
             <section className="py-20 sm:py-28 bg-[#f9fbf7] relative overflow-hidden border-t border-slate-200">
                 <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">

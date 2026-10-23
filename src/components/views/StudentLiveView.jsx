@@ -409,24 +409,33 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             }
             
             const completionStatus = isCorrect ? 'correct' : 'wrong';
-            setCompleted(prev => ({ ...prev, [targetIdx]: completionStatus }));
 
-            // 🟢 AUTO-ADVANCE in Open Pacing Worksheet Mode
-            if (!isPresentationMode && settings.pacing === 'open') {
-                const nextUnansweredIdx = localPacket.findIndex((_, idx) => idx !== targetIdx && !completed[idx]);
+            // 🟢 Create the updated completion map immediately to avoid stale state in timeout
+            const updatedCompleted = { ...completed, [targetIdx]: completionStatus };
+            setCompleted(updatedCompleted);
 
+            // 🟢 AUTO-ADVANCE in Open or Progressive pacing
+            if (!isPresentationMode && (settings.pacing === 'open' || settings.pacing === 'progressive')) {
                 setTimeout(() => {
-                    if (nextUnansweredIdx !== -1) {
-                        // Advance to next unanswered question
-                        setCurrentIndex(nextUnansweredIdx);
-                    } else if (targetIdx < localPacket.length - 1) {
-                        // Fallback sequential progression
-                        setCurrentIndex(targetIdx + 1);
-                    } else if (settings.summary) {
-                        // If all are finished and summary is enabled, open results
-                        setShowFinalReview(true);
+                    if (settings.pacing === 'progressive') {
+                        // 🔒 Progressive: Strictly one-way forward march
+                        if (targetIdx < localPacket.length - 1) {
+                            setCurrentIndex(targetIdx + 1);
+                        } else if (settings.summary) {
+                            setShowFinalReview(true);
+                        }
+                    } else {
+                        // 🔓 Open: Jump to next unanswered question, or next sequential
+                        const nextUnansweredIdx = localPacket.findIndex((_, idx) => !updatedCompleted[idx]);
+                        if (nextUnansweredIdx !== -1) {
+                            setCurrentIndex(nextUnansweredIdx);
+                        } else if (targetIdx < localPacket.length - 1) {
+                            setCurrentIndex(targetIdx + 1);
+                        } else if (settings.summary) {
+                            setShowFinalReview(true);
+                        }
                     }
-                }, 600); // 600ms grace period to let the checkmark register visually
+                }, 600); // 600ms grace period so the student sees the green checkmark before the card turns
             }
         } catch (err) {
             console.error("Submission error:", err);
@@ -690,7 +699,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         </p>
                     </div>
 
-                    {/* 🟢 CENTER: Paging Control Pod (Always clickable, never dimmed) */}
+                    {/* 🟢 CENTER: Paging Control Pod (Render ONLY in Open Pacing) */}
                     {!isPresentationMode && settings.pacing === 'open' && (
                         <div className="flex items-center bg-[var(--bg-surface)] p-1 rounded-2xl border border-[var(--border-main)] shadow-xs gap-1.5 shrink-0">
                             <button
