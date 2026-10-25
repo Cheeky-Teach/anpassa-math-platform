@@ -876,8 +876,8 @@ export default function InteractiveCanvas({
                 />
                 
                 {/* 3. Top-Left System Actions (Move, Copy, Delete) */}
-                <foreignObject x={el.x} y={topY} width={180} height={50} className="overflow-visible pointer-events-auto">
-                    <div className="flex gap-1.5 items-center bg-white/95 backdrop-blur-md p-1 rounded-2xl border-2 border-slate-200 shadow-xl w-max">
+                <foreignObject x={el.x} y={topY - 10} width={260} height={70} className="overflow-visible pointer-events-auto">
+                    <div className="flex gap-2 items-center bg-white/95 backdrop-blur-md p-1.5 rounded-2xl border-2 border-slate-200 shadow-xl w-max">
                         <button 
                             onPointerDown={(e) => {
                                 e.stopPropagation();
@@ -887,34 +887,34 @@ export default function InteractiveCanvas({
                                 const { x, y } = getCoordinates(e, false);
                                 dragCoordRef.current = { x, y };
                             }}
-                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-move pointer-events-auto transition-colors" 
+                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-move pointer-events-auto transition-colors" 
                             title={lang === 'sv' ? 'Flytta' : 'Move'}
                         >
-                            <Move size={15} />
+                            <Move size={20} />
                         </button>
                         <button 
                             onClick={() => duplicateElement(el.id)} 
-                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto" 
+                            className="!bg-white !text-slate-700 border border-slate-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-slate-50 hover:!text-indigo-600 cursor-pointer pointer-events-auto" 
                             title={lang === 'sv' ? 'Kopiera' : 'Copy'}
                         >
-                            <Copy size={15}/>
+                            <Copy size={20}/>
                         </button>
                         <button 
                             onClick={() => deleteElement(el.id)} 
-                            className="!bg-white !text-rose-500 border border-rose-200 rounded-xl shadow-xs w-9 h-9 flex items-center justify-center hover:!bg-rose-50 cursor-pointer pointer-events-auto" 
+                            className="!bg-white !text-rose-500 border border-rose-200 rounded-xl shadow-xs w-11 h-11 flex items-center justify-center hover:!bg-rose-50 cursor-pointer pointer-events-auto" 
                             title={lang === 'sv' ? 'Ta bort' : 'Delete'}
                         >
-                            <Trash2 size={16}/>
+                            <Trash2 size={20}/>
                         </button>
                     </div>
                 </foreignObject>
 
                 {/* 4. Bottom Context Menu */}
                 {hasCustomContextMenu && (
-                    <foreignObject x={el.x} y={botY + 6} width={800} height={70} className="overflow-visible pointer-events-auto">
+                    <foreignObject x={el.x} y={botY + 6} width={1200} height={100} className="overflow-visible pointer-events-auto">
                         <div 
                             onPointerDown={(e) => e.stopPropagation()} 
-                            className="flex items-center gap-3.5 !bg-white !text-slate-900 px-4 py-2 rounded-2xl border-2 border-slate-200/90 shadow-2xl pointer-events-auto text-sm font-bold font-sans w-max select-none"
+                            className="flex items-center gap-4 !bg-white !text-slate-900 px-5 py-3 rounded-2xl border-2 border-slate-200/90 shadow-2xl pointer-events-auto text-3xl font-bold font-sans w-max select-none"
                             style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
                         >
                             {Tool.renderContextMenu({

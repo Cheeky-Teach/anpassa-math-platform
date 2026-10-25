@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import MathScratchpad from '../ui/MathScratchpad';
+import { evaluateStudentAdvance } from '../../lib/livePacingEngine.js';
 
 // --- VISUAL & INPUT IMPORTS ---
 import VisualRenderer from '../visuals/VisualRenderer';
@@ -303,8 +304,16 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                 if (error && error.code !== '23505') throw error; // Ignore duplicate key errors if they hit submit twice quickly
             }
 
-            setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: true }));
-        } catch (err) {
+            // Only mark slide complete if all slide tasks succeeded (or slide has no sub-questions)
+            const allTasksCompleted = currentSlideIds.every(qId => {
+                const idx = localPacket.findIndex(p => p.id === qId);
+                return idx === -1 || !!completed[idx];
+            });
+
+            if (currentSlideIds.length === 0 || allTasksCompleted) {
+                setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: true }));
+            }
+        } catch (err) { // 👈 ADD THIS LINE BACK
             console.error("Unified presentation submission error:", err);
             if (err.code === '42501') {
                 setCompletedSlide(prev => ({ ...prev, [activeSlideIndex]: true }));
@@ -334,15 +343,17 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         const hasAnswer = rawAnswer !== undefined && String(rawAnswer).trim() !== "";
         const hasCanvas = canvasData.length > 0;
         const hasScratchpad = scratchpadSteps.length > 0;
+        // 🟢 Require the correct input based on teacher setting with question-type fallbacks
+        const rd = currentItem.resolvedData?.renderData;
+        const isMultipleChoice = rd?.answerType === 'multiple_choice' || (rd?.options && Array.isArray(rd.options));
 
-        // 🟢 Require the correct input based on teacher setting
         if (responseStyle === 'answer_only' && !hasAnswer) {
             alert(lang === 'sv' ? "Vänligen fyll i ett svar innan du skickar in." : "Please provide an answer before submitting.");
             return;
-        } else if (responseStyle === 'canvas_only' && !hasCanvas) {
+        } else if (responseStyle === 'canvas_only' && !hasCanvas && !isMultipleChoice) {
             alert(lang === 'sv' ? "Vänligen rita på tavlan innan du skickar in." : "Please draw on the canvas before submitting.");
             return;
-        } else if (responseStyle === 'scratchpad_only' && !hasScratchpad && !hasAnswer) {
+        } else if (responseStyle === 'scratchpad_only' && !hasScratchpad && !hasAnswer && !isFreeText) {
             alert(lang === 'sv' ? "Vänligen använd kladdpappret eller svara innan du skickar in." : "Please use the scratchpad or answer before submitting.");
             return;
         } else if (!hasAnswer && !hasCanvas && !hasScratchpad) {
@@ -409,24 +420,25 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
             }
             
             const completionStatus = isCorrect ? 'correct' : 'wrong';
-            setCompleted(prev => ({ ...prev, [targetIdx]: completionStatus }));
+            const updatedCompleted = { ...completed, [targetIdx]: completionStatus };
+            setCompleted(updatedCompleted);
 
-            // 🟢 AUTO-ADVANCE in Open Pacing Worksheet Mode
-            if (!isPresentationMode && settings.pacing === 'open') {
-                const nextUnansweredIdx = localPacket.findIndex((_, idx) => idx !== targetIdx && !completed[idx]);
-
+            // 🟢 AUTO-ADVANCE in Open or Progressive pacing using the shared engine
+            if (!isPresentationMode && (settings.pacing === 'open' || settings.pacing === 'progressive')) {
                 setTimeout(() => {
-                    if (nextUnansweredIdx !== -1) {
-                        // Advance to next unanswered question
-                        setCurrentIndex(nextUnansweredIdx);
-                    } else if (targetIdx < localPacket.length - 1) {
-                        // Fallback sequential progression
-                        setCurrentIndex(targetIdx + 1);
-                    } else if (settings.summary) {
-                        // If all are finished and summary is enabled, open results
+                    const result = evaluateStudentAdvance({
+                        currentIdx: targetIdx,
+                        totalQuestions: localPacket.length,
+                        settings,
+                        updatedCompleted
+                    });
+
+                    if (result.showSummary) {
                         setShowFinalReview(true);
+                    } else {
+                        setCurrentIndex(result.nextIndex);
                     }
-                }, 600); // 600ms grace period to let the checkmark register visually
+                }, 600);
             }
         } catch (err) {
             console.error("Submission error:", err);
@@ -690,7 +702,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                         </p>
                     </div>
 
-                    {/* 🟢 CENTER: Paging Control Pod (Always clickable, never dimmed) */}
+                    {/* 🟢 CENTER: Paging Control Pod (Render ONLY in Open Pacing) */}
                     {!isPresentationMode && settings.pacing === 'open' && (
                         <div className="flex items-center bg-[var(--bg-surface)] p-1 rounded-2xl border border-[var(--border-main)] shadow-xs gap-1.5 shrink-0">
                             <button
@@ -1074,7 +1086,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
                                         <p className="text-sm text-slate-400 font-bold italic">
                                             {settings.pacing === 'teacher'
                                                 ? (lang === 'sv' ? "Väntar på läraren..." : "Waiting for teacher...")
-                                                : (lang === 'sv' ? "Laddar nästa..." : "Loading next...")
+                                                : (lang === 'sv' ? "Laddar nästa fråga..." : "Loading next question...")
                                             }
                                         </p>
                                     </div>
