@@ -372,56 +372,77 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
     // Sync from ContentModal selections
     const handleToggleItem = (topicId, level) => {
-        setBuckets(prev => prev.map(b => {
-            if (b.id !== activeContentModalBucketId) return b;
+    setBuckets(prev => prev.map(b => {
+        if (b.id !== activeContentModalBucketId) return b;
 
-            let parts = [...(b.payload || [])];
-            let partForTopic = parts.find(p => p.topicId === topicId);
+        const parts = (b.payload || []).map(part => ({
+            ...part,
+            steps: [...(part.steps || [])]
+        }));
 
-            // If no Part exists for this topic, auto-create Del [N]: [Topic]
-            if (!partForTopic) {
-                const nextPartNum = parts.length + 1;
-                const newPart = {
+        // 1. Check if this level exists anywhere across ANY part in this unit
+        const alreadyExists = parts.some(part => 
+            part.steps.some(s => 
+                s.type === 'practice' && 
+                (s.topic === topicId || s.topicId === topicId) && 
+                Number(s.level) === Number(level)
+            )
+        );
+
+        if (alreadyExists) {
+            // 🟢 DESELECT: Remove from every part where it is found
+            const cleanedParts = parts.map(part => ({
+                ...part,
+                steps: part.steps.filter(s => 
+                    !(s.type === 'practice' && 
+                      (s.topic === topicId || s.topicId === topicId) && 
+                      Number(s.level) === Number(level))
+                )
+            }));
+            return { ...b, payload: cleanedParts };
+        } else {
+            // 🟢 SELECT: Find or create the matching part, then append step
+            let targetPart = parts.find(p => p.topicId === topicId);
+            if (!targetPart) {
+                targetPart = {
                     id: `part_${topicId}_${Date.now()}`,
                     type: 'part',
                     topicId: topicId,
-                    title: `${lang === 'sv' ? 'Del' : 'Part'} ${nextPartNum}: ${getTopicName(topicId, lang)}`,
-                    isCustomTitle: false,
+                    customTitle: null,
                     steps: []
                 };
-                parts.push(newPart);
-                partForTopic = newPart;
+                parts.push(targetPart);
             }
 
-            // Check if level already exists in this part
-            const exists = partForTopic.steps.some(s => s.type === 'practice' && s.level === level);
-
-            if (exists) {
-                partForTopic.steps = partForTopic.steps.filter(s => !(s.type === 'practice' && s.level === level));
-            } else {
-                partForTopic.steps.push({
-                    id: `step_${topicId}_${level}_${Date.now()}`,
-                    type: 'practice',
-                    topic: topicId,
-                    level: level
-                });
-            }
+            targetPart.steps.push({
+                id: `step_${topicId}_${level}_${Date.now()}`,
+                type: 'practice',
+                topic: topicId,
+                level: Number(level)
+            });
 
             return { ...b, payload: parts };
-        }));
-    };
+        }
+    }));
+};
 
     const handleCloseContentModal = async () => {
         setIsContentModalOpen(false);
         if (activeContentModalBucketId) {
-            const bucketToSave = buckets.find(b => b.id === activeContentModalBucketId);
-            if (bucketToSave) {
-                try {
-                    await supabase.from('teacher_buckets').update({ payload: bucketToSave.payload }).eq('id', activeContentModalBucketId);
-                } catch (err) {
-                    console.error("Error saving updated parts from modal:", err);
+            // Read fresh from current state reference
+            setBuckets(currentBuckets => {
+                const bucketToSave = currentBuckets.find(b => b.id === activeContentModalBucketId);
+                if (bucketToSave) {
+                    supabase
+                        .from('teacher_buckets')
+                        .update({ payload: bucketToSave.payload })
+                        .eq('id', activeContentModalBucketId)
+                        .then(({ error }) => {
+                            if (error) console.error("Error saving updated parts from modal:", error);
+                        });
                 }
-            }
+                return currentBuckets;
+            });
             setActiveContentModalBucketId(null);
         }
     };

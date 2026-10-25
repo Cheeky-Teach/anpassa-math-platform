@@ -164,6 +164,7 @@ export default function InstructionSlideModal({
                             bgType="blank"
                             globalZoom={1.2}
                             authorMode={false}
+                            theme={currentSlide?.theme || 'clean'}
                             slideRendererProps={{
                                 clueViewMode: 'steps',
                                 currentFocusedQuestion: null,

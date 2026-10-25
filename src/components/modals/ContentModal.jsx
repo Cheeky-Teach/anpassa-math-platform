@@ -1,26 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CONTENT_MAP } from '../../constants/content_map.generated';
 import { X, BookOpen, Layers, Search, Check, Plus } from 'lucide-react';
 import MathDisplay from '../shared/MathDisplay';
-import MathText from '../ui/MathText';
 
 const ContentModal = ({ 
     visible, 
     onClose, 
     lang = 'sv',
-    // --- NEW SELECTION MODE PROPS ---
     selectionMode = false,
-    selectedItems = [], // Array of { topic: '...', level: 1 }
+    selectedItems = [],
     onToggleItem = () => {} 
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Instant O(1) set lookup
+    const selectedKeySet = useMemo(() => {
+        const set = new Set();
+        if (Array.isArray(selectedItems)) {
+            selectedItems.forEach(item => {
+                const t = item.topic || item.topicId;
+                if (t && item.level !== undefined) {
+                    set.add(`${t}_${Number(item.level)}`);
+                }
+            });
+        }
+        return set;
+    }, [selectedItems]);
 
     if (!visible) return null;
 
     const TEXT = {
         sv: {
             title: selectionMode ? "Välj Innehåll" : "Innehållskarta",
-            subtitle: selectionMode ? "Klicka på rader för att lägga till i uppdraget" : "Heltäckande ämnesöversikt",
+            subtitle: selectionMode ? "Klicka på rader för att lägga till eller ta bort" : "Heltäckande ämnesöversikt",
             close: "Stäng",
             done: "Klar",
             searchPlaceholder: "Sök ämne, beskrivning eller exempel...",
@@ -29,7 +41,7 @@ const ContentModal = ({
         },
         en: {
             title: selectionMode ? "Select Content" : "Content Map",
-            subtitle: selectionMode ? "Click rows to add them to your mission" : "Comprehensive curriculum overview",
+            subtitle: selectionMode ? "Click rows to add or remove" : "Comprehensive curriculum overview",
             close: "Close",
             done: "Done",
             searchPlaceholder: "Search topic, description or example...",
@@ -47,12 +59,10 @@ const ContentModal = ({
         rose: { bg: "bg-rose-500", text: "text-rose-700", border: "border-rose-200" }
     };
 
-    // Helper to check if a specific level is currently selected
     const isSelected = (topicId, level) => {
-        return selectedItems.some(item => item.topic === topicId && item.level === level);
+        return selectedKeySet.has(`${topicId}_${Number(level)}`);
     };
 
-    // --- SMART FILTER LOGIC ---
     const normalizedSearch = searchTerm.toLowerCase().trim();
     
     const filteredContent = CONTENT_MAP.map(category => {
@@ -66,7 +76,7 @@ const ContentModal = ({
             if (topicName.includes(normalizedSearch)) return true;
 
             return topic.levels.some(lvl => {
-                const desc = (lvl.desc[lang] || lvl.desc || "").toLowerCase();
+                const desc = (lvl.desc?.[lang] || lvl.desc || "").toLowerCase();
                 const ex = (lvl.ex || "").toLowerCase();
                 return desc.includes(normalizedSearch) || ex.includes(normalizedSearch);
             });
@@ -82,7 +92,7 @@ const ContentModal = ({
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
             <div className="bg-slate-50 w-full max-w-[1600px] h-[95vh] rounded-[2rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
                 
-                {/* Header with Search */}
+                {/* Header */}
                 <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 shrink-0 shadow-sm z-10">
                     <div className="flex items-center gap-4">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md shrink-0 ${selectionMode ? 'bg-indigo-600' : 'bg-slate-900'}`}>
@@ -124,31 +134,12 @@ const ContentModal = ({
                     </div>
                 </div>
 
-                {/* Main Content Area - High Density Masonry Grid */}
+                {/* Main Content */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
                     {filteredContent.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
                             <Search size={48} className="opacity-20" />
-                            {/* VARIATIONS LIST */}
-                {lvl.variations && lvl.variations.length > 0 ? (
-                    <div className="flex flex-col gap-2 mt-3">
-                        {lvl.variations.map((v, idx) => (
-                            <div key={idx} className="bg-[var(--bg-surface)] p-3 rounded-lg border border-[var(--border-subtle)]">
-                                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest block mb-1">
-                                    {v.name.sv || v.name}
-                                </span>
-                                <div className="text-sm font-sans text-[var(--brand-text)] flex justify-center text-center">
-                                    {/* If v.ex is just text (like word problems), MathText handles it gracefully too */}
-                                    <MathText text={v.ex.includes('\\') && !v.ex.includes('$$') ? `$$${v.ex}$$` : v.ex} />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="mt-3 text-center text-sm font-sans text-[var(--brand-text)]">
-                        <MathText text={lvl.ex.includes('\\') && !lvl.ex.includes('$$') ? `$$${lvl.ex}$$` : lvl.ex} />
-                    </div>
-                )}
+                            <p className="text-sm font-bold uppercase tracking-wider">{t.noResults} "{searchTerm}"</p>
                         </div>
                     ) : (
                         <div className="columns-1 lg:columns-2 2xl:columns-3 gap-6 space-y-6">
@@ -156,8 +147,6 @@ const ContentModal = ({
                                 const theme = themeClasses[category.color] || themeClasses.indigo;
                                 return (
                                     <div key={category.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden break-inside-avoid">
-                                        
-                                        {/* Category Strip */}
                                         <div className={`${theme.bg} px-5 py-2.5 flex items-center justify-between`}>
                                             <div className="flex items-center gap-3">
                                                 <Layers size={16} className="text-white/80" />
@@ -170,31 +159,34 @@ const ContentModal = ({
                                             </span>
                                         </div>
 
-                                        {/* Flat Topics List */}
                                         <div className="flex flex-col divide-y divide-slate-100">
                                             {category.topics.map((topic) => (
                                                 <div key={topic.id} className="p-4 bg-white">
-                                                    {/* Topic Header */}
                                                     <h4 className={`font-black text-xs uppercase tracking-tight mb-2 ${theme.text}`}>
                                                         {topic.name[lang] || topic.name}
                                                     </h4>
 
-                                                    {/* Dense Level Rows */}
                                                     <div className="flex flex-col border border-slate-100 rounded-lg overflow-hidden">
                                                         {topic.levels.map((lvl, index) => {
-                                                            const rowText = `${lvl.desc[lang] || lvl.desc} ${lvl.ex}`.toLowerCase();
+                                                            const descStr = lvl.desc?.[lang] || lvl.desc || '';
+                                                            const rowText = `${descStr} ${lvl.ex}`.toLowerCase();
                                                             const isHighlighted = searchTerm && rowText.includes(normalizedSearch);
-                                                            
-                                                            // Logic for Selection Mode
                                                             const currentlySelected = selectionMode && isSelected(topic.id, lvl.lvl);
 
                                                             return (
                                                                 <div 
                                                                     key={lvl.lvl}
-                                                                    onClick={() => selectionMode && onToggleItem(topic.id, lvl.lvl)}
-                                                                    className={`group flex items-stretch text-[10px] sm:text-[11px] leading-tight transition-all
+                                                                    role={selectionMode ? "button" : undefined}
+                                                                    tabIndex={selectionMode ? 0 : undefined}
+                                                                    onClick={(e) => {
+                                                                        if (!selectionMode) return;
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        onToggleItem(topic.id, lvl.lvl);
+                                                                    }}
+                                                                    className={`group flex items-stretch text-[10px] sm:text-[11px] leading-tight transition-all select-none
                                                                         ${index !== topic.levels.length - 1 ? 'border-b border-slate-100' : ''}
-                                                                        ${selectionMode ? 'cursor-pointer' : ''}
+                                                                        ${selectionMode ? 'cursor-pointer active:scale-[0.995]' : ''}
                                                                         ${currentlySelected 
                                                                             ? 'bg-emerald-50 shadow-inner z-10' 
                                                                             : (isHighlighted ? 'bg-indigo-50/50' : 'hover:bg-slate-50')
@@ -202,29 +194,29 @@ const ContentModal = ({
                                                                     `}
                                                                 >
                                                                     {/* Level Number */}
-                                                                    <div className={`w-8 shrink-0 flex items-center justify-center font-black transition-colors ${currentlySelected ? 'bg-emerald-500 text-white' : `bg-slate-50 border-r border-slate-100 ${theme.text}`}`}>
+                                                                    <div className={`w-8 shrink-0 flex items-center justify-center font-black pointer-events-none transition-colors ${currentlySelected ? 'bg-emerald-500 text-white' : `bg-slate-50 border-r border-slate-100 ${theme.text}`}`}>
                                                                         {lvl.lvl}
                                                                     </div>
                                                                     
                                                                     {/* Description */}
-                                                                    <div className={`w-1/2 sm:w-2/5 shrink-0 p-2 font-bold border-r border-slate-100 flex items-center transition-colors ${currentlySelected ? 'text-emerald-900 border-emerald-100' : 'text-slate-700'}`}>
-                                                                        {lvl.desc[lang] || lvl.desc}
+                                                                    <div className={`w-1/2 sm:w-2/5 shrink-0 p-2 font-bold border-r border-slate-100 flex items-center pointer-events-none transition-colors ${currentlySelected ? 'text-emerald-900 border-emerald-100' : 'text-slate-700'}`}>
+                                                                        {descStr}
                                                                     </div>
                                                                     
                                                                     {/* Math Example */}
-                                                                    <div className="flex-1 p-2 font-serif font-bold text-slate-500 italic flex items-center overflow-x-auto no-scrollbar">
+                                                                    <div className="flex-1 p-2 font-serif font-bold text-slate-500 italic flex items-center overflow-x-auto no-scrollbar pointer-events-none">
                                                                         {lvl.ex && (
                                                                             lvl.ex.includes('\\') || lvl.ex.includes('$') || lvl.ex.includes('=') ? (
-                                                                                <MathDisplay content={lvl.ex.includes('$') ? lvl.ex : `$$${lvl.ex}$$`} className="inline-block" />
+                                                                                <MathDisplay content={lvl.ex.includes('$') ? lvl.ex : `$$${lvl.ex}$$`} className="inline-block pointer-events-none" />
                                                                             ) : (
-                                                                                <span className="font-sans not-italic text-[10px] text-slate-600">{lvl.ex}</span>
+                                                                                <span className="font-sans not-italic text-[10px] text-slate-600 pointer-events-none">{lvl.ex}</span>
                                                                             )
                                                                         )}
                                                                     </div>
 
-                                                                    {/* Selection Mode Interactive Indicator */}
+                                                                    {/* Action Indicator */}
                                                                     {selectionMode && (
-                                                                        <div className={`w-10 shrink-0 flex items-center justify-center border-l transition-colors ${currentlySelected ? 'bg-emerald-500 text-white border-emerald-600' : 'border-slate-100 text-slate-300 group-hover:bg-slate-200 group-hover:text-indigo-500 bg-slate-50'}`}>
+                                                                        <div className={`w-10 shrink-0 flex items-center justify-center border-l pointer-events-none transition-colors ${currentlySelected ? 'bg-emerald-500 text-white border-emerald-600' : 'border-slate-100 text-slate-300 group-hover:bg-slate-200 group-hover:text-indigo-500 bg-slate-50'}`}>
                                                                             {currentlySelected ? <Check size={16} strokeWidth={4} /> : <Plus size={16} strokeWidth={3} />}
                                                                         </div>
                                                                     )}
@@ -244,7 +236,6 @@ const ContentModal = ({
 
                 {/* Footer */}
                 <div className={`border-t border-slate-200 p-4 flex justify-between items-center shrink-0 ${selectionMode ? 'bg-indigo-50' : 'bg-white'}`}>
-                    {/* Left side: Selection counter (only visible in selection mode) */}
                     <div className="w-1/2">
                         {selectionMode && (
                             <div className="flex items-center gap-2">
@@ -258,7 +249,6 @@ const ContentModal = ({
                         )}
                     </div>
 
-                    {/* Right side: Close / Done Button */}
                     <button 
                         onClick={onClose} 
                         className={`px-10 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 w-full sm:w-auto shadow-md

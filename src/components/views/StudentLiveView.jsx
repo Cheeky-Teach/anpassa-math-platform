@@ -74,7 +74,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         const checkMobile = () => {
             const mobile = window.innerWidth < 768;
             setIsMobile(mobile);
-            if (mobile) setIsDockCollapsed(true);
+            // Removed auto-collapse so the answer pane stays open on initial load
         };
         checkMobile(); 
         window.addEventListener('resize', checkMobile);

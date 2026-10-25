@@ -1,6 +1,6 @@
 /**
  * AUTO-GENERATED CONTENT MAP (Static Snapshot with Live Examples)
- * Generated on: 2026-10-18T13:09:23.646Z
+ * Generated on: 2026-10-25T13:48:35.741Z
  */
 export const CONTENT_MAP = [
     {
@@ -25,7 +25,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$x + 16 = 25$$",
+                        "ex": "$$x + 15 = 24$$",
                         "desc": {
                             "sv": "Ensteg: Beräkning",
                             "en": "One-step: Calculation"
@@ -54,7 +54,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$5x + 12 = 42$$",
+                        "ex": "$$\\frac{x}{5} - 1 = 1$$",
                         "desc": {
                             "sv": "Tvåsteg: Beräkning",
                             "en": "Two-step: Calculation"
@@ -105,7 +105,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$4(x + 6) = 56$$",
+                        "ex": "$$5(x + 6) = 35$$",
                         "desc": {
                             "sv": "Parenteser: Beräkning",
                             "en": "Parentheses: Calculation"
@@ -131,6 +131,35 @@ export const CONTENT_MAP = [
                                 }
                             }
                         ]
+                    },
+                    {
+                        "lvl": 4,
+                        "ex": "$$10x + 3 = 4x + 57$$",
+                        "desc": {
+                            "sv": "X på båda sidor",
+                            "en": "X on both sides"
+                        },
+                        "student_desc": {
+                            "sv": "Variabel på båda sidor",
+                            "en": "Variables on both sides"
+                        },
+                        "teacher_desc": {
+                            "sv": "Samla x-termer på en sida (ax + b = cx + d)",
+                            "en": "Collect x-terms on one side"
+                        },
+                        "variations": [
+                            {
+                                "key": "bothsides_calc",
+                                "name": {
+                                    "sv": "X på båda sidor",
+                                    "en": "X on both sides"
+                                },
+                                "desc": {
+                                    "sv": "Samla x-termer på en sida (ax + b = cx + d)",
+                                    "en": "Collect x-terms on one side"
+                                }
+                            }
+                        ]
                     }
                 ]
             },
@@ -147,7 +176,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$23x+49=348$$",
+                        "ex": "$$15x+49=259$$",
                         "desc": {
                             "sv": "Skriv: Fast + Rörlig",
                             "en": "Write: Fixed + Variable"
@@ -272,7 +301,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$17x - 10 + 3x - 3$$",
+                        "ex": "$$20x + 19 - 2x + 5$$",
                         "desc": {
                             "sv": "Förenkla uttryck",
                             "en": "Simplify expressions"
@@ -301,7 +330,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$6 \\cdot 2x - 8x + 7$$",
+                        "ex": "$$2 \\cdot 5x - 3x + 10$$",
                         "desc": {
                             "sv": "Prioritering: Multiplikation",
                             "en": "Order: Multiplication"
@@ -352,7 +381,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$14x + (6x + 10)$$",
+                        "ex": "$$13x + (3x + 8)$$",
                         "desc": {
                             "sv": "Parentes (+)",
                             "en": "Parentheses (+)"
@@ -392,7 +421,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$3(x + 3) + 2(x + 4)$$",
+                        "ex": "$$3(x + 2) + 2(x + 1)$$",
                         "desc": {
                             "sv": "Dubbla parenteser",
                             "en": "Double parentheses"
@@ -432,7 +461,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$18x - (3x + 7)$$",
+                        "ex": "$$14x - (2x + 10)$$",
                         "desc": {
                             "sv": "Minusparentes (+)",
                             "en": "Minus parentheses (+)"
@@ -514,7 +543,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Rektangelns omkrets är 122 cm. Beräkna x.",
+                        "ex": "Kvadratens omkrets är 204 cm. Beräkna x.",
                         "desc": {
                             "sv": "Omkrets: Lös ut x",
                             "en": "Perimeter: Solve for x"
@@ -572,7 +601,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "Triangelns area är 155 cm². Beräkna x.",
+                        "ex": "Rektangelns area är 60 cm². Beräkna x.",
                         "desc": {
                             "sv": "Area: Lös ut x",
                             "en": "Area: Solve for x"
@@ -630,7 +659,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "Vinklarna bildar tillsammans 180°. Beräkna x.",
+                        "ex": "Vinklarna bildar tillsammans 90°. Beräkna x.",
                         "desc": {
                             "sv": "Vinklar: Lös ut x",
                             "en": "Angles: Solve for x"
@@ -723,7 +752,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Vilket värde har tal nummer 10 i mönstret: 5, 12, 19... ?",
+                        "ex": "Vilket värde har tal nummer 10 i mönstret: 7, 14, 21... ?",
                         "desc": {
                             "sv": "Hitta tal n",
                             "en": "Find term n"
@@ -843,7 +872,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "I ett mönster med formeln $V = 4n + 4$, vilken figur (n) består av 56 stycken delar?",
+                        "ex": "I ett mönster med formeln $V = 4n + 8$, vilket figurnummer (n) består av 156 stycken delar?",
                         "desc": {
                             "sv": "Hitta n (Ekvation)",
                             "en": "Find n (Equation)"
@@ -883,6 +912,35 @@ export const CONTENT_MAP = [
                     "en": "Linear Equations & Graphs"
                 },
                 "levels": [
+                    {
+                        "lvl": 1,
+                        "ex": "Var krockar linjen med den stående y-axeln? Bestäm linjens m-värde.",
+                        "desc": {
+                            "sv": "Bestäm m-värde",
+                            "en": "Find m-value"
+                        },
+                        "student_desc": {
+                            "sv": "Hitta m-värdet",
+                            "en": "Find m-value"
+                        },
+                        "teacher_desc": {
+                            "sv": "Hitta var linjen korsar y-axeln på grafen",
+                            "en": "Find where the line crosses the y-axis"
+                        },
+                        "variations": [
+                            {
+                                "key": "intercept_id",
+                                "name": {
+                                    "sv": "Bestäm m-värde",
+                                    "en": "Find m-value"
+                                },
+                                "desc": {
+                                    "sv": "Hitta var linjen korsar y-axeln på grafen",
+                                    "en": "Find where the line crosses the y-axis"
+                                }
+                            }
+                        ]
+                    },
                     {
                         "lvl": 2,
                         "ex": "Bestäm linjens lutning (k-värde).",
@@ -1040,7 +1098,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$\\begin{array}{r} 39 \\\\ + \\; 146 \\\\ \\hline \\end{array}$$",
+                        "ex": "$$\\begin{array}{r} 150 \\\\ + \\; 114 \\\\ \\hline \\end{array}$$",
                         "desc": {
                             "sv": "Addition: Uppställning",
                             "en": "Addition: Column Method"
@@ -1091,7 +1149,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$\\begin{array}{r} 159 \\\\ - \\; 55 \\\\ \\hline \\end{array}$$",
+                        "ex": "$$\\begin{array}{r} 120 \\\\ - \\; 64 \\\\ \\hline \\end{array}$$",
                         "desc": {
                             "sv": "Subtraktion: Uppställning",
                             "en": "Subtraction: Column Method"
@@ -1142,7 +1200,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$37,4 + 3,73$$",
+                        "ex": "$$18,9 + 4,45$$",
                         "desc": {
                             "sv": "Decimaler: Addition",
                             "en": "Decimals: Addition"
@@ -1182,7 +1240,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$10 \\cdot 4$$",
+                        "ex": "$$6 \\cdot 7$$",
                         "desc": {
                             "sv": "Multiplikationstabell",
                             "en": "Multiplication Table"
@@ -1222,7 +1280,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\begin{array}{r} 16 \\\\ \\times \\; 3 \\\\ \\hline \\end{array}$$",
+                        "ex": "$$\\begin{array}{r} 15 \\\\ \\times \\; 5 \\\\ \\hline \\end{array}$$",
                         "desc": {
                             "sv": "Mult: Uppställning",
                             "en": "Mult: Column Method"
@@ -1262,7 +1320,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$0,2 \\cdot 14$$",
+                        "ex": "$$0,43 \\cdot 10$$",
                         "desc": {
                             "sv": "Decimalmultiplikation",
                             "en": "Decimal Multiplication"
@@ -1302,7 +1360,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 7,
-                        "ex": "$$\\frac{28}{4}$$",
+                        "ex": "$$\\frac{30}{3}$$",
                         "desc": {
                             "sv": "Division: Enkel",
                             "en": "Division: Basic"
@@ -1342,7 +1400,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 8,
-                        "ex": "Vilket av följande tal är delbart med 3?",
+                        "ex": "Vilket av följande tal är delbart med 2?",
                         "desc": {
                             "sv": "Delbarhet: Flerval",
                             "en": "Divisibility: MCQ"
@@ -1393,20 +1451,31 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 9,
-                        "ex": "$$\\frac{2,4}{0,2}$$",
+                        "ex": "$$\\frac{4,8}{4}$$",
                         "desc": {
-                            "sv": "Division: Decimal i nämnaren",
-                            "en": "Division: Decimal in divisor"
+                            "sv": "Division: Decimal i täljaren",
+                            "en": "Division: Decimal in dividend"
                         },
                         "student_desc": {
                             "sv": "Division med Decimaler",
                             "en": "Division with Decimals"
                         },
                         "teacher_desc": {
-                            "sv": "Dela med ett decimaltal",
-                            "en": "Divide by a decimal"
+                            "sv": "Dela ett decimaltal",
+                            "en": "Divide a decimal"
                         },
                         "variations": [
+                            {
+                                "key": "div_decimal_dividend",
+                                "name": {
+                                    "sv": "Division: Decimal i täljaren",
+                                    "en": "Division: Decimal in dividend"
+                                },
+                                "desc": {
+                                    "sv": "Dela ett decimaltal",
+                                    "en": "Divide a decimal"
+                                }
+                            },
                             {
                                 "key": "div_decimal_divisor",
                                 "name": {
@@ -1435,7 +1504,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Vilket värde har siffran 5 i talet 952?",
+                        "ex": "Vilket värde har siffran 6 i talet 90163?",
                         "desc": {
                             "sv": "Heltal: Siffrans värde",
                             "en": "Whole: Digit value"
@@ -1486,7 +1555,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Vilket värde har siffran 4 i talet 852,46? Svara i decimalform.",
+                        "ex": "Vilket värde har siffran 1 i talet 79,1? Svara i decimalform.",
                         "desc": {
                             "sv": "Decimal: Siffrans värde",
                             "en": "Dec: Digit value"
@@ -1537,7 +1606,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Avrunda talet 4331,14 till närmaste ental. (Svara som ett heltal utan kommatecken)",
+                        "ex": "Avrunda talet 4363,12 till närmaste hundratal. (Svara som ett heltal utan kommatecken)",
                         "desc": {
                             "sv": "Avrunda till heltal",
                             "en": "Round to whole"
@@ -1590,7 +1659,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$6 - \\frac{6}{3}$$",
+                        "ex": "$$2 + \\frac{18}{3}$$",
                         "desc": {
                             "sv": "Prioritering: Grund",
                             "en": "Order: Basic"
@@ -1619,7 +1688,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$1 + 4 \\cdot (9 - 4)$$",
+                        "ex": "$$(2 + 5) \\cdot 4 - 5$$",
                         "desc": {
                             "sv": "Prioritering: Parenteser",
                             "en": "Order: Parentheses"
@@ -1648,7 +1717,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$13 + 2 · 3 - \\frac{1 + 9}{5}$$",
+                        "ex": "$$3 · 7 + \\frac{6 + 15}{3} - 25$$",
                         "desc": {
                             "sv": "Prioritering: Bråkstreck",
                             "en": "Order: Fraction Bar"
@@ -1677,7 +1746,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$7^{2} - \\frac{30 + 2}{4} - 18$$",
+                        "ex": "$$13 + \\frac{18 + 2}{2} + 4^{2}$$",
                         "desc": {
                             "sv": "Prioritering: Potenser",
                             "en": "Order: Powers"
@@ -1719,7 +1788,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 2,
-                        "ex": "$$2 + 5 - (-3) + 2$$",
+                        "ex": "$$(-4) + 4 - 0 + 0$$",
                         "desc": {
                             "sv": "Add/Sub Kedja (4)",
                             "en": "Add/Sub Chain (4)"
@@ -1792,7 +1861,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$(-4) \\cdot (-5)$$",
+                        "ex": "$$(-9) \\cdot (-9)$$",
                         "desc": {
                             "sv": "Multiplikation: Lika tecken",
                             "en": "Multiplication: Same Sign"
@@ -1854,7 +1923,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\frac{-10}{-2}$$",
+                        "ex": "$$\\frac{6}{3}$$",
                         "desc": {
                             "sv": "Division: Samma tecken",
                             "en": "Division: Same signs"
@@ -1905,7 +1974,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$\\frac{13  +  5  \\cdot  (-5)}{-3}$$",
+                        "ex": "$$\\frac{-5  +  (-3)  \\cdot  (-5)}{5}$$",
                         "desc": {
                             "sv": "Prioritering: Bråk & Mult",
                             "en": "Order: Fractions & Mult"
@@ -1958,7 +2027,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Du har 16 kulor. Hur många kulor motsvarar 1/8?",
+                        "ex": "Du har 40 kulor. Hur många kulor motsvarar 1/10?",
                         "desc": {
                             "sv": "Bild: Hitta helheten",
                             "en": "Visual: Find whole"
@@ -1998,7 +2067,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Om en 1/3 av ett okänt tal är 31, vad är då hela talet totalt?",
+                        "ex": "Om en 1/5 av ett okänt tal är 35, vad är då hela talet totalt?",
                         "desc": {
                             "sv": "Hitta helheten",
                             "en": "Find the whole"
@@ -2049,7 +2118,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Mellan vilka två hela siffror ligger bråket $\\frac{17}{3}$?",
+                        "ex": "Mellan vilka två hela siffror ligger bråket $\\frac{14}{6}$?",
                         "desc": {
                             "sv": "Storleksbedömning",
                             "en": "Size assessment"
@@ -2111,7 +2180,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\frac{8}{9} = \\frac{?}{27}$$",
+                        "ex": "$$\\frac{1}{10} = \\frac{?}{20}$$",
                         "desc": {
                             "sv": "Likvärdiga bråk",
                             "en": "Equivalent fractions"
@@ -2151,7 +2220,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\frac{2}{3} \\quad \\bigcirc \\quad 0,57$$",
+                        "ex": "$$\\frac{2}{3} \\quad \\bigcirc \\quad 0,72$$",
                         "desc": {
                             "sv": "Jämför bråk/decimal",
                             "en": "Compare fraction/decimal"
@@ -2237,7 +2306,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$\\frac{2}{9} + \\frac{x}{9} = \\frac{5}{9}$$",
+                        "ex": "$$\\frac{5}{11} + \\frac{x}{11} = \\frac{9}{11}$$",
                         "desc": {
                             "sv": "Addition: Pussel",
                             "en": "Addition: Puzzle"
@@ -2288,7 +2357,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Hitta den minsta gemensamma nämnaren (MGN) för 6 och 9.",
+                        "ex": "Hitta den minsta gemensamma nämnaren (MGN) för 8 och 11.",
                         "desc": {
                             "sv": "Hitta MGN",
                             "en": "Find LCD"
@@ -2339,7 +2408,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$3\\frac{1}{3} + 1\\frac{1}{3}$$",
+                        "ex": "$$3\\frac{1}{4} + 2\\frac{1}{5}$$",
                         "desc": {
                             "sv": "Uppskatta summa",
                             "en": "Estimate Sum"
@@ -2412,7 +2481,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\frac{3}{5} \\cdot \\frac{5}{9}$$",
+                        "ex": "$$\\frac{1}{6} \\cdot \\frac{7}{5}$$",
                         "desc": {
                             "sv": "Multiplikation: Skalning",
                             "en": "Mult: Scaling"
@@ -2463,7 +2532,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$\\frac{2}{9} \\div \\frac{3}{6}$$",
+                        "ex": "$$\\frac{5}{9} \\div \\frac{4}{6}$$",
                         "desc": {
                             "sv": "Division: Koncept",
                             "en": "Division: Concept"
@@ -2514,7 +2583,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$-\\frac{2}{3} + \\frac{1}{2}$$",
+                        "ex": "$$-\\frac{3}{4} - \\frac{1}{3}$$",
                         "desc": {
                             "sv": "Negativa bråk (+/-)",
                             "en": "Negative Fractions (+/-)"
@@ -2554,7 +2623,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 7,
-                        "ex": "$$\\frac{1}{2} + \\frac{1}{2} \\cdot \\frac{1}{3}$$",
+                        "ex": "$$\\frac{9}{10} + \\frac{1}{2} \\cdot \\frac{2}{5}$$",
                         "desc": {
                             "sv": "Prio: Mult & Add",
                             "en": "Order: Mult & Add"
@@ -2594,7 +2663,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 8,
-                        "ex": "$$\\left(-\\frac{1}{2}\\right)^{2} + \\frac{1}{4}$$",
+                        "ex": "$$\\left(-\\frac{1}{2}\\right)^{3} + \\frac{3}{8}$$",
                         "desc": {
                             "sv": "Potenser av negativa bråk",
                             "en": "Powers of negative fractions"
@@ -2720,7 +2789,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$50\\% \\cdot 30$$",
+                        "ex": "$$25\\% \\cdot 16$$",
                         "desc": {
                             "sv": "Huvudräkning (Bas)",
                             "en": "Mental Math (Basic)"
@@ -2771,7 +2840,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$20\\% \\cdot 900$$",
+                        "ex": "$$60\\% \\cdot 980$$",
                         "desc": {
                             "sv": "Sammansatta procent",
                             "en": "Composite percentages"
@@ -2833,7 +2902,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\frac{280}{800}$$",
+                        "ex": "$$\\frac{7}{10}$$",
                         "desc": {
                             "sv": "Andelen (Grund)",
                             "en": "Find Percent (Basic)"
@@ -2895,7 +2964,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$20\\% = 74$$",
+                        "ex": "$$20\\% = 22$$",
                         "desc": {
                             "sv": "Hitta det hela",
                             "en": "Find the whole"
@@ -2935,7 +3004,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$\\frac{600}{300}$$",
+                        "ex": "$$\\frac{90}{200}$$",
                         "desc": {
                             "sv": "Beräkna förändring",
                             "en": "Calculate change"
@@ -2958,6 +3027,17 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Skillnad / Ursprungsvärde",
                                     "en": "Difference / Original"
+                                }
+                            },
+                            {
+                                "key": "change_multiplier",
+                                "name": {
+                                    "sv": "Förändringsfaktor",
+                                    "en": "Change Factor"
+                                },
+                                "desc": {
+                                    "sv": "1,0 +/- %",
+                                    "en": "1.0 +/- %"
                                 }
                             },
                             {
@@ -2988,7 +3068,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Ett värde ökar med 67%. Vilken förändringsfaktor motsvarar denna ökning?",
+                        "ex": "Ett värde ökar med 90%. Vilken förändringsfaktor motsvarar denna ökning?",
                         "desc": {
                             "sv": "Ökning till Faktor",
                             "en": "Increase to Factor"
@@ -3050,7 +3130,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Ett pris på 3700 kr ska höjas med 19%. Beräkna det nya priset.",
+                        "ex": "Ett pris på 600 kr ska höjas med 41%. Beräkna det nya priset.",
                         "desc": {
                             "sv": "Beräkna nytt (Ökning)",
                             "en": "Calc new (Increase)"
@@ -3090,7 +3170,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Efter en höjning med 49% kostar en vara nu 447 kr. Vad var priset från början?",
+                        "ex": "Efter en höjning med 65% kostar en vara nu 825 kr. Vad var priset från början?",
                         "desc": {
                             "sv": "Hitta gamla (Ökning)",
                             "en": "Find old (Increase)"
@@ -3130,7 +3210,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "Värdet på ett föremål ändras först med +20% och därefter med +20%. Beräkna den totala förändringsfaktorn.",
+                        "ex": "Värdet på ett föremål ändras först med -10% och därefter med +25%. Beräkna den totala förändringsfaktorn.",
                         "desc": {
                             "sv": "Total faktor",
                             "en": "Total factor"
@@ -3172,7 +3252,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$219^{0}$$",
+                        "ex": "$$497^{0}$$",
                         "desc": {
                             "sv": "Noll-regeln",
                             "en": "Zero rule"
@@ -3212,7 +3292,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$10^{2}$$",
+                        "ex": "$$10^{6}$$",
                         "desc": {
                             "sv": "Tiopotenser (Pos)",
                             "en": "Powers of ten (Pos)"
@@ -3263,7 +3343,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Skriv 610 000 i grundpotensform.",
+                        "ex": "Skriv 6 600 i grundpotensform.",
                         "desc": {
                             "sv": "Till Grundpotensform",
                             "en": "To Scientific Notation"
@@ -3314,7 +3394,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "$$\\sqrt{81}$$",
+                        "ex": "$$\\sqrt{16}$$",
                         "desc": {
                             "sv": "Kvadratrötter",
                             "en": "Square roots"
@@ -3354,7 +3434,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "$$x^{2} \\cdot x^{8}$$",
+                        "ex": "$$x^{7} \\cdot x^{10}$$",
                         "desc": {
                             "sv": "Lag: Multiplikation",
                             "en": "Law: Multiplication"
@@ -3416,7 +3496,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "$$(x^{2})^{4}$$",
+                        "ex": "$$(x^{4})^{4}$$",
                         "desc": {
                             "sv": "Lag: Potens av potens",
                             "en": "Law: Power of power"
@@ -3467,7 +3547,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 7,
-                        "ex": "$$2 \\cdot 10^{-8} \\cdot 4 \\cdot 10^{-6}$$",
+                        "ex": "$$6 \\cdot 10^{-4} \\cdot 7 \\cdot 10^{-4}$$",
                         "desc": {
                             "sv": "Multiplikation (Grundpotens)",
                             "en": "Multiplication (Scientific)"
@@ -3520,7 +3600,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$21 \\cdot 100$$",
+                        "ex": "$$0,16 \\cdot 100$$",
                         "desc": {
                             "sv": "Multiplikation: Stora tal",
                             "en": "Multiplication: Large numbers"
@@ -3582,7 +3662,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Att dividera med 0,1 ger exakt samma svar som att multiplicera med...",
+                        "ex": "Att multiplicera med 0,01 ger exakt samma svar som att dividera med...",
                         "desc": {
                             "sv": "Inverser (0,1/0,01)",
                             "en": "Reciprocals (0.1/0.01)"
@@ -3611,7 +3691,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$0,61 \\cdot 0,1$$",
+                        "ex": "$$2,6 \\cdot 0,001$$",
                         "desc": {
                             "sv": "Multiplikation: Små tal",
                             "en": "Multiplication: Small numbers"
@@ -3686,7 +3766,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$320 \\text{ m} = \\text{\\_\\_\\_} \\text{ mm}$$",
+                        "ex": "$$49,9 \\text{ dm} = \\text{\\_\\_\\_} \\text{ mm}$$",
                         "desc": {
                             "sv": "Längd: Grundläggande",
                             "en": "Length: Basic"
@@ -3737,7 +3817,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "$$890 \\text{ kg} = \\text{\\_\\_\\_} \\text{ hg}$$",
+                        "ex": "$$690 \\text{ hg} = \\text{\\_\\_\\_} \\text{ kg}$$",
                         "desc": {
                             "sv": "Vikt: Grundläggande",
                             "en": "Weight: Basic"
@@ -3788,7 +3868,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "$$372 \\text{ l} = \\text{\\_\\_\\_} \\text{ dl}$$",
+                        "ex": "$$189 \\text{ ml} = \\text{\\_\\_\\_} \\text{ l}$$",
                         "desc": {
                             "sv": "Volym: Grundläggande",
                             "en": "Volume: Basic"
@@ -3841,7 +3921,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$4 \\cdot 8$$",
+                        "ex": "$$4 \\cdot 9$$",
                         "desc": {
                             "sv": "Omkrets: Kvadrat",
                             "en": "Perimeter: Square"
@@ -4349,6 +4429,35 @@ export const CONTENT_MAP = [
                         ]
                     },
                     {
+                        "lvl": 3,
+                        "ex": "Bestäm x.",
+                        "desc": {
+                            "sv": "Vertikalvinklar",
+                            "en": "Vertical angles"
+                        },
+                        "student_desc": {
+                            "sv": "Vertikal- & Sidovinklar",
+                            "en": "Vertical & Adjacent Angles"
+                        },
+                        "teacher_desc": {
+                            "sv": "Mittemot varandra",
+                            "en": "Opposite each other"
+                        },
+                        "variations": [
+                            {
+                                "key": "vertical_side_visual",
+                                "name": {
+                                    "sv": "Vertikalvinklar",
+                                    "en": "Vertical angles"
+                                },
+                                "desc": {
+                                    "sv": "Mittemot varandra",
+                                    "en": "Opposite each other"
+                                }
+                            }
+                        ]
+                    },
+                    {
                         "lvl": 4,
                         "ex": "Beräkna x i triangeln.",
                         "desc": {
@@ -4636,7 +4745,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "En 75 meter lång stege lutar mot en vägg. Den når 72 meter upp på väggen. Hur långt från väggen står stegen?",
+                        "ex": "En 13 meter lång stege lutar mot en vägg. Den når 12 meter upp på väggen. Hur långt från väggen står stegen?",
                         "desc": {
                             "sv": "Problem: Stegen",
                             "en": "Problem: The Ladder"
@@ -4709,7 +4818,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "Är en triangel med sidorna 6, 8 och 12 rätvinklig?",
+                        "ex": "Är en triangel med sidorna 6, 8 och 10 rätvinklig?",
                         "desc": {
                             "sv": "Rätvinklig?",
                             "en": "Right-angled?"
@@ -4760,7 +4869,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "Vilket räknesätt använder du för att hitta en katet om du vet hypotenusan och den andra kateten?",
+                        "ex": "En 51 meter lång stege lutar mot en vägg. Den når 45 meter upp på väggen. Hur långt från väggen står stegen?",
                         "desc": {
                             "sv": "Blandade problem",
                             "en": "Mixed problems"
@@ -4836,6 +4945,17 @@ export const CONTENT_MAP = [
                                 "desc": {
                                     "sv": "Kontrollera likformighet via vinklar",
                                     "en": "Check similarity via angles"
+                                }
+                            },
+                            {
+                                "key": "sim_tri_side_check",
+                                "name": {
+                                    "sv": "Trianglar (Sidor)",
+                                    "en": "Triangles (Sides)"
+                                },
+                                "desc": {
+                                    "sv": "Kontrollera likformighet via sidor",
+                                    "en": "Check similarity via sides"
                                 }
                             }
                         ]
@@ -4946,7 +5066,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 2,
-                        "ex": "I ett biologiskt diagram är ett föremål 6 mm, men på bilden är det 3 mm. Vilken skala har bilden?",
+                        "ex": "I ett laboratorieglas är ett föremål 200 mm, men på bilden är det 2 mm. Vilken skala har bilden?",
                         "desc": {
                             "sv": "Bestäm skalan",
                             "en": "Determine scale"
@@ -5008,7 +5128,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "På ett sjökort i skala 1:40 000 är rutten mellan två öar 24 cm. Hur långt är detta i verkligheten? Svara i kilometer.",
+                        "ex": "På en världskarta i skala 1:50 000 är avståndet mellan två länder 12 cm. Hur långt är detta i verkligheten? Svara i kilometer.",
                         "desc": {
                             "sv": "Karta: Verklighet",
                             "en": "Map: Reality"
@@ -5070,7 +5190,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "Väggen i vardagsrummet är 125 m. På en ritning är den 25 cm. Vilken skala har använts?",
+                        "ex": "Den nya uteplatsen är 24 m. På en trädgårdsskiss är den 12 cm. Vilken skala har använts?",
                         "desc": {
                             "sv": "Bestäm förminskning",
                             "en": "Determine reduction"
@@ -5110,7 +5230,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "En trädgårdsskiss är ritad i skala 1:40. I verkligheten är den nya uteplatsen 5.2 meter. Hur lång blir den på ritningen? Svara i cm.",
+                        "ex": "På en orienteringskarta i skala 1:10 000 är sträckan till nästa kontroll 12 cm. Hur långt är detta i verkligheten? Svara i kilometer.",
                         "desc": {
                             "sv": "Textproblem",
                             "en": "Word problem"
@@ -5139,7 +5259,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "Om längden på alla sidor i en figur dubbleras (längdskala 1:4), vad händer då med arean?",
+                        "ex": "Om längden på alla sidor i en figur dubbleras (längdskala 1:15), vad händer då med arean?",
                         "desc": {
                             "sv": "Beräkna bild: Area",
                             "en": "Calculate Image: Area"
@@ -5201,6 +5321,57 @@ export const CONTENT_MAP = [
                     "en": "Volume & Surface Area"
                 },
                 "levels": [
+                    {
+                        "lvl": 1,
+                        "ex": "Beräkna rätblockets volym.",
+                        "desc": {
+                            "sv": "Volym: Rätblock",
+                            "en": "Volume: Cuboid"
+                        },
+                        "student_desc": {
+                            "sv": "Rätblock & Kub",
+                            "en": "Cuboid & Cube"
+                        },
+                        "teacher_desc": {
+                            "sv": "Längd · Bredd · Höjd",
+                            "en": "Length · Width · Height"
+                        },
+                        "variations": [
+                            {
+                                "key": "vol_cuboid_std",
+                                "name": {
+                                    "sv": "Volym: Rätblock",
+                                    "en": "Volume: Cuboid"
+                                },
+                                "desc": {
+                                    "sv": "Längd · Bredd · Höjd",
+                                    "en": "Length · Width · Height"
+                                }
+                            },
+                            {
+                                "key": "vol_cuboid_inverse",
+                                "name": {
+                                    "sv": "Rätblock: Invers",
+                                    "en": "Cuboid: Inverse"
+                                },
+                                "desc": {
+                                    "sv": "Hitta saknad sida från volymen",
+                                    "en": "Find missing side from volume"
+                                }
+                            },
+                            {
+                                "key": "vol_cuboid_scaling",
+                                "name": {
+                                    "sv": "Rätblock: Skalning",
+                                    "en": "Cuboid: Scaling"
+                                },
+                                "desc": {
+                                    "sv": "Hur ändras volymen om sidorna dubblas?",
+                                    "en": "How does volume change if sides double?"
+                                }
+                            }
+                        ]
+                    },
                     {
                         "lvl": 2,
                         "ex": "Beräkna volymen for det triangulära prismat.",
@@ -5294,20 +5465,31 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "Beräkna konens volym ($\\pi \\approx 3,14$).",
+                        "ex": "Pyramiden har en kvadratisk basyta. Beräkna pyramidens volym.",
                         "desc": {
-                            "sv": "Kon: Tredjedelsregeln",
-                            "en": "Cone: Rule of Thirds"
+                            "sv": "Volym: Pyramid",
+                            "en": "Volume: Pyramid"
                         },
                         "student_desc": {
                             "sv": "Pyramid & Kon",
                             "en": "Pyramid & Cone"
                         },
                         "teacher_desc": {
-                            "sv": "En kon är 1/3 av en cylinder",
-                            "en": "A cone is 1/3 of a cylinder"
+                            "sv": "(Basytan · h) / 3",
+                            "en": "(Base area · h) / 3"
                         },
                         "variations": [
+                            {
+                                "key": "vol_pyramid_std",
+                                "name": {
+                                    "sv": "Volym: Pyramid",
+                                    "en": "Volume: Pyramid"
+                                },
+                                "desc": {
+                                    "sv": "(Basytan · h) / 3",
+                                    "en": "(Base area · h) / 3"
+                                }
+                            },
                             {
                                 "key": "vol_cone_rule3",
                                 "name": {
@@ -5334,7 +5516,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "Beräkna klotets volym med radien 6 cm.",
+                        "ex": "Beräkna klotets volym med radien 3 cm.",
                         "desc": {
                             "sv": "Volym: Klot",
                             "en": "Volume: Sphere"
@@ -5385,7 +5567,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "Beräkna cylinderns volym ($\\pi \\approx 3,14$).",
+                        "ex": "Pyramiden har en kvadratisk basyta. Beräkna pyramidens volym.",
                         "desc": {
                             "sv": "Klot från diameter",
                             "en": "Sphere from diameter"
@@ -5425,7 +5607,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 7,
-                        "ex": "En partytut har formen av ett kon med radien 6 cm och höjden 12 cm. Vad är dess volym i milliliter?",
+                        "ex": "En pappersmugg har formen av ett kon med radien 8 cm och höjden 11 cm. Vad är dess volym i milliliter?",
                         "desc": {
                             "sv": "Enheter: Liter & dm³",
                             "en": "Units: Liters & dm³"
@@ -5487,20 +5669,31 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 8,
-                        "ex": "Beräkna ytarean för ett klot med radien 17 cm.",
+                        "ex": "Beräkna rätblockets ytarea (arean av alla sex sidor sammanlagt).",
                         "desc": {
-                            "sv": "Begränsningsarea: Cylinder",
-                            "en": "Surface Area: Cylinder"
+                            "sv": "Begränsningsarea: Rätblock",
+                            "en": "Surface Area: Cuboid"
                         },
                         "student_desc": {
                             "sv": "Begränsningsyta",
                             "en": "Surface Area"
                         },
                         "teacher_desc": {
-                            "sv": "Två basytor + mantelarea",
-                            "en": "Two bases + lateral area"
+                            "sv": "Area av alla 6 sidor",
+                            "en": "Area of all 6 sides"
                         },
                         "variations": [
+                            {
+                                "key": "sa_cuboid",
+                                "name": {
+                                    "sv": "Begränsningsarea: Rätblock",
+                                    "en": "Surface Area: Cuboid"
+                                },
+                                "desc": {
+                                    "sv": "Area av alla 6 sidor",
+                                    "en": "Area of all 6 sides"
+                                }
+                            },
                             {
                                 "key": "sa_cylinder",
                                 "name": {
@@ -5562,7 +5755,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "Kolla igenom gjorda mål listan: 2, 0, 4, 2, 3, 4, 4, 2. Vilket är typvärdet?",
+                        "ex": "Kolla igenom gjorda mål listan: 0, 4, 0, 0, 4, 0. Vilket är typvärdet?",
                         "desc": {
                             "sv": "Typvärde",
                             "en": "Mode"
@@ -5613,7 +5806,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Beräkna medelvärdet för följande skostorlekar: 40, 41, 44, 39, 39.",
+                        "ex": "Beräkna medelvärdet för följande åldrar: 12, 13, 12, 11, 17.",
                         "desc": {
                             "sv": "Beräkna medelvärde",
                             "en": "Calculate mean"
@@ -5653,7 +5846,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 3,
-                        "ex": "Bestäm medianen för följande gjorda mål: 2, 5, 5, 1, 1.",
+                        "ex": "Bestäm medianen för följande temperaturer: 15, 12, 15, 24, 19, 20.",
                         "desc": {
                             "sv": "Median (Udda antal)",
                             "en": "Median (Odd count)"
@@ -5693,7 +5886,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 4,
-                        "ex": "Medelvärdet av fyra tal är 17. Tre av talen är 11, 18 och 13. Vilket är det fjärde talet?",
+                        "ex": "Medelvärdet av fyra tal är 17. Tre av talen är 10, 18 och 10. Vilket är det fjärde talet?",
                         "desc": {
                             "sv": "Hitta saknat värde",
                             "en": "Find missing value"
@@ -5808,18 +6001,29 @@ export const CONTENT_MAP = [
                         "lvl": 6,
                         "ex": "Du köper 2 kg äpplen för 20 kr/kg och 3 kg till av en annan sort. Medelpriset blir 26 kr/kg. Vad kostade den andra sorten per kg?",
                         "desc": {
-                            "sv": "Vägt medelvärde",
-                            "en": "Weighted average"
+                            "sv": "Effekt av extremvärden",
+                            "en": "Outlier effects"
                         },
                         "student_desc": {
                             "sv": "Blandade begrepp",
                             "en": "Mixed Concepts"
                         },
                         "teacher_desc": {
-                            "sv": "Beräkna snitt med olika vikter/grupper",
-                            "en": "Calculate average of different groups"
+                            "sv": "Hur ändras medelvärdet?",
+                            "en": "How does the mean change?"
                         },
                         "variations": [
+                            {
+                                "key": "real_outlier_shift",
+                                "name": {
+                                    "sv": "Effekt av extremvärden",
+                                    "en": "Outlier effects"
+                                },
+                                "desc": {
+                                    "sv": "Hur ändras medelvärdet?",
+                                    "en": "How does the mean change?"
+                                }
+                            },
                             {
                                 "key": "real_weighted_avg",
                                 "name": {
@@ -5859,7 +6063,7 @@ export const CONTENT_MAP = [
                 "levels": [
                     {
                         "lvl": 1,
-                        "ex": "$$\\frac{6}{15}$$",
+                        "ex": "$$\\frac{4}{14}$$",
                         "desc": {
                             "sv": "Beräkna Sannolikhet",
                             "en": "Calculate Probability"
@@ -5943,7 +6147,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 2,
-                        "ex": "Vad är sannolikheten att få en 1:a när du kastar en vanlig sexsidig tärning?",
+                        "ex": "Vad är sannolikheten att få en 5:a när du kastar en vanlig sexsidig tärning?",
                         "desc": {
                             "sv": "Tärning: Enstaka tal",
                             "en": "Dice: Single number"
@@ -6016,7 +6220,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 5,
-                        "ex": "I en samling finns det 21 vinylskivor och 13 CD-skivor. Du drar två slumpmässigt utan återläggning. Vad är sannolikheten att du drar en vinylskiva först och därefter en vinylskiva?",
+                        "ex": "I en klass finns det 21 pojkar och 14 flickor. Du drar två slumpmässigt utan återläggning. Vad är sannolikheten att du drar en pojke först och därefter en flicka?",
                         "desc": {
                             "sv": "Sannolikhetsträd",
                             "en": "Probability tree"
@@ -6056,7 +6260,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 6,
-                        "ex": "I en påse finns det 21 gröna paprikor och 8 gula paprikor. Du väljer två slumpmässigt utan återläggning. Vad är sannolikheten att få en av varje sort?",
+                        "ex": "I en kortlek finns det 22 hjärterkort och 9 spaderkort. Du väljer två slumpmässigt utan återläggning. Vad är sannolikheten att få en av varje sort?",
                         "desc": {
                             "sv": "Oberoende ordning",
                             "en": "Independent order"
@@ -6096,7 +6300,7 @@ export const CONTENT_MAP = [
                     },
                     {
                         "lvl": 7,
-                        "ex": "En restaurang har 9 förrätter och 14 varmrätter. På hur många sätt kan du kombinera dem?",
+                        "ex": "En restaurang har 6 förrätter och 10 varmrätter. På hur många sätt kan du kombinera dem?",
                         "desc": {
                             "sv": "Kombinatorik: Outfits",
                             "en": "Combinatorics: Outfits"

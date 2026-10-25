@@ -22,7 +22,8 @@ import { HelpCircle } from 'lucide-react';
 import PresentationTutorialModal from '../modals/PresentationTutorialModal';
 import { getToolDefinition } from '../whiteboard/tools/registry';
 import SheetLibraryModal from '../modals/SheetLibraryModal';
-import SaveToUnitModal from '../modals/SaveToUnitModal'; // 🟢 NEW IMPORT
+import SaveToUnitModal from '../modals/SaveToUnitModal';
+import { PRESENTATION_THEMES } from '../../constants/presentationThemes';
 
 import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 
@@ -41,6 +42,7 @@ export default function PresentationView({
     const [slides, setSlides] = useState(initialSlides || [{ id: `slide_${Date.now()}`, elements: [], scrollX: 0, scrollY: 0, title: 'Slide 1', activeIds: [] }]);
     const [activeSlideIndex, setActiveSlideIndex] = useState(0);
     const [editingSlideIndex, setEditingSlideIndex] = useState(null);
+    const [presentationTheme, setPresentationTheme] = useState(initialSettings?.theme || packet?.settings?.theme || 'clean');
 
     // --- MODAL STATES ---
     const [showNamingModal, setShowNamingModal] = useState(false);
@@ -424,7 +426,7 @@ export default function PresentationView({
                 title: localTitle,
                 type: 'board', 
                 user_id: teacherId,
-                packet: { slides, livePacket, settings: { bgType, viewMode,  globalZoom } }
+                packet: { slides, livePacket, settings: { bgType, viewMode,  globalZoom, theme: presentationTheme } },
             };
 
             let res;
@@ -511,7 +513,7 @@ export default function PresentationView({
                 title: finalTitle,
                 type: 'board', 
                 user_id: teacherId,
-                packet: { slides, livePacket, settings: { bgType, viewMode, globalZoom } }
+                packet: { slides, livePacket, settings: { bgType, viewMode, globalZoom, theme: presentationTheme } }
             };
 
             const { data: savedSheet, error } = await supabase.from('saved_sheets').insert([payload]).select().single();
@@ -545,7 +547,7 @@ export default function PresentationView({
                 mode: 'presentation',
                 packet: livePacket,
                 slides: slides,
-                settings: { bgType, viewMode, globalZoom, ...configuredSettings }
+                settings: { bgType, viewMode, globalZoom, theme: presentationTheme, ...configuredSettings }
             };
 
             const { data: roomData, error } = await supabase
@@ -712,6 +714,18 @@ export default function PresentationView({
                                     >
                                         <Download size={16} className="text-emerald-500" />
                                         {lang === 'sv' ? "Exportera text (CSV)" : "Export text (CSV)"}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const keys = Object.keys(PRESENTATION_THEMES);
+                                            const nextIdx = (keys.indexOf(presentationTheme) + 1) % keys.length;
+                                            setPresentationTheme(keys[nextIdx]);
+                                            setIsSaving(false);
+                                        }}
+                                        className="p-1.5 rounded-lg text-xs font-black uppercase text-slate-300 hover:text-white bg-slate-800 border border-slate-700/60"
+                                    >
+                                        {PRESENTATION_THEMES[presentationTheme]?.name[lang] || 'Tema'}
                                     </button>
                                 </div>
                             </>
@@ -1247,6 +1261,7 @@ export default function PresentationView({
                                     ...slides[activeSlideIndex],
                                     activeIds: sidebarTab === 'slides' ? (slides[activeSlideIndex]?.activeIds || []) : activeIds
                                 }}
+                                theme={presentationTheme}
                                 livePacket={livePacket}
                                 lang={lang}
                                 bgType={bgType}
@@ -1597,6 +1612,9 @@ export default function PresentationView({
                     if (sheet.packet?.livePacket) setLivePacket(sheet.packet.livePacket);
                     if (sheet.title) setLocalTitle(sheet.title);
                     if (sheet.id) setBoardId(sheet.id);
+                    if (sheet.packet?.settings?.theme || sheet.theme) {
+                        setPresentationTheme(sheet.packet?.settings?.theme || sheet.theme);
+                    };
                     setShowLibraryModal(false);
                 }}
             />

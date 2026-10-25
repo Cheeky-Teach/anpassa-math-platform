@@ -36,7 +36,10 @@ async function generateContentMap() {
                 
                 // Skip concept/theory/MCQ variations to stick strictly to calculate types
                 const k = variation.key.toLowerCase();
-                const isConceptOrMCQ = ['concept', 'theory', 'foundations', 'id', 'begrepp', 'lie', 'spot', 'choice', 'mcq'].some(kw => k.includes(kw));
+                
+                // Match keywords as distinct segments or word boundaries, preventing matches on 'bothsides' or 'multiplier'
+                const filterPattern = /(^|_)(concept|theory|foundations|begrepp|mcq|choice|spot|lie)(_|$)/;
+                const isConceptOrMCQ = filterPattern.test(k);
                 if (isConceptOrMCQ) continue;
 
                 if (!levelMap[lvl]) {
