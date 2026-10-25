@@ -30,6 +30,7 @@ export default function InteractiveCanvas({
         onToggleBg, 
         elements = [], 
         setElements = () => {},
+        isOverlay = false,
         onCustomClear = null,
         livePacket = [], 
         clueProgress = {}, 
@@ -73,6 +74,11 @@ export default function InteractiveCanvas({
     const [hoveredId, setHoveredId] = useState(null);
     const [editingId, setEditingId] = useState(null);
     const [interactionMode, setInteractionMode] = useState(null);
+
+    // 🟢 When in overlay mode, pass clicks through to the slide unless an active drawing/erasing tool is in use
+    const isDrawingTool = activeTool !== 'select';
+    const shouldInterceptEvents = !isOverlay || isDrawingTool;
+    const elementPointerClass = (!isOverlay || isDrawingTool || selectedIds.length > 0) ? 'pointer-events-auto' : 'pointer-events-none';
 
     const dragCoordRef = useRef({ x: 0, y: 0 });
     const selectionBoxRef = useRef(null);
@@ -301,25 +307,26 @@ export default function InteractiveCanvas({
     }, [selectedIds, elements, setElements]);
 
         useEffect(() => {
-        const handleGlobalDeselect = (e) => {
-            const isInput = e.target.tagName?.toLowerCase() === 'input' || e.target.tagName?.toLowerCase() === 'textarea';
-            if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]') || isInput) return;
-            
-            const targetNode = e.target.closest('[data-id]');
-            if (targetNode) return;
+        if (isOverlay) return; // 🟢 Don't intercept global deselects when acting as a transparent slide overlay
+            const handleGlobalDeselect = (e) => {
+                const isInput = e.target.tagName?.toLowerCase() === 'input' || e.target.tagName?.toLowerCase() === 'textarea';
+                if (e.target.closest('.ui-ignore') || e.target.closest('[contenteditable="true"]') || isInput) return;
+                
+                const targetNode = e.target.closest('[data-id]');
+                if (targetNode) return;
 
-            const hitElement = [...elements].reverse().find(el => isPointInElement(e.clientX, e.clientY, el));
-            if (hitElement && editingId === hitElement.id) {
-                return;
-            }
+                const hitElement = [...elements].reverse().find(el => isPointInElement(e.clientX, e.clientY, el));
+                if (hitElement && editingId === hitElement.id) {
+                    return;
+                }
 
-            if (activeTool === 'select' && !selectionBoxRef.current) {
-                setSelectedIds([]);
-                setEditingId(null);
-                setInteractionMode(null);
-                setIsDrawing(false);
-            }
-        };
+                if (activeTool === 'select' && !selectionBoxRef.current) {
+                    setSelectedIds([]);
+                    setEditingId(null);
+                    setInteractionMode(null);
+                    setIsDrawing(false);
+                }
+            };
 
         window.addEventListener('pointerdown', handleGlobalDeselect);
         return () => window.removeEventListener('pointerdown', handleGlobalDeselect);
@@ -991,7 +998,7 @@ export default function InteractiveCanvas({
             }
 
             return (
-                <g key={el.id} data-id={el.id} className="pointer-events-auto">
+                <g key={el.id} data-id={el.id} className={elementPointerClass}>
                     {renderedContent}
                 </g>
             );
@@ -1032,12 +1039,12 @@ export default function InteractiveCanvas({
 
         if (el.type === 'path') {
             const d = getSmoothPathData(el.points);
-            return <path key={el.id} data-id={el.id} d={d} stroke={el.stroke} strokeWidth={el.strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={el.opacity} className="pointer-events-auto cursor-move" />;
+            return <path key={el.id} data-id={el.id} d={d} stroke={el.stroke} strokeWidth={el.strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={el.opacity} className={`${elementPointerClass} cursor-move`} />;
         }
 
         if (el.type === 'line') {
             return (
-                <g key={el.id} data-id={el.id} className="pointer-events-auto cursor-move">
+                <g key={el.id} data-id={el.id} className={`${elementPointerClass} cursor-move`}>
                     <line 
                         x1={el.x1 ?? el.x} 
                         y1={el.y1 ?? el.y} 
@@ -1063,18 +1070,20 @@ export default function InteractiveCanvas({
     };
 
     return (
-        <div className="relative w-full h-full overflow-hidden">
+        <div className="relative w-full h-full overflow-hidden pointer-events-none">
             <svg 
                 ref={svgRef}
                 viewBox={`0 0 ${resolution.w} ${resolution.h}`}
                 preserveAspectRatio="xMidYMid meet"
                 style={{ touchAction: 'none' }}
-                className={`absolute inset-0 w-full h-full z-10 pointer-events-auto ${
+                className={`absolute inset-0 w-full h-full z-10 ${
+                    shouldInterceptEvents ? 'pointer-events-auto' : 'pointer-events-none'
+                } ${
                     readOnly ? 'cursor-default' :
                     activeTool === 'eraser' ? 'cursor-cell' :
                     activeTool === 'select' ? 'cursor-default' : 'cursor-crosshair'
                 }`}
-                onPointerDown={readOnly ? undefined : handlePointerDown}
+                onPointerDown={readOnly || !shouldInterceptEvents ? undefined : handlePointerDown}
             >
                 {Array.isArray(elements) && elements.map(renderElement)}
 
@@ -1106,35 +1115,39 @@ export default function InteractiveCanvas({
                 )}
             </svg>
             
-            {/* Unified Toolbar (Direct child of canvas container) */}
+            {/* Unified Toolbar (Only actual buttons intercept clicks, not empty margins) */}
             {toolbarMode !== 'none' && !readOnly && (
-                <Toolbar 
-                    lang={lang} 
-                    activeTool={activeTool} 
-                    setActiveTool={setActiveTool} 
-                    color={color} 
-                    setColor={setColor} 
-                    onClear={() => onCustomClear ? onCustomClear() : setElements([])} 
-                    canUndo={false} 
-                    canRedo={false} 
-                    bgType={bgType} 
-                    onToggleBg={onToggleBg} 
-                    mode={toolbarMode}
-                    allowedTools={allowedTools}
-                    activeDrawer={activeDrawer}
-                    onToggleDrawer={handleToggleDrawer}
-                />
+                <div className="pointer-events-none [&_button]:pointer-events-auto [&_input]:pointer-events-auto [&_.ui-ignore]:pointer-events-auto">
+                    <Toolbar 
+                        lang={lang} 
+                        activeTool={activeTool} 
+                        setActiveTool={setActiveTool} 
+                        color={color} 
+                        setColor={setColor} 
+                        onClear={() => onCustomClear ? onCustomClear() : setElements([])} 
+                        canUndo={false} 
+                        canRedo={false} 
+                        bgType={bgType} 
+                        onToggleBg={onToggleBg} 
+                        mode={toolbarMode}
+                        allowedTools={allowedTools}
+                        activeDrawer={activeDrawer}
+                        onToggleDrawer={handleToggleDrawer}
+                    />
+                </div>
             )}
 
             {/* Whiteboard Drawer */}
             {!readOnly && renderDrawer && (
-                <WhiteboardDrawer
-                    activeDrawer={activeDrawer}
-                    onClose={() => handleToggleDrawer(null)}
-                    onSpawn={handleSpawnFromDrawer}
-                    lang={lang}
-                    showDividingLine={showDividingLine}
-                />
+                <div className="pointer-events-none [&>*]:pointer-events-auto">
+                    <WhiteboardDrawer
+                        activeDrawer={activeDrawer}
+                        onClose={() => handleToggleDrawer(null)}
+                        onSpawn={handleSpawnFromDrawer}
+                        lang={lang}
+                        showDividingLine={showDividingLine}
+                    />
+                </div>
             )}
         </div>
     );

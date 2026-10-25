@@ -60,6 +60,33 @@ export default function PresentationView({
         return !localStorage.getItem(storageKey);
     });
 
+    // Add near your top-level state declarations:
+    const [isDirty, setIsDirty] = useState(false);
+    const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
+    const [showSaveChoiceModal, setShowSaveChoiceModal] = useState(false);
+
+    // 1. Guard against browser refresh or tab close
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = ''; // Standard browser prompt
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
+
+    // 2. Guard for the in-app "Stäng" (Close) button
+    const handleAppClose = () => {
+        if (isDirty) {
+            setShowUnsavedChangesModal(true);
+        } else {
+            onClose();
+        }
+    };
+
     // Fetch Teacher ID on mount for the SaveToUnitModal
     useEffect(() => {
         supabase.auth.getUser().then(({ data }) => {
@@ -231,6 +258,13 @@ export default function PresentationView({
     useEffect(() => {
         if (sidebarTab === 'slides') setActiveIds(JSON.parse(currentPinnedIds));
     }, [activeSlideIndex, sidebarTab, currentPinnedIds]);
+
+    // Mark dirty whenever content changes:
+    useEffect(() => {
+        // Flag changes whenever slides, questions, title, or settings change
+        setIsDirty(true);
+    }, [slides, livePacket, localTitle, presentationTheme, bgType, viewMode]);
+
 
     useEffect(() => {
         if (clueViewMode === 'coach' && presentationBoardEndRef.current) {
@@ -414,34 +448,57 @@ export default function PresentationView({
         updateCurrentSlideElements(prev => [...prev, ...newElements]);
     };
 
-    // --- 🟢 CORE SAVE TO CLOUD FUNCTION ---
-    const handleSave = async (silent = false) => {
+    // --- NEW / UPDATED SAVE FUNCTIONS ---
+    // 1. Core Save Worker: accepts an optional forceNewCopy flag
+    const executeSave = async ({ forceNewCopy = false, silent = false } = {}) => {
         setIsSaving(true);
         syncBatchProgress('presentation_saved', livePacket, { app_mode: 'presentation_builder' });
-        
+
         try {
-            if (!teacherId) throw new Error("Not authenticated");
+            let activeTeacherId = teacherId;
+            if (!activeTeacherId) {
+                const { data: authData } = await supabase.auth.getUser();
+                activeTeacherId = authData?.user?.id;
+                if (activeTeacherId) setTeacherId(activeTeacherId);
+            }
+            if (!activeTeacherId) throw new Error("Not authenticated");
+
+            let targetTitle = localTitle.trim() || (lang === 'sv' ? "Namnlös Presentation" : "Untitled Presentation");
+            if (forceNewCopy && !targetTitle.includes(lang === 'sv' ? '(Kopia)' : '(Copy)')) {
+                targetTitle = `${targetTitle} (${lang === 'sv' ? 'Kopia' : 'Copy'})`;
+                setLocalTitle(targetTitle);
+            }
 
             const payload = {
-                title: localTitle,
-                type: 'board', 
-                user_id: teacherId,
-                packet: { slides, livePacket, settings: { bgType, viewMode,  globalZoom, theme: presentationTheme } },
+                title: targetTitle,
+                type: 'board',
+                user_id: activeTeacherId,
+                packet: { slides, livePacket, settings: { bgType, viewMode, globalZoom, theme: presentationTheme } }
             };
 
             let res;
-            if (boardId) {
+            // If updating an existing sheet and NOT forcing a new copy:
+            if (boardId && !forceNewCopy) {
                 res = await supabase.from('saved_sheets').update(payload).eq('id', boardId).select().single();
             } else {
-                res = await supabase.from('saved_sheets').insert(payload).select().single();
+                // Fresh insert (creates a new boardId)
+                res = await supabase.from('saved_sheets').insert([payload]).select().single();
             }
 
             if (res.error) throw res.error;
-            
-            setBoardId(res.data.id); 
-            if (!silent) alert(lang === 'sv' ? "Presentationen har sparats i molnet!" : "Presentation saved to cloud!");
-            
-            return res.data.id; // Return the ID so other functions can use it
+
+            setBoardId(res.data.id);
+            setIsDirty(false); // Reset dirty flag after successful save
+
+            if (!silent) {
+                alert(
+                    forceNewCopy || !boardId
+                        ? (lang === 'sv' ? "En ny kopia har sparats i molnet!" : "Saved as a new copy to cloud!")
+                        : (lang === 'sv' ? "Ändringarna har sparats!" : "Changes saved!")
+                );
+            }
+
+            return res.data.id;
         } catch (err) {
             console.error("Save Error:", err);
             if (!silent) alert(lang === 'sv' ? "Kunde inte spara presentationen." : "Failed to save presentation.");
@@ -451,20 +508,47 @@ export default function PresentationView({
         }
     };
 
+    // 2. High-Level Handler for the File Menu "Save"
+    const handleSave = async (silent = false) => {
+        // If it's an existing presentation loaded from the library, ask whether to overwrite or fork
+        if (boardId && !silent) {
+            setShowSaveChoiceModal(true);
+            return boardId;
+        }
+        return await executeSave({ forceNewCopy: false, silent });
+    };
+
+    // 3. Explicit Handler for "Save As New Copy"
+    const handleSaveAsCopy = async () => {
+        setIsFileMenuOpen(false);
+        await executeSave({ forceNewCopy: true, silent: false });
+    };
+
     // --- 🟢 CORE SAVE TO CUSTOM UNIT MODULE ---
     const handleOpenSaveToUnit = async () => {
         setIsFileMenuOpen(false);
-        if (!boardId) {
-            // Force a background save if it hasn't been saved to the cloud yet
-            const newBoardId = await handleSave(true);
-            if (newBoardId) setShowSaveToUnitModal(true);
-        } else {
+        // Always save to saved_sheets first so the record exists, is up-to-date with any title changes or slide edits, and returns a valid boardId
+        const currentBoardId = await handleSave(true);
+        if (currentBoardId) {
             setShowSaveToUnitModal(true);
+        } else {
+            alert(lang === 'sv' 
+                ? "Kunde inte spara presentationen innan den lades till i modulen. Kontrollera din anslutning eller inloggning." 
+                : "Could not save presentation before adding to unit. Please check your connection or login.");
         }
     };
 
     const handleConfirmSaveToUnit = async ({ unitId, partId, insertIndex, title }) => {
         try {
+            // Safety check: ensure we have a valid boardId
+            let targetBoardId = boardId;
+            if (!targetBoardId) {
+                targetBoardId = await handleSave(true);
+            }
+            if (!targetBoardId) {
+                throw new Error("Missing presentation ID");
+            }
+
             const { data: bucket, error } = await supabase.from('teacher_buckets').select('payload').eq('id', unitId).single();
             if (error) throw error;
             
@@ -472,11 +556,16 @@ export default function PresentationView({
             const partIndex = currentPayload.findIndex(p => p.id === partId);
             if (partIndex === -1) throw new Error("Part not found");
             
+            // Prioritize user-entered title in modal, falling back to localTitle
+            const finalTitle = (title && title.trim() && title !== "Min Presentation" && title !== "My Presentation")
+                ? title.trim()
+                : (localTitle.trim() || (lang === 'sv' ? "Namnlös Presentation" : "Untitled Presentation"));
+
             const newStep = {
-                id: `step_inst_${boardId}_${Date.now()}`,
+                id: `step_inst_${targetBoardId}_${Date.now()}`,
                 type: 'instruction',
-                sheetId: boardId,
-                sheetTitle: title
+                sheetId: targetBoardId,
+                sheetTitle: finalTitle
             };
 
             const steps = currentPayload[partIndex].steps || [];
@@ -487,6 +576,7 @@ export default function PresentationView({
             if (updateErr) throw updateErr;
 
             alert(lang === 'sv' ? "Presentationen har lagts till i modulen!" : "Presentation added to module!");
+            setShowSaveToUnitModal(false);
         } catch(e) {
             console.error("Failed to save to unit:", e);
             alert(lang === 'sv' ? "Ett fel uppstod vid sparandet." : "An error occurred during save.");
@@ -527,6 +617,7 @@ export default function PresentationView({
             setIsSaving(false);
         }
     };
+    
 
     const handleLaunchWithoutSaving = () => {
         const finalTitle = tempTitleInput.trim() || (lang === 'sv' ? "Tillfällig Presentation" : "Temporary Presentation");
@@ -659,6 +750,50 @@ export default function PresentationView({
         }
     };
 
+        // --- PRESENTATION MODE STATE ---
+    const [isPresenting, setIsPresenting] = useState(false);
+
+    const togglePresentMode = async () => {
+        if (!isPresenting) {
+            try {
+                if (document.documentElement.requestFullscreen) {
+                    await document.documentElement.requestFullscreen();
+                }
+            } catch {
+                // Fullscreen might be blocked by browser permissions, continue anyway
+            }
+            setIsPresenting(true);
+        } else {
+            if (document.fullscreenElement && document.exitFullscreen) {
+                await document.exitFullscreen();
+            }
+            setIsPresenting(false);
+        }
+    };
+
+    // Listen for ESC or F5 / 'P' to toggle Present Mode
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Prevent interfering when teacher is typing in an input
+            if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+
+            if (e.key === 'p' || e.key === 'P') {
+                togglePresentMode();
+            } else if (e.key === 'Escape' && isPresenting) {
+                setIsPresenting(false);
+            } else if (isPresenting) {
+                if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+                    if (activeSlideIndex < slides.length - 1) setActiveSlideIndex(prev => prev + 1);
+                } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                    if (activeSlideIndex > 0) setActiveSlideIndex(prev => prev - 1);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isPresenting, activeSlideIndex, slides.length]);
+
     const sizeClasses = { desc: 'text-m', latex: 'text-xl', clue: 'text-m', headerText: 'text-l', visualClass: 'scale-100 max-h-[180px] mb-2' };
     const getColSpanClass = (span) => ({ 2: 'col-span-2', 3: 'col-span-3', 4: 'col-span-4', 6: 'col-span-6' }[span] || 'col-span-6');
 
@@ -699,6 +834,14 @@ export default function PresentationView({
                                     >
                                         <UploadCloud size={16} className="text-indigo-500" />
                                         {lang === 'sv' ? "Spara till molnet" : "Save to cloud"}
+                                    </button>
+                                    {/* 🟢 NEW: Save As Copy Option (always available or enabled when a sheet is loaded) */}
+                                    <button 
+                                        onClick={handleSaveAsCopy} 
+                                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left text-xs font-bold"
+                                    >
+                                        <Copy size={16} className="text-cyan-500" />
+                                        {lang === 'sv' ? "Spara som ny kopia..." : "Save as new copy..."}
                                     </button>
                                     <button 
                                         onClick={handleOpenSaveToUnit} 
@@ -797,6 +940,16 @@ export default function PresentationView({
                     <div className="w-px h-6 bg-slate-700/60 mx-1 hidden sm:block" />
 
                     <button 
+                        type="button"
+                        onClick={togglePresentMode}
+                        className="px-3.5 py-2 rounded-xl text-white bg-indigo-600 hover:bg-indigo-500 transition-all cursor-pointer flex items-center gap-2 shadow-md active:scale-95 font-black text-xs uppercase tracking-wider"
+                        title={lang === 'sv' ? "Starta helskärmspresentation (Tangent: P)" : "Present Fullscreen (Key: P)"}
+                    >
+                        <Presentation size={15} />
+                        <span className="hidden sm:inline">{lang === 'sv' ? "Presentera" : "Present"}</span>
+                    </button>
+
+                    <button 
                         onClick={handleGoLive}
                         className="px-3 sm:px-4 py-2 rounded-xl text-white bg-rose-600 hover:bg-rose-500 transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-rose-900/50 active:scale-95"
                     >
@@ -806,8 +959,9 @@ export default function PresentationView({
                         </span>
                     </button>
 
+                    {/* Change onClick={onClose} to: */}
                     <button 
-                        onClick={onClose} 
+                        onClick={handleAppClose} 
                         className="bg-white/10 hover:bg-rose-500 px-3 sm:px-4 py-2 rounded-xl text-[12px] font-black uppercase tracking-widest transition-all cursor-pointer"
                     >
                         <X size={16} className="sm:hidden" />
@@ -1277,14 +1431,16 @@ export default function PresentationView({
                                     setIsSaving: setIsSaving
                                 }}
                                 interactiveCanvasProps={{
-                                    key: slides[activeSlideIndex]?.id,
-                                    setElements: updateCurrentSlideElements,
-                                    onToggleBg: () => setBgType(prev => prev === 'blank' ? 'grid' : 'blank'),
-                                    clueProgress: clueProgress,
-                                    activeDrawer: activeDrawer,
-                                    onToggleDrawer: handleToggleDrawer,
-                                    renderDrawer: false
-                                }}
+                                key: `presenter_canvas_${slides[activeSlideIndex]?.id}`,
+                                forceActive: true,
+                                setElements: updateCurrentSlideElements,
+                                onToggleBg: () => setBgType(prev => prev === 'blank' ? 'grid' : 'blank'),
+                                clueProgress,
+                                activeDrawer,
+                                onToggleDrawer: handleToggleDrawer,
+                                renderDrawer: true,
+                                toolbarMode: "teacher"
+                            }}
                             />
                         )}
                     </div>
@@ -1618,16 +1774,216 @@ export default function PresentationView({
                     setShowLibraryModal(false);
                 }}
             />
+            {showSaveChoiceModal && (
+                <div className="fixed inset-0 z-[500] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md">
+                        <h3 className="text-base font-black text-slate-800 uppercase tracking-wider mb-2">
+                            {lang === 'sv' ? "Hur vill du spara?" : "How would you like to save?"}
+                        </h3>
+                        <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">
+                            {lang === 'sv' 
+                                ? "Denna presentation finns redan sparad. Vill du skriva över originalet eller spara dina ändringar som en ny presentation?"
+                                : "This presentation already exists. Would you like to overwrite the original or save as a new copy?"}
+                        </p>
+
+                        <div className="flex flex-col gap-2.5">
+                            <button
+                                onClick={async () => {
+                                    setShowSaveChoiceModal(false);
+                                    await executeSave({ forceNewCopy: false, silent: false });
+                                }}
+                                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-xs tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Save size={15} />
+                                <span>{lang === 'sv' ? "Skriv över originalet" : "Overwrite original"}</span>
+                            </button>
+
+                            <button
+                                onClick={async () => {
+                                    setShowSaveChoiceModal(false);
+                                    await executeSave({ forceNewCopy: true, silent: false });
+                                }}
+                                className="w-full py-3 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-200 font-black uppercase text-xs tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Copy size={15} />
+                                <span>{lang === 'sv' ? "Spara som ny kopia" : "Save as new copy"}</span>
+                            </button>
+
+                            <button 
+                                onClick={() => setShowSaveChoiceModal(false)}
+                                className="w-full py-2 text-slate-400 hover:text-slate-600 font-bold text-xs uppercase transition-colors"
+                            >
+                                {lang === 'sv' ? "Avbryt" : "Cancel"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showUnsavedChangesModal && (
+                <div className="fixed inset-0 z-[500] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md">
+                        <h3 className="text-base font-black text-slate-800 uppercase tracking-wider mb-2">
+                            {lang === 'sv' ? "Osparade ändringar" : "Unsaved Changes"}
+                        </h3>
+                        <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">
+                            {lang === 'sv'
+                                ? "Du har osparade ändringar i presentationen. Vill du spara innan du stänger?"
+                                : "You have unsaved changes in your presentation. Would you like to save before closing?"}
+                        </p>
+
+                        <div className="flex flex-col gap-2.5">
+                            <button
+                                onClick={async () => {
+                                    setShowUnsavedChangesModal(false);
+                                    const savedId = await executeSave({ forceNewCopy: false, silent: true });
+                                    if (savedId) onClose();
+                                }}
+                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                            >
+                                <Save size={15} />
+                                <span>{lang === 'sv' ? "Spara och stäng" : "Save and exit"}</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setShowUnsavedChangesModal(false);
+                                    onClose();
+                                }}
+                                className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black uppercase text-xs tracking-wider rounded-xl transition-all cursor-pointer"
+                            >
+                                {lang === 'sv' ? "Stäng utan att spara" : "Exit without saving"}
+                            </button>
+
+                            <button
+                                onClick={() => setShowUnsavedChangesModal(false)}
+                                className="w-full py-2 text-slate-400 hover:text-slate-600 font-bold text-xs uppercase transition-colors"
+                            >
+                                {lang === 'sv' ? "Fortsätt redigera" : "Keep editing"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* 🟢 NEW: SAVE TO CUSTOM UNIT MODAL */}
             <SaveToUnitModal 
+                key={showSaveToUnitModal ? `unit_modal_${boardId || 'new'}_${localTitle}` : 'modal_closed'}
                 isOpen={showSaveToUnitModal}
                 onClose={() => setShowSaveToUnitModal(false)}
                 onConfirmSave={handleConfirmSaveToUnit}
+                title={localTitle}
+                sheetTitle={localTitle}
+                initialTitle={localTitle}
                 testTitle={localTitle}
                 teacherId={teacherId}
                 lang={lang}
             />
+            {/* ========================================================================= */}
+            {/* 🟢 FULLSCREEN TEACHER PRESENTATION STAGE                                   */}
+            {/* ========================================================================= */}
+            {isPresenting && (
+                <div className="fixed inset-0 z-[600] bg-slate-950 flex flex-col items-center justify-center overflow-hidden select-none p-3 sm:p-6 animate-in fade-in duration-200">
+                    
+                    {/* Main 16:9 Slide Stage (Scaled to max viewport height/width) */}
+                    <div className="w-full h-full max-w-[177.78vh] max-h-[56.25vw] flex items-center justify-center relative">
+                        <SlideViewerCore
+                            slide={slides[activeSlideIndex]}
+                            theme={presentationTheme}
+                            livePacket={livePacket}
+                            lang={lang}
+                            bgType={bgType}
+                            globalZoom={globalZoom}
+                            authorMode={true}
+                            slideRendererProps={{
+                                setLivePacket,
+                                clueViewMode,
+                                currentFocusedQuestion,
+                                coachProps,
+                                onSpotlight: setSpotlightVisual,
+                                onRegenerate: handleRegenerateQuestion,
+                                setIsSaving
+                            }}
+                            interactiveCanvasProps={{
+                                key: `presenter_canvas_${slides[activeSlideIndex]?.id}`,
+                                forceActive: true,
+                                isOverlay: slides[activeSlideIndex]?.layout === 'instruction_template',
+                                setElements: updateCurrentSlideElements,
+                                onToggleBg: () => setBgType(prev => prev === 'blank' ? 'grid' : 'blank'),
+                                clueProgress,
+                                activeDrawer,
+                                onToggleDrawer: handleToggleDrawer,
+                                renderDrawer: true,
+                                toolbarMode: "teacher"
+                            }}
+                        />
+                    </div>
+
+                    {/* Floating Bottom Navigation & Controls Dock */}
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[650] flex items-center gap-2 bg-slate-900/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-700/80 shadow-2xl text-white">
+                        {/* Previous Slide */}
+                        <button
+                            type="button"
+                            onClick={() => setActiveSlideIndex(prev => Math.max(0, prev - 1))}
+                            disabled={activeSlideIndex === 0}
+                            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                            title={lang === 'sv' ? "Föregående slide (Vänsterpil)" : "Previous slide (Left Arrow)"}
+                        >
+                            <ChevronLeft size={18} />
+                        </button>
+
+                        {/* Slide Indicator & Title */}
+                        <div className="flex items-center gap-2 px-2">
+                            <span className="text-xs font-black uppercase text-emerald-400">
+                                {activeSlideIndex + 1} / {slides.length}
+                            </span>
+                            <span className="text-xs font-bold text-slate-300 max-w-[140px] truncate hidden md:inline">
+                                • {slides[activeSlideIndex]?.title}
+                            </span>
+                        </div>
+
+                        {/* Next Slide */}
+                        <button
+                            type="button"
+                            onClick={() => setActiveSlideIndex(prev => Math.min(slides.length - 1, prev + 1))}
+                            disabled={activeSlideIndex === slides.length - 1}
+                            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+                            title={lang === 'sv' ? "Nästa slide (Högerpil / Mellanslag)" : "Next slide (Right Arrow / Space)"}
+                        >
+                            <ChevronRight size={18} />
+                        </button>
+
+                        <div className="w-px h-5 bg-slate-700 mx-1" />
+
+                        {/* Quick Regenerate numbers if instruction slide */}
+                        {slides[activeSlideIndex]?.layout === 'instruction_template' && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const targetId = slides[activeSlideIndex]?.boundQuestionId || slides[activeSlideIndex]?.activeIds?.[0];
+                                    if (targetId) handleRegenerateQuestion(targetId);
+                                }}
+                                className="px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                                title={lang === 'sv' ? "Slumpa nya värden" : "Roll new numbers"}
+                            >
+                                <RefreshCw size={13} />
+                                <span className="hidden sm:inline">{lang === 'sv' ? "Nytt exempel" : "New"}</span>
+                            </button>
+                        )}
+
+                        {/* Exit Presentation Mode */}
+                        <button
+                            type="button"
+                            onClick={togglePresentMode}
+                            className="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 transition-colors cursor-pointer ml-1"
+                            title={lang === 'sv' ? "Avsluta presentation (Esc)" : "Exit Presenter (Esc)"}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+
+                </div>
+            )}
         </div>
     );
 }

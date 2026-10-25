@@ -408,3 +408,28 @@ html {
   flex-direction: column;
   min-h: 0;
 }
+/* ================================================= */
+/* SLIDE & PRESENTATION HONEYCOMB TEXTURE            */
+/* ================================================= */
+.slide-honeycomb-bg {
+  position: relative;
+}
+
+.slide-honeycomb-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* Sits above the slide canvas surface, but below interactive content cards */
+  pointer-events: none;
+
+  background-image: 
+    radial-gradient(circle at 100% 100%, currentColor 0%, transparent 65%),
+    radial-gradient(circle at 0% 0%, currentColor 0%, transparent 45%);
+
+  opacity: var(--honeycomb-opacity, 0.045);
+
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
+  -webkit-mask-size: 40px;
+  mask-image: url("data:image/svg+xml,%3Csvg width='40' height='69.282' viewBox='0 0 40 69.282' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 11.547L20 0 0 11.547v23.094L20 46.188l20-11.547V11.547zm-20 46.188L0 69.282v23.094l20 11.547 20-11.547V69.282L20 57.735z' fill='none' stroke='black' stroke-width='2'/%3E%3C/svg%3E");
+  mask-size: 40px;
+}

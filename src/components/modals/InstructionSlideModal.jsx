@@ -131,7 +131,7 @@ export default function InstructionSlideModal({
                 </div>
 
                 {/* 2. Main 16:9 Presentation Viewport */}
-                <div className="flex-1 bg-slate-950 p-4 sm:p-6 flex items-center justify-center relative overflow-hidden min-h-0">
+                <div className="flex-1 bg-transparent p-4 sm:p-6 flex items-center justify-center relative overflow-hidden min-h-0">                    
                     
                     {/* Navigation Arrows */}
                     {localSlides.length > 1 && (

@@ -31,30 +31,26 @@ export default function SlideViewerCore({
 
     return (
         <div 
-            className={`relative w-full flex flex-col items-center shadow-[0_25px_70px_rgba(0,0,0,0.6)] rounded-3xl border-4 transition-colors duration-300 overflow-hidden select-none ${currentTheme.wrapperClass}`}
+            className={`relative w-full flex flex-col items-center shadow-[0_25px_70px_rgba(0,0,0,0.6)] rounded-3xl border-4 transition-colors duration-300 overflow-hidden select-none ${currentTheme.wrapperClass.replace(/slide-honeycomb-bg/g, '')}`}
             style={{
                 aspectRatio: '16/9',
                 height: '100%',
                 maxHeight: '100%',
-                ...(bgType === 'grid' ? {
-                    backgroundImage: `linear-gradient(${currentTheme.gridColor} 2px, transparent 2px), linear-gradient(90deg, ${currentTheme.gridColor} 2px, transparent 2px)`,
-                    backgroundSize: '40px 40px',
-                    backgroundPosition: '-1px -1px'
-                } : {})
+                backgroundImage: 'none'
             }}
         >
-            {isInstruction ? (
-                <InstructionSlideCard 
-                    key={`instruction_${slide?.id}_${boundQuestionId}`}
-                    question={boundQuestion}
-                    lang={lang}
-                    readOnly={!authorMode}
-                    theme={currentTheme}
-                    onRegenerate={slideRendererProps?.onRegenerate}
-                />
-            ) : (
-                <>
-                    {/* Layer 1: Content */}
+            {/* --- BASE CONTENT LAYER (z-10) --- */}
+            <div className="absolute inset-0 z-10 w-full h-full pointer-events-auto">
+                {isInstruction ? (
+                    <InstructionSlideCard 
+                        key={`instruction_${slide?.id}_${boundQuestionId}_${boundQuestion?.regenVersion || 0}`}
+                        question={boundQuestion}
+                        lang={lang}
+                        readOnly={false}
+                        theme={currentTheme}
+                        onRegenerate={slideRendererProps?.onRegenerate}
+                    />
+                ) : (
                     <SlideRenderer
                         activeIds={slide?.activeIds || []}
                         livePacket={livePacket}
@@ -65,18 +61,24 @@ export default function SlideViewerCore({
                         theme={currentTheme}
                         {...slideRendererProps}
                     />
+                )}
+            </div>
 
-                    {/* Layer 2: Whiteboard */}
+            {/* --- INTERACTIVE CANVAS & TOOLBAR LAYER (z-20) --- */}
+            {/* Render canvas when NOT an instruction slide OR explicitly enabled via props (e.g., when Presenting) */}
+            {(!isInstruction || interactiveCanvasProps?.forceActive) && (
+                <div className="absolute inset-0 z-20 w-full h-full pointer-events-none">
                     <InteractiveCanvas
-                        key={slide?.id}
+                        key={interactiveCanvasProps?.key || slide?.id}
                         elements={slide?.elements || []}
                         resolution={{ w: 1920, h: 1080 }}
                         lang={lang}
                         bgType={bgType}
                         livePacket={livePacket}
                         {...interactiveCanvasProps}
+                        isOverlay={isInstruction || interactiveCanvasProps?.isOverlay}
                     />
-                </>
+                </div>
             )}
 
             {/* 🟢 PERMANENT WATERMARK (Positioned safely above backgrounds, below interactive whiteboard tools) */}

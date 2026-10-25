@@ -1,12 +1,49 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-    ChevronLeft, ChevronRight, BookOpen, Eye, List, Layers, 
-    RotateCcw, RefreshCw, Sparkles, CheckCircle2, ChevronDown, ChevronUp 
+    ChevronLeft, ChevronRight, BookOpen, Eye, RefreshCw,
+    RotateCcw, Sparkles, CheckCircle2, ChevronDown, ChevronUp 
 } from 'lucide-react';
 import MathDisplay from './MathDisplay';
 import VisualRenderer from '../visuals/VisualRenderer';
 import { compileAnchoredStory } from '../../core/utils/storyCompiler';
 import { DEFAULT_THEME, PRESENTATION_THEMES } from '../../constants/presentationThemes';
+
+// 🟢 Scale presets controlling text and KaTeX font dimensions across all views
+const SCALE_PRESETS = {
+    normal: {
+        label: '100%',
+        promptText: 'text-sm sm:text-base',
+        promptLatex: 'text-lg sm:text-xl',
+        derivationMath: 'text-lg sm:text-xl',
+        insightText: 'text-xs sm:text-sm',
+        ribbonMath: 'text-base sm:text-lg',
+        ribbonText: 'text-xs sm:text-sm',
+        accordionMath: 'text-base sm:text-lg',
+        accordionText: 'text-xs sm:text-sm'
+    },
+    large: {
+        label: '125%',
+        promptText: 'text-base sm:text-lg',
+        promptLatex: 'text-xl sm:text-2xl',
+        derivationMath: 'text-xl sm:text-2xl font-semibold',
+        insightText: 'text-sm sm:text-base font-medium',
+        ribbonMath: 'text-lg sm:text-xl font-semibold',
+        ribbonText: 'text-sm sm:text-base font-medium',
+        accordionMath: 'text-lg sm:text-xl font-semibold',
+        accordionText: 'text-sm sm:text-base font-medium'
+    },
+    xl: {
+        label: '150%',
+        promptText: 'text-lg sm:text-xl',
+        promptLatex: 'text-2xl sm:text-3xl',
+        derivationMath: 'text-2xl sm:text-3xl font-bold',
+        insightText: 'text-base sm:text-lg font-bold',
+        ribbonMath: 'text-xl sm:text-2xl font-bold',
+        ribbonText: 'text-base sm:text-lg font-bold',
+        accordionMath: 'text-xl sm:text-2xl font-bold',
+        accordionText: 'text-base sm:text-lg font-bold'
+    }
+};
 
 export default function InstructionSlideCard({ 
     question, 
@@ -17,12 +54,15 @@ export default function InstructionSlideCard({
 }) {
     // -1 = Nothing revealed yet (initial state, problem prompt only)
     const [revealedIndex, setRevealedIndex] = useState(-1);
-    const [displayStyle, setDisplayStyle] = useState('accumulate'); 
     const [isCycling, setIsCycling] = useState(false);
 
     // 🟢 LAYOUT SELECTOR: Change this key to test different layout styles!
     // Options: 'concept2_board' (Derivation Board) | 'concept1_ribbon' (Dual-Rail) | 'concept3_accordion' (Accordion)
     const [activeLayoutVariant, setActiveLayoutVariant] = useState('concept1_ribbon');
+
+    // 🟢 TEXT & LATEX WALKTHROUGH ZOOM SCALE
+    const [walkthroughScale, setWalkthroughScale] = useState('normal'); // 'normal' | 'large' | 'xl'
+    const currentScale = SCALE_PRESETS[walkthroughScale] || SCALE_PRESETS.normal;
 
     // Safe Theme Ingestion
     const currentTheme = (typeof theme === 'string' ? PRESENTATION_THEMES[theme] : theme) 
@@ -89,7 +129,7 @@ export default function InstructionSlideCard({
     };
 
     return (
-        <div className={`w-full h-full p-4 sm:p-6 flex flex-col justify-start select-none overflow-hidden font-sans transition-colors duration-300 ${currentTheme.wrapperClass}`}>
+        <div className={`w-full h-full p-4 sm:p-6 pb-8 sm:pb-9 flex flex-col justify-start select-none overflow-hidden font-sans transition-colors duration-300 ${currentTheme.wrapperClass}`}>
             
             {/* 1. TOP TOOLBAR STRIP */}
             <div className="flex items-center justify-between border-b border-black/10 dark:border-white/10 pb-2.5 shrink-0 mb-3">
@@ -107,34 +147,66 @@ export default function InstructionSlideCard({
                                 : `${totalSteps} ${lang === 'sv' ? 'steg redo' : 'steps ready'}`}
                         </span>
                     )}
+
+                    {/* 🟢 TOP-BAR STEP DOTS: Placed in header to avoid bottom drawer collision */}
+                    {hasClues && isStarted && (
+                        <div className="hidden sm:flex items-center gap-1 ml-2 bg-black/5 dark:bg-white/5 px-2 py-1 rounded-full border border-black/10 dark:border-white/10">
+                            {clues.map((_, dotIdx) => (
+                                <button
+                                    key={dotIdx}
+                                    type="button"
+                                    onClick={() => setRevealedIndex(dotIdx)}
+                                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                                        dotIdx === revealedIndex 
+                                            ? 'w-4 bg-indigo-600' 
+                                            : dotIdx < revealedIndex 
+                                                ? 'w-1.5 bg-emerald-500' 
+                                                : 'w-1.5 bg-black/20 dark:bg-white/20 hover:opacity-100'
+                                    }`}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Dev/Teacher Layout Switcher Pill */}
-                    <div className="flex bg-black/5 dark:bg-white/10 p-0.5 rounded-xl border border-black/10 dark:border-white/10 text-[9px] font-black uppercase">
+                    {/* 🟢 FONT & LATEX ZOOM CONTROLLER PILL */}
+                    <div className="flex bg-black/5 dark:bg-white/10 p-0.5 rounded-xl border border-black/10 dark:border-white/10 text-[9px] font-black uppercase items-center">
                         <button
                             type="button"
-                            onClick={() => setActiveLayoutVariant('concept2_board')}
-                            className={`px-2 py-1 rounded-lg transition-all ${activeLayoutVariant === 'concept2_board' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'opacity-50 hover:opacity-80'}`}
-                            title="Koncept 2: Derivation Board (Matematik uppe, Förklaring nere)"
+                            onClick={() => setWalkthroughScale('normal')}
+                            className={`px-2 py-1 rounded-lg transition-all ${
+                                walkthroughScale === 'normal' 
+                                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' 
+                                    : 'opacity-50 hover:opacity-80'
+                            }`}
+                            title={lang === 'sv' ? "Standardstorlek (100%)" : "Standard size (100%)"}
                         >
-                            {lang === 'sv' ? "Tavla" : "Board"}
+                            A
                         </button>
                         <button
                             type="button"
-                            onClick={() => setActiveLayoutVariant('concept1_ribbon')}
-                            className={`px-2 py-1 rounded-lg transition-all ${activeLayoutVariant === 'concept1_ribbon' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'opacity-50 hover:opacity-80'}`}
-                            title="Koncept 1: Dual-Rail Ribbon (Sida vid sida per steg)"
+                            onClick={() => setWalkthroughScale('large')}
+                            className={`px-2 py-1 rounded-lg transition-all text-[10px] font-black ${
+                                walkthroughScale === 'large' 
+                                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' 
+                                    : 'opacity-50 hover:opacity-80'
+                            }`}
+                            title={lang === 'sv' ? "Stor text (125%)" : "Large text (125%)"}
                         >
-                            {lang === 'sv' ? "Band" : "Ribbon"}
+                            A+
                         </button>
                         <button
                             type="button"
-                            onClick={() => setActiveLayoutVariant('concept3_accordion')}
-                            className={`px-2 py-1 rounded-lg transition-all ${activeLayoutVariant === 'concept3_accordion' ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'opacity-50 hover:opacity-80'}`}
-                            title="Koncept 3: Accordion (Expanderbara förklaringar)"
+                            onClick={() => setWalkthroughScale('xl')}
+                            className={`px-2 py-1 rounded-lg transition-all text-[11px] font-black ${
+                                walkthroughScale === 'xl' 
+                                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs' 
+                                    : 'opacity-50 hover:opacity-80'
+                            }`}
+                            title={lang === 'sv' ? "Extra stor text för tavla (150%)" : "Extra large text for board (150%)"}
                         >
-                            {lang === 'sv' ? "Dragspel" : "Fold"}
+                            A++
                         </button>
                     </div>
 
@@ -181,8 +253,8 @@ export default function InstructionSlideCard({
                             )}
                         </div>
 
-                        {/* Problem Text */}
-                        <div className={`text-sm sm:text-base font-bold leading-snug mb-2 ${currentTheme.textMain}`}>
+                        {/* Problem Text with zoom scaling */}
+                        <div className={`${currentScale.promptText} font-bold leading-snug mb-2 ${currentTheme.textMain}`}>
                             <MathDisplay content={compileAnchoredStory(question, lang) || rd?.description || question.text} />
                         </div>
 
@@ -203,9 +275,9 @@ export default function InstructionSlideCard({
                             </div>
                         )}
 
-                        {/* Primary Math Expression */}
+                        {/* Primary Math Expression with zoom scaling */}
                         {rd?.latex && !rd?.geometry && (
-                            <div className={`my-2 py-2 px-3 rounded-xl border ${currentTheme.cardSurface} ${currentTheme.mathText} text-center font-serif text-lg sm:text-xl shadow-xs`}>
+                            <div className={`my-2 py-2 px-3 rounded-xl border ${currentTheme.cardSurface} ${currentTheme.mathText} text-center font-serif ${currentScale.promptLatex} shadow-xs`}>
                                 <MathDisplay content={`$$${rd.latex}$$`} />
                             </div>
                         )}
@@ -220,13 +292,16 @@ export default function InstructionSlideCard({
                         )}
                     </div>
 
-                    {/* Step Navigation Bar at base of Left Anchor */}
-                    <div className="pt-3 shrink-0 flex items-center justify-between gap-2">
+                    {/* 🟢 STEP NAVIGATION FOOTBAR: pb-14 clears collapsed whiteboard drawer handles */}
+                    <div className="pt-3 pb-14 sm:pb-16 shrink-0 flex items-center justify-between gap-2 relative z-30 pointer-events-auto">
                         {!isStarted ? (
                             <button
                                 type="button"
-                                onClick={handleNext}
-                                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleNext();
+                                }}
+                                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 pointer-events-auto relative z-30"
                             >
                                 <Eye size={15} />
                                 <span>{lang === 'sv' ? "Starta genomgång" : "Start Walkthrough"}</span>
@@ -242,22 +317,9 @@ export default function InstructionSlideCard({
                                     <span>{lang === 'sv' ? "Föregående" : "Prev"}</span>
                                 </button>
 
-                                <div className="flex items-center gap-1.5">
-                                    {clues.map((_, dotIdx) => (
-                                        <button
-                                            key={dotIdx}
-                                            type="button"
-                                            onClick={() => setRevealedIndex(dotIdx)}
-                                            className={`h-2 rounded-full transition-all cursor-pointer ${
-                                                dotIdx === revealedIndex 
-                                                    ? 'w-6 bg-indigo-600' 
-                                                    : dotIdx < revealedIndex 
-                                                        ? 'w-2 bg-emerald-500' 
-                                                        : 'w-2 bg-black/20 dark:bg-white/20 hover:opacity-100'
-                                            }`}
-                                        />
-                                    ))}
-                                </div>
+                                <span className="text-[11px] font-black uppercase tracking-wider opacity-60">
+                                    {revealedIndex + 1} / {totalSteps}
+                                </span>
 
                                 {isAtLastStep && onRegenerate ? (
                                     <button
@@ -286,7 +348,7 @@ export default function InstructionSlideCard({
                 </div>
 
                 {/* 🟢 COLUMN 2: DYNAMIC STAGE (60% Width - cols 6-12) */}
-                <div className="col-span-7 h-full flex flex-col justify-start overflow-hidden">
+                <div className="col-span-7 h-full flex flex-col justify-start overflow-hidden pb-14 sm:pb-16">
                     {!isStarted ? (
                         <div className="h-full border-2 border-dashed border-black/10 dark:border-white/10 rounded-2xl flex flex-col items-center justify-center p-8 text-center opacity-40">
                             <Eye size={36} className="mb-2" />
@@ -304,6 +366,7 @@ export default function InstructionSlideCard({
                                     revealedIndex={revealedIndex}
                                     setRevealedIndex={setRevealedIndex}
                                     currentTheme={currentTheme}
+                                    currentScale={currentScale}
                                     lang={lang}
                                 />
                             )}
@@ -313,6 +376,7 @@ export default function InstructionSlideCard({
                                     clues={clues} 
                                     revealedIndex={revealedIndex}
                                     currentTheme={currentTheme}
+                                    currentScale={currentScale}
                                     lang={lang}
                                 />
                             )}
@@ -322,6 +386,7 @@ export default function InstructionSlideCard({
                                     clues={clues} 
                                     revealedIndex={revealedIndex}
                                     currentTheme={currentTheme}
+                                    currentScale={currentScale}
                                     lang={lang}
                                 />
                             )}
@@ -337,7 +402,7 @@ export default function InstructionSlideCard({
 // ============================================================================
 // 🟢 CONCEPT 2: DERIVATION BOARD (Continuous Math Blackboard + Active Insight)
 // ============================================================================
-function DerivationBoardLayout({ clues, revealedIndex, setRevealedIndex, currentTheme, lang }) {
+function DerivationBoardLayout({ clues, revealedIndex, setRevealedIndex, currentTheme, currentScale, lang }) {
     const activeClue = clues[revealedIndex] || clues[0];
     const stepsEndRef = useRef(null);
 
@@ -366,10 +431,10 @@ function DerivationBoardLayout({ clues, revealedIndex, setRevealedIndex, current
                         <div
                             key={`derivation-${idx}`}
                             onClick={() => setRevealedIndex(idx)}
-                            className={`p-3 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 ${
+                            className={`p-3 rounded-xl transition-all duration-150 cursor-pointer flex items-center justify-between gap-4 ${
                                 isActive 
                                     ? currentTheme.activeCardBg 
-                                    : `${currentTheme.cardSurface} opacity-50 hover:opacity-85`
+                                    : `${currentTheme.cardSurface} border border-black/10 dark:border-white/10 opacity-60 hover:opacity-90`
                             }`}
                         >
                             {/* Step Number Badge */}
@@ -379,8 +444,8 @@ function DerivationBoardLayout({ clues, revealedIndex, setRevealedIndex, current
                                 {idx + 1}
                             </span>
                             
-                            {/* 🟢 High-contrast Math Equation */}
-                            <div className={`flex-1 text-center font-serif text-lg sm:text-xl ${
+                            {/* Math Equation scaled by currentScale */}
+                            <div className={`flex-1 text-center font-serif ${currentScale.derivationMath} ${
                                 isActive ? currentTheme.activeMathText : currentTheme.mathText
                             }`}>
                                 <MathDisplay content={`$$${step.latex}$$`} />
@@ -397,7 +462,7 @@ function DerivationBoardLayout({ clues, revealedIndex, setRevealedIndex, current
                 <div ref={stepsEndRef} />
             </div>
 
-            {/* Lower Zone: Pedagogical Insight Deck (Theme-adapted text colors) */}
+            {/* Lower Zone: Pedagogical Insight Deck */}
             <div className={`h-[140px] shrink-0 rounded-2xl p-4 border flex flex-col justify-between animate-in fade-in duration-200 shadow-sm ${currentTheme.insightBox}`}>
                 <div className="flex items-center justify-between">
                     <span className={`text-[10px] font-black uppercase tracking-widest ${currentTheme.insightTitle}`}>
@@ -406,8 +471,8 @@ function DerivationBoardLayout({ clues, revealedIndex, setRevealedIndex, current
                     <span className="text-[9px] font-bold opacity-75">💡 Insight</span>
                 </div>
 
-                {/* Text explanation using currentTheme.activeText */}
-                <div className={`flex-1 flex items-center my-1 text-xs sm:text-sm font-bold leading-relaxed overflow-y-auto custom-scrollbar ${currentTheme.activeText}`}>
+                {/* Text explanation scaled by currentScale */}
+                <div className={`flex-1 flex items-center my-1 ${currentScale.insightText} font-bold leading-relaxed overflow-y-auto custom-scrollbar ${currentTheme.activeText}`}>
                     <MathDisplay content={activeClue.text || (lang === 'sv' ? "Utför beräkningen ovan." : "Perform the calculation above.")} />
                 </div>
             </div>
@@ -418,7 +483,7 @@ function DerivationBoardLayout({ clues, revealedIndex, setRevealedIndex, current
 // ============================================================================
 // 🟢 CONCEPT 1: DUAL-RAIL RIBBON (Horizontal Row Pairing: Why + What)
 // ============================================================================
-function DualRailRibbonLayout({ clues, revealedIndex, currentTheme, lang }) {
+function DualRailRibbonLayout({ clues, revealedIndex, currentTheme, currentScale, lang }) {
     const listEndRef = useRef(null);
 
     useEffect(() => {
@@ -433,10 +498,10 @@ function DualRailRibbonLayout({ clues, revealedIndex, currentTheme, lang }) {
                 return (
                     <div 
                         key={`ribbon-${idx}`}
-                        className={`rounded-2xl border p-3.5 transition-all duration-200 flex flex-col sm:flex-row items-stretch gap-3 ${
+                        className={`rounded-2xl transition-all duration-150 flex flex-col sm:flex-row items-stretch gap-3 p-3.5 ${
                             isActive 
                                 ? currentTheme.activeCardBg 
-                                : `${currentTheme.cardSurface} opacity-50 hover:opacity-85`
+                                : `${currentTheme.cardSurface} border border-black/10 dark:border-white/10 opacity-70 hover:opacity-90`
                         }`}
                     >
                         {/* Step Marker */}
@@ -449,16 +514,18 @@ function DualRailRibbonLayout({ clues, revealedIndex, currentTheme, lang }) {
                         </div>
 
                         {/* Rail A: Text Commentary */}
-                        <div className={`flex-1 flex items-center text-xs sm:text-sm font-bold leading-relaxed border-b sm:border-b-0 sm:border-r border-black/10 dark:border-white/10 pb-2 sm:pb-0 sm:pr-3 ${
+                        <div className={`flex-1 flex items-center ${currentScale.ribbonText} font-bold leading-relaxed border-b sm:border-b-0 sm:border-r border-black/10 dark:border-white/10 pb-2 sm:pb-0 sm:pr-3 ${
                             isActive ? currentTheme.activeText : currentTheme.textMain
                         }`}>
                             <MathDisplay content={step.text} />
                         </div>
 
                         {/* Rail B: Math Expression */}
-                        <div className={`flex-1 flex items-center justify-center font-serif text-base sm:text-lg min-w-[140px] py-1 rounded-xl px-2 ${
-                            isActive ? currentTheme.activeMathText : currentTheme.mathText
-                        }`}>
+                        <div className={`flex-1 flex items-center justify-center font-serif ${currentScale.ribbonMath} min-w-[140px] py-1.5 px-3 rounded-xl border ${
+                            isActive 
+                                ? 'border-current/30 bg-black/5 dark:bg-white/5' 
+                                : 'border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5'
+                        } ${isActive ? currentTheme.activeMathText : currentTheme.mathText}`}>
                             {step.latex ? (
                                 <MathDisplay content={`$$${step.latex}$$`} />
                             ) : (
@@ -478,7 +545,7 @@ function DualRailRibbonLayout({ clues, revealedIndex, currentTheme, lang }) {
 // ============================================================================
 // 🟢 CONCEPT 3: ACCORDION FOCUS (Compact Math Pills with Collapsible Drawers)
 // ============================================================================
-function AccordionFocusLayout({ clues, revealedIndex, currentTheme, lang }) {
+function AccordionFocusLayout({ clues, revealedIndex, currentTheme, currentScale, lang }) {
     const [openStepIndices, setOpenStepIndices] = useState([revealedIndex]);
 
     useEffect(() => {
@@ -500,10 +567,10 @@ function AccordionFocusLayout({ clues, revealedIndex, currentTheme, lang }) {
                 return (
                     <div 
                         key={`accordion-${idx}`}
-                        className={`rounded-2xl border transition-all overflow-hidden ${
+                        className={`rounded-2xl transition-all overflow-hidden ${
                             isActive 
                                 ? currentTheme.activeCardBg 
-                                : `${currentTheme.cardSurface} opacity-55 hover:opacity-85`
+                                : `${currentTheme.cardSurface} border border-black/10 dark:border-white/10 opacity-75`
                         }`}
                     >
                         {/* Header Math Strip */}
@@ -517,7 +584,7 @@ function AccordionFocusLayout({ clues, revealedIndex, currentTheme, lang }) {
                                 {idx + 1}
                             </span>
 
-                            <div className={`flex-1 text-center font-serif text-base sm:text-lg truncate ${
+                            <div className={`flex-1 text-center font-serif ${currentScale.accordionMath} truncate ${
                                 isActive ? currentTheme.activeMathText : currentTheme.mathText
                             }`}>
                                 {step.latex ? (
@@ -536,7 +603,7 @@ function AccordionFocusLayout({ clues, revealedIndex, currentTheme, lang }) {
 
                         {/* Collapsible Text Drawer */}
                         {isOpen && step.text && (
-                            <div className={`px-4 py-3 border-t border-black/10 dark:border-white/10 text-xs sm:text-sm font-bold leading-relaxed border-l-4 border-l-amber-400 ${currentTheme.insightBox}`}>
+                            <div className={`px-4 py-3 border-t border-black/10 dark:border-white/10 ${currentScale.accordionText} font-bold leading-relaxed border-l-4 border-l-amber-400 ${currentTheme.insightBox}`}>
                                 <MathDisplay content={step.text} />
                             </div>
                         )}
