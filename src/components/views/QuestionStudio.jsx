@@ -242,14 +242,22 @@ export default function QuestionStudio({
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   
+  {/*
+    Uncomment this if you want the tutorial to show based on LocalStorage true false flags
   const [showTutorial, setShowTutorial] = useState(() => {
     return !localStorage.getItem('has_seen_studio_guide');
     });
+    */}
 
-    const handleCloseTutorial = () => {
-        localStorage.setItem('has_seen_studio_guide', 'true');
-        setShowTutorial(false);
-    };
+  // Comment this next line out and uncomment the previous block for tutorials to show based on LocalStorage
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  const handleCloseTutorial = () => {
+    localStorage.setItem('has_seen_studio_guide', 'true');
+    setShowTutorial(false);
+  }; 
+
+
 
   const handleDragStartUnified = (e, index) => {
     setDraggedIdx(index);
@@ -934,9 +942,9 @@ export default function QuestionStudio({
         {/* PANE 1: Topics */}
         <div className={`bg-[var(--bg-card)] border-r border-[var(--border-main)] flex flex-col shrink-0 transition-all duration-300 ${isPane1Collapsed ? 'w-16' : 'w-72'}`}>
           <div className={`p-4 border-b border-[var(--border-main)] flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-end'}`}>
-              <button onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} className="btn-ghost p-1">
-                  {isPane1Collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-              </button>
+              <button onClick={() => setIsPane1Collapsed(!isPane1Collapsed)} className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors">
+                    {isPane1Collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+                </button>
           </div>
           <div className={`flex-1 overflow-y-auto custom-scrollbar transition-opacity duration-200 ${isPane1Collapsed ? 'opacity-0 invisible' : 'opacity-100 p-4 space-y-3'}`}>
             {!isPane1Collapsed && (
@@ -1003,7 +1011,7 @@ export default function QuestionStudio({
             ).sort(([lvlA], [lvlB]) => Number(lvlA) - Number(lvlB)).map(([lvl, variations]) => (
                 <div key={lvl} className="space-y-2">
                     <div className="sticky top-0 bg-[var(--bg-surface)]/95 backdrop-blur-sm pt-4 pb-2 flex items-center z-10">
-                        <span className="text-[14px] font-black uppercase tracking-widest text-[var(--brand-solid)]">
+                        <span className="text-[14px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
                             {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
                         </span>
                         <div className="flex-1 h-[2px] bg-[var(--border-strong)] ml-3 rounded-full"></div>
@@ -1282,7 +1290,7 @@ export default function QuestionStudio({
                                             </div>
                                             
                                             <div className="flex items-start gap-4 flex-1">
-                                                <div className="shrink-0 w-7 h-7 rounded-full border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xs mt-1">
+                                                <div className="shrink-0 w-7 h-7 rounded-full border-2 border-[var(--text-main)] flex items-center justify-center text-[var(--text-main)] font-black text-xs mt-1">
                                                     {idx + 1}
                                                 </div>
                                                 
@@ -1398,9 +1406,9 @@ export default function QuestionStudio({
                     <div className="bg-[var(--text-main)] text-[var(--bg-canvas)] px-2 py-0.5 rounded-lg text-[9px] font-black">{packet.length}</div>
                 </div>
               )}
-              <button onClick={() => setIsPane4Collapsed(!isPane4Collapsed)} className="btn-ghost p-1">
+              <button onClick={() => setIsPane4Collapsed(!isPane4Collapsed)} className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] transition-colors">
                 {isPane4Collapsed ? <PanelRightOpen size={20} /> : <PanelRightClose size={20} />}
-              </button>
+            </button>
           </div>
 
           {!isPane4Collapsed && (

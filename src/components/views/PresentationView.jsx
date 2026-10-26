@@ -55,10 +55,15 @@ export default function PresentationView({
     const [showSaveToUnitModal, setShowSaveToUnitModal] = useState(false);
     const [teacherId, setTeacherId] = useState(null);
 
+
+    {/* Uncomment this if you want the tutorial to show based on LocalStorage true false flags
     const storageKey = `has_seen_presentation_guide`;
     const [showTutorial, setShowTutorial] = useState(() => {
         return !localStorage.getItem(storageKey);
     });
+    */}
+    
+    const [showTutorial, setShowTutorial] = useState(false);
 
     // Add near your top-level state declarations:
     const [isDirty, setIsDirty] = useState(false);
@@ -1438,7 +1443,7 @@ export default function PresentationView({
                                 clueProgress,
                                 activeDrawer,
                                 onToggleDrawer: handleToggleDrawer,
-                                renderDrawer: true,
+                                renderDrawer: false,
                                 toolbarMode: "teacher"
                             }}
                             />
@@ -1713,7 +1718,11 @@ export default function PresentationView({
             />
             
             {/* 🟢 PRESENTATION GUIDE MODAL */}
-            <PresentationTutorialModal isOpen={showTutorial} onClose={handleCloseTutorial} lang={lang} />
+            <PresentationTutorialModal 
+                isOpen={showTutorial} 
+                onClose={handleCloseTutorial} 
+                lang={lang} 
+            />
             
             {/* 🟢 NAMING & SAVE CHOICE MODAL */}
             {showNamingModal && (
@@ -1913,7 +1922,7 @@ export default function PresentationView({
                                 clueProgress,
                                 activeDrawer,
                                 onToggleDrawer: handleToggleDrawer,
-                                renderDrawer: true,
+                                renderDrawer: false,
                                 toolbarMode: "teacher"
                             }}
                         />

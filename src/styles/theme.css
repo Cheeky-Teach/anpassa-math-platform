@@ -41,6 +41,9 @@ body, .font-sans {
   --ambient-emerald: rgba(110, 231, 183, 0.3);
   --ambient-indigo: rgba(165, 180, 252, 0.3);
   --ambient-amber: rgba(253, 230, 138, 0.2);
+
+  --brand-solid: #4f46e5; /* Default primary brand for un-themed UI */
+  --brand-text: #4338ca;
 }
 
 /* 🌙 2. FULL DARK THEME */
@@ -63,6 +66,9 @@ body, .font-sans {
   --ambient-emerald: rgba(6, 78, 59, 0.2);
   --ambient-indigo: rgba(49, 46, 129, 0.2);
   --ambient-amber: rgba(120, 53, 15, 0.1);
+
+  --brand-solid: #818cf8; /* High-contrast bright indigo for dark mode */
+  --brand-text: #a5b4fc;
 }
 
 /* 🎯 3. FOCUS THEME (For StudentLiveView & Active Practice) */
