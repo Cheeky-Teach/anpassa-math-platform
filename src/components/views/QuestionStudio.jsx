@@ -828,7 +828,7 @@ export default function QuestionStudio({
   //  ACTIVE EDITOR (STUDIO MODE)
   // =========================================================================
   return (
-    <div className="layout-wrapper flex flex-col h-full font-sans overflow-hidden relative">
+    <div className="layout-wrapper flex flex-col h-screen max-h-screen font-sans overflow-hidden relative">
         <header className={`relative flex items-center justify-between px-6 py-1 border-b shadow-md z-50 transition-colors duration-500 ${setupMode === 'donow' ? 'bg-indigo-950 border-indigo-900' : 'bg-emerald-900 border-emerald-800'}`}>
             <div className="flex items-center gap-3 flex-1 max-w-[40%]">
                 <button 
@@ -930,7 +930,7 @@ export default function QuestionStudio({
             </div>
         </header>
 
-      <div className="flex flex-1 overflow-hidden relative z-10">
+      <div className="flex flex-1 overflow-hidden relative z-10 min-h-0">
         {/* PANE 1: Topics */}
         <div className={`bg-[var(--bg-card)] border-r border-[var(--border-main)] flex flex-col shrink-0 transition-all duration-300 ${isPane1Collapsed ? 'w-16' : 'w-72'}`}>
           <div className={`p-4 border-b border-[var(--border-main)] flex items-center ${isPane1Collapsed ? 'justify-center' : 'justify-end'}`}>
@@ -963,36 +963,36 @@ export default function QuestionStudio({
         </div>
 
         {/* PANE 2: Variations */}
-        <div className="w-[300px] bg-[var(--bg-surface)]/80 backdrop-blur-sm border-r border-[var(--border-main)] flex flex-col shrink-0">
-        <div className="p-3 border-b border-[var(--border-main)] bg-[var(--bg-card)] shrink-0 shadow-sm space-y-2">
-            <h1 className="text-sm font-black text-[var(--text-main)] uppercase italic truncate leading-none">{currentTopic?.name[lang]}</h1>
-            
-            <div className="flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-strong)] shadow-inner">
-                <span className="text-[11px] font-black uppercase text-[var(--text-main)] ml-1.5 tracking-tight">{t.hide_extra}</span>
-                <button 
-                    onClick={() => setHideExtra(!hideExtra)} 
-                    className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${hideExtra ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}
-                >
-                    <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${hideExtra ? 'translate-x-4' : 'translate-x-0'}`} />
-                </button>
+        <div className="w-[300px] bg-[var(--bg-surface)]/80 backdrop-blur-sm border-r border-[var(--border-main)] flex flex-col shrink-0 min-h-0 h-full">
+            <div className="p-3 border-b border-[var(--border-main)] bg-[var(--bg-card)] shrink-0 shadow-sm space-y-2">
+                <h1 className="text-sm font-black text-[var(--text-main)] uppercase italic truncate leading-none">{currentTopic?.name[lang]}</h1>
+                
+                <div className="flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-strong)] shadow-inner">
+                    <span className="text-[11px] font-black uppercase text-[var(--text-main)] ml-1.5 tracking-tight">{t.hide_extra}</span>
+                    <button 
+                        onClick={() => setHideExtra(!hideExtra)} 
+                        className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${hideExtra ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}
+                    >
+                        <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${hideExtra ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                </div>
+
+                <div className={`flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border shadow-inner transition-opacity ${topicSupportsWordProblems ? 'border-[var(--border-strong)]' : 'border-[var(--border-main)] opacity-50'}`}>
+                    <span className="text-[11px] font-black uppercase text-[var(--text-main)] ml-1.5 tracking-tight">
+                        {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
+                    </span>
+                    <button 
+                        disabled={!topicSupportsWordProblems}
+                        onClick={() => setUseWordProblems(!useWordProblems)} 
+                        className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${!topicSupportsWordProblems ? 'cursor-not-allowed bg-[var(--border-main)]' : useWordProblems ? 'cursor-pointer bg-[var(--theme-emerald-solid)]' : 'cursor-pointer bg-[var(--border-strong)]'}`}
+                        title={!topicSupportsWordProblems ? (lang === 'sv' ? "Inga textuppgifter finns för detta område" : "No word problems available for this topic") : ""}
+                    >
+                        <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${useWordProblems ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                </div>
             </div>
 
-            <div className={`flex items-center justify-between bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border shadow-inner transition-opacity ${topicSupportsWordProblems ? 'border-[var(--border-strong)]' : 'border-[var(--border-main)] opacity-50'}`}>
-                <span className="text-[11px] font-black uppercase text-[var(--text-main)] ml-1.5 tracking-tight">
-                    {lang === 'sv' ? 'Problemlösning' : 'Word Problems'}
-                </span>
-                <button 
-                    disabled={!topicSupportsWordProblems}
-                    onClick={() => setUseWordProblems(!useWordProblems)} 
-                    className={`w-8 h-4 rounded-full transition-all relative p-0.5 ${!topicSupportsWordProblems ? 'cursor-not-allowed bg-[var(--border-main)]' : useWordProblems ? 'cursor-pointer bg-[var(--theme-emerald-solid)]' : 'cursor-pointer bg-[var(--border-strong)]'}`}
-                    title={!topicSupportsWordProblems ? (lang === 'sv' ? "Inga textuppgifter finns för detta område" : "No word problems available for this topic") : ""}
-                >
-                    <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${useWordProblems ? 'translate-x-4' : 'translate-x-0'}`} />
-                </button>
-            </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar min-h-0">
             {Object.entries(
                 visibleVariations.reduce((acc, v) => {
                     const lvl = v.level || 1; 
@@ -1055,7 +1055,7 @@ export default function QuestionStudio({
         </div>
 
         {/* PANE 3: Workspace */}
-        <div className="flex-1 flex flex-col overflow-hidden relative bg-[var(--bg-canvas)]">
+        <div className="flex-1 flex flex-col overflow-hidden relative bg-[var(--bg-canvas)] min-h-0 h-full">
           
           <div className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-6 py-2 flex flex-wrap items-center justify-between shadow-sm shrink-0 z-50 min-h-[64px]">
               <div className="flex items-center gap-4">
@@ -1164,7 +1164,7 @@ export default function QuestionStudio({
               )}
           </div>
 
-          <div className="flex-1 flex flex-col overflow-hidden relative">
+          <div className="flex-1 flex flex-col overflow-hidden relative min-h-0">
             {canvasMode === 'studio' ? (
                 <div className="whiteboard-protect bg-white flex-1 rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300 m-4">
                     <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center">
@@ -1389,7 +1389,7 @@ export default function QuestionStudio({
         </div>
 
         {/* PANE 4: Selected Questions */}
-        <div className={`bg-[var(--bg-card)]/90 backdrop-blur-sm border-l border-[var(--border-main)] flex flex-col shadow-2xl shrink-0 transition-all duration-300 ${isPane4Collapsed ? 'w-16' : 'w-72'}`}>
+          <div className={`bg-[var(--bg-card)]/90 backdrop-blur-sm border-l border-[var(--border-main)] flex flex-col shadow-2xl shrink-0 transition-all duration-300 min-h-0 h-full ${isPane4Collapsed ? 'w-16' : 'w-72'}`}>
           <div className={`p-4 border-b border-[var(--border-main)] flex items-center ${isPane4Collapsed ? 'justify-center' : 'justify-between'} bg-[var(--bg-surface)]/80`}>
               {!isPane4Collapsed && (
                 <div className="flex items-center gap-2">
@@ -1404,11 +1404,11 @@ export default function QuestionStudio({
           </div>
 
           {!isPane4Collapsed && (
-            <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-200">
-                <div className="p-3 border-b border-[var(--border-main)] flex justify-end">
+            <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-200 min-h-0">
+                <div className="p-3 border-b border-[var(--border-main)] flex justify-end shrink-0">
                     <button onClick={() => { if(window.confirm(t.clear_all + "?")) setPacket([]); }} className="text-[var(--text-main)] hover:text-[var(--theme-rose-text)] transition-colors flex items-center gap-1 text-[14px] font-black uppercase tracking-widest"><Eraser size={14}/> {t.clear_all}</button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-[var(--bg-canvas)]/50">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-[var(--bg-canvas)]/50 min-h-0">
                     {packet.map((item, idx) => (
                         <div 
                         key={item.id}
@@ -1455,7 +1455,7 @@ export default function QuestionStudio({
                 ))}
             </div>
             {setupMode === 'worksheet' && (
-                    <div className="p-4 border-t border-[var(--border-main)] bg-[var(--bg-card)] space-y-4">
+                    <div className="p-4 border-t border-[var(--border-main)] bg-[var(--bg-card)] space-y-4 shrink-0">
                         <div className="flex items-center justify-between">
                             <span className="text-[12px] font-black uppercase text-[var(--text-main)] tracking-widest">
                                 {t.answer_key_toggle}
