@@ -3,7 +3,7 @@ import { Printer, ChevronLeft, X, ChevronRight, Maximize2, Loader2 } from 'lucid
 import { SKILL_BUCKETS } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer';
 
-// --- MATH RENDERING ENGINE ---
+// --- MATH RENDERING ENGINE (PROTECTED FOR PRINT & PREVIEW) ---
 const MathDisplay = ({ content, className = "" }) => {
     const containerRef = useRef(null);
     useEffect(() => {
@@ -24,7 +24,12 @@ const MathDisplay = ({ content, className = "" }) => {
         };
         renderMath();
     }, [content]);
-    return <div ref={containerRef} className={`math-content leading-relaxed whitespace-pre-wrap ${className}`} />;
+    return (
+        <div 
+            ref={containerRef} 
+            className={`math-content leading-relaxed whitespace-pre-wrap text-slate-900 [&_.katex]:!text-slate-900 [&_.katex-html]:!text-slate-900 ${className}`} 
+        />
+    );
 };
 
 // Word problem / Story saver
@@ -63,12 +68,11 @@ const compileAnchoredStory = (item, lang = 'sv') => {
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
             const cleanValue = String(value).replace(/[()]/g, '');
-            // 🟢 FIXED: Safely escape the curly braces in the RegExp
             template = template.replace(new RegExp(`\\{${key}\\}`, 'g'), cleanValue);
         });
     }
 
-    // 5. Append the exact uniform instructional directive suffix corresponding to the current variation key context
+    // 5. Append instructional suffix
     if (item.variationKey === 'apply_factor_inc' || item.variationKey === 'apply_factor_dec') {
         template += lang === 'en' ? " Calculate the new value." : " Beräkna det nya värdet.";
     } else if (item.variationKey === 'find_original_inc' || item.variationKey === 'find_original_dec') {
@@ -100,7 +104,6 @@ export default function PrintView({
     workspaceStyle: propWorkStyle,
     layoutStyle: propLayoutStyle
 }) {
-    // Failsafe Extraction: Pulls from the standard prop, or falls back to our attached packet data
     const globalLatexSize = propLatexSize ?? packet[0]?._globalLatexSize ?? 'md';
     const workspaceHeight = propWorkHeight ?? packet[0]?._workspaceHeight ?? 3;
     const workspaceStyle = propWorkStyle ?? packet[0]?._workspaceStyle ?? 'blank';
@@ -118,14 +121,6 @@ export default function PrintView({
         }
     }[lang];
 
-    const hasVisual = (rd) => {
-        return !!(rd?.graph || rd?.geometry || rd?.pattern || rd?.marbles || rd?.spinner || 
-                 rd?.freqTable || rd?.percentGrid || rd?.scale || rd?.similarity || 
-                 rd?.compareArea || rd?.tree);
-    };
-
-
-    // 🟢 STRATEGY 3 STATE MANAGEMENT: Tracks calculated groupings via asynchronous DOM passes
     const [measuredPages, setMeasuredPages] = useState([]);
     const [isMeasuring, setIsMeasuring] = useState(true);
 
@@ -136,9 +131,9 @@ export default function PrintView({
             const sandboxCards = document.querySelectorAll('.sandbox-card');
             if (!sandboxCards.length) return;
 
-            const ROW_GAP = 40; // Matches gap-y-10 (2.5rem = 40px)
-            const HEADER_OFFSET = 160; // Extra padding reserved for the page top (Title, Date block)
-            const MAX_PAGE_HEIGHT = 950; // Calibrated safe A4 height to prevent native printer overflow
+            const ROW_GAP = 40;
+            const HEADER_OFFSET = 160;
+            const MAX_PAGE_HEIGHT = 950;
             
             const pages = [];
             let currentPage = [];
@@ -151,25 +146,20 @@ export default function PrintView({
                 const displayStory = item.showText !== false;
                 const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
 
-                // ⚡ Read absolute heights from browser paint matrix
                 const targetCard = sandboxCards[idx];
                 const baseItemHeight = targetCard && targetCard.getBoundingClientRect().height > 0 
                     ? targetCard.getBoundingClientRect().height 
                     : 140;
 
-                // Grab the isolated header text if it exists
                 const headerEl = document.getElementById(`sandbox-header-${idx}`);
                 const headerHeight = headerEl && headerEl.getBoundingClientRect().height > 0
                     ? headerEl.getBoundingClientRect().height
                     : 0;
 
-                // 1. Will this item force a row wrap BEFORE we place it?
                 let forcesWrap = isHeaderMode || (currentRowWidth > 0 && currentRowWidth + colSpan > 6);
-
                 let projectedHeight = currentHeight;
                 if (forcesWrap) projectedHeight += maxHeightInCurrentRow + (currentRowWidth > 0 ? ROW_GAP : 0);
 
-                // 2. How much height does THIS entire item add to the row?
                 let addedItemHeight = 0;
                 if (isHeaderMode) {
                     addedItemHeight += headerHeight + ROW_GAP + baseItemHeight;
@@ -177,17 +167,15 @@ export default function PrintView({
                     addedItemHeight = Math.max(forcesWrap ? 0 : maxHeightInCurrentRow, baseItemHeight);
                 }
 
-                // 3. Does it exceed safe A4 bounds?
                 if (projectedHeight + addedItemHeight > MAX_PAGE_HEIGHT && currentPage.length > 0) {
-                    pages.push(currentPage);     // Page Break Triggered!
+                    pages.push(currentPage);
                     currentPage = [];
-                    currentHeight = HEADER_OFFSET; // Reset to top
+                    currentHeight = HEADER_OFFSET;
                     currentRowWidth = 0;
                     maxHeightInCurrentRow = 0;
-                    forcesWrap = false;          // It's a new page, so it doesn't wrap a row
+                    forcesWrap = false;
                 }
 
-                // 4. Record the item safely into the current layout row
                 if (forcesWrap && currentRowWidth > 0) {
                     currentHeight += maxHeightInCurrentRow + ROW_GAP;
                     currentRowWidth = 0;
@@ -197,7 +185,6 @@ export default function PrintView({
                 currentPage.push({ ...item, originalIdx: idx });
 
                 if (isHeaderMode) {
-                    // Headers take a full row. Track their height immediately, then track the child item.
                     currentHeight += headerHeight + ROW_GAP;
                     currentRowWidth = colSpan;
                     maxHeightInCurrentRow = baseItemHeight;
@@ -211,7 +198,7 @@ export default function PrintView({
 
             setMeasuredPages(pages);
             setIsMeasuring(false);
-        }, 400); // 400ms ensures text symbols, options lists and charts complete rendering layout fully
+        }, 400);
 
         return () => clearTimeout(timer);
     }, [packet, workspaceHeight, workspaceStyle, layoutStyle, globalLatexSize, lang]);
@@ -229,9 +216,20 @@ export default function PrintView({
     };
 
     return (
-        <div className="print-view-root min-h-screen bg-slate-100 pb-20 print:bg-white print:pb-0 print:min-h-0 print:h-auto font-sans relative">
-            
-            {/* 🟢 FLOATING INTERACTIVE MASK COVER: Locks UI transitions cleanly during DOM layout checks */}
+        /* 🟢 THEME SHIELD: Explicit light color-scheme and CSS variables to neutralize any parent dark-mode classes */
+        <div 
+            className="print-view-root min-h-screen bg-slate-100 pb-20 print:bg-white print:pb-0 print:min-h-0 print:h-auto font-sans relative text-slate-900"
+            style={{
+                colorScheme: 'light',
+                '--text-main': '#0f172a',
+                '--text-muted': '#475569',
+                '--bg-card': '#ffffff',
+                '--bg-surface': '#f8fafc',
+                '--border-main': '#e2e8f0',
+                '--border-strong': '#cbd5e1'
+            }}
+        >
+            {/* FLOATING INTERACTIVE MASK COVER */}
             {isMeasuring && (
                 <div className="fixed inset-0 bg-slate-900 text-white flex flex-col items-center justify-center gap-4 font-sans select-none z-[9999] animate-in fade-in duration-200 print:hidden">
                     <Loader2 className="animate-spin text-indigo-500" size={40} />
@@ -248,29 +246,32 @@ export default function PrintView({
 
             {/* TOOLBAR */}
             <div className="bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50 print:hidden">
-                <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold uppercase hover:text-indigo-400 transition-colors">
+                <button onClick={onBack} className="flex items-center gap-2 text-sm font-bold uppercase hover:text-indigo-400 transition-colors cursor-pointer">
                     <ChevronLeft size={18}/> Question Studio
                 </button>
                 <div className="flex items-center gap-4">
                     <span className="text-[10px] font-black uppercase text-slate-500 italic px-3 py-1 bg-white/5 rounded-lg border border-white/10">Förhandsgranskning</span>
-                    <button onClick={() => window.print()} className="bg-indigo-600 px-6 py-2 rounded-xl text-sm font-black uppercase flex items-center gap-2 hover:bg-indigo-500 shadow-lg transition-all active:scale-95">
+                    <button onClick={() => window.print()} className="bg-indigo-600 px-6 py-2 rounded-xl text-sm font-black uppercase flex items-center gap-2 hover:bg-indigo-500 shadow-lg transition-all active:scale-95 cursor-pointer">
                         <Printer size={18}/> Skriv ut
                     </button>
                 </div>
             </div>
 
-            {/* WORKSHEET PAGES — Maps across evaluated measured states */}
+            {/* WORKSHEET PAGES */}
             {!isMeasuring && measuredPages.map((pageItems, pageIdx) => (
-                <div key={pageIdx} className={`max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[8mm] flex flex-col min-h-[240mm] print:min-h-auto print:shadow-none print:my-0 print:p-[12mm] relative ${pageIdx < measuredPages.length - 1 ? 'break-after-page' : ''}`}>
-                    <header className="border-b-1 border-black pb-2 mb-4 relative">
+                <div 
+                    key={pageIdx} 
+                    className={`max-w-[210mm] mx-auto !bg-white !text-slate-900 shadow-2xl my-8 p-[8mm] flex flex-col min-h-[240mm] print:min-h-auto print:shadow-none print:my-0 print:p-[12mm] relative ${pageIdx < measuredPages.length - 1 ? 'break-after-page' : ''}`}
+                >
+                    <header className="border-b border-black pb-2 mb-4 relative">
                         <div className="mb-6">
                             <div className="text-[6px] font-black uppercase text-slate-600 italic tracking-widest">{t.watermark}</div>
-                            <h1 className="text-[12px] font-black uppercase tracking-tight leading-none">{title || "Matematik"}</h1>
+                            <h1 className="text-[12px] font-black uppercase tracking-tight leading-none text-slate-900">{title || "Matematik"}</h1>
                         </div>
-                        <div className="flex gap-8 text-[10px] font-bold uppercase">
-                            <div className="flex-1 flex gap-2 items-baseline border-b border-black/10"><span>{t.name}</span><div className="flex-1" /></div>
-                            <div className="w-32 flex gap-2 items-baseline border-b border-black/10"><span>{t.class}</span><div className="flex-1" /></div>
-                            <div className="w-32 flex gap-2 items-baseline border-b border-black/10"><span>{t.date}</span><div className="flex-1" /></div>
+                        <div className="flex gap-8 text-[10px] font-bold uppercase text-slate-800">
+                            <div className="flex-1 flex gap-2 items-baseline border-b border-black/20"><span>{t.name}</span><div className="flex-1" /></div>
+                            <div className="w-32 flex gap-2 items-baseline border-b border-black/20"><span>{t.class}</span><div className="flex-1" /></div>
+                            <div className="w-32 flex gap-2 items-baseline border-b border-black/20"><span>{t.date}</span><div className="flex-1" /></div>
                         </div>
                     </header>
 
@@ -287,14 +288,14 @@ export default function PrintView({
                             const effectiveLatexSize = item.localLatexSize || globalLatexSize;
                             const latexSizeClass = { sm: 'text-base', md: 'text-lg', lg: 'text-xl', xl: 'text-2xl' }[effectiveLatexSize] || 'text-lg';
                             const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
-                            const effectiveWorkspaceStyle = item.localWorkspaceStyle !== undefined ? item.localWorkspaceStyle : workspaceStyle; // 🟢 NEW
+                            const effectiveWorkspaceStyle = item.localWorkspaceStyle !== undefined ? item.localWorkspaceStyle : workspaceStyle;
 
                             return (
                                 <React.Fragment key={item.id}>
                                     {/* Header Description Text Section */}
                                     {isHeaderMode && (
-                                        <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-2 mb-2 bg-slate-50/50 break-inside-avoid">
-                                            <div className="text-sm font-semibold text-slate-800 leading-relaxed">
+                                        <div className="col-span-6 border-l-4 border-slate-900 pl-4 py-2 mb-2 bg-slate-50 break-inside-avoid">
+                                            <div className="text-sm font-semibold text-slate-900 leading-relaxed">
                                                 <MathDisplay content={compileAnchoredStory(item, lang)} />
                                             </div>
                                         </div>
@@ -306,14 +307,14 @@ export default function PrintView({
                                     }`}>
                                         <div className="flex items-start gap-4" onClick={() => setZoomedIdx(item.originalIdx)}>
                                             {/* Visual Anchor Circle */}
-                                            <div className="shrink-0 w-7 h-7 rounded-full border-2 border-black flex items-center justify-center text-black font-black text-xs mt-1">
+                                            <div className="shrink-0 w-7 h-7 rounded-full border-2 border-slate-900 flex items-center justify-center text-slate-900 font-black text-xs mt-1">
                                                 {(item.originalIdx + 1).toString()}
                                             </div>
 
                                             <div className="flex-1 min-w-0 flex flex-col h-full">
                                                 {/* Inline Description Text Section */}
                                                 {isInlineMode && (
-                                                    <div className="text-sm font-semibold text-slate-800 leading-relaxed border-b border-slate-100 pb-2 mb-3">
+                                                    <div className="text-sm font-semibold text-slate-900 leading-relaxed border-b border-slate-100 pb-2 mb-3">
                                                         <MathDisplay content={compileAnchoredStory(item, lang)} />
                                                     </div>
                                                 )}
@@ -336,12 +337,12 @@ export default function PrintView({
                                                 )}
 
                                                 {item.resolvedData?.renderData?.options && (
-                                                    <div className="grid grid-cols-1 gap-2 border-l-2 border-slate-100 pl-4 mb-2">
+                                                    <div className="grid grid-cols-1 gap-2 border-l-2 border-slate-200 pl-4 mb-2">
                                                         {item.resolvedData.renderData.options.map((opt, i) => {
                                                             const choiceLabel = typeof opt === 'object' ? opt.label : opt;
                                                             return (
-                                                                <div key={i} className="flex gap-2 items-baseline text-[11px]">
-                                                                    <span className="font-black text-slate-400">{String.fromCharCode(65 + i)})</span>
+                                                                <div key={i} className="flex gap-2 items-baseline text-[11px] text-slate-800">
+                                                                    <span className="font-black text-slate-600">{String.fromCharCode(65 + i)})</span>
                                                                     <MathDisplay content={choiceLabel} />
                                                                 </div>
                                                             );
@@ -357,7 +358,7 @@ export default function PrintView({
                                                             style={{ 
                                                                 height: `${effectiveWorkArea * 30}px`, 
                                                                 ...(effectiveWorkspaceStyle === 'grid' ? {
-                                                                    backgroundImage: 'linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)',
+                                                                    backgroundImage: 'linear-gradient(to right, #cbd5e1 1px, transparent 1px), linear-gradient(to bottom, #cbd5e1 1px, transparent 1px)',
                                                                     backgroundSize: '30px 30px'
                                                                 } : { backgroundColor: 'transparent' })
                                                             }} 
@@ -377,23 +378,23 @@ export default function PrintView({
             {/* --- 3-COLUMN SPILLING ANSWER KEY --- */}
             {!isMeasuring && includeAnswerKey && (
                  <div className="print-answer-key-page print:my-0">
-                     <div className="max-w-[210mm] mx-auto bg-white shadow-2xl my-8 p-[15mm] flex flex-col min-h-[297mm] print:min-h-0 print:shadow-none print:my-0 print:p-[12mm] relative border-t-[12px] border-emerald-600">
-                        <header className="border-b-2 border-black pb-4 mb-6">
-                            <div className="text-[8px] font-black uppercase text-slate-300 italic tracking-widest leading-none mb-1">{t.watermark}</div>
-                            <h2 className="text-xl font-black uppercase tracking-tight">{t.key_title}: {title}</h2>
+                     <div className="max-w-[210mm] mx-auto !bg-white !text-slate-900 shadow-2xl my-8 p-[15mm] flex flex-col min-h-[297mm] print:min-h-0 print:shadow-none print:my-0 print:p-[12mm] relative border-t-[12px] border-emerald-600">
+                        <header className="border-b-2 border-slate-900 pb-4 mb-6">
+                            <div className="text-[8px] font-black uppercase text-slate-400 italic tracking-widest leading-none mb-1">{t.watermark}</div>
+                            <h2 className="text-xl font-black uppercase tracking-tight text-slate-900">{t.key_title}: {title}</h2>
                         </header>
                         
-                        <div className="print-columns-3 flex-1">
+                        <div className="print-columns-3 flex-1 text-slate-900">
                             {packet.map((item, idx) => (
-                                <div key={`ans-${item.id}`} className={`break-inside-avoid border-slate-100 ${answerKeyStyle === 'compact' ? 'mb-2 flex gap-2 items-baseline' : 'mb-6 pb-4 border-b'}`}>
-                                    <div className="font-black uppercase text-slate-400 shrink-0 text-[10px] italic">{idx + 1}</div>
+                                <div key={`ans-${item.id}`} className={`break-inside-avoid border-slate-200 ${answerKeyStyle === 'compact' ? 'mb-2 flex gap-2 items-baseline' : 'mb-6 pb-4 border-b'}`}>
+                                    <div className="font-black uppercase text-slate-500 shrink-0 text-[10px] italic">{idx + 1}</div>
                                     {answerKeyStyle === 'compact' ? (
                                         <div className="font-bold text-slate-900 text-[11px]"><MathDisplay content={getFinalAnswer(item.resolvedData)} /></div>
                                     ) : (
                                         <div className="space-y-2 mt-0.5">
                                             {item.resolvedData?.clues?.map((clue, cIdx) => (
-                                                <div key={cIdx} className={`${cIdx === item.resolvedData.clues.length - 1 ? 'font-bold text-emerald-700 bg-emerald-50 p-2 rounded-lg' : 'text-slate-500 pl-2'} text-[9px] leading-tight`}>
-                                                    <div className="italic opacity-80 mb-1">{clue.text}</div>
+                                                <div key={cIdx} className={`${cIdx === item.resolvedData.clues.length - 1 ? 'font-bold text-emerald-800 bg-emerald-50 p-2 rounded-lg border border-emerald-200' : 'text-slate-700 pl-2'} text-[9px] leading-tight`}>
+                                                    <div className="italic opacity-90 mb-1">{clue.text}</div>
                                                     {clue.latex && <MathDisplay content={`$${clue.latex}$`} />}
                                                 </div>
                                             ))}
@@ -406,8 +407,8 @@ export default function PrintView({
                  </div>
             )}
 
-            {/* 🟢 HIDDEN SANDBOX INTERACTION CANVAS: Kept constantly rendered in background to give true measurements */}
-            <div className="absolute top-0 left-0 opacity-0 pointer-events-none print:hidden z-[-100] w-[210mm] px-[12mm] box-border">
+            {/* HIDDEN SANDBOX INTERACTION CANVAS */}
+            <div className="absolute top-0 left-0 opacity-0 pointer-events-none print:hidden z-[-100] w-[210mm] px-[12mm] box-border text-slate-900 bg-white">
                 <div id="print-sandbox" className="grid grid-cols-6 gap-x-10 gap-y-10 items-start">
                     {packet.map((item, idx) => {
                         const displayStory = item.showText !== false;
@@ -417,7 +418,6 @@ export default function PrintView({
                         const isHeaderMode = displayStory && (item.instructionMode === 'header' || !item.instructionMode);
                         const isInlineMode = displayStory && item.instructionMode === 'inline';
 
-                        // 🟢 FIXED: Apply dynamic sizes to the sandbox so it measures breaks perfectly
                         const effectiveLatexSize = item.localLatexSize || globalLatexSize;
                         const latexSizeClass = { sm: 'text-base', md: 'text-lg', lg: 'text-xl', xl: 'text-2xl' }[effectiveLatexSize] || 'text-lg';
                         const effectiveWorkArea = item.localWorkspaceHeight !== undefined ? item.localWorkspaceHeight : workspaceHeight;
@@ -425,8 +425,8 @@ export default function PrintView({
                         return (
                             <React.Fragment key={`sb-card-${item.id}`}>
                                 {isHeaderMode && (
-                                    <div id={`sandbox-header-${idx}`} className="col-span-6 border-l-4 border-slate-900 pl-4 py-2 bg-slate-50/50">
-                                        <div className="text-sm font-semibold"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
+                                    <div id={`sandbox-header-${idx}`} className="col-span-6 border-l-4 border-slate-900 pl-4 py-2 bg-slate-50">
+                                        <div className="text-sm font-semibold text-slate-900"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
                                     </div>
                                 )}
                                 <div className={`sandbox-card ${layoutStyle === 'framed' ? 'border-2 p-4' : 'p-2'} ${item.columnSpan === 2 ? 'col-span-2' : item.columnSpan === 3 ? 'col-span-3' : 'col-span-6'}`}>
@@ -436,10 +436,10 @@ export default function PrintView({
                                         </div>
                                         <div className="flex-1 min-w-0 flex flex-col h-full space-y-4">
                                             {isInlineMode && (
-                                                <div className="text-sm font-semibold"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
+                                                <div className="text-sm font-semibold text-slate-900"><MathDisplay content={compileAnchoredStory(item, lang)} /></div>
                                             )}
                                             {displayLatex && item.resolvedData?.renderData.latex && (
-                                                <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-center font-serif`} /></div>
+                                                <div className="py-2"><MathDisplay content={`$$${item.resolvedData.renderData.latex}$$`} className={`${latexSizeClass} text-center font-serif text-slate-900`} /></div>
                                             )}
                                             {displayVisual && (
                                                 <div className="flex justify-center scale-90 origin-top mt-2">
@@ -458,12 +458,26 @@ export default function PrintView({
                 </div>
             </div>
 
-            {/* DYNAMIC MEDIA PRINT STYLE HANDLERS */}
+            {/* DYNAMIC MEDIA PRINT STYLE HANDLERS (STRICT LIGHT-MODE ENFORCEMENT) */}
             <style dangerouslySetInnerHTML={{ __html: `
+                /* 🟢 SCREEN OVERRIDE: Neutralize dark-mode styles leaking from theme.css */
+                .print-view-root, 
+                .print-view-root *:not(.print\\:hidden) {
+                    color-scheme: light !important;
+                }
+                
+                .print-view-root [class*="text-white"],
+                .print-view-root .katex,
+                .print-view-root .katex-html,
+                .print-view-root svg text {
+                    fill: #0f172a !important;
+                }
+
                 @media print {
                     * {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
+                        color-scheme: light !important;
                     }
                 
                     /* 1. Neutralize high-level layout layers */
@@ -473,9 +487,11 @@ export default function PrintView({
                         overflow: visible !important;
                         display: block !important;
                         position: static !important;
+                        background: #ffffff !important;
+                        color: #0f172a !important;
                     }
 
-                    /* 2. Find any structural parent wrappers holding this view and flatten them entirely */
+                    /* 2. Flatten parent structural wrappers */
                     *:has(> .print-view-root),
                     *:has(> .break-after-page),
                     *:has(> .print-answer-key-page) {
@@ -489,34 +505,33 @@ export default function PrintView({
                         flex-direction: column !important;
                     }
 
-                    /* 3. Strip layout constraints on your component root */
+                    /* 3. Strip layout constraints on component root */
                     .print-view-root {
                         display: block !important;
                         position: static !important;
                         overflow: visible !important;
                         height: auto !important;
                         min-height: 0 !important;
+                        background: #ffffff !important;
+                        color: #0f172a !important;
                     }
 
                     @page { size: A4; margin: 0; }
                     .print\\:hidden { display: none !important; }
                     
-                    /* 4. Enforce strict fragmentation boundaries on individual cards */
+                    /* 4. Enforce strict fragmentation boundaries on cards */
                     .break-inside-avoid { 
                         break-inside: avoid !important; 
                         page-break-inside: avoid !important;
                     }
                     
-                    /*  THE GRID-TO-FLEX OVERRIDE: 
-                       Flattens the grid container into an adjustable flex row so the browser 
-                       can calculate item page breaks properly */
+                    /* 5. Grid-to-flex print flattening */
                     .grid-cols-6 {
                         display: flex !important;
                         flex-wrap: wrap !important;
-                        gap: 2.5rem 1.5rem !important; /* Replicates grid column gaps */
+                        gap: 2.5rem 1.5rem !important;
                     }
                     
-                    /* Map col-span configurations into explicit print-safe percentage widths */
                     .col-span-2 { width: calc(33.333% - 1rem) !important; flex-shrink: 0 !important; }
                     .col-span-3 { width: calc(50% - 1rem) !important; flex-shrink: 0 !important; }
                     .col-span-6 { width: 100% !important; flex-shrink: 0 !important; }
@@ -539,8 +554,9 @@ export default function PrintView({
                     .print-columns-3 { column-count: 3; column-gap: 1cm; }
                     body { background: white !important; -webkit-print-color-adjust: exact; }
                 }
+
                 @media screen {
-                    .print-columns-3 { display: grid; grid-template-cols: repeat(3, 1fr); gap: 1.5rem; }
+                    .print-columns-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
                 }
             `}} />
         </div>

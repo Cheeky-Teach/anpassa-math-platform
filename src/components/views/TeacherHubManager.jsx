@@ -3,8 +3,8 @@ import {
     Plus, Star, Eye, EyeOff, Copy, Trash2, 
     Calendar as CalendarIcon, FolderOpen, Layers, Loader2,
     ChevronDown, ChevronUp, Folder, X, Check, Edit2, 
-    ChevronLeft, ChevronRight, BookOpen, Target, ArrowUp, ArrowDown,
-    Bookmark, SplitSquareVertical, Beaker
+    BookOpen, Target, ArrowUp, ArrowDown,
+    Bookmark, Beaker, Archive, ArchiveRestore, Filter
 } from 'lucide-react';
 import ContentModal from '../modals/ContentModal'; 
 import { supabase } from '../../lib/supabaseClient';
@@ -14,7 +14,7 @@ import MathDisplay from '../shared/MathDisplay';
 import { CATEGORIES, LEVEL_DESCRIPTIONS } from '../../constants/localization';
 import CheckpointModal from '../modals/CheckpointModal';
 
-//  Helper to get localized topic names
+// Helper to get localized topic names
 const getTopicName = (topicId, lang = 'sv') => {
     if (!topicId) return "";
     for (const catKey in CATEGORIES) {
@@ -29,7 +29,6 @@ const getLevelMetadata = (topicId, level, lang = 'sv') => {
         return { description: "", mathExample: "" };
     }
 
-    // Defensive check ensuring LEVEL_DESCRIPTIONS exists and doesn't throw
     const descriptionsObj = typeof LEVEL_DESCRIPTIONS !== 'undefined' ? LEVEL_DESCRIPTIONS : {};
     const topicDesc = descriptionsObj[topicId]?.[level];
     const description = typeof topicDesc === 'object' 
@@ -53,11 +52,9 @@ const getLevelMetadata = (topicId, level, lang = 'sv') => {
     return { description, mathExample };
 };
 
-//  Normalizer: Converts any flat legacy payload into our structured "Del / Part" array
 export const normalizePartsPayload = (rawPayload = [], lang = 'sv') => {
     if (!Array.isArray(rawPayload) || rawPayload.length === 0) return [];
 
-    // If it's already using the structured "part / section" schema:
     if (rawPayload[0]?.type === 'part' || rawPayload[0]?.type === 'section') {
         return rawPayload.map((part, pIdx) => ({
             ...part,
@@ -68,23 +65,17 @@ export const normalizePartsPayload = (rawPayload = [], lang = 'sv') => {
         }));
     }
 
-    // Auto-Group legacy flat array by topic (Option A default)
     const grouped = {};
     const parts = [];
 
     rawPayload.forEach((item, idx) => {
         const topic = item.topic || item.topicId || 'generic';
         if (!grouped[topic]) {
-            const partIndex = parts.length + 1;
-            const topicLabel = getTopicName(topic, lang);
-            const partTitle = `${lang === 'sv' ? 'Del' : 'Part'} ${partIndex}: ${topicLabel}`;
-
-            // In normalizePartsPayload:
             const newPart = {
                 id: `part_${topic}_${Date.now()}_${idx}`,
                 type: 'part',
                 topicId: topic,
-                customTitle: null, //  No hardcoded "Del" or "Part"
+                customTitle: null,
                 steps: []
             };
             grouped[topic] = newPart;
@@ -108,29 +99,30 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
     const [isSaving, setIsSaving] = useState(false);
     const [collapsedFolders, setCollapsedFolders] = useState({});
 
-    // --- Sequencer & Instructional Presentations State ---
-    const [isInstructionPickerOpen, setIsInstructionPickerOpen] = useState(false);
-    const [targetPartContext, setTargetPartContext] = useState(null); // { bucketId, partId }
-    const [expandedSequencerBucketId, setExpandedSequencerBucketId] = useState(null);
+    // Filter Chip State
+    const [activeFolderFilter, setActiveFolderFilter] = useState('ALL');
 
-    //  NEW: Checkpoint Modal State
+    // Sequencer & Modals State
+    const [isInstructionPickerOpen, setIsInstructionPickerOpen] = useState(false);
+    const [targetPartContext, setTargetPartContext] = useState(null);
+    const [expandedSequencerBucketId, setExpandedSequencerBucketId] = useState(null);
     const [isCheckpointModalOpen, setIsCheckpointModalOpen] = useState(false);
 
-    // --- Inline Part Title Editing ---
+    // Inline Editing States
     const [editingPartId, setEditingPartId] = useState(null);
     const [editPartTitleValue, setEditPartTitleValue] = useState('');
+    const [editingStepId, setEditingStepId] = useState(null);
+    const [editStepTitleValue, setEditStepTitleValue] = useState('');
 
-    // --- Smart Folder State ---
+    // Folder Management State
     const [selectedFolder, setSelectedFolder] = useState('Okategoriserad');
     const [isAddingNewFolder, setIsAddingNewFolder] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
-    
-    // --- Folder Renaming & Reordering
     const [editingFolderId, setEditingFolderId] = useState(null);
     const [editFolderValue, setEditFolderValue] = useState('');
     const [folderOrder, setFolderOrder] = useState([]); 
 
-    // --- Bucket Creation State ---
+    // Bucket Creation State
     const [newBucketName, setNewBucketName] = useState('');
     const [newBucketColor, setNewBucketColor] = useState('indigo');
     
@@ -138,11 +130,11 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
     defaultDate.setDate(defaultDate.getDate() + 7);
     const [newBucketDate, setNewBucketDate] = useState(defaultDate.toISOString().split('T')[0]); 
 
-    // --- Content Selection State ---
+    // Content Selection Modal State
     const [isContentModalOpen, setIsContentModalOpen] = useState(false);
     const [activeContentModalBucketId, setActiveContentModalBucketId] = useState(null);
 
-    // --- Inline Bucket Title / Date Editing ---
+    // Inline Bucket Title / Date Editing
     const [editingTitleId, setEditingTitleId] = useState(null);
     const [editTitleValue, setEditTitleValue] = useState('');
     const [editingDateId, setEditingDateId] = useState(null);
@@ -190,30 +182,27 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                 if (profileData && profileData.folder_order) {
                     setFolderOrder(profileData.folder_order);
                 }
-            } catch (err) { console.error("Error fetching buckets:", err); } 
-            finally { setIsLoading(false); }
+            } catch (err) { 
+                console.error("Error fetching buckets:", err); 
+            } finally { 
+                setIsLoading(false); 
+            }
         };
         fetchBuckets();
     }, [teacherId, lang]);
 
     const getPartDisplayTitle = (part, partIndex, lang = 'sv') => {
-        // 1. If teacher manually renamed this specific part, honor their custom text
         if (part.customTitle && part.customTitle.trim()) {
             return part.customTitle;
         }
-
-        // 2. Otherwise, construct it dynamically using the active language
         const prefix = lang === 'sv' ? 'Del' : 'Part';
         const topicLabel = getTopicName(part.topicId, lang);
-
         if (topicLabel) {
             return `${prefix} ${partIndex + 1}: ${topicLabel}`;
         }
-
         return `${prefix} ${partIndex + 1}`;
     };
 
-    // Save full parts array of a bucket to Supabase
     const persistBucketPayload = async (bucketId, newParts) => {
         setBuckets(prev => prev.map(b => b.id === bucketId ? { ...b, payload: newParts } : b));
         try {
@@ -223,7 +212,72 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         }
     };
 
-    //  Insert an instruction presentation into a specific "Del"
+    const handleArchiveBucket = async (bucketId) => {
+        const pastDate = new Date(Date.now() - 1000).toISOString();
+        setBuckets(prev => prev.map(b => b.id === bucketId ? { ...b, expires_at: pastDate } : b));
+        try {
+            await supabase.from('teacher_buckets').update({ expires_at: pastDate }).eq('id', bucketId);
+        } catch (err) {
+            console.error("Error archiving unit:", err);
+        }
+    };
+
+    const handleRestoreBucket = async (bucketId) => {
+        const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        setBuckets(prev => prev.map(b => b.id === bucketId ? { ...b, expires_at: futureDate } : b));
+        try {
+            await supabase.from('teacher_buckets').update({ expires_at: futureDate }).eq('id', bucketId);
+        } catch (err) {
+            console.error("Error restoring unit:", err);
+        }
+    };
+
+    const handleDeleteOrArchive = async (bucket) => {
+        const isCurrentlyActive = new Date(bucket.expires_at) > new Date();
+        
+        if (isCurrentlyActive) {
+            const choice = window.confirm(
+                lang === 'sv'
+                    ? `Vill du arkivera "${bucket.name}" så att du kan använda den igen senare?\n\nKlicka "OK" för att Arkivera.\nKlicka "Avbryt" för att avbryta.`
+                    : `Do you want to archive "${bucket.name}" for later reuse?\n\nClick "OK" to Archive.\nClick "Cancel" to abort.`
+            );
+            if (choice) {
+                await handleArchiveBucket(bucket.id);
+            }
+        } else {
+            if (window.confirm(lang === 'sv' ? `Radera "${bucket.name}" permanent? Detta kan inte ångras.` : `Permanently delete "${bucket.name}"? This cannot be undone.`)) {
+                setBuckets(prev => prev.filter(b => b.id !== bucket.id));
+                try {
+                    await supabase.from('teacher_buckets').delete().eq('id', bucket.id);
+                } catch (err) {
+                    console.error("Error permanently deleting bucket:", err);
+                }
+            }
+        }
+    };
+
+    const saveCheckpointTitleEdit = async (bucketId, partId, stepId) => {
+        const trimmed = editStepTitleValue.trim();
+        const bucket = buckets.find(b => b.id === bucketId);
+        if (!bucket) return;
+
+        const updatedParts = (bucket.payload || []).map(part => {
+            if (part.id !== partId) return part;
+            return {
+                ...part,
+                steps: part.steps.map(step => {
+                    if (step.id === stepId) {
+                        return { ...step, title: trimmed || step.title };
+                    }
+                    return step;
+                })
+            };
+        });
+
+        setEditingStepId(null);
+        await persistBucketPayload(bucketId, updatedParts);
+    };
+
     const handleAddInstructionSlideToPart = async (bucketId, partId, sheet) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
@@ -244,32 +298,24 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
         const updatedParts = (bucket.payload || []).map(part => {
             if (part.id !== partId) return part;
-            return {
-                ...part,
-                steps: [...part.steps, newStep]
-            };
+            return { ...part, steps: [...part.steps, newStep] };
         });
 
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    //  Insert a TestLab checkpoint step into a specific "Del"
     const handleAddCheckpointToPart = async (bucketId, partId, checkpointData) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
 
         const updatedParts = (bucket.payload || []).map(part => {
             if (part.id !== partId) return part;
-            return {
-                ...part,
-                steps: [...part.steps, checkpointData]
-            };
+            return { ...part, steps: [...part.steps, checkpointData] };
         });
 
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    //  Reorder steps strictly inside a "Del"
     const moveStepInsidePart = async (bucketId, partId, stepIndex, direction) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
@@ -289,7 +335,6 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    //  Remove a step from a "Del"
     const removeStepFromPart = async (bucketId, partId, stepIndex) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
@@ -305,18 +350,16 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    //  Add a new custom "Del" (Part) to the unit
     const handleAddNewPart = async (bucketId) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
 
         const currentParts = bucket.payload || [];
-        const nextPartNumber = currentParts.length + 1;
         const newPart = {
             id: `part_custom_${Date.now()}`,
             type: 'part',
             topicId: null,
-            customTitle: null, // Renders dynamically as "Del X" / "Part X"
+            customTitle: null,
             steps: []
         };
 
@@ -324,18 +367,15 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    //  Save custom title for a "Del"
     const savePartTitleEdit = async (bucketId, partId) => {
-    const bucket = buckets.find(b => b.id === bucketId);
+        const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
 
         const trimmed = editPartTitleValue.trim();
-
         const updatedParts = (bucket.payload || []).map(part => {
             if (part.id !== partId) return part;
             return {
                 ...part,
-                // If they cleared the input, revert customTitle to null (resuming auto Del/Part)
                 customTitle: trimmed.length > 0 ? trimmed : null
             };
         });
@@ -344,13 +384,12 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    //  Reorder whole "Del" sections
     const movePartSection = async (bucketId, partIndex, direction) => {
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
 
         const targetIdx = partIndex + direction;
-        if (targetIdx < 0 || targetIdx >= bucket.payload.length) return;
+        if (targetIdx < 0 || targetIdx >= (bucket.payload || []).length) return;
 
         const newParts = [...bucket.payload];
         const [moved] = newParts.splice(partIndex, 1);
@@ -359,77 +398,71 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         await persistBucketPayload(bucketId, newParts);
     };
 
-    //  Delete a whole "Del" section
     const deletePartSection = async (bucketId, partId) => {
         if (!window.confirm(lang === 'sv' ? "Vill du ta bort denna Del och alla dess steg?" : "Delete this Part and all its steps?")) return;
 
         const bucket = buckets.find(b => b.id === bucketId);
         if (!bucket) return;
 
-        const updatedParts = bucket.payload.filter(p => p.id !== partId);
+        const updatedParts = (bucket.payload || []).filter(p => p.id !== partId);
         await persistBucketPayload(bucketId, updatedParts);
     };
 
-    // Sync from ContentModal selections
     const handleToggleItem = (topicId, level) => {
-    setBuckets(prev => prev.map(b => {
-        if (b.id !== activeContentModalBucketId) return b;
+        setBuckets(prev => prev.map(b => {
+            if (b.id !== activeContentModalBucketId) return b;
 
-        const parts = (b.payload || []).map(part => ({
-            ...part,
-            steps: [...(part.steps || [])]
-        }));
-
-        // 1. Check if this level exists anywhere across ANY part in this unit
-        const alreadyExists = parts.some(part => 
-            part.steps.some(s => 
-                s.type === 'practice' && 
-                (s.topic === topicId || s.topicId === topicId) && 
-                Number(s.level) === Number(level)
-            )
-        );
-
-        if (alreadyExists) {
-            // 🟢 DESELECT: Remove from every part where it is found
-            const cleanedParts = parts.map(part => ({
+            const parts = (b.payload || []).map(part => ({
                 ...part,
-                steps: part.steps.filter(s => 
-                    !(s.type === 'practice' && 
-                      (s.topic === topicId || s.topicId === topicId) && 
-                      Number(s.level) === Number(level))
-                )
+                steps: [...(part.steps || [])]
             }));
-            return { ...b, payload: cleanedParts };
-        } else {
-            // 🟢 SELECT: Find or create the matching part, then append step
-            let targetPart = parts.find(p => p.topicId === topicId);
-            if (!targetPart) {
-                targetPart = {
-                    id: `part_${topicId}_${Date.now()}`,
-                    type: 'part',
-                    topicId: topicId,
-                    customTitle: null,
-                    steps: []
-                };
-                parts.push(targetPart);
+
+            const alreadyExists = parts.some(part => 
+                part.steps.some(s => 
+                    s.type === 'practice' && 
+                    (s.topic === topicId || s.topicId === topicId) && 
+                    Number(s.level) === Number(level)
+                )
+            );
+
+            if (alreadyExists) {
+                const cleanedParts = parts.map(part => ({
+                    ...part,
+                    steps: part.steps.filter(s => 
+                        !(s.type === 'practice' && 
+                          (s.topic === topicId || s.topicId === topicId) && 
+                          Number(s.level) === Number(level))
+                    )
+                }));
+                return { ...b, payload: cleanedParts };
+            } else {
+                let targetPart = parts.find(p => p.topicId === topicId);
+                if (!targetPart) {
+                    targetPart = {
+                        id: `part_${topicId}_${Date.now()}`,
+                        type: 'part',
+                        topicId: topicId,
+                        customTitle: null,
+                        steps: []
+                    };
+                    parts.push(targetPart);
+                }
+
+                targetPart.steps.push({
+                    id: `step_${topicId}_${level}_${Date.now()}`,
+                    type: 'practice',
+                    topic: topicId,
+                    level: Number(level)
+                });
+
+                return { ...b, payload: parts };
             }
-
-            targetPart.steps.push({
-                id: `step_${topicId}_${level}_${Date.now()}`,
-                type: 'practice',
-                topic: topicId,
-                level: Number(level)
-            });
-
-            return { ...b, payload: parts };
-        }
-    }));
-};
+        }));
+    };
 
     const handleCloseContentModal = async () => {
         setIsContentModalOpen(false);
         if (activeContentModalBucketId) {
-            // Read fresh from current state reference
             setBuckets(currentBuckets => {
                 const bucketToSave = currentBuckets.find(b => b.id === activeContentModalBucketId);
                 if (bucketToSave) {
@@ -447,7 +480,6 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         }
     };
 
-    // --- Folder Handlers ---
     const startEditingFolder = (e, folderName) => {
         e.stopPropagation();
         setEditingFolderId(folderName);
@@ -469,7 +501,9 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         try {
             await supabase.from('teacher_buckets').update({ folder: newName }).eq('teacher_id', teacherId).eq('folder', oldName);
             await supabase.from('profiles').update({ folder_order: newOrder }).eq('id', teacherId);
-        } catch (err) { console.error("Error renaming folder:", err); }
+        } catch (err) { 
+            console.error("Error renaming folder:", err); 
+        }
         setEditingFolderId(null);
     };
 
@@ -490,7 +524,9 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
         try {
             await supabase.from('profiles').update({ folder_order: newOrder }).eq('id', teacherId);
-        } catch (err) { console.error("Error saving folder order:", err); }
+        } catch (err) { 
+            console.error("Error saving folder order:", err); 
+        }
     };
 
     const handleCreateBucket = async () => {
@@ -526,8 +562,11 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                 setFolderOrder(newOrder);
                 supabase.from('profiles').update({ folder_order: newOrder }).eq('id', teacherId).then();
             }
-        } catch (err) { alert("Kunde inte skapa enheten."); } 
-        finally { setIsSaving(false); }
+        } catch (err) { 
+            alert("Kunde inte skapa enheten."); 
+        } finally { 
+            setIsSaving(false); 
+        }
     };
 
     const startEditingTitle = (bucket) => { setEditingTitleId(bucket.id); setEditTitleValue(bucket.name); };
@@ -536,7 +575,9 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         try {
             await supabase.from('teacher_buckets').update({ name: editTitleValue.trim() }).eq('id', id);
             setBuckets(prev => prev.map(b => b.id === id ? { ...b, name: editTitleValue.trim() } : b));
-        } catch (err) { console.error("Error updating title:", err); }
+        } catch (err) { 
+            console.error("Error updating title:", err); 
+        }
         setEditingTitleId(null);
     };
 
@@ -548,7 +589,9 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
             const newIso = end.toISOString();
             await supabase.from('teacher_buckets').update({ expires_at: newIso }).eq('id', id);
             setBuckets(prev => prev.map(b => b.id === id ? { ...b, expires_at: newIso } : b));
-        } catch (err) { console.error("Error updating date:", err); }
+        } catch (err) { 
+            console.error("Error updating date:", err); 
+        }
         setEditingDateId(null);
     };
 
@@ -557,7 +600,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         if (!target) return;
         const newValue = !target.is_focused;
         setBuckets(prev => prev.map(b => b.id === id ? { ...b, is_focused: newValue } : b));
-        try { await supabase.from('teacher_buckets').update({ is_focused: newValue }).eq('id', id); } catch (err) { }
+        try { await supabase.from('teacher_buckets').update({ is_focused: newValue }).eq('id', id); } catch (err) {}
     };
 
     const toggleVisibility = async (id) => { 
@@ -595,12 +638,6 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         } catch (err) {}
     };
 
-    const deleteBucket = async (id) => { 
-        if (!window.confirm(lang === 'sv' ? 'Är du säker på att du vill radera denna enhet?' : 'Are you sure you want to delete this unit?')) return;
-        setBuckets(prev => prev.filter(b => b.id !== id));
-        try { await supabase.from('teacher_buckets').delete().eq('id', id); } catch (err) {}
-    };
-
     const now = new Date();
     const activeBuckets = buckets.filter(b => new Date(b.expires_at) > now);
     const archivedBuckets = buckets.filter(b => new Date(b.expires_at) <= now);
@@ -617,10 +654,9 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
         if (indexA !== -1) return -1;
         if (indexB !== -1) return 1;
         return a.localeCompare(b);
-    });
+    }).filter(folderName => activeFolderFilter === 'ALL' || folderName === activeFolderFilter);
 
     const activeContentBucket = buckets.find(b => b.id === activeContentModalBucketId);
-    // Flat selected items for ContentModal checkbox sync
     const flatSelectedItems = useMemo(() => {
         if (!activeContentBucket) return [];
         return (activeContentBucket.payload || []).flatMap(part => part.steps.filter(s => s.type === 'practice'));
@@ -636,7 +672,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
             {/* Header & Creation Strip */}
             <div className="bg-[var(--bg-card)] rounded-3xl p-6 shadow-sm border border-[var(--border-main)] mb-6 transition-colors">
                 <h2 className="text-xl font-black uppercase italic tracking-tight text-[var(--text-main)] mb-4">
-                    {lang === 'sv' ? "Grupper & Enheter" : "Groups & Units"}
+                    {lang === 'sv' ? "Grupper & Moduler" : "Groups & Units"}
                 </h2>
                 
                 <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -706,14 +742,47 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                 </div>
             </div>
 
-            {/* High-Contrast Toggle Tabs */}
-            <div className="flex gap-2 mb-4">
-                <button onClick={() => setActiveTab('active')} className={`px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer ${activeTab === 'active' ? 'bg-[var(--text-main)] text-[var(--bg-canvas)] shadow-md' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)] border border-transparent'}`}>
-                    {lang === 'sv' ? `Aktiva (${activeBuckets.length})` : `Active (${activeBuckets.length})`}
-                </button>
-                <button onClick={() => setActiveTab('archive')} className={`px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer ${activeTab === 'archive' ? 'bg-[var(--text-main)] text-[var(--bg-canvas)] shadow-md' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)] border border-transparent'}`}>
-                    {lang === 'sv' ? `Arkiv (${archivedBuckets.length})` : `Archive (${archivedBuckets.length})`}
-                </button>
+            {/* Navigation Strip: Active/Archive Toggle + Folder Filter Chips */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div className="flex gap-2">
+                    <button onClick={() => setActiveTab('active')} className={`px-5 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer ${activeTab === 'active' ? 'bg-[var(--text-main)] text-[var(--bg-canvas)] shadow-md' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)] border border-transparent'}`}>
+                        {lang === 'sv' ? `Aktiva (${activeBuckets.length})` : `Active (${activeBuckets.length})`}
+                    </button>
+                    <button onClick={() => setActiveTab('archive')} className={`px-5 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer ${activeTab === 'archive' ? 'bg-[var(--text-main)] text-[var(--bg-canvas)] shadow-md' : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)] border border-transparent'}`}>
+                        {lang === 'sv' ? `Arkiv (${archivedBuckets.length})` : `Archive (${archivedBuckets.length})`}
+                    </button>
+                </div>
+
+                {existingFolders.length > 1 && (
+                    <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-1 max-w-full">
+                        <span className="text-[10px] font-black uppercase text-[var(--text-muted)] mr-1 flex items-center gap-1">
+                            <Filter size={12} /> {lang === 'sv' ? "Filtrera:" : "Filter:"}
+                        </span>
+                        <button
+                            onClick={() => setActiveFolderFilter('ALL')}
+                            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer ${
+                                activeFolderFilter === 'ALL'
+                                    ? 'bg-[var(--brand-solid)] text-white shadow-xs'
+                                    : 'bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-main)]'
+                            }`}
+                        >
+                            {lang === 'sv' ? "Alla grupper" : "All Groups"}
+                        </button>
+                        {existingFolders.map(fName => (
+                            <button
+                                key={fName}
+                                onClick={() => setActiveFolderFilter(fName)}
+                                className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer ${
+                                    activeFolderFilter === fName
+                                        ? 'bg-[var(--brand-solid)] text-white shadow-xs'
+                                        : 'bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-main)]'
+                                }`}
+                            >
+                                {fName}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Grouped Bucket List */}
@@ -722,7 +791,10 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                     <div className="py-12 text-center border-2 border-dashed border-[var(--border-main)] rounded-3xl bg-[var(--bg-surface)]">
                         <FolderOpen size={32} className="mx-auto text-[var(--text-muted)] opacity-50 mb-3" />
                         <p className="text-[var(--text-muted)] font-bold text-sm">
-                            {activeTab === 'active' ? (lang === 'sv' ? "Du har inga aktiva enheter just nu." : "You have no active units right now.") : (lang === 'sv' ? "Arkivet är tomt." : "The archive is empty.")}
+                            {activeTab === 'active' 
+                                ? (lang === 'sv' ? "Du har inga aktiva moduler i denna grupp." : "No active units in this group.") 
+                                : (lang === 'sv' ? "Arkivet är tomt." : "The archive is empty.")
+                            }
                         </p>
                     </div>
                 ) : (
@@ -735,7 +807,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                             <div key={folderName} className="bg-[var(--bg-card)] rounded-3xl border border-[var(--border-main)] shadow-sm overflow-hidden transition-colors">
                                 
                                 {/* Folder Header */}
-                                <div className="bg-[var(--bg-surface)] px-3 sm:px-5 py-4 border-b border-[var(--border-main)] flex items-center justify-between group">
+                                <div className="bg-[var(--bg-surface)] px-3 sm:px-5 py-3.5 border-b border-[var(--border-main)] flex items-center justify-between group">
                                     <div className="flex items-center gap-2 flex-1 min-w-0">
                                         <button onClick={() => setCollapsedFolders(prev => ({ ...prev, [folderName]: !prev[folderName] }))} className="p-1 hover:bg-[var(--bg-surface-hover)] rounded-md text-[var(--text-main)] cursor-pointer">
                                             {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
@@ -747,9 +819,9 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                 <input 
                                                     autoFocus type="text" value={editFolderValue} onChange={(e) => setEditFolderValue(e.target.value)}
                                                     onBlur={() => saveFolderEdit(folderName)} onKeyDown={(e) => { if (e.key === 'Enter') saveFolderEdit(folderName); if (e.key === 'Escape') setEditingFolderId(null); }}
-                                                    className="flex-1 bg-[var(--bg-card)] border-2 border-[var(--border-strong)] text-[var(--text-main)] rounded-lg px-3 py-1.5 text-sm font-black uppercase tracking-widest outline-none shadow-inner"
+                                                    className="flex-1 bg-[var(--bg-card)] border-2 border-[var(--border-strong)] text-[var(--text-main)] rounded-lg px-3 py-1 text-xs font-black uppercase tracking-widest outline-none shadow-inner"
                                                 />
-                                                <button onMouseDown={(e) => { e.preventDefault(); saveFolderEdit(folderName); }} className="p-1.5 bg-[var(--text-main)] text-[var(--bg-canvas)] rounded hover:opacity-80"><Check size={16}/></button>
+                                                <button onMouseDown={(e) => { e.preventDefault(); saveFolderEdit(folderName); }} className="p-1.5 bg-[var(--text-main)] text-[var(--bg-canvas)] rounded hover:opacity-80"><Check size={14}/></button>
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2 cursor-pointer flex-1 min-w-0" onClick={(e) => startEditingFolder(e, folderName)}>
@@ -808,9 +880,9 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                             <input 
                                                                                 autoFocus type="text" value={editTitleValue} onChange={(e) => setEditTitleValue(e.target.value)}
                                                                                 onBlur={() => saveTitleEdit(bucket.id)} onKeyDown={(e) => { if (e.key === 'Enter') saveTitleEdit(bucket.id); if (e.key === 'Escape') setEditingTitleId(null); }}
-                                                                                className="flex-1 bg-[var(--bg-surface)] border-2 border-[var(--brand-border)] focus:border-[var(--brand-solid)] text-[var(--text-main)] rounded-lg px-3 py-1.5 text-base font-black outline-none transition-all shadow-inner"
+                                                                                className="flex-1 bg-[var(--bg-surface)] border-2 border-[var(--brand-border)] focus:border-[var(--brand-solid)] text-[var(--text-main)] rounded-lg px-3 py-1 text-sm font-black outline-none transition-all shadow-inner"
                                                                             />
-                                                                            <button onMouseDown={(e) => { e.preventDefault(); saveTitleEdit(bucket.id); }} className="p-2 bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] rounded-lg hover:bg-[var(--brand-solid)] hover:text-white transition-colors cursor-pointer"><Check size={16}/></button>
+                                                                            <button onMouseDown={(e) => { e.preventDefault(); saveTitleEdit(bucket.id); }} className="p-1.5 bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] rounded-lg hover:bg-[var(--brand-solid)] hover:text-white transition-colors cursor-pointer"><Check size={14}/></button>
                                                                         </div>
                                                                     ) : (
                                                                         <div className="flex items-center gap-2 group cursor-pointer" onClick={() => startEditingTitle(bucket)}>
@@ -830,13 +902,13 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
                                                                 <div className="flex items-center gap-3 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex-wrap">
                                                                     {editingDateId === bucket.id ? (
-                                                                         <div className="flex items-center gap-2">
+                                                                        <div className="flex items-center gap-2">
                                                                             <input 
                                                                                 autoFocus type="date" value={editDateValue} onChange={(e) => setEditDateValue(e.target.value)}
                                                                                 onBlur={() => saveDateEdit(bucket.id)} onKeyDown={(e) => { if (e.key === 'Enter') saveDateEdit(bucket.id); if (e.key === 'Escape') setEditingDateId(null); }}
-                                                                                className="bg-[var(--bg-surface)] border-2 border-[var(--brand-border)] focus:border-[var(--brand-solid)] text-[var(--text-main)] rounded-lg px-2 py-1 outline-none transition-all shadow-inner"
+                                                                                className="bg-[var(--bg-surface)] border-2 border-[var(--brand-border)] focus:border-[var(--brand-solid)] text-[var(--text-main)] rounded-lg px-2 py-0.5 outline-none transition-all shadow-inner"
                                                                             />
-                                                                            <button onMouseDown={(e) => { e.preventDefault(); saveDateEdit(bucket.id); }} className="p-1.5 bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] rounded-lg hover:bg-[var(--brand-solid)] hover:text-white transition-colors cursor-pointer"><Check size={14}/></button>
+                                                                            <button onMouseDown={(e) => { e.preventDefault(); saveDateEdit(bucket.id); }} className="p-1 bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] rounded-lg hover:bg-[var(--brand-solid)] hover:text-white transition-colors cursor-pointer"><Check size={12}/></button>
                                                                         </div>
                                                                     ) : (
                                                                         <span className="flex items-center gap-1 group cursor-pointer hover:text-[var(--text-main)] transition-colors" onClick={() => startEditingDate(bucket)}>
@@ -854,49 +926,70 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                         </div>
 
                                                         {/* Right Side: Action Pod */}
-                                                        <div className="flex items-center gap-2 bg-[var(--bg-surface)] p-1.5 rounded-xl border border-[var(--border-main)] shrink-0 w-full xl:w-auto overflow-x-auto custom-scrollbar">
+                                                        <div className="flex items-center gap-1.5 bg-[var(--bg-surface)] p-1.5 rounded-xl border border-[var(--border-main)] shrink-0 w-full xl:w-auto overflow-x-auto custom-scrollbar">
                                                             {!isExpired ? (
                                                                 <>
-                                                                    {/*  TOGGLE PLAN SEQUENCER ACCORDION */}
                                                                     <button 
                                                                         onClick={() => setExpandedSequencerBucketId(isSequencerOpen ? null : bucket.id)}
-                                                                        className={`flex-1 xl:flex-none px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                                                                        className={`flex-1 xl:flex-none px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
                                                                             isSequencerOpen 
                                                                                 ? 'bg-[var(--brand-solid)] text-white' 
                                                                                 : 'bg-[var(--bg-card)] hover:bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--border-main)]'
                                                                         }`}
                                                                     >
-                                                                        <span>{lang === 'sv' ? "Ordna Delar & Steg" : "Sequence Parts & Steps"}</span>
+                                                                        <span>{lang === 'sv' ? "Ordna Delar & Steg" : "Sequence"}</span>
                                                                         {isSequencerOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                                                     </button>
 
-                                                                    <div className="w-px h-6 bg-[var(--border-strong)] mx-1" />
+                                                                    <div className="w-px h-5 bg-[var(--border-strong)] mx-0.5" />
                                                                     
-                                                                    <button onClick={() => toggleFocus(bucket.id)} className={`w-9 h-9 shrink-0 flex items-center justify-center rounded-lg transition-all cursor-pointer ${bucket.is_focused ? 'theme-amber bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] shadow-inner' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] border border-[var(--border-main)]'}`} title={lang === 'sv' ? "Markera som Dagens Fokus" : "Mark as Today's Focus"}>
-                                                                        <Star size={16} fill={bucket.is_focused ? "currentColor" : "none"} />
+                                                                    <button onClick={() => toggleFocus(bucket.id)} className={`w-8 h-8 shrink-0 flex items-center justify-center rounded-lg transition-all cursor-pointer ${bucket.is_focused ? 'theme-amber bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--brand-border)] shadow-inner' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-main)] border border-[var(--border-main)]'}`} title={lang === 'sv' ? "Dagens Fokus" : "Today's Focus"}>
+                                                                        <Star size={14} fill={bucket.is_focused ? "currentColor" : "none"} />
                                                                     </button>
                                                                     
-                                                                    <button onClick={() => toggleVisibility(bucket.id)} className={`w-9 h-9 shrink-0 flex items-center justify-center rounded-lg transition-all cursor-pointer ${!bucket.is_visible ? 'bg-[var(--bg-surface-hover)] text-[var(--text-muted)] shadow-inner border border-[var(--border-main)]' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)] border border-[var(--border-main)] shadow-sm'}`} title={lang === 'sv' ? "Dölj/Visa för elever" : "Hide/Show for students"}>
-                                                                        {bucket.is_visible ? <Eye size={16} /> : <EyeOff size={16} />}
+                                                                    <button onClick={() => toggleVisibility(bucket.id)} className={`w-8 h-8 shrink-0 flex items-center justify-center rounded-lg transition-all cursor-pointer ${!bucket.is_visible ? 'bg-[var(--bg-surface-hover)] text-[var(--text-muted)] shadow-inner border border-[var(--border-main)]' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)] border border-[var(--border-main)] shadow-sm'}`} title={lang === 'sv' ? "Synlighet för elever" : "Visibility"}>
+                                                                        {bucket.is_visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                                                                    </button>
+
+                                                                    <button 
+                                                                        onClick={() => handleArchiveBucket(bucket.id)} 
+                                                                        className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-amber-600 hover:bg-amber-50 border border-[var(--border-main)] transition-all cursor-pointer" 
+                                                                        title={lang === 'sv' ? "Arkivera modul" : "Archive unit"}
+                                                                    >
+                                                                        <Archive size={14} />
                                                                     </button>
                                                                 </>
                                                             ) : (
-                                                                <button onClick={() => duplicateBucket(bucket)} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--bg-card)] hover:bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--border-main)] hover:border-[var(--brand-border)] rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer">
-                                                                    <Copy size={14} /> {lang === 'sv' ? "Återanvänd (Kopiera)" : "Reuse (Duplicate)"}
-                                                                </button>
+                                                                <>
+                                                                    <button 
+                                                                        onClick={() => handleRestoreBucket(bucket.id)} 
+                                                                        className="flex-1 xl:flex-none px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                                                                        title={lang === 'sv' ? "Återställ till aktiva" : "Restore to active"}
+                                                                    >
+                                                                        <ArchiveRestore size={13} /> {lang === 'sv' ? "Återställ" : "Restore"}
+                                                                    </button>
+
+                                                                    <button onClick={() => duplicateBucket(bucket)} className="flex-1 xl:flex-none px-3 py-1.5 bg-[var(--bg-card)] hover:bg-[var(--brand-bg)] text-[var(--brand-solid)] border border-[var(--border-main)] rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                                                                        <Copy size={13} /> {lang === 'sv' ? "Kopiera" : "Copy"}
+                                                                    </button>
+                                                                </>
                                                             )}
-                                                            <div className="w-px h-6 bg-[var(--border-strong)] mx-1 shrink-0" />
-                                                            <button onClick={() => deleteBucket(bucket.id)} className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg bg-[var(--bg-card)] text-[var(--text-muted)] hover:bg-[var(--theme-rose-bg)] hover:text-[var(--theme-rose-text)] hover:border-[var(--theme-rose-border)] border border-[var(--border-main)] transition-all cursor-pointer" title={lang === 'sv' ? "Radera" : "Delete"}>
-                                                                <Trash2 size={16} />
+
+                                                            <div className="w-px h-5 bg-[var(--border-strong)] mx-0.5 shrink-0" />
+                                                            
+                                                            <button 
+                                                                onClick={() => handleDeleteOrArchive(bucket)} 
+                                                                className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-[var(--bg-card)] text-[var(--text-muted)] hover:bg-rose-50 hover:text-rose-600 border border-[var(--border-main)] transition-all cursor-pointer" 
+                                                                title={isExpired ? (lang === 'sv' ? "Radera permanent" : "Delete permanently") : (lang === 'sv' ? "Arkivera / Radera" : "Archive / Delete")}
+                                                            >
+                                                                <Trash2 size={14} />
                                                             </button>
                                                         </div>
                                                     </div>
 
-                                                    {/*  EXPANDABLE SEQUENCER DRAWER: "DEL"-BASED ROADMAP */}
+                                                    {/* EXPANDABLE SEQUENCER DRAWER */}
                                                     {isSequencerOpen && (
                                                         <div className="mt-2 pt-4 border-t border-[var(--border-main)] space-y-4 animate-in fade-in duration-200">
-                                                            
-                                                            {/* Top Strip */}
                                                             <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--bg-surface)] p-3 rounded-xl border border-[var(--border-main)]">
                                                                 <div className="flex items-center gap-2">
                                                                     <Bookmark size={15} className="text-[var(--brand-solid)]" />
@@ -929,12 +1022,12 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                 </div>
                                                             </div>
 
-                                                            {/* Render Each "Del" (Part) Container */}
+                                                            {/* Render Parts */}
                                                             {parts.length === 0 ? (
                                                                 <div className="p-8 text-center border-2 border-dashed border-[var(--border-main)] rounded-2xl text-xs font-bold text-[var(--text-muted)] italic">
                                                                     {lang === 'sv' 
-                                                                        ? "Inga delar tillagda ännu. Klicka på '+ Välj Övningsnivåer' för att automatiskt skapa delar per ämnesområde." 
-                                                                        : "No parts created yet. Click '+ Select Practice Levels' to auto-create parts by topic."}
+                                                                        ? "Inga delar tillagda ännu. Klicka på '+ Välj Övningsnivåer' för att automatiskt skapa delar." 
+                                                                        : "No parts created yet. Click '+ Select Practice Levels' to auto-create parts."}
                                                                 </div>
                                                             ) : (
                                                                 <div className="space-y-4">
@@ -943,10 +1036,8 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                             key={part.id || pIdx} 
                                                                             className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-main)] p-4 space-y-3 shadow-xs"
                                                                         >
-                                                                            {/* Part Header Strip */}
+                                                                            {/* Part Header */}
                                                                             <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
-                                                                                
-                                                                                {/* Inline Part Title Editing */}
                                                                                 {editingPartId === part.id ? (
                                                                                     <div className="flex items-center gap-2 flex-1 max-w-md">
                                                                                         <input 
@@ -973,14 +1064,12 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                                         className="flex items-center gap-2 cursor-pointer group"
                                                                                         onClick={() => {
                                                                                             setEditingPartId(part.id);
-                                                                                            // If they already have a custom title, pre-fill it; otherwise start blank so they can type a new one
                                                                                             setEditPartTitleValue(part.customTitle || "");
                                                                                         }}
                                                                                     >
                                                                                         <span className="w-5 h-5 rounded-md bg-[var(--brand-solid)] text-white text-[10px] font-black flex items-center justify-center shrink-0">
                                                                                             {pIdx + 1}
                                                                                         </span>
-                                                                                        {/* After: Fully reactive to language switches */}
                                                                                         <h4 className="font-black text-xs uppercase tracking-wider text-[var(--text-main)]">
                                                                                             {getPartDisplayTitle(part, pIdx, lang)}
                                                                                         </h4>
@@ -988,7 +1077,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                                     </div>
                                                                                 )}
 
-                                                                                {/* Part Actions: Reorder Whole Part, Add Instruction to this Part, Delete Part */}
+                                                                                {/* Part Actions */}
                                                                                 <div className="flex items-center gap-1.5 shrink-0">
                                                                                     <button 
                                                                                         type="button"
@@ -1002,7 +1091,6 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                                         <span>{lang === 'sv' ? "+ Infoga Genomgång" : "+ Insert Walkthrough"}</span>
                                                                                     </button>
                                                                                     
-                                                                                    {/* Add Checkpoint Button */}
                                                                                     <button 
                                                                                         type="button"
                                                                                         onClick={() => {
@@ -1047,7 +1135,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                             {/* Part Steps Sequence */}
                                                                             {(part.steps || []).length === 0 ? (
                                                                                 <div className="py-4 text-center border border-dashed border-[var(--border-subtle)] rounded-xl text-[11px] font-bold text-[var(--text-muted)] italic">
-                                                                                    {lang === 'sv' ? "Inga steg i denna del ännu. Infoga en genomgång ovan eller välj nivåer." : "No steps in this part yet. Insert a walkthrough above or select levels."}
+                                                                                    {lang === 'sv' ? "Inga steg i denna del ännu." : "No steps in this part yet."}
                                                                                 </div>
                                                                             ) : (
                                                                                 <div className="space-y-1.5">
@@ -1067,7 +1155,6 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                                                         : 'bg-[var(--bg-card)] border-[var(--border-main)] text-[var(--text-main)] hover:border-[var(--border-strong)]'
                                                                                                 }`}
                                                                                             >
-                                                                                                {/* Stegnummer & Innehållsdetaljer */}
                                                                                                 <div className="flex items-center gap-3.5 min-w-0 flex-1">
                                                                                                     <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${
                                                                                                         isInstruction 
@@ -1078,32 +1165,63 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                                                     </div>
 
                                                                                                     {isInstruction ? (
-                                                                                                        /* GENOMGÅNGSKORT */
                                                                                                         <div className="flex items-center gap-2 min-w-0 flex-1">
                                                                                                             <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0">
                                                                                                                 {lang === 'sv' ? "Genomgång" : "Walkthrough"}
                                                                                                             </span>
                                                                                                             <BookOpen size={14} className="text-indigo-600 shrink-0" />
-                                                                                                            <span className="font-black text-s text-slate-800 truncate">
+                                                                                                            <span className="font-black text-sm text-slate-800 truncate">
                                                                                                                 {step.sheetTitle}
                                                                                                             </span>
                                                                                                         </div>
                                                                                                     ) : isTest ? (
-                                                                                                        /*  CHECKPOINT TEST CARD */
                                                                                                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                                                                                             <span className="bg-amber-200 text-amber-900 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0">
                                                                                                                 {step.testMode === 'exam' ? (lang === 'sv' ? "Prov" : "Exam") : (lang === 'sv' ? "Delprov" : "Checkpoint")}
                                                                                                             </span>
                                                                                                             <Beaker size={14} className="text-amber-600 shrink-0" />
-                                                                                                            <span className="font-black text-m text-[var(--text-main)] truncate">
-                                                                                                                {step.title}
-                                                                                                            </span>
-                                                                                                            <span className="text-[11px] font-black tracking-tight text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md border border-indigo-200/80 dark:border-indigo-800/60 shrink-0">
+                                                                                                            
+                                                                                                            {editingStepId === step.id ? (
+                                                                                                                <div className="flex items-center gap-1.5 flex-1 max-w-sm">
+                                                                                                                    <input
+                                                                                                                        autoFocus
+                                                                                                                        type="text"
+                                                                                                                        value={editStepTitleValue}
+                                                                                                                        onChange={(e) => setEditStepTitleValue(e.target.value)}
+                                                                                                                        onBlur={() => saveCheckpointTitleEdit(bucket.id, part.id, step.id)}
+                                                                                                                        onKeyDown={(e) => {
+                                                                                                                            if (e.key === 'Enter') saveCheckpointTitleEdit(bucket.id, part.id, step.id);
+                                                                                                                            if (e.key === 'Escape') setEditingStepId(null);
+                                                                                                                        }}
+                                                                                                                        className="flex-1 bg-[var(--bg-card)] border-2 border-[var(--brand-border)] text-[var(--text-main)] rounded-lg px-2 py-0.5 text-xs font-black outline-none shadow-inner"
+                                                                                                                    />
+                                                                                                                    <button
+                                                                                                                        onMouseDown={(e) => { e.preventDefault(); saveCheckpointTitleEdit(bucket.id, part.id, step.id); }}
+                                                                                                                        className="p-1 bg-[var(--brand-solid)] text-white rounded-md hover:opacity-90"
+                                                                                                                    >
+                                                                                                                        <Check size={12} />
+                                                                                                                    </button>
+                                                                                                                </div>
+                                                                                                            ) : (
+                                                                                                                <div
+                                                                                                                    className="flex items-center gap-1.5 cursor-pointer group"
+                                                                                                                    onClick={() => {
+                                                                                                                        setEditingStepId(step.id);
+                                                                                                                        setEditStepTitleValue(step.title || "");
+                                                                                                                    }}
+                                                                                                                >
+                                                                                                                    <span className="font-black text-sm text-[var(--text-main)] truncate">
+                                                                                                                        {step.title}
+                                                                                                                    </span>
+                                                                                                                    <Edit2 size={11} className="opacity-0 group-hover:opacity-60 text-[var(--text-muted)] transition-opacity" />
+                                                                                                                </div>
+                                                                                                            )}
+
+                                                                                                            <span className="text-[10px] font-black tracking-tight text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md border border-indigo-200/80 dark:border-indigo-800/60 shrink-0 ml-auto">
                                                                                                                 {step.questionCount} {lang === 'sv' ? "frågor" : "questions"}
                                                                                                             </span>
                                                                                                         </div>
                                                                                                     ) : (
-                                                                                                        /* ÖVNINGSKORT MED MATTE-EXEMPEL & BESKRIVNING */
                                                                                                         <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap sm:flex-nowrap">
                                                                                                             <span className="bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 border border-emerald-300 dark:border-emerald-800">
                                                                                                                 {lang === 'sv' ? `Nivå ${step.level}` : `Level ${step.level}`}
@@ -1111,20 +1229,19 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
 
                                                                                                             <div className="flex flex-col min-w-0 flex-1">
                                                                                                                 <div className="flex items-center gap-2">
-                                                                                                                    <span className="font-black text-m text-[var(--text-main)] truncate">
+                                                                                                                    <span className="font-black text-sm text-[var(--text-main)] truncate">
                                                                                                                         {getTopicName(step.topic || step.topicId, lang)}
                                                                                                                     </span>
                                                                                                                     {description && (
                                                                                                                         <>
                                                                                                                             <span className="text-[var(--text-muted)] opacity-40 hidden md:inline">•</span>
-                                                                                                                            <span className="text-s font-semibold text-[var(--text-muted)] truncate hidden md:inline">
+                                                                                                                            <span className="text-xs font-semibold text-[var(--text-muted)] truncate hidden md:inline">
                                                                                                                                 {description}
                                                                                                                             </span>
                                                                                                                         </>
                                                                                                                     )}
                                                                                                                 </div>
 
-                                                                                                                {/* 🟢 ENLARGED CONTRAST-SAFE MATH PREVIEW */}
                                                                                                                 {mathExample && (
                                                                                                                     <div className="mt-1 text-sm sm:text-base text-indigo-600 dark:text-indigo-400 font-serif italic truncate flex items-center gap-2">
                                                                                                                         <span className="text-[9px] font-sans font-black uppercase tracking-widest text-[var(--text-muted)] not-italic bg-[var(--bg-surface)] px-1.5 py-0.5 rounded border border-[var(--border-subtle)]">
@@ -1138,7 +1255,6 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                                                                                                     )}
                                                                                                 </div>
 
-                                                                                                {/* Knappar för att flytta upp/ned och ta bort */}
                                                                                                 <div className="flex items-center gap-1 shrink-0">
                                                                                                     <button 
                                                                                                         type="button"
@@ -1189,7 +1305,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                 )}
             </div>
 
-            {/*  CHECKPOINT MODAL */}
+            {/* CHECKPOINT MODAL */}
             <CheckpointModal
                 isOpen={isCheckpointModalOpen}
                 onClose={() => {
@@ -1208,7 +1324,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                 }}
             />
 
-            {/* CONTENT MODAL (Practice Level Checklist) */}
+            {/* CONTENT MODAL */}
             <ContentModal 
                 visible={isContentModalOpen} 
                 onClose={handleCloseContentModal}
@@ -1218,7 +1334,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                 onToggleItem={handleToggleItem}
             />
 
-            {/*  INSTRUCTIONAL SLIDE PICKER (Drops slide into target Part) */}
+            {/* INSTRUCTIONAL SLIDE PICKER */}
             {isInstructionPickerOpen && (
                 <SheetLibraryModal
                     isOpen={isInstructionPickerOpen}
@@ -1236,8 +1352,7 @@ export default function TeacherHubManager({ lang = 'sv', teacherId }) {
                         setIsInstructionPickerOpen(false);
                         setTargetPartContext(null);
                     }}
-            />
-            
+                />
             )}
         </div>
     );
