@@ -5,7 +5,7 @@ import {
   Minus, Eye, Settings2, Printer, Square, Type, Shuffle, Save, Eraser, Clock,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, X, Globe, Building2, Lock, Copy, Check, Filter,
   MoreVertical, AlignLeft, LayoutGrid, EyeOff, GripVertical, Brain, Calculator, Target, 
-  Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown, Edit2, HelpCircle
+  Image as ImageIcon, FileText as TextIcon, Monitor, ChevronDown, Edit2, HelpCircle, Gamepad2
 } from 'lucide-react';
 import { SKILL_BUCKETS, isTopicWordProblemReady } from '../../constants/skillBuckets.js';
 import VisualRenderer from '../visuals/VisualRenderer.jsx';
@@ -15,6 +15,9 @@ import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 import LiveLaunchModal from '../modals/LiveLaunchModal';
 import StudioTutorialModal from '../modals/StudioTutorialModal.jsx';
 import SheetLibraryModal from '../modals/SheetLibraryModal';
+
+import ActivityHubModal from '../activities/modals/ActivityHubModal';
+import CategoryClashEngine from '../activities/engines/CategoryClashEngine';
 
 
 // CRITICAL: Imports Universal Theme and Preferences Toggle
@@ -220,7 +223,6 @@ export default function QuestionStudio({
   const [showPresentation, setShowPresentation] = useState(false); 
 
   // Live Session Pre-Flight States
-  // Live Session Pre-Flight States
   const [showLiveModal, setShowLiveModal] = useState(false);
   const [liveSettings, setLiveSettings] = useState({ pacing: 'open', order: 'original', summary: true });
   const [enableScratchpad, setEnableScratchpad] = useState(true);
@@ -241,16 +243,16 @@ export default function QuestionStudio({
 
   const [draggedItemIndex, setDraggedItemIndex] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [showActivityHub, setShowActivityHub] = useState(false);
+  const [activeGameConfig, setActiveGameConfig] = useState(null);
+  const [activeGameSheet, setActiveGameSheet] = useState(null);
   
-  {/*
-    Uncomment this if you want the tutorial to show based on LocalStorage true false flags
+
   const [showTutorial, setShowTutorial] = useState(() => {
     return !localStorage.getItem('has_seen_studio_guide');
     });
-    */}
 
-  // Comment this next line out and uncomment the previous block for tutorials to show based on LocalStorage
-  const [showTutorial, setShowTutorial] = useState(false);
 
   const handleCloseTutorial = () => {
     localStorage.setItem('has_seen_studio_guide', 'true');
@@ -285,6 +287,20 @@ export default function QuestionStudio({
     setDraggedIdx(null);
     setDraggedItemIndex(null);
   };
+
+  const handleSelectSheet = (sheet) => {
+    // 🟢 1. If it's a game, NEVER load it into QuestionStudio!
+    // Open the game engine modal directly.
+    if (sheet.type?.startsWith('activity')) {
+        setActiveGameSheet(sheet);
+        setShowLibraryModal(false);
+        return;
+    }
+
+    // 2. Regular worksheets/presentations proceed as normal
+    setPacket(Array.isArray(sheet.packet) ? sheet.packet : []);
+    setShowLibraryModal(false);
+};
 
   //  STEP 4.2 GUARD: Disable and reset Word Problems if the selected topic does not support them
   const topicSupportsWordProblems = isTopicWordProblemReady(selectedTopicId);
@@ -571,6 +587,12 @@ export default function QuestionStudio({
   };
 
   const loadSheet = (sheet) => {
+      // 🟢 Intercept game sheets if ever passed directly
+      if (sheet.type?.startsWith('activity')) {
+          setActiveGameSheet(sheet);
+          return;
+      }
+
       if (sheet.type === 'board') {
           loadBoard(sheet);
           return;
@@ -578,8 +600,19 @@ export default function QuestionStudio({
       
       setActiveBoardSheet(null); 
 
-      setPacket(sheet.packet); setSheetTitle(sheet.title); setSetupMode(sheet.type); setActiveSheetId(sheet.id); 
-      setChosenVisibility(sheet.visibility || 'private'); setIsSaved(true);
+      // 🟢 Guarantee packet is an array
+      const safePacket = Array.isArray(sheet.packet) 
+          ? sheet.packet 
+          : Array.isArray(sheet.packet?.tiles) 
+              ? sheet.packet.tiles 
+              : [];
+
+      setPacket(safePacket); 
+      setSheetTitle(sheet.title); 
+      setSetupMode(sheet.type); 
+      setActiveSheetId(sheet.id); 
+      setChosenVisibility(sheet.visibility || 'private'); 
+      setIsSaved(true);
       if (sheet.config?.includeAnswerKey !== undefined) setIncludeAnswerKey(sheet.config.includeAnswerKey);
       if (sheet.config?.answerKeyStyle !== undefined) setAnswerKeyStyle(sheet.config.answerKeyStyle);
       if (sheet.config?.globalLatexSize !== undefined) setGlobalLatexSize(sheet.config.globalLatexSize);
@@ -797,38 +830,83 @@ export default function QuestionStudio({
       );
   }
 
+  // 🟢 PRIORITY 1.5: If a game activity is selected, render it directly on its own layer!
+  if (activeGameSheet) {
+      return (
+          <CategoryClashEngine
+              savedBoard={activeGameSheet}
+              onClose={() => {
+                  setActiveGameSheet(null);
+                  fetchLibrary();
+              }}
+              lang={lang}
+          />
+      );
+  }
+
+  // 🟢 PRIORITY 2: If no setupMode, show the Decoupled Library
   // 🟢 PRIORITY 2: If no setupMode, show the Decoupled Library
   if (!setupMode) {
       return (
-          <SheetLibraryModal
-              isOpen={true}
-              profile={profile}
-              lang={lang}
-              onClose={onClose}
-              showCreationActions={true}
-              onCreateNew={(type) => {
-                  if (type === 'board') {
-                      setActiveBoardSheet(null);
-                      setPacket([]);
-                      setSheetTitle("");
-                      setShowPresentation(true); // 🟢 Directly launches fresh presentation view!
-                  } else {
-                      setSetupMode(type); // 'donow' or 'worksheet'
-                      setPacket([]);
-                      setSheetTitle("");
-                      setActiveSheetId(null);
-                      setChosenVisibility('private');
-                  }
-              }}
-              onSelectSheet={(sheet) => {
-                  if (sheet.type === 'board') {
-                      setActiveBoardSheet(sheet);
-                      setShowPresentation(true); // 🟢 Mounts immediately without needing an editor!
-                  } else {
-                      loadSheet(sheet); // Loads into worksheet / do-now editor
-                  }
-              }}
-          />
+          <>
+              <SheetLibraryModal
+                  isOpen={true}
+                  profile={profile}
+                  lang={lang}
+                  onClose={onClose}
+                  showCreationActions={true}
+                  onCreateActivity={() => setShowActivityHub(true)} // 🟢 Open Activity Hub directly!
+                  onCreateNew={(type) => {
+                      if (type === 'board') {
+                          setActiveBoardSheet(null);
+                          setPacket([]);
+                          setSheetTitle("");
+                          setShowPresentation(true);
+                      } else {
+                          setSetupMode(type);
+                          setPacket([]);
+                          setSheetTitle("");
+                          setActiveSheetId(null);
+                          setChosenVisibility('private');
+                      }
+                  }}
+                  onSelectSheet={(sheet) => {
+                      if (sheet.type?.startsWith('activity')) {
+                          setActiveGameSheet(sheet);
+                          return;
+                      }
+                      if (sheet.type === 'board') {
+                          setActiveBoardSheet(sheet);
+                          setShowPresentation(true);
+                      } else {
+                          loadSheet(sheet);
+                      }
+                  }}
+              />
+
+              {/* 🟢 Ensure ActivityHubModal & CategoryClashEngine can mount over the library */}
+              <ActivityHubModal
+                  isOpen={showActivityHub}
+                  onClose={() => setShowActivityHub(false)}
+                  sourcePacket={[]} // Empty array triggers fresh procedural generation
+                  lang={lang}
+                  onLaunchCategoryClash={(config) => {
+                      setActiveGameConfig(config);
+                  }}
+              />
+
+              {activeGameConfig && (
+                  <CategoryClashEngine
+                      initialConfig={activeGameConfig}
+                      sourcePacket={[]}
+                      onClose={() => {
+                          setActiveGameConfig(null);
+                          fetchLibrary();
+                      }}
+                      lang={lang}
+                  />
+              )}
+          </>
       );
   }
 
@@ -891,7 +969,17 @@ export default function QuestionStudio({
                         {lang === 'sv' ? "Guide" : "Help"}
                     </span>
                 </button>
+                
                 <PreferencesToggle />
+
+                <button
+                    type="button"
+                    onClick={() => setShowActivityHub(true)}
+                    className="p-2 bg-[var(--bg-surface)] hover:bg-indigo-600 text-[var(--text-muted)] hover:text-white border border-[var(--border-main)] rounded-xl transition-all cursor-pointer shadow-sm"
+                    title={lang === 'sv' ? "Aktiviteter & Spel" : "Activities & Games"}
+                >
+                    <Gamepad2 size={16} className="hover:rotate-12 transition-transform" />
+                </button>
 
                 <button 
                     onClick={handleLaunchLive} 
@@ -1226,7 +1314,7 @@ export default function QuestionStudio({
 
                       {/*  WHITEBOARD PROTECTED CONTENT CARDS */}
                       <div className="grid grid-cols-6 gap-x-8 gap-y-6 items-start content-start">
-                          {packet.map((item, idx) => {
+                          {Array.isArray(packet) && packet.map((item, idx) => {
                                 const displayStory = item.showText !== false;
                                 const displayLatex = item.showLatex !== false;
                                 const displayVisual = item.showVisual !== false;
@@ -1417,7 +1505,7 @@ export default function QuestionStudio({
                     <button onClick={() => { if(window.confirm(t.clear_all + "?")) setPacket([]); }} className="text-[var(--text-main)] hover:text-[var(--theme-rose-text)] transition-colors flex items-center gap-1 text-[14px] font-black uppercase tracking-widest"><Eraser size={14}/> {t.clear_all}</button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-[var(--bg-canvas)]/50 min-h-0">
-                    {packet.map((item, idx) => (
+                    {Array.isArray(packet) && packet.map((item, idx) => (
                         <div 
                         key={item.id}
                         draggable 
@@ -1529,6 +1617,31 @@ export default function QuestionStudio({
             onClose={handleCloseTutorial}
             lang={lang}
         />
+        <ActivityHubModal
+            isOpen={showActivityHub}
+            onClose={() => setShowActivityHub(false)}
+            sourcePacket={packet}
+            lang={lang}
+            onLaunchCategoryClash={(config) => setActiveGameConfig(config)}
+        />
+
+        {activeGameConfig && (
+            <CategoryClashEngine
+                initialConfig={activeGameConfig}
+                sourcePacket={packet}
+                onClose={() => setActiveGameConfig(null)}
+                lang={lang}
+            />
+        )}
+
+        {/* Active Game Modal (Launches over everything cleanly) */}
+        {activeGameSheet && (
+            <CategoryClashEngine
+                savedBoard={activeGameSheet}
+                onClose={() => setActiveGameSheet(null)}
+                lang={lang}
+            />
+        )}
     </div>
   );
 }

@@ -32,8 +32,10 @@ import { SKILL_BUCKETS } from '../src/constants/skillBuckets.js';
 // COMPLETE TOPIC MAP (Aligned with skillBuckets.js)
 const TopicMap: Record<string, any> = {
   // Algebra & Patterns
-  'equation': LinearEquationGen,
   'equations': LinearEquationGen,
+  'linearEquations': LinearEquationGen,
+  'linear_equations': LinearEquationGen,
+  'linear-equations': LinearEquationGen,
   'equations_word': LinearEquationGen, // Delegated internally
   'algebra': LinearEquationGen,
   'expressions': ExpressionSimplificationGen,
@@ -71,6 +73,39 @@ const TopicMap: Record<string, any> = {
   'statistics': StatisticsGen,
   'probability': ProbabilityGen
 };
+
+/**
+ * Fast taxonomy helper to locate a variation's metadata config
+ */
+function findVariationConfig(variationKey: string): any {
+  if (!variationKey) return null;
+  for (const catKey in SKILL_BUCKETS) {
+    const cat = (SKILL_BUCKETS as any)[catKey];
+    if (cat && typeof cat === 'object' && cat.topics) {
+      for (const topicKey in cat.topics) {
+        const topicObj = cat.topics[topicKey];
+        if (topicObj && Array.isArray(topicObj.variations)) {
+          const matched = topicObj.variations.find((v: any) => v && v.key === String(variationKey));
+          if (matched) return matched;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Extracts all variations registered under a topic key
+ */
+function getTopicVariations(topicKey: string): any[] {
+  for (const catKey in SKILL_BUCKETS) {
+    const cat = (SKILL_BUCKETS as any)[catKey];
+    if (cat && typeof cat === 'object' && cat.topics && cat.topics[topicKey]) {
+      return cat.topics[topicKey].variations || [];
+    }
+  }
+  return [];
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // 1. CORS & Preflight
@@ -111,9 +146,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const questions: any[] = [];
     let globalIndex = 1;
 
-    // 3. Generation Loop
+    // 2. Generation Loop
     for (const item of requests) {
       const { topic, variation, level, lang, wordProblem } = item;
+      const safeLevel = Number(level) || 1;
+      const safeLang = String(lang || 'sv');
       
       const GeneratorClass = TopicMap[topic];
 
@@ -130,73 +167,117 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const generator = new GeneratorClass();
 
       try {
-        let questionData;
-        
-        if (variation && typeof generator.generateByVariation === 'function') {
-          questionData = generator.generateByVariation(variation, lang);
-        } else {
-          questionData = generator.generate(level || 1, lang);
-        }
-
-        // WORD PROBLEM INTERCEPTOR
+        let questionData: any = null;
         const activateWordProblem = (wordProblem === true || wordProblem === 'true');
-        const activeVariation = variation || questionData?.variationKey;
 
-        if (activateWordProblem && activeVariation) {
-            let foundVariationConfig = null;
+        // Locate topic variations to pre-filter word-problem-ready candidates
+        const allTopicVariations = getTopicVariations(topic);
+        const wpEligibleVariations = allTopicVariations.filter(
+          (v: any) => v.tags?.includes('word_problem_ready') && (v.level === undefined || Number(v.level) === safeLevel)
+        );
 
-            for (const catKey in SKILL_BUCKETS) {
-                const category = (SKILL_BUCKETS as any)[catKey];
-                if (category && typeof category === 'object' && category.topics) {
-                    for (const topicKey in category.topics) {
-                        const topicObj = category.topics[topicKey];
-                        if (topicObj && topicObj.variations && Array.isArray(topicObj.variations)) {
-                            const matchedVariant = topicObj.variations.find((v: any) => v && v.key === String(activeVariation));
-                            if (matchedVariant) {
-                                foundVariationConfig = matchedVariant;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (foundVariationConfig) break;
+        // 🟢 1. SYNCHRONOUS RETRY LOOP FOR WORD PROBLEMS
+        if (activateWordProblem) {
+          const MAX_ATTEMPTS = 8;
+
+          for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+            let candidate: any = null;
+
+            // Prefer an eligible variation at this level if no explicit variation was passed
+            let targetVariation = variation;
+            if (!targetVariation && wpEligibleVariations.length > 0) {
+              const picked = wpEligibleVariations[attempt % wpEligibleVariations.length];
+              targetVariation = picked.key;
             }
 
-            if (foundVariationConfig) {
-                questionData = WordProblemInterceptor.process(questionData, foundVariationConfig, String(lang || 'sv'));
+            if (targetVariation && typeof generator.generateByVariation === 'function') {
+              candidate = generator.generateByVariation(String(targetVariation), safeLang);
+            } else if (typeof generator.generate === 'function') {
+              candidate = generator.generate(safeLevel, safeLang);
             }
+
+            if (!candidate) continue;
+
+            const activeKey = targetVariation || candidate.variationKey;
+            const config = findVariationConfig(activeKey);
+
+            if (config && config.tags?.includes('word_problem_ready')) {
+              const transformed = WordProblemInterceptor.process(candidate, config, safeLang);
+              
+              // Validate that a non-empty story description was actually formed
+              const desc = transformed?.renderData?.description;
+              const hasValidText = typeof desc === 'string' 
+                ? desc.trim().length > 0 
+                : Boolean(desc && (desc.sv || desc.en));
+
+              if (transformed?.metadata?.isWordProblemApplied === true && hasValidText) {
+                questionData = transformed;
+                break;
+              }
+            }
+          }
+
+          if (!questionData) {
+            console.warn(`[Batch WordProblem fallback to pure math for ${topic} level ${safeLevel}]`);
+          }
         }
 
+        // 🟢 2. STANDARD FALLBACK GENERATION
+        if (!questionData) {
+          if (variation && typeof generator.generateByVariation === 'function') {
+            questionData = generator.generateByVariation(String(variation), safeLang);
+          } else if (typeof generator.generate === 'function') {
+            questionData = generator.generate(safeLevel, safeLang);
+          }
+        }
 
-        // SECURITY: Payload Scrubbing
-        // We explicitly whitelists the properties to return.
-        // By NOT spreading (...questionData), we ensure the raw 'answer' property 
-        // is never exposed to the student's browser/Network Tab.
-        // Locate your questions.push configuration block inside api/batch.ts
+        if (!questionData) {
+          throw new Error(`Generator returned null for topic ${topic}`);
+        }
+
+        const rawRenderData = questionData.renderData || {};
+        const isWP = Boolean(
+          questionData.metadata?.isWordProblemApplied || 
+          rawRenderData.isWordProblemApplied
+        );
+
+        // 🟢 3. PREVENT EMPTY BOX: Ensure valid description text exists
+        let finalDescription = rawRenderData.description;
+        if (!finalDescription || (typeof finalDescription === 'string' && !finalDescription.trim())) {
+          finalDescription = isWP
+            ? (safeLang === 'en' ? "Solve the following problem:" : "Lös följande uppgift:")
+            : (safeLang === 'en' ? "Calculate:" : "Beräkna:");
+        }
+
+        const activeVariation = variation || questionData?.variationKey;
+        const answerVal = questionData.answer || rawRenderData.answer || null;
+
+        // 🟢 4. FORMATTED RESPONSE OBJECT
         questions.push({
           id: `q-${globalIndex}-${Date.now()}`,
           number: globalIndex,
           topic_id: topic,
           variation_key: activeVariation || 'generic',
           is_generated: true,
+          answer: answerVal,
           resolvedData: {
             renderData: {
-                ...questionData.renderData,
-                
-                // 🟢 FIX: Read from questionData.metadata or questionData.metadata (handles both paths!)
-                isWordProblemApplied: questionData.metadata?.isWordProblemApplied || 
-                                      questionData.renderData?.isWordProblemApplied || 
-                                      false
+              ...rawRenderData,
+              description: finalDescription,
+              latex: rawRenderData.latex || '',
+              answer: answerVal,
+              isWordProblemApplied: isWP
             },
-            token: questionData.token,           
-            clues: questionData.clues,           
-            level: questionData.level || level   
+            token: questionData.token || null,
+            clues: Array.isArray(questionData.clues) ? questionData.clues : [],
+            level: questionData.level || safeLevel,
+            answer: answerVal
           }
         });
         
         globalIndex++;
 
-      } catch (genError) {
+      } catch (genError: any) {
         console.error(`Generation error for ${topic}/${variation}:`, genError);
         questions.push({
           id: `err-${globalIndex}`,

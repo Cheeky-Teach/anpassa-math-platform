@@ -79,7 +79,8 @@ export const SKILL_BUCKETS = {
             desc: { sv: 'Samla x-termer på en sida (ax + b = cx + d)', en: 'Collect x-terms on one side' },
             tags: ['word_problem_ready'],
             contextType: 'algebra_bothsides',
-            extractorPattern: /^(?<a>\d+)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*=\s*(?<c>\d+)x\s*(?<op2>[\+\-])\s*(?<d>\d+)$/
+            // 🟢 Handles optional '1' before x (e.g. 'x' or '1x') and optional negative signs
+            extractorPattern: /^(?<a>-?\d*)x\s*(?<op1>[\+\-])\s*(?<b>\d+)\s*=\s*(?<c>-?\d*)x\s*(?<op2>[\+\-])\s*(?<d>\d+)$/
           },
           { key: 'bothsides_concept_strategy', level: 4, name: { sv: 'X på båda sidor: Strategi', en: 'X on both sides: Strategy' }, desc: { sv: 'Håll antalet x positivt', en: 'Keep the number of x positive' } }
         ]

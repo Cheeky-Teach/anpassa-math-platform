@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
     Search, Filter, Plus, Trash2, Layers, Building2, Globe, FileText, 
     Monitor, Grid3X3, Copy, X, Edit2, PanelLeftClose, ChevronDown, 
-    ChevronRight, Loader2, Maximize2, HelpCircle 
+    ChevronRight, Loader2, Maximize2, HelpCircle, Gamepad2
 } from 'lucide-react';
 import { useLibrary } from '../../hooks/useLibrary';
 import { SKILL_BUCKETS } from '../../constants/skillBuckets';
@@ -15,6 +15,7 @@ export default function SheetLibraryModal({
     onClose,
     onSelectSheet,
     onCreateNew = null,
+    onCreateActivity = null,
     showCreationActions = true,
     profile = null,
     lang = 'sv',
@@ -94,17 +95,46 @@ export default function SheetLibraryModal({
     const filteredLibrary = savedSheets.filter(sheet => {
         const matchesSearch = (sheet.title || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesTopic = filterTopic === 'all' || sheet.auto_topics?.includes(filterTopic);
-        const activeSheetType = (sheet.type || '').replace('_', '').toLowerCase();
-        const matchesType = filterDocType === 'all' || activeSheetType === filterDocType.replace('_', '').toLowerCase();
+        
+        const rawType = (sheet.type || '').toLowerCase();
+        const matchesType = filterDocType === 'all' 
+            ? true
+            : filterDocType === 'activity'
+                ? rawType.startsWith('activity')
+                : rawType.replace('_', '') === filterDocType.replace('_', '');
+
         return matchesSearch && matchesTopic && matchesType;
     });
 
-    const getSheetIconStyle = (type, size = 16) => {
-        if (type === 'board') return { theme: 'theme-amber', bg: 'bg-amber-50 text-amber-600 border-amber-200', icon: <Monitor size={size} /> };
-        if (type === 'donow') return { theme: 'theme-indigo', bg: 'bg-indigo-50 text-indigo-600 border-indigo-200', icon: <Grid3X3 size={size} /> };
-        return { theme: 'theme-emerald', bg: 'bg-emerald-50 text-emerald-600 border-emerald-200', icon: <FileText size={size} /> };
+    const getSheetIconStyle = (type = '', size = 16) => {
+        const cleanType = String(type).toLowerCase();
+        if (cleanType.startsWith('activity')) {
+            return { 
+                theme: 'theme-purple', 
+                bg: 'bg-purple-50 text-purple-600 border-purple-200', 
+                icon: <Gamepad2 size={size} /> 
+            };
+        }
+        if (cleanType === 'board') {
+            return { 
+                theme: 'theme-amber', 
+                bg: 'bg-amber-50 text-amber-600 border-amber-200', 
+                icon: <Monitor size={size} /> 
+            };
+        }
+        if (cleanType === 'donow') {
+            return { 
+                theme: 'theme-indigo', 
+                bg: 'bg-indigo-50 text-indigo-600 border-indigo-200', 
+                icon: <Grid3X3 size={size} /> 
+            };
+        }
+        return { 
+            theme: 'theme-emerald', 
+            bg: 'bg-emerald-50 text-emerald-600 border-emerald-200', 
+            icon: <FileText size={size} /> 
+        };
     };
-
     return (
         <div className="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-8 animate-in fade-in select-none font-sans">
             <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-7xl h-[88vh] flex flex-row overflow-hidden">
@@ -141,6 +171,13 @@ export default function SheetLibraryModal({
                                     className="w-full py-2.5 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                                 >
                                     <Plus size={14} /> {lang === 'sv' ? "Nytt Arbetsblad" : "New Worksheet"}
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={onCreateActivity}
+                                    className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-purple-500/40"
+                                >
+                                    <Gamepad2 size={14} /> {lang === 'sv' ? "Nytt Aktivitet" : "New Activity"}
                                 </button>
                             </div>
                         )}
@@ -223,10 +260,12 @@ export default function SheetLibraryModal({
                                 { id: 'all', label: lang === 'sv' ? 'Alla' : 'All' },
                                 { id: 'board', label: lang === 'sv' ? 'Presentation' : 'Board', icon: Monitor },
                                 { id: 'worksheet', label: lang === 'sv' ? 'Arbetsblad' : 'Sheet', icon: FileText },
-                                { id: 'donow', label: 'Grid', icon: Grid3X3 }
+                                { id: 'donow', label: 'Grid', icon: Grid3X3 },
+                                { id: 'activity', label: lang === 'sv' ? 'Spel' : 'Games', icon: Gamepad2 } // 🟢 Added
                             ].map(tab => (
                                 <button
                                     key={tab.id}
+                                    type="button"
                                     onClick={() => setFilterDocType(tab.id)}
                                     className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
                                         filterDocType === tab.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
@@ -333,9 +372,20 @@ export default function SheetLibraryModal({
                                                                 </div>
                                                             </td>
                                                             <td className="py-2.5">
-                                                                <span className="text-[9px] font-black uppercase tracking-wider bg-white border border-slate-200 text-slate-500 px-2 py-0.5 rounded-md">
-                                                                    {sheet.auto_topics?.[0] || sheet.type}
-                                                                </span>
+                                                                {sheet.type?.startsWith('activity') ? (
+                                                                    <span className="text-[9px] font-black uppercase tracking-wider bg-purple-50 border border-purple-200 text-purple-700 px-2 py-0.5 rounded-md">
+                                                                        🎮 {sheet.packet?.dimensions ? `${sheet.packet.dimensions.columns}×${sheet.packet.dimensions.rows} ` : ''}
+                                                                        {sheet.type === 'activity_category_clash' ? (lang === 'sv' ? 'Poängjakten' : 'Category Clash') : 'Spel'}
+                                                                    </span>
+                                                                ) : (
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {sheet.auto_topics?.slice(0, 2).map(tag => (
+                                                                            <span key={tag} className="text-[9px] font-black uppercase tracking-wider bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md">
+                                                                                {tag}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                             </td>
                                                             <td className="py-2.5 text-center text-slate-400 text-xs">{new Date(sheet.updated_at).toLocaleDateString()}</td>
                                                             <td className="py-2.5 text-right pr-4">
@@ -369,6 +419,20 @@ export default function SheetLibraryModal({
                                                     <div className="truncate" title={sheet.title}>{sheet.title}</div>
                                                 </td>
                                                 <td className="py-3">
+                                                    {sheet.type?.startsWith('activity') ? (
+                                                        <span className="text-[9px] font-black uppercase tracking-wider bg-purple-50 border border-purple-200 text-purple-700 px-2 py-0.5 rounded-md">
+                                                            🎮 {sheet.packet?.dimensions ? `${sheet.packet.dimensions.columns}×${sheet.packet.dimensions.rows} ` : ''}
+                                                            {sheet.type === 'activity_category_clash' ? (lang === 'sv' ? 'Poängjakten' : 'Category Clash') : 'Spel'}
+                                                        </span>
+                                                    ) : (
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {sheet.auto_topics?.slice(0, 2).map(tag => (
+                                                                <span key={tag} className="text-[9px] font-black uppercase tracking-wider bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md">{tag}</span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="py-3">
                                                     <div className="flex flex-wrap gap-1">
                                                         {sheet.auto_topics?.slice(0, 2).map(tag => (
                                                             <span key={tag} className="text-[9px] font-black uppercase tracking-wider bg-slate-100 border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md">{tag}</span>
@@ -382,7 +446,9 @@ export default function SheetLibraryModal({
                                                             onClick={() => onSelectSheet(sheet)} 
                                                             className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-xs cursor-pointer"
                                                         >
-                                                            {lang === 'sv' ? "Öppna" : "Open"}
+                                                            {sheet.type?.startsWith('activity') 
+                                                                ? (lang === 'sv' ? "Spela" : "Play") 
+                                                                : (lang === 'sv' ? "Öppna" : "Open")}
                                                         </button>
                                                         <button onClick={() => setPeekSheet(sheet)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"><Maximize2 size={14} /></button>
                                                         {isTrashView ? (
@@ -440,43 +506,132 @@ export default function SheetLibraryModal({
             {peekSheet && (
                 <div className="fixed inset-0 z-[400] flex justify-end bg-slate-900/40 backdrop-blur-xs">
                     <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+                        {/* Header */}
                         <div className="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                            <div>
+                            <div className="min-w-0 pr-2">
                                 <h4 className="font-black text-slate-800 text-sm truncate">{peekSheet.title}</h4>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{peekSheet.type}</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    {peekSheet.type?.startsWith('activity')
+                                        ? (lang === 'sv' ? 'Spelaktivitet' : 'Game Activity')
+                                        : peekSheet.type}
+                                </span>
                             </div>
-                            <button onClick={() => setPeekSheet(null)} className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"><X size={18} /></button>
+                            <button onClick={() => setPeekSheet(null)} className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer">
+                                <X size={18} />
+                            </button>
                         </div>
+
+                        {/* Content Body */}
                         <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">
-                            {(peekSheet.type === 'board' ? (peekSheet.packet?.livePacket || []) : (peekSheet.packet || [])).map((q, i) => (
-                                <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
-                                    <div className="font-bold text-slate-800 mb-2 leading-relaxed">
-                                        <MathDisplay content={q.resolvedData?.renderData?.description || q.text} />
+                            {peekSheet.type?.startsWith('activity') ? (
+                                <div className="space-y-4">
+                                    {/* Game Overview Banner */}
+                                    <div className="p-4 bg-purple-50 rounded-2xl border border-purple-200 text-purple-950">
+                                        <div className="text-xs font-black uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                            <Gamepad2 size={15} className="text-purple-600" />
+                                            <span>
+                                                {peekSheet.type === 'activity_category_clash'
+                                                    ? (lang === 'sv' ? 'Poängjakten' : 'Category Clash')
+                                                    : (lang === 'sv' ? 'Aktivitet' : 'Activity')}
+                                            </span>
+                                        </div>
+
+                                        {peekSheet.packet?.dimensions && (
+                                            <div className="text-xs font-bold text-purple-700">
+                                                {peekSheet.packet.dimensions.columns} {lang === 'sv' ? 'kolumner' : 'columns'} × {peekSheet.packet.dimensions.rows} {lang === 'sv' ? 'rader' : 'rows'}
+                                            </div>
+                                        )}
+
+                                        {/* Categories Chips */}
+                                        {Array.isArray(peekSheet.packet?.categories) && (
+                                            <div className="mt-3 flex flex-wrap gap-1">
+                                                {peekSheet.packet.categories.map((c, i) => (
+                                                    <span key={c.id || i} className="text-[10px] font-bold px-2 py-0.5 bg-white text-purple-800 rounded-lg border border-purple-200">
+                                                        {c.name || c.topic}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                    {q.resolvedData?.renderData?.latex && (
-                                        <div className="py-2 text-center font-serif text-indigo-700 bg-white rounded-lg border border-slate-200 my-2">
-                                            <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
+
+                                    {/* Sample Tiles Preview (First 6 tiles) */}
+                                    <div className="space-y-3">
+                                        <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-1">
+                                            {lang === 'sv' ? "Förhandsvisning av brickor" : "Tile Previews"}
                                         </div>
-                                    )}
-                                    {q.resolvedData?.renderData && (
-                                        <div className="flex justify-center max-h-[140px] overflow-hidden my-2 scale-75 origin-top">
-                                            <VisualRenderer data={q.resolvedData.renderData} isWordProblem={false} />
-                                        </div>
-                                    )}
+
+                                        {(peekSheet.packet?.tiles || []).slice(0, 6).map((tile, i) => {
+                                            const renderData = tile.renderData || tile.resolvedData?.renderData || {};
+                                            return (
+                                                <div key={tile.slotId || tile.id || i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+                                                    <div className="flex justify-between items-center mb-2 text-[10px] font-black uppercase text-slate-400">
+                                                        <span className="font-mono text-indigo-600">{tile.slotId || `Tile ${i + 1}`}</span>
+                                                        {tile.points && (
+                                                            <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-black">
+                                                                {tile.points} p
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {renderData.description && (
+                                                        <div className="font-bold text-slate-800 mb-2 leading-relaxed">
+                                                            <MathDisplay content={renderData.description} />
+                                                        </div>
+                                                    )}
+
+                                                    {renderData.latex && (
+                                                        <div className="py-2 text-center font-serif text-indigo-700 bg-white rounded-lg border border-slate-200 my-1">
+                                                            <MathDisplay content={`$$${renderData.latex}$$`} />
+                                                        </div>
+                                                    )}
+
+                                                    {renderData && (renderData.geometry || renderData.graph || renderData.pattern) && (
+                                                        <div className="flex justify-center max-h-[120px] overflow-hidden my-2 scale-75 origin-top">
+                                                            <VisualRenderer data={renderData} isWordProblem={tile.wordProblem} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            ))}
+                            ) : (
+                                /* Standard Worksheets / Presentation Boards */
+                                (peekSheet.type === 'board' ? (peekSheet.packet?.livePacket || []) : (peekSheet.packet || [])).map((q, i) => (
+                                    <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs">
+                                        <div className="font-bold text-slate-800 mb-2 leading-relaxed">
+                                            <MathDisplay content={q.resolvedData?.renderData?.description || q.text} />
+                                        </div>
+                                        {q.resolvedData?.renderData?.latex && (
+                                            <div className="py-2 text-center font-serif text-indigo-700 bg-white rounded-lg border border-slate-200 my-2">
+                                                <MathDisplay content={`$$${q.resolvedData.renderData.latex}$$`} />
+                                            </div>
+                                        )}
+                                        {q.resolvedData?.renderData && (
+                                            <div className="flex justify-center max-h-[140px] overflow-hidden my-2 scale-75 origin-top">
+                                                <VisualRenderer data={q.resolvedData.renderData} isWordProblem={false} />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
                         </div>
+
+                        {/* Footer Action */}
                         <div className="p-4 border-t border-slate-200 bg-slate-50">
                             <button 
                                 onClick={() => { onSelectSheet(peekSheet); setPeekSheet(null); }}
-                                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-md"
+                                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-md cursor-pointer transition-all active:scale-[0.98]"
                             >
-                                {lang === 'sv' ? "Öppna detta material" : "Open this Resource"}
+                                {peekSheet.type?.startsWith('activity')
+                                    ? (lang === 'sv' ? "Starta detta spel" : "Launch this Game")
+                                    : (lang === 'sv' ? "Öppna detta material" : "Open this Resource")}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
             {/* 🟢 MOVE TO FOLDER MODAL */}
             {showMoveModal && (
                 <div className="fixed inset-0 z-[400] flex items-center justify-center bg-slate-900/60 p-4 animate-in fade-in">

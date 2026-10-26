@@ -3,7 +3,8 @@ import {
     X, ChevronLeft, ChevronRight, ChevronDown, Monitor, PanelLeftClose, 
     PanelLeftOpen, ZoomIn, ZoomOut, Layers, FileText, List, Plus,
     RefreshCw, Presentation, FileQuestion, Save, Download, Trash2, 
-    MessageSquare, Copy, GripVertical, Menu, FolderOpen, BookmarkPlus, UploadCloud
+    MessageSquare, Copy, GripVertical, Menu, FolderOpen, BookmarkPlus, UploadCloud,
+    Gamepad2
 } from 'lucide-react';
 
 import VisualRenderer from '../visuals/VisualRenderer';
@@ -33,6 +34,10 @@ import { compileAnchoredStory } from '../../core/utils/storyCompiler';
 import SlideRenderer from '../shared/SlideRenderer';
 import SlideViewerCore from '../shared/SlideViewerCore';
 
+// activities
+import ActivityHubModal from '../activities/modals/ActivityHubModal';
+import CategoryClashEngine from '../activities/engines/CategoryClashEngine';
+
 export default function PresentationView({ 
     packet, sheetTitle, lang = 'sv', onClose, initialSlides, boardId: initialBoardId, onLaunchLive,
     initialSettings }) {
@@ -55,15 +60,10 @@ export default function PresentationView({
     const [showSaveToUnitModal, setShowSaveToUnitModal] = useState(false);
     const [teacherId, setTeacherId] = useState(null);
 
-
-    {/* Uncomment this if you want the tutorial to show based on LocalStorage true false flags
     const storageKey = `has_seen_presentation_guide`;
     const [showTutorial, setShowTutorial] = useState(() => {
         return !localStorage.getItem(storageKey);
     });
-    */}
-    
-    const [showTutorial, setShowTutorial] = useState(false);
 
     // Add near your top-level state declarations:
     const [isDirty, setIsDirty] = useState(false);
@@ -258,6 +258,10 @@ export default function PresentationView({
     const { coachProps } = useMyCoach(currentFocusedQuestion, lang);
     const presentationBoardEndRef = useRef(null);
     const [spotlightVisual, setSpotlightVisual] = useState(null);
+
+    // --- ACTIVITY / GAME STATES ---
+    const [showActivityHub, setShowActivityHub] = useState(false);
+    const [activeGameConfig, setActiveGameConfig] = useState(null);
 
     const currentPinnedIds = JSON.stringify(slides[activeSlideIndex]?.activeIds || []);
     useEffect(() => {
@@ -944,6 +948,13 @@ export default function PresentationView({
 
                     <div className="w-px h-6 bg-slate-700/60 mx-1 hidden sm:block" />
 
+                    <button 
+                        onClick={() => setShowGameLauncher(true)} 
+                        className="p-2 bg-slate-800 hover:bg-indigo-600 text-amber-400 rounded-xl border border-slate-700/60"
+                        title="Spela Poängjakten"
+                    >
+                        <Gamepad2 size={16} />
+                    </button>
                     <button 
                         type="button"
                         onClick={togglePresentMode}
@@ -1992,6 +2003,23 @@ export default function PresentationView({
                     </div>
 
                 </div>
+            )}
+            {/* ACTIVITY / GAME LAUNCHER & ENGINE */}
+            <ActivityHubModal
+                isOpen={showActivityHub}
+                onClose={() => setShowActivityHub(false)}
+                sourcePacket={livePacket}
+                lang={lang}
+                onLaunchCategoryClash={(config) => setActiveGameConfig(config)}
+            />
+
+            {activeGameConfig && (
+                <CategoryClashEngine
+                    initialConfig={activeGameConfig}
+                    sourcePacket={livePacket}
+                    onClose={() => setActiveGameConfig(null)}
+                    lang={lang}
+                />
             )}
         </div>
     );
