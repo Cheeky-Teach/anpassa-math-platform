@@ -1,3 +1,4 @@
+// src/components/shared/SlideViewerCore.jsx
 import React from 'react';
 import SlideRenderer from './SlideRenderer';
 import InteractiveCanvas from '../whiteboard/InteractiveCanvas';
@@ -11,7 +12,7 @@ export default function SlideViewerCore({
     bgType = 'blank',
     globalZoom = 1.0,
     authorMode = false,
-    theme = DEFAULT_THEME, // 🟢 Optional theme prop with default fallback
+    theme = DEFAULT_THEME,
     interactiveCanvasProps = {},
     slideRendererProps = {},
     sizeClasses = { 
@@ -26,8 +27,10 @@ export default function SlideViewerCore({
     const boundQuestionId = slide?.boundQuestionId || (slide?.activeIds && slide.activeIds[0]);
     const boundQuestion = livePacket.find(p => p.id === boundQuestionId) || null;
 
-    // 🟢 Select active theme safely
     const currentTheme = PRESENTATION_THEMES[slide?.theme || theme] || PRESENTATION_THEMES[DEFAULT_THEME];
+
+    // 🟢 Strip `key` out of interactiveCanvasProps so it cannot be spread into JSX
+    const { key: canvasKey, ...safeCanvasProps } = interactiveCanvasProps || {};
 
     return (
         <div 
@@ -65,23 +68,22 @@ export default function SlideViewerCore({
             </div>
 
             {/* --- INTERACTIVE CANVAS & TOOLBAR LAYER (z-20) --- */}
-            {/* Render canvas when NOT an instruction slide OR explicitly enabled via props (e.g., when Presenting) */}
             {(!isInstruction || interactiveCanvasProps?.forceActive) && (
                 <div className="absolute inset-0 z-20 w-full h-full pointer-events-none">
                     <InteractiveCanvas
-                        key={interactiveCanvasProps?.key || slide?.id}
-                        elements={slide?.elements || []}
+                        key={canvasKey || slide?.id}
+                        elements={safeCanvasProps?.elements || slide?.elements || []}
                         resolution={{ w: 1920, h: 1080 }}
                         lang={lang}
                         bgType={bgType}
                         livePacket={livePacket}
-                        {...interactiveCanvasProps}
-                        isOverlay={isInstruction || interactiveCanvasProps?.isOverlay}
+                        {...safeCanvasProps}
+                        isOverlay={isInstruction || safeCanvasProps?.isOverlay}
                     />
                 </div>
             )}
 
-            {/* 🟢 PERMANENT WATERMARK (Positioned safely above backgrounds, below interactive whiteboard tools) */}
+            {/* --- PERMANENT WATERMARK --- */}
             <div className={`absolute bottom-3 right-5 pointer-events-none select-none z-20 flex items-center gap-1.5 font-sans font-black text-[11px] uppercase tracking-widest ${currentTheme.watermarkColor}`}>
                 <span className="w-2 h-2 rounded-full bg-current opacity-60" />
                 <span>Anpassa Math Platform :: Anpassa.app</span>

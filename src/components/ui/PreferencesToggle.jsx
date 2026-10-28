@@ -4,7 +4,12 @@ import { Sun, Moon, Globe } from 'lucide-react';
 import { PreferencesContext } from '../../App'; // Adjust import path
 
 export default function PreferencesToggle() {
-    const { theme, toggleTheme, lang, toggleLang } = useContext(PreferencesContext);
+    const { 
+        theme = 'light', 
+        toggleTheme = () => {}, 
+        lang = 'sv', 
+        toggleLang = () => {} 
+    } = useContext(PreferencesContext) || {};
 
     return (
         <div className="flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border-main)] p-1 rounded-[var(--radius-btn)] shadow-sm">

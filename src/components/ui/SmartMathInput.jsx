@@ -1,17 +1,13 @@
+// src/components/ui/SmartMathInput.jsx
 import React, { useRef, useEffect } from 'react';
 import { FractionInput, ExponentInput, ScientificInput } from './InputComponents';
 
-/**
- * Universal mathematical input sanitizer.
- * Strips script tags, HTML tags, and harmful control characters
- * while allowing standard mathematical symbols and variable letters (a-z).
- */
 export const sanitizeMathExpression = (val, maxLen = 100) => {
     if (val === null || val === undefined) return '';
     return String(val)
-        .replace(/<[^>]*>?/gm, '') // Strip any HTML/XML tags
-        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Strip control characters
-        .replace(/[^a-zA-Z0-9+\-*/:.,><=^()_\s;]/g, '') // Allow math symbols and variables (including n, x, y)
+        .replace(/<[^>]*>?/gm, '')
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+        .replace(/[^a-zA-Z0-9+\-*/:.,><=^()_\s;]/g, '')
         .substring(0, maxLen);
 };
 
@@ -19,7 +15,9 @@ export default function SmartMathInput({
     value = '',
     onChange,
     onSubmit,
-    inputType = 'text',
+    inputType,          // explicit inputType prop
+    answerType,         // fallback from question.answerType
+    renderData,         // fallback from question.resolvedData.renderData
     disabled = false,
     autoFocus = false,
     placeholder = 'Ditt svar...',
@@ -29,6 +27,19 @@ export default function SmartMathInput({
 }) {
     const localRef = useRef(null);
     const activeRef = externalRef || localRef;
+
+    // 🟢 Resolve the effective type from any incoming prop format
+    const effectiveType = (() => {
+        const raw = inputType || answerType || renderData?.inputType || renderData?.answerType || renderData?.inputMode || 'text';
+        
+        // Normalize Swedish / variation aliases
+        if (raw === 'brak' || raw === 'fraction') {
+            return renderData?.allowMixed ? 'mixed_fraction' : 'fraction';
+        }
+        if (raw === 'grundpotensform' || raw === 'scientific') return 'scientific';
+        if (raw === 'potens' || raw === 'exponent') return 'exponent';
+        return raw;
+    })();
 
     const handleTextChange = (e) => {
         const clean = sanitizeMathExpression(e.target.value, 100);
@@ -43,7 +54,7 @@ export default function SmartMathInput({
     };
 
     // 1. Specialized inputs from InputComponents
-    if (inputType === 'mixed_fraction') {
+    if (effectiveType === 'mixed_fraction') {
         return (
             <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full">
                 <div className="transform origin-center">
@@ -52,13 +63,14 @@ export default function SmartMathInput({
                         onChange={(val) => onChange(sanitizeMathExpression(val, 30))} 
                         allowMixed={true} 
                         autoFocus={autoFocus && !isMobile} 
+                        disabled={disabled}
                     />
                 </div>
             </div>
         );
     }
 
-    if (inputType === 'fraction') {
+    if (effectiveType === 'fraction') {
         return (
             <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full">
                 <div className="transform origin-center">
@@ -67,13 +79,14 @@ export default function SmartMathInput({
                         onChange={(val) => onChange(sanitizeMathExpression(val, 30))} 
                         allowMixed={false} 
                         autoFocus={autoFocus && !isMobile} 
+                        disabled={disabled}
                     />
                 </div>
             </div>
         );
     }
 
-    if (inputType === 'exponent' || inputType === 'structured_power') {
+    if (effectiveType === 'exponent' || effectiveType === 'structured_power') {
         return (
             <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full">
                 <div className="transform origin-center">
@@ -81,13 +94,14 @@ export default function SmartMathInput({
                         value={value} 
                         onChange={(val) => onChange(sanitizeMathExpression(val, 30))} 
                         autoFocus={autoFocus && !isMobile} 
+                        disabled={disabled}
                     />
                 </div>
             </div>
         );
     }
 
-    if (inputType === 'scientific' || inputType === 'structured_scientific') {
+    if (effectiveType === 'scientific' || effectiveType === 'structured_scientific') {
         return (
             <div className="flex justify-center py-4 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border-2 border-dashed border-[var(--border-main)] shadow-inner w-full">
                 <div className="transform origin-center">
@@ -95,13 +109,14 @@ export default function SmartMathInput({
                         value={value} 
                         onChange={(val) => onChange(sanitizeMathExpression(val, 30))} 
                         autoFocus={autoFocus && !isMobile} 
+                        disabled={disabled}
                     />
                 </div>
             </div>
         );
     }
 
-    if (inputType === 'free_text') {
+    if (effectiveType === 'free_text') {
         return (
             <textarea
                 ref={activeRef}
@@ -116,12 +131,12 @@ export default function SmartMathInput({
         );
     }
 
-    // 2. Standard Text/Formula Input (Allows numbers, operators, and variables like 'n', 'x', 'y')
+    // 2. Standard Text/Formula Input
     return (
         <input
             ref={activeRef}
             type="text"
-            inputMode="text" // Enables full keyboard on mobile for variables (3n+2, 2x+1)
+            inputMode="text"
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="none"

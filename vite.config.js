@@ -22,6 +22,6 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/test/setup.js' // optional for custom matchers
+    //setupFiles: './src/test/setup.js' // optional for custom matchers
   }
 })

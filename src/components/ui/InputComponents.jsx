@@ -1,3 +1,4 @@
+//src/components/ui/InputComponents.jsx
 import React, { useRef, useEffect } from 'react';
 
 // Shared helper to sanitize inner math sub-values

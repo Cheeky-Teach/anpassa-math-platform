@@ -1,6 +1,5 @@
 // scripts/liveRoomMatrix.test.js
-import { describe, it } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, it, expect } from 'vitest';
 import { evaluateStudentAdvance, validateStudentInput } from '../src/lib/livePacingEngine.js';
 
 function simulateStudentLiveTransition({
@@ -22,7 +21,7 @@ function simulateStudentLiveTransition({
 
         const rawAnswer = answers[targetIdx];
         const canvasData = canvasElements[targetIdx] || [];
-        const scratchpadSteps = (scratchpad[targetIdx] || []).filter(s => s.trim().length > 0);
+        const scratchpadSteps = (scratchpad[targetIdx] || []).filter(s => s && s.trim().length > 0);
 
         const hasAnswer = rawAnswer !== undefined && String(rawAnswer).trim() !== "";
         const hasCanvas = canvasData.length > 0;
@@ -30,7 +29,7 @@ function simulateStudentLiveTransition({
         const isMultipleChoice = currentItem.answerType === 'multiple_choice';
         const isFreeText = currentItem.answerType === 'free_text';
 
-        // 🟢 Calls REAL production validation logic from src/lib/livePacingEngine.js
+        // Calls production validation logic
         const validation = validateStudentInput({
             responseStyle: settings.responseStyle || 'flexible',
             hasAnswer,
@@ -46,7 +45,7 @@ function simulateStudentLiveTransition({
 
         const updatedCompleted = { ...completed, [targetIdx]: 'correct' };
 
-        // 🟢 Calls REAL production auto-advance logic from src/lib/livePacingEngine.js
+        // Calls production auto-advance logic
         const advance = evaluateStudentAdvance({
             currentIdx: targetIdx,
             totalQuestions: localPacket.length,
@@ -111,13 +110,13 @@ describe('Live Classroom Setting Matrix Exhaustive Suite', () => {
                         action: { type: 'SUBMIT', targetIdx: 0 }
                     });
 
-                    assert.equal(result.success, true);
-                    assert.equal(result.completed[0], 'correct');
+                    expect(result.success).toBe(true);
+                    expect(result.completed[0]).toBe('correct');
 
                     if (pacing === 'progressive' || pacing === 'open') {
-                        assert.equal(result.currentIndex, 1);
+                        expect(result.currentIndex).toBe(1);
                     } else if (pacing === 'teacher') {
-                        assert.equal(result.currentIndex, 0); // Holds until teacher pushes
+                        expect(result.currentIndex).toBe(0); // Holds until teacher pushes
                     }
                 });
 
@@ -133,10 +132,10 @@ describe('Live Classroom Setting Matrix Exhaustive Suite', () => {
                     });
 
                     if (pacing === 'open') {
-                        assert.equal(navResult.success, true);
-                        assert.equal(navResult.currentIndex, 1);
+                        expect(navResult.success).toBe(true);
+                        expect(navResult.currentIndex).toBe(1);
                     } else {
-                        assert.equal(navResult.error, 'NAVIGATION_LOCKED');
+                        expect(navResult.error).toBe('NAVIGATION_LOCKED');
                     }
                 });
             });
@@ -155,18 +154,18 @@ describe('Live Classroom Setting Matrix Exhaustive Suite', () => {
 
         // Submit Q1
         let res = simulateStudentLiveTransition({ ...state, action: { type: 'SUBMIT', targetIdx: 0 } });
-        assert.equal(res.currentIndex, 1);
+        expect(res.currentIndex).toBe(1);
         state.completed = res.completed;
         state.currentIndex = res.currentIndex;
 
         // Submit Q2
         res = simulateStudentLiveTransition({ ...state, action: { type: 'SUBMIT', targetIdx: 1 } });
-        assert.equal(res.currentIndex, 2);
+        expect(res.currentIndex).toBe(2);
         state.completed = res.completed;
         state.currentIndex = res.currentIndex;
 
         // Submit Q3
         res = simulateStudentLiveTransition({ ...state, action: { type: 'SUBMIT', targetIdx: 2 } });
-        assert.equal(res.currentIndex, 'FINAL_REVIEW');
+        expect(res.currentIndex).toBe('FINAL_REVIEW');
     });
 });

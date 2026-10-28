@@ -1,11 +1,15 @@
+// src/components/ui/MathScratchpad.jsx
 import React, { useRef, useEffect } from 'react';
 import { Plus, Undo2, Redo2 } from 'lucide-react';
 import 'mathlive'; 
 
-export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' }) {
+export default function MathScratchpad({ steps = [''], onChange, disabled, lang = 'sv' }) {
     const mfRefs = useRef([]);
     const stepsRef = useRef(steps);
     const isAddingRef = useRef(false);
+    
+    // 🟢 Flag to prevent the props-sync effect from fighting active typing
+    const isLocalInputRef = useRef(false);
 
     useEffect(() => {
         stepsRef.current = steps;
@@ -68,8 +72,9 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
         const currentRefs = mfRefs.current;
         
         const handleInput = (e, idx) => {
+            isLocalInputRef.current = true;
             let val = e.target.value;
-            const currentSteps = [...stepsRef.current];
+            const currentSteps = [...(stepsRef.current || [''])];
             
             if (val.includes('§')) {
                 val = val.replace(/§/g, ''); 
@@ -95,12 +100,13 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
         let lastDeleteTime = 0;
         const handleKeyDown = (e, idx) => {
             const mf = currentRefs[idx];
+            if (!mf) return;
             
             if (e.key === 'Enter') {
                 e.preventDefault();
                 if (!isAddingRef.current) {
                     isAddingRef.current = true;
-                    const currentSteps = [...stepsRef.current];
+                    const currentSteps = [...(stepsRef.current || [''])];
                     currentSteps.splice(idx + 1, 0, '');
                     onChange(currentSteps);
                     setTimeout(() => { 
@@ -109,10 +115,11 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
                     }, 50);
                 }
             } else if (e.key === 'Backspace') {
-                if (mf.value === '' && stepsRef.current.length > 1) {
+                if (mf.value === '' && (stepsRef.current || []).length > 1) {
                     const now = Date.now();
                     if (now - lastDeleteTime > 400) { 
                         e.preventDefault();
+                        isLocalInputRef.current = true;
                         const currentSteps = stepsRef.current.filter((_, i) => i !== idx);
                         onChange(currentSteps);
                         setTimeout(() => { 
@@ -149,23 +156,29 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
                 mf.removeEventListener('paste', handlePaste);
             });
         };
-    }, [steps.length]);
+    }, [steps.length, onChange]);
 
-    // State Sync
+    // 🟢 SAFE STATE SYNC: Only update DOM value if change came from OUTSIDE, not local typing
     useEffect(() => {
+        if (isLocalInputRef.current) {
+            isLocalInputRef.current = false;
+            return;
+        }
+
         mfRefs.current.forEach((mf, idx) => {
-            if (mf && steps[idx] !== undefined && mf.value !== steps[idx]) {
-                mf.value = steps[idx];
+            if (mf && steps[idx] !== undefined) {
+                if (mf.value !== steps[idx]) {
+                    mf.value = steps[idx];
+                }
             }
         });
     }, [steps]);
 
+    const activeSteps = Array.isArray(steps) && steps.length > 0 ? steps : [''];
+
     return (
-        /* 🟢 STRICT WHITE CARD: Immune to dark mode */
         <div className="flex flex-col rounded-2xl border-2 border-slate-200 bg-white p-3 shadow-sm select-none">
-            
             <style>{`
-                /* 🟢 FORCE LIGHT SCHEME & PREVENT SQUISHING */
                 math-field {
                     display: block !important;
                     width: 100% !important;
@@ -216,13 +229,12 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
 
             {/* Structured Rows */}
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1 pb-1 custom-scrollbar">
-                {(steps.length === 0 ? [''] : steps).map((step, idx) => (
+                {activeSteps.map((step, idx) => (
                     <div key={idx} className="flex items-center gap-2 w-full">
                         <span className="w-5 text-right font-mono text-[11px] font-bold text-slate-400 select-none shrink-0">
                             {idx + 1}.
                         </span>
                         
-                        {/* 🟢 Rigid flex item wrapper prevents custom element collapse */}
                         <div className="flex-1 min-w-0 bg-white rounded-xl border border-slate-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-50 transition-all shadow-2xs">
                             <math-field
                                 ref={el => (mfRefs.current[idx] = el)}
@@ -247,7 +259,8 @@ export default function MathScratchpad({ steps, onChange, disabled, lang = 'sv' 
                         <button
                             type="button"
                             onClick={() => {
-                                const next = [...stepsRef.current, ''];
+                                isLocalInputRef.current = false;
+                                const next = [...(stepsRef.current || ['']), ''];
                                 onChange(next);
                                 setTimeout(() => mfRefs.current[next.length - 1]?.focus(), 50);
                             }}
