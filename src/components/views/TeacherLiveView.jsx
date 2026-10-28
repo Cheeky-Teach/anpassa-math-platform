@@ -15,15 +15,25 @@ import {
     ArrowDownAZ, ListOrdered, Shuffle, ChevronDown
 } from 'lucide-react';
 import { syncProgress } from '../../lib/progressSync';
+import { getActivityDefinition } from '../activities/registry/activityRegistry';
 
-export default function TeacherLiveView({ 
-    session, 
-    packet, 
-    lang = 'sv', 
-    onEnd, 
-    onKick, 
-    teacherClassCode 
-}) {
+export default function TeacherLiveView({ session, packet, lang, onEnd, onKick, onCreateReport, teacherClassCode }) {
+    // 🟢 1. Check if the current room is an activity
+    const mode = session?.active_question_data?.mode;
+    const activityDef = getActivityDefinition(mode);
+
+    if (activityDef?.TeacherEngine) {
+        const TeacherActivityEngine = activityDef.TeacherEngine;
+        return (
+            <TeacherActivityEngine
+                session={session}
+                isLiveHost={true}
+                initialConfig={session?.active_question_data?.settings}
+                onClose={onEnd}
+                lang={lang}
+            />
+        );
+    }
     const engine = useTeacherSessionState({ session, packet, lang, onKick, onEnd });
     
     const [zoomIndex, setZoomIndex] = useState(null);

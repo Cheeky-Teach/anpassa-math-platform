@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
     X, Grid, Sparkles, Trophy, Shuffle, Gauge, 
-    Play, Info, ChevronRight, HelpCircle, ArrowRight
+    Play, Info, ChevronRight, HelpCircle, ArrowRight, Monitor
 } from 'lucide-react';
 import { SKILL_BUCKETS } from '../../../constants/skillBuckets.js';
 import { extractSeedsFromPacket } from '../../../hooks/useGameQuestionPool.js';
@@ -12,8 +12,13 @@ export default function CategoryClashSetupModal({
     onClose,
     onLaunch,
     sourcePacket = null,
+    profile = null,
     lang = 'sv'
 }) {
+    // 🟢 Strict teacher / super_admin role checking
+    const userRole = String(profile?.role || '').toLowerCase();
+    const isTeacher = userRole === 'teacher' || userRole === 'super_admin';
+
     // 1. Grid Dimensions
     const [columns, setColumns] = useState(4);
     const [rows, setRows] = useState(4);
@@ -102,8 +107,7 @@ export default function CategoryClashSetupModal({
             point_scale: "Poängskala",
             teams_title: "Lagindelning",
             word_problems: "Aktivera textuppgifter / problemlösning",
-            cancel: "Avbryt",
-            start_btn: "Skapa & Granska Bräde"
+            cancel: "Avbryt"
         },
         en: {
             title: "Configure Category Clash",
@@ -119,8 +123,7 @@ export default function CategoryClashSetupModal({
             point_scale: "Point Scale",
             teams_title: "Teams",
             word_problems: "Enable story problems & context",
-            cancel: "Cancel",
-            start_btn: "Create & Review Board"
+            cancel: "Cancel"
         }
     }[lang];
 
@@ -176,9 +179,7 @@ export default function CategoryClashSetupModal({
         setColumnRanges({});
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
+    const handleDoLaunch = (target) => {
         const activeCategories = Array.from({ length: columns }, (_, colIdx) => {
             const topicId = selectedTopics[colIdx] || allTopics[0]?.id || 'equations';
             const topicMeta = allTopics.find(t => t.id === topicId);
@@ -207,6 +208,7 @@ export default function CategoryClashSetupModal({
         }));
 
         onLaunch({
+            launchTarget: target, // 🟢 'local' | 'live'
             dimensions: { columns, rows },
             pointScale: calculatePointScale(),
             categories: activeCategories,
@@ -237,7 +239,7 @@ export default function CategoryClashSetupModal({
                 </div>
 
                 {/* Form Body */}
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-6">
+                <form onSubmit={(e) => { e.preventDefault(); handleDoLaunch('local'); }} className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-6">
                     
                     {/* Visual Concept Banner */}
                     <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 text-white rounded-3xl p-5 border border-indigo-800/60 shadow-md flex items-center gap-5">
@@ -381,7 +383,7 @@ export default function CategoryClashSetupModal({
                                                 </div>
                                             </div>
 
-                                            {/* Intentional Info Button (Opens modal preview without covering the selects) */}
+                                            {/* Intentional Info Button */}
                                             <button
                                                 type="button"
                                                 onClick={() => setInspectedTopic(topicMeta)}
@@ -455,7 +457,7 @@ export default function CategoryClashSetupModal({
                         <span className="text-xs font-bold text-slate-700">{t.word_problems}</span>
                     </label>
 
-                    {/* Submit Bar */}
+                    {/* Action Footer */}
                     <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
                         <button
                             type="button"
@@ -464,18 +466,35 @@ export default function CategoryClashSetupModal({
                         >
                             {t.cancel}
                         </button>
-                        <button
-                            type="submit"
-                            className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
-                        >
-                            <Play size={14} />
-                            {t.start_btn}
-                        </button>
+
+                        <div className="flex items-center gap-2">
+                            {/* Standard Projector/Solo Launch */}
+                            <button
+                                type="button"
+                                onClick={() => handleDoLaunch('local')}
+                                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95"
+                            >
+                                <Play size={14} />
+                                <span>{isTeacher ? (lang === 'sv' ? "Projektorläge" : "Projector Mode") : (lang === 'sv' ? "Spela" : "Play")}</span>
+                            </button>
+
+                            {/* 🟢 Live Room Launch (Strictly for teacher & super_admin) */}
+                            {isTeacher && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleDoLaunch('live')}
+                                    className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-md shadow-rose-600/20 active:scale-95 transition-all cursor-pointer"
+                                >
+                                    <Monitor size={14} />
+                                    <span>{lang === 'sv' ? "Starta Live-rum" : "Host Live Room"}</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                 </form>
 
-                {/* 🟢 INTENTIONAL LEVEL INSPECTOR MODAL (Only opens when (i) is clicked) */}
+                {/* Level Inspector Modal */}
                 {inspectedTopic && (
                     <div className="absolute inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-6 animate-in fade-in">
                         <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh] overflow-hidden text-slate-800">

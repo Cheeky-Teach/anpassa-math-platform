@@ -4,16 +4,17 @@ import { useStudentSessionState } from '../live/core/useStudentSessionState';
 import StudentSummaryGrid from '../live/student/components/StudentSummaryGrid';
 import StudentPresentationView from '../live/student/views/StudentPresentationView';
 import StudentWorksheetView from '../live/teacher/views/StudentWorksheetView';
-//import StudentActivityView from '../live/student/views/StudentActivityView';
 import { LogOut, ListChecks } from 'lucide-react';
 import { syncProgress } from '../../lib/progressSync';
+import { getActivityDefinition } from '../activities/registry/activityRegistry';
 
 export default function StudentLiveView({ session, packet, lang = 'sv', studentAlias, onBack }) {
+    // 1. Resolve Mode & Engine once at the top
+    const mode = session?.active_question_data?.mode || 'worksheet';
     const studentEngine = useStudentSessionState({ session, packet, studentAlias, lang, onBack });
     const { roomActive, showFinalReview, setShowFinalReview, completed, localPacket } = studentEngine;
-    const mode = session?.active_question_data?.mode || 'worksheet';
 
-    // 1. Terminated Screen
+    // 2. Terminated Screen (Applies to all modes: worksheets, presentations, activities)
     if (!roomActive) {
         return (
             <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center select-none">
@@ -32,12 +33,28 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         );
     }
 
-    // 2. Final Review Grid
+    // 🟢 3. Activity Mode Router (Dynamic via Registry)
+    const activityDef = getActivityDefinition(mode);
+    if (activityDef?.StudentView) {
+        const StudentActivityComponent = activityDef.StudentView;
+        return (
+            <StudentActivityComponent
+                engine={studentEngine}
+                session={session}
+                packet={packet}
+                studentAlias={studentAlias}
+                lang={lang}
+                onBack={onBack}
+            />
+        );
+    }
+
+    // 4. Final Review Grid (Worksheet only)
     if (showFinalReview) {
         return <StudentSummaryGrid engine={studentEngine} lang={lang} onBack={onBack} />;
     }
 
-    // 3. Completed Screen (Worksheet only)
+    // 5. Completed Screen (Worksheet only)
     const allDone = localPacket.length > 0 && Object.keys(completed).length === localPacket.length;
     if (allDone && mode === 'worksheet') {
         return (
@@ -67,20 +84,7 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         );
     }
 
-    // 4. Activity Mode Router (Clash, Buzzers, etc.)
-    if (mode === 'activity_category_clash' || mode.startsWith('activity_')) {
-        return (
-            <StudentActivityView 
-                engine={studentEngine} 
-                session={session} 
-                studentAlias={studentAlias}
-                lang={lang} 
-                onBack={onBack} 
-            />
-        );
-    }
-
-    // 5. Presentation Mode Router
+    // 6. Presentation Mode Router
     if (mode === 'presentation') {
         return (
             <StudentPresentationView 
@@ -93,12 +97,12 @@ export default function StudentLiveView({ session, packet, lang = 'sv', studentA
         );
     }
 
-    // 6. Default: Standard Worksheet View
+    // 7. Default: Standard Worksheet View
     return (
         <StudentWorksheetView 
             engine={studentEngine} 
             session={session} 
-            studentAlias={studentAlias}
+            studentAlias={studentAlias} 
             lang={lang} 
             onBack={onBack} 
         />

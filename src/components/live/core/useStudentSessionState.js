@@ -31,7 +31,10 @@ function prepareStudentPacket(rawPacket, settings, isPresentation) {
 }
 
 export function useStudentSessionState({ session, packet, studentAlias, lang = 'sv', onBack }) {
-    // 🟢 1. Dynamic state for room settings so updates take effect live
+    // 🟢 1. Live Session State: Tracks full room updates (active_question_data, activeTile, etc.)
+    const [liveSession, setLiveSession] = useState(session);
+
+    // Dynamic state for room settings so updates take effect live
     const extractEffectiveSettings = (sess) => {
         return sess?.active_question_data?.settings || sess?.settings || {};
     };
@@ -44,7 +47,7 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
 
     const allowCanvas = Boolean(liveSettings.allowCanvas || liveSettings.enableCanvas);
     const responseStyle = liveSettings.responseStyle || 'flexible';
-    const isPresentationMode = session?.active_question_data?.mode === 'presentation';
+    const isPresentationMode = liveSession?.active_question_data?.mode === 'presentation';
 
     // 🟢 2. Initialize localPacket
     const [localPacket, setLocalPacket] = useState(() => {
@@ -89,7 +92,7 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
         currentIndexRef.current = currentIndex;
     }, [completed, localPacket, currentIndex]);
 
-    // 🟢 Auto-redirect timer when room closes (single, clean instance)
+    // Auto-redirect timer when room closes
     useEffect(() => {
         if (!roomActive) {
             const timer = setTimeout(() => {
@@ -118,10 +121,9 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
 
         const initialize = async () => {
             try {
-                // Query only real columns: status, settings, active_question_data
                 const { data: roomData } = await supabase
                     .from('rooms')
-                    .select('status, settings, active_question_data')
+                    .select('*')
                     .eq('id', session.id)
                     .maybeSingle();
 
@@ -130,6 +132,7 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
                         setRoomActive(false);
                         return;
                     }
+                    setLiveSession(roomData);
                     const freshSettings = extractEffectiveSettings(roomData);
                     setLiveSettings(freshSettings);
                 }
@@ -216,8 +219,10 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
             }, (payload) => {
                 if (!isSubscribed) return;
                 const updated = payload.new;
-                const currentSettings = settingsRef.current;
-                const currentIsPresentation = isPresentationModeRef.current;
+                
+                // 🟢 CRITICAL: Update full session so active_question_data propagates to all views!
+                setLiveSession(updated);
+
                 const currentAlias = studentAliasRef.current;
                 const currentLang = langRef.current;
 
@@ -309,18 +314,22 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
             })
             .subscribe();
 
-        // 🟢 Robust Polling: Only mark closed if explicitly returned as closed
         const pollInterval = setInterval(async () => {
             if (!isSubscribed) return;
             try {
                 const { data, error } = await supabase
                     .from('rooms')
-                    .select('status')
+                    .select('status, active_question_data')
                     .eq('id', session.id)
                     .maybeSingle();
 
-                if (!error && data?.status === 'closed') {
-                    setRoomActive(false);
+                if (!error && data) {
+                    if (data.status === 'closed') {
+                        setRoomActive(false);
+                    } else if (data.active_question_data) {
+                        // Keep active_question_data in sync even if WebSocket dropped
+                        setLiveSession(prev => ({ ...prev, active_question_data: data.active_question_data }));
+                    }
                 }
             } catch {
                 // Ignore transient network errors
@@ -334,32 +343,29 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
         };
     }, [session?.id, studentAlias]);
 
-    // 🟢 6. Submission logic with strict room-open verification
+    // 🟢 6. Submission logic
     const submitAnswer = useCallback(async (forcedIdx = null, passedCanvas = null) => {
         const targetIdx = forcedIdx !== null ? forcedIdx : currentIndex;
         const currentItem = localPacket[targetIdx];
         if (!currentItem || isSubmitting || !session?.id) return;
 
-        // Fast bail-out
         if (!roomActive || completed[targetIdx]) return;
 
         setIsSubmitting(true);
         try {
-            // 🟢 STRICT PREFLIGHT: Require status to explicitly be active/open
             const { data: roomCheck, error: roomErr } = await supabase
                 .from('rooms')
                 .select('status')
                 .eq('id', session.id)
                 .maybeSingle();
 
-            // If query fails, room row is missing, or status is NOT 'active' / 'open' (or explicitly 'closed')
             const isRoomClosed = roomErr || !roomCheck || roomCheck.status === 'closed' || roomCheck.status === 'archived';
 
             if (isRoomClosed) {
                 console.warn("[StudentLive] Attempted submission to closed room. Aborting write.");
                 setRoomActive(false);
                 setIsSubmitting(false);
-                return; // ⛔ Abort immediately. Nothing is written to the responses table.
+                return;
             }
 
             const isFreeText = currentItem.answerType === 'free_text';
@@ -397,7 +403,6 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
             const updatedCompleted = { ...completed, [targetIdx]: isCorrect ? 'correct' : 'wrong' };
             setCompleted(updatedCompleted);
 
-            // Progressive auto-advance
             if (liveSettings.pacing === 'open' || liveSettings.pacing === 'progressive') {
                 setTimeout(() => {
                     const advance = evaluateStudentAdvance({
@@ -419,6 +424,7 @@ export function useStudentSessionState({ session, packet, studentAlias, lang = '
     }, [currentIndex, localPacket, isSubmitting, roomActive, completed, answers, canvasElements, scratchpad, session?.id, studentAlias, liveSettings]);
 
     return {
+        session: liveSession, // 🟢 NOW RETURNS THE LIVE UPDATING SESSION!
         settings: liveSettings,
         allowScratchpad,
         allowCanvas,

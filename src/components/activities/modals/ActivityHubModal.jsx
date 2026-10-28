@@ -1,16 +1,17 @@
 // src/components/activities/modals/ActivityHubModal.jsx
 import React, { useState } from 'react';
-import { X, Grid, Trophy, Swords, SplitSquareVertical, Sparkles, ArrowRight } from 'lucide-react';
-import CategoryClashSetupModal from '../wizards/CategoryClashSetupModal.jsx';
+import { X, ArrowRight } from 'lucide-react';
+import { ACTIVITY_REGISTRY, getActivityDefinition } from '../registry/activityRegistry';
 
 export default function ActivityHubModal({
     isOpen,
     onClose,
     sourcePacket = [],
-    onLaunchCategoryClash, // ({ dimensions, pointScale, categories, teams, wordProblems, sourceMode }) => void
+    onLaunchActivity, // 🟢 Unified callback: (gameKey, config) => void
+    profile = null,
     lang = 'sv'
 }) {
-    const [activeWizard, setActiveWizard] = useState(null); // null | 'category_clash' | 'millionaire' | ...
+    const [activeWizardKey, setActiveWizardKey] = useState(null);
 
     if (!isOpen) return null;
 
@@ -31,65 +32,22 @@ export default function ActivityHubModal({
         }
     }[lang];
 
-    const activities = [
-        {
-            id: 'category_clash',
-            title: lang === 'sv' ? "Poängjakten" : "Category Clash",
-            desc: lang === 'sv' 
-                ? "Klassiskt rutnät där lag väljer kategori och nivå för att samla poäng." 
-                : "Grid matrix where teams pick topic and tier to rack up points.",
-            icon: Grid,
-            color: 'from-amber-500/20 to-amber-600/10 border-amber-500/30 text-amber-500',
-            badgeColor: 'bg-amber-500 text-slate-950',
-            available: true
-        },
-        {
-            id: 'millionaire',
-            title: lang === 'sv' ? "Kvitt eller Dubbelt" : "Math Ladder",
-            desc: lang === 'sv' 
-                ? "15-stegs utmaning med eskalerande svårighetsgrad och klassiska livlinor." 
-                : "15-step difficulty ladder with classic lifelines (50:50, Coach).",
-            icon: Trophy,
-            color: 'from-indigo-500/20 to-indigo-600/10 border-indigo-500/30 text-indigo-400',
-            badgeColor: 'bg-indigo-600 text-white',
-            available: false
-        },
-        {
-            id: 'tug_of_war',
-            title: lang === 'sv' ? "Dragkamp" : "Tug of War",
-            desc: lang === 'sv' 
-                ? "Två lag eller solospelare mot en klockbot kämpar om repet genom snabbhet." 
-                : "Push-and-pull battle of speed and accuracy against a team or bot.",
-            icon: Swords,
-            color: 'from-rose-500/20 to-rose-600/10 border-rose-500/30 text-rose-400',
-            badgeColor: 'bg-rose-500 text-white',
-            available: false
-        },
-        {
-            id: 'four_corners',
-            title: lang === 'sv' ? "Fyra Hörn" : "Four Corners",
-            desc: lang === 'sv' 
-                ? "Fysisk eller digital ställningstagandeövning kring matematiska påståenden." 
-                : "Physical or digital voting exercise evaluating mathematical claims.",
-            icon: SplitSquareVertical,
-            color: 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30 text-emerald-400',
-            badgeColor: 'bg-emerald-500 text-slate-950',
-            available: false
-        }
-    ];
+    const activeDef = getActivityDefinition(activeWizardKey);
 
-    // If a wizard is active, show that specific wizard
-    if (activeWizard === 'category_clash') {
+    // Dynamic wizard mount
+    if (activeDef?.SetupModal) {
+        const SetupComponent = activeDef.SetupModal;
         return (
-            <CategoryClashSetupModal
+            <SetupComponent
                 isOpen={true}
-                onClose={() => setActiveWizard(null)}
+                onClose={() => setActiveWizardKey(null)}
                 sourcePacket={sourcePacket}
+                profile={profile}
                 lang={lang}
                 onLaunch={(config) => {
-                    setActiveWizard(null);
+                    setActiveWizardKey(null);
                     onClose();
-                    onLaunchCategoryClash(config);
+                    onLaunchActivity(activeDef.key, config);
                 }}
             />
         );
@@ -110,14 +68,17 @@ export default function ActivityHubModal({
                     </button>
                 </div>
 
-                {/* Activity Card Grid */}
+                {/* Dynamic Activity Card Grid */}
                 <div className="p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto max-h-[70vh] custom-scrollbar">
-                    {activities.map((act) => {
+                    {Object.values(ACTIVITY_REGISTRY).map((act) => {
                         const Icon = act.icon;
+                        const titleText = act.title[lang] || act.title.sv;
+                        const descText = act.desc?.[lang] || act.desc?.sv || "";
+
                         return (
                             <div
                                 key={act.id}
-                                onClick={() => act.available && setActiveWizard(act.id)}
+                                onClick={() => act.available && setActiveWizardKey(act.id)}
                                 className={`p-5 rounded-2xl border-2 flex flex-col justify-between transition-all ${
                                     act.available 
                                         ? 'bg-gradient-to-br ' + act.color + ' hover:scale-[1.02] cursor-pointer shadow-sm hover:shadow-md' 
@@ -136,10 +97,10 @@ export default function ActivityHubModal({
                                         )}
                                     </div>
                                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide mb-1">
-                                        {act.title}
+                                        {titleText}
                                     </h3>
                                     <p className="text-xs font-medium text-slate-500 leading-relaxed mb-4">
-                                        {act.desc}
+                                        {descText}
                                     </p>
                                 </div>
 

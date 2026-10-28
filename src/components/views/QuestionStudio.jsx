@@ -15,10 +15,10 @@ import { syncProgress, syncBatchProgress } from '../../lib/progressSync';
 import LiveLaunchModal from '../modals/LiveLaunchModal';
 import StudioTutorialModal from '../modals/StudioTutorialModal.jsx';
 import SheetLibraryModal from '../modals/SheetLibraryModal';
+import { liveCreateRoom } from '../live/core/liveCreateRoom.js';
 
 import ActivityHubModal from '../activities/modals/ActivityHubModal';
-import CategoryClashEngine from '../activities/engines/CategoryClashEngine';
-
+import { getActivityDefinition } from '../activities/registry/activityRegistry.js';
 
 // CRITICAL: Imports Universal Theme and Preferences Toggle
 import '../../styles/theme.css'; 
@@ -120,9 +120,9 @@ export default function QuestionStudio({
     setSheetTitle, 
     studioMode, 
     setStudioMode,
-    includeAnswerKey,
-    setIncludeAnswerKey,
-    answerKeyStyle,
+    includeAnswerKey, 
+    setIncludeAnswerKey, 
+    answerKeyStyle, 
     setAnswerKeyStyle
 }) {
   const t = {
@@ -226,8 +226,8 @@ export default function QuestionStudio({
   const [showLiveModal, setShowLiveModal] = useState(false);
   const [liveSettings, setLiveSettings] = useState({ pacing: 'open', order: 'original', summary: true });
   const [enableScratchpad, setEnableScratchpad] = useState(true);
-  const [enableCanvas, setEnableCanvas] = useState(false); //  Default false to save bandwidth
-  const [responseStyle, setResponseStyle] = useState('flexible'); //  'flexible', 'scratchpad_only', 'canvas_only', 'answer_only'
+  const [enableCanvas, setEnableCanvas] = useState(false); 
+  const [responseStyle, setResponseStyle] = useState('flexible'); 
   const [folders, setFolders] = useState([]);
   const [expandedFolders, setExpandedFolders] = useState([]);
 
@@ -245,21 +245,52 @@ export default function QuestionStudio({
   const [isSaving, setIsSaving] = useState(false);
 
   const [showActivityHub, setShowActivityHub] = useState(false);
-  const [activeGameConfig, setActiveGameConfig] = useState(null);
-  const [activeGameSheet, setActiveGameSheet] = useState(null);
-  
+  const [activeActivity, setActiveActivity] = useState(null);
+
+  // Universal Launch Handler
+  const handleLaunchActivity = async (gameKey, config) => {
+      const actDef = getActivityDefinition(gameKey);
+      if (!actDef) return;
+
+      if (config.launchTarget === 'live') {
+          try {
+              const initialSettings = actDef.createInitialSettings 
+                  ? actDef.createInitialSettings(config) 
+                  : config;
+
+              const roomData = await liveCreateRoom({
+                  teacherId: profile?.id,
+                  profile,
+                  title: `${actDef.title[lang] || actDef.title.sv} Live`,
+                  mode: actDef.modePrefix,
+                  packet: [],
+                  settings: initialSettings
+              });
+
+              onDoNowGenerate(null, null, { 
+                  room: roomData, 
+                  packet: [] 
+              });
+          } catch (err) {
+              alert((lang === 'sv' ? "Kunde inte starta live-aktivitet: " : "Failed to start live activity: ") + err.message);
+          }
+      } else {
+          setActiveActivity({
+              key: gameKey,
+              config,
+              sourcePacket: packet
+          });
+      }
+  };
 
   const [showTutorial, setShowTutorial] = useState(() => {
-    return !localStorage.getItem('has_seen_studio_guide');
-    });
-
+      return !localStorage.getItem('has_seen_studio_guide');
+  });
 
   const handleCloseTutorial = () => {
-    localStorage.setItem('has_seen_studio_guide', 'true');
-    setShowTutorial(false);
+      localStorage.setItem('has_seen_studio_guide', 'true');
+      setShowTutorial(false);
   }; 
-
-
 
   const handleDragStartUnified = (e, index) => {
     setDraggedIdx(index);
@@ -289,20 +320,23 @@ export default function QuestionStudio({
   };
 
   const handleSelectSheet = (sheet) => {
-    // 🟢 1. If it's a game, NEVER load it into QuestionStudio!
-    // Open the game engine modal directly.
+    // 🟢 1. If it's an activity, open via registry
     if (sheet.type?.startsWith('activity')) {
-        setActiveGameSheet(sheet);
+        const actDef = getActivityDefinition(sheet.type);
+        if (actDef) {
+            setActiveActivity({
+                key: actDef.key,
+                savedBoard: sheet
+            });
+        }
         setShowLibraryModal(false);
         return;
     }
 
-    // 2. Regular worksheets/presentations proceed as normal
     setPacket(Array.isArray(sheet.packet) ? sheet.packet : []);
     setShowLibraryModal(false);
-};
+  };
 
-  //  STEP 4.2 GUARD: Disable and reset Word Problems if the selected topic does not support them
   const topicSupportsWordProblems = isTopicWordProblemReady(selectedTopicId);
 
   useEffect(() => {
@@ -327,12 +361,9 @@ export default function QuestionStudio({
 
   const getTopicLabel = (topicId) => {
       if (!topicId || topicId === 'all') return lang === 'sv' ? "Alla ämnen" : "All topics";
-      
-      // Direct alias check in case your sheets save 'patterns' or 'pattern'
       if (topicId === 'patterns' || topicId === 'pattern') {
           return lang === 'sv' ? "Mönster" : "Patterns";
       }
-
       for (const catKey in SKILL_BUCKETS) {
           const category = SKILL_BUCKETS[catKey];
           if (category.topics && category.topics[topicId]) {
@@ -388,7 +419,6 @@ export default function QuestionStudio({
     return 2; 
   };
 
-  // --- DATABASE & API LOGIC ---
   const fetchLibrary = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -420,7 +450,6 @@ export default function QuestionStudio({
     } catch (err) { console.error(err); } finally { setIsLibraryLoading(false); }
   };
 
-    // --- SUPABASE SAVE PIPELINE ---
   const handleSave = async () => {
       setIsSaving(true);
       try {
@@ -465,7 +494,7 @@ export default function QuestionStudio({
           
           setActiveSheetId(res.data.id); 
           setIsSaved(true);
-          fetchLibrary(); // Refresh the sidebar library automatically
+          fetchLibrary();
           alert(t.save_success);
       } catch (err) {
           console.error("Save Error:", err);
@@ -552,7 +581,7 @@ export default function QuestionStudio({
               title: newTitle,
               type: sheet.type,
               user_id: user.id,
-              visibility: 'private', // Duplicates start as private in your own library
+              visibility: 'private',
               school_name: profile?.school_name?.trim() || null,
               school_id: profile?.school_id || null,
               packet: sheet.packet,
@@ -587,9 +616,14 @@ export default function QuestionStudio({
   };
 
   const loadSheet = (sheet) => {
-      // 🟢 Intercept game sheets if ever passed directly
       if (sheet.type?.startsWith('activity')) {
-          setActiveGameSheet(sheet);
+          const actDef = getActivityDefinition(sheet.type);
+          if (actDef) {
+              setActiveActivity({
+                  key: actDef.key,
+                  savedBoard: sheet
+              });
+          }
           return;
       }
 
@@ -600,7 +634,6 @@ export default function QuestionStudio({
       
       setActiveBoardSheet(null); 
 
-      // 🟢 Guarantee packet is an array
       const safePacket = Array.isArray(sheet.packet) 
           ? sheet.packet 
           : Array.isArray(sheet.packet?.tiles) 
@@ -623,23 +656,18 @@ export default function QuestionStudio({
       else setWorkspaceHeight(0);
   };
 
-  // Progress sync WIRED
   const handleLaunchGrid = () => { 
       if (!isSaved && !window.confirm(t.unsaved_warning)) return; 
-      
       syncBatchProgress('donow_generated', packet, { 
           app_mode: 'question_studio',
           include_answer_key: includeAnswerKey 
       });
-
       const gridPacket = packet.map(item => ({ ...item, _globalLatexSize: globalLatexSize }));
       onDoNowGenerate({ title: sheetTitle, globalLatexSize, includeAnswerKey, answerKeyStyle }, gridPacket); 
   };
 
-  // Wired via progressSync
   const handleLaunchPrint = () => { 
       if (!isSaved && !window.confirm(t.unsaved_warning)) return; 
-      
       syncBatchProgress('worksheet_printed', packet, { 
           app_mode: 'question_studio',
           include_answer_key: includeAnswerKey,
@@ -647,7 +675,6 @@ export default function QuestionStudio({
           layout_style: layoutStyle,
           workspace_height: workspaceHeight
       });
-
       const printPacket = packet.map(item => ({
           ...item, _globalLatexSize: globalLatexSize, _workspaceHeight: workspaceHeight, _workspaceStyle: workspaceStyle, _layoutStyle: layoutStyle
       }));
@@ -659,10 +686,8 @@ export default function QuestionStudio({
     setShowLiveModal(true);
   };
 
-  // progressSync
-    const confirmLaunchLive = async (settingsToUse) => {
+  const confirmLaunchLive = async (settingsToUse) => {
         setShowLiveModal(false);
-        
         const finalSettings = settingsToUse || liveSettings;
         
         syncBatchProgress('live_session_started', packet, {
@@ -672,31 +697,28 @@ export default function QuestionStudio({
             scratchpad: enableScratchpad
         });
 
-        const { data: { user } } = await supabase.auth.getUser();
-        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
         try {
-            const { data, error } = await supabase.from('rooms').insert([{ 
-                teacher_id: user.id, 
-                class_code: code, 
-                status: 'active', 
-                title: sheetTitle || "Live Session", 
-                active_worksheet_id: activeSheetId, 
-                active_question_data: { 
-                    packet: packet, 
-                    mode: setupMode, 
-                    settings: { 
-                        ...finalSettings, 
-                        scratchpad: enableScratchpad,
-                        allowScratchpad: enableScratchpad,
-                        allowCanvas: enableCanvas,        
-                        responseStyle: responseStyle     
-                    } 
-                }
-            }]).select().single();
-            if (error) throw error;
-            onDoNowGenerate(null, null, { room: data, packet: packet }); 
-        } catch (err) { alert("Systemfel: " + err.message); }
-    };
+            const roomData = await liveCreateRoom({
+                teacherId: profile?.id,
+                profile,
+                title: sheetTitle || (setupMode === 'donow' ? "Do Now Grid" : "Arbetsblad Live"),
+                mode: setupMode || 'worksheet',
+                packet: packet,
+                settings: {
+                    ...finalSettings,
+                    scratchpad: enableScratchpad,
+                    allowScratchpad: enableScratchpad,
+                    allowCanvas: enableCanvas,
+                    responseStyle: responseStyle
+                },
+                activeSheetId
+            });
+
+            onDoNowGenerate(null, null, { room: roomData, packet: roomData.active_question_data.packet });
+        } catch (err) {
+            alert((lang === 'sv' ? "Kunde inte starta live-lektion: " : "Failed to launch live session: ") + err.message);
+        }
+  };
 
   const triggerPreview = async (variationKey) => {
     setIsPreviewLoading(true); setActivePreviewKey(variationKey);
@@ -731,7 +753,7 @@ export default function QuestionStudio({
         try {
             syncBatchProgress(setupMode === 'donow' ? 'donow_grid_shuffled' : 'worksheet_grid_shuffled', packet, {
                 app_mode: 'question_studio',
-                shuffle_mode: mode // 'numbers' | 'stories' | 'both'
+                shuffle_mode: mode
             });
 
             const updatedPacket = await Promise.all(packet.map(async (item) => {
@@ -776,7 +798,6 @@ export default function QuestionStudio({
       return matchesSearch && matchesTopic && matchesType;
   });
   
-  //  FIX: Include all registered curriculum topics from SKILL_BUCKETS so "mönster" (patterns) is always filterable
   const allCurriculumTopicIds = Object.values(SKILL_BUCKETS).flatMap(cat => Object.keys(cat.topics || {}));
   const availableTopics = [...new Set([
       ...allCurriculumTopicIds,
@@ -804,9 +825,9 @@ export default function QuestionStudio({
   };
 
   // =========================================================================
-  //  SETUP MODE (CLOUD DRIVE LAYOUT)
+  // SETUP MODE (CLOUD DRIVE LAYOUT)
   // =========================================================================
-  // 🟢 PRIORITY 1: If a presentation is active, render it directly on its own layer
+  // 🟢 PRIORITY 1: Presentation Mode
   if (showPresentation) {
       return (
           <PresentationView 
@@ -819,7 +840,7 @@ export default function QuestionStudio({
               onClose={() => { 
                   setShowPresentation(false);
                   setActiveBoardSheet(null);
-                  setSetupMode(null); // 🟢 Always return to the starting library!
+                  setSetupMode(null);
                   fetchLibrary(); 
               }}
               onLaunchLive={(roomData) => {
@@ -830,22 +851,27 @@ export default function QuestionStudio({
       );
   }
 
-  // 🟢 PRIORITY 1.5: If a game activity is selected, render it directly on its own layer!
-  if (activeGameSheet) {
-      return (
-          <CategoryClashEngine
-              savedBoard={activeGameSheet}
-              onClose={() => {
-                  setActiveGameSheet(null);
-                  fetchLibrary();
-              }}
-              lang={lang}
-          />
-      );
+  // 🟢 PRIORITY 1.5: Dynamic Activity Engine (via Registry)
+  if (activeActivity) {
+      const def = getActivityDefinition(activeActivity.key);
+      if (def?.TeacherEngine) {
+          const Engine = def.TeacherEngine;
+          return (
+              <Engine
+                  initialConfig={activeActivity.config}
+                  savedBoard={activeActivity.savedBoard}
+                  sourcePacket={activeActivity.sourcePacket || []}
+                  onClose={() => {
+                      setActiveActivity(null);
+                      fetchLibrary();
+                  }}
+                  lang={lang}
+              />
+          );
+      }
   }
 
-  // 🟢 PRIORITY 2: If no setupMode, show the Decoupled Library
-  // 🟢 PRIORITY 2: If no setupMode, show the Decoupled Library
+  // 🟢 PRIORITY 2: Decoupled Library
   if (!setupMode) {
       return (
           <>
@@ -855,7 +881,7 @@ export default function QuestionStudio({
                   lang={lang}
                   onClose={onClose}
                   showCreationActions={true}
-                  onCreateActivity={() => setShowActivityHub(true)} // 🟢 Open Activity Hub directly!
+                  onCreateActivity={() => setShowActivityHub(true)}
                   onCreateNew={(type) => {
                       if (type === 'board') {
                           setActiveBoardSheet(null);
@@ -872,7 +898,10 @@ export default function QuestionStudio({
                   }}
                   onSelectSheet={(sheet) => {
                       if (sheet.type?.startsWith('activity')) {
-                          setActiveGameSheet(sheet);
+                          const actDef = getActivityDefinition(sheet.type);
+                          if (actDef) {
+                              setActiveActivity({ key: actDef.key, savedBoard: sheet });
+                          }
                           return;
                       }
                       if (sheet.type === 'board') {
@@ -884,34 +913,20 @@ export default function QuestionStudio({
                   }}
               />
 
-              {/* 🟢 Ensure ActivityHubModal & CategoryClashEngine can mount over the library */}
               <ActivityHubModal
-                  isOpen={showActivityHub}
-                  onClose={() => setShowActivityHub(false)}
-                  sourcePacket={[]} // Empty array triggers fresh procedural generation
-                  lang={lang}
-                  onLaunchCategoryClash={(config) => {
-                      setActiveGameConfig(config);
-                  }}
-              />
-
-              {activeGameConfig && (
-                  <CategoryClashEngine
-                      initialConfig={activeGameConfig}
-                      sourcePacket={[]}
-                      onClose={() => {
-                          setActiveGameConfig(null);
-                          fetchLibrary();
-                      }}
-                      lang={lang}
-                  />
-              )}
+                    isOpen={showActivityHub}
+                    onClose={() => setShowActivityHub(false)}
+                    sourcePacket={setupMode ? packet : []}
+                    profile={profile}
+                    lang={lang}
+                    onLaunchActivity={handleLaunchActivity}
+                />
           </>
       );
   }
 
   // =========================================================================
-  //  ACTIVE EDITOR (STUDIO MODE)
+  // ACTIVE EDITOR (STUDIO MODE)
   // =========================================================================
   return (
     <div className="layout-wrapper flex flex-col h-screen max-h-screen font-sans overflow-hidden relative">
@@ -1088,71 +1103,70 @@ export default function QuestionStudio({
                 </div>
             </div>
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar min-h-0">
-            {Object.entries(
-                visibleVariations.reduce((acc, v) => {
-                    const lvl = v.level || 1; 
-                    if (!acc[lvl]) acc[lvl] = [];
-                    acc[lvl].push(v);
-                    return acc;
-                }, {})
-            ).sort(([lvlA], [lvlB]) => Number(lvlA) - Number(lvlB)).map(([lvl, variations]) => (
-                <div key={lvl} className="space-y-2">
-                    <div className="sticky top-0 bg-[var(--bg-surface)]/95 backdrop-blur-sm pt-4 pb-2 flex items-center z-10">
-                        <span className="text-[14px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-                            {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
-                        </span>
-                        <div className="flex-1 h-[2px] bg-[var(--border-strong)] ml-3 rounded-full"></div>
-                    </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar min-h-0">
+                {Object.entries(
+                    visibleVariations.reduce((acc, v) => {
+                        const lvl = v.level || 1; 
+                        if (!acc[lvl]) acc[lvl] = [];
+                        acc[lvl].push(v);
+                        return acc;
+                    }, {})
+                ).sort(([lvlA], [lvlB]) => Number(lvlA) - Number(lvlB)).map(([lvl, variations]) => (
+                    <div key={lvl} className="space-y-2">
+                        <div className="sticky top-0 bg-[var(--bg-surface)]/95 backdrop-blur-sm pt-4 pb-2 flex items-center z-10">
+                            <span className="text-[14px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+                                {lang === 'sv' ? `Nivå ${lvl}` : `Level ${lvl}`}
+                            </span>
+                            <div className="flex-1 h-[2px] bg-[var(--border-strong)] ml-3 rounded-full"></div>
+                        </div>
 
-                    {variations.map(v => {
-                        const cat = getVariationCategory(v.key);
-                        const styles = getCategoryStyles(cat);
-                        const isPreviewed = activePreviewKey === v.key;
-                        
-                        return (
-                            <div 
-                                key={v.key} 
-                                onClick={() => triggerPreview(v.key)} 
-                                className={`group p-3 rounded-[var(--radius-card)] border transition-all bg-[var(--bg-card)] relative overflow-hidden
-                                    ${isPreviewed ? 'border-[var(--brand-solid)] shadow-md ring-2 ring-[var(--brand-solid)]/10' : 'border-[var(--border-main)] shadow-sm hover:border-[var(--brand-solid)] cursor-pointer'}
-                                `}
-                            >
-                                <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg}`} />
-                                <div className="flex justify-between items-start mb-1">
-                                    <h4 className="font-black text-[11px] uppercase tracking-tight text-[var(--text-main)] leading-tight pr-2">{v.name[lang]}</h4>
-                                    <div className={`shrink-0 px-1.5 py-0.5 rounded border ${styles.border} ${styles.bg} ${styles.text} text-[7px] font-black uppercase flex items-center gap-0.5`}>
-                                        {styles.icon} {styles.label}
+                        {variations.map(v => {
+                            const cat = getVariationCategory(v.key);
+                            const styles = getCategoryStyles(cat);
+                            const isPreviewed = activePreviewKey === v.key;
+                            
+                            return (
+                                <div 
+                                    key={v.key} 
+                                    onClick={() => triggerPreview(v.key)} 
+                                    className={`group p-3 rounded-[var(--radius-card)] border transition-all bg-[var(--bg-card)] relative overflow-hidden
+                                        ${isPreviewed ? 'border-[var(--brand-solid)] shadow-md ring-2 ring-[var(--brand-solid)]/10' : 'border-[var(--border-main)] shadow-sm hover:border-[var(--brand-solid)] cursor-pointer'}
+                                    `}
+                                >
+                                    <div className={`absolute top-0 left-0 bottom-0 w-1 ${styles.bg}`} />
+                                    <div className="flex justify-between items-start mb-1">
+                                        <h4 className="font-black text-[11px] uppercase tracking-tight text-[var(--text-main)] leading-tight pr-2">{v.name[lang]}</h4>
+                                        <div className={`shrink-0 px-1.5 py-0.5 rounded border ${styles.border} ${styles.bg} ${styles.text} text-[7px] font-black uppercase flex items-center gap-0.5`}>
+                                            {styles.icon} {styles.label}
+                                        </div>
+                                    </div>
+                                    
+                                    <p className="text-[9px] font-medium text-[var(--text-muted)] line-clamp-1 mb-2 italic leading-tight">{v.desc[lang]}</p>
+                                    
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5">
+                                            <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} className="w-5 h-5 flex items-center justify-center hover:bg-[var(--bg-card)] rounded transition-all text-[var(--text-muted)] hover:text-[var(--primary-color)]"><Minus size={10}/></button>
+                                            <span className="w-5 text-center text-[11px] font-black text-[var(--text-main)]">{pendingQuantity}</span>
+                                            <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(pendingQuantity + 1); }} className="w-5 h-5 flex items-center justify-center hover:bg-[var(--bg-card)] rounded transition-all text-[var(--text-muted)] hover:text-[var(--primary-color)]"><Plus size={10}/></button>
+                                        </div>
+                                        <button 
+                                            disabled={isPreviewLoading} 
+                                            onClick={(e) => { e.stopPropagation(); addToPacket(v, pendingQuantity); }} 
+                                            className={`flex-1 py-1.5 text-white rounded-[var(--radius-btn)] text-[9px] font-black uppercase transition-all shadow-sm active:scale-95 disabled:opacity-50 ${setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                                        >
+                                            {isPreviewLoading && isPreviewed ? '...' : `Lägg till ${pendingQuantity}`}
+                                        </button>
                                     </div>
                                 </div>
-                                
-                                <p className="text-[9px] font-medium text-[var(--text-muted)] line-clamp-1 mb-2 italic leading-tight">{v.desc[lang]}</p>
-                                
-                                <div className="flex items-center gap-1.5">
-                                    <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-main)] rounded-[var(--radius-btn)] p-0.5">
-                                        <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(Math.max(1, pendingQuantity - 1)); }} className="w-5 h-5 flex items-center justify-center hover:bg-[var(--bg-card)] rounded transition-all text-[var(--text-muted)] hover:text-[var(--primary-color)]"><Minus size={10}/></button>
-                                        <span className="w-5 text-center text-[11px] font-black text-[var(--text-main)]">{pendingQuantity}</span>
-                                        <button onClick={(e) => { e.stopPropagation(); setPendingQuantity(pendingQuantity + 1); }} className="w-5 h-5 flex items-center justify-center hover:bg-[var(--bg-card)] rounded transition-all text-[var(--text-muted)] hover:text-[var(--primary-color)]"><Plus size={10}/></button>
-                                    </div>
-                                    <button 
-                                        disabled={isPreviewLoading} 
-                                        onClick={(e) => { e.stopPropagation(); addToPacket(v, pendingQuantity); }} 
-                                        className={`flex-1 py-1.5 text-white rounded-[var(--radius-btn)] text-[9px] font-black uppercase transition-all shadow-sm active:scale-95 disabled:opacity-50 ${setupMode === 'donow' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
-                                    >
-                                        {isPreviewLoading && isPreviewed ? '...' : `Lägg till ${pendingQuantity}`}
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            ))}
-        </div>
+                            );
+                        })}
+                    </div>
+                ))}
+            </div>
         </div>
 
         {/* PANE 3: Workspace */}
         <div className="flex-1 flex flex-col overflow-hidden relative bg-[var(--bg-canvas)] min-h-0 h-full">
-          
           <div className="bg-[var(--bg-card)] border-b border-[var(--border-main)] px-6 py-2 flex flex-wrap items-center justify-between shadow-sm shrink-0 z-50 min-h-[64px]">
               <div className="flex items-center gap-4">
                   <div className="bg-[var(--bg-surface)] p-1 rounded-[var(--radius-btn)] border border-[var(--border-main)] flex gap-1">
@@ -1163,7 +1177,6 @@ export default function QuestionStudio({
 
               {canvasMode === 'layout' && (
                   <div className="flex items-center gap-5 justify-end flex-1 pl-6">
-                      
                       <div className="flex flex-col gap-1 items-center relative group">
                           <button 
                               disabled={isRegeneratingAll || packet.length === 0}
@@ -1265,30 +1278,45 @@ export default function QuestionStudio({
                 <div className="whiteboard-protect bg-white flex-1 rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col mx-auto w-full max-w-2xl animate-in zoom-in-95 duration-300 m-4">
                     <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center">
                       <span className="text-[10px] font-black uppercase tracking-widest opacity-60 italic">
-                    {t.board_label}</span>{activePreviewKey && <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-[var(--bg-canvas)]/10 hover:bg-[var(--bg-canvas)]/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all">
-                        <RefreshCcw size={12}/> {t.new_example}</button>}
-                        </div>
+                        {t.board_label}
+                      </span>
+                      {activePreviewKey && (
+                        <button onClick={() => triggerPreview(activePreviewKey)} className="text-[10px] bg-[var(--bg-canvas)]/10 hover:bg-[var(--bg-canvas)]/20 px-4 py-1.5 rounded-full font-black uppercase flex items-center gap-2 transition-all">
+                            <RefreshCcw size={12}/> {t.new_example}
+                        </button>
+                      )}
+                    </div>
                   <div className="p-12 flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
-                    {isPreviewLoading ? <div className="h-full flex items-center justify-center">
-                        <Loader2 className="animate-spin text-[var(--brand-solid)]" size={48} />
-                        </div> : !previewData ? <div className="h-full flex items-center justify-center text-[var(--border-strong)] uppercase font-black tracking-widest italic">
+                    {isPreviewLoading ? (
+                        <div className="h-full flex items-center justify-center">
+                            <Loader2 className="animate-spin text-[var(--brand-solid)]" size={48} />
+                        </div>
+                    ) : !previewData ? (
+                        <div className="h-full flex items-center justify-center text-[var(--border-strong)] uppercase font-black tracking-widest italic">
                             {t.select_hint}
-                            </div> : <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="w-full flex justify-center drop-shadow-md">
-                                    <VisualRenderer 
-                                        data={previewData?.renderData} 
-                                        isWordProblem={useWordProblems} 
-                                    />
+                        </div>
+                    ) : (
+                        <div className="w-full space-y-12 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="w-full flex justify-center drop-shadow-md">
+                                <VisualRenderer 
+                                    data={previewData?.renderData} 
+                                    isWordProblem={useWordProblems} 
+                                />
+                            </div>
+                            <div className="text-2xl text-[var(--text-main)] font-bold text-center px-10 leading-relaxed">
+                                <MathDisplay content={previewData.renderData.description} />
+                            </div>
+                            {previewData.renderData.latex && (
+                                <div className="text-4xl text-[var(--brand-solid)] bg-[var(--brand-bg)] p-10 rounded-[2.5rem] border-2 border-[var(--brand-border)] shadow-inner text-center font-serif">
+                                    <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
                                 </div>
-                                    <div className="text-2xl text-[var(--text-main)] font-bold text-center px-10 leading-relaxed">
-                                        <MathDisplay content={previewData.renderData.description} />
-                                        </div>{previewData.renderData.latex && <div className="text-4xl text-[var(--brand-solid)] bg-[var(--brand-bg)] p-10 rounded-[2.5rem] border-2 border-[var(--brand-border)] shadow-inner text-center font-serif">
-                                        <MathDisplay content={`$$${previewData.renderData.latex}$$`} />
-                                        </div>}{renderOptions(previewData.renderData?.options)}
-                                    </div>}
+                            )}
+                            {renderOptions(previewData.renderData?.options)}
+                        </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-          ) : (
+            ) : (
               <div className="flex-1 overflow-auto custom-scrollbar pb-24 flex justify-center items-start bg-[var(--bg-canvas)] p-4 rounded-[3rem]">
                   <div 
                     className={`shadow-2xl flex flex-col animate-in slide-in-from-bottom-6 origin-top ${
@@ -1312,7 +1340,6 @@ export default function QuestionStudio({
                           </header>
                       )}
 
-                      {/*  WHITEBOARD PROTECTED CONTENT CARDS */}
                       <div className="grid grid-cols-6 gap-x-8 gap-y-6 items-start content-start">
                           {Array.isArray(packet) && packet.map((item, idx) => {
                                 const displayStory = item.showText !== false;
@@ -1354,7 +1381,6 @@ export default function QuestionStudio({
                                             
                                             <div className="absolute -top-4 left-0 right-0 flex justify-center opacity-0 group-hover:opacity-100 z-30 transition-all gap-1.5">
                                                 <div className="bg-white shadow-2xl rounded-full p-1 flex gap-1 border border-slate-200 items-center">
-                                                    
                                                     {setupMode === 'worksheet' && (
                                                         <>
                                                             <div className="flex items-center bg-slate-100 rounded-full px-1">
@@ -1485,7 +1511,7 @@ export default function QuestionStudio({
         </div>
 
         {/* PANE 4: Selected Questions */}
-          <div className={`bg-[var(--bg-card)]/90 backdrop-blur-sm border-l border-[var(--border-main)] flex flex-col shadow-2xl shrink-0 transition-all duration-300 min-h-0 h-full ${isPane4Collapsed ? 'w-16' : 'w-72'}`}>
+        <div className={`bg-[var(--bg-card)]/90 backdrop-blur-sm border-l border-[var(--border-main)] flex flex-col shadow-2xl shrink-0 transition-all duration-300 min-h-0 h-full ${isPane4Collapsed ? 'w-16' : 'w-72'}`}>
           <div className={`p-4 border-b border-[var(--border-main)] flex items-center ${isPane4Collapsed ? 'justify-center' : 'justify-between'} bg-[var(--bg-surface)]/80`}>
               {!isPane4Collapsed && (
                 <div className="flex items-center gap-2">
@@ -1507,77 +1533,80 @@ export default function QuestionStudio({
                 <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar bg-[var(--bg-canvas)]/50 min-h-0">
                     {Array.isArray(packet) && packet.map((item, idx) => (
                         <div 
-                        key={item.id}
-                        draggable 
-                        onDragStart={(e) => handleDragStartUnified(e, idx)}
-                        onDragOver={(e) => handleDragOverUnified(e, idx)}
-                        onDragEnd={handleDragEndUnified}
-                        className={`p-3 border rounded-[var(--radius-card)] flex justify-between items-center group shadow-sm transition-all select-none
-                            ${draggedItemIndex === idx 
-                                ? 'opacity-30 bg-[var(--theme-indigo-bg)] border-[var(--brand-solid)] border-dashed scale-[0.98]' 
-                                : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:shadow-md hover:border-[var(--brand-solid)] cursor-grab active:cursor-grabbing'
-                            }`}
-                    >
-                        <div className="flex items-start gap-2 min-w-0 flex-1 w-full">
-                            <GripVertical size={12} className="text-[var(--text-muted)] shrink-0 group-hover:text-[var(--primary-color)] transition-colors mt-1" />
-                            <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-[14px] font-black text-[var(--text-main)]">#{idx + 1}</span>
-                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-[var(--border-strong)]'}`} />
-                                    <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest truncate">
-                                        {item.name}
-                                    </span>
-                                </div>
-                                
-                                <div className="text-[11px] font-bold text-[var(--text-muted)] leading-tight pr-2">
-                                    <MathDisplay 
-                                        content={compileAnchoredStory(item, lang, true)} 
-                                        className="!whitespace-normal line-clamp-2" 
-                                    />
+                            key={item.id}
+                            draggable 
+                            onDragStart={(e) => handleDragStartUnified(e, idx)}
+                            onDragOver={(e) => handleDragOverUnified(e, idx)}
+                            onDragEnd={handleDragEndUnified}
+                            className={`p-3 border rounded-[var(--radius-card)] flex justify-between items-center group shadow-sm transition-all select-none
+                                ${draggedItemIndex === idx 
+                                    ? 'opacity-30 bg-[var(--theme-indigo-bg)] border-[var(--brand-solid)] border-dashed scale-[0.98]' 
+                                    : 'bg-[var(--bg-card)] border-[var(--border-main)] hover:shadow-md hover:border-[var(--brand-solid)] cursor-grab active:cursor-grabbing'
+                                }`}
+                        >
+                            <div className="flex items-start gap-2 min-w-0 flex-1 w-full">
+                                <GripVertical size={12} className="text-[var(--text-muted)] shrink-0 group-hover:text-[var(--primary-color)] transition-colors mt-1" />
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-[14px] font-black text-[var(--text-main)]">#{idx + 1}</span>
+                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.instructionMode === 'header' ? 'bg-indigo-500' : item.instructionMode === 'inline' ? 'bg-amber-500' : 'bg-[var(--border-strong)]'}`} />
+                                        <span className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest truncate">
+                                            {item.name}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="text-[11px] font-bold text-[var(--text-muted)] leading-tight pr-2">
+                                        <MathDisplay 
+                                            content={compileAnchoredStory(item, lang, true)} 
+                                            className="!whitespace-normal line-clamp-2" 
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }}
-                                className="p-1 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] transition-colors rounded-lg"
-                                title={t.delete_task}
-                            >
-                                <Trash2 size={20} />
-                            </button>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); setPacket(packet.filter(p => p.id !== item.id)); }}
+                                    className="p-1 text-[var(--text-muted)] hover:text-[var(--theme-rose-text)] transition-colors rounded-lg"
+                                    title={t.delete_task}
+                                >
+                                    <Trash2 size={20} />
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </div>
-            {setupMode === 'worksheet' && (
+                    ))}
+                </div>
+                {setupMode === 'worksheet' && (
                     <div className="p-4 border-t border-[var(--border-main)] bg-[var(--bg-card)] space-y-4 shrink-0">
                         <div className="flex items-center justify-between">
                             <span className="text-[12px] font-black uppercase text-[var(--text-main)] tracking-widest">
                                 {t.answer_key_toggle}
-                                </span>
-                                <button onClick={() => setIncludeAnswerKey(!includeAnswerKey)} className={`w-10 h-5 rounded-full transition-all relative p-1 ${includeAnswerKey ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}>
-                                    <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${includeAnswerKey ? 'translate-x-5' : 'translate-x-0'}`} />
-                                </button>
+                            </span>
+                            <button onClick={() => setIncludeAnswerKey(!includeAnswerKey)} className={`w-10 h-5 rounded-full transition-all relative p-1 ${includeAnswerKey ? 'bg-[var(--brand-solid)]' : 'bg-[var(--border-strong)]'}`}>
+                                <div className={`w-3 h-3 bg-white rounded-full transition-all shadow-sm ${includeAnswerKey ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
                         </div>
                         {includeAnswerKey && (
                             <div className="animate-in fade-in slide-in-from-bottom-2 space-y-2">
-                                <label className="text-[12px] font-black uppercase text-[var(--text-main)] block">{t.answer_style_label}
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-1 p-1 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border border-[var(--border-main)]">
-                                        <button onClick={() => setAnswerKeyStyle('compact')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'compact' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
-                                            Kompakt
-                                            </button>
-                                            <button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>Steg</button></div></div>)}
+                                <label className="text-[12px] font-black uppercase text-[var(--text-main)] block">
+                                    {t.answer_style_label}
+                                </label>
+                                <div className="grid grid-cols-2 gap-1 p-1 bg-[var(--bg-surface)] rounded-[var(--radius-btn)] border border-[var(--border-main)]">
+                                    <button onClick={() => setAnswerKeyStyle('compact')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'compact' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>
+                                        Kompakt
+                                    </button>
+                                    <button onClick={() => setAnswerKeyStyle('detailed')} className={`py-1 rounded-[var(--radius-btn)] text-[12px] font-black uppercase transition-all ${answerKeyStyle === 'detailed' ? 'bg-[var(--bg-card)] text-[var(--brand-solid)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}>Steg</button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
-                
             </div>
           )}
         </div>
       </div>
       
-      {/* MODALS GO HERE AT THE VERY ROOT TO OVERLAY EVERYTHING */}
+      {/* MODALS */}
       <LiveLaunchModal
           isOpen={showLiveModal}
           onClose={() => setShowLiveModal(false)}
@@ -1591,14 +1620,12 @@ export default function QuestionStudio({
           initialSettings={liveSettings}
       />
 
-      {/* LAUNCHES STANDALONE PRESENTATION BUILDER/VIEWER */}
       {showPresentation && (
           <PresentationView 
               packet={activeBoardSheet ? (activeBoardSheet.packet?.livePacket || activeBoardSheet.packet) : packet}
               initialSlides={activeBoardSheet?.packet?.slides}
               initialSettings={activeBoardSheet?.packet?.settings}
               boardId={activeBoardSheet?.id || (peekSheet?.type === 'board' || savedSheets.find(s => s.id === activeSheetId)?.type === 'board' ? activeSheetId : null)}
-              
               sheetTitle={activeBoardSheet?.title || sheetTitle} 
               lang={lang} 
               onClose={() => { 
@@ -1617,31 +1644,34 @@ export default function QuestionStudio({
             onClose={handleCloseTutorial}
             lang={lang}
         />
+
         <ActivityHubModal
             isOpen={showActivityHub}
             onClose={() => setShowActivityHub(false)}
             sourcePacket={packet}
+            profile={profile}
             lang={lang}
-            onLaunchCategoryClash={(config) => setActiveGameConfig(config)}
+            onLaunchActivity={handleLaunchActivity}
         />
 
-        {activeGameConfig && (
-            <CategoryClashEngine
-                initialConfig={activeGameConfig}
-                sourcePacket={packet}
-                onClose={() => setActiveGameConfig(null)}
-                lang={lang}
-            />
-        )}
-
-        {/* Active Game Modal (Launches over everything cleanly) */}
-        {activeGameSheet && (
-            <CategoryClashEngine
-                savedBoard={activeGameSheet}
-                onClose={() => setActiveGameSheet(null)}
-                lang={lang}
-            />
-        )}
+        {/* 🟢 Dynamic Activity Engine Render */}
+        {activeActivity && (() => {
+            const def = getActivityDefinition(activeActivity.key);
+            if (!def?.TeacherEngine) return null;
+            const Engine = def.TeacherEngine;
+            return (
+                <Engine
+                    initialConfig={activeActivity.config}
+                    savedBoard={activeActivity.savedBoard}
+                    sourcePacket={activeActivity.sourcePacket || packet || []}
+                    onClose={() => {
+                        setActiveActivity(null);
+                        fetchLibrary();
+                    }}
+                    lang={lang}
+                />
+            );
+        })()}
     </div>
   );
 }
